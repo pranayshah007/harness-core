@@ -150,7 +150,6 @@ public class InfrastructureResource {
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private final SshEntityHelper sshEntityHelper;
-  //  private final NGFeatureFlagHelperService featureFlagHelperService;
   private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
 
   public static final String INFRA_PARAM_MESSAGE = "Infrastructure Identifier for the entity";
