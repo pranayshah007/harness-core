@@ -70,6 +70,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
 import io.harness.ng.core.filestore.dto.FileStoreRequest;
+import io.harness.ng.core.utils.URLDecoderUtility;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PageUtils;
@@ -498,7 +499,7 @@ public class FileStoreResource {
   @Consumes({"application/json"})
   @Path("files/{scopedFilePath}/content")
   @ApiOperation(
-      value = "Get file content as string using scopedFilePath", nickname = "getFileContentUsingScopedFilePath")
+      value = "Get file content as string using encoded scopedFilePath", nickname = "getFileContentUsingScopedFilePath")
   @Operation(operationId = "getFileContentUsingScopedFilePath", summary = "Get file content of scopedFilePath",
       responses =
       {
@@ -510,6 +511,7 @@ public class FileStoreResource {
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
+    scopedFilePath = URLDecoderUtility.getDecodedString(scopedFilePath);
     return ResponseDTO.newResponse(fileStoreService.getFileContentAsString(
         accountIdentifier, orgIdentifier, projectIdentifier, scopedFilePath, Long.MAX_VALUE));
   }
