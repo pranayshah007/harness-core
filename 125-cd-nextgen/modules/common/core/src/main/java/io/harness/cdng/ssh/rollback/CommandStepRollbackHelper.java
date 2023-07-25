@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.ssh.rollback;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getOutputVariableValuesWithoutSecrets;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.getSecretOutputVariableValues;
@@ -16,7 +15,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -51,6 +53,8 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_AMI_ASG})
 @Singleton
 @OwnedBy(CDP)
 @Slf4j

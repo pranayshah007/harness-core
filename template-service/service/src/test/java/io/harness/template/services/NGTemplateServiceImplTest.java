@@ -858,21 +858,22 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .when(accessControlClient)
         .hasAccess(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER), Resource.of("TEMPLATE", null),
             TEMPLATE_VIEW_PERMISSION);
-    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(new ArrayList<>());
-    TemplateEntity createdEntity = templateService.create(entity, false, "", false);
+    //    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(new ArrayList<>());
+    //    TemplateEntity createdEntity = templateService.create(entity, false, "", false);
     TemplateEntity entityRbacAllowed = TemplateEntity.builder()
                                            .accountId(ACCOUNT_ID)
                                            .orgIdentifier(ORG_IDENTIFIER)
                                            .projectIdentifier(PROJ_IDENTIFIER)
-                                           .identifier("DifferentIdentifier")
+                                           .identifier(TEMPLATE_IDENTIFIER)
                                            .name(TEMPLATE_IDENTIFIER)
-                                           .versionLabel("DifferentVersion")
+                                           .versionLabel("v1")
                                            .yaml(yaml)
                                            .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
                                            .childType(TEMPLATE_CHILD_TYPE)
                                            .fullyQualifiedIdentifier("account_id/orgId/projId/template1/version1/")
                                            .templateScope(Scope.PROJECT)
                                            .build();
+
     TemplateEntity entityVersion2 = templateService.create(entityRbacAllowed, false, "", false);
     FilterParamsDTO filterParamsDTO = NGTemplateDtoMapper.prepareFilterParamsDTO("", "", null,
         NGTemplateDtoMapper.toTemplateFilterProperties(
@@ -881,14 +882,156 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                 .build()),
         false, false);
     PageParamsDTO pageParamsDTO = NGTemplateDtoMapper.preparePageParamsDTO(0, 1000, new ArrayList<>());
-    //    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(Collections.singletonList(entityVersion2));
+    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(Collections.singletonList(entityVersion2));
+    List<TemplateEntity> rbacFilteredTemplates =
+        templateService
+            .listTemplateMetadata(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, filterParamsDTO, pageParamsDTO)
+            .getContent();
+    assertThat(rbacFilteredTemplates.size()).isEqualTo(1);
+    assertThat(rbacFilteredTemplates.get(0).getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetAllRbacFilteredMultipleTemplates() {
+    doReturn(false)
+        .when(accessControlClient)
+        .hasAccess(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER), Resource.of("TEMPLATE", null),
+            TEMPLATE_VIEW_PERMISSION);
+    //    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(new ArrayList<>());
+    //    TemplateEntity createdEntity = templateService.create(entity, false, "", false);
+    TemplateEntity entityRbacAllowed = TemplateEntity.builder()
+                                           .accountId(ACCOUNT_ID)
+                                           .orgIdentifier(ORG_IDENTIFIER)
+                                           .projectIdentifier(PROJ_IDENTIFIER)
+                                           .identifier(TEMPLATE_IDENTIFIER)
+                                           .name(TEMPLATE_IDENTIFIER)
+                                           .versionLabel("v1")
+                                           .yaml(yaml)
+                                           .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                                           .childType(TEMPLATE_CHILD_TYPE)
+                                           .fullyQualifiedIdentifier("account_id/orgId/projId/template1/version1/")
+                                           .templateScope(Scope.PROJECT)
+                                           .build();
+    TemplateEntity entityRbacAllowed2 = TemplateEntity.builder()
+                                            .accountId(ACCOUNT_ID)
+                                            .orgIdentifier(ORG_IDENTIFIER)
+                                            .projectIdentifier(PROJ_IDENTIFIER)
+                                            .identifier("template2")
+                                            .name("template2")
+                                            .versionLabel("v1")
+                                            .yaml(yaml)
+                                            .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                                            .childType(TEMPLATE_CHILD_TYPE)
+                                            .fullyQualifiedIdentifier("account_id/orgId/projId/template2/version1/")
+                                            .templateScope(Scope.PROJECT)
+                                            .build();
+
+    TemplateEntity entityVersion2 = templateService.create(entityRbacAllowed, false, "", false);
+    TemplateEntity entityVersion3 = templateService.create(entityRbacAllowed2, false, "", false);
+    List<String> template = new ArrayList<>();
+    template.add(TEMPLATE_IDENTIFIER);
+    template.add("template2");
+    FilterParamsDTO filterParamsDTO = NGTemplateDtoMapper.prepareFilterParamsDTO("", "", null,
+        NGTemplateDtoMapper.toTemplateFilterProperties(
+            TemplateFilterPropertiesDTO.builder().templateIdentifiers(template).build()),
+        false, false);
+    PageParamsDTO pageParamsDTO = NGTemplateDtoMapper.preparePageParamsDTO(0, 1000, new ArrayList<>());
+    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(Collections.singletonList(entityVersion2));
+    List<TemplateEntity> rbacFilteredTemplates =
+        templateService
+            .listTemplateMetadata(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, filterParamsDTO, pageParamsDTO)
+            .getContent();
+    assertThat(rbacFilteredTemplates.size()).isEqualTo(1);
+    assertThat(rbacFilteredTemplates.get(0).getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+    List<TemplateEntity> templateEntities = new ArrayList<>();
+    templateEntities.add(entityVersion2);
+    templateEntities.add(entityVersion3);
+    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(templateEntities);
+    rbacFilteredTemplates =
+        templateService
+            .listTemplateMetadata(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, filterParamsDTO, pageParamsDTO)
+            .getContent();
+    assertThat(rbacFilteredTemplates.size()).isEqualTo(2);
+    assertThat(rbacFilteredTemplates.get(0).getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+    assertThat(rbacFilteredTemplates.get(1).getIdentifier()).isEqualTo("template2");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetAllRbacWithoutFilteredTemplates() {
+    doReturn(false)
+        .when(accessControlClient)
+        .hasAccess(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER), Resource.of("TEMPLATE", null),
+            TEMPLATE_VIEW_PERMISSION);
+    //    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(new ArrayList<>());
+    //    TemplateEntity createdEntity = templateService.create(entity, false, "", false);
+    TemplateEntity entityRbacAllowed = TemplateEntity.builder()
+                                           .accountId(ACCOUNT_ID)
+                                           .orgIdentifier(ORG_IDENTIFIER)
+                                           .projectIdentifier(PROJ_IDENTIFIER)
+                                           .identifier(TEMPLATE_IDENTIFIER)
+                                           .name(TEMPLATE_IDENTIFIER)
+                                           .versionLabel("v1")
+                                           .yaml(yaml)
+                                           .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                                           .childType(TEMPLATE_CHILD_TYPE)
+                                           .fullyQualifiedIdentifier("account_id/orgId/projId/template1/version1/")
+                                           .templateScope(Scope.PROJECT)
+                                           .build();
+
+    TemplateEntity entityVersion2 = templateService.create(entityRbacAllowed, false, "", false);
+    FilterParamsDTO filterParamsDTO = NGTemplateDtoMapper.prepareFilterParamsDTO("", "", null, null, false, false);
+    PageParamsDTO pageParamsDTO = NGTemplateDtoMapper.preparePageParamsDTO(0, 1000, new ArrayList<>());
+    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(Collections.singletonList(entityVersion2));
+    List<TemplateEntity> rbacFilteredTemplates =
+        templateService
+            .listTemplateMetadata(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, filterParamsDTO, pageParamsDTO)
+            .getContent();
+    assertThat(rbacFilteredTemplates.size()).isEqualTo(1);
+    assertThat(rbacFilteredTemplates.get(0).getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetAllRbacFilteredNoPermissionTemplates() {
+    doReturn(false)
+        .when(accessControlClient)
+        .hasAccess(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER), Resource.of("TEMPLATE", null),
+            TEMPLATE_VIEW_PERMISSION);
+    //    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(new ArrayList<>());
+    //    TemplateEntity createdEntity = templateService.create(entity, false, "", false);
+    TemplateEntity entityRbacAllowed = TemplateEntity.builder()
+                                           .accountId(ACCOUNT_ID)
+                                           .orgIdentifier(ORG_IDENTIFIER)
+                                           .projectIdentifier(PROJ_IDENTIFIER)
+                                           .identifier(TEMPLATE_IDENTIFIER)
+                                           .name(TEMPLATE_IDENTIFIER)
+                                           .versionLabel("v1")
+                                           .yaml(yaml)
+                                           .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                                           .childType(TEMPLATE_CHILD_TYPE)
+                                           .fullyQualifiedIdentifier("account_id/orgId/projId/template1/version1/")
+                                           .templateScope(Scope.PROJECT)
+                                           .build();
+
+    TemplateEntity entityVersion2 = templateService.create(entityRbacAllowed, false, "", false);
+    FilterParamsDTO filterParamsDTO = NGTemplateDtoMapper.prepareFilterParamsDTO("", "", null,
+        NGTemplateDtoMapper.toTemplateFilterProperties(
+            TemplateFilterPropertiesDTO.builder()
+                .templateIdentifiers(Collections.singletonList(TEMPLATE_IDENTIFIER))
+                .build()),
+        false, false);
+    PageParamsDTO pageParamsDTO = NGTemplateDtoMapper.preparePageParamsDTO(0, 1000, new ArrayList<>());
+    when(templateRbacHelper.getPermittedTemplateList(any())).thenReturn(Collections.emptyList());
     List<TemplateEntity> rbacFilteredTemplates =
         templateService
             .listTemplateMetadata(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, filterParamsDTO, pageParamsDTO)
             .getContent();
     assertThat(rbacFilteredTemplates.size()).isEqualTo(0);
-    //    assertThat(rbacFilteredTemplates.get(0).getIdentifier()).isEqualTo("DifferentIdentifier");
-    // TODO :- Jira CDS-72711 Fix RBAC based template filtering
   }
 
   @Test
@@ -1839,6 +1982,49 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Template with the given Identifier: template-movetogit and versionLabel version1 cannot be moved to Git as it is not a Git Supported Template Type");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testIfTemplateIsAlreadyRemoteType() {
+    NGTemplateServiceImpl ngTemplateService = spy(templateService);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier("template-movetogit")
+                                        .name("templatemovetogit")
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.MONITORED_SERVICE_TEMPLATE)
+                                        .storeType(StoreType.REMOTE)
+                                        .yaml(yaml)
+                                        .filePath("FILE_PATH")
+                                        .rootFolder("ROOT")
+                                        .objectIdOfYaml("YAML_ID_TEMPLATE")
+                                        .repo("git")
+                                        .branch("master")
+                                        .build();
+    ngTemplateService.create(templateEntity, true, "", false);
+    doReturn(templateEntity)
+        .when(ngTemplateService)
+        .moveTemplateEntity(any(), any(), any(), any(), any(), any(TemplateMoveConfigOperationDTO.class), any());
+    doReturn(Optional.of(templateEntity))
+        .when(ngTemplateService)
+        .get(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean());
+    TemplateMoveConfigRequestDTO moveConfigOperationDTO =
+        TemplateMoveConfigRequestDTO.builder()
+            .isNewBranch(false)
+            .moveConfigOperationType(TemplateMoveConfigOperationType.INLINE_TO_REMOTE)
+            .versionLabel(TEMPLATE_VERSION_LABEL)
+            .build();
+    assertThatThrownBy(()
+                           -> ngTemplateService.moveTemplateStoreTypeConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "template-movetogit", moveConfigOperationDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Template with the given Identifier: template-movetogit and versionLabel version1 cannot be moved to Git as it is already Remote Type");
   }
 
   @Test

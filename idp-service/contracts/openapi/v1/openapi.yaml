@@ -1411,14 +1411,17 @@ components:
           type: integer
           x-stoplight:
             id: z84hfxygvrde5
+          default: 0
         tab_contents:
           type: integer
           x-stoplight:
             id: xsao98zphpvue
+          default: 0
         cards:
           type: integer
           x-stoplight:
             id: ksifiqe7f9p5w
+          default: 0
         default_entity_types:
           type: array
           x-stoplight:

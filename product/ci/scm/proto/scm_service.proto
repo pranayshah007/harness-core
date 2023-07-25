@@ -776,6 +776,12 @@ message GetUserReposRequest {
   PageRequest pagination = 1;
   Provider provider = 2;
   bool fetchAllRepos = 3;
+  RepoFilterParams repoFilterParams = 4;
+}
+
+message RepoFilterParams {
+  string repoName = 1;
+  string userName = 2;
 }
 
 message GetUserReposResponse {

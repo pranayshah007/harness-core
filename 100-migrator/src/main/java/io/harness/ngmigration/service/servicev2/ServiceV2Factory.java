@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.servicev2;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 
 import software.wings.api.DeploymentType;
@@ -19,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceV2Factory {
   private static final ServiceV2Mapper k8sServiceV2Mapper = new K8sServiceV2Mapper();

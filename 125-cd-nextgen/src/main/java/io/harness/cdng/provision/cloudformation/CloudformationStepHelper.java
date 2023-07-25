@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.provision.cloudformation;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType.S3URL;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -17,7 +16,10 @@ import static io.harness.delegate.task.cloudformation.CloudformationTaskType.CRE
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -117,6 +119,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(CDP)
 @Singleton

@@ -6,7 +6,6 @@
  */
 
 package io.harness.template.services;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -16,6 +15,7 @@ import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.INLINE_
 import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.getMoveConfigType;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
+import static io.harness.template.resources.beans.NGTemplateConstants.IDENTIFIER;
 import static io.harness.template.resources.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.template.resources.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
@@ -29,7 +29,10 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
@@ -134,6 +137,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_GITX,
+        HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(CDC)
@@ -1486,6 +1492,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
             templateIdentifier, versionLabel));
       }
 
+      if (templateEntityOptional.get().getStoreType().equals(StoreType.REMOTE)) {
+        throw new InvalidRequestException(String.format(
+            "Template with the given Identifier: %s and versionLabel %s cannot be moved to Git as it is already Remote Type",
+            templateIdentifier, versionLabel));
+      }
+
       TemplateEntity movedTemplateEntity = moveTemplateEntity(accountIdentifier, orgIdentifier, projectIdentifier,
           templateIdentifier, versionLabel, moveConfigOperationDTO, templateEntityOptional.get());
 
@@ -1649,9 +1661,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       if (isEmpty(templateEntityList)) {
         return Page.empty();
       }
+
+      if (criteria.getCriteriaObject().containsKey(IDENTIFIER)) {
+        criteria = templateServiceHelper.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier,
+            filterParamsDTO.getFilterIdentifier(), false, null, filterParamsDTO.getSearchTerm(),
+            filterParamsDTO.isIncludeAllTemplatesAccessibleAtScope());
+      }
       populateInFilter(criteria, TemplateEntityKeys.identifier,
           templateEntityList.stream().map(TemplateEntity::getIdentifier).collect(toList()));
-
       templateEntities = templateServiceHelper.listTemplate(accountIdentifier, orgIdentifier, projectIdentifier,
           criteria, Pageable.unpaged(), filterParamsDTO.isGetDistinctFromBranches());
     }

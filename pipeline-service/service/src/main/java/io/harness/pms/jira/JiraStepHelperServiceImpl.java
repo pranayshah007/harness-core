@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.jira;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGTaskType;
@@ -52,6 +54,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 public class JiraStepHelperServiceImpl implements JiraStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;

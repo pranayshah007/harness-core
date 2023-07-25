@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.creator;
-
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsTaskDefinition;
 import static io.harness.cdng.manifest.ManifestType.ServerlessAwsLambda;
@@ -53,8 +52,11 @@ import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
 import static io.harness.ng.core.k8s.ServiceSpecType.SERVERLESS_AWS_LAMBDA;
 import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppRollbackStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSlotDeploymentStepVariableCreator;
@@ -300,6 +302,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_GITOPS,
+        HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {

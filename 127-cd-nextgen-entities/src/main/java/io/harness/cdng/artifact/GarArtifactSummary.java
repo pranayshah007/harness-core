@@ -9,6 +9,7 @@ package io.harness.cdng.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 
@@ -21,6 +22,7 @@ import lombok.Data;
 @Data
 @Builder
 @JsonTypeName(ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME)
+@RecasterAlias("io.harness.cdng.artifact.GarArtifactSummary")
 public class GarArtifactSummary implements ArtifactSummary {
   @JsonProperty("package") String pkg;
   String version;

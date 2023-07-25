@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.usage.impl;
-
 import static io.harness.cdng.usage.jobs.CDLicenseDailyReportIteratorHandler.BULK_INSERT_LIMIT;
 import static io.harness.cdng.usage.jobs.CDLicenseDailyReportIteratorHandler.QUERY_ON_NUMBER_OF_DAYS;
 import static io.harness.cdng.usage.mapper.ServiceInstancesDateUsageMapper.buildDailyLicenseDateUsageFetchData;
@@ -16,8 +15,11 @@ import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.NOT_SU
 import static java.lang.String.format;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cd.CDLicenseType;
 import io.harness.cd.TimeScaleDAL;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
@@ -55,6 +57,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.exception.DataAccessException;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 @Slf4j

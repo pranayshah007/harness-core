@@ -6,9 +6,11 @@
  */
 
 package io.harness.rancher;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.Map;
 import retrofit2.Call;
@@ -17,6 +19,7 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.QueryMap;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 public interface RancherRestClient {
   @GET("/v3/clusters") Call<RancherListClustersResponse> listClusters(@QueryMap Map<String, String> pageRequestParams);

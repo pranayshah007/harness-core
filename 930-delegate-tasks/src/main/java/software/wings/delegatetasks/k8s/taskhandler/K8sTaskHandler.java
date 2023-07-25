@@ -6,10 +6,12 @@
  */
 
 package software.wings.delegatetasks.k8s.taskhandler;
-
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.exception.ExceptionUtils;
@@ -28,6 +30,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public abstract class K8sTaskHandler {

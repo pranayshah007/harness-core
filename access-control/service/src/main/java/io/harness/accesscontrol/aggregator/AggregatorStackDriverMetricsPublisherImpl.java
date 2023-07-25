@@ -28,6 +28,7 @@ public class AggregatorStackDriverMetricsPublisherImpl implements MetricsPublish
   private final MetricService metricService;
   private final String namespace = System.getenv("NAMESPACE");
   private final String containerName = System.getenv("CONTAINER_NAME");
+  private final String serviceName = "access-control";
 
   @Override
   public void recordMetrics() {
@@ -35,7 +36,8 @@ public class AggregatorStackDriverMetricsPublisherImpl implements MetricsPublish
     Optional<SnapshotMetrics> snapshotMetricsOptional = aggregatorMetricsService.getSnapshotMetrics();
 
     if (streamingMetricsOptional.isPresent()) {
-      try (AccessControlMetricsContext ignored = new AccessControlMetricsContext(namespace, containerName)) {
+      try (AccessControlMetricsContext ignored =
+               new AccessControlMetricsContext(namespace, containerName, serviceName)) {
         StreamingMetrics streamingMetrics = streamingMetricsOptional.get();
         metricService.recordMetric(
             "aggregator_streaming_numberOfDisconnects", streamingMetrics.getNumberOfDisconnects());
@@ -57,7 +59,8 @@ public class AggregatorStackDriverMetricsPublisherImpl implements MetricsPublish
     }
 
     if (snapshotMetricsOptional.isPresent()) {
-      try (AccessControlMetricsContext ignored = new AccessControlMetricsContext(namespace, containerName)) {
+      try (AccessControlMetricsContext ignored =
+               new AccessControlMetricsContext(namespace, containerName, serviceName)) {
         SnapshotMetrics snapshotMetrics = snapshotMetricsOptional.get();
         metricService.recordMetric(
             "aggregator_snapshot_millisSinceLastEvent", snapshotMetrics.getMillisSinceLastEvent());

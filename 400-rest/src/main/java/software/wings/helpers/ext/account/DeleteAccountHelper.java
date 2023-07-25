@@ -6,7 +6,6 @@
  */
 
 package software.wings.helpers.ext.account;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -17,7 +16,10 @@ import static software.wings.beans.Base.ACCOUNT_ID_KEY2;
 import static java.lang.reflect.Modifier.isAbstract;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.event.timeseries.processor.TimescaleDataCleanup;
@@ -67,6 +69,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_GITX,
+        HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 @Slf4j
 public class DeleteAccountHelper {

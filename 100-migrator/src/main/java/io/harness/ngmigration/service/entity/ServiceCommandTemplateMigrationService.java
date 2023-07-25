@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
 import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
@@ -14,6 +13,9 @@ import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE;
 import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -82,6 +84,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 // Merge this class with TemplateMigrationService
 public class ServiceCommandTemplateMigrationService extends NgMigrationService {

@@ -8,6 +8,7 @@
 package io.harness.pms.serializer.recaster;
 
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
@@ -33,6 +34,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,6 +56,39 @@ public class RecastOrchestrationUtilsTest extends CategoryTest {
     String simpleJson = RecastOrchestrationUtils.toSimpleJson(null);
     assertThat(simpleJson).isNotNull();
     assertThat(simpleJson).isEqualTo("{}");
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForStringArray() {
+    String[] s = new String[] {"a", "b"};
+    String json = RecastOrchestrationUtils.toJson(s);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class);
+    assertThat(response).isInstanceOf(ArrayList.class);
+    assertThat(((ArrayList) response).size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForIntArray() {
+    int[] s = new int[] {1, 2};
+    String json = RecastOrchestrationUtils.toJson(s);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class);
+    assertThat(response).isInstanceOf(ArrayList.class);
+    assertThat((ArrayList) response).containsExactly(1, 2);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForBooleanArray() {
+    boolean[] s = new boolean[] {true, false};
+    String json = RecastOrchestrationUtils.toJson(s);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class);
+    assertThat(response).isInstanceOf(ArrayList.class);
+    assertThat((ArrayList) response).containsExactly(true, false);
   }
 
   @Test

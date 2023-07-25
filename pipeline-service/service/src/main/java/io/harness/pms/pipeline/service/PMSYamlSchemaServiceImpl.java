@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.pipeline.service;
-
 import static io.harness.beans.FeatureName.PIE_STATIC_YAML_SCHEMA;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.APPROVAL_NAMESPACE;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA;
@@ -25,8 +24,11 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceConfiguration;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -86,6 +88,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
@@ -153,7 +157,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         // If e.getCause() instance of InvalidYamlException then it means we got some legit schema-validation errors and
         // it has error info according to the schema-error-experience.
         if (e.getCause() != null && e.getCause() instanceof io.harness.yaml.validator.InvalidYamlException) {
-          throw(io.harness.yaml.validator.InvalidYamlException) e.getCause();
+          throw (io.harness.yaml.validator.InvalidYamlException) e.getCause();
         }
         throw new RuntimeException(e.getCause());
       } catch (TimeoutException | InterruptedException e) {
@@ -176,7 +180,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
       // If static schema ff is on, fetch schema from fetcher
       if (pmsFeatureFlagService.isEnabled(accountIdentifier, PIE_STATIC_YAML_SCHEMA)) {
-        schema = schemaFetcher.fetchStaticYamlSchema(accountIdentifier);
+        schema = schemaFetcher.fetchStaticYamlSchema();
       } else {
         schema = getPipelineYamlSchema(accountIdentifier, projectId, orgId, Scope.PROJECT);
       }

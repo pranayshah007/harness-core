@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.featureFlag;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ff.filters.EnumFeatureFlagFilter;
@@ -17,6 +19,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class CdEnumFilter extends EnumFeatureFlagFilter {

@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.manifest.steps;
-
 import static io.harness.cdng.manifest.ManifestType.MULTIPLE_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniqueness;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOverridesTypeAndUniquenessV2;
@@ -23,8 +22,11 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
@@ -125,6 +127,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, AsyncExecutable<EmptyStepParameters> {

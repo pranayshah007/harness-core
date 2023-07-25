@@ -6,11 +6,13 @@
  */
 
 package software.wings.service.impl.instance;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -20,6 +22,7 @@ import software.wings.service.InstanceSyncPerpetualTaskCreator;
 
 import java.util.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 @TargetModule(HarnessModule._441_CG_INSTANCE_SYNC)
 public interface InstanceSyncByPerpetualTaskHandler {

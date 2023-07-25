@@ -6,15 +6,17 @@
  */
 
 package io.harness.pms.events.base;
-
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListener>

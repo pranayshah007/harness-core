@@ -10,6 +10,7 @@ package io.harness.yaml.core.variables;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.common.NGExpressionUtils;
@@ -41,6 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(NGVariableConstants.STRING_TYPE)
 @SimpleVisitorHelper(helperClass = StringVariableVisitorHelper.class)
 @TypeAlias("io.harness.yaml.core.variables.StringNGVariable")
+@RecasterAlias("io.harness.yaml.core.variables.StringNGVariable")
 @OwnedBy(CDC)
 public class StringNGVariable implements NGVariable {
   @NGVariableName

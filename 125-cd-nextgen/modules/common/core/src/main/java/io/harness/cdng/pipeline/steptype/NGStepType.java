@@ -6,13 +6,15 @@
  */
 
 package io.harness.cdng.pipeline.steptype;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 
@@ -25,6 +27,10 @@ import java.util.List;
 /*
    Todo: Change StepSpecTypeConstants.PLACEHOLDER to their respective type once the StepInfo for those is implemented.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_INFRA_PROVISIONERS,
+        HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(CDP)
 public enum NGStepType {
   // gitops steps

@@ -6,7 +6,6 @@
  */
 
 package io.harness.artifactory;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -26,7 +25,10 @@ import static org.jfrog.artifactory.client.ArtifactoryRequest.ContentType.TEXT;
 import static org.jfrog.artifactory.client.ArtifactoryRequest.Method.GET;
 import static org.jfrog.artifactory.client.ArtifactoryRequest.Method.POST;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
@@ -77,6 +79,8 @@ import org.jfrog.artifactory.client.model.Repository;
 import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 import org.jfrog.artifactory.client.model.repository.settings.RepositorySettings;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 @OwnedBy(CDC)
 public class ArtifactoryClientImpl {
@@ -250,7 +254,7 @@ public class ArtifactoryClientImpl {
               serverMayNotBeRunningMessaage, ErrorCode.INVALID_ARTIFACT_SERVER, reportTargets));
     }
     if (e instanceof WingsException) {
-      throw(WingsException) e;
+      throw (WingsException) e;
     }
     throw NestedExceptionUtils.hintWithExplanationException(
         "Check if the URL is correct. Consider appending `/artifactory` to the endpoint if you have not already.",

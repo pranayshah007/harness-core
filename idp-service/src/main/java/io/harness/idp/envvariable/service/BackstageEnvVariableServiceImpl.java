@@ -9,6 +9,8 @@ package io.harness.idp.envvariable.service;
 
 import static io.harness.idp.common.Constants.GITHUB_APP_PRIVATE_KEY_REF;
 import static io.harness.idp.common.Constants.LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES;
+import static io.harness.idp.common.Constants.PRIVATE_KEY_END;
+import static io.harness.idp.common.Constants.PRIVATE_KEY_START;
 import static io.harness.idp.k8s.constants.K8sConstants.BACKSTAGE_SECRET;
 
 import static java.lang.String.format;
@@ -425,6 +427,10 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
             decryptedValue.setDecryptedValue(
                 new String(Base64.getDecoder().decode(decryptedValue.getDecryptedValue()), StandardCharsets.UTF_8));
           }
+          if (secretResponseWrapper.getSecret().getType().equals(SecretType.SecretText)) {
+            String privateKeyFormatted = formatPrivateKey(decryptedValue.getDecryptedValue());
+            decryptedValue.setDecryptedValue(privateKeyFormatted);
+          }
         }
         return decryptedValue.getDecryptedValue();
       } catch (Exception e) {
@@ -443,5 +449,15 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     }
 
     throw new RuntimeException("Failed to retrieve decrypted value after multiple retries.");
+  }
+
+  private String formatPrivateKey(String privateKey) {
+    privateKey = privateKey.replace(PRIVATE_KEY_START + " ", "");
+    privateKey = privateKey.replace(PRIVATE_KEY_END, "");
+    privateKey = privateKey.replace(" ", "\n");
+    String privateKeyFormatted = PRIVATE_KEY_START + "\n";
+    privateKeyFormatted = privateKeyFormatted + privateKey;
+    privateKeyFormatted = privateKeyFormatted + PRIVATE_KEY_END;
+    return privateKeyFormatted;
   }
 }

@@ -6,9 +6,11 @@
  */
 
 package io.harness.idp.onboarding.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.UnexpectedException;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -21,6 +23,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class FileUtils {

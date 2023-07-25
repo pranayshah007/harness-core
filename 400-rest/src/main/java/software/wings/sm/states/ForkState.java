@@ -6,7 +6,6 @@
  */
 
 package software.wings.sm.states;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.ABORTED;
 import static io.harness.beans.ExecutionStatus.EXPIRED;
@@ -16,8 +15,11 @@ import static io.harness.beans.FeatureName.SPG_CG_REJECT_PRIORITY_WHEN_FORK_STAT
 import static java.lang.String.join;
 import static org.apache.commons.lang3.StringUtils.abbreviate;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.ExecutionStatusResponseData;
@@ -50,6 +52,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author Rishi
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Slf4j
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

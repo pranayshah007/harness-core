@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.cf;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -60,7 +59,10 @@ import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.pcf.CfAppRenameInfo;
@@ -117,6 +119,10 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Stateles helper class
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PCF, HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_FIRST_GEN,
+        HarnessModuleComponent.CDS_SERVERLESS})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)

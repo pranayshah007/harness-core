@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.gitops.steps;
-
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_ENV_OUTCOME;
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -22,6 +21,9 @@ import static io.harness.pms.execution.utils.AmbianceUtils.getProjectIdentifier;
 import static java.lang.String.format;
 import static java.util.function.Predicate.not;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ScopeLevel;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
@@ -91,6 +93,7 @@ import net.jodah.failsafe.RetryPolicy;
 import org.jetbrains.annotations.NotNull;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Slf4j
 public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepParameters> {
   private static final int UNLIMITED_SIZE = 100000;

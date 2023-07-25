@@ -38,6 +38,7 @@ import software.wings.delegatetasks.cv.DataCollectionException;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.Optional;
+import javax.ws.rs.BadRequestException;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -119,7 +120,7 @@ public class OnboardingServiceImplTest extends CvNextGenTestBase {
                     .orgIdentifier(orgIdentifier)
                     .projectIdentifier(projectIdentifier)
                     .build()))
-        .isInstanceOf(NullPointerException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessage("Missing tracingId/requestGuid in request");
   }
 

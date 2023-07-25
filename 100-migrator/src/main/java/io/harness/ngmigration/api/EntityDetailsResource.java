@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.api;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
@@ -14,7 +13,10 @@ import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.data.structure.EmptyPredicate;
@@ -57,6 +59,7 @@ import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(CDC)
 @Slf4j
 @Path("/")

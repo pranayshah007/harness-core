@@ -6,9 +6,11 @@
  */
 
 package io.harness.gitsync.common.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
@@ -27,6 +29,7 @@ import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
+import io.harness.gitsync.common.dtos.ScmRepoFilterParams;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
@@ -35,13 +38,15 @@ import io.harness.ng.beans.PageRequest;
 
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PL)
 public interface ScmFacilitatorService {
   List<String> listBranchesUsingConnector(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String connectorIdentifierRef, String repoURL, PageRequest pageRequest, String searchTerm);
 
   List<GitRepositoryResponseDTO> listReposByRefConnector(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorRef, PageRequest pageRequest, String searchTerm,
+      String projectIdentifier, String connectorRef, PageRequest pageRequest, ScmRepoFilterParams scmRepoFilterParams,
       boolean applyGitXRepoAllowListFilter);
 
   ScmCommitFileResponseDTO createFile(ScmCreateFileRequestDTO scmCommitRequestDTO);

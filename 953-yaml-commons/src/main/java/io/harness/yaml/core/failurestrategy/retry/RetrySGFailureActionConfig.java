@@ -6,12 +6,14 @@
  */
 
 package io.harness.yaml.core.failurestrategy.retry;
-
 import static io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants.RETRY_STEP_GROUP;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureActionType;
 
@@ -21,6 +23,8 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)

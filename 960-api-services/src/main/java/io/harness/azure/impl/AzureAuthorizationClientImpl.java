@@ -6,7 +6,6 @@
  */
 
 package io.harness.azure.impl;
-
 import static io.harness.azure.model.AzureConstants.OBJECT_ID_NAME_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.ROLE_ASSIGNMENT_NAME_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.SUBSCRIPTION_ID_NULL_VALIDATION_MSG;
@@ -14,6 +13,9 @@ import static io.harness.azure.model.AzureConstants.SUBSCRIPTION_ID_NULL_VALIDAT
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureAuthorizationRestClient;
@@ -42,6 +44,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 public class AzureAuthorizationClientImpl extends AzureClient implements AzureAuthorizationClient {

@@ -6,7 +6,9 @@
  */
 
 package io.harness.k8s.model;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.yaml.BooleanPatchedRepresenter;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -19,6 +21,7 @@ import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.representer.Representer;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class K8sYamlUtils {
   private final org.yaml.snakeyaml.Yaml mapper;
   public static int CUSTOM_LOAD_SIZE = 100 * 1024 * 1024;

@@ -10761,8 +10761,7 @@
           "type": "object",
           "required": [
             "policy",
-            "source",
-            "verifyAttestation"
+            "source"
           ],
           "properties": {
             "policy": {
@@ -10790,7 +10789,6 @@
         {
           "type": "object",
           "required": [
-            "attestation",
             "source",
             "tool"
           ],

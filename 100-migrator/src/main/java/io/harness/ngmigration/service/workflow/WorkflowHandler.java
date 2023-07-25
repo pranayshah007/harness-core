@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.workflow;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.ELASTIC_GROUP_ACCOUNT_IDS;
@@ -20,6 +19,9 @@ import static software.wings.sm.StepType.AZURE_NODE_SELECT;
 import static software.wings.sm.StepType.CUSTOM_DEPLOYMENT_FETCH_INSTANCES;
 import static software.wings.sm.StepType.DC_NODE_SELECT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.InputSetValidatorType;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
@@ -108,6 +110,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public abstract class WorkflowHandler {
   public static final String INPUT_EXPRESSION = "<+input>";
   private static final Set<String> loopingEnablers = Sets.newHashSet(DC_NODE_SELECT.name(),

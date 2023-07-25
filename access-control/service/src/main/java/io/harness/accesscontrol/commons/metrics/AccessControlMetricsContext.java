@@ -19,8 +19,9 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(PL)
 public class AccessControlMetricsContext extends AutoMetricContext {
-  public AccessControlMetricsContext(String namespace, String containerName) {
+  public AccessControlMetricsContext(String namespace, String containerName, String serviceName) {
     put("namespace", namespace);
     put("containerName", containerName);
+    put("serviceName", serviceName);
   }
 }

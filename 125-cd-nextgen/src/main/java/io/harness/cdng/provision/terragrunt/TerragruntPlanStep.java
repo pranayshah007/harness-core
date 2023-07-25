@@ -15,15 +15,17 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
-
 import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
 import static io.harness.provision.TerragruntConstants.PLAN;
 
 import static software.wings.beans.TaskType.TERRAGRUNT_PLAN_TASK_NG;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -71,6 +73,8 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskResponse> {

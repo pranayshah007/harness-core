@@ -6,7 +6,6 @@
  */
 
 package io.harness.rancher;
-
 import static io.harness.exception.ngexception.RancherClientRuntimeException.RancherActionType.GENERATE_KUBECONFIG;
 import static io.harness.exception.ngexception.RancherClientRuntimeException.RancherActionType.LIST_CLUSTERS;
 import static io.harness.exception.sanitizer.ExceptionMessageSanitizer.sanitizeException;
@@ -14,8 +13,11 @@ import static io.harness.exception.sanitizer.ExceptionMessageSanitizer.sanitizeE
 import static io.github.resilience4j.retry.Retry.decorateCallable;
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.ngexception.RancherClientRuntimeException;
 import io.harness.exception.ngexception.RancherClientRuntimeException.RancherActionType;
 import io.harness.k8s.KubernetesApiRetryUtils;
@@ -29,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import retrofit2.Call;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)

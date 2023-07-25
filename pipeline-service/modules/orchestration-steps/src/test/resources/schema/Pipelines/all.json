@@ -1136,8 +1136,7 @@
           "required": [
             "infrastructure",
             "policy",
-            "source",
-            "verifyAttestation"
+            "source"
           ],
           "properties": {
             "infrastructure": {
@@ -1169,7 +1168,6 @@
         {
           "type": "object",
           "required": [
-            "attestation",
             "infrastructure",
             "source",
             "tool"

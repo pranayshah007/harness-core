@@ -6,10 +6,12 @@
  */
 
 package io.harness.serializer;
-
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
@@ -35,6 +37,8 @@ import com.google.common.collect.ImmutableSet;
 import dev.morphia.converters.TypeConverter;
 import io.serializer.registrars.NGCommonsRegistrars;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @OwnedBy(HarnessTeam.PL)
 public class NextGenRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =

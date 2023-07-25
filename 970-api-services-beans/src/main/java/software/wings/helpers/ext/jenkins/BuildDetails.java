@@ -6,9 +6,11 @@
  */
 
 package software.wings.helpers.ext.jenkins;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 
 import com.google.common.base.MoreObjects;
@@ -19,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDC)
 public class BuildDetails {
   @UtilityClass

@@ -6,11 +6,13 @@
  */
 
 package io.harness.gitsync.scm.errorhandling;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.ScmBadRequestException;
@@ -25,6 +27,7 @@ import io.harness.gitsync.scm.beans.ScmGitMetaData;
 
 import groovy.lang.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Singleton
 @OwnedBy(HarnessTeam.PL)
 public class ScmErrorHandler {

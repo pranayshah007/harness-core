@@ -59,6 +59,8 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
   @Mock private NextGenService nextGenService;
   @Mock private VerificationManagerService verificationManagerService;
   private String accountId;
+
+  private String tracingId;
   private String connectorIdentifier;
   private Map<String, List<String>> stringListMap;
   private Map<String, Object> sampleDataResponse;
@@ -68,6 +70,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
   public void setup() throws IllegalAccessException, IOException {
     accountId = generateUuid();
     connectorIdentifier = generateUuid();
+    tracingId = generateUuid();
     prometheusConnectionParams = PrometheusConnectionParams.builder().connectorIdentifier(connectorIdentifier).build();
     FieldUtils.writeField(prometheusService, "onboardingService", onboardingService, true);
     FieldUtils.writeField(onboardingService, "nextGenService", nextGenService, true);
@@ -87,8 +90,8 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
   public void testGetMetricNames() {
-    List<String> metrics =
-        prometheusService.getMetricNames(accountId, generateUuid(), generateUuid(), "", prometheusConnectionParams);
+    List<String> metrics = prometheusService.getMetricNames(
+        accountId, generateUuid(), generateUuid(), tracingId, prometheusConnectionParams);
 
     assertThat(metrics).isNotEmpty();
     assertThat(metrics).hasSameElementsAs(stringListMap.get("data"));
@@ -102,8 +105,8 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
   public void testGetLabelNames() {
-    List<String> metrics =
-        prometheusService.getLabelNames(accountId, generateUuid(), generateUuid(), "", prometheusConnectionParams);
+    List<String> metrics = prometheusService.getLabelNames(
+        accountId, generateUuid(), generateUuid(), tracingId, prometheusConnectionParams);
 
     assertThat(metrics).isNotEmpty();
     assertThat(metrics).hasSameElementsAs(stringListMap.get("data"));
@@ -118,7 +121,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetLabelValues() {
     List<String> metrics = prometheusService.getLabelValues(
-        accountId, generateUuid(), generateUuid(), "labelName", "", prometheusConnectionParams);
+        accountId, generateUuid(), generateUuid(), "labelName", tracingId, prometheusConnectionParams);
 
     assertThat(metrics).isNotEmpty();
     assertThat(metrics).hasSameElementsAs(stringListMap.get("data"));
@@ -138,7 +141,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
              anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
         .thenReturn(JsonUtils.asJson(sampleDataResponse));
     List<PrometheusSampleData> sampleData = prometheusService.getSampleData(
-        accountId, generateUuid(), generateUuid(), "up", "", prometheusConnectionParams);
+        accountId, generateUuid(), generateUuid(), "up", tracingId, prometheusConnectionParams);
     verify(verificationManagerService, times(1))
         .getDataCollectionResponse(anyString(), anyString(), anyString(), any(PrometheusFetchSampleDataRequest.class));
     verify(verificationManagerService, times(0))
@@ -159,7 +162,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
              anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
         .thenReturn(JsonUtils.asJson(sampleDataResponse));
     List<PrometheusSampleData> sampleData =
-        prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up", "",
+        prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up", tracingId,
             PrometheusConnectionParams.builder()
                 .connectorIdentifier(connectorIdentifier)
                 .dataSourceType(DataSourceType.AWS_PROMETHEUS)
@@ -190,7 +193,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
              anyString(), anyString(), anyString(), any(DataCollectionRequest.class)))
         .thenReturn(JsonUtils.asJson(sampleDataResponseList));
     List<PrometheusSampleData> sampleData =
-        prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up", "",
+        prometheusService.getSampleData(accountId, generateUuid(), generateUuid(), "up", tracingId,
             PrometheusConnectionParams.builder()
                 .connectorIdentifier(connectorIdentifier)
                 .dataSourceType(DataSourceType.PROMETHEUS)
@@ -239,13 +242,14 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testAwsPrometheus_getLabelValues() {
-    List<String> metrics = prometheusService.getLabelValues(accountId, generateUuid(), generateUuid(), "labelName", "",
-        PrometheusConnectionParams.builder()
-            .connectorIdentifier(connectorIdentifier)
-            .dataSourceType(DataSourceType.AWS_PROMETHEUS)
-            .region("")
-            .workspaceId("")
-            .build());
+    List<String> metrics =
+        prometheusService.getLabelValues(accountId, generateUuid(), generateUuid(), "labelName", tracingId,
+            PrometheusConnectionParams.builder()
+                .connectorIdentifier(connectorIdentifier)
+                .dataSourceType(DataSourceType.AWS_PROMETHEUS)
+                .region("")
+                .workspaceId("")
+                .build());
     verify(verificationManagerService, times(1))
         .getDataCollectionResponse(anyString(), anyString(), anyString(), any(AwsDataCollectionRequest.class));
     verify(verificationManagerService, times(0))
@@ -290,7 +294,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testAwsPrometheus_getLabelNames() {
-    List<String> metrics = prometheusService.getLabelNames(accountId, generateUuid(), generateUuid(), "",
+    List<String> metrics = prometheusService.getLabelNames(accountId, generateUuid(), generateUuid(), tracingId,
         PrometheusConnectionParams.builder()
             .connectorIdentifier(connectorIdentifier)
             .dataSourceType(DataSourceType.AWS_PROMETHEUS)
@@ -339,7 +343,7 @@ public class PrometheusServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
   public void testAwsPrometheus_getMetricNames() {
-    List<String> metrics = prometheusService.getMetricNames(accountId, generateUuid(), generateUuid(), "",
+    List<String> metrics = prometheusService.getMetricNames(accountId, generateUuid(), generateUuid(), tracingId,
         PrometheusConnectionParams.builder()
             .connectorIdentifier(connectorIdentifier)
             .dataSourceType(DataSourceType.AWS_PROMETHEUS)

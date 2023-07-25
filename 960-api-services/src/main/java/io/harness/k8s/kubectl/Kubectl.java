@@ -6,15 +6,18 @@
  */
 
 package io.harness.k8s.kubectl;
-
 import static io.harness.k8s.kubectl.Utils.encloseWithQuotesIfNeeded;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.version.Version;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class Kubectl {
   private final String kubectlPath;
   private final String configPath;

@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.pipeline.executions;
-
 import static io.harness.executions.steps.StepSpecTypeConstants.K8S_ROLLING_ROLLBACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_APPLY;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_DESTROY;
@@ -17,8 +16,11 @@ import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import static io.harness.reflection.ReflectionUtils.getFieldValuesByType;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
@@ -55,6 +57,8 @@ import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {

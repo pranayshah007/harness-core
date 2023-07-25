@@ -6,7 +6,9 @@
  */
 
 package io.harness.repositories.serviceoverride.custom;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 
 import com.mongodb.client.result.DeleteResult;
@@ -14,6 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 public interface ServiceOverrideRepositoryCustom {
   Page<NGServiceOverridesEntity> findAll(Criteria criteria, Pageable pageable);
   NGServiceOverridesEntity upsert(Criteria criteria, NGServiceOverridesEntity serviceOverridesEntity);

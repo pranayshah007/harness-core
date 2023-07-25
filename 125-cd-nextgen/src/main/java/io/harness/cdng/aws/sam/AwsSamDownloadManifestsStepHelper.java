@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.aws.sam;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.steps.nodes.GitCloneStepNode;
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome;
@@ -58,6 +60,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
 public class AwsSamDownloadManifestsStepHelper {
   @Inject private OutcomeService outcomeService;

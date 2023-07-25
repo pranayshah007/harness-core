@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.manifest.steps.task;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -17,6 +19,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)

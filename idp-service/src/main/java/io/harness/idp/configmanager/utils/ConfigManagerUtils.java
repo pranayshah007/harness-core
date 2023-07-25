@@ -66,6 +66,7 @@ public class ConfigManagerUtils {
   private static final String SNYK_SECURITY_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/snyk-security-schema.json";
 
   private static final String CIRCLE_CI_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/circleci-schema.json";
+  private static final String CONFLUENCE_CI_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/confluence-schema.json";
 
   private static final String JENKINS_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/jenkins-schema.json";
 
@@ -195,6 +196,8 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(SNYK_SECURITY_PLUGIN_JSON_SCHEMA_PATH);
       case "circleci":
         return readFileFromClassPath(CIRCLE_CI_PLUGIN_JSON_SCHEMA_PATH);
+      case "confluence":
+        return readFileFromClassPath(CONFLUENCE_CI_PLUGIN_JSON_SCHEMA_PATH);
       case "jenkins":
         return readFileFromClassPath(JENKINS_PLUGIN_JSON_SCHEMA_PATH);
       case "lighthouse":

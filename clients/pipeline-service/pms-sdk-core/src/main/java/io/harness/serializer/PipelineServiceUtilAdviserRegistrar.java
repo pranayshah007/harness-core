@@ -6,7 +6,6 @@
  */
 
 package io.harness.serializer;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserWithRollback;
@@ -16,7 +15,10 @@ import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.retry.RetryStepGroupAdvisor;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultValueAdviser;
@@ -25,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(CDC)
 @UtilityClass
 public class PipelineServiceUtilAdviserRegistrar {

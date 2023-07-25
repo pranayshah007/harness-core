@@ -6,7 +6,6 @@
  */
 
 package io.harness.k8s.apiclient;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
 import static io.harness.network.Http.getProxyPassword;
@@ -16,6 +15,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static okhttp3.Protocol.HTTP_1_1;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.runtime.KubernetesApiClientRuntimeException;
 import io.harness.exception.runtime.utils.KubernetesCertificateType;
 import io.harness.k8s.model.KubernetesClusterAuthType;
@@ -39,6 +41,7 @@ import okhttp3.ConnectionPool;
 import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 public class ApiClientFactoryImpl implements ApiClientFactory {
   private static final ConnectionPool connectionPool;

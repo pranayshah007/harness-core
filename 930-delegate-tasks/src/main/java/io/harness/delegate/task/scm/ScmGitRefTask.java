@@ -9,6 +9,7 @@ package io.harness.delegate.task.scm;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -152,7 +153,13 @@ public class ScmGitRefTask extends AbstractDelegateRunnableTask {
       case REPOSITORY_LIST: {
         final GetUserReposResponse getUserReposResponse = scmDelegateClient.processScmRequest(c
             -> scmServiceClient.getUserRepos(scmGitRefTaskParams.getScmConnector(),
-                scmGitRefTaskParams.getPageRequest(), SCMGrpc.newBlockingStub(c)));
+                scmGitRefTaskParams.getPageRequest(), SCMGrpc.newBlockingStub(c),
+                scmGitRefTaskParams.getRepoFilterDelegateTaskParams() != null
+                    ? RepoFilterParamsDTO.builder()
+                          .repoName(scmGitRefTaskParams.getRepoFilterDelegateTaskParams().getRepoName())
+                          .userName(scmGitRefTaskParams.getRepoFilterDelegateTaskParams().getUserName())
+                          .build()
+                    : RepoFilterParamsDTO.builder().build()));
         return ScmGitRefTaskResponseData.builder()
             .gitRefType(scmGitRefTaskParams.getGitRefType())
             .getUserReposResponse(getUserReposResponse.toByteArray())

@@ -6,11 +6,13 @@
  */
 
 package io.harness.k8s.kubectl;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.version.Version;
 
 import com.google.common.collect.ImmutableMap;
@@ -19,6 +21,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 public enum Flag {

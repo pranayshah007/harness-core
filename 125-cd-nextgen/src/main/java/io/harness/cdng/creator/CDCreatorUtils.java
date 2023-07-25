@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.creator;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.executions.steps.StepSpecTypeConstants;
 
 import com.google.common.collect.Sets;
@@ -16,6 +18,9 @@ import java.util.Collections;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_SERVERLESS,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_GITOPS})
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class CDCreatorUtils {

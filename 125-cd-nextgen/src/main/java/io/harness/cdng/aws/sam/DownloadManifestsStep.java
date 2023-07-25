@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.aws.sam;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plugin.GitCloneStep;
@@ -26,6 +28,7 @@ import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
 public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElementParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()

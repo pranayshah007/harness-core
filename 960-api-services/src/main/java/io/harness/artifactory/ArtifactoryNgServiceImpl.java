@@ -6,15 +6,17 @@
  */
 
 package io.harness.artifactory;
-
 import static io.harness.artifactory.ArtifactoryClientImpl.getArtifactoryClient;
 
 import static java.util.stream.Collectors.toList;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.docker;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.maven;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactoryRegistryException;
@@ -38,6 +40,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_AMI_ASG})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)

@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.ssh;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.prepareOutputVariables;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -15,7 +14,10 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
@@ -72,6 +74,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Slf4j
 @OwnedBy(CDP)
 public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {

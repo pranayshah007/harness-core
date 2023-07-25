@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.k8s.exception;
-
 import static io.harness.k8s.exception.RancherExplanation.RANCHER_GENERIC_EXPLANATION;
 import static io.harness.k8s.exception.RancherExplanation.RANCHER_KUBECFG_CLUSTER_INVALID_PERMS;
 import static io.harness.k8s.exception.RancherExplanation.RANCHER_KUBECFG_CLUSTER_INVALID_TOKEN;
@@ -28,8 +27,11 @@ import static io.harness.k8s.exception.RancherHint.RANCHER_SOCKET_TIMEOUT_HINT;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.FailureType;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
@@ -41,6 +43,7 @@ import io.harness.exception.ngexception.RancherClientRuntimeException.RancherReq
 import java.net.SocketTimeoutException;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 public class RancherRuntimeExceptionHandler implements ExceptionHandler {
   public static Set<Class<? extends Exception>> exceptions() {

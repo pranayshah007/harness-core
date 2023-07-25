@@ -6,7 +6,6 @@
  */
 
 package software.wings.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionInterruptType.ABORT_ALL;
 import static io.harness.beans.ExecutionInterruptType.ROLLBACK;
@@ -48,8 +47,11 @@ import static java.util.Collections.disjoint;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
@@ -107,6 +109,8 @@ import org.apache.commons.jexl3.JexlException;
 /**
  * Created by rishi on 1/24/17.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Slf4j
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
