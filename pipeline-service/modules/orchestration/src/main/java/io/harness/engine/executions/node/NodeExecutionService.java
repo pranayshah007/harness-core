@@ -159,7 +159,7 @@ public interface NodeExecutionService {
    * @return
    */
   CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
-          String planExecutionId, String parentId, Direction sortOrderOfCreatedAt);
+      String planExecutionId, String parentId, Direction sortOrderOfCreatedAt);
 
   /**
    * Returns iterator for children nodeExecution for given parentId(direct children only) with projection (No Sort, thus
@@ -202,7 +202,7 @@ public interface NodeExecutionService {
    * @return
    */
   List<NodeExecution> extractChildExecutions(String parentId, boolean includeParent, List<NodeExecution> finalList,
-      List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy);
+      List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy, boolean excludeChildOfOldRetries);
 
   // stepType, parentId and Status are already included into projections
 

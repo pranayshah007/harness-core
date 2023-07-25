@@ -245,8 +245,8 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
 
     List<NodeExecution> extractedChildExecutions = new LinkedList<>();
     extractedChildExecutions.add(NodeExecution.builder().uuid("childUuid").status(RUNNING).build());
-    when(nodeExecutionService.extractChildExecutions(
-             interruptWithNodeExecutionId.getNodeExecutionId(), true, new LinkedList<>(), new LinkedList<>(), true))
+    when(nodeExecutionService.extractChildExecutions(interruptWithNodeExecutionId.getNodeExecutionId(), true,
+             new LinkedList<>(), new LinkedList<>(), true, false))
         .thenReturn(extractedChildExecutions);
     Interrupt handledInterrupt = userMarkedFailAllInterruptHandler.handleChildNodes(
         interruptWithNodeExecutionId, interruptWithNodeExecutionId.getNodeExecutionId());

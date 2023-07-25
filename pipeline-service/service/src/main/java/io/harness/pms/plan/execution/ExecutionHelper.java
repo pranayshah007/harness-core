@@ -18,7 +18,6 @@ import static io.harness.utils.ExecutionModeUtils.isRollbackMode;
 
 import static java.lang.String.format;
 
-import com.google.common.collect.Lists;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -118,6 +117,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
@@ -125,12 +125,10 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
@@ -711,41 +709,34 @@ public class ExecutionHelper {
         .build();
   }
 
-  public NodeExecutionSubGraphResponse getNodeExecutionSubGraph(String nodeExecutionId, String planExecutionId, PipelineExecutionSummaryEntity executionSummaryEntity,
-                                                                EntityGitDetails entityGitDetails) {
+  public NodeExecutionSubGraphResponse getNodeExecutionSubGraph(String nodeExecutionId, String planExecutionId,
+      PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails) {
     List<NodeExecution> nodeExecutions = new LinkedList<>();
     List<NodeExecution> tempNodeEx = new LinkedList<>();
-    try (CloseableIterator<NodeExecution> iterator =
-                 nodeExecutionService.fetchChildrenNodeExecutionsIterator(planExecutionId, nodeExecutionId,
-                         Sort.Direction.ASC)) {
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, nodeExecutionId, Sort.Direction.ASC)) {
       while (iterator.hasNext()) {
         tempNodeEx.add(iterator.next());
       }
     }
-    nodeExecutions = nodeExecutionService.extractChildExecutions(nodeExecutionId, false, nodeExecutions, tempNodeEx, true);
+    nodeExecutions =
+        nodeExecutionService.extractChildExecutions(nodeExecutionId, false, nodeExecutions, tempNodeEx, true, true);
     nodeExecutions.add(nodeExecutionService.get(nodeExecutionId));
-    Set<String> retryIds = new HashSet<>();
-    for(NodeExecution nodeExecution:nodeExecutions){
-      if(EmptyPredicate.isNotEmpty(nodeExecution.getRetryIds())){
-        retryIds.addAll(nodeExecution.getRetryIds());
-      }
-    }
-//    nodeExecutions.removeIf(nodeExecution -> retryIds.contains(nodeExecution.getUuid()));
     // build graph wale me new func
     OrchestrationGraph graph = OrchestrationGraph.builder()
-            .cacheKey(planExecutionId)
-            .cacheContextOrder(System.currentTimeMillis())
-            .cacheParams(null)
-            .planExecutionId(planExecutionId)
-            .rootNodeIds(Lists.newArrayList(nodeExecutionId))
-            .adjacencyList(orchestrationAdjacencyListGenerator.generateAdjacencyList(
-                    nodeExecutionId, nodeExecutions, true))
-            .build();
+                                   .cacheKey(planExecutionId)
+                                   .cacheContextOrder(System.currentTimeMillis())
+                                   .cacheParams(null)
+                                   .planExecutionId(planExecutionId)
+                                   .rootNodeIds(Lists.newArrayList(nodeExecutionId))
+                                   .adjacencyList(orchestrationAdjacencyListGenerator.generateAdjacencyList(
+                                       nodeExecutionId, nodeExecutions, true))
+                                   .build();
 
     OrchestrationGraphDTO orchestrationGraphDTO = OrchestrationGraphDTOConverter.convertFrom(graph);
 
-    ExecutionGraph executionGraph = ExecutionGraphMapper.toExecutionGraph(
-            orchestrationGraphDTO, executionSummaryEntity);
+    ExecutionGraph executionGraph =
+        ExecutionGraphMapper.toExecutionGraph(orchestrationGraphDTO, executionSummaryEntity);
     return NodeExecutionSubGraphResponse.builder().executionGraph(executionGraph).build();
   }
 

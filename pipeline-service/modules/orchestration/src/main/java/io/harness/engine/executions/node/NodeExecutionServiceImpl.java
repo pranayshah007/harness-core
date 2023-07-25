@@ -295,10 +295,10 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
-          String planExecutionId, String parentId, Direction sortOrderOfCreatedAt) {
+      String planExecutionId, String parentId, Direction sortOrderOfCreatedAt) {
     // Uses planExecutionId_parentId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-            .with(Sort.by(sortOrderOfCreatedAt, NodeExecutionKeys.createdAt));
+                      .with(Sort.by(sortOrderOfCreatedAt, NodeExecutionKeys.createdAt));
     return nodeExecutionReadHelper.fetchNodeExecutionsIteratorWithoutProjections(query);
   }
 
@@ -338,9 +338,13 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public List<NodeExecution> extractChildExecutions(String parentId, boolean includeParent,
-      List<NodeExecution> finalList, List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy) {
+      List<NodeExecution> finalList, List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy,
+      boolean excludeChildOfOldRetries) {
     Map<String, List<NodeExecution>> parentChildrenMap = new HashMap<>();
     for (NodeExecution execution : allExecutions) {
+      if (excludeChildOfOldRetries && execution.getOldRetry()) {
+        continue;
+      }
       if (execution.getParentId() == null) {
         parentChildrenMap.put(execution.getUuid(), new ArrayList<>());
       } else if (parentChildrenMap.containsKey(execution.getParentId())) {
@@ -395,7 +399,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         allExecutions.add(iterator.next());
       }
     }
-    return extractChildExecutions(parentId, includeParent, finalList, allExecutions, includeChildrenOfStrategy);
+    return extractChildExecutions(parentId, includeParent, finalList, allExecutions, includeChildrenOfStrategy, false);
   }
 
   @Override
