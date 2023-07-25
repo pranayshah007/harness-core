@@ -7,6 +7,7 @@
  */
 
 package io.harness.cdng.serverless.container.steps;
+
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -176,9 +177,7 @@ public class ServerlessAwsLambdaRollbackV2Step extends AbstractContainerStepV2<S
           stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()));
     }
 
-    StepResponse.StepOutcome stepOutcome = null;
-
-    return stepOutcome;
+    return null;
   }
 
   @Override
