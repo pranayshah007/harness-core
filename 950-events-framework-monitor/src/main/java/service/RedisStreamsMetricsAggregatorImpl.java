@@ -66,7 +66,7 @@ public class RedisStreamsMetricsAggregatorImpl implements RedisStreamsMetricsAgg
 
   private int getConsumerBehindCount(
       RStream<String, String> currentStream, StreamMessageId startId, StreamMessageId endId) {
-    int batchSize = 500;
+    int batchSize = 100;
     int count = 0;
     while (true) {
       Map<StreamMessageId, Map<String, String>> range = currentStream.range(batchSize, startId, endId);
@@ -95,9 +95,10 @@ public class RedisStreamsMetricsAggregatorImpl implements RedisStreamsMetricsAgg
   @Override
   public AggregateRedisStreamMetricsDTO getStreamStats() {
     Iterator<String> keysIterator = redisClient.getKeys().getKeysByPattern("*:streams:*", 1000).iterator();
-    try {
-      List<RedisStreamMetricsDTO> redisStreamMetricsDTOList = new ArrayList<>();
-      while (keysIterator.hasNext()) {
+
+    List<RedisStreamMetricsDTO> redisStreamMetricsDTOList = new ArrayList<>();
+    while (keysIterator.hasNext()) {
+      try {
         String streamName = keysIterator.next();
         if (streamName.matches("(.*)streams:deadletter_queue(.*)")) {
           log.debug("Skipping deadletter queue key {}", streamName);
@@ -109,7 +110,7 @@ public class RedisStreamsMetricsAggregatorImpl implements RedisStreamsMetricsAgg
 
         long streamLength = getStreamLength(currentStream);
         double averageMessageSize = getAverageMessageSize(streamName);
-        double memoryUsageInMBs = averageMessageSize * streamLength / 1024;
+        double memoryUsageInMBs = redisClient.getStream(streamName).sizeInMemory();
 
         long deadletterQueueLength = getDeadletterQueueLength(redisStreamDTO);
         List<StreamGroup> groups = redisClient.getStream(streamName).listGroups();
@@ -131,11 +132,10 @@ public class RedisStreamsMetricsAggregatorImpl implements RedisStreamsMetricsAgg
                                           .streamSize(streamLength)
                                           .consumergroupMetricsDTOs(consumerGroupMetricsDTOS)
                                           .build());
+      } catch (Exception e) {
+        log.error("Failed in getting stream stats", e);
       }
-      return AggregateRedisStreamMetricsDTO.builder().redisStreamMetricsDTOList(redisStreamMetricsDTOList).build();
-    } catch (Exception e) {
-      log.error("Failed in getting stream stats", e);
-      return AggregateRedisStreamMetricsDTO.builder().redisStreamMetricsDTOList(Collections.emptyList()).build();
     }
+    return AggregateRedisStreamMetricsDTO.builder().redisStreamMetricsDTOList(redisStreamMetricsDTOList).build();
   }
 }
