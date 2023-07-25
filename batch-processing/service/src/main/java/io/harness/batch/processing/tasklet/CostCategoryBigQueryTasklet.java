@@ -9,9 +9,7 @@ package io.harness.batch.processing.tasklet;
 
 import static io.harness.batch.processing.pricing.gcp.bigquery.BQConst.BIG_QUERY_TIME_FORMAT;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
-
-import static org.apache.commons.lang3.ObjectUtils.max;
-import static org.apache.commons.lang3.ObjectUtils.min;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.ModuleType;
 import io.harness.batch.processing.ccm.CCMJobConstants;
@@ -81,7 +79,7 @@ public class CostCategoryBigQueryTasklet implements Tasklet {
     log.info("Processing cost categories update from time: {} to: {}", monthStartTime, monthEndTime);
 
     List<BusinessMapping> businessMappings = businessMappingService.getAll(accountId);
-    if (businessMappings == null || businessMappings.isEmpty()) {
+    if (!isEmpty(businessMappings)) {
       log.info("No cost categories found for account: {}", accountId);
       return null;
     }
