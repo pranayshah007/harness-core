@@ -17,6 +17,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution/service:module",
         "//878-ng-common-utilities:module",
         "//950-opa-client:module",
