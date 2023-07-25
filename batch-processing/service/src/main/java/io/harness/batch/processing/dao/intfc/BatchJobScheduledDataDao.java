@@ -22,4 +22,6 @@ public interface BatchJobScheduledDataDao {
   void invalidateJobs(CEDataCleanupRequest ceDataCleanupRequest);
 
   void invalidateJobs(String accountId, List<String> batchJobTypes, Instant instant);
+
+  boolean deleteJobRuns(String accountId, List<String> batchJobTypes, Instant instant);
 }

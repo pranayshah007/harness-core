@@ -47,7 +47,7 @@ public class RerunJobTasklet implements Tasklet {
     Instant lastRunStartInstant = Instant.ofEpochMilli(jobConstants.getJobStartTime()).minus(35, ChronoUnit.DAYS);
     List<String> costCategoryBatchJob = List.of(BatchJobType.COST_CATEGORY_BIGQUERY.toString());
     log.info("invalidating last run for batchJobs: {} for account: {}", costCategoryBatchJob, accountId);
-    batchJobScheduledDataService.invalidateJobs(accountId, costCategoryBatchJob, lastRunStartInstant);
+    batchJobScheduledDataService.deleteJobRuns(accountId, costCategoryBatchJob, lastRunStartInstant);
 
     Instant startInstant = Instant.ofEpochMilli(jobConstants.getJobStartTime()).minus(3, ChronoUnit.DAYS);
     CEMetadataRecord ceMetadataRecord = ceMetadataRecordDao.getByAccountId(accountId);

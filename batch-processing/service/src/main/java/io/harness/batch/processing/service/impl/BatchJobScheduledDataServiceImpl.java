@@ -199,4 +199,9 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
   public void invalidateJobs(String accountId, List<String> batchJobTypes, Instant instant) {
     batchJobScheduledDataDao.invalidateJobs(accountId, batchJobTypes, instant);
   }
+
+  @Override
+  public boolean deleteJobRuns(String accountId, List<String> batchJobTypes, Instant instant) {
+    return batchJobScheduledDataDao.deleteJobRuns(accountId, batchJobTypes, instant);
+  }
 }
