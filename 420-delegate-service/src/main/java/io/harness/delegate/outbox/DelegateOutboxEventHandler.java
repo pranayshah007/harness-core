@@ -144,8 +144,10 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
   @VisibleForTesting
   protected boolean handleDelegateRegisterEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
+    
     DelegateRegisterEvent delegateRegisterEvent =
         objectMapper.readValue(outboxEvent.getEventData(), DelegateRegisterEvent.class);
+    log.info("Delegate set up details 2: {}", delegateRegisterEvent.getDelegateSetupDetails());
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
                                 .module(ModuleType.CORE)

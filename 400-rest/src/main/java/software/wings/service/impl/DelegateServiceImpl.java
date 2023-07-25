@@ -4413,6 +4413,7 @@ public class DelegateServiceImpl implements DelegateService {
       Delegate delegate, DelegateSetupDetails delegateSetupDetails, String accountId) {
     if (delegate.isNg()) {
       if (delegateSetupDetails != null) {
+        log.info("Delegate set up details 1: {}", delegateSetupDetails);
         outboxService.save(DelegateRegisterEvent.builder()
                                .accountIdentifier(accountId)
                                .orgIdentifier(delegateSetupDetails.getOrgIdentifier())
