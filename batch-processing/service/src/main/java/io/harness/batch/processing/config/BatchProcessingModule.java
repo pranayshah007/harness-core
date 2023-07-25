@@ -67,6 +67,8 @@ import io.harness.ccm.msp.service.intf.MarginDetailsService;
 import io.harness.ccm.msp.service.intf.MspValidationService;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
+import io.harness.ccm.serviceNow.CCMServiceNowHelper;
+import io.harness.ccm.serviceNow.CCMServiceNowHelperImpl;
 import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingHistoryServiceImpl;
 import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingServiceImpl;
 import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingValidationServiceImpl;
@@ -278,6 +280,7 @@ public class BatchProcessingModule extends AbstractModule {
 
     bindRetryOnExceptionInterceptor();
     bind(AWSOrganizationHelperService.class).to(AWSOrganizationHelperServiceImpl.class);
+    bind(CCMServiceNowHelper.class).to(CCMServiceNowHelperImpl.class);
   }
 
   private void bindPricingServices() {
