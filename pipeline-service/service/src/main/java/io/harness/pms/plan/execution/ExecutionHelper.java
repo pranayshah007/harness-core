@@ -27,10 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionGraph;
 import io.harness.beans.FeatureName;
-import io.harness.beans.OrchestrationGraph;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.dto.OrchestrationGraphDTO;
-import io.harness.dto.converter.OrchestrationGraphDTOConverter;
 import io.harness.engine.OrchestrationService;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -45,7 +42,6 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
 import io.harness.execution.RetryStagesMetadata;
-import io.harness.generator.OrchestrationAdjacencyListGenerator;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -68,7 +64,6 @@ import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
 import io.harness.pms.contracts.plan.RerunInfo;
 import io.harness.pms.contracts.plan.RetryExecutionInfo;
 import io.harness.pms.exception.PmsExceptionUtils;
-import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
@@ -96,7 +91,6 @@ import io.harness.pms.plan.execution.beans.PipelineMetadataInternalDTO;
 import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
-import io.harness.pms.plan.execution.beans.dto.NodeExecutionSubGraphResponse;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
@@ -117,7 +111,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
@@ -125,7 +118,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -135,8 +127,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.util.CloseableIterator;
 import retrofit2.Call;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -172,7 +162,6 @@ public class ExecutionHelper {
   NodeExecutionService nodeExecutionService;
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
-  OrchestrationAdjacencyListGenerator orchestrationAdjacencyListGenerator;
 
   // Add all FFs to this list that we want to use during pipeline execution
   public final List<FeatureName> featureNames =
@@ -707,37 +696,6 @@ public class ExecutionHelper {
             executionSummaryEntity))
         .rollbackGraph(rollbackGraph)
         .build();
-  }
-
-  public NodeExecutionSubGraphResponse getNodeExecutionSubGraph(String nodeExecutionId, String planExecutionId,
-      PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails) {
-    List<NodeExecution> nodeExecutions = new LinkedList<>();
-    List<NodeExecution> tempNodeEx = new LinkedList<>();
-    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchChildrenNodeExecutionsIterator(
-             planExecutionId, nodeExecutionId, Sort.Direction.ASC)) {
-      while (iterator.hasNext()) {
-        tempNodeEx.add(iterator.next());
-      }
-    }
-    nodeExecutions =
-        nodeExecutionService.extractChildExecutions(nodeExecutionId, false, nodeExecutions, tempNodeEx, true, true);
-    nodeExecutions.add(nodeExecutionService.get(nodeExecutionId));
-    // build graph wale me new func
-    OrchestrationGraph graph = OrchestrationGraph.builder()
-                                   .cacheKey(planExecutionId)
-                                   .cacheContextOrder(System.currentTimeMillis())
-                                   .cacheParams(null)
-                                   .planExecutionId(planExecutionId)
-                                   .rootNodeIds(Lists.newArrayList(nodeExecutionId))
-                                   .adjacencyList(orchestrationAdjacencyListGenerator.generateAdjacencyList(
-                                       nodeExecutionId, nodeExecutions, true))
-                                   .build();
-
-    OrchestrationGraphDTO orchestrationGraphDTO = OrchestrationGraphDTOConverter.convertFrom(graph);
-
-    ExecutionGraph executionGraph =
-        ExecutionGraphMapper.toExecutionGraph(orchestrationGraphDTO, executionSummaryEntity);
-    return NodeExecutionSubGraphResponse.builder().executionGraph(executionGraph).build();
   }
 
   private NodeExecution getNodeExecution(String stageNodeId, String planExecutionId) {

@@ -199,6 +199,7 @@ public interface NodeExecutionService {
    * @param finalList                 -> it contains the result from allExecutions
    * @param allExecutions
    * @param includeChildrenOfStrategy
+   * @param excludeChildOfOldRetries  -> it will exclude the children of oldRetries
    * @return
    */
   List<NodeExecution> extractChildExecutions(String parentId, boolean includeParent, List<NodeExecution> finalList,
