@@ -90,7 +90,6 @@ public class BatchJobRunner {
     }
     List<BatchJobType> dependentBatchJobs = batchJobType.getDependentBatchJobs();
     Instant startAt = batchJobScheduledDataService.fetchLastBatchJobScheduledTime(accountId, batchJobType);
-    log.info("startAt: {}, {}, {}", startAt, accountId, batchJobType);
     if (null == startAt) {
       log.info("Event not received for account: {}, Job: {} ", accountId, batchJobType.name());
       return;
@@ -108,7 +107,6 @@ public class BatchJobRunner {
     }
     BatchJobScheduleTimeProvider batchJobScheduleTimeProvider =
         new BatchJobScheduleTimeProvider(startAt, endAt, duration, chronoUnit);
-    log.info("batchJobScheduleTimeProvider: {}, {}, {}", batchJobScheduleTimeProvider, accountId, batchJobType);
     Instant startInstant = startAt;
     Instant jobsStartTime = Instant.now();
 
@@ -118,8 +116,6 @@ public class BatchJobRunner {
     log.info("starting while loop while (batchJobScheduleTimeProvider.hasNext()) {} {}", accountId, batchJobType);
     while (batchJobScheduleTimeProvider.hasNext()) {
       Instant endInstant = batchJobScheduleTimeProvider.next();
-      log.info("batchJobScheduleTimeProvider hasNext endInstant: {}, startInstant: {}, {}, {}", endInstant,
-          startInstant, accountId, batchJobType);
       if (batchJobType == BatchJobType.INSTANCE_BILLING_HOURLY) {
         Instant currentTime = Instant.now();
         if (clusterDataHourlyCounter < TOTAL_INSTANCE_BILLING_HOURLY_JOBS_PER_MINUTE
@@ -151,7 +147,6 @@ public class BatchJobRunner {
           try (AutoLogContext ignore =
                    new BatchJobTimeLogContext(String.valueOf(startInstant.toEpochMilli()), OVERRIDE_ERROR)) {
             Instant jobStartTime = Instant.now();
-            log.info("calling jobLauncher.run {} {}", accountId, batchJobType);
             JobExecution jobExecution = jobLauncher.run(job, params);
             BatchStatus status = jobExecution.getStatus();
             log.info("Job status {}", status);
