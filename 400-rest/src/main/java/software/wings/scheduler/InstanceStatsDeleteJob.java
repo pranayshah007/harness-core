@@ -7,12 +7,12 @@
 
 package software.wings.scheduler;
 
-import static io.harness.event.timeseries.processor.EventProcessor.MAX_RETRY_COUNT;
-
 import static software.wings.beans.AccountStatus.EXPIRED;
 
 import io.harness.beans.FeatureName;
 import io.harness.dataretention.LongerDataRetentionService;
+import io.harness.event.timeseries.processor.EventProcessor;
+import io.harness.exception.InstanceDeletionException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -24,11 +24,11 @@ import software.wings.beans.LicenseInfo;
 import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.service.intfc.AccountService;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.security.SecureRandom;
 import java.sql.*;
 import java.time.Duration;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -47,22 +47,21 @@ public class InstanceStatsDeleteJob implements Job {
   private static final SecureRandom random = new SecureRandom();
   public static final String GROUP = "INSTANCE_STATS_DELETE_CRON_GROUP";
   public static final long TWO_MONTH_IN_MILLIS = 5184000000L;
+  public static final long ONE_DAY_IN_MILLIS = 86400000L;
   public static final String ACCOUNT_ID_KEY = "accountId";
 
   // 10 minutes
   private static final int SYNC_INTERVAL = 10;
+  static final int MAX_RETRY = 3;
 
   public static final String DELETE_INSTANCE_DATA_POINTS =
       "DELETE FROM INSTANCE_STATS WHERE ACCOUNTID = ? AND REPORTEDAT>= ? AND REPORTEDAT< ?";
   public static final String GET_FIRST_REPORTEDAT_INSTANCE_STAT_DATE =
-      "SELECT COUNT(*) FROM INSTANCE_STATS WHERE ACCOUNTID = ? REPORTEDAT LIMIT 1";
-  public static final String GET_FIRST_REPORTEDAT_INSTANCE_STAT_DATE =
-      "DELETE FROM INSTANCE_STATS WHERE ACCOUNTID = ? ORDER BY REPORTEDAT LIMIT 1";
-  public static final String GET_FIRST_REPORTEDAT_INSTANCE_STAT_DATE =
-      "DELETE FROM INSTANCE_STATS WHERE ACCOUNTID = ? ORDER BY REPORTEDAT LIMIT 1";
-
+      "SELECT * FROM INSTANCE_STATS WHERE ACCOUNTID = ? ORDER BY REPORTEDAT LIMIT 1";
+  long intervalEndTimestamp;
+  Timestamp oldestInstanceStats;
   // instance data migration cron
-  private static final long DATA_DELETION_CRON_LOCK_EXPIRY_IN_SECONDS = 660; // 60 * 11
+  private static final long DATA_DELETION_CRON_LOCK_EXPIRY_IN_SECONDS = 1800; // 60 * 30
   private static final String DATA_DELETION_CRON_LOCK_PREFIX = "INSTANCE_DATA_DELETION_CRON:";
   @Inject private TimeScaleDBService timeScaleDBService;
 
@@ -120,7 +119,7 @@ public class InstanceStatsDeleteJob implements Job {
       log.debug("Skipping instance stats deletion job since the account id is null");
       return;
     }
-
+    intervalEndTimestamp = System.currentTimeMillis();
     Account account = accountService.get(accountId);
 
     if (!shouldDeleteInstanceStatsData(account.getLicenseInfo())) {
@@ -129,6 +128,7 @@ public class InstanceStatsDeleteJob implements Job {
       return;
     }
 
+    intervalEndTimestamp = account.getLicenseInfo().getExpiryTime() + TWO_MONTH_IN_MILLIS + ONE_DAY_IN_MILLIS;
     try (
         AcquiredLock lock = persistentLocker.tryToAcquireLock(Account.class, DATA_DELETION_CRON_LOCK_PREFIX + accountId,
             Duration.ofSeconds(DATA_DELETION_CRON_LOCK_EXPIRY_IN_SECONDS))) {
@@ -141,62 +141,70 @@ public class InstanceStatsDeleteJob implements Job {
               LongerDataRetentionState.INSTANCE_LONGER_RETENTION, accountId)) {
         log.info("Triggering instance data deletion cron job for account : {}", accountId);
         try {
-          boolean successful = deleteInstanceStatsDataPointsFromTsDb(accountId);
-          if (!successful) {
-            log.error("Unable to carry out instanceStats Delete step");
-          }
-        } catch (Exception exception) {
-          log.error("Failed to do instance data migration for account id : {}", accountId, exception);
+          processBatchQueries(accountId);
+        } catch (Exception ex) {
+          log.error("Failed to do instance data deletion for account id : {}", accountId, ex);
         }
       }
     }
   }
 
   private boolean shouldDeleteInstanceStatsData(LicenseInfo licenseInfo) {
-    if (EXPIRED.equals(licenseInfo.getAccountStatus())
-        && System.currentTimeMillis() > (licenseInfo.getExpiryTime() + TWO_MONTH_IN_MILLIS)) {
-      return true;
-    }
-    return false;
+    return EXPIRED.equals(licenseInfo.getAccountStatus())
+        && System.currentTimeMillis() > (licenseInfo.getExpiryTime() + TWO_MONTH_IN_MILLIS);
   }
 
-  @VisibleForTesting
-  boolean deleteInstanceStatsDataPointsFromTsDb(String accountId) throws Exception {
-    boolean successfulUpsert = false;
-    int retryCount = 0, QUERY_BATCH_SIZE = 10;
+  private void processBatchQueries(String accountId) throws SQLException {
+    int retryCount = 0;
 
-    while (!successfulUpsert && retryCount < MAX_RETRY_COUNT) {
-      try {
-        boolean dataLeftToDelete = processBatchQueries(accountId, QUERY_BATCH_SIZE);
-        successfulUpsert = true;
-        if (!dataLeftToDelete) {
-          return true;
-        }
-      } catch (SQLException e) {
-        if (retryCount >= MAX_RETRY_COUNT) {
-          String errorLog =
-              String.format("MAX RETRY FAILURE : Failed to save instance data , error : [%s]", e.toString());
-          throw new Exception(errorLog);
-        } else {
-          log.error(
-              "Failed to save instance data : [{}] , retryCount : [{}] , error : [{}]", retryCount, e.toString(), e);
-        }
+    try (Connection dbConnection = timeScaleDBService.getDBConnection();
+         PreparedStatement fetchOldestInstanceStatsRecordStatement =
+             dbConnection.prepareStatement(InstanceStatsDeleteJob.GET_FIRST_REPORTEDAT_INSTANCE_STAT_DATE)) {
+      fetchOldestInstanceStatsRecordStatement.setString(1, accountId);
+      ResultSet resultSet = fetchOldestInstanceStatsRecordStatement.executeQuery();
+      if (resultSet.getFetchSize() == 0) {
+        log.info("No instance stats available for account : {}", accountId);
+        return;
+      }
+      oldestInstanceStats = resultSet.getTimestamp(EventProcessor.REPORTEDAT);
+    }
+
+    if (oldestInstanceStats == null) {
+      return;
+    }
+
+    Timestamp currentTime = new Timestamp(intervalEndTimestamp);
+    Timestamp currentBatchTime = oldestInstanceStats;
+    Timestamp nextBatchTime = generateNextBatchTime(currentBatchTime);
+
+    while (currentBatchTime.before(currentTime)) {
+      try (Connection dbConnection = timeScaleDBService.getDBConnection()) {
+        PreparedStatement deleteStatement = dbConnection.prepareStatement(DELETE_INSTANCE_DATA_POINTS);
+        deleteStatement.setString(1, accountId);
+        deleteStatement.setTimestamp(2, currentBatchTime);
+        deleteStatement.setTimestamp(3, nextBatchTime);
+        ResultSet resultSet = deleteStatement.executeQuery();
+        int fetch = resultSet.getFetchSize();
+        currentBatchTime = nextBatchTime;
+        nextBatchTime = generateNextBatchTime(currentBatchTime);
+        retryCount = 0;
+      } catch (SQLException exception) {
         retryCount++;
+        if (retryCount >= MAX_RETRY) {
+          String errorLog = "MAX RETRY FAILURE : Failed to delete instance data points within interval";
+          throw new InstanceDeletionException(errorLog, exception);
+        }
+        log.error(
+            String.format("Failed to delete instanceStats data for expired accountId : [%s], retry : [%d], error: [%s]",
+                accountId, retryCount, exception.toString()));
       }
     }
-    return false;
   }
 
-  private boolean processBatchQueries(String accountId, Integer batchSize) throws SQLException {
-    try (Connection dbConnection = timeScaleDBService.getDBConnection()) {
-      PreparedStatement deleteStatement = dbConnection.prepareStatement(DELETE_INSTANCE_DATA_POINTS);
-      deleteStatement.setString(1, accountId);
-      deleteStatement.setInt(2, batchSize);
-      ResultSet resultSet = deleteStatement.executeQuery();
-      return true;
-    } catch (SQLException e) {
-      log.error("Failed to delete instanceStats data for expired accountId : %s", accountId);
-    }
-    return false;
+  private Timestamp generateNextBatchTime(Timestamp currentBatchTime) {
+    Calendar calendar = Calendar.getInstance();
+    calendar.setTimeInMillis(currentBatchTime.getTime());
+    calendar.add(Calendar.HOUR, 1);
+    return new Timestamp(calendar.getTimeInMillis());
   }
 }
