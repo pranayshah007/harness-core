@@ -113,7 +113,6 @@ public class BatchJobRunner {
     int clusterDataHourlyCounter = 0;
     Instant clusterDataHourlyLastRunTime = Instant.now();
 
-    log.info("starting while loop while (batchJobScheduleTimeProvider.hasNext()) {} {}", accountId, batchJobType);
     while (batchJobScheduleTimeProvider.hasNext()) {
       Instant endInstant = batchJobScheduleTimeProvider.next();
       if (batchJobType == BatchJobType.INSTANCE_BILLING_HOURLY) {
