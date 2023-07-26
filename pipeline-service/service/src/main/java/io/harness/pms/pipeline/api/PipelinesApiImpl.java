@@ -7,6 +7,8 @@
 
 package io.harness.pms.pipeline.api;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+import static io.harness.pms.pipeline.api.PipelinesApiUtils.populateGitImportInfoFromGitCreate;
+import static io.harness.pms.pipeline.api.PipelinesApiUtils.populatePipelineImportRequestDtoFromPipelineCreateRequestBody;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -18,9 +20,11 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -48,6 +52,7 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
+import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
 import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
@@ -100,6 +105,27 @@ public class PipelinesApiImpl implements PipelinesApi {
     if (requestBody == null) {
       throw new InvalidRequestException("Pipeline Create request body must not be null.");
     }
+
+    if (EmptyPredicate.isEmpty(requestBody.getPipelineYaml())) {
+      if (requestBody.getGitDetails() != null) {
+        GitImportInfo gitImportInfo = populateGitImportInfoFromGitCreate(requestBody.getGitDetails());
+
+        io.harness.spec.server.pipeline.v1.model.PipelineImportRequestDTO pipelineImportRequestDTO =
+            populatePipelineImportRequestDtoFromPipelineCreateRequestBody(requestBody);
+
+        PipelineImportRequestBody pipelineImportRequestBody = new PipelineImportRequestBody();
+        pipelineImportRequestBody.setGitImportInfo(gitImportInfo);
+        pipelineImportRequestBody.setPipelineImportRequest(pipelineImportRequestDTO);
+
+        importPipelineFromGit(org, project, requestBody.getIdentifier(), pipelineImportRequestBody, account);
+
+      } else {
+        String hint = "Please check if the Pipeline Yaml given is correct.";
+        String explaination = "Pipeline Yaml given is empty.";
+        throw NestedExceptionUtils.hintWithExplanationException(hint, explaination);
+      }
+    }
+
     GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitCreateDetails(requestBody.getGitDetails()));
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
         PipelinesApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, null);

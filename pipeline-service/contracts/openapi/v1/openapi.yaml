@@ -1070,7 +1070,7 @@ components:
       properties:
         pipeline_yaml:
           type: string
-          description: Pipeline YAML (to be passed as a String).
+          description: Pipeline YAML (to be passed as a String). If Pipeline YAML is not passed but the git details are passed, Pipeline YAML present in the corresponding filePath will be imported.
         identifier:
           type: string
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'

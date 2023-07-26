@@ -51,6 +51,7 @@ import io.harness.spec.server.pipeline.v1.model.NodeInfo;
 import io.harness.spec.server.pipeline.v1.model.ParentStageInfo;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineImportRequestDTO;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
@@ -534,5 +535,27 @@ public class PipelinesApiUtils {
       default:
         throw new InvalidRequestException("Invalid move config type provided.");
     }
+  }
+
+  public static GitImportInfo populateGitImportInfoFromGitCreate(GitCreateDetails gitCreateDetails) {
+    GitImportInfo gitImportInfo = new GitImportInfo();
+
+    gitImportInfo.setBranchName(gitCreateDetails.getBranchName());
+    gitImportInfo.connectorRef(gitCreateDetails.getConnectorRef());
+    gitImportInfo.setIsForceImport(false);
+    gitImportInfo.setFilePath(gitCreateDetails.getFilePath());
+    gitImportInfo.setRepoName(gitCreateDetails.getRepoName());
+
+    return gitImportInfo;
+  }
+
+  public static PipelineImportRequestDTO populatePipelineImportRequestDtoFromPipelineCreateRequestBody(
+      PipelineCreateRequestBody requestBody) {
+    io.harness.spec.server.pipeline.v1.model.PipelineImportRequestDTO pipelineImportRequestDTO =
+        new io.harness.spec.server.pipeline.v1.model.PipelineImportRequestDTO();
+    pipelineImportRequestDTO.setPipelineName(requestBody.getName());
+    pipelineImportRequestDTO.setPipelineDescription(requestBody.getDescription());
+
+    return pipelineImportRequestDTO;
   }
 }
