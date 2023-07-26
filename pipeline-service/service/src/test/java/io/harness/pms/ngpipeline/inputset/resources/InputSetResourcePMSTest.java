@@ -142,7 +142,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
     inputSetResourcePMSImpl = new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService,
-        validateAndMergeHelper, inputSetsApiUtils, executionService, pmsFeatureFlagService);
+        validateAndMergeHelper, inputSetsApiUtils, executionService, pmsFeatureFlagService, null, null);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
