@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.k8Connector;
 import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.exception.UnknownEnumTypeException;
@@ -38,8 +39,11 @@ public class K8sTaskCapabilityHelper extends ConnectorCapabilityBaseHelper {
         SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
             k8sManualCreds.getMasterUrl(), capabilityList);
       } else {
-        capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-            k8sManualCreds.getMasterUrl(), maskingEvaluator));
+        HttpConnectionExecutionCapability httpConnectionExecutionCapability =
+            HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+                k8sManualCreds.getMasterUrl(), maskingEvaluator);
+        httpConnectionExecutionCapability.setUseSocketFallback(true);
+        capabilityList.add(httpConnectionExecutionCapability);
       }
     } else if (credential.getKubernetesCredentialType() != KubernetesCredentialType.INHERIT_FROM_DELEGATE) {
       throw new UnknownEnumTypeException(

@@ -38,6 +38,7 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -256,6 +257,39 @@ public class Http {
       }
     }
     return false;
+  }
+
+  /**
+   * Checks if an HTTP URL is connectable without following redirects. This should be used with a fallback mechanism to
+   * handle the exception thrown.
+   *
+   * @param url                The URL to check for connectivity.
+   * @param headers            A list of KeyValuePair objects representing headers to be included in the request.
+   * @param ignoreResponseCode A boolean flag indicating whether to ignore the HTTP response code during validation.
+   * @return {@code true} if the URL is connectable, {@code false} otherwise.
+   * @throws ExecutionException If an execution exception occurs during the validation process.
+   *
+   * <p>This method attempts to connect to the provided HTTP URL without following redirects and validates the response
+   * code. It takes a list of headers to be included in the request and an option to ignore the response code during
+   * validation.
+   *
+   * <p>The connection is wrapped in a UrlLogContext to log the URL and error information if an exception occurs.
+   *
+   * <p>If an exception is thrown during the validation process, it is logged with a message indicating the connection
+   * failure. The exception is rethrown after logging to allow the calling code to handle the error appropriately.
+   */
+  public static boolean connectableHttpUrlWithoutFollowingRedirectUsingFallback(
+      String url, List<KeyValuePair> headers, boolean ignoreResponseCode) throws ExecutionException {
+    try (UrlLogContext ignore = new UrlLogContext(url, OVERRIDE_ERROR)) {
+      try {
+        return checkResponseCode(responseCodeForValidationWithoutFollowingRedirect.get(
+                                     HttpURLHeaderInfo.builder().url(url).headers(headers).build()),
+            ignoreResponseCode);
+      } catch (Exception e) {
+        log.info("Could not connect: {}", e.getMessage());
+        throw e;
+      }
+    }
   }
 
   public static boolean connectableHttpUrlWithoutFollowingRedirect(

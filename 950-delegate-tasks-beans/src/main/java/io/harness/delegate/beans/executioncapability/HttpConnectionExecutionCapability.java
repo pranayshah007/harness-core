@@ -38,6 +38,7 @@ public class HttpConnectionExecutionCapability implements ExecutionCapability {
   private String query;
   private boolean ignoreRedirect;
   private boolean ignoreResponseCode;
+  private boolean useSocketFallback;
 
   @Override
   public EvaluationMode evaluationMode() {

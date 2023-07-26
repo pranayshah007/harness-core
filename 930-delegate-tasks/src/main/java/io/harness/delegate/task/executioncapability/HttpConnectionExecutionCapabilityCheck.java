@@ -21,10 +21,14 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
+import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.network.Http;
 
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_K8S})
 public class HttpConnectionExecutionCapabilityCheck implements CapabilityCheck, ProtoCapabilityCheck {
@@ -32,28 +36,58 @@ public class HttpConnectionExecutionCapabilityCheck implements CapabilityCheck, 
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     HttpConnectionExecutionCapability httpConnectionExecutionCapability =
         (HttpConnectionExecutionCapability) delegateCapability;
-    boolean valid;
+    boolean valid = false;
     boolean isNextGen =
         isNotBlank(System.getenv().get("NEXT_GEN")) && Boolean.parseBoolean(System.getenv().get("NEXT_GEN"));
-    if (isNextGen) {
-      valid = Http.connectableHttpUrlWithoutFollowingRedirect(httpConnectionExecutionCapability.fetchConnectableUrl(),
-          httpConnectionExecutionCapability.getHeaders(), httpConnectionExecutionCapability.isIgnoreResponseCode());
-    } else {
-      if (httpConnectionExecutionCapability.getHeaders() != null) {
-        valid = Http.connectableHttpUrlWithHeaders(httpConnectionExecutionCapability.fetchConnectableUrl(),
-            httpConnectionExecutionCapability.getHeaders(), httpConnectionExecutionCapability.isIgnoreResponseCode());
+    try {
+      if (isNextGen) {
+        valid = Http.connectableHttpUrlWithoutFollowingRedirectUsingFallback(
+            httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders(),
+            httpConnectionExecutionCapability.isIgnoreResponseCode());
       } else {
-        if (httpConnectionExecutionCapability.isIgnoreRedirect()) {
-          valid = Http.connectableHttpUrlWithoutFollowingRedirect(
-              httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders(),
-              httpConnectionExecutionCapability.isIgnoreResponseCode());
+        if (httpConnectionExecutionCapability.getHeaders() != null) {
+          valid = Http.connectableHttpUrlWithHeaders(httpConnectionExecutionCapability.fetchConnectableUrl(),
+              httpConnectionExecutionCapability.getHeaders(), httpConnectionExecutionCapability.isIgnoreResponseCode());
         } else {
-          valid = Http.connectableHttpUrl(httpConnectionExecutionCapability.fetchConnectableUrl(),
-              httpConnectionExecutionCapability.isIgnoreResponseCode());
+          if (httpConnectionExecutionCapability.isIgnoreRedirect()) {
+            valid = Http.connectableHttpUrlWithoutFollowingRedirect(
+                httpConnectionExecutionCapability.fetchConnectableUrl(), httpConnectionExecutionCapability.getHeaders(),
+                httpConnectionExecutionCapability.isIgnoreResponseCode());
+          } else {
+            valid = Http.connectableHttpUrl(httpConnectionExecutionCapability.fetchConnectableUrl(),
+                httpConnectionExecutionCapability.isIgnoreResponseCode());
+          }
         }
+      }
+    } catch (Exception ex) {
+      if (httpConnectionExecutionCapability.isUseSocketFallback()) {
+        // Testing Socket Connectivity
+        log.info("Using fallback mechanism by relying on Socket connection.");
+        valid = performSocketConnectivityCheck(httpConnectionExecutionCapability);
       }
     }
     return CapabilityResponse.builder().delegateCapability(httpConnectionExecutionCapability).validated(valid).build();
+  }
+
+  private boolean performSocketConnectivityCheck(HttpConnectionExecutionCapability httpConnectionExecutionCapability) {
+    boolean valid;
+    SocketConnectivityExecutionCapability socketConnectivityCapabilityCheck =
+        SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
+            httpConnectionExecutionCapability.getHost(), Integer.toString(httpConnectionExecutionCapability.getPort()));
+
+    try {
+      if (socketConnectivityCapabilityCheck.getHostName() != null) {
+        valid = SocketConnectivityCapabilityCheck.connectableHost(socketConnectivityCapabilityCheck.getHostName(),
+            Integer.parseInt(socketConnectivityCapabilityCheck.getPort()));
+      } else {
+        valid = SocketConnectivityCapabilityCheck.connectableHost(
+            socketConnectivityCapabilityCheck.getUrl(), Integer.parseInt(socketConnectivityCapabilityCheck.getPort()));
+      }
+      return valid;
+    } catch (final Exception ex) {
+      log.info("Fallback Socket capability failed");
+      return false;
+    }
   }
 
   @Override
