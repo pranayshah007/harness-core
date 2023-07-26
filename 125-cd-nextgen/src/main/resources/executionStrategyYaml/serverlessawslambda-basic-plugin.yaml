@@ -24,6 +24,9 @@ spec:
                   connectorRef: account.harnessImage
                   image: harnessdev/serverless-preparerollback:1.82.0-latest
                   imagePullPolicy: Always
+                  resources:
+                    limits:
+                      memory: 2G
             - step:
                 identifier: Serverless_Aws_Lambda_Package
                 type: ServerlessAwsLambdaPackageV2
