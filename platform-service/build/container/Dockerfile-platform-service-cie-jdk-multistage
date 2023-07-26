@@ -14,14 +14,14 @@ WORKDIR /app
 ENV BUILD_PURPOSE=DEVELOPMENT
 
 RUN chmod +x \
-    /app/platform-service/build/feature_build.sh \
-    /app/platform-service/build/build_jar.sh \
-    /app/platform-service/build/build_dist.sh \
+    /app/build/feature_build.sh \
+    /app/build/build_jar.sh \
+    /app/build/build_dist.sh \
     /app/scripts/bazel/generate_credentials.sh \
     && /app/scripts/bazel/generate_credentials.sh \
-    && /app/platform-service/build/feature_build.sh $GCP_KEY \
-    && /app/platform-service/build/build_jar.sh \
-    && /app/platform-service/build/build_dist.sh
+    && /app/build/feature_build.sh platform-service $GCP_KEY \
+    && /app/build/build_jar.sh \
+    && /app/build/build_dist.sh
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
