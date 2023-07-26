@@ -35,6 +35,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.util.HashMap;
@@ -54,6 +55,7 @@ import org.mockito.MockitoAnnotations;
 @RunWith(JUnitParamsRunner.class)
 public class UpdateReleaseRepoStepTest extends CDNGTestBase {
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock protected OutcomeService outcomeService;
@@ -63,7 +65,9 @@ public class UpdateReleaseRepoStepTest extends CDNGTestBase {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     Reflect.on(cdExpressionResolver).set("engineExpressionService", engineExpressionService);
+    Reflect.on(cdExpressionResolver).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
     Reflect.on(step).set("cdExpressionResolver", cdExpressionResolver);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
   }
 
   @Test

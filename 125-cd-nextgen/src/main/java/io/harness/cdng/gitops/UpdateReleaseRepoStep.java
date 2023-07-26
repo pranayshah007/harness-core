@@ -265,7 +265,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
 
           if (copyParameter.getValue() != null) {
             populateVariables(
-                copyParameter, flattennedVariables, variableEntry.getKey(), copyParameter.fetchFinalValue().toString());
+                copyParameter, flattennedVariables, variableEntry.getKey(), copyParameter.getValue().toString());
           }
 
           for (String key : flattennedVariables.keySet()) {
