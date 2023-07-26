@@ -54,7 +54,7 @@ public class RedisStreamStatsPublisher implements MetricsPublisher {
   @Override
   public void recordMetrics() {
     AggregateRedisStreamMetricsDTO aggregateRedisStreamMetricsDTO = redisStreamsMetricsAggregator.getStreamStats();
-    log.info(aggregateRedisStreamMetricsDTO.toString());
+    log.info("Aggregated Data to publish {}", aggregateRedisStreamMetricsDTO.toString());
     for (RedisStreamMetricsDTO streamMetrics : aggregateRedisStreamMetricsDTO.getRedisStreamMetricsDTOList()) {
       RedisStreamDTO redisStreamDTO = streamMetrics.getRedisStreamDTO();
       String streamName = redisStreamDTO.getStreamName();
