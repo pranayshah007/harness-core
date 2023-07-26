@@ -172,7 +172,6 @@ public interface InputSetResourcePMS {
 
   @POST
   @ApiOperation(value = "Create an InputSet For Pipeline", nickname = "createInputSetForPipeline")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Operation(operationId = "postInputSet", description = "Creates an Input Set for a Pipeline",
       summary = "Create an Input Set",
       responses =
@@ -207,7 +206,6 @@ public interface InputSetResourcePMS {
   @POST
   @Path("overlay")
   @ApiOperation(value = "Create an Overlay InputSet For Pipeline", nickname = "createOverlayInputSetForPipeline")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Operation(operationId = "postOverlayInputSet", summary = "Create an Overlay Input Set for a pipeline",
       responses =
       {
@@ -234,7 +232,6 @@ public interface InputSetResourcePMS {
   @PUT
   @Path("{inputSetIdentifier}")
   @ApiOperation(value = "Update an InputSet by identifier", nickname = "updateInputSetForPipeline")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Operation(operationId = "putInputSet", description = "Updates the Input Set for a Pipeline",
       summary = "Update an Input Set",
       responses =
@@ -275,7 +272,6 @@ public interface InputSetResourcePMS {
   @PUT
   @Path("overlay/{inputSetIdentifier}")
   @ApiOperation(value = "Update an Overlay InputSet by identifier", nickname = "updateOverlayInputSetForPipeline")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Operation(operationId = "putOverlayInputSet", summary = "Update an Overlay Input Set for a pipeline",
       responses =
       {
@@ -479,7 +475,6 @@ public interface InputSetResourcePMS {
   @POST
   @Path("{inputSetIdentifier}/sanitise")
   @ApiOperation(value = "Sanitise an InputSet", nickname = "sanitiseInputSet")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   @Operation(operationId = "sanitiseInputSet", summary = "Sanitise an Input Set by removing invalid fields",
       responses =
       {
@@ -511,7 +506,7 @@ public interface InputSetResourcePMS {
   @GET
   @Path("{inputSetIdentifier}/yaml-diff")
   @ApiOperation(value = "Get sanitised YAML for an InputSet", nickname = "yamlDiffForInputSet")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   @Operation(operationId = "yamlDiffForInputSet",
       summary = "Get sanitised YAML for an InputSet by removing invalid fields",
       responses =
@@ -549,7 +544,6 @@ public interface InputSetResourcePMS {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "Fetches Input Set YAML from Git Repository and saves a record for it in Harness")
       })
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   ResponseDTO<InputSetImportResponseDTO>
   importInputSetFromGit(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
                             description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
@@ -576,7 +570,6 @@ public interface InputSetResourcePMS {
             description =
                 "Fetches Input Set YAML from Harness DB and creates a remote entity or Fetches Pipeline YAML from remote repository and creates a inline entity")
       })
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   ResponseDTO<InputSetMoveConfigResponseDTO>
   moveConfig(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -620,7 +613,6 @@ public interface InputSetResourcePMS {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns identifier of updated input-set")
       })
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   ResponseDTO<InputSetGitUpdateResponseDTO>
   updateGitMetadataForInputSet(
       @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
