@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.metrics.service.api.MetricService;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.events.PmsEventMonitoringConstants;
 import io.harness.pms.events.base.PmsMetricContextGuard;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -26,7 +27,7 @@ import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorService {
-  private static final String PLAN_EXECUTION_ACTIVE_COUNT = "plan_execution_active_count";
+  private static final String PLAN_EXECUTION_COUNT = "plan_execution_count";
 
   @Inject private PlanExecutionService planExecutionService;
   @Inject private MetricService metricService;
@@ -35,26 +36,34 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
   public void registerActiveExecutionMetrics() {
     Map<PipelineExecutionMetric, Integer> metricMap = new HashMap<>();
     try (CloseableIterator<PlanExecution> iterator =
-             planExecutionService.fetchPlanExecutionsByStatusFromAnalytics(StatusUtils.activeStatuses(),
-                 ImmutableSet.of(PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.metadata))) {
+             planExecutionService.fetchPlanExecutionsByStatusFromAnalytics(StatusUtils.metricStatuses(),
+                 ImmutableSet.of(PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.status))) {
       while (iterator.hasNext()) {
         PlanExecution planExecution = iterator.next();
         PipelineExecutionMetric planExecutionMetric =
             PipelineExecutionMetric.builder()
                 .accountId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.accountId))
+                .status(planExecution.getStatus())
                 .build();
         metricMap.put(planExecutionMetric, metricMap.getOrDefault(planExecutionMetric, 0) + 1);
       }
     }
 
     for (Map.Entry<PipelineExecutionMetric, Integer> entry : metricMap.entrySet()) {
+      String status = entry.getKey().getStatus().toString();
+      if ((entry.getKey().getStatus() != Status.RUNNING)
+          && (StatusUtils.activeStatuses().contains(entry.getKey().getStatus()))) {
+        status = "ACTIVE";
+      }
+
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
               .put(PmsEventMonitoringConstants.ACCOUNT_ID, entry.getKey().getAccountId())
+              .put(PmsEventMonitoringConstants.STATUS, status)
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
-        metricService.recordMetric(PLAN_EXECUTION_ACTIVE_COUNT, entry.getValue());
+        metricService.recordMetric(PLAN_EXECUTION_COUNT, entry.getValue());
       }
     }
   }

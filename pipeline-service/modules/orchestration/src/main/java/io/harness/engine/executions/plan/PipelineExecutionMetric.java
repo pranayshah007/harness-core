@@ -7,6 +7,8 @@
 
 package io.harness.engine.executions.plan;
 
+import io.harness.pms.contracts.execution.Status;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,4 +20,5 @@ public class PipelineExecutionMetric {
   String accountId;
   String projectId;
   String orgIdentifier;
+  Status status;
 }

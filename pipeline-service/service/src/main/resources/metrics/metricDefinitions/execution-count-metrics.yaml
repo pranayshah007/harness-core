@@ -2,7 +2,7 @@ name: Count of plan Executions
 identifier: plan_execution_count
 metricGroup: plan_execution_count_metric_group
 metrics:
-  - metricName: plan_execution_active_count
-    metricDefinition: Number of active plan executions at a given instant
+  - metricName: plan_execution_count
+    metricDefinition: Number of plan executions at a given instant
     type: LastValue
     unit: "1"

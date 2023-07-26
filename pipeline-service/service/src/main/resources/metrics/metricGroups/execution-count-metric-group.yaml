@@ -2,3 +2,4 @@ name: Group by fields for metrics
 identifier: plan_execution_count_metric_group
 labels:
   - accountId
+  - status
