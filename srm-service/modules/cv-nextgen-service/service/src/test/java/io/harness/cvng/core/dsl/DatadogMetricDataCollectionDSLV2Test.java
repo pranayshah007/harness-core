@@ -7,7 +7,6 @@
 
 package io.harness.cvng.core.dsl;
 
-import static io.harness.CvNextGenTestBase.getResourceFilePath;
 import static io.harness.CvNextGenTestBase.getSourceResourceFile;
 import static io.harness.rule.OwnerRule.ANSUMAN;
 
@@ -192,8 +191,7 @@ public class DatadogMetricDataCollectionDSLV2Test extends HoverflyCVNextGenTestB
                                               .baseUrl(BASE_URL)
                                               .build();
     List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
-        code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
-    HOVERFLY_RULE.printSimulationData();
+        code, runtimeParameters, callDetails -> System.out.println(callDetails));
     assertThat(timeSeriesRecords.size()).isEqualTo(60);
     assertThat(timeSeriesRecords.get(0).getMetricName()).isEqualTo("system.cpu.user");
     assertThat(timeSeriesRecords.get(0).getHostname()).isNull();
@@ -229,17 +227,75 @@ public class DatadogMetricDataCollectionDSLV2Test extends HoverflyCVNextGenTestB
     assertThat(timeSeriesRecords.get(0).getTxnName()).isEqualTo("group");
   }
 
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testExecute_datadogDSL_forServiceHealth() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("datadog-v2-dsl-metric.datacollection");
+    Instant instant = Instant.parse("2023-07-24T08:12:40.000Z");
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.DATADOG_METRICS);
+    DatadogMetricCVConfig datadogMetricCVConfig =
+        builderFactory.datadogMetricCVConfigBuilder()
+            .metricInfoList(Arrays.asList(
+                DatadogMetricCVConfig.MetricInfo.builder()
+                    .query(
+                        "\n kubernetes.memory.usage{cluster-name:chi-play}.rollup(avg, 60) ; \n kubernetes.memory.usage{cluster-name:chi-play};(a / b) * 100")
+                    .metric("system.cpu.user")
+                    .identifier("my-dashboard-1")
+                    .metricName("my-dashboard-1")
+                    .metricType(TimeSeriesMetricType.INFRA)
+                    .isManualQuery(true)
+                    .build(),
+                DatadogMetricCVConfig.MetricInfo.builder()
+                    .query(
+                        "kubernetes.memory.usage{cluster-name:chi-play}.rollup(avg, 60) ; kubernetes.memory.usage{cluster-name:chi-play};(a / b) * 100")
+                    .metric("system.cpu.user")
+                    .identifier("my-dashboard-2")
+                    .metricName("my-dashboard-2")
+                    .metricType(TimeSeriesMetricType.INFRA)
+                    .isManualQuery(true)
+                    .build()))
+            .build();
+    datadogMetricCVConfig.setMetricPack(metricPacks.get(0));
+    DatadogMetricsDataCollectionInfo datadogMetricsDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(datadogMetricCVConfig, VerificationTask.TaskType.LIVE_MONITORING);
+    datadogMetricsDataCollectionInfo.setCollectHostData(false);
+    dataCollectionInfoMapper.postProcessDataCollectionInfo(
+        datadogMetricsDataCollectionInfo, datadogMetricCVConfig, VerificationTask.TaskType.LIVE_MONITORING);
+    DatadogConnectorDTO datadogConnectorDTO = getDatadogConnectorDTO();
+    Map<String, Object> params = datadogMetricsDataCollectionInfo.getDslEnvVariables(datadogConnectorDTO);
+    Map<String, String> headers = datadogMetricsDataCollectionInfo.collectionHeaders(datadogConnectorDTO);
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minus(Duration.ofMinutes(60)))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl(BASE_URL)
+                                              .build();
+    List<TimeSeriesRecord> timeSeriesRecords =
+        (List<TimeSeriesRecord>) dataCollectionDSLService.execute(code, runtimeParameters, System.out::println);
+    assertThat(timeSeriesRecords.size()).isEqualTo(120);
+    assertThat(timeSeriesRecords.get(0).getMetricName()).isEqualTo("my-dashboard-1");
+    assertThat(timeSeriesRecords.get(0).getHostname()).isNull();
+    assertThat(timeSeriesRecords.get(0).getMetricIdentifier()).isEqualTo("my-dashboard-1");
+    assertThat(timeSeriesRecords.get(0).getMetricValue()).isEqualTo(100d);
+    assertThat(timeSeriesRecords.get(0).getTxnName()).isEqualTo("dashboardName");
+    assertThat(timeSeriesRecords.get(0).getTimestamp()).isEqualTo(1690182780000L);
+    assertThat(timeSeriesRecords.get(119).getTimestamp()).isEqualTo(1690186320000L);
+    assertThat(timeSeriesRecords.get(119).getMetricValue()).isEqualTo(100d);
+    assertThat(timeSeriesRecords.get(119).getMetricName()).isEqualTo("my-dashboard-2");
+    assertThat(timeSeriesRecords.get(119).getMetricIdentifier()).isEqualTo("my-dashboard-2");
+  }
+
   private String readDSL(String name) throws IOException {
     return FileUtils.readFileToString(
         new File(getSourceResourceFile(PrometheusCVConfig.class, "/io/harness/cvng/core/entities/" + name)),
         StandardCharsets.UTF_8);
   }
-
-  private String readJson(String name) throws IOException {
-    return FileUtils.readFileToString(
-        new File(getResourceFilePath("hoverfly/datadog/" + name)), StandardCharsets.UTF_8);
-  }
-
   private DatadogConnectorDTO getDatadogConnectorDTO() {
     return DatadogConnectorDTO.builder()
         .url(BASE_URL)
@@ -248,8 +304,7 @@ public class DatadogMetricDataCollectionDSLV2Test extends HoverflyCVNextGenTestB
         .build();
   }
 
-  private RuntimeParameters getRuntimeParameters(DataCollectionRequest<DatadogConnectorDTO> request, Instant instant)
-      throws IOException {
+  private RuntimeParameters getRuntimeParameters(DataCollectionRequest<DatadogConnectorDTO> request, Instant instant) {
     return RuntimeParameters.builder()
         .baseUrl(request.getBaseUrl())
         .commonHeaders(request.collectionHeaders())
