@@ -82,7 +82,7 @@ git push origin release/${PURPOSE}/${VERSION}xx
 
 echo "INFO: Step 12: Creating the fix version."
 chmod +x srm-service/release/release-branch-create-srm-versions.sh
-srm-service/release/release-branch-create-srm-versions.sh
+#srm-service/release/release-branch-create-srm-versions.sh
 echo "INFO: Step 13: Updating jiras."
 chmod +x srm-service/release/release-branch-update-jiras.sh
-srm-service/release/release-branch-update-jiras.sh
+#srm-service/release/release-branch-update-jiras.sh
