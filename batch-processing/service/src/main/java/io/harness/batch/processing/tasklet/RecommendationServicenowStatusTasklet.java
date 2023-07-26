@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.batch.processing.tasklet;
 
 import static io.harness.ccm.commons.constants.ViewFieldConstants.THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION;
@@ -62,15 +69,17 @@ public class RecommendationServicenowStatusTasklet implements Tasklet {
                                   .serviceNowTicket(serviceNowTicketNG)
                                   .build();
         } catch (Exception e) {
-          log.warn("Couldn't fetch recommendation jira for recommendationId: {}, error: {}", recommendation.getId(), e);
+          log.warn("Couldn't fetch recommendation servicenow ticket for recommendationId: {}, error: {}",
+              recommendation.getId(), e);
           continue;
         }
         try {
           String status = serviceNowUtils.getStatus(serviceNowTicketNG);
-          if (!Objects.equals(recommendation.getJirastatus(), status)) {
+          if (!Objects.equals(recommendation.getServicenowstatus(), status)) {
             // updates in timescale
-            k8sRecommendationDAO.updateJiraInTimescale(
-                recommendation.getId(), recommendation.getJiraconnectorref(), recommendation.getJiraissuekey(), status);
+            k8sRecommendationDAO.updateServicenowDetailsInTimescale(recommendation.getId(),
+                recommendation.getServicenowconnectorref(), recommendation.getServicenowtickettype(),
+                recommendation.getServicenowissuekey(), status);
 
             // updates in mongo
             switch (ResourceType.valueOf(recommendation.getResourcetype())) {
@@ -104,9 +113,9 @@ public class RecommendationServicenowStatusTasklet implements Tasklet {
             }
           }
         } catch (Exception e) {
-          log.warn("Error getting status of jira: {}, recommendationId: {}, error: {}",
-              recommendation.getJiraissuekey(), recommendation.getId(), e);
-          log.info("Jira issue fetched: {}", serviceNowTicketNG);
+          log.warn("Error getting status of servicenow ticket: {}, recommendationId: {}, error: {}",
+              recommendation.getServicenowissuekey(), recommendation.getId(), e);
+          log.info("Servicenow issue fetched: {}", serviceNowTicketNG);
         }
       }
     }
@@ -121,10 +130,10 @@ public class RecommendationServicenowStatusTasklet implements Tasklet {
             offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION)))
         .and(nonDelegate())
         .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.notEqual("APPLIED"))
-        .and(CE_RECOMMENDATIONS.JIRACONNECTORREF.isNotNull())
-        .and(CE_RECOMMENDATIONS.JIRACONNECTORREF.notIn("", " "))
-        .and(CE_RECOMMENDATIONS.JIRAISSUEKEY.isNotNull())
-        .and(CE_RECOMMENDATIONS.JIRAISSUEKEY.notIn("", " "));
+        .and(CE_RECOMMENDATIONS.SERVICENOWCONNECTORREF.isNotNull())
+        .and(CE_RECOMMENDATIONS.SERVICENOWCONNECTORREF.notIn("", " "))
+        .and(CE_RECOMMENDATIONS.SERVICENOWISSUEKEY.isNotNull())
+        .and(CE_RECOMMENDATIONS.SERVICENOWISSUEKEY.notIn("", " "));
   }
 
   private static Condition nonDelegate() {

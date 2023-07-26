@@ -60,7 +60,7 @@ public class RecommendationServiceNowService {
           accountId, recommendationId, serviceNowDetails);
     }
     k8sRecommendationDAO.updateServicenowDetailsInTimescale(recommendationId, serviceNowConnectorRef,
-        serviceNowTicket.getNumber(), serviceNowUtils.getStatus(serviceNowTicket));
+        serviceNowCreateDTO.getTicketType(), serviceNowTicket.getNumber(), serviceNowUtils.getStatus(serviceNowTicket));
     return serviceNowDetails;
   }
 }
