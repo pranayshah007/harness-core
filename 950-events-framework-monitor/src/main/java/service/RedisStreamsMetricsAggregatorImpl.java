@@ -131,6 +131,8 @@ public class RedisStreamsMetricsAggregatorImpl implements RedisStreamsMetricsAgg
                                           .streamSize(streamLength)
                                           .consumergroupMetricsDTOs(consumerGroupMetricsDTOS)
                                           .build());
+        log.info("Captured stream stats Stream Name:{} Stats: Length:{} MemoryUsageInMBs:{} ", streamName, streamLength,
+            memoryUsageInMBs);
       } catch (Exception e) {
         log.error("Failed in getting stream stats", e);
       }
