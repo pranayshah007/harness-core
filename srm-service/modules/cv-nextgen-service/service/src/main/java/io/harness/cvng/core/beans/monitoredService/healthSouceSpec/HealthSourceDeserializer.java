@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import javax.ws.rs.BadRequestException;
 
 public class HealthSourceDeserializer extends JsonDeserializer<HealthSource> {
@@ -70,6 +71,15 @@ public class HealthSourceDeserializer extends JsonDeserializer<HealthSource> {
         healthSource.setSpec(nextGenHealthSourceSpec);
         return healthSource;
       }
+    } else if (Objects.nonNull(type) && type == MonitoredServiceDataSourceType.ELASTICSEARCH) {
+      DataSourceType dataSourceType = MonitoredServiceDataSourceType.getDataSourceType(type);
+      NextGenHealthSourceSpec nextGenHealthSourceSpec = JsonUtils.treeToValue(spec, NextGenHealthSourceSpec.class);
+      if (dataSourceType.isNextGenSpec()) {
+        nextGenHealthSourceSpec.setDataSourceType(dataSourceType);
+      }
+      healthSource.setVersion(HealthSourceVersion.V2);
+      healthSource.setSpec(nextGenHealthSourceSpec);
+      return healthSource;
     }
     Class<?> deserializationClass = deserializationMapper.get(type);
     if (deserializationClass == null) {
