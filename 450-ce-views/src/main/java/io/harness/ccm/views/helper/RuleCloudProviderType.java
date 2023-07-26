@@ -7,4 +7,4 @@
 
 package io.harness.ccm.views.helper;
 
-public enum RuleCloudProviderType { AWS }
+public enum RuleCloudProviderType { AWS, AZURE }

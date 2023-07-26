@@ -32,6 +32,7 @@ import software.wings.beans.Pipeline;
 import software.wings.beans.User;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.security.AppPermissionSummary;
 import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.PermissionAttribute;
@@ -148,7 +149,10 @@ public class DeploymentAuthHandler {
   }
 
   public void authorizeWithWorkflowExecutionId(String appId, String workflowExecutionId) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    String[] fields = {WorkflowExecutionKeys.envId, WorkflowExecutionKeys.pipelineSummary,
+        WorkflowExecutionKeys.workflowId, WorkflowExecutionKeys.workflowType};
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
     authorize(appId, workflowExecution);
   }
 

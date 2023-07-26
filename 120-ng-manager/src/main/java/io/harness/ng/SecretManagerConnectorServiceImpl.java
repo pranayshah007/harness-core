@@ -21,6 +21,7 @@ import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorInternalFilterPropertiesDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.entities.Connector;
@@ -510,6 +511,12 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
       Boolean getDistinctFromBranches, Pageable pageable) {
     return defaultConnectorService.listCcmK8S(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
         filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
+  }
+
+  @Override
+  public Page<ConnectorResponseDTO> list(
+      ConnectorInternalFilterPropertiesDTO connectorInternalFilterPropertiesDTO, Pageable pageable) {
+    return defaultConnectorService.list(connectorInternalFilterPropertiesDTO, pageable);
   }
 
   @Override

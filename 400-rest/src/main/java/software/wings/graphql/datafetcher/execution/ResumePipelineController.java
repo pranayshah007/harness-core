@@ -23,6 +23,7 @@ import software.wings.beans.ArtifactVariable;
 import software.wings.beans.ExecutionArgs;
 import software.wings.beans.Pipeline;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.graphql.schema.mutation.pipeline.input.QLRuntimeExecutionInputs;
 import software.wings.graphql.schema.mutation.pipeline.payload.QLContinueExecutionPayload;
@@ -51,8 +52,10 @@ public class ResumePipelineController {
     notBlankCheck("Invalid pipeline execution", parameter.getPipelineExecutionId());
     notBlankCheck("Invalid pipeline stage ", parameter.getPipelineStageElementId());
 
+    String[] fields = {WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.stageName,
+        WorkflowExecutionKeys.workflowId, WorkflowExecutionKeys.workflowType};
     WorkflowExecution execution =
-        workflowExecutionService.getWorkflowExecution(appId, parameter.getPipelineExecutionId());
+        workflowExecutionService.getWorkflowExecution(appId, parameter.getPipelineExecutionId(), fields);
     notNullCheck("No execution found for the given application " + appId, execution, USER);
     String pipelineId = execution.getWorkflowId();
     Pipeline pipeline = pipelineService.readPipeline(appId, pipelineId, true);

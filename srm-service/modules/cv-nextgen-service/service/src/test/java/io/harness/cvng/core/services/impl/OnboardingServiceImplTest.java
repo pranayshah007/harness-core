@@ -9,6 +9,7 @@ package io.harness.cvng.core.services.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANJAN;
+import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,9 +33,12 @@ import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 
+import software.wings.delegatetasks.cv.DataCollectionException;
+
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.Optional;
+import javax.ws.rs.BadRequestException;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -116,7 +120,37 @@ public class OnboardingServiceImplTest extends CvNextGenTestBase {
                     .orgIdentifier(orgIdentifier)
                     .projectIdentifier(projectIdentifier)
                     .build()))
-        .isInstanceOf(NullPointerException.class)
+        .isInstanceOf(BadRequestException.class)
         .hasMessage("Missing tracingId/requestGuid in request");
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testGetOnboardingResponse_exception() {
+    ConnectorConfigDTO connectorConfigDTO =
+        SplunkConnectorDTO.builder()
+            .splunkUrl("https://splunk.dev.harness.io:8089/")
+            .username("harnessadmin")
+            .passwordRef(SecretRefData.builder().decryptedValue("123".toCharArray()).build())
+            .build();
+    when(nextGenService.get(eq(accountId), eq(connectorIdentifier), eq(orgIdentifier), eq(projectIdentifier)))
+        .thenReturn(Optional.of(ConnectorInfoDTO.builder().connectorConfig(connectorConfigDTO).build()));
+    when(verificationManagerService.getDataCollectionResponse(
+             eq(accountId), eq(orgIdentifier), eq(projectIdentifier), any()))
+        .thenThrow(new DataCollectionException("Test message", new ArithmeticException()));
+    assertThatThrownBy(
+        ()
+            -> onboardingService.getOnboardingResponse(accountId,
+                OnboardingRequestDTO.builder()
+                    .dataCollectionRequest(SplunkSavedSearchRequest.builder().tracingId(generateUuid()).build())
+                    .connectorIdentifier(connectorIdentifier)
+                    .orgIdentifier(orgIdentifier)
+                    .tracingId(generateUuid())
+                    .projectIdentifier(projectIdentifier)
+                    .build()))
+        .isInstanceOf(DataCollectionException.class)
+        .hasMessage("Test message")
+        .hasCause(new ArithmeticException());
   }
 }

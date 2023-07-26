@@ -77,6 +77,7 @@ public class K8sApplyTaskParameters extends K8sTaskParameters implements Manifes
     if (isNotEmpty(delegateSelectors)) {
       capabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());
     }
+    capabilities.addAll(getSecretManagerExecutionCapabilities(maskingEvaluator, k8sDelegateManifestConfig));
     return capabilities;
   }
 }

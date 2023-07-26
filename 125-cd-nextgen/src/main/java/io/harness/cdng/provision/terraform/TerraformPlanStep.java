@@ -61,6 +61,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -86,9 +87,6 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    TerraformPlanStepParameters planStepParameters = (TerraformPlanStepParameters) stepParameters.getSpec();
-    boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
-
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -148,9 +146,8 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
     boolean isTerraformCloudCli = planStepParameters.getConfiguration().getIsTerraformCloudCli().getValue();
 
-    EncryptionConfig secretManagerEncryptionConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
-
     if (!isTerraformCloudCli) {
+      EncryptionConfig secretManagerEncryptionConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
       exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
       exportTfHumanReadablePlanField = planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
       builder.saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue());
@@ -158,6 +155,8 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
           !ParameterField.isNull(exportTfHumanReadablePlanField) && exportTfHumanReadablePlanField.getValue());
       builder.encryptionConfig(secretManagerEncryptionConfig);
       builder.workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()));
+      builder.encryptDecryptPlanForHarnessSMOnManager(
+          helper.tfPlanEncryptionOnManager(accountId, secretManagerEncryptionConfig));
     }
     ParameterField<Boolean> skipTerraformRefreshCommand =
         planStepParameters.getConfiguration().getSkipTerraformRefresh();
@@ -192,8 +191,6 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
-            .encryptDecryptPlanForHarnessSMOnManager(
-                helper.tfPlanEncryptionOnManager(accountId, secretManagerEncryptionConfig))
             .isTerraformCloudCli(isTerraformCloudCli)
             .build();
 
@@ -294,11 +291,16 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
         }
       }
 
+      Map<String, String> outputKeys = helper.getRevisionsMap(
+          planStepParameters.getConfiguration().getVarFiles(), terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+      helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
+
       stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
                                           .name(TerraformPlanOutcome.OUTCOME_NAME)
                                           .outcome(tfPlanOutcomeBuilder.build())
                                           .build());
     }
+
     return stepResponseBuilder.build();
   }
 }

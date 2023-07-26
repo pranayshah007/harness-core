@@ -53,6 +53,11 @@ public class ProjectServicesApiImpl extends AbstractServicesApiImpl implements P
     return super.deleteServiceEntity(org, project, service, account, Boolean.TRUE == forceDelete);
   }
 
+  @Override
+  public Response getPrimaryManifests(String service, String org, String project, String harnessAccount) {
+    return super.getPrimaryManifestList(service, org, project, harnessAccount);
+  }
+
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")
   @Override
   public Response getService(@OrgIdentifier String org, @ProjectIdentifier String project,

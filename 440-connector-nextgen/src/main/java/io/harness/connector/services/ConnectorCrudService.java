@@ -15,6 +15,7 @@ import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
+import io.harness.connector.ConnectorInternalFilterPropertiesDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.entities.Connector;
@@ -97,4 +98,7 @@ public interface ConnectorCrudService {
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
       Boolean getDistinctFromBranches, Pageable pageable);
+
+  Page<ConnectorResponseDTO> list(
+      ConnectorInternalFilterPropertiesDTO connectorInternalFilterPropertiesDTO, Pageable pageable);
 }

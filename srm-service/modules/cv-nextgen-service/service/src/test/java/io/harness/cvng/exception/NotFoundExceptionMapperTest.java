@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.exception.mapper.NotFoundExceptionMapper;
 import io.harness.eraro.ResponseMessage;
 import io.harness.rule.Owner;
 

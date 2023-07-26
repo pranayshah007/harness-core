@@ -293,7 +293,7 @@ public class LicenseServiceImpl implements LicenseService {
         templateName = TRIAL_EXPIRATION_DAY_60_TEMPLATE;
       } else if (expiredSinceDays == 89) {
         templateName = TRIAL_EXPIRATION_DAY_89_TEMPLATE;
-      } else if (expiredSinceDays >= 90) {
+      } else if (expiredSinceDays >= 90 && expiredSinceDays <= 92) {
         templateName = TRIAL_EXPIRATION_BEFORE_DELETION_TEMPLATE;
       }
     }

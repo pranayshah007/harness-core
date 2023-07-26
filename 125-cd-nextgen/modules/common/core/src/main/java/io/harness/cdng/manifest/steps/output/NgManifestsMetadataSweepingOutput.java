@@ -11,6 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -38,4 +39,7 @@ public class NgManifestsMetadataSweepingOutput implements ExecutionSweepingOutpu
   // added for override v2
   Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride;
   List<ManifestConfigWrapper> svcManifests;
+
+  // manifest configurations
+  ManifestConfigurations manifestConfigurations;
 }

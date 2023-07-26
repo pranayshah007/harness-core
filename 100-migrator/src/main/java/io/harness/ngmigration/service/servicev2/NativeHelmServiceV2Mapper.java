@@ -14,6 +14,7 @@ import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec.NativeHelmServiceSpecBuilder;
 import io.harness.cdng.service.beans.ServiceDefinition;
@@ -47,6 +48,10 @@ public class NativeHelmServiceV2Mapper implements ServiceV2Mapper {
     List<NGVariable> variables = MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables());
     if (primaryArtifact != null) {
       helmServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
+    }
+    ManifestConfigurations manifestConfigurations = getManifestConfigurations(entities, graph, service);
+    if (manifestConfigurations != null) {
+      helmServiceSpecBuilder.manifestConfigurations(manifestConfigurations);
     }
     helmServiceSpecBuilder.manifests(changeIdentifier(manifests, "helm_"));
     helmServiceSpecBuilder.configFiles(configFiles);

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.MANUAL_CREDENTIALS;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
@@ -43,6 +44,7 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("AwsConnector")
 @Schema(name = "AwsConnector", description = "This contains details of the AWS connector")
+@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO")
 public class AwsConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @Valid @NotNull AwsCredentialDTO credential;
   @Valid AwsSdkClientBackoffStrategyDTO awsSdkClientBackOffStrategyOverride;

@@ -53,7 +53,7 @@ public class TriggerWebhookEventExecutionServiceImpl implements TriggerWebhookEv
           ngTriggerElementMapper
               .toNGTriggerWebhookEvent(triggerExecutionDTO.getWebhookDto().getAccountId(), null, null,
                   triggerExecutionDTO.getWebhookDto().getJsonPayload(),
-                  prepareHeaders(triggerExecutionDTO.getWebhookDto()))
+                  prepareHeaders(triggerExecutionDTO.getWebhookDto()), null)
               .uuid(triggerExecutionDTO.getWebhookDto().getEventId())
               .createdAt(triggerExecutionDTO.getWebhookDto().getTime())
               .build();

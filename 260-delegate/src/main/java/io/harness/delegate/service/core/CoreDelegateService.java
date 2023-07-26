@@ -48,16 +48,15 @@ public class CoreDelegateService extends SimpleDelegateAgent<AcquireTasksRespons
         executeRestCall(getManagerClient().acquireProtoTask(DelegateAgentCommonVariables.getDelegateId(), taskId,
             getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
 
-    log.info("Delegate {} received tasks group {} of {} tasks for delegateInstance {}",
-        DelegateAgentCommonVariables.getDelegateId(), response.getExecutionInfraId(), response.getTaskList().size(),
-        DELEGATE_INSTANCE_ID);
+    log.info("Delegate {} received {} tasks for delegateInstance {}", DelegateAgentCommonVariables.getDelegateId(),
+        response.getTaskList().size(), DELEGATE_INSTANCE_ID);
     return response;
   }
 
   @Override
   protected ExecutionStatusResponse executeTask(final AcquireTasksResponse acquireResponse) {
-    final var groupId = acquireResponse.getExecutionInfraId();
     final var task = acquireResponse.getTask(0);
+    final var groupId = task.getExecutionInfraId();
     // FixMe: Hack so we don't need to make changes to CI & NG manager for now. Normally it would just invoke a single
     // runner stage
     if (hasTaskType(task.getTaskData(), INITIALIZATION_PHASE)) {

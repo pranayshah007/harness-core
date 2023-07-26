@@ -78,4 +78,7 @@ public interface ScmFacilitatorService {
   ScmGetFileUrlResponseDTO getFileUrl(ScmGetFileUrlRequestDTO scmGetFileUrlRequestDTO);
 
   UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO authenticatedUserRequestDTO);
+
+  void validateRepo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName);
 }

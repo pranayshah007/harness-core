@@ -24,11 +24,13 @@ import static io.harness.NGCommonEntityConstants.FILE_YAML_DEFINITION_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILTER_IDENTIFIER_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FOLDER_DETAILS_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FOLDER_NODE_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.SCOPED_FILE_PATH_PARAM_MESSAGE;
 import static io.harness.NGResourceFilterConstants.FILTER_KEY;
 import static io.harness.NGResourceFilterConstants.IDENTIFIERS;
 import static io.harness.NGResourceFilterConstants.PAGE_KEY;
@@ -46,6 +48,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 
 import io.harness.EntityType;
+import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -69,6 +72,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
 import io.harness.ng.core.filestore.dto.FileStoreRequest;
+import io.harness.ng.core.utils.URLDecoderUtility;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PageUtils;
@@ -287,12 +291,14 @@ public class FileStoreResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
       @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier @PathParam(
-          IDENTIFIER_KEY) String identifier) {
+          IDENTIFIER_KEY) String identifier,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, identifier), FILE_DELETE_PERMISSION);
 
     return ResponseDTO.newResponse(
-        fileStoreService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier));
+        fileStoreService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete));
   }
 
   @POST
@@ -491,5 +497,26 @@ public class FileStoreResource {
 
     return ResponseDTO.newResponse(
         fileStoreService.getCreatedByList(accountIdentifier, orgIdentifier, projectIdentifier));
+  }
+
+  @GET
+  @Consumes({"application/json"})
+  @Path("files/{scopedFilePath}/content")
+  @ApiOperation(
+      value = "Get file content as string using encoded scopedFilePath", nickname = "getFileContentUsingScopedFilePath")
+  @Operation(operationId = "getFileContentUsingScopedFilePath", summary = "Get file content of scopedFilePath",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the file content of scopedFilePath")
+      })
+  public ResponseDTO<String>
+  getFileContentUsingScopedFilePath(@Parameter(description = SCOPED_FILE_PATH_PARAM_MESSAGE) @PathParam(
+                                        "scopedFilePath") @NotBlank String scopedFilePath,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
+    scopedFilePath = URLDecoderUtility.getDecodedString(scopedFilePath);
+    return ResponseDTO.newResponse(fileStoreService.getFileContentAsString(
+        accountIdentifier, orgIdentifier, projectIdentifier, scopedFilePath, Long.MAX_VALUE));
   }
 }

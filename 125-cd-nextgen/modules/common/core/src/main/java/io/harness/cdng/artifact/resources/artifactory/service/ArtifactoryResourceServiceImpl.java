@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.artifact.resources.artifactory.service;
-
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_BUILDS;
 import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_IMAGE_PATHS;
@@ -17,8 +16,11 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import static software.wings.beans.TaskType.NG_ARTIFACTORY_TASK;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.NGArtifactConstants;
@@ -86,6 +88,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.MutablePair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -229,14 +232,16 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   @Override
   public ArtifactoryResponseDTO getBuildDetails(IdentifierRef artifactoryConnectorRef, String repositoryName,
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
-      String projectIdentifier) {
+      String projectIdentifier, String tagRegex) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.REPOSITORY, repositoryName),
+        MutablePair.of(NGArtifactConstants.ARTIFACT_PATH, artifactPath));
     ArtifactoryConnectorDTO connector = getConnector(artifactoryConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(artifactoryConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     ArtifactSourceDelegateRequest artifactoryRequest =
         ArtifactDelegateRequestUtils.getArtifactoryArtifactDelegateRequest(repositoryName, artifactPath,
-            repositoryFormat, artifactRepositoryUrl, null, null, null, connector, encryptionDetails,
+            repositoryFormat, artifactRepositoryUrl, null, tagRegex, null, connector, encryptionDetails,
             ArtifactSourceType.ARTIFACTORY_REGISTRY);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(artifactoryRequest,
@@ -297,6 +302,8 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
   @Override
   public ArtifactoryImagePathsDTO getImagePaths(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
       String orgIdentifier, String projectIdentifier, @NotNull String repository) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.REPOSITORY, repository));
+
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
         connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
     if (!connectorDTO.isPresent()

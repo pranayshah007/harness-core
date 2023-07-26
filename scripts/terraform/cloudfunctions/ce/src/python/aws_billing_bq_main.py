@@ -4,12 +4,12 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 import json
-import base64
 import os
 import re
 import datetime
 import util
 import requests
+import uuid
 
 from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_query, COSTAGGREGATED, UNIFIED, \
     PREAGGREGATED, CEINTERNALDATASET, CURRENCYCONVERSIONFACTORUSERINPUT, update_connector_data_sync_status, \
@@ -53,20 +53,19 @@ publisher = pubsub_v1.PublisherClient()
 COSTCATEGORIESUPDATETOPIC = os.environ.get('COSTCATEGORIESUPDATETOPIC', 'ccm-bigquery-batch-update')
 
 
-def main(event, context):
-    """Triggered from a message on a Cloud Pub/Sub topic.
-    Args:
-         event (dict): Event payload.
-         context (google.cloud.functions.Context): Metadata for the event.
+def main(request):
     """
-    print(event)
-    data = base64.b64decode(event['data']).decode('utf-8')
-    event_json = json.loads(data)
-    jsonData = event_json.get("data", {}).get("message", {})
-    print(jsonData)
+    Triggered from an HTTP Request.
+    """
+    print(request)
+    jsonData = request.get_json(force=True)
 
     # Set accountid for GCP logging
     util.ACCOUNTID_LOG = jsonData.get("accountId")
+    util.CF_EXECUTION_ID = uuid.uuid4()
+    print_(request)
+    print_(jsonData)
+
     jsonData["cloudProvider"] = "AWS"
     ps = jsonData["path"].split("/")
     if len(ps) == 4:
@@ -89,7 +88,7 @@ def main(event, context):
     jsonData["tableId"] = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
 
     if not create_dataset_and_tables(jsonData):
-        return
+        return "CF completed execution."
     ingest_data_from_csv(jsonData)
     set_available_columns(jsonData)
     get_unique_accountids(jsonData)
@@ -125,6 +124,7 @@ def main(event, context):
     })
 
     print_("Completed")
+    return "CF executed successfully."
 
 
 def trigger_historical_cost_update_in_preferred_currency(jsonData):

@@ -339,7 +339,8 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testToDtoForParentStageInfo() {
-    AbortedBy abortedBy = AbortedBy.builder().userName("user1").email("email").build();
+    AbortedBy abortedBy =
+        AbortedBy.builder().userName("user1").email("email").createdAt(System.currentTimeMillis()).build();
     PipelineExecutionSummaryEntity executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
                                                                 .accountId(accountId)
                                                                 .orgIdentifier(orgId)

@@ -28,8 +28,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.ng.core.Resource;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.monitor.OutboxMetricsServiceImpl;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
@@ -45,14 +47,17 @@ public class OutboxPollJobTest extends CategoryTest {
   private OutboxEventPollJob outboxEventPollJob;
 
   private static final String OUTBOX_POLL_JOB_LOCK = "OUTBOX_POLL_JOB_LOCK";
+  private OutboxMetricsServiceImpl outboxMetricsServiceImpl;
 
   @Before
   public void setup() {
     outboxService = mock(OutboxService.class);
     outboxEventHandler = mock(OutboxEventHandler.class);
     persistentLocker = mock(PersistentLocker.class);
+    outboxMetricsServiceImpl = mock(OutboxMetricsServiceImpl.class);
     outboxEventPollJob = new OutboxEventPollJob(outboxService, outboxEventHandler, persistentLocker,
-        OutboxPollConfiguration.builder().maximumRetryAttemptsForAnEvent(2).lockId("LOCK_ID").build());
+        OutboxPollConfiguration.builder().maximumRetryAttemptsForAnEvent(2).lockId("LOCK_ID").build(),
+        outboxMetricsServiceImpl);
     MaintenanceController.forceMaintenance(false);
   }
 
@@ -65,7 +70,13 @@ public class OutboxPollJobTest extends CategoryTest {
              any()))
         .thenReturn(mock(AcquiredLock.class));
     String id = randomAlphabetic(10);
-    OutboxEvent outboxEvent = OutboxEvent.builder().eventType("emptyEvent").blocked(false).id(id).build();
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .eventType("emptyEvent")
+                                  .blocked(false)
+                                  .id(id)
+                                  .resource(Resource.builder().type("resource").build())
+                                  .createdAt(123456789L)
+                                  .build();
     when(outboxService.list(any())).thenReturn(singletonList(outboxEvent));
     when(outboxEventHandler.handle(outboxEvent)).thenReturn(true);
     when(outboxService.delete(id)).thenReturn(true);
@@ -84,7 +95,13 @@ public class OutboxPollJobTest extends CategoryTest {
              any()))
         .thenReturn(mock(AcquiredLock.class));
     String id = randomAlphabetic(10);
-    OutboxEvent outboxEvent = OutboxEvent.builder().eventType("emptyEvent").blocked(false).id(id).build();
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .eventType("emptyEvent")
+                                  .blocked(false)
+                                  .id(id)
+                                  .resource(Resource.builder().type("resource").build())
+                                  .createdAt(123456789L)
+                                  .build();
     when(outboxService.list(any())).thenReturn(singletonList(outboxEvent));
     when(outboxEventHandler.handle(outboxEvent)).thenReturn(false);
     final ArgumentCaptor<OutboxEvent> outboxEventArgumentCaptor = ArgumentCaptor.forClass(OutboxEvent.class);

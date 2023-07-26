@@ -16,6 +16,7 @@ java_library(
         "//970-api-services-beans/src/main/java/io/harness/beans:module",
         "//970-api-services-beans/src/main/java/io/harness/globalcontex:module",
         "//970-api-services-beans/src/main/java/io/harness/logging:module",
+        "//970-ng-commons/src/main/java/io/harness/constants:module",
         "//980-commons/src/main/java/io/harness/beans:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
         "//980-commons/src/main/java/io/harness/exception:module",

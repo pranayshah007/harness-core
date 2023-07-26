@@ -56,6 +56,7 @@ public class ContainerStepExecutionResponseHelper {
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
       entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
       if (entry.getValue() instanceof BinaryResponseData) {
+        log.info("Binary Response Data Received");
         entry.setValue((ResponseData) referenceFalseKryoSerializer.asInflatedObject(
             ((BinaryResponseData) entry.getValue()).getData()));
       }
@@ -104,7 +105,7 @@ public class ContainerStepExecutionResponseHelper {
     return buildAndReturnStepResponse(stepStatusTaskResponseData, ambiance, stepIdentifier, outcome);
   }
 
-  private StepStatusTaskResponseData filterK8StepResponse(Map<String, ResponseData> responseDataMap) {
+  public StepStatusTaskResponseData filterK8StepResponse(Map<String, ResponseData> responseDataMap) {
     // Filter final response from step
     return responseDataMap.entrySet()
         .stream()
@@ -204,5 +205,16 @@ public class ContainerStepExecutionResponseHelper {
   }
   private StepStatusTaskResponseData filterK8StepResponse(ResponseData responseData) {
     return responseData instanceof StepStatusTaskResponseData ? ((StepStatusTaskResponseData) responseData) : null;
+  }
+
+  public void deserializeResponse(Map<String, ResponseData> responseDataMap) {
+    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
+      log.info(String.format("ResponseData with class %s received", entry.getValue().getClass()));
+      entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
+      if (entry.getValue() instanceof BinaryResponseData) {
+        entry.setValue((ResponseData) referenceFalseKryoSerializer.asInflatedObject(
+            ((BinaryResponseData) entry.getValue()).getData()));
+      }
+    }
   }
 }

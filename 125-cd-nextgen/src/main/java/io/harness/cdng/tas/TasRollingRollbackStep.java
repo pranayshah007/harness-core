@@ -16,7 +16,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -42,7 +42,6 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.pcf.CfCommandUnitConstants;
@@ -56,7 +55,6 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -96,7 +94,7 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
   @Inject private StepHelper stepHelper;
   @Inject private TasStepHelper tasStepHelper;
   @Inject private InstanceInfoService instanceInfoService;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -106,6 +104,7 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
           ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
   }
+
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
@@ -141,24 +140,22 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
     TasManifestsPackage unresolvedTasManifestsPackage =
         tasStageExecutionDetails == null ? null : tasStageExecutionDetails.getTasManifestsPackage();
 
-    CDExpressionResolveFunctor cdExpressionResolveFunctor =
-        new CDExpressionResolveFunctor(engineExpressionService, ambiance);
     if (unresolvedTasManifestsPackage != null
         && EmptyPredicate.isNotEmpty(unresolvedTasManifestsPackage.getManifestYml())) {
-      resolvedTasManifestsPackage.setManifestYml((String) ExpressionEvaluatorUtils.updateExpressions(
-          unresolvedTasManifestsPackage.getManifestYml(), cdExpressionResolveFunctor));
+      resolvedTasManifestsPackage.setManifestYml(
+          (String) cdExpressionResolver.updateExpressions(ambiance, unresolvedTasManifestsPackage.getManifestYml()));
     }
 
     if (unresolvedTasManifestsPackage != null
         && EmptyPredicate.isNotEmpty(unresolvedTasManifestsPackage.getAutoscalarManifestYml())) {
-      resolvedTasManifestsPackage.setAutoscalarManifestYml((String) ExpressionEvaluatorUtils.updateExpressions(
-          unresolvedTasManifestsPackage.getAutoscalarManifestYml(), cdExpressionResolveFunctor));
+      resolvedTasManifestsPackage.setAutoscalarManifestYml((String) cdExpressionResolver.updateExpressions(
+          ambiance, unresolvedTasManifestsPackage.getAutoscalarManifestYml()));
     }
 
     List<String> varsYamlList = new ArrayList<>();
     if (unresolvedTasManifestsPackage != null && unresolvedTasManifestsPackage.getVariableYmls() != null) {
       for (String varsYaml : unresolvedTasManifestsPackage.getVariableYmls()) {
-        varsYamlList.add((String) ExpressionEvaluatorUtils.updateExpressions(varsYaml, cdExpressionResolveFunctor));
+        varsYamlList.add((String) cdExpressionResolver.updateExpressions(ambiance, varsYaml));
       }
       resolvedTasManifestsPackage.setVariableYmls(varsYamlList);
     }

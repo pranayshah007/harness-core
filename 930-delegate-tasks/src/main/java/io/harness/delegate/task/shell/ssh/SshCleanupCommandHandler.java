@@ -18,7 +18,6 @@ import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
 
@@ -62,13 +61,14 @@ public class SshCleanupCommandHandler implements CommandHandler {
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
 
-    CommandExecutionStatus commandExecutionStatus = cleanup(sshCommandTaskParameters, executor);
-    if (parameters.isExecuteOnDelegate()) {
-      executor.getLogCallback().saveExecutionLog(
-          "Command finished with status " + commandExecutionStatus, LogLevel.INFO, commandExecutionStatus);
+    try {
+      CommandExecutionStatus commandExecutionStatus = cleanup(sshCommandTaskParameters, executor);
+      closeLogStreamWithSuccessEmptyMsg(executor.getLogCallback());
+      return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
+    } catch (Exception e) {
+      closeLogStreamWithError(executor.getLogCallback());
+      throw e;
     }
-
-    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 
   private CommandExecutionStatus cleanup(SshCommandTaskParameters taskParameters, AbstractScriptExecutor executor) {

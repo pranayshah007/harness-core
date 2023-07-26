@@ -22,6 +22,7 @@ public enum PredefinedTemplate {
   MSTEAMS_TEST("templates/msteams_test.txt", "msteams_test"),
   EMAIL_INVITE("templates/email_invite.txt", "email_invite"),
   EMAIL_NOTIFY("templates/email_notify.txt", "email_notify"),
+  NG_RESET_PASSWORD("templates/ng_reset_password.txt", "ng_reset_password"),
   EMAIL_VERIFY("templates/email_verify.txt", "default_email_verify"),
   SIGNUP_CONFIRMATION("templates/signup_confirmation.txt", "default_signup_confirmation"),
   EMAIL_TEST_WITH_USER("templates/email_test2.txt", "email_test2"),
@@ -79,6 +80,9 @@ public enum PredefinedTemplate {
       "cvng_notification_templates/cvng_monitoredservice_slack.txt", "cvng_monitoredservice_slack"),
   CVNG_MONITOREDSERVICE_ET_SLACK(
       "cvng_notification_templates/cvng_monitoredservice_et_slack.txt", "cvng_monitoredservice_et_slack"),
+
+  CVNG_MONITOREDSERVICE_REPORT_SLACK(
+      "cvng_notification_templates/cvng_monitoredservice_report_slack.txt", "cvng_monitoredservice_report_slack"),
   CVNG_MONITOREDSERVICE_EMAIL(
       "cvng_notification_templates/cvng_monitoredservice_email.txt", "cvng_monitoredservice_email"),
   CVNG_MONITOREDSERVICE_ET_EMAIL(

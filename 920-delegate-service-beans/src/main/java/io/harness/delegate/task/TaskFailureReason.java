@@ -7,4 +7,12 @@
 
 package io.harness.delegate.task;
 
-public enum TaskFailureReason { EXPIRED, NO_ELIGIBLE_DELEGATE }
+public enum TaskFailureReason {
+  EXPIRED,
+  NO_ELIGIBLE_DELEGATES,
+  NO_ACTIVE_DELEGATES,
+  TIMED_OUT,
+  NOT_ASSIGNED,
+  DELEGATE_DISCONNECTED,
+  VALIDATION_FAILED
+}

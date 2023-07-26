@@ -34,6 +34,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -76,8 +77,11 @@ import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
 import io.harness.accesscontrol.scopes.ScopeDTO;
+import io.harness.accesscontrol.scopes.ScopeFilterType;
+import io.harness.accesscontrol.scopes.ScopeSelector;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
+import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeService;
 import io.harness.accesscontrol.scopes.harness.ScopeMapper;
@@ -135,6 +139,8 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
   private ResourceScope resourceScope;
 
   private RoleAssignmentDTOMapper roleAssignmentDTOMapper;
+  RoleAssignmentAggregateMapper roleAssignmentAggregateMapper;
+  private static String ACCOUNT_ID = randomAlphabetic(10);
 
   @Before
   public void setup() {
@@ -154,6 +160,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     actionValidator = mock(HarnessActionValidator.class);
     accessControlClient = mock(AccessControlClient.class);
     roleAssignmentDTOMapper = mock(RoleAssignmentDTOMapper.class);
+    roleAssignmentAggregateMapper = mock(RoleAssignmentAggregateMapper.class);
     RoleAssignmentApiUtils roleAssignmentApiUtils =
         spy(new RoleAssignmentApiUtils(buildDefaultValidatorFactory().getValidator(), harnessResourceGroupService,
             harnessUserGroupService, harnessUserService, harnessServiceAccountService, harnessScopeService,
@@ -161,7 +168,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
             mock(RoleAssignmentDTOMapper.class), accessControlClient));
     roleAssignmentResource = spy(new RoleAssignmentResourceImpl(roleAssignmentService, harnessResourceGroupService,
         scopeService, roleService, resourceGroupService, userGroupService, userService, roleAssignmentDTOMapper,
-        mock(RoleAssignmentAggregateMapper.class), mock(RoleDTOMapper.class), transactionTemplate, actionValidator,
+        roleAssignmentAggregateMapper, mock(RoleDTOMapper.class), transactionTemplate, actionValidator,
         mock(OutboxService.class), roleAssignmentApiUtils));
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
     harnessScopeParams = HarnessScopeParams.builder()
@@ -187,6 +194,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
         .scopeLevel("organization")
         .principalType(principalType)
         .principalIdentifier(principalId)
+        .principalScopeLevel("organization")
         .build();
   }
 
@@ -438,7 +446,12 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     }
     ArgumentCaptor<RoleAssignmentFilter> roleAssignmentFilterArgumentCaptor =
         ArgumentCaptor.forClass(RoleAssignmentFilter.class);
-    PageRequest maxPageRequest = PageRequest.builder().pageSize(1000).build();
+    PageRequest maxPageRequest;
+    if (isUserPrincipal) {
+      maxPageRequest = PageRequest.builder().pageIndex(0).pageSize(50000).build();
+    } else {
+      maxPageRequest = PageRequest.builder().pageSize(1000).build();
+    }
     when(roleAssignmentService.list(eq(maxPageRequest), any())).thenReturn(getEmptyPageResponse(maxPageRequest));
     RoleFilter roleFilter = RoleFilter.builder()
                                 .identifierFilter(new HashSet<>())
@@ -488,6 +501,46 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
             .principalFilter(PrincipalDTO.builder().identifier("user1").type(PrincipalType.USER).build())
             .build();
     testGetAggregatedV2Internal(roleAssignmentFilterV2);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testgetList_principalType_UserGroup() {
+    RoleAssignmentFilterV2 roleAssignmentFilterV2 =
+        RoleAssignmentFilterV2.builder()
+            .scopeFilters(Set.of(ScopeSelector.builder()
+                                     .accountIdentifier(ACCOUNT_ID)
+                                     .filter(ScopeFilterType.INCLUDING_CHILD_SCOPES)
+                                     .build()))
+            .principalTypeFilter(Set.of(USER_GROUP))
+            .build();
+    preViewPrincipalPermissions(true, true, true);
+    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    ArgumentCaptor<RoleAssignmentFilter> roleAssignmentFilterArgumentCaptor =
+        ArgumentCaptor.forClass(RoleAssignmentFilter.class);
+    PageRequest maxPageRequest = PageRequest.builder().pageSize(1000).build();
+    List<RoleAssignment> roleAssignments = new ArrayList<>();
+    RoleAssignment roleAssignment1 = getRoleAssignment(
+        "RA1", "/ACCOUNT/kmpySmUISimoRrJL6NL73w/ORGANIZATION/orgtest2", USER_GROUP, "_organization_all_users");
+    RoleAssignment roleAssignment2 = getRoleAssignment(
+        "RA2", "/ACCOUNT/kmpySmUISimoRrJL6NL73w/ORGANIZATION/orgtest", USER_GROUP, "_organization_all_users");
+    RoleAssignment roleAssignment3 =
+        getRoleAssignment("RA3", "/ACCOUNT/kmpySmUISimoRrJL6NL73w/ORGANIZATION/orgtest2", USER_GROUP, "user_group1");
+    roleAssignments.add(roleAssignment1);
+    roleAssignments.add(roleAssignment2);
+    roleAssignments.add(roleAssignment3);
+    PageResponse pageResponse = getEmptyPageResponse(pageRequest);
+    pageResponse.setContent(roleAssignments);
+    when(roleAssignmentService.list(eq(maxPageRequest), any())).thenReturn(pageResponse);
+    when(scopeService.buildScopeFromScopeIdentifier(anyString()))
+        .thenReturn(Scope.builder().instanceId(ACCOUNT_ID).level(HarnessScopeLevel.ORGANIZATION).build());
+    ResponseDTO<PageResponse<RoleAssignmentAggregate>> responseDTO =
+        roleAssignmentResource.getList(maxPageRequest, harnessScopeParams, roleAssignmentFilterV2);
+    verify(userGroupService, times(0)).list(anyString());
+    verify(roleAssignmentAggregateMapper, times(1)).toDTO(roleAssignment1, null, null);
+    verify(roleAssignmentAggregateMapper, times(1)).toDTO(roleAssignment2, null, null);
+    verify(roleAssignmentAggregateMapper, times(1)).toDTO(roleAssignment3, null, null);
   }
 
   @Test
@@ -958,11 +1011,12 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     roleAssignments.add(roleAssignment3);
     PageResponse pageResponse = getEmptyPageResponse(pageRequest);
     pageResponse.setContent(roleAssignments);
+    pageResponse.setEmpty(false);
     List<String> userGroupScopes = new ArrayList<>();
     userGroupScopes.add("/ACCOUNT/kmpySmUISimoRrJL6NL73w/ORGANIZATION/orgtest2/_organization_all_users");
 
     PageResponse result =
-        roleAssignmentResource.filterRoleAssignmentForUnwantedUserGroup(pageResponse, userGroupScopes);
+        roleAssignmentResource.filterRoleAssignmentForUnwantedUserGroup(pageResponse, userGroupScopes, pageRequest);
     assertThat(result.getContent().size()).isEqualTo(2);
     List<RoleAssignment> resultRoleAssignments = result.getContent();
     assertThat(resultRoleAssignments.stream().map(RoleAssignment::getIdentifier).collect(Collectors.toList()))

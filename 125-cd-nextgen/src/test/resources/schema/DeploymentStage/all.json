@@ -170,6 +170,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -1532,6 +1558,208 @@
             },
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsCdkBootstrapStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "appPath": {
+              "type": "string"
+            },
+            "commandOptions": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "exportTemplate": {
+              "type": "boolean"
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsCdkSynthStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "appPath": {
+              "type": "string"
+            },
+            "commandOptions": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "exportTemplate": {
+              "type": "boolean"
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "stackNames": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }
@@ -4630,117 +4858,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "CreatePRStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "overrideConfig",
-            "shell"
-          ],
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "(<\\+.+>.*)",
-                  "minLength": 1
-                }
-              ]
-            },
-            "overrideConfig": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "shell": {
-              "type": "string",
-              "enum": [
-                "Bash"
-              ]
-            },
-            "source": {
-              "$ref": "#/definitions/CreatePRStepUpdateConfigScriptWrapper"
-            },
-            "stringMap": {
-              "$ref": "#/definitions/ParameterFieldMapStringString"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "CreatePRStepUpdateConfigScriptBaseSource": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "CreatePRStepUpdateConfigScriptInlineSource": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/CreatePRStepUpdateConfigScriptBaseSource"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "updateConfigScript": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "CreatePRStepUpdateConfigScriptWrapper": {
-      "type": "object",
-      "required": [
-        "spec",
-        "type"
-      ],
-      "properties": {
-        "type": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "Inline"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CreatePRStepUpdateConfigScriptInlineSource"
-              }
-            }
-          }
-        }
-      ]
-    },
     "CustomArtifactConfig": {
       "allOf": [
         {
@@ -7169,6 +7286,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "EnvironmentInfraUseFromStage": {
+      "type": "object",
+      "required": [
+        "stage"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "EnvironmentYaml": {
       "type": "object",
       "required": [
@@ -7204,9 +7337,6 @@
     },
     "EnvironmentYamlV2": {
       "type": "object",
-      "required": [
-        "environmentRef"
-      ],
       "properties": {
         "deployToAll": {
           "oneOf": [
@@ -7310,6 +7440,9 @@
           "items": {
             "$ref": "#/definitions/ServiceOverrideInputsYaml"
           }
+        },
+        "useFromStage": {
+          "$ref": "#/definitions/EnvironmentInfraUseFromStage"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8111,9 +8244,6 @@
                 "container"
               ]
             },
-            "repository": {
-              "type": "string"
-            },
             "user": {
               "type": "string"
             },
@@ -8865,6 +8995,18 @@
                 },
                 {
                   "type": "boolean"
+                }
+              ]
+            },
+            "fetchHelmChartMetadata": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
                 }
               ]
             },
@@ -14314,13 +14456,72 @@
           "properties": {
             "spec": {
               "readOnly": true,
-              "$ref": "#/definitions/RetryFailureSpecConfig"
+              "$ref": "#/definitions/RetryStepGroupFailureSpecConfig"
             },
             "type": {
               "type": "string",
               "enum": [
                 "RetryStepGroup"
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RetryStepGroupFailureSpecConfig": {
+      "type": "object",
+      "required": [
+        "retryCount",
+        "retryIntervals"
+      ],
+      "properties": {
+        "retryCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "retryIntervals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 2147483647,
+          "minItems": 1
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RevertPRStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "commitId"
+          ],
+          "properties": {
+            "commitId": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "prTitle": {
+              "type": "string"
             }
           }
         }
@@ -15405,9 +15606,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "settings"
-          ],
           "properties": {
             "connectorRef": {
               "type": "string"
@@ -15499,16 +15697,6 @@
                   "minLength": 1
                 }
               ]
-            },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             }
           }
         }
@@ -15584,6 +15772,110 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServerlessAwsLambdaPackageV2StepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "packageCommandOptions": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "serverlessVersion": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServerlessAwsLambdaPrepareRollbackV2StepInfo": {
       "allOf": [
         {
@@ -15591,9 +15883,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "settings"
-          ],
           "properties": {
             "connectorRef": {
               "type": "string"
@@ -15671,16 +15960,6 @@
                   "type": "string",
                   "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
                   "minLength": 1
-                }
-              ]
-            },
-            "settings": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
-                },
-                {
-                  "type": "string"
                 }
               ]
             }
@@ -16549,7 +16828,7 @@
             },
             {
               "type": "string",
-              "pattern": "(<\\+.+>.*)",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
               "minLength": 1
             }
           ]
@@ -17548,6 +17827,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AwsCdkBootstrap"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsCdkBootstrapStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AwsCdkSynth"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsCdkSynthStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "AwsLambdaDeploy"
               }
             }
@@ -17956,22 +18267,6 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/CommandStepInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "CreatePR"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/CreatePRStepInfo"
               }
             }
           }
@@ -18668,6 +18963,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "RevertPR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RevertPRStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "RollbackCloudFunctionGenOne"
               }
             }
@@ -18836,6 +19147,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServerlessAwsLambdaDeployV2StepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ServerlessAwsLambdaPackageV2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServerlessAwsLambdaPackageV2StepInfo"
               }
             }
           }

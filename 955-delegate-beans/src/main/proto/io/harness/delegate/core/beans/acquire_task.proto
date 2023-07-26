@@ -15,10 +15,9 @@ option java_multiple_files = true;
   Top level request object for acquiring tasks
  */
 message AcquireTasksResponse {
-  string executionInfraId = 1;  // Id for the entire transaction
   // There will be only one payload per request at current stage of implementation.
   // But it's always good to keep API definition plural for future extensibility.
-  repeated TaskPayload task = 2;
+  repeated TaskPayload task = 1;
 }
 
 /*
@@ -37,11 +36,12 @@ message TaskPayload {
   // When delegate receives POST /execution/{runnerType},
   // delegate will invoke the handler of executing a task, in which it will call the corresponding runner's API to
   // execute the task.
-  string resourceUri = 2;
-  string resourceMethod = 3;
+  string eventType = 2;
+  string runnerType = 3;
   string log_token =
-      6;  // Token for log stream. It's not in the payload data because log token is assigned when acquire
-  InputData task_data = 7;   // binary data for task inputs.
-  InputData infra_data = 8;  // binary data for infra config
+      4;  // Token for log stream. It's not in the payload data because log token is assigned when acquire
+  InputData task_data = 5;      // binary data for task inputs.
+  InputData infra_data = 6;     // binary data for infra config
+  string executionInfraId = 7;  // Id for the execution infra to use
   // TODO: secrets + decryptableEntities
 }

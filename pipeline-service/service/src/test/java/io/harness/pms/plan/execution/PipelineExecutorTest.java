@@ -49,6 +49,7 @@ import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -133,9 +134,9 @@ public class PipelineExecutorTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testRunPipelineWithInputSetReferencesList() {
-    doReturn(runtimeInputYaml)
+    doReturn(YamlUtils.readAsJsonNode(runtimeInputYaml))
         .when(validateAndMergeHelper)
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+        .getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId, orgId, projectId, pipelineId,
             inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
 
     doReturn(pipelineEntity).when(executionHelper).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
@@ -144,8 +145,9 @@ public class PipelineExecutorTest extends CategoryTest {
 
     doReturn(execArgs)
         .when(executionHelper)
-        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-            Collections.emptyMap(), executionTriggerInfo, null, retryExecutionParameters, false, false, null, null);
+        .buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), Collections.emptyMap(),
+            executionTriggerInfo, null, retryExecutionParameters, false, false, null,
+            YamlUtils.readAsJsonNode(runtimeInputYaml));
 
     doReturn(planExecution)
         .when(executionHelper)
@@ -159,12 +161,13 @@ public class PipelineExecutorTest extends CategoryTest {
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
     verify(validateAndMergeHelper, times(1))
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+        .getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId, orgId, projectId, pipelineId,
             inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
     verify(executionHelper, times(1)).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
     verify(executionHelper, times(1))
-        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-            Collections.emptyMap(), executionTriggerInfo, null, retryExecutionParameters, false, false, null, null);
+        .buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), Collections.emptyMap(),
+            executionTriggerInfo, null, retryExecutionParameters, false, false, null,
+            YamlUtils.readAsJsonNode(runtimeInputYaml));
   }
 
   @Test
@@ -213,9 +216,9 @@ public class PipelineExecutorTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testRerunPipelineWithInputSetReferencesList() {
-    doReturn(runtimeInputYaml)
+    doReturn(YamlUtils.readAsJsonNode(runtimeInputYaml))
         .when(validateAndMergeHelper)
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+        .getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId, orgId, projectId, pipelineId,
             inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
 
     doReturn(pipelineEntity).when(executionHelper).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
@@ -224,9 +227,9 @@ public class PipelineExecutorTest extends CategoryTest {
 
     doReturn(execArgs)
         .when(executionHelper)
-        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-            Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
-            null, null);
+        .buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), Collections.emptyMap(),
+            executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null,
+            YamlUtils.readAsJsonNode(runtimeInputYaml));
 
     doReturn(planExecution)
         .when(executionHelper)
@@ -241,21 +244,21 @@ public class PipelineExecutorTest extends CategoryTest {
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
     verify(validateAndMergeHelper, times(1))
-        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+        .getMergedJsonNodeFromInputSetReferencesAndRuntimeInputJsonNode(accountId, orgId, projectId, pipelineId,
             inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
     verify(executionHelper, times(1)).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
     verify(executionHelper, times(1))
-        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-            Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
-            null, null);
+        .buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), Collections.emptyMap(),
+            executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null,
+            YamlUtils.readAsJsonNode(runtimeInputYaml));
   }
 
   private void doReturnStatementsForFreshRun(
       String originalExecutionId, boolean addValidateAndMergeHelperDoReturn, List<String> stageIdentifiers) {
     if (addValidateAndMergeHelperDoReturn) {
-      doReturn(runtimeInputYaml)
+      doReturn(YamlUtils.readAsJsonNode(runtimeInputYaml))
           .when(validateAndMergeHelper)
-          .getMergeInputSetFromPipelineTemplate(
+          .getMergeInputSetFromPipelineTemplateWithJsonNode(
               accountId, orgId, projectId, pipelineId, inputSetReferences, pipelineBranch, pipelineRepoId, null);
     }
 
@@ -265,14 +268,15 @@ public class PipelineExecutorTest extends CategoryTest {
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
       doReturn(execArgs)
           .when(executionHelper)
-          .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
-              null, null);
+          .buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), Collections.emptyMap(),
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null,
+              YamlUtils.readAsJsonNode(runtimeInputYaml));
     } else {
       doReturn(execArgs)
           .when(executionHelper)
-          .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null, null);
+          .buildExecutionArgs(pipelineEntity, moduleType, stageIdentifiers, Collections.emptyMap(),
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null,
+              YamlUtils.readAsJsonNode(runtimeInputYaml));
     }
 
     doReturn(planExecution)
@@ -284,7 +288,7 @@ public class PipelineExecutorTest extends CategoryTest {
       String originalExecutionId, boolean verifyValidateAndMergeHelper, List<String> stageIdentifiers) {
     if (verifyValidateAndMergeHelper) {
       verify(validateAndMergeHelper, times(1))
-          .getMergeInputSetFromPipelineTemplate(
+          .getMergeInputSetFromPipelineTemplateWithJsonNode(
               accountId, orgId, projectId, pipelineId, inputSetReferences, pipelineBranch, pipelineRepoId, null);
     }
 
@@ -293,13 +297,14 @@ public class PipelineExecutorTest extends CategoryTest {
     verify(executionHelper, times(1)).buildTriggerInfo(originalExecutionId);
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
       verify(executionHelper, times(1))
-          .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
-              Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
-              null, null);
+          .buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), Collections.emptyMap(),
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null,
+              YamlUtils.readAsJsonNode(runtimeInputYaml));
     } else {
       verify(executionHelper, times(1))
-          .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, stageIdentifiers, Collections.emptyMap(),
-              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null, null);
+          .buildExecutionArgs(pipelineEntity, moduleType, stageIdentifiers, Collections.emptyMap(),
+              executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false, null,
+              YamlUtils.readAsJsonNode(runtimeInputYaml));
     }
     verify(executionHelper, times(1))
         .startExecution(accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, null, null);

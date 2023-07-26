@@ -48,6 +48,7 @@ public class GitProviderDataObtainmentManagerTest extends CategoryTest {
     obtainerMap.put(WebhookSourceRepo.GITHUB.name(), scmDataObtainer);
     obtainerMap.put(WebhookSourceRepo.BITBUCKET.name(), scmDataObtainer);
     obtainerMap.put(WebhookSourceRepo.GITLAB.name(), scmDataObtainer);
+    obtainerMap.put(WebhookSourceRepo.HARNESS.name(), scmDataObtainer);
     gitProviderDataObtainmentManager = new GitProviderDataObtainmentManager(obtainerMap);
   }
 

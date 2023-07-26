@@ -16,8 +16,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class OutcomeExpressionConstants {
-  public final String CREATE_PR_OUTCOME = "createPROutcome";
   public final String MERGE_PR_OUTCOME = "mergePROutcome";
+  public final String MERGE_REVERT_PR_OUTCOME = "mergeRevertPROutcome";
+  public final String REVERT_PR_OUTCOME = "revertPROutcome";
   public final String SERVICE = "service";
   public final String ARTIFACTS = "artifacts";
   public final String ARTIFACT = "artifact";
@@ -38,6 +39,7 @@ public class OutcomeExpressionConstants {
   public final String TERRAFORM_CLOUD_CONFIG = "terraformCloudConfig";
   public final String DEPLOYMENT_INFO_OUTCOME = "deploymentInfoOutcome";
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
+  public final String HELM_DEPLOY_RELEASE_OUTCOME = "helmDeployRelease";
   public final String HELM_ROLLBACK_OUTCOME = "helmRollbackOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME = "serverlessAwsLambdaRollbackDataOutcome";
   public final String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2 =
@@ -87,5 +89,5 @@ public class OutcomeExpressionConstants {
   public final String SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME = "sshWinRmPrepareRollbackDataOutcome";
   public final String AWS_SAM_VALUES_YAML_DATA_OUTCOME = "AwsSamValuesYamlDataOutcome";
   public final String SERVERLESS_VALUES_YAML_DATA_OUTCOME = "ServerlessValuesYamlDataOutcome";
-  public final String SERVICE_VARIABLES_OUTCOME = "serviceVariables";
+  public final String SERVERLESS_V2_DIRECTORY_PATH_OUTCOME = "serverlessV2";
 }

@@ -29,7 +29,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(DX)
 @Schema(name = "UpsertWebhookRequest",
     description = "This is the view of the UpsertWebhookRequest entity defined in Harness")
-@OneOfField(fields = {"connectorIdentifierRef", "isHarnessCode"})
+@OneOfField(fields = {"connectorIdentifierRef", "isHarnessScm"})
 public class UpsertWebhookRequestDTO {
   @NotNull @NotEmpty String accountIdentifier;
   String orgIdentifier;
@@ -38,5 +38,5 @@ public class UpsertWebhookRequestDTO {
   @NotNull HookEventType hookEventType;
   String repoURL;
   String webhookSecretIdentifierRef;
-  Boolean isHarnessCode;
+  Boolean isHarnessScm;
 }

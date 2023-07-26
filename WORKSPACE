@@ -751,8 +751,8 @@ go_repository(
 go_repository(
     name = "com_github_wings_software_dlite",
     importpath = "github.com/wings-software/dlite",
-    sum = "h1:143lMB7T+9OqU9VYSpm71B4DzIONQOUvWWGsmreTpHI=",
-    version = "v0.0.0-20220915141325-eb8c295a2189",
+    sum = "h1:POHuMFn5nQpZjN2Ql1maNabDO6r/8ZOargRA6uzAOuo=",
+    version = "v1.0.0-rc.5",
 )
 
 go_repository(
@@ -3931,6 +3931,20 @@ go_repository(
     version = "v5.0.0",
 )
 
+go_repository(
+    name = "com_github_redis_go_redis_v9",
+    importpath = "github.com/redis/go-redis/v9",
+    sum = "h1:CuQcn5HIEeK7BgElubPP8CGtE0KakrnbBSTLjathl5o=",
+    version = "v9.0.5",
+)
+
+go_repository(
+    name = "com_github_go_redis_redismock_v9",
+    importpath = "github.com/go-redis/redismock/v9",
+    sum = "h1:mtHQi2l51lCmXIbTRTqb1EiHYe9tL5Yk5oorlSJJqR0=",
+    version = "v9.0.3",
+)
+
 rust_repositories(
     edition = "2018",
     version = "1.49.0",
@@ -4614,7 +4628,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.20.4")
+go_register_toolchains(version = "1.20.5")
 
 gazelle_dependencies()
 
@@ -5000,7 +5014,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.62-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.63-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:18.0.0",
@@ -5078,11 +5092,11 @@ plain_artifacts = [
     "net.minidev:accessors-smart:1.2",
     "net.minidev:json-smart:2.4.10",
     "net.openhft:affinity:3.2.2",
-    "net.openhft:chronicle-bytes:2.19.0",
-    "net.openhft:chronicle-core:2.19.0",
-    "net.openhft:chronicle-queue:5.19.2",
-    "net.openhft:chronicle-threads:2.17.27",
-    "net.openhft:chronicle-wire:2.17.71",
+    "net.openhft:chronicle-bytes:2.22.28",
+    "net.openhft:chronicle-core:2.22.35",
+    "net.openhft:chronicle-queue:5.22.28",
+    "net.openhft:chronicle-threads:2.22.16",
+    "net.openhft:chronicle-wire:2.22.22",
     "net.openhft:compiler:2.3.4",
     "net.rcarz:jira-client:0.9-SNAPSHOT",
     "net.redhogs.cronparser:cron-parser:2.6",
@@ -5594,7 +5608,8 @@ maven_install(
 maven_install(
     name = "batch",
     artifacts = [
-        "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",
+        "com.fasterxml.jackson.core:jackson-databind:2.15.1",
+        "com.google.guava:guava:32.0.1-jre",
         "com.azure:azure-core:1.29.1",
         "com.azure:azure-identity:1.5.0",
         "com.azure:azure-storage-blob:12.16.0",
@@ -5615,6 +5630,7 @@ maven_install(
 maven_install(
     name = "ce-nextgen",
     artifacts = [
+        "com.google.guava:guava:32.0.1-jre",
         "com.azure:azure-core:1.29.1",
         "com.azure:azure-core-management:1.6.2",
         "com.azure:azure-identity:1.5.0",

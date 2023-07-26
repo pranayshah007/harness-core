@@ -17,6 +17,7 @@ java_library(
         "//:lombok",
         "//490-ce-commons:module",
         "//940-feature-flag:module",
+        "//950-telemetry:module",
         "//956-feature-flag-beans:module",
         "//960-persistence:module",
         "//980-commons:module",
@@ -24,6 +25,7 @@ java_library(
         "@maven//:com_healthmarketscience_sqlbuilder_sqlbuilder",
         "@maven//:org_jfree_jfreechart",
         "@maven//:org_springframework_spring_context",
+        "@maven//:org_yaml_snakeyaml",
     ],
 )
 

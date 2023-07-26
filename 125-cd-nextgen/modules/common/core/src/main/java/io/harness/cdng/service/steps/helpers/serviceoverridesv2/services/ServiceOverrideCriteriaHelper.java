@@ -7,6 +7,7 @@
 
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
 
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 
 import javax.validation.constraints.NotNull;
@@ -27,6 +28,7 @@ public class ServiceOverrideCriteriaHelper {
     criteria.and(ACCOUNT_ID).is(accountId);
     criteria.and(ORG_ID).is(orgIdentifier);
     criteria.and(PROJECT_ID).is(projectIdentifier);
+    criteria.and(NGServiceOverridesEntity.NGServiceOverridesEntityKeys.spec).exists(true).ne(null);
 
     if (type != null) {
       criteria.and(TYPE).is(type);

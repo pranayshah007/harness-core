@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidArgumentsException;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
@@ -70,6 +71,10 @@ public class NGDateUtils {
     } catch (DateTimeParseException e) {
       throw new InvalidArgumentsException(format("Invalid date format, pattern: %s, date: %s", datePattern, date));
     }
+  }
+
+  public static LocalDate getCurrentMonthFirstDay() {
+    return LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1);
   }
 
   // ----------------------- PRIVATE METHODS ---------------------------

@@ -8,6 +8,9 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_BACKEND_CONFIG_FILE;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_CONFIG_FILES;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -51,6 +54,7 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
@@ -58,7 +62,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -127,6 +133,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
     TerraformTaskNGParametersBuilder builder =
         getTerraformTaskNGParametersBuilderInline(ambiance, stepParameters, stepElementParameters);
     terraformPassThroughData.setTerraformTaskNGParametersBuilder(builder);
+    terraformPassThroughData.setOriginalStepVarFiles(spec.getVarFiles());
 
     if (hasGitVarFiles || hasS3VarFiles) {
       return helper.fetchRemoteVarFiles(terraformPassThroughData, varFilesInfo, ambiance, stepElementParameters,
@@ -155,7 +162,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
       Ambiance ambiance, TerraformDestroyStepParameters stepParameters, StepElementParameters stepElementParameters) {
     TerraformConfig terraformConfig = helper.getLastSuccessfulApplyConfig(stepParameters, ambiance);
     List<TerraformVarFileInfo> varFilesInfo =
-        helper.prepareTerraformVarFileInfo(terraformConfig.getVarFileConfigs(), ambiance);
+        helper.prepareTerraformVarFileInfo(terraformConfig.getVarFileConfigs(), ambiance, true);
     boolean hasGitVarFiles = helper.hasGitVarFiles(varFilesInfo);
     boolean hasS3VarFiles = helper.hasS3VarFiles(varFilesInfo);
 
@@ -165,6 +172,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
     TerraformTaskNGParametersBuilder builder =
         getTerraformTaskNGParametersBuilderInheritFromApply(ambiance, stepParameters, stepElementParameters);
     terraformPassThroughData.setTerraformTaskNGParametersBuilder(builder);
+    terraformPassThroughData.setOriginalVarFileConfigs(terraformConfig.getVarFileConfigs());
 
     if (hasGitVarFiles || hasS3VarFiles) {
       return helper.fetchRemoteVarFiles(terraformPassThroughData, varFilesInfo, ambiance, stepElementParameters,
@@ -199,7 +207,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     TerraformDestroyStepParameters stepParameters = (TerraformDestroyStepParameters) stepElementParameters.getSpec();
@@ -209,7 +217,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     log.info("Handling Task Result With Security Context for the Apply Step");
@@ -259,6 +267,9 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
             WingsException.USER);
     }
 
+    Map<String, String> outputKeys =
+        getGitRevisionsOutput(parameters, terraformTaskNGResponse, terraformPassThroughData);
+
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
       terraformConfigDAL.clearTerraformConfig(ambiance,
           helper.generateFullIdentifier(
@@ -268,6 +279,8 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
               ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
+
     return stepResponseBuilder.build();
   }
 
@@ -349,7 +362,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
                 ? helper.prepareTerraformConfigFileInfo(inheritOutput.getFileStorageConfigDTO(), ambiance)
                 : helper.getFileStoreFetchFilesConfig(
                     inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
-        .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
+        .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance, true))
         .backendConfig(inheritOutput.getBackendConfig())
         .backendConfigFileInfo(
             helper.prepareTerraformBackendConfigFileInfo(inheritOutput.getBackendConfigurationFileConfig(), ambiance))
@@ -385,7 +398,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
     TerraformConfig terraformConfig = helper.getLastSuccessfulApplyConfig(stepParameters, ambiance);
 
     builder.workspace(terraformConfig.getWorkspace())
-        .varFileInfos(helper.prepareTerraformVarFileInfo(terraformConfig.getVarFileConfigs(), ambiance))
+        .varFileInfos(helper.prepareTerraformVarFileInfo(terraformConfig.getVarFileConfigs(), ambiance, true))
         .backendConfig(terraformConfig.getBackendConfig())
         .backendConfigFileInfo(
             helper.prepareTerraformBackendConfigFileInfo(terraformConfig.getBackendConfigFileConfig(), ambiance))
@@ -411,5 +424,25 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
     ParameterField<Boolean> skipTerraformRefreshCommand = stepParameters.getConfiguration().getIsSkipTerraformRefresh();
     builder.skipTerraformRefresh(ParameterFieldHelper.getBooleanParameterFieldValue(skipTerraformRefreshCommand));
     return builder;
+  }
+
+  @VisibleForTesting
+  @NotNull
+  Map<String, String> getGitRevisionsOutput(TerraformDestroyStepParameters parameters,
+      TerraformTaskNGResponse terraformTaskNGResponse, TerraformPassThroughData passThroughData) {
+    Map<String, String> outputKeys = new HashMap<>();
+    if (isNotEmpty(terraformTaskNGResponse.getCommitIdForConfigFilesMap())) {
+      outputKeys.put(TF_CONFIG_FILES, terraformTaskNGResponse.getCommitIdForConfigFilesMap().get(TF_CONFIG_FILES));
+      outputKeys.put(
+          TF_BACKEND_CONFIG_FILE, terraformTaskNGResponse.getCommitIdForConfigFilesMap().get(TF_BACKEND_CONFIG_FILE));
+    }
+    if ((parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+             TerraformStepConfigurationType.INLINE.getDisplayName())
+            || parameters.getConfiguration().getType().getDisplayName().equalsIgnoreCase(
+                TerraformStepConfigurationType.INHERIT_FROM_APPLY.getDisplayName()))
+        && isNotEmpty(passThroughData.getFetchedCommitIdsMap())) {
+      outputKeys.putAll(passThroughData.getFetchedCommitIdsMap());
+    }
+    return outputKeys;
   }
 }

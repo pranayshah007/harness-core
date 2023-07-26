@@ -28,7 +28,9 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 
@@ -50,29 +52,33 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
   private final EnvironmentService environmentService;
   private final ServiceEntityService serviceEntityService;
   private final ServiceOverrideService serviceOverrideService;
+  private final ServiceOverridesServiceV2 serviceOverridesServiceV2;
   private final InfrastructureEntityService infraService;
   private final ClusterService clusterService;
   private final EnvironmentGroupService environmentGroupService;
 
   private final InstanceSyncPerpetualTaskInfoService instanceSyncPerpetualTaskInfoService;
   private final InfrastructureMappingService infrastructureMappingService;
+  private final ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
 
   @Inject
   public ProjectEntityCRUDStreamListener(ProjectService projectService, EnvironmentService environmentService,
-      ServiceOverrideService serviceOverrideService, InfrastructureEntityService infraService,
-      ServiceEntityService serviceEntityService, ClusterService clusterService,
-      InfrastructureMappingService infrastructureMappingService,
+      ServiceOverrideService serviceOverrideService, ServiceOverridesServiceV2 serviceOverridesServiceV2,
+      InfrastructureEntityService infraService, ServiceEntityService serviceEntityService,
+      ClusterService clusterService, InfrastructureMappingService infrastructureMappingService,
       InstanceSyncPerpetualTaskInfoService instanceSyncPerpetualTaskInfoService,
-      EnvironmentGroupService environmentGroupService) {
+      EnvironmentGroupService environmentGroupService, ServiceOverrideV2ValidationHelper overrideV2ValidationHelper) {
     this.projectService = projectService;
     this.environmentService = environmentService;
     this.serviceOverrideService = serviceOverrideService;
+    this.serviceOverridesServiceV2 = serviceOverridesServiceV2;
     this.serviceEntityService = serviceEntityService;
     this.infraService = infraService;
     this.clusterService = clusterService;
     this.environmentGroupService = environmentGroupService;
     this.infrastructureMappingService = infrastructureMappingService;
     this.instanceSyncPerpetualTaskInfoService = instanceSyncPerpetualTaskInfoService;
+    this.overrideV2ValidationHelper = overrideV2ValidationHelper;
   }
 
   @Override
@@ -145,8 +151,12 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
         processQuietly(() -> clusterService.deleteAllFromProj(accountIdentifier, orgIdentifier, projIdentifier));
     boolean serviceDeleted = processQuietly(
         () -> serviceEntityService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
-    boolean serviceOverridesDeleted = processQuietly(
-        () -> serviceOverrideService.deleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
+    boolean isOverridesV2Enabled =
+        overrideV2ValidationHelper.isOverridesV2Enabled(accountIdentifier, orgIdentifier, projIdentifier);
+    boolean serviceOverridesDeleted = processQuietly(()
+                                                         -> isOverridesV2Enabled
+            ? (serviceOverridesServiceV2.deleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier))
+            : (serviceOverrideService.deleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier)));
     boolean infraMappingDeleted = processQuietly(
         () -> infrastructureMappingService.deleteAllFromProj(accountIdentifier, orgIdentifier, projIdentifier));
 
@@ -209,8 +219,12 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
     // delete org level clusters when clusters are supported at org/account level
     boolean serviceDeleted =
         processQuietly(() -> serviceEntityService.forceDeleteAllInOrg(accountIdentifier, orgIdentifier));
-    boolean serviceOverridesDeleted =
-        processQuietly(() -> serviceOverrideService.deleteAllInOrg(accountIdentifier, orgIdentifier));
+    boolean isOverridesV2Enabled =
+        overrideV2ValidationHelper.isOverridesV2Enabled(accountIdentifier, orgIdentifier, null);
+    boolean serviceOverridesDeleted = processQuietly(()
+                                                         -> isOverridesV2Enabled
+            ? (serviceOverridesServiceV2.deleteAllInOrg(accountIdentifier, orgIdentifier))
+            : (serviceOverrideService.deleteAllInOrg(accountIdentifier, orgIdentifier)));
     boolean envGroupsDeleted =
         processQuietly(() -> environmentGroupService.deleteAllInOrg(accountIdentifier, orgIdentifier));
 

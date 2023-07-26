@@ -24,12 +24,16 @@ import org.apache.commons.text.StringEscapeUtils;
 @UtilityClass
 @Slf4j
 public class ApiCallLogUtils {
-  public static String requestBodyToString(final Request request) {
+  public static String requestBodyToString(final Request request, boolean isEscapeWhitespace) {
     try {
       final Request copy = request.newBuilder().build();
       final Buffer buffer = new Buffer();
       Objects.requireNonNull(copy.body()).writeTo(buffer);
-      return StringEscapeUtils.unescapeJava(buffer.readUtf8());
+      if (isEscapeWhitespace) {
+        return StringEscapeUtils.unescapeJson(buffer.readUtf8());
+      } else {
+        return buffer.readUtf8();
+      }
     } catch (final IOException e) {
       return "cannot parse the byteArray Request Body";
     }
@@ -47,5 +51,16 @@ public class ApiCallLogUtils {
     } catch (Exception ignored) {
     }
     return fieldType;
+  }
+
+  public static boolean isFormEncoded(Request request) {
+    boolean isFormEncoded = false;
+    try {
+      String mediaType = Objects.requireNonNull(Objects.requireNonNull(request.body()).contentType()).toString();
+      isFormEncoded =
+          Pattern.compile(Pattern.quote("x-www-form-urlencoded"), Pattern.CASE_INSENSITIVE).matcher(mediaType).find();
+    } catch (Exception ignored) {
+    }
+    return isFormEncoded;
   }
 }

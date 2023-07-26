@@ -8,6 +8,8 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_BACKEND_CONFIG_FILE;
+import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_CONFIG_FILES;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_ENCRYPTED_JSON_OUTPUT_NAME;
 import static io.harness.rule.OwnerRule.VLICA;
 
@@ -73,6 +75,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -915,8 +918,12 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
 
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commitIdForConfigFilesMap(commitIdForConfigFilesMap)
                                                           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                           .unitProgressData(unitProgressData)
                                                           .build();
@@ -926,6 +933,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
 
     StepResponse stepResponse = terraformApplyStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
+
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
   }
@@ -972,8 +980,11 @@ public class TerraformApplyStepV2Test extends CategoryTest {
 
     StepResponse stepResponse = terraformApplyStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
+
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -1106,8 +1117,11 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
-
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
     TerraformTaskNGResponse terraformTaskNGResponseFailure = TerraformTaskNGResponse.builder()
+                                                                 .commitIdForConfigFilesMap(commitIdForConfigFilesMap)
                                                                  .commandExecutionStatus(CommandExecutionStatus.FAILURE)
                                                                  .unitProgressData(unitProgressData)
                                                                  .build();
@@ -1121,6 +1135,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
 
     TerraformTaskNGResponse terraformTaskNGResponseRunning = TerraformTaskNGResponse.builder()
+                                                                 .commitIdForConfigFilesMap(commitIdForConfigFilesMap)
                                                                  .commandExecutionStatus(CommandExecutionStatus.RUNNING)
                                                                  .unitProgressData(unitProgressData)
                                                                  .build();
@@ -1130,6 +1145,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
 
     TerraformTaskNGResponse terraformTaskNGResponseQueued = TerraformTaskNGResponse.builder()
+                                                                .commitIdForConfigFilesMap(commitIdForConfigFilesMap)
                                                                 .commandExecutionStatus(CommandExecutionStatus.QUEUED)
                                                                 .unitProgressData(unitProgressData)
                                                                 .build();
@@ -1311,7 +1327,11 @@ public class TerraformApplyStepV2Test extends CategoryTest {
 
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commitIdForConfigFilesMap(commitIdForConfigFilesMap)
                                                           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                           .unitProgressData(unitProgressData)
                                                           .outputs(tfJsonOutput)
@@ -1361,11 +1381,14 @@ public class TerraformApplyStepV2Test extends CategoryTest {
         .thenReturn(new HashMap<>() {
           { put(TF_ENCRYPTED_JSON_OUTPUT_NAME, "<+secrets.getValue(\"account.test-json-1\")>"); }
         });
-
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
     when(cdFeatureFlagHelper.isEnabled(any(), eq(CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT))).thenReturn(true);
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commitIdForConfigFilesMap(commitIdForConfigFilesMap)
                                                           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                           .unitProgressData(unitProgressData)
                                                           .outputs(tfJsonOutput)

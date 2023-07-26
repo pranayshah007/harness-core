@@ -9,6 +9,9 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
@@ -35,12 +38,14 @@ import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
 import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.winrm.ArtifactDownloadHandler;
 import io.harness.delegate.utils.ArtifactoryUtils;
+import io.harness.delegate.utils.GithubPackageUtils;
 import io.harness.delegate.utils.NexusVersion;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -74,38 +79,24 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
     BaseScriptExecutor executor =
         getExecutor(parameters, commandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
     LogCallback logCallback = executor.getLogCallback();
-    CommandExecutionStatus commandExecutionStatus = downloadArtifact(parameters, logCallback, commandUnit, executor);
 
-    if (FAILURE == commandExecutionStatus) {
-      logCallback.saveExecutionLog("Failed to download artifact.", ERROR, commandExecutionStatus);
+    try {
+      CommandExecutionStatus commandExecutionStatus = downloadArtifact(parameters, logCallback, commandUnit, executor);
+      closeLogStreamEmptyMsg(logCallback, commandExecutionStatus);
+      log.info("Download artifact command execution returned status: {}", commandExecutionStatus);
+      return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
+    } catch (Exception e) {
+      closeLogStreamWithError(logCallback);
+      throw e;
     }
-    logCallback.saveExecutionLog(
-        "Command execution finished with status " + commandExecutionStatus, INFO, commandExecutionStatus);
-
-    log.info("Download artifact command execution returned status: {}", commandExecutionStatus);
-    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 
   private CommandExecutionStatus downloadArtifact(CommandTaskParameters commandTaskParameters, LogCallback logCallback,
       NgCommandUnit commandUnit, BaseScriptExecutor executor) {
     log.info("About to download artifact");
     SshWinRmArtifactDelegateConfig artifactDelegateConfig = commandTaskParameters.getArtifactDelegateConfig();
-    if (artifactDelegateConfig instanceof SkipCopyArtifactDelegateConfig) {
-      throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
-          format(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT_EXPLANATION, artifactDelegateConfig.getArtifactType()),
-          new WinRmCommandExecutionException(
-              format(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT, artifactDelegateConfig.getArtifactType())));
-    }
 
-    if (artifactDelegateConfig instanceof CustomArtifactDelegateConfig) {
-      throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
-          DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION,
-          new WinRmCommandExecutionException(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT));
-    }
-
-    if (artifactDelegateConfig == null) {
-      throw new InvalidRequestException("Artifact delegate config not found.");
-    }
+    verifyIfDownloadIsSupported(artifactDelegateConfig);
 
     logCallback.saveExecutionLog(format("Begin execution of command: %s", commandUnit.getName()), INFO);
     logCallback.saveExecutionLog("Downloading artifact from " + getArtifactType(artifactDelegateConfig) + " to "
@@ -130,6 +121,39 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
       return executor.executeCommandString(command);
     } catch (Exception e) {
       return FAILURE;
+    }
+  }
+
+  private void verifyIfDownloadIsSupported(SshWinRmArtifactDelegateConfig artifactDelegateConfig) {
+    if (artifactDelegateConfig == null) {
+      throw new InvalidRequestException("Artifact delegate config not found.");
+    }
+
+    if (artifactDelegateConfig instanceof SkipCopyArtifactDelegateConfig) {
+      throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
+          format(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT_EXPLANATION, artifactDelegateConfig.getArtifactType()),
+          new WinRmCommandExecutionException(
+              format(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_ARTIFACT, artifactDelegateConfig.getArtifactType())));
+    }
+
+    if (artifactDelegateConfig instanceof CustomArtifactDelegateConfig) {
+      throw NestedExceptionUtils.hintWithExplanationException(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
+          DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION,
+          new WinRmCommandExecutionException(DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT));
+    }
+
+    if (artifactDelegateConfig instanceof GithubPackagesArtifactDelegateConfig) {
+      GithubPackagesArtifactDelegateConfig githubPackagesArtifactDelegateConfig =
+          (GithubPackagesArtifactDelegateConfig) artifactDelegateConfig;
+      if (!GithubPackageUtils.MAVEN_PACKAGE_TYPE.equals(githubPackagesArtifactDelegateConfig.getPackageType())) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_HINT,
+            format(COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_EXPLANATION,
+                githubPackagesArtifactDelegateConfig.getPackageType()),
+            new WinRmCommandExecutionException(
+                format(COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_FAILED,
+                    githubPackagesArtifactDelegateConfig.getPackageType())));
+      }
     }
   }
 

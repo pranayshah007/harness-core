@@ -345,7 +345,7 @@ public abstract class State {
   }
 
   public void parseProperties(Map<String, Object> properties) {
-    MapperUtils.mapObject(properties, this);
+    MapperUtils.mapProperties(properties, this);
   }
 
   protected void renderDelegateTask(

@@ -10,6 +10,7 @@ package io.harness.cvng.core.services.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.FeatureName;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.DatadogLogDataCollectionInfo;
@@ -28,31 +29,45 @@ import io.harness.cvng.core.beans.datadog.DatadogDashboardDetail;
 import io.harness.cvng.core.beans.datadog.MetricTagResponseDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.DatadogService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.exception.OnboardingException;
+import io.harness.cvng.utils.DatadogQueryUtils;
 import io.harness.delegate.beans.connector.datadog.DatadogConnectorDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PageUtils;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import java.lang.reflect.Type;
+import java.net.URL;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class DatadogServiceImpl implements DatadogService {
   public static final int MAX_ACTIVE_METRICS_COUNT = 1000;
   public static final int MAX_METRIC_TAGS_COUNT = 1000;
+  @Inject private FeatureFlagService featureFlagService;
+  public static final URL DATADOG_SAMPLE_DSL_PATH =
+      MetricPackServiceImpl.class.getResource("/datadog/dsl/datadog-time-series-points.datacollection");
+
+  public static final URL DATADOG_SAMPLE_V2_DSL_PATH =
+      MetricPackServiceImpl.class.getResource("/datadog/dsl/datadog-time-series-points-v2.datacollection");
 
   @Inject private OnboardingService onboardingService;
   @Inject private Clock clock;
@@ -124,19 +139,36 @@ public class DatadogServiceImpl implements DatadogService {
         .collect(Collectors.toList());
   }
 
+  @SneakyThrows
   @Override
   public List<TimeSeriesSampleDTO> getTimeSeriesPoints(
       ProjectParams projectParams, String connectorIdentifier, String query, String tracingId) {
     Instant now = DateTimeUtils.roundDownTo1MinBoundary(Instant.now());
-
-    DataCollectionRequest<DatadogConnectorDTO> request = DatadogTimeSeriesPointsRequest.builder()
-                                                             .type(DataCollectionRequestType.DATADOG_TIME_SERIES_POINTS)
-                                                             .from(now.minus(Duration.ofMinutes(60)).getEpochSecond())
-                                                             .to(now.getEpochSecond())
-                                                             .query(query)
-                                                             .build();
+    DataCollectionRequest<DatadogConnectorDTO> request;
+    if (featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureName.SRM_DATADOG_METRICS_FORMULA_SUPPORT.name())) {
+      Pair<String, List<String>> formulaQueriesPair = DatadogQueryUtils.processCompositeQuery(query, null, false);
+      String formula = formulaQueriesPair.getLeft();
+      List<String> formulaQueries = formulaQueriesPair.getRight();
+      request = DatadogTimeSeriesPointsRequest.builder()
+                    .type(DataCollectionRequestType.DATADOG_TIME_SERIES_POINTS)
+                    .from(now.minus(1, ChronoUnit.HOURS).toEpochMilli())
+                    .to(now.toEpochMilli())
+                    .DSL(Resources.toString(DATADOG_SAMPLE_V2_DSL_PATH, Charsets.UTF_8))
+                    .formula(formula)
+                    .formulaQueriesList(formulaQueries)
+                    .query(query)
+                    .build();
+    } else {
+      request = DatadogTimeSeriesPointsRequest.builder()
+                    .type(DataCollectionRequestType.DATADOG_TIME_SERIES_POINTS)
+                    .from(now.minus(1, ChronoUnit.HOURS).getEpochSecond())
+                    .to(now.getEpochSecond())
+                    .DSL(Resources.toString(DATADOG_SAMPLE_DSL_PATH, Charsets.UTF_8))
+                    .query(query)
+                    .build();
+    }
     Type type = new TypeToken<List<TimeSeriesSampleDTO>>() {}.getType();
-
     return performRequestAndGetDataResult(request, type, projectParams, connectorIdentifier, tracingId);
   }
 

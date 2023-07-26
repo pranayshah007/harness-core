@@ -145,13 +145,17 @@ public class TemplateMergeServiceHelper {
               templateIdentifierRef.getIdentifier(), versionLabel, false, loadFromCache);
     }
     if (!templateEntity.isPresent()) {
-      throw new NGTemplateException(String.format(
-          "The template identifier %s and version label %s does not exist. Could not replace this template",
-          templateIdentifierRef.getIdentifier(), versionLabel));
+      throwTemplateNotFoundException(templateIdentifierRef.getIdentifier(), versionLabel);
     }
     TemplateEntity template = templateEntity.get();
     templateCacheMap.put(templateUniqueIdentifier, template);
     return template;
+  }
+
+  private void throwTemplateNotFoundException(String templateIdentifier, String versionLabel) {
+    throw new NGTemplateException(String.format(
+        "The template identifier [%s] and version label [%s] does not exist. Please check identifier and version is correct and exists",
+        templateIdentifier, versionLabel));
   }
 
   // Checks if the current Json node is a Template node with fieldName as TEMPLATE and Non-null Value

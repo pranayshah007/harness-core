@@ -1,0 +1,21 @@
+import bazelrc.common
+
+# Add properties that are specific for ci build system
+
+startup --output_base=/tmp
+startup --max_idle_secs 5
+
+build --announce_rc
+
+# TODO: remove from here when remote cache is enabled for developers
+build --remote_cache=grpcs://harness-bazel-cache.qa.harness.io:9092
+build --tls_client_certificate=/tmp/client.crt
+build --tls_client_key=/tmp/client.pem
+build --tls_certificate=/tmp/ca.crt
+build --experimental_inmemory_dotd_files
+build --experimental_inmemory_jdeps_files
+build --nobuild_runfile_links
+
+test --flaky_test_attempts=1
+
+--sandbox_base=/run/shm

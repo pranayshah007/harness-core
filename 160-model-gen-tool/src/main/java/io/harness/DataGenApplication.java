@@ -54,7 +54,6 @@ import io.harness.serializer.ManagerRegistrars;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateTokenService;
-import io.harness.springdata.SpringPersistenceModule;
 import io.harness.stream.AtmosphereBroadcaster;
 import io.harness.stream.StreamModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
@@ -147,7 +146,6 @@ public class DataGenApplication extends Application<MainConfiguration> {
         return new ThreadLocalUserProvider();
       }
     });
-    modules.add(new SpringPersistenceModule());
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -203,7 +201,6 @@ public class DataGenApplication extends Application<MainConfiguration> {
       }
     });
     modules.add(StreamModule.getInstance());
-
     modules.add(new AbstractModule() {
       @Override
       protected void configure() {

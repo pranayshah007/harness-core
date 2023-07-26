@@ -14,8 +14,8 @@ if [[ ( -z "$DISABLE_CLIENT_TOOLS") || ("$DISABLE_CLIENT_TOOLS" = "false") ]]; t
   && curl -s -L -o client-tools/kubectl/v1.19.2/kubectl https://app.harness.io/public/shared/tools/kubectl/release/v1.19.2/bin/linux/$ARCH/kubectl \
   && mkdir -m 777 -p client-tools/go-template/v0.4 \
   && curl -s -L -o client-tools/go-template/v0.4/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4/bin/linux/$ARCH/go-template \
-  && mkdir -m 777 -p client-tools/go-template/v0.4.2 \
-  && curl -s -L -o client-tools/go-template/v0.4.2/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4.2/bin/linux/$ARCH/go-template \
+  && mkdir -m 777 -p client-tools/go-template/v0.4.3 \
+  && curl -s -L -o client-tools/go-template/v0.4.3/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4.3/bin/linux/$ARCH/go-template \
   && mkdir -m 777 -p client-tools/harness-pywinrm/v0.4-dev \
   && curl -s -L -o client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm https://app.harness.io/public/shared/tools/harness-pywinrm/release/v0.4-dev/bin/linux/$ARCH/harness-pywinrm \
   && mkdir -m 777 -p client-tools/helm/v2.13.1 \
@@ -40,11 +40,11 @@ if [[ ( -z "$DISABLE_CLIENT_TOOLS") || ("$DISABLE_CLIENT_TOOLS" = "false") ]]; t
   && curl -s -L -o client-tools/kustomize/v3.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v3.5.4/bin/linux/$ARCH/kustomize \
   && mkdir -m 777 -p client-tools/kustomize/v4.0.0 \
   && curl -s -L -o client-tools/kustomize/v4.0.0/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.0.0/bin/linux/$ARCH/kustomize \
-  && mkdir -m 777 -p client-tools/scm/f1024c6b \
-  && curl -s -L -o client-tools/scm/f1024c6b/scm https://app.harness.io/public/shared/tools/scm/release/f1024c6b/bin/linux/$ARCH/scm
+  && mkdir -m 777 -p client-tools/scm/b4486350 \
+  && curl -s -L -o client-tools/scm/b4486350/scm https://app.harness.io/public/shared/tools/scm/release/b4486350/bin/linux/$ARCH/scm
 else
   echo "Client tools are disabled"
   echo "Installing scm binary"
-  mkdir -m 777 -p client-tools/scm/f1024c6b \
-  && curl -s -L -o client-tools/scm/f1024c6b/scm https://app.harness.io/public/shared/tools/scm/release/f1024c6b/bin/linux/$ARCH/scm
+  mkdir -m 777 -p client-tools/scm/b4486350 \
+  && curl -s -L -o client-tools/scm/b4486350/scm https://app.harness.io/public/shared/tools/scm/release/b4486350/bin/linux/$ARCH/scm
 fi

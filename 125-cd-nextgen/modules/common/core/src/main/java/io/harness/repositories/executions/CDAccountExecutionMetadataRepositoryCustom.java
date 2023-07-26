@@ -13,4 +13,5 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface CDAccountExecutionMetadataRepositoryCustom {
   void updateAccountExecutionMetadata(String accountId, Long endTs);
+  boolean deleteForAccount(String accountId);
 }

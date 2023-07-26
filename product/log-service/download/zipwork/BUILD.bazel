@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "zipwork",
+    srcs = ["zipwork.go"],
+    importpath = "github.com/harness/harness-core/product/log-service/download/zipwork",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//product/log-service/cache",
+        "//product/log-service/config",
+        "//product/log-service/entity",
+        "//product/log-service/logger",
+        "//product/log-service/queue",
+        "//product/log-service/store",
+        "@org_golang_x_sync//errgroup",
+    ],
+)

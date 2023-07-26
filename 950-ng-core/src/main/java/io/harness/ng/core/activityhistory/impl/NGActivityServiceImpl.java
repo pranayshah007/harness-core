@@ -17,6 +17,7 @@ import io.harness.EntityType;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.activityhistory.NGActivityQueryCriteriaHelper;
 import io.harness.ng.core.activityhistory.NGActivityStatus;
+import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckSummaryDTO;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckSummaryDTO.ConnectivityCheckSummaryKeys;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;
@@ -30,6 +31,7 @@ import io.harness.repositories.activityhistory.NGActivityRepository;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -61,11 +63,14 @@ public class NGActivityServiceImpl implements NGActivityService {
   @Override
   public Page<NGActivityDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, long start, long end, NGActivityStatus status,
-      EntityType referredEntityType, EntityType referredByEntityType) {
-    List<NGActivityDTO> allActivitiesOtherThanConnectivityCheck =
-        getAllActivitiesOtherThanConnectivityCheck(page, size, accountIdentifier, orgIdentifier, projectIdentifier,
-            referredEntityIdentifier, start, end, status, referredEntityType, referredByEntityType);
-    return new PageImpl<>(allActivitiesOtherThanConnectivityCheck);
+      EntityType referredEntityType, EntityType referredByEntityType, Set<NGActivityType> ngActivityTypes) {
+    Criteria criteria = createCriteriaForEntityUsageActivity(accountIdentifier, orgIdentifier, projectIdentifier,
+        referredEntityIdentifier, status, start, end, referredEntityType, referredByEntityType, ngActivityTypes);
+    Pageable pageable =
+        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ActivityHistoryEntityKeys.activityTime));
+    List<NGActivity> activities = activityRepository.findAll(criteria, pageable).getContent();
+    return new PageImpl<>(activities.stream().map(activityEntityToDTOMapper::writeDTO).collect(Collectors.toList()),
+        pageable, activities.size());
   }
 
   @Override
@@ -110,17 +115,6 @@ public class NGActivityServiceImpl implements NGActivityService {
     return criteria;
   }
 
-  private List<NGActivityDTO> getAllActivitiesOtherThanConnectivityCheck(int page, int size, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String referredEntityIdentifier, long start, long end,
-      NGActivityStatus status, EntityType referredEntityType, EntityType referredByEntityType) {
-    Criteria criteria = createCriteriaForEntityUsageActivity(accountIdentifier, orgIdentifier, projectIdentifier,
-        referredEntityIdentifier, status, start, end, referredEntityType, referredByEntityType);
-    Pageable pageable =
-        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ActivityHistoryEntityKeys.activityTime));
-    List<NGActivity> activities = activityRepository.findAll(criteria, pageable).getContent();
-    return activities.stream().map(activityEntityToDTOMapper::writeDTO).collect(Collectors.toList());
-  }
-
   private void populateActivityStatusCriteria(Criteria criteria, NGActivityStatus status) {
     if (status != null) {
       criteria.and(ActivityHistoryEntityKeys.activityStatus).is(status);
@@ -129,15 +123,15 @@ public class NGActivityServiceImpl implements NGActivityService {
 
   private Criteria createCriteriaForEntityUsageActivity(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, NGActivityStatus status, long startTime, long endTime,
-      EntityType referredEntityType, EntityType referredByEntityType) {
+      EntityType referredEntityType, EntityType referredByEntityType, Set<NGActivityType> ngActivityTypes) {
     Criteria criteria = new Criteria();
-    criteria.and(ActivityHistoryEntityKeys.type).ne(String.valueOf(CONNECTIVITY_CHECK));
     ngActivityQueryCriteriaHelper.populateEntityFQNFilterInCriteria(
         criteria, accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier);
     ngActivityQueryCriteriaHelper.addReferredEntityTypeCriteria(criteria, referredEntityType);
     ngActivityQueryCriteriaHelper.addReferredByEntityTypeCriteria(criteria, referredByEntityType);
     populateActivityStatusCriteria(criteria, status);
     ngActivityQueryCriteriaHelper.addTimeFilterInTheCriteria(criteria, startTime, endTime);
+    ngActivityQueryCriteriaHelper.addActivityTypeCriteria(criteria, ngActivityTypes);
     return criteria;
   }
 

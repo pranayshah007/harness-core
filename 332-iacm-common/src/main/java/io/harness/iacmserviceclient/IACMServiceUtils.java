@@ -14,8 +14,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.entities.Execution;
 import io.harness.beans.entities.IACMServiceConfig;
+import io.harness.beans.entities.ResourceResponseData;
 import io.harness.beans.entities.TerraformEndpointsData;
 import io.harness.beans.entities.Workspace;
+import io.harness.beans.entities.WorkspaceOutput;
 import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.exception.GeneralException;
 import io.harness.ng.core.NGAccess;
@@ -33,6 +35,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -115,7 +120,7 @@ public class IACMServiceUtils {
 
   @NotNull
   public String getIACMServiceToken(String accountID) {
-    log.info("Initiating token request to IACM service: {}", this.iacmServiceConfig.getBaseUrl());
+    log.info("Initiating token request to IACM service: " + this.iacmServiceConfig.getBaseUrl());
     Response<JsonObject> response;
     RetryPolicy<Response<JsonObject>> retryPolicy =
         getRetryPolicyJsonObject(format("[Retrying failed call to retrieve token from the IAC Server info: {}"),
@@ -150,6 +155,63 @@ public class IACMServiceUtils {
       throw new GeneralException("Could not fetch token from IACM service. Response body is null");
     }
     return response.body().get("token").getAsString();
+  }
+
+  public Map<String, String> getIacmWorkspaceOutputs(
+      String org, String projectId, String accountId, String workspaceID) {
+    log.info("Initiating request to IACM service for ouput retrieval: {}", this.iacmServiceConfig.getBaseUrl());
+    RetryPolicy<Response<JsonObject>> retryPolicy = getRetryPolicyJsonObject(
+        format("[Retrying failed call to retrieve output variables from the IAC Server info: {}"),
+        format("Failed to retrieve output variables from the IAC Server after retrying {} times"));
+
+    Response<JsonObject> response;
+
+    try {
+      response = Failsafe.with(retryPolicy)
+                     .get(()
+                              -> iacmServiceClient
+                                     .getWorkspaceResoures(org, projectId, workspaceID,
+                                         generateJWTToken(accountId, org, projectId), accountId)
+                                     .execute());
+    } catch (Exception e) {
+      log.error("Error while trying to execute the query in the IACM Service: ", e);
+      throw new GeneralException("Error retrieving the resources from the IACM service. Call failed", e);
+    }
+    if (!response.isSuccessful()) {
+      String errorBody = null;
+      try {
+        if (response.errorBody() != null) {
+          errorBody = response.errorBody().string();
+        }
+      } catch (IOException e) {
+        log.error("Could not read error body {}", response.errorBody());
+      }
+      log.error("error querying the iac server{}", errorBody);
+
+      throw new GeneralException(String.format("Could not parse body for the env retrieval response = %s, message = %s",
+          response.code(), response.message()));
+    }
+
+    if (response.body() == null) {
+      throw new GeneralException("Could not retrieve IACM variables from the IACM service. Response body is null");
+    }
+    ObjectMapper objectMapper = new ObjectMapper();
+    ResourceResponseData responseData;
+    Map<String, String> outputs = new HashMap<>();
+    try {
+      responseData = objectMapper.readValue(response.body().toString(), ResourceResponseData.class);
+      for (WorkspaceOutput output : responseData.getOutputs()) {
+        outputs.put(output.getName(), output.getValue());
+      }
+    } catch (JsonProcessingException ex) {
+      log.error("Could not parse json body {}", response.body().toString());
+      throw new GeneralException(
+          "Could not parse variables response. Please contact Harness Support for more information");
+    }
+    if (outputs.size() == 0) {
+      log.info("There are no outputs in this workspace");
+    }
+    return outputs;
   }
 
   public WorkspaceVariables[] getIacmWorkspaceEnvs(String org, String projectId, String accountId, String workspaceID) {
@@ -204,18 +266,14 @@ public class IACMServiceUtils {
     return vars;
   }
 
-  public String GetTerraformEndpointsData(Ambiance ambiance, String workspaceId) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+  public String GetTerraformEndpointsData(String account, String org, String project, String workspaceId) {
     TerraformEndpointsData tfEndpointsData = TerraformEndpointsData.builder()
-                                                 .org_id(ngAccess.getOrgIdentifier())
+                                                 .org_id(org)
                                                  .base_url(iacmServiceConfig.getExternalUrl())
-                                                 .account_id(ngAccess.getAccountIdentifier())
-                                                 .pipeline_execution_id(ambiance.getPlanExecutionId())
-                                                 .pipeline_stage_execution_id(ambiance.getStageExecutionId())
-                                                 .project_id(ngAccess.getProjectIdentifier())
+                                                 .account_id(account)
+                                                 .project_id(project)
                                                  .workspace_id(workspaceId)
-                                                 .token(generateJWTToken(ngAccess.getAccountIdentifier(),
-                                                     ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier()))
+                                                 .token(generateJWTToken(account, org, project))
                                                  .build();
     ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
     try {
@@ -287,22 +345,48 @@ public class IACMServiceUtils {
 
   private RetryPolicy<Response<JsonObject>> getRetryPolicyJsonObject(
       String failedAttemptMessage, String failureMessage) {
+    Random random = new Random();
     return new RetryPolicy<Response<JsonObject>>()
-        .handleResultIf(event -> !event.isSuccessful())
-        .onRetry(event -> log.info("Retrying again"))
-        .withDelay(retrySleepDuration)
+        .handleResultIf(event -> !event.isSuccessful() && event.code() != 409)
+        .onRetry(event -> {
+          log.warn("Retrying again");
+          long minDelay = 3000; // Minimum delay in milliseconds (3 seconds)
+          long maxDelay = 10000; // Maximum delay in milliseconds (10 seconds)
+          long delay = minDelay + random.nextInt((int) (maxDelay - minDelay + 1));
+          try {
+            Thread.sleep(delay);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        })
         .withMaxAttempts(maxAttempts)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailedAttempt(event -> {
+          log.warn(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure());
+          log.warn("Error code: {}", event.getLastResult().code());
+        })
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 
   private RetryPolicy<Response<JsonArray>> getRetryPolicyJsonArray(String failedAttemptMessage, String failureMessage) {
+    Random random = new Random();
     return new RetryPolicy<Response<JsonArray>>()
-        .handleResultIf(event -> !event.isSuccessful())
-        .onRetry(event -> log.info("Retrying again"))
-        .withDelay(retrySleepDuration)
+        .handleResultIf(event -> !event.isSuccessful() && event.code() != 409)
+        .onRetry(event -> {
+          log.info("Retrying again");
+          long minDelay = 3000; // Minimum delay in milliseconds (3 seconds)
+          long maxDelay = 10000; // Maximum delay in milliseconds (10 seconds)
+          long delay = minDelay + random.nextInt((int) (maxDelay - minDelay + 1));
+          try {
+            Thread.sleep(delay);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        })
         .withMaxAttempts(maxAttempts)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailedAttempt(event -> {
+          log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure());
+          log.info("Error code: {}", event.getLastResult().code());
+        })
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 }

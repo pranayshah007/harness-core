@@ -150,6 +150,7 @@ public class EC2RecommendationDAO {
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT,
             toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 2, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.AWS.name())
         .execute();
   }
 

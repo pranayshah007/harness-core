@@ -44,12 +44,9 @@ import com.google.inject.name.Named;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -66,6 +63,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   Integer allowedParallelStages;
   private final String TEMPLATE_JSON_PATH = "static-schema/template.json";
   private final String PRE_QA = "stress";
+  private JsonNode templateStaticSchemaJsonNode = null;
 
   @Inject
   public NGTemplateSchemaServiceImpl(PipelineYamlSchemaServiceClient pipelineYamlSchemaServiceClient,
@@ -217,9 +215,8 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   public JsonNode getStaticYamlSchema(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateChildType, TemplateEntityType entityType, Scope scope, String version) {
     String env = System.getenv("ENV");
-    Set<TemplateEntityType> notSupportedStaticSchemaTemplateTypes = new HashSet<>(
-        Arrays.asList(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE, TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE));
-    if (PRE_QA.equals(env) && !notSupportedStaticSchemaTemplateTypes.contains(entityType)) {
+    log.info(String.format("Current Environment :- %s ", env));
+    if (PRE_QA.equals(env)) {
       String fileUrl = calculateFileURL(entityType, version);
       try {
         // Read the JSON file as JsonNode
@@ -229,6 +226,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
         log.error(String.format("Not able to read template schema file from %s path for stress env", fileUrl));
       }
     }
+    log.info("Fetching static schema from resource file");
     return getStaticYamlSchemaFromResource(
         accountIdentifier, projectIdentifier, orgIdentifier, templateChildType, entityType, scope);
   }
@@ -259,11 +257,15 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   }
 
   public JsonNode fetchFile(String filePath) throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    String staticJson =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
-    return JsonUtils.asObject(staticJson, JsonNode.class);
+    if (null == templateStaticSchemaJsonNode) {
+      ClassLoader classLoader = this.getClass().getClassLoader();
+      String staticJson =
+          Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
+      templateStaticSchemaJsonNode = JsonUtils.asObject(staticJson, JsonNode.class);
+    }
+    return templateStaticSchemaJsonNode;
   }
+
   private JsonNode getStaticYamlSchemaFromResource(String accountIdentifier, String projectIdentifier,
       String orgIdentifier, String templateChildType, TemplateEntityType entityType, Scope scope) {
     String filePath;
@@ -274,6 +276,8 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
       case STAGE_TEMPLATE:
       case MONITORED_SERVICE_TEMPLATE:
       case SECRET_MANAGER_TEMPLATE:
+      case ARTIFACT_SOURCE_TEMPLATE:
+      case CUSTOM_DEPLOYMENT_TEMPLATE:
         filePath = TEMPLATE_JSON_PATH;
         break;
       default:
@@ -282,6 +286,10 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
     }
 
     try {
+      /*
+        if templateStaticSchemaJsonNode is null then we fetch schema from template.json and set it to
+        templateStaticSchemaJsonNode else directly return templateStaticSchemaJsonNode
+      */
       return fetchFile(filePath);
     } catch (IOException ex) {
       log.error("Not able to read json from {} path", filePath);

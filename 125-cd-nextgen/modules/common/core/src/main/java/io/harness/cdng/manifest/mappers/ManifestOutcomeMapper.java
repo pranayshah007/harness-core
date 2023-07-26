@@ -255,6 +255,7 @@ public class ManifestOutcomeMapper {
         .enableDeclarativeRollback(helmChartManifest.getEnableDeclarativeRollback())
         .commandFlags(helmChartManifest.getCommandFlags())
         .subChartPath(helmChartManifest.getSubChartPath())
+        .fetchHelmChartMetadata(helmChartManifest.getFetchHelmChartMetadata())
         .build();
   }
 

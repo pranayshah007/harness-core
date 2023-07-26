@@ -64,7 +64,8 @@ public class SscaOrchestrationStepInfo implements PluginCompatibleStep, WithConn
 
   @NotNull SbomSource source;
 
-  @NotNull Attestation attestation;
+  Attestation attestation;
+  ContainerResource resources;
 
   @Override
   public TypeInfo getNonYamlInfo() {
@@ -92,12 +93,6 @@ public class SscaOrchestrationStepInfo implements PluginCompatibleStep, WithConn
           return null;
       }
     }
-    return null;
-  }
-
-  @Override
-  @ApiModelProperty(hidden = true)
-  public ContainerResource getResources() {
     return null;
   }
 

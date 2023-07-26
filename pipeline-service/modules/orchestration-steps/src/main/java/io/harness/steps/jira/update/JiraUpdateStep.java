@@ -8,6 +8,9 @@
 package io.harness.steps.jira.update;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
+import static io.harness.jira.JiraConstantsNG.ISSUE_TYPE_NAME;
+import static io.harness.jira.JiraConstantsNG.STATUS_NAME;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,10 +18,17 @@ import io.harness.beans.IdentifierRef;
 import io.harness.delegate.task.jira.JiraTaskNGParameters;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
+import io.harness.engine.executions.step.StepExecutionEntityService;
+import io.harness.eraro.Level;
+import io.harness.exception.ExceptionUtils;
+import io.harness.execution.step.jira.update.JiraUpdateStepExecutionDetails;
 import io.harness.jira.JiraActionNG;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -34,8 +44,10 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 @OwnedBy(CDC)
 public class JiraUpdateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
@@ -43,6 +55,8 @@ public class JiraUpdateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
 
   @Inject private JiraStepHelperService jiraStepHelperService;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
+  @Inject private StepExecutionEntityService stepExecutionEntityService;
+  @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -83,7 +97,35 @@ public class JiraUpdateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<JiraTaskNGResponse> responseSupplier) throws Exception {
+    dashboardExecutorService.submit(
+        () -> updateJiraUpdateStepExecutionDetailsFromResponse(ambiance, responseSupplier, stepParameters.getName()));
     return jiraStepHelperService.prepareStepResponse(responseSupplier);
+  }
+
+  private void updateJiraUpdateStepExecutionDetailsFromResponse(
+      Ambiance ambiance, ThrowingSupplier<JiraTaskNGResponse> responseSupplier, String stepName) {
+    try {
+      JiraTaskNGResponse taskResponse = responseSupplier.get();
+      if (taskResponse != null && taskResponse.getIssue() != null) {
+        JiraUpdateStepExecutionDetails jiraUpdateStepExecutionDetails =
+            JiraUpdateStepExecutionDetails.builder()
+                .url(taskResponse.getIssue().getUrl())
+                .issueType(taskResponse.getIssue().getFields().getOrDefault(ISSUE_TYPE_NAME, "").toString())
+                .ticketStatus(taskResponse.getIssue().getFields().getOrDefault(STATUS_NAME, "").toString())
+                .build();
+        stepExecutionEntityService.updateStepExecutionEntity(
+            ambiance, null, jiraUpdateStepExecutionDetails, stepName, Status.RUNNING);
+      }
+    } catch (Exception ex) {
+      FailureInfo failureInfo = FailureInfo.newBuilder()
+                                    .addFailureData(FailureData.newBuilder()
+                                                        .setLevel(Level.ERROR.name())
+                                                        .setCode(APPROVAL_STEP_NG_ERROR.name())
+                                                        .setMessage(ExceptionUtils.getMessage(ex))
+                                                        .build())
+                                    .build();
+      stepExecutionEntityService.updateStepExecutionEntity(ambiance, failureInfo, null, stepName, Status.RUNNING);
+    }
   }
 
   @Override

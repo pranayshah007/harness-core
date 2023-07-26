@@ -6,12 +6,19 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 
+filegroup(
+    name = "java_srcs",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+)
+
 java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     ],
 )

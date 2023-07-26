@@ -81,4 +81,28 @@ public class MatrixConfigServiceTest extends CategoryTest {
     List<ChildrenExecutableResponse.Child> children = matrixConfigService.fetchChildren(strategyConfig, "childNodeId");
     assertThat(children.size()).isEqualTo(24);
   }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testFetchChildrenComplexAxisWithRecaster() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("pipeline-with-strategy.yaml");
+    assertThat(testFile).isNotNull();
+    String pipelineYaml = Resources.toString(testFile, Charsets.UTF_8);
+    String pipelineYamlWithUuid = YamlUtils.injectUuid(pipelineYaml);
+    YamlField pipelineYamlField = YamlUtils.readTree(pipelineYamlWithUuid).getNode().getField("pipeline");
+    assertThat(pipelineYamlField).isNotNull();
+    YamlField stagesYamlField = pipelineYamlField.getNode().getField("stages");
+    assertThat(stagesYamlField).isNotNull();
+    List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
+
+    YamlField approvalStageYamlField = stageYamlNodes.get(10).getField("stage");
+
+    YamlField strategyField = approvalStageYamlField.getNode().getField("strategy");
+    StrategyConfig strategyConfig = YamlUtils.read(strategyField.getNode().toString(), StrategyConfig.class);
+
+    List<ChildrenExecutableResponse.Child> children = matrixConfigService.fetchChildren(strategyConfig, "childNodeId");
+    assertThat(children.size()).isEqualTo(4);
+  }
 }

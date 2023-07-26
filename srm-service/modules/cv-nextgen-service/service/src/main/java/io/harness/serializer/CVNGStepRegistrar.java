@@ -10,6 +10,7 @@ package io.harness.serializer;
 import static io.harness.annotations.dev.HarnessTeam.CV;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.cdng.services.impl.CVNGAnalyzeDeploymentStep;
 import io.harness.cvng.cdng.services.impl.CVNGStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
@@ -25,6 +26,7 @@ public class CVNGStepRegistrar {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
 
     engineSteps.put(CVNGStep.STEP_TYPE, CVNGStep.class);
+    engineSteps.put(CVNGAnalyzeDeploymentStep.STEP_TYPE, CVNGAnalyzeDeploymentStep.class);
     return engineSteps;
   }
 }

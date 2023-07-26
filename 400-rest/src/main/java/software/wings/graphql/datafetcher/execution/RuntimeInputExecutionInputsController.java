@@ -28,6 +28,7 @@ import software.wings.beans.Pipeline;
 import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.graphql.datafetcher.service.ServiceController;
 import software.wings.graphql.schema.mutation.execution.input.QLVariableInput;
@@ -65,8 +66,8 @@ public class RuntimeInputExecutionInputsController {
       notBlankCheck("Invalid pipeline execution", parameters.getPipelineExecutionId());
       notBlankCheck("Invalid pipeline stage ", parameters.getPipelineStageElementId());
 
-      WorkflowExecution pipelineExecution =
-          workflowExecutionService.getWorkflowExecution(appId, parameters.getPipelineExecutionId());
+      WorkflowExecution pipelineExecution = workflowExecutionService.getWorkflowExecution(appId,
+          parameters.getPipelineExecutionId(), WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.workflowId);
       notNullCheck("No pipeline execution for the given execution id " + parameters.getPipelineExecutionId(),
           pipelineExecution, USER);
       String pipelineId = pipelineExecution.getWorkflowId();

@@ -8,8 +8,10 @@
 package io.harness.filestore.outbox;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.filestore.events.FileForceDeleteEvent.FILE_FORCE_DELETED_EVENT;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static junit.framework.TestCase.assertEquals;
@@ -36,6 +38,7 @@ import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.filestore.events.FileCreateEvent;
 import io.harness.filestore.events.FileDeleteEvent;
+import io.harness.filestore.events.FileForceDeleteEvent;
 import io.harness.filestore.events.FileUpdateEvent;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.filestore.dto.FileStoreRequest;
@@ -177,6 +180,45 @@ public class FileEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.DELETE, auditEntry.getAction());
+    assertNull(auditEntry.getNewYaml());
+    String oldYaml = getYamlString(FileStoreRequest.builder().file(fileDTO).build());
+    assertEquals(oldYaml, auditEntry.getOldYaml());
+
+    Message message = messageArgumentCaptor.getValue();
+    assertMessage(message, accountIdentifier, "delete");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testForceDelete() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    FileDTO fileDTO = getFileDTO(orgIdentifier, identifier);
+    FileForceDeleteEvent fileDeleteEvent = new FileForceDeleteEvent(accountIdentifier, fileDTO);
+    String eventData = objectMapper.writeValueAsString(fileDeleteEvent);
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(FILE_FORCE_DELETED_EVENT)
+                                  .eventData(eventData)
+                                  .resourceScope(fileDeleteEvent.getResourceScope())
+                                  .resource(fileDeleteEvent.getResource())
+                                  .createdAt(Long.parseLong(randomNumeric(5)))
+                                  .globalContext(new GlobalContext())
+                                  .build();
+
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    final ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    fileEventHandler.handle(outboxEvent);
+
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    verify(eventProducer, times(1)).send(messageArgumentCaptor.capture());
+
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
+    assertEquals(Action.FORCE_DELETE, auditEntry.getAction());
     assertNull(auditEntry.getNewYaml());
     String oldYaml = getYamlString(FileStoreRequest.builder().file(fileDTO).build());
     assertEquals(oldYaml, auditEntry.getOldYaml());

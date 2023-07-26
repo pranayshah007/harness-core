@@ -9,6 +9,7 @@ package io.harness.delegate.task.scm;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.grpc.client.SCMGrpcInterceptor;
 
 import io.grpc.ManagedChannel;
 import io.grpc.netty.NettyChannelBuilder;
@@ -28,6 +29,7 @@ public class ScmLinuxManager extends ScmUnixManager {
     return NettyChannelBuilder.forAddress(new DomainSocketAddress(socketAddress))
         .eventLoopGroup(epollEventLoopGroup)
         .channelType(EpollDomainSocketChannel.class)
+        .intercept(SCMGrpcInterceptor.INTERCEPTOR)
         .usePlaintext()
         .build();
   }

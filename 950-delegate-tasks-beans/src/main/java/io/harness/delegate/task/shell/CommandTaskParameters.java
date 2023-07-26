@@ -49,6 +49,7 @@ import lombok.experimental.SuperBuilder;
 public abstract class CommandTaskParameters implements TaskParameters, ExecutionCapabilityDemander {
   String accountId;
   String executionId;
+  Long sessionTimeout;
   @Default @Expression(ALLOW_SECRETS) Map<String, String> environmentVariables = new HashMap<>();
   boolean executeOnDelegate;
   @Expression(ALLOW_SECRETS) List<NgCommandUnit> commandUnits;

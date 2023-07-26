@@ -6,15 +6,17 @@
  */
 
 package io.harness.cdng.artifact.mappers;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.utils.RepositoryFormat.generic;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
@@ -98,6 +100,7 @@ import java.util.Map;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactConfigToDelegateReqMapper {
@@ -224,7 +227,7 @@ public class ArtifactConfigToDelegateReqMapper {
       return ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(artifactConfig.getPackageName().getValue(),
           artifactConfig.getPackageType().getValue(), version, versionRegex, org, connectorRef, connectorDTO,
           encryptedDataDetails, ArtifactSourceType.GITHUB_PACKAGES, artifactConfig.getArtifactId().getValue(),
-          artifactConfig.getRepository().getValue(), user,
+          "repository", user,
           ParameterField.isNotNull(artifactConfig.getExtension()) ? artifactConfig.getExtension().getValue() : "",
           artifactConfig.getGroupId().getValue());
     }
@@ -239,9 +242,6 @@ public class ArtifactConfigToDelegateReqMapper {
 
     if (ParameterField.isBlank(artifactConfig.getGroupId())) {
       throw new InvalidRequestException("GroupId field cannot be blank");
-    }
-    if (ParameterField.isBlank(artifactConfig.getRepository())) {
-      throw new InvalidRequestException("Repository field cannot be blank");
     }
   }
   public AzureArtifactsDelegateRequest getAzureArtifactsDelegateRequest(AzureArtifactsConfig artifactConfig,
@@ -325,18 +325,21 @@ public class ArtifactConfigToDelegateReqMapper {
     String artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue() : "";
     String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
+    String buildRegex = null;
     if (isLastPublishedExpression(buildNumber)) {
       if (ParameterField.isNotNull(artifactConfig.getBuild())
           && tagHasInputValidator(artifactConfig.getBuild().getInputSetValidator(), buildNumber)) {
+        buildRegex = artifactConfig.getBuild().getInputSetValidator().getParameters();
         buildNumber = artifactConfig.getBuild().getInputSetValidator().getParameters();
       } else {
-        buildNumber = buildNumber.equals(LAST_PUBLISHED_EXPRESSION) ? "" : buildNumber;
+        buildRegex = "";
+        buildNumber = "";
       }
     }
 
     return ArtifactDelegateRequestUtils.getJenkinsDelegateArtifactRequest(connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath),
-        buildNumber);
+        encryptedDataDetails, ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath), buildNumber,
+        buildRegex);
   }
 
   public BambooArtifactDelegateRequest getBambooDelegateRequest(BambooArtifactConfig artifactConfig,

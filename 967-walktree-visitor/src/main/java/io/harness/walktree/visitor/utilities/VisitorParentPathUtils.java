@@ -20,6 +20,7 @@ import lombok.experimental.UtilityClass;
 public class VisitorParentPathUtils {
   public final String PARENT_PATH_KEY = "PARENT_PATH_KEY";
   public final String PATH_CONNECTOR = ".";
+  public final String VALUES = "values";
 
   private <T> void setConfig(String key, T config, Map<String, Object> contextMap) {
     if (config == null) {

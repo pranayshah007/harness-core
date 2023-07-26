@@ -72,6 +72,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -327,6 +328,13 @@ public class K8sRecommendationDAO {
   }
 
   @NonNull
+  public List<String> fetchDistinctInstanceFamilies(JobConstants jobConstants, NodePoolId nodePoolId) {
+    List<String> instanceFamilies = instanceDataDao.fetchDistinctInstanceFamilies(jobConstants.getAccountId(),
+        nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname(), InstanceState.RUNNING);
+    return firstNonNull(instanceFamilies, Collections.emptyList());
+  }
+
+  @NonNull
   public K8sServiceProvider getServiceProvider(JobConstants jobConstants, NodePoolId nodePoolId) {
     InstanceData instanceData = instanceDataDao.fetchInstanceData(jobConstants.getAccountId(),
         nodePoolId.getClusterid(), InstanceType.K8S_NODE, nodePoolId.getNodepoolname(), InstanceState.RUNNING);
@@ -416,6 +424,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, clusterName) // for updating older rows having clusterId instead
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.UNKNOWN.name())
         .execute();
   }
 
@@ -435,7 +444,7 @@ public class K8sRecommendationDAO {
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
   public void upsertCeRecommendation(String entityUuid, @NonNull JobConstants jobConstants,
       @NonNull NodePoolId nodePoolId, String clusterName, @NonNull RecommendationOverviewStats stats,
-      Instant lastReceivedUntilAt) {
+      Instant lastReceivedUntilAt, String cloudProvider) {
     dslContext.insertInto(CE_RECOMMENDATIONS)
         .set(CE_RECOMMENDATIONS.ACCOUNTID, jobConstants.getAccountId())
         .set(CE_RECOMMENDATIONS.ID, entityUuid)
@@ -447,7 +456,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.ISVALID, true)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
-        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.UNKNOWN.name())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, cloudProvider)
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, stats.getTotalMonthlyCost())
@@ -456,6 +465,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, clusterName) // for updating older rows having clusterId instead
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, cloudProvider)
         .execute();
   }
 

@@ -14,6 +14,7 @@ import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.bool;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
@@ -97,6 +98,10 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> enableDeclarativeRollback;
   @Wither List<HelmManifestCommandFlag> commandFlags;
   @Wither @ApiModelProperty(dataType = STRING_CLASSPATH) @SkipAutoEvaluation ParameterField<String> subChartPath;
+  @Wither
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
+  @YamlSchemaTypes({expression})
+  ParameterField<Boolean> fetchHelmChartMetadata;
 
   @Override
   public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {

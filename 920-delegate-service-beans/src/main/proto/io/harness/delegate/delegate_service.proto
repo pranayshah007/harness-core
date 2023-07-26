@@ -26,9 +26,7 @@ service DelegateService {
   rpc RegisterCallback(RegisterCallbackRequest) returns (RegisterCallbackResponse);
 
   rpc SubmitTaskV2(SubmitTaskRequest) returns (SubmitTaskResponse);
-  rpc SubmitTask(SubmitTaskRequest) returns (SubmitTaskResponse);
 
-  rpc CancelTask(CancelTaskRequest) returns (CancelTaskResponse);
   rpc CancelTaskV2(CancelTaskRequest) returns (CancelTaskResponse);
 
   rpc TaskProgress(TaskProgressRequest) returns (TaskProgressResponse);
@@ -36,9 +34,7 @@ service DelegateService {
 
   rpc ExecuteParkedTask(ExecuteParkedTaskRequest) returns (ExecuteParkedTaskResponse);
   rpc FetchParkedTaskStatus(FetchParkedTaskStatusRequest) returns (FetchParkedTaskStatusResponse);
-  rpc SendTaskStatus(SendTaskStatusRequest) returns (SendTaskStatusResponse);
   rpc SendTaskStatusV2(SendTaskStatusRequest) returns (SendTaskStatusResponse);
-  rpc SendTaskProgress(SendTaskProgressRequest) returns (SendTaskProgressResponse);
   rpc SendTaskProgressV2(SendTaskProgressRequest) returns (SendTaskProgressResponse);
 
   rpc CreatePerpetualTask(CreatePerpetualTaskRequest) returns (CreatePerpetualTaskResponse);

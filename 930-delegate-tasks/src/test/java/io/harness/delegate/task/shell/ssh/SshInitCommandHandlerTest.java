@@ -8,6 +8,7 @@
 package io.harness.delegate.task.shell.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.AZURE_CLI_INSTALLATION_CHECK_HINT;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.VITALIE;
@@ -15,9 +16,13 @@ import static io.harness.rule.OwnerRule.VITALIE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -37,9 +42,12 @@ import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
 import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ScriptSshExecutor;
@@ -52,6 +60,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -103,6 +112,7 @@ public class SshInitCommandHandlerTest extends CategoryTest {
 
     doReturn(scriptSshExecutor).when(sshScriptExecutorFactory).getExecutor(any());
     when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.FAILURE);
+    when(scriptSshExecutor.getLogCallback()).thenReturn(logCallback);
 
     CommandExecutionStatus status =
         sshInitCommandHandler
@@ -148,6 +158,7 @@ public class SshInitCommandHandlerTest extends CategoryTest {
     when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.SUCCESS);
     when(scriptSshExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.getLogCallback()).thenReturn(logCallback);
 
     CommandExecutionStatus status =
         sshInitCommandHandler
@@ -213,6 +224,7 @@ public class SshInitCommandHandlerTest extends CategoryTest {
     when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.SUCCESS);
     when(scriptSshExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.getLogCallback()).thenReturn(logCallback);
 
     CommandExecutionStatus status =
         sshInitCommandHandler
@@ -283,6 +295,7 @@ public class SshInitCommandHandlerTest extends CategoryTest {
     when(scriptSshExecutor.executeCommandString(PRE_INIT_CMD, true)).thenReturn(CommandExecutionStatus.SUCCESS);
     when(scriptSshExecutor.executeCommandString(eq(PRINT_ENV), any(StringBuffer.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
+    when(scriptSshExecutor.getLogCallback()).thenReturn(logCallback);
 
     CommandExecutionStatus status =
         sshInitCommandHandler
@@ -401,5 +414,42 @@ public class SshInitCommandHandlerTest extends CategoryTest {
     assertThat(evaluatedDownloadArtifactCommandUnit.getDestinationPath()).isEqualTo(downloadDestinationPath);
 
     assertThat(ngCommandUnits.get(4)).isInstanceOf(NgCleanupCommandUnit.class);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldCheckIfForAzureUniversalPackageCLI_isInstalled_Fails() {
+    NgDownloadArtifactCommandUnit downloadArtifactCommandUnit = NgDownloadArtifactCommandUnit.builder().build();
+    AzureArtifactDelegateConfig azureArtifactDelegateConfig =
+        AzureArtifactDelegateConfig.builder().packageType("upack").build();
+
+    SshCommandTaskParameters parameters = SshCommandTaskParameters.builder()
+                                              .executeOnDelegate(false)
+                                              .executionId("test")
+                                              .sshInfraDelegateConfig(PdcSshInfraDelegateConfig.builder().build())
+                                              .artifactDelegateConfig(azureArtifactDelegateConfig)
+                                              .commandUnits(Arrays.asList(initCommandUnit, downloadArtifactCommandUnit))
+                                              .build();
+
+    doReturn(scriptProcessExecutor).when(sshScriptExecutorFactory).getExecutor(any());
+    when(scriptProcessExecutor.executeCommandString(anyString(), anyBoolean()))
+        .thenReturn(CommandExecutionStatus.FAILURE);
+    LogCallback logCallback = mock(LogCallback.class);
+    when(scriptProcessExecutor.getLogCallback()).thenReturn(logCallback);
+
+    assertThatThrownBy(()
+                           -> sshInitCommandHandler.handle(
+                               parameters, initCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage(AZURE_CLI_INSTALLATION_CHECK_HINT);
+
+    ArgumentCaptor<LogLevel> logLevelArgCaptor = ArgumentCaptor.forClass(LogLevel.class);
+    ArgumentCaptor<CommandExecutionStatus> commandExecutionStatusArgCaptor =
+        ArgumentCaptor.forClass(CommandExecutionStatus.class);
+    verify(logCallback, times(1))
+        .saveExecutionLog(anyString(), logLevelArgCaptor.capture(), commandExecutionStatusArgCaptor.capture());
+    assertThat(logLevelArgCaptor.getValue()).isEqualTo(LogLevel.ERROR);
+    assertThat(commandExecutionStatusArgCaptor.getValue()).isEqualTo(CommandExecutionStatus.FAILURE);
   }
 }

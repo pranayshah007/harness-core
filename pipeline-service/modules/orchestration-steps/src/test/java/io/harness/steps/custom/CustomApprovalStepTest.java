@@ -55,6 +55,7 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,6 +71,7 @@ public class CustomApprovalStepTest extends CategoryTest {
   @Mock private CustomApprovalInstanceHandler customApprovalInstanceHandler;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   private static final String STATUS = "status";
+  @Mock ExecutorService dashboardExecutorService;
   @InjectMocks private CustomApprovalStep customApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 

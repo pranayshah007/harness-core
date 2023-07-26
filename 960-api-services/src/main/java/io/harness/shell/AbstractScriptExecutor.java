@@ -190,10 +190,10 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
 
     for (Map.Entry<String, String> variable : envVariablesMap.entrySet()) {
       if (isEmpty(variable.getValue())) {
-        emptySb.append(variable.getKey()).append(",");
+        emptySb.append(variable.getKey()).append(',');
       }
       if (variable.getKey().contains("-")) {
-        hyphenSb.append(variable.getKey()).append(",");
+        hyphenSb.append(variable.getKey()).append(',');
       }
     }
 

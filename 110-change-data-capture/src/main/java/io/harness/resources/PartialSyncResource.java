@@ -18,6 +18,7 @@ import static io.harness.NGCommonEntityConstants.PLAN_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.STAGE_KEY;
+import static io.harness.NGCommonEntityConstants.STEP_KEY;
 import static io.harness.NGCommonEntityConstants.USER_ID;
 
 import static dev.morphia.mapping.Mapper.ID_KEY;
@@ -40,11 +41,15 @@ import io.harness.entities.InfrastructureEntityTimeScale;
 import io.harness.entities.OrganizationEntity;
 import io.harness.entities.PipelineCDCEntity;
 import io.harness.entities.PipelineExecutionSummaryEntityCDCEntity;
+import io.harness.entities.PipelineStageExecutionCDCEntity;
 import io.harness.entities.ProjectEntity;
 import io.harness.entities.ServiceCDCEntity;
+import io.harness.entities.StepExecutionCDCEntity;
 import io.harness.entities.UserEntity;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
+import io.harness.execution.stage.StageExecutionEntity.StageExecutionEntityKeys;
+import io.harness.execution.step.StepExecutionEntity.StepExecutionEntityKeys;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
@@ -103,6 +108,8 @@ public class PartialSyncResource {
   @Inject ConnectorCDCEntity connectorCDCEntity;
   @Inject UserEntity userEntity;
   @Inject CDStageExecutionCDCEntity cdStageExecutionCDCEntity;
+  @Inject PipelineStageExecutionCDCEntity pipelineStageExecutionCDCEntity;
+  @Inject StepExecutionCDCEntity stepExecutionCDCEntity;
 
   @GET
   @Path("/accounts")
@@ -248,6 +255,50 @@ public class PartialSyncResource {
     addTsFilter(filters, StageExecutionInfoKeys.startts, startTsFrom, startTsTo);
 
     return triggerSync(cdStageExecutionCDCEntity, filters, handler);
+  }
+
+  @GET
+  @Path("/pipelineStageExecutions")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "trigger bulk sync for the pipeline stage Execution entity using supplied filters")
+  public RestResponse<String> triggerPipelineStageExecutionSync(@QueryParam(STAGE_KEY) @Nullable String identifier,
+      @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
+      @QueryParam(PIPELINE_KEY) @Nullable String pipelineIdentifier,
+      @QueryParam(PLAN_KEY) @Nullable String planExecutionId, @QueryParam(HANDLER_KEY) @Nullable String handler,
+      @QueryParam("startTs_from") @Nullable Long startTsFrom, @QueryParam("startTs_to") @Nullable Long startTsTo) {
+    List<Bson> filters = new ArrayList<>();
+    addEqFilter(filters, StageExecutionEntityKeys.stageExecutionId, identifier);
+    addEqFilter(filters, StageExecutionEntityKeys.planExecutionId, planExecutionId);
+    addEqFilter(filters, StageExecutionEntityKeys.accountIdentifier, accountId);
+    addEqFilter(filters, StageExecutionEntityKeys.projectIdentifier, projectIdentifier);
+    addEqFilter(filters, StageExecutionEntityKeys.pipelineIdentifier, pipelineIdentifier);
+    addTsFilter(filters, StageExecutionEntityKeys.startts, startTsFrom, startTsTo);
+
+    return triggerSync(pipelineStageExecutionCDCEntity, filters, handler);
+  }
+
+  @GET
+  @Path("/stepExecutions")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "trigger bulk sync for the step Execution entity using supplied filters")
+  public RestResponse<String> triggerStepExecutionSync(@QueryParam(STEP_KEY) @Nullable String identifier,
+      @QueryParam(ACCOUNT_KEY) @Nullable String accountId, @QueryParam(PROJECT_KEY) @Nullable String projectIdentifier,
+      @QueryParam(PIPELINE_KEY) @Nullable String pipelineIdentifier,
+      @QueryParam(PLAN_KEY) @Nullable String planExecutionId, @QueryParam(HANDLER_KEY) @Nullable String handler,
+      @QueryParam(STAGE_KEY) @Nullable String stageExecutionId, @QueryParam("startTs_from") @Nullable Long startTsFrom,
+      @QueryParam("startTs_to") @Nullable Long startTsTo) {
+    List<Bson> filters = new ArrayList<>();
+    addEqFilter(filters, StepExecutionEntityKeys.stepExecutionId, identifier);
+    addEqFilter(filters, StepExecutionEntityKeys.stageExecutionId, stageExecutionId);
+    addEqFilter(filters, StageExecutionEntityKeys.planExecutionId, planExecutionId);
+    addEqFilter(filters, StageExecutionEntityKeys.accountIdentifier, accountId);
+    addEqFilter(filters, StageExecutionEntityKeys.projectIdentifier, projectIdentifier);
+    addEqFilter(filters, StageExecutionEntityKeys.pipelineIdentifier, pipelineIdentifier);
+    addTsFilter(filters, StageExecutionEntityKeys.startts, startTsFrom, startTsTo);
+
+    return triggerSync(stepExecutionCDCEntity, filters, handler);
   }
 
   @GET

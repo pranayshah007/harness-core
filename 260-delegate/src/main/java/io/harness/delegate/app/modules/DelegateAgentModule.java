@@ -19,6 +19,7 @@ import io.harness.delegate.app.DelegateGrpcServiceModule;
 import io.harness.delegate.app.modules.common.DelegateHealthModule;
 import io.harness.delegate.app.modules.common.DelegateTokensModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.service.handlermapping.SchedulingTaskEventMessageModule;
 import io.harness.delegate.task.citasks.CITaskFactoryModule;
 import io.harness.delegate.task.k8s.apiclient.KubernetesApiClientFactoryModule;
 import io.harness.event.client.impl.appender.AppenderModule;
@@ -54,6 +55,7 @@ public class DelegateAgentModule extends AbstractModule {
 
     install(new DelegateTokensModule(configuration));
     install(new DelegateServiceTokenModule(configuration));
+    install(new SchedulingTaskEventMessageModule(configuration));
     install(new DelegateHealthModule());
     install(KryoModule.getInstance());
     install(new DelegateKryoModule());

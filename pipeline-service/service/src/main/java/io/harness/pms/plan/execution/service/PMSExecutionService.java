@@ -41,6 +41,9 @@ public interface PMSExecutionService {
 
   Page<PipelineExecutionSummaryEntity> getPipelineExecutionSummaryEntity(Criteria criteria, Pageable pageable);
 
+  Page<PipelineExecutionSummaryEntity> getPipelineExecutionSummaryEntityWithProjection(
+      Criteria criteria, Pageable pageable, List<String> projections);
+
   PipelineExecutionSummaryEntity getPipelineExecutionSummaryEntity(
       String accountId, String orgId, String projectId, String planExecutionId, boolean pipelineDeleted);
 

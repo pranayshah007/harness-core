@@ -10,16 +10,20 @@ package io.harness.ng.migration;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
+import io.harness.ng.core.migration.timescale.AddChartVersionToCDStageHelmManifestTable;
 import io.harness.ng.core.migration.timescale.AddColumnsToCDStageTable;
 import io.harness.ng.core.migration.timescale.AddDeletedAtColumns;
 import io.harness.ng.core.migration.timescale.AddIndexToServiceInfraInfoTable;
 import io.harness.ng.core.migration.timescale.AddModuleTypeSpecificColumnsToModuleLicensesTable;
 import io.harness.ng.core.migration.timescale.AddRollbackDurationToServiceInfraInfoTable;
+import io.harness.ng.core.migration.timescale.CreateCDStageHelmManifestTable;
 import io.harness.ng.core.migration.timescale.CreateCDStageTable;
 import io.harness.ng.core.migration.timescale.CreateConnectorsTable;
 import io.harness.ng.core.migration.timescale.CreateModuleLicensesTable;
 import io.harness.ng.core.migration.timescale.CreateNgUserTable;
 import io.harness.ng.core.migration.timescale.CreateRuntimeInputsInfoTable;
+import io.harness.ng.core.migration.timescale.CreateServiceInstancesLicenseDailyReport;
+import io.harness.ng.core.migration.timescale.CreateServicesLicenseDailyReport;
 import io.harness.ng.core.migration.timescale.CreateStageTable;
 import io.harness.ng.core.migration.timescale.GetActiveServicesByDateFunction;
 import io.harness.ng.core.migration.timescale.GetServiceInstancesByDateFunction;
@@ -55,6 +59,12 @@ public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(11, CreateStageTable.class))
         .add(Pair.of(12, CreateCDStageTable.class))
         .add(Pair.of(13, AddColumnsToCDStageTable.class))
+        .add(Pair.of(14, GetActiveServicesByDateFunction.class))
+        .add(Pair.of(15, GetServiceInstancesByDateFunction.class))
+        .add(Pair.of(16, CreateServiceInstancesLicenseDailyReport.class))
+        .add(Pair.of(17, CreateServicesLicenseDailyReport.class))
+        .add(Pair.of(18, CreateCDStageHelmManifestTable.class))
+        .add(Pair.of(19, AddChartVersionToCDStageHelmManifestTable.class))
         .build();
   }
 }

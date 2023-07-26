@@ -132,11 +132,11 @@ public class CoreDelegateResource {
       final TaskPayload task =
           TaskPayload.newBuilder()
               .setInfraData(InputData.newBuilder().setProtoData(Any.pack(k8SInfra)).build()) // Infra input
-              .setTaskData(
-                  InputData.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build()) // Task input
+              .setTaskData(InputData.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build())
+              .setExecutionInfraId(taskId) // Task input
               .build();
 
-      final var response = AcquireTasksResponse.newBuilder().setExecutionInfraId(taskId).addTask(task).build();
+      final var response = AcquireTasksResponse.newBuilder().addTask(task).build();
 
       return Response.ok(response).build();
     } catch (final Exception e) {

@@ -73,12 +73,12 @@ public class RancherConnectionHelperServiceImplTest extends CategoryTest {
   public void testListClusters() {
     RancherListClustersResponse response = RancherListClustersResponse.builder()
                                                .resourceType("clusters")
-                                               .data(List.of(RancherClusterItem.builder().name("c1").build(),
-                                                   RancherClusterItem.builder().name("c2").build()))
+                                               .data(List.of(RancherClusterItem.builder().name("c1").id("id1").build(),
+                                                   RancherClusterItem.builder().name("c2").id("id2").build()))
                                                .build();
     doReturn(response).when(rancherClusterClient).listClusters(any(), any(), any());
     assertThat(rancherConnectionHelperService.listClusters("url", "token", Collections.emptyMap()))
-        .contains("c1", "c2");
+        .containsExactlyInAnyOrder("id1", "id2");
   }
 
   @Test

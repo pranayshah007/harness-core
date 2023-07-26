@@ -21,6 +21,7 @@ import io.harness.pms.yaml.YamlField;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,7 +40,7 @@ public class StrategyVariableCreator implements VariableCreator<StrategyConfig> 
   public VariableCreationResponse createVariablesForFieldV2(VariableCreationContext ctx, StrategyConfig config) {
     Map<String, YamlProperties> yamlPropertiesMap = new HashMap<>();
     if (ParameterField.isNotNull(config.getMatrixConfig()) && config.getMatrixConfig().getValue() != null) {
-      Set<String> axisKeys = ((MatrixConfig) config.getMatrixConfig().getValue()).getAxes().keySet();
+      Set<String> axisKeys = new HashSet<>(((MatrixConfig) config.getMatrixConfig().getValue()).getAxes().keySet());
       axisKeys.addAll(((MatrixConfig) config.getMatrixConfig().getValue()).getExpressionAxes().keySet());
       String placeHolder = "matrix.%s";
       for (String axis : axisKeys) {

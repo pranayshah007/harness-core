@@ -478,20 +478,12 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   }
 
   protected SMPLicense createSmpLicense(String accountId) {
-    AccountLicenseDTO accountLicenseDTO = getAccountLicense(accountId);
+    List<ModuleLicenseDTO> moduleLicensesFromDb = getAllModuleLicences(accountId);
     AccountDTO accountDTO = accountService.getAccount(accountId);
 
-    if (Objects.isNull(accountLicenseDTO) || Objects.isNull(accountLicenseDTO.getAllModuleLicenses())
-        || accountLicenseDTO.getAllModuleLicenses().isEmpty() || Objects.isNull(accountDTO)) {
+    if (Objects.isNull(moduleLicensesFromDb) || moduleLicensesFromDb.isEmpty() || Objects.isNull(accountDTO)) {
+      log.error("There might be no account or module license present in db to generate smp license");
       throw new InvalidRequestException("There might be no account or module license present in db");
-    }
-    List<ModuleLicenseDTO> moduleLicenseDTOS = accountLicenseDTO.getAllModuleLicenses()
-                                                   .values()
-                                                   .stream()
-                                                   .flatMap(Collection::stream)
-                                                   .collect(Collectors.toList());
-    if (moduleLicenseDTOS.isEmpty()) {
-      throw new InvalidRequestException("No module license found for account: " + accountId);
     }
     LicenseMeta licenseMeta = new LicenseMeta();
     licenseMeta.setAccountDTO(AccountInfo.builder()
@@ -503,7 +495,7 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     licenseMeta.setLicenseVersion(0);
     licenseMeta.setLibraryVersion(LibraryVersion.V1);
     licenseMeta.setAccountOptional(true);
-    return SMPLicense.builder().licenseMeta(licenseMeta).moduleLicenses(moduleLicenseDTOS).build();
+    return SMPLicense.builder().licenseMeta(licenseMeta).moduleLicenses(moduleLicensesFromDb).build();
   }
 
   @Override

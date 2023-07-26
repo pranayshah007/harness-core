@@ -34,14 +34,14 @@ import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
-import io.harness.cdng.gitops.CreatePRStepInfo;
-import io.harness.cdng.gitops.CreatePRStepParams;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepParams;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepParams;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
+import io.harness.cdng.gitops.revertpr.RevertPRStepInfo;
+import io.harness.cdng.gitops.revertpr.RevertPRStepParameters;
 import io.harness.cdng.gitops.syncstep.SyncResponse;
 import io.harness.cdng.gitops.syncstep.SyncStepOutcome;
 import io.harness.cdng.helm.HelmDeployStepInfo;
@@ -153,10 +153,10 @@ import com.esotericsoftware.kryo.Kryo;
 public class NGKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
-    kryo.register(CreatePRStepInfo.class, 13007);
-    kryo.register(CreatePRStepParams.class, 13008);
     kryo.register(UpdateReleaseRepoStepInfo.class, 13009);
     kryo.register(UpdateReleaseRepoStepParams.class, 13010);
+    kryo.register(RevertPRStepInfo.class, 13011);
+    kryo.register(RevertPRStepParameters.class, 13012);
 
     kryo.register(ArtifactStepParameters.class, 8001);
     kryo.register(ServiceStepParameters.class, 8008);

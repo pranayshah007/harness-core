@@ -130,7 +130,12 @@ info:
   termsOfService: 'https://harness.io/terms-of-use/'
 servers:
   - url: 'https://app.harness.io'
-    description: Harness host URL.
+    description: Harness host URL
+  - url: https://{vanity}
+    description: Vanity URL
+    variables:
+      vanity:
+        default: app.harness.io
 tags:
   - name: Governance Status
     description: |

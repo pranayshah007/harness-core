@@ -8,7 +8,7 @@
 
 package io.harness.cdng.creator.plan.steps.serverless;
 
-import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_SERVERLESS_MANIFESTS;
+import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_MANIFESTS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -47,7 +47,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator
   protected StepParameters getStepParameters(
       PlanCreationContext ctx, ServerlessAwsLambdaPrepareRollbackV2StepNode stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
-    String downloadManifestsFqn = getExecutionStepFqn(ctx.getCurrentField(), DOWNLOAD_SERVERLESS_MANIFESTS);
+    String downloadManifestsFqn = getExecutionStepFqn(ctx.getCurrentField(), DOWNLOAD_MANIFESTS);
     ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters =
         (ServerlessAwsLambdaPrepareRollbackV2StepParameters) ((StepElementParameters) stepParameters).getSpec();
     serverlessAwsLambdaPrepareRollbackV2StepParameters.setDownloadManifestsFqn(downloadManifestsFqn);

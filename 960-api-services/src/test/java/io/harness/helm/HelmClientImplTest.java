@@ -38,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.HelmClientException;
+import io.harness.exception.HelmClientRetryableException;
 import io.harness.exception.HelmClientRuntimeException;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.k8s.config.K8sGlobalConfigService;
@@ -442,14 +443,19 @@ public class HelmClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSegregationOfOutputAndError() throws Exception {
     String errorMsg = "Unexpected Error";
+    String errorMsg2 = "Check this error out";
+    String finalError = "\nUnexpected Error\nCheck this error out";
+    String finalError2 = "\nUnexpected Error";
     HelmClientImpl.LogErrorStream errorStream1 = new HelmClientImpl.LogErrorStream();
     errorStream1.processLine(errorMsg);
+    errorStream1.processLine(errorMsg2);
     HelmClientImpl.ErrorActivityOutputStream errorStream2 =
         new HelmClientImpl.ErrorActivityOutputStream(getLogCallback());
     errorStream2.processLine(errorMsg);
     String expectedYamlMessage = "Some Yaml File\n";
     String command = "echo 'Some Yaml File'";
-    String combinedOutput = errorMsg + " " + expectedYamlMessage;
+    String combinedOutput = finalError2 + " " + expectedYamlMessage;
+    String combinedOutput2 = finalError + " " + expectedYamlMessage;
     doCallRealMethod()
         .when(helmClient)
         .executeHelmCLICommandNoDefaultTimeout(command, errorStream1, Collections.emptyMap());
@@ -460,12 +466,12 @@ public class HelmClientImplTest extends CategoryTest {
         helmClient.executeHelmCLICommandNoDefaultTimeout(command, errorStream1, Collections.emptyMap());
     HelmCliResponse helmCliResponse2 =
         helmClient.executeHelmCLICommandNoDefaultTimeout(command, errorStream2, Collections.emptyMap());
-    assertThat(helmCliResponse1.getOutput().equals(expectedYamlMessage));
-    assertThat(helmCliResponse1.getErrorStreamOutput().equals(errorMsg));
-    assertThat(helmCliResponse1.getOutputWithErrorStream().equals(combinedOutput));
-    assertThat(helmCliResponse2.getOutput().equals(expectedYamlMessage));
-    assertThat(helmCliResponse2.getErrorStreamOutput().equals(errorMsg));
-    assertThat(helmCliResponse2.getOutputWithErrorStream().equals(combinedOutput));
+    assertThat(helmCliResponse1.getOutput()).isEqualTo(expectedYamlMessage);
+    assertThat(helmCliResponse1.getErrorStreamOutput()).isEqualTo(finalError);
+    assertThat(helmCliResponse1.getOutputWithErrorStream()).isEqualTo(combinedOutput2);
+    assertThat(helmCliResponse2.getOutput()).isEqualTo(expectedYamlMessage);
+    assertThat(helmCliResponse2.getErrorStreamOutput()).isEqualTo(finalError2);
+    assertThat(helmCliResponse2.getOutputWithErrorStream()).isEqualTo(combinedOutput);
   }
 
   @Test
@@ -512,6 +518,8 @@ public class HelmClientImplTest extends CategoryTest {
     doReturn("helm").when(k8sGlobalConfigService).getHelmPath(HelmVersion.V3);
 
     assertThatThrownBy(() -> helmClient.getManifest(commandData, "default"))
+        .isInstanceOf(HelmClientRetryableException.class)
+        .getCause()
         .isInstanceOf(HelmClientRuntimeException.class);
     verify(helmClient, times(3))
         .executeWithExceptionHandling(

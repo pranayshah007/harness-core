@@ -18,6 +18,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.KustomizeCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
+import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sTaskType;
@@ -85,6 +86,19 @@ public class K8sTaskParameters implements TaskParameters, ActivityAccess, Execut
     }
     if (isNotEmpty(delegateSelectors)) {
       executionCapabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());
+    }
+
+    return executionCapabilities;
+  }
+
+  protected List<ExecutionCapability> getSecretManagerExecutionCapabilities(
+      ExpressionEvaluator maskingEvaluator, K8sDelegateManifestConfig manifestConfig) {
+    final List<ExecutionCapability> executionCapabilities = new ArrayList<>();
+
+    if (manifestConfig != null && manifestConfig.isSecretManagerCapabilitiesEnabled()) {
+      executionCapabilities.addAll(
+          EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+              manifestConfig.getEncryptedDataDetails(), maskingEvaluator));
     }
 
     return executionCapabilities;

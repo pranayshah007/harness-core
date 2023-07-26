@@ -89,6 +89,7 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
                                                           .connectorRef(gitEntityInfo.getConnectorRef())
                                                           .filePath(gitEntityInfo.getFilePath())
                                                           .repoName(gitEntityInfo.getRepoName())
+                                                          .applyRepoAllowListFilter(true)
                                                           .build();
     return gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
   }

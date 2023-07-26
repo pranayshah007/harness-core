@@ -21,7 +21,6 @@ import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutorConfig;
@@ -55,7 +54,7 @@ public class WinRmCleanupCommandHandler implements CommandHandler {
     ShellExecutorConfig config = getShellExecutorConfig((WinrmTaskParameters) parameters, commandUnit);
     AbstractScriptExecutor executor =
         shellExecutorFactory.getExecutor(config, logStreamingTaskClient, commandUnitsProgress, true);
-    executor.getLogCallback().saveExecutionLog("Command completed with ExitCode (0)", LogLevel.INFO, SUCCESS);
+    closeLogStreamWithSuccess(executor.getLogCallback());
     return ExecuteCommandResponse.builder().status(SUCCESS).build();
   }
 }

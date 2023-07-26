@@ -9,7 +9,7 @@ package io.harness.engine.interrupts.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
-import static io.harness.pms.contracts.execution.Status.QUEUED;
+import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static java.util.Arrays.asList;
@@ -99,7 +99,7 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
 
     mongoTemplate.save(interrupt);
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
-             planExecutionId, StatusUtils.abortAndExpireStatuses()))
+             planExecutionId, StatusUtils.userMarkedFailureStatuses()))
         .thenReturn(-1L);
     Interrupt handledInterrupt = userMarkedFailAllInterruptHandler.handleInterrupt(interrupt);
     assertThat(handledInterrupt).isNotNull();
@@ -122,7 +122,7 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
                               .build();
 
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
-             planExecutionId, StatusUtils.finalizableStatuses()))
+             planExecutionId, StatusUtils.userMarkedFailureStatuses()))
         .thenReturn(0L);
     when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.RUNNING);
     Interrupt handledInterrupt = userMarkedFailAllInterruptHandler.registerInterrupt(interrupt);
@@ -148,7 +148,7 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
     CloseableIterator<NodeExecution> iterator =
         OrchestrationTestHelper.createCloseableIterator(Collections.emptyListIterator());
     when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
-             interruptWithNodeExecutionId.getPlanExecutionId(), StatusUtils.abortAndExpireStatuses(),
+             interruptWithNodeExecutionId.getPlanExecutionId(), StatusUtils.userMarkedFailureStatuses(),
              NodeProjectionUtils.fieldsForInterruptPropagatorHandler))
         .thenReturn(iterator);
     handledInterrupt = userMarkedFailAllInterruptHandler.registerInterrupt(interruptWithNodeExecutionId);
@@ -175,7 +175,7 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
 
     // case1: updatedCount = 0
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
-             planExecutionId, StatusUtils.finalizableStatuses()))
+             planExecutionId, StatusUtils.userMarkedFailureStatuses()))
         .thenReturn(0L);
     Interrupt handledInterrupt = userMarkedFailAllInterruptHandler.handleAllNodes(interrupt);
     assertThat(handledInterrupt).isNotNull();
@@ -184,7 +184,7 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
 
     // case2: updatedCount < 0
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
-             planExecutionId, StatusUtils.abortAndExpireStatuses()))
+             planExecutionId, StatusUtils.userMarkedFailureStatuses()))
         .thenReturn(-1L);
     handledInterrupt = userMarkedFailAllInterruptHandler.handleAllNodes(interrupt);
     assertThat(handledInterrupt).isNotNull();
@@ -193,7 +193,7 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
 
     // case3: updatedCount > 0
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
-             planExecutionId, StatusUtils.abortAndExpireStatuses()))
+             planExecutionId, StatusUtils.userMarkedFailureStatuses()))
         .thenReturn(1L);
     CloseableIterator<NodeExecution> iterator =
         OrchestrationTestHelper.createCloseableIterator(Collections.emptyListIterator());
@@ -231,7 +231,7 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
             .uuid(nodeExecution1Id)
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1)).build())
             .planNode(planNode1)
-            .status(QUEUED)
+            .status(RUNNING)
             .build();
     List<NodeExecution> nodeExecutionList1 = asList(nodeExecution1);
 
@@ -244,7 +244,7 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
         .thenReturn(iterator);
 
     List<NodeExecution> extractedChildExecutions = new LinkedList<>();
-    extractedChildExecutions.add(NodeExecution.builder().uuid("childUuid").status(QUEUED).build());
+    extractedChildExecutions.add(NodeExecution.builder().uuid("childUuid").status(RUNNING).build());
     when(nodeExecutionService.extractChildExecutions(
              interruptWithNodeExecutionId.getNodeExecutionId(), true, new LinkedList<>(), new LinkedList<>(), true))
         .thenReturn(extractedChildExecutions);

@@ -53,16 +53,19 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.mappers.ManifestFilterHelper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
@@ -72,6 +75,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
+import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.IdentifierRefHelper;
@@ -131,9 +135,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private final OutboxService outboxService;
   private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final ServiceOverrideService serviceOverrideService;
+  private final ServiceOverridesServiceV2 serviceOverridesServiceV2;
   private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Inject private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
   @Inject private TemplateResourceClient templateResourceClient;
+  @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -144,13 +150,15 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Inject
   public ServiceEntityServiceImpl(ServiceRepository serviceRepository, EntitySetupUsageService entitySetupUsageService,
       @Named(ENTITY_CRUD) Producer eventProducer, OutboxService outboxService, TransactionTemplate transactionTemplate,
-      ServiceOverrideService serviceOverrideService, ServiceEntitySetupUsageHelper entitySetupUsageHelper) {
+      ServiceOverrideService serviceOverrideService, ServiceOverridesServiceV2 serviceOverridesServiceV2,
+      ServiceEntitySetupUsageHelper entitySetupUsageHelper) {
     this.serviceRepository = serviceRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
     this.serviceOverrideService = serviceOverrideService;
+    this.serviceOverridesServiceV2 = serviceOverridesServiceV2;
     this.entitySetupUsageHelper = entitySetupUsageHelper;
   }
 
@@ -389,9 +397,13 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         }
         return true;
       }));
+      boolean isOverridesV2Enabled =
+          overrideV2ValidationHelper.isOverridesV2Enabled(accountId, orgIdentifier, projectIdentifier);
       processQuietly(()
-                         -> serviceOverrideService.deleteAllInProjectForAService(
-                             accountId, orgIdentifier, projectIdentifier, serviceRef));
+                         -> isOverridesV2Enabled
+              ? (serviceOverridesServiceV2.deleteAllOfService(accountId, orgIdentifier, projectIdentifier, serviceRef))
+              : (serviceOverrideService.deleteAllInProjectForAService(
+                  accountId, orgIdentifier, projectIdentifier, serviceRef)));
       entitySetupUsageHelper.deleteSetupUsages(serviceEntityOptional.get());
       publishEvent(
           accountId, orgIdentifier, projectIdentifier, serviceRef, EventsFrameworkMetadataConstants.DELETE_ACTION);
@@ -607,8 +619,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public boolean isServiceField(String fieldName, JsonNode serviceValue) {
     return YamlTypes.SERVICE_ENTITY.equals(fieldName) && serviceValue.isObject()
-        && (serviceValue.get(YamlTypes.SERVICE_REF) != null
-            || serviceValue.get(YamlTypes.SERVICE_USE_FROM_STAGE) != null);
+        && (serviceValue.get(YamlTypes.SERVICE_REF) != null || serviceValue.get(YamlTypes.USE_FROM_STAGE) != null);
   }
 
   @Override
@@ -1063,5 +1074,28 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
 
     return ValidateTemplateInputsResponseDTO.builder().validYaml(true).build();
+  }
+
+  @Override
+  public ManifestsResponseDTO getManifestIdentifiers(String yaml, String serviceIdentifier) {
+    try {
+      YamlField serviceYamlField = YamlUtils.readTree(yaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
+      if (serviceYamlField == null) {
+        throw new YamlException(
+            String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
+      }
+
+      YamlField manifestsField =
+          ManifestFilterHelper.getManifestsNodeFromServiceYaml(serviceYamlField, serviceIdentifier);
+      if (manifestsField == null) {
+        return new ManifestsResponseDTO();
+      }
+
+      return new ManifestsResponseDTO().identifiers(
+          ManifestFilterHelper.getManifestIdentifiersFilteredOnManifestType(manifestsField));
+    } catch (IOException e) {
+      throw new InvalidRequestException(
+          String.format("Error occurred while fetching list of manifests for service %s", serviceIdentifier), e);
+    }
   }
 }

@@ -66,6 +66,7 @@ public class NGCommonEntityConstants {
   public static final String REPO_NAME = "repoName";
   public static final String PLAN_KEY = "planExecutionId";
   public static final String STAGE_KEY = "stageExecutionId";
+  public static final String STEP_KEY = "stepExecutionId";
   public static final String TYPE_KEY = "type";
   public static final String TOKEN_KEY = "tokenId";
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
@@ -117,6 +118,7 @@ public class NGCommonEntityConstants {
   public static final String DELETED_PARAM_MESSAGE = "Deletion status for Entity";
   public static final String VERSION_PARAM_MESSAGE = "Version of Entity";
   public static final String FILE_PARAM_MESSAGE = "The file identifier";
+  public static final String SCOPED_FILE_PATH_PARAM_MESSAGE = "The scoped file path reference";
   public static final String FILE_LIST_IDENTIFIERS_PARAM_MESSAGE =
       "This is the list of File IDs. Details specific to these IDs would be fetched.";
   public static final String FILE_SEARCH_TERM_PARAM_MESSAGE =
@@ -145,6 +147,9 @@ public class NGCommonEntityConstants {
   public static final String INTERNAL_SERVER_ERROR_CODE = "500";
   public static final String APPLICATION_JSON_MEDIA_TYPE = "application/json";
   public static final String APPLICATION_YAML_MEDIA_TYPE = "application/yaml";
+  public static final String CONTENT_TYPE_HEADER = "Content-Type";
+  public static final String APPLICATION_GZIP_MEDIA_TYPE = "application/x-gzip";
+  public static final String APPLICATION_OCTET_STREAM_MEDIA_TYPE = "application/octet-stream";
   public static final String OPERATOR_PARAM_MESSAGE = "Operator Criteria for Criterias ";
   public static final String RESOURCE = "Resource it targets (For icons)";
   public static final String POLICY = "Get YAML of the policy";
@@ -209,4 +214,5 @@ public class NGCommonEntityConstants {
   public static final String TARGET_IDENTIFIER_KEY = "targetIdentifier";
   public static final String NOTES_FOR_PIPELINE_EXECUTION = "notesForPipelineExecution";
   public static final String APPLY_GITX_REPO_ALLOW_LIST_FILTER = "applyGitXRepoAllowListFilter";
+  public static final String ACTIVITY_TYPES = "activityTypes";
 }

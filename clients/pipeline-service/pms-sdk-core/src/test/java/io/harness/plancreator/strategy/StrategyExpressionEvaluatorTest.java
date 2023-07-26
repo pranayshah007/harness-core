@@ -28,7 +28,7 @@ public class StrategyExpressionEvaluatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResolve() throws IOException {
     Map<String, String> combinations = Map.of("config", "{\"a\":\"AA\",\"b\":\"BB\"}");
-    EngineExpressionEvaluator evaluator = new StrategyExpressionEvaluator(combinations, 3, 5, "10");
+    EngineExpressionEvaluator evaluator = new StrategyExpressionEvaluator(combinations, 3, 5, "10", null);
 
     assertThat(evaluator.resolve("<+matrix.config.a>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED)).isEqualTo("AA");
     assertThat(evaluator.resolve("<+matrix.config.b>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED)).isEqualTo("BB");
@@ -58,7 +58,7 @@ public class StrategyExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.resolve("<+repeat.item>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED)).isEqualTo("10");
 
     combinations = Map.of("a", "AAA", "b", "BBB");
-    evaluator = new StrategyExpressionEvaluator(combinations, 3, 5, "10");
+    evaluator = new StrategyExpressionEvaluator(combinations, 3, 5, "10", null);
 
     assertThat(evaluator.resolve("<+matrix.a>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED)).isEqualTo("AAA");
     assertThat(evaluator.resolve("<+matrix.b>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED)).isEqualTo("BBB");

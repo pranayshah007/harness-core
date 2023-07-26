@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataServiceImpl;
@@ -40,7 +41,13 @@ import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -87,11 +94,30 @@ public class TriggerFunctorTest extends CategoryTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testGetMetadataWebhook() {
+    MultivaluedMap<String, String> headerMap = new MultivaluedHashMap<>();
+    headerMap.put("X-GitHub-Delivery", Collections.singletonList("c4186fb6-1d22-11ee-8736-3f7c21bf83f1"));
+    headerMap.put("Accept", Collections.singletonList("*/*"));
+    headerMap.put("X-GitHub-Hook-ID", Collections.singletonList("402904149"));
+    headerMap.put("content-type", Collections.singletonList("application/json"));
+    headerMap.put("User-Agent", Arrays.asList("GitHub-Hookshot/703fc34", "GitHub-Hookshot/703fc35"));
+    headerMap.put("X-GitHub-Event", Collections.singletonList("push"));
+    headerMap.put("X-GitHub-Hook-Installation-Target-ID", Collections.singletonList("587948287"));
+    headerMap.put("X-GitHub-Hook-Installation-Target-Type", Collections.singletonList("repository"));
+    headerMap.put("X-Hub-Signature", Collections.singletonList("sha1=3e2d63c23863baa66f030c789537a6275744b3c7"));
+    headerMap.put("X-Hub-Signature-256",
+        Collections.singletonList("sha256=3213c8dee847243acbdb71096223f6737d98c9d72ca7ae2b24cacc0f468fa0cb"));
+    headerMap.put("Host", Collections.singletonList("localhost:1010"));
+    headerMap.put("Accept-Encoding", Collections.singletonList("gzip,deflate,br"));
+
+    List<HeaderConfig> headerConfigs = new ArrayList<>();
+    headerMap.forEach((k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
+
     PlanExecutionMetadataService metadataService = mock(PlanExecutionMetadataServiceImpl.class);
     when(metadataService.findByPlanExecutionId(any()))
         .thenReturn(Optional.of(
             PlanExecutionMetadata.builder()
                 .triggerJsonPayload(bigPayload)
+                .triggerHeader(headerConfigs)
                 .triggerPayload(TriggerPayload.newBuilder()
                                     .setParsedPayload(ParsedPayload.newBuilder().setPr(prEvent.getPr()).build())
                                     .setType(Type.WEBHOOK)
@@ -113,6 +139,26 @@ public class TriggerFunctorTest extends CategoryTest {
     assertThat(expressionEvaluator.renderExpression("<+trigger.repoUrl>")).isEqualTo("https://github.com");
     assertThat(expressionEvaluator.renderExpression("<+trigger.gitUser>")).isEqualTo("user");
     assertThat(expressionEvaluator.renderExpression("<+trigger.prTitle>")).isEqualTo("This is Title");
+
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['Host']>")).isEqualTo("localhost:1010");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-GitHub-Delivery']>"))
+        .isEqualTo("c4186fb6-1d22-11ee-8736-3f7c21bf83f1");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['Accept']>")).isEqualTo("*/*");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-GitHub-Hook-ID']>")).isEqualTo("402904149");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['content-type']>")).isEqualTo("application/json");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['User-Agent']>"))
+        .isEqualTo("GitHub-Hookshot/703fc34,GitHub-Hookshot/703fc35");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-GitHub-Event']>")).isEqualTo("push");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-GitHub-Hook-Installation-Target-ID']>"))
+        .isEqualTo("587948287");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-GitHub-Hook-Installation-Target-Type']>"))
+        .isEqualTo("repository");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-Hub-Signature']>"))
+        .isEqualTo("sha1=3e2d63c23863baa66f030c789537a6275744b3c7");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-Hub-Signature-256']>"))
+        .isEqualTo("sha256=3213c8dee847243acbdb71096223f6737d98c9d72ca7ae2b24cacc0f468fa0cb");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['Accept-Encoding']>"))
+        .isEqualTo("gzip,deflate,br");
 
     when(metadataService.findByPlanExecutionId(any()))
         .thenReturn(Optional.of(

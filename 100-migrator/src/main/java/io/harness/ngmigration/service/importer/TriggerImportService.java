@@ -124,12 +124,13 @@ public class TriggerImportService implements ImportService {
     Map<CgEntityId, NGYamlFile> yamlFileMap = summaryDTO.getNgYamlFiles()
                                                   .stream()
                                                   .filter(ngYamlFile -> ngYamlFile.getCgBasicInfo() != null)
+                                                  .distinct()
                                                   .collect(Collectors.toMap(yamlFile
                                                       -> CgEntityId.builder()
                                                              .id(yamlFile.getCgBasicInfo().getId())
                                                              .type(yamlFile.getCgBasicInfo().getType())
                                                              .build(),
-                                                      yamlFile -> yamlFile));
+                                                      yamlFile -> yamlFile, (yamlFile1, yamlFile2) -> yamlFile1));
 
     MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(authToken, importDTO);
     PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);

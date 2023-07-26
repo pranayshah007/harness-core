@@ -72,10 +72,13 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 
+import software.wings.beans.GcpKmsConfig;
+
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -238,6 +241,8 @@ public class TerraformPlanStepTest extends CategoryTest {
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(varFileInfo).when(terraformStepHelper).toTerraformVarFileInfo(any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
+    doReturn(GcpKmsConfig.builder().build()).when(terraformStepHelper).getEncryptionConfig(any(), any());
+    doReturn(true).when(terraformStepHelper).tfPlanEncryptionOnManager(any(), any());
     doReturn("back-content").when(terraformStepHelper).getBackendConfig(any());
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
@@ -264,6 +269,8 @@ public class TerraformPlanStepTest extends CategoryTest {
     assertThat(taskParameters.getPlanName()).isEqualTo("planName");
     assertThat(taskParameters.isSkipTerraformRefresh()).isTrue();
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+    verify(terraformStepHelper, times(1)).getEncryptionConfig(any(), any());
+    assertThat(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager()).isTrue();
   }
 
   @Test
@@ -318,6 +325,8 @@ public class TerraformPlanStepTest extends CategoryTest {
     doReturn("planName").when(terraformStepHelper).getTerraformPlanName(any(), any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
     doReturn(varFileInfo).when(terraformStepHelper).toTerraformVarFileInfo(any(), any());
+    doReturn(GcpKmsConfig.builder().build()).when(terraformStepHelper).getEncryptionConfig(any(), any());
+    doReturn(true).when(terraformStepHelper).tfPlanEncryptionOnManager(any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
     doReturn("back-content").when(terraformStepHelper).getBackendConfig(any());
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
@@ -348,6 +357,8 @@ public class TerraformPlanStepTest extends CategoryTest {
     assertThat(taskParameters.isTerraformCloudCli()).isTrue();
     assertThat(taskParameters.isSkipTerraformRefresh()).isFalse();
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+    verify(terraformStepHelper, times(0)).getEncryptionConfig(any(), any());
+    assertThat(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager()).isFalse();
   }
 
   @Test
@@ -445,6 +456,7 @@ public class TerraformPlanStepTest extends CategoryTest {
         TerraformPlanStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("id"))
             .configuration(TerraformPlanExecutionDataParameters.builder()
+                               .varFiles(new LinkedHashMap<>())
                                .isTerraformCloudCli(ParameterField.createValueField(false))
                                .command(TerraformPlanCommand.APPLY)
                                .build())
@@ -467,10 +479,12 @@ public class TerraformPlanStepTest extends CategoryTest {
     assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
     assertThat(((TerraformPlanOutcome) (stepOutcome.getOutcome())).getDetailedExitCode()).isEqualTo(2);
 
+    verify(terraformStepHelper).getRevisionsMap(any(LinkedHashMap.class), any());
     verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any(), eq(null));
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
     verify(terraformStepHelper)
         .saveTerraformPlanExecutionDetails(eq(ambiance), eq(terraformTaskNGResponse), eq("id"), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test // Different Status

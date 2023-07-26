@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.artifact.bean.artifactsource;
-
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -40,6 +42,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
  * Artifacts Streams like Docker Hub, Nexus, GCR, etc.
  * This is the resolved artifact stream, can be used for Artifact Collection, etc.has
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Data
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)

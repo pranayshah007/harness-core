@@ -11,6 +11,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
@@ -74,13 +75,12 @@ import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.idp.provision.resource.ProvisionApiImpl;
 import io.harness.idp.provision.service.ProvisionService;
 import io.harness.idp.provision.service.ProvisionServiceImpl;
+import io.harness.idp.proxy.config.ProxyAllowListConfig;
 import io.harness.idp.proxy.delegate.DelegateProxyApi;
 import io.harness.idp.proxy.delegate.DelegateProxyApiImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
-import io.harness.idp.proxy.ngmanager.ManagerProxyApi;
-import io.harness.idp.proxy.ngmanager.ManagerProxyApiImpl;
-import io.harness.idp.proxy.ngmanager.NgManagerProxyApi;
-import io.harness.idp.proxy.ngmanager.NgManagerProxyApiImpl;
+import io.harness.idp.proxy.services.ProxyApi;
+import io.harness.idp.proxy.services.ProxyApiImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
 import io.harness.idp.settings.resources.BackstagePermissionsApiImpl;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -94,13 +94,13 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
-import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.organization.OrganizationClientModule;
+import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -225,7 +225,6 @@ public class IdpModule extends AbstractModule {
             .build();
       }
     });
-    install(new MetricsModule());
     install(new EventsFrameworkModule(appConfig.getEventsFrameworkConfiguration()));
     install(new AbstractModule() {
       @Override
@@ -261,6 +260,7 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ServiceResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, IDP_SERVICE.getServiceId(), false));
     install(new BackstageResourceClientModule());
     install(DelegateServiceDriverModule.getInstance(false, false));
     install(ExceptionModule.getInstance());
@@ -308,8 +308,7 @@ public class IdpModule extends AbstractModule {
     bind(OnboardingService.class).to(OnboardingServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(LayoutProxyApi.class).to(LayoutProxyApiImpl.class);
-    bind(NgManagerProxyApi.class).to(NgManagerProxyApiImpl.class);
-    bind(ManagerProxyApi.class).to(ManagerProxyApiImpl.class);
+    bind(ProxyApi.class).to(ProxyApiImpl.class);
     bind(PluginInfoApi.class).to(PluginInfoApiImpl.class);
     bind(DelegateProxyApi.class).to(DelegateProxyApiImpl.class);
     bind(PluginInfoService.class).to(PluginInfoServiceImpl.class);
@@ -485,6 +484,13 @@ public class IdpModule extends AbstractModule {
     return this.appConfig.getBackstagePostgresHost();
   }
 
+  @Provides
+  @Singleton
+  @Named("idpEncryptionSecret")
+  public String idpEncryptionSecret() {
+    return this.appConfig.getIdpEncryptionSecret();
+  }
+
   private DelegateCallbackToken getDelegateCallbackToken(DelegateServiceGrpcClient delegateServiceClient) {
     log.info("Generating Delegate callback token");
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(
@@ -503,5 +509,12 @@ public class IdpModule extends AbstractModule {
   @Named("backstageHttpClientConfig")
   public ServiceHttpClientConfig backstageHttpClientConfig() {
     return this.appConfig.getBackstageHttpClientConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("proxyAllowList")
+  public ProxyAllowListConfig proxyAllowList() {
+    return this.appConfig.getProxyAllowList();
   }
 }

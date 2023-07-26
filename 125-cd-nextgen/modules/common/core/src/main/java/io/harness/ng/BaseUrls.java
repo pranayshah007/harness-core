@@ -25,4 +25,6 @@ public class BaseUrls {
   @JsonProperty("nextGenUiUrl") String nextGenUiUrl;
   @JsonProperty("nextGenAuthUiUrl") String nextGenAuthUiUrl;
   @JsonProperty("webhookBaseUrl") String webhookBaseUrl;
+  @JsonProperty("ngManagerInternalBaseUrl") String ngManagerInternalBaseUrl;
+  @JsonProperty("scmServiceBaseUrl") String scmServiceBaseUrl;
 }

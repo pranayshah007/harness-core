@@ -51,4 +51,5 @@ public class ExecutionNode {
   Map<String, OrchestrationMap> stepDetails;
   StrategyMetadata strategyMetadata;
   Boolean executionInputConfigured;
+  String logBaseKey;
 }

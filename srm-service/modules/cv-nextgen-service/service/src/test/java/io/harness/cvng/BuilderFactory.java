@@ -27,6 +27,8 @@ import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClu
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
 import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityBuilder;
+import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
+import io.harness.cvng.activity.entities.SRMStepAnalysisActivity.SRMStepAnalysisActivityBuilder;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
@@ -62,6 +64,8 @@ import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.ExecutionLogDTOBuilder;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.beans.job.Sensitivity;
+import io.harness.cvng.cdng.beans.CVNGDeploymentStepInfo;
+import io.harness.cvng.cdng.beans.CVNGDeploymentStepInfo.CVNGDeploymentStepInfoBuilder;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.CVNGStepInfo.CVNGStepInfoBuilder;
 import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
@@ -267,6 +271,10 @@ import io.harness.eventsframework.schemas.deployment.ExecutionDetails;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO.EnvironmentResponseDTOBuilder;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.common.collect.Sets;
@@ -507,6 +515,10 @@ public class BuilderFactory {
                   .deploymentTag(ParameterField.createValueField("build#1"))
                   .sensitivity(ParameterField.createValueField("Low"))
                   .build());
+  }
+
+  public CVNGDeploymentStepInfoBuilder cvngDeploymentStepInfoBuilder() {
+    return CVNGDeploymentStepInfo.builder().duration(ParameterField.createValueField("12H"));
   }
 
   public AppDynamicsCVConfigBuilder appDynamicsCVConfigBuilder() {
@@ -1063,6 +1075,49 @@ public class BuilderFactory {
         .verificationJobInstanceIds(Arrays.asList(generateUuid()))
         .activityEndTime(clock.instant())
         .activityStartTime(clock.instant());
+  }
+
+  public SRMStepAnalysisActivityBuilder getSRMStepAnalysisActivityBuilder() {
+    return SRMStepAnalysisActivity.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
+        .eventTime(clock.instant())
+        .changeSourceIdentifier("changeSourceID")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .type(ChangeSourceType.HARNESS_CD.getActivityType())
+        .stageStepId("stageStepId")
+        .stageId("stageId")
+        .pipelineId("pipelineId")
+        .planExecutionId(generateUuid())
+        .artifactType("artifactType")
+        .artifactTag("artifactTag")
+        .activityName(generateUuid())
+        .activityEndTime(clock.instant())
+        .activityStartTime(clock.instant());
+  }
+
+  public Ambiance getAmbiance(ProjectParams projectParams) {
+    HashMap<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put("accountId", projectParams.getAccountIdentifier());
+    setupAbstractions.put("projectIdentifier", projectParams.getProjectIdentifier());
+    setupAbstractions.put("orgIdentifier", projectParams.getOrgIdentifier());
+    return Ambiance.newBuilder()
+        .setPlanExecutionId(generateUuid())
+        .setStageExecutionId(generateUuid())
+        .addLevels(Level.newBuilder()
+                       .setRuntimeId(generateUuid())
+                       .setStartTs(clock.millis())
+                       .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                       .build())
+        .addLevels(Level.newBuilder()
+                       .setRuntimeId(generateUuid())
+                       .setIdentifier("identifier")
+                       .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                       .build())
+        .putAllSetupAbstractions(setupAbstractions)
+        .build();
   }
 
   public InternalChangeActivityBuilder<?, ?> getInternalChangeActivity_FFBuilder() {
@@ -1628,6 +1683,7 @@ public class BuilderFactory {
     testVerificationJob.setProjectIdentifier(context.getProjectIdentifier());
     testVerificationJob.setOrgIdentifier(context.getOrgIdentifier());
     testVerificationJob.setCvConfigs(cvConfigs);
+    testVerificationJob.setBaselineVerificationJobInstanceId(UUID.randomUUID().toString());
     return testVerificationJob;
   }
 
@@ -1879,15 +1935,17 @@ public class BuilderFactory {
 
   private List<NotificationRuleCondition> getNotificationRuleConditions(NotificationRuleType type) {
     if (type.equals(NotificationRuleType.SLO)) {
-      return Arrays.asList(NotificationRuleCondition.builder()
-                               .type(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_PERCENTAGE)
-                               .spec(ErrorBudgetRemainingPercentageConditionSpec.builder().threshold(10.0).build())
-                               .build());
+      return new ArrayList<>(
+          Arrays.asList(NotificationRuleCondition.builder()
+                            .type(NotificationRuleConditionType.ERROR_BUDGET_REMAINING_PERCENTAGE)
+                            .spec(ErrorBudgetRemainingPercentageConditionSpec.builder().threshold(10.0).build())
+                            .build()));
     } else {
-      return Arrays.asList(NotificationRuleCondition.builder()
-                               .type(NotificationRuleConditionType.HEALTH_SCORE)
-                               .spec(HealthScoreConditionSpec.builder().threshold(20.0).period("10m").build())
-                               .build());
+      return new ArrayList<>(
+          Arrays.asList(NotificationRuleCondition.builder()
+                            .type(NotificationRuleConditionType.HEALTH_SCORE)
+                            .spec(HealthScoreConditionSpec.builder().threshold(20.0).period("10m").build())
+                            .build()));
     }
   }
 

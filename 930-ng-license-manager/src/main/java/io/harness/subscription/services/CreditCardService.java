@@ -7,10 +7,12 @@
 
 package io.harness.subscription.services;
 
+import io.harness.subscription.dto.CardDTO;
 import io.harness.subscription.dto.CreditCardDTO;
 import io.harness.subscription.responses.CreditCardResponse;
 
 public interface CreditCardService {
   CreditCardResponse saveCreditCard(CreditCardDTO creditCardDTO);
   boolean hasValidCard(String accountIdentifier);
+  CardDTO getDefaultCreditCard(String accountIdentifier);
 }

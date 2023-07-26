@@ -7,9 +7,6 @@
 
 package io.harness.accesscontrol.resources.resourcegroups;
 
-import static io.harness.accesscontrol.resources.resourcegroups.ResourceGroup.ALL_RESOURCES_IDENTIFIER;
-import static io.harness.accesscontrol.scopes.core.Scope.PATH_DELIMITER;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -29,12 +26,4 @@ public class ResourceSelector {
   @NotEmpty String selector;
   boolean conditional;
   String condition;
-
-  public static boolean validateResourceType(String resourceType, String resourceSelector) {
-    String[] split = resourceSelector.split(PATH_DELIMITER);
-    String resourceTypeFromSelector = split[split.length - 2];
-
-    return ALL_RESOURCES_IDENTIFIER.equals(resourceTypeFromSelector)
-        || resourceTypeFromSelector.equalsIgnoreCase(resourceType);
-  }
 }

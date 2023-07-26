@@ -7,6 +7,9 @@
 
 package io.harness.cvng.core.resources;
 
+import static io.harness.cvng.core.utils.ValidationUtils.validateOneOfDurationOrStartTimeIsPresent;
+import static io.harness.cvng.core.utils.ValidationUtils.validateTheDifferenceBetweenStartAndEndTimeAndGetStartTime;
+import static io.harness.cvng.core.utils.ValidationUtils.validationIfBothDurationAndStartTimeIsPresent;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.NGCommonEntityConstants;
@@ -67,7 +70,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
@@ -231,9 +236,14 @@ public class MonitoredServiceResource {
   public ResponseDTO<HistoricalTrend>
   getOverAllHealthScore(@NotNull @Valid @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @NotEmpty @PathParam("identifier") @ResourceIdentifier String identifier,
-      @NotNull @QueryParam("duration") DurationDTO durationDTO, @NotNull @QueryParam("endTime") Long endTime) {
+      @QueryParam("duration") DurationDTO durationDTO, @NotNull @QueryParam("endTime") Long endTime,
+      @QueryParam("startTime") Long startTime) {
+    validateOneOfDurationOrStartTimeIsPresent(durationDTO, startTime);
+    validationIfBothDurationAndStartTimeIsPresent(durationDTO, startTime, endTime);
+    Instant startTimeInstant = validateTheDifferenceBetweenStartAndEndTimeAndGetStartTime(
+        durationDTO, startTime, endTime, Duration.of(5, ChronoUnit.MINUTES));
     return ResponseDTO.newResponse(monitoredServiceService.getOverAllHealthScore(
-        projectParams.getProjectParams(), identifier, durationDTO, Instant.ofEpochMilli(endTime)));
+        projectParams.getProjectParams(), identifier, startTimeInstant, Instant.ofEpochMilli(endTime)));
   }
 
   @GET

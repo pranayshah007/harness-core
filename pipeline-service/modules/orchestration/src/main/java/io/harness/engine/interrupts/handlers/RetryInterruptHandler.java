@@ -22,7 +22,10 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
@@ -48,6 +51,9 @@ public class RetryInterruptHandler implements InterruptHandler {
     }
     NodeExecution nodeExecution = nodeExecutionService.getWithFieldsIncluded(
         interrupt.getNodeExecutionId(), NodeProjectionUtils.fieldsForRetryInterruptHandler);
+    Ambiance ambiance = nodeExecution.getAmbiance();
+    boolean isStepGroupRetry =
+        (StepCategory.STEP_GROUP.name()).equals(AmbianceUtils.obtainCurrentLevel(ambiance).getStepType().getType());
     if (!StatusUtils.retryableStatuses().contains(nodeExecution.getStatus())) {
       throw new InvalidRequestException(
           "NodeExecution is not in a retryable status. Current Status: " + nodeExecution.getStatus());
@@ -56,7 +62,8 @@ public class RetryInterruptHandler implements InterruptHandler {
       throw new InvalidRequestException("This Node is already Retried");
     }
 
-    if (ExecutionModeUtils.isParentMode(nodeExecution.getMode())) {
+    // If it is stepGroup then retries are supported.
+    if (!isStepGroupRetry && ExecutionModeUtils.isParentMode(nodeExecution.getMode())) {
       throw new InvalidRequestException("Node Retry is supported only for Leaf Nodes");
     }
     interrupt.setState(State.PROCESSING);

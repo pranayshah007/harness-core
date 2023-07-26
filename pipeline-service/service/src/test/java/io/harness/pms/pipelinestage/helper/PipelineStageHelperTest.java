@@ -44,6 +44,7 @@ import io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActi
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -252,16 +253,16 @@ public class PipelineStageHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testGetInputSetYaml() throws IOException {
+  public void testGetInputSetJsonNode() throws IOException {
     YamlField inputSetField = YamlUtils.readTreeWithDefaultObjectMapper("a:\n  b: c");
-    String inputSetYaml = pipelineStageHelper.getInputSetYaml(inputSetField, PipelineVersion.V0);
-    assertThat(inputSetYaml).isEqualTo("pipeline:\n  a:\n    b: c\n");
-    verify(pipelineStageHelperV1, times(0)).getInputSet(inputSetField);
+    JsonNode inputSetJsonNode = pipelineStageHelper.getInputSetJsonNode(inputSetField, PipelineVersion.V0);
+    assertThat(inputSetJsonNode).isEqualTo(YamlUtils.readAsJsonNode("pipeline:\n  a:\n    b: c\n"));
+    verify(pipelineStageHelperV1, times(0)).getInputSetJsonNode(inputSetField);
 
-    pipelineStageHelper.getInputSetYaml(inputSetField, PipelineVersion.V1);
-    verify(pipelineStageHelperV1, times(1)).getInputSet(inputSetField);
+    pipelineStageHelper.getInputSetJsonNode(inputSetField, PipelineVersion.V1);
+    verify(pipelineStageHelperV1, times(1)).getInputSetJsonNode(inputSetField);
 
-    assertThatThrownBy(() -> pipelineStageHelper.getInputSetYaml(inputSetField, "V2"))
+    assertThatThrownBy(() -> pipelineStageHelper.getInputSetJsonNode(inputSetField, "V2"))
         .isInstanceOf(InvalidRequestException.class);
   }
   @NotNull

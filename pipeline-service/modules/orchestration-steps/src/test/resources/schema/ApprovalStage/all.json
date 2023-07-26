@@ -159,6 +159,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -1312,8 +1338,7 @@
           "required": [
             "infrastructure",
             "policy",
-            "source",
-            "verifyAttestation"
+            "source"
           ],
           "properties": {
             "infrastructure": {
@@ -1345,7 +1370,6 @@
         {
           "type": "object",
           "required": [
-            "attestation",
             "infrastructure",
             "source",
             "tool"
@@ -4928,7 +4952,7 @@
           "properties": {
             "spec": {
               "readOnly": true,
-              "$ref": "#/definitions/RetryFailureSpecConfig"
+              "$ref": "#/definitions/RetryStepGroupFailureSpecConfig"
             },
             "type": {
               "type": "string",
@@ -4939,6 +4963,28 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RetryStepGroupFailureSpecConfig": {
+      "type": "object",
+      "required": [
+        "retryCount",
+        "retryIntervals"
+      ],
+      "properties": {
+        "retryCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "retryIntervals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 2147483647,
+          "minItems": 1
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "RunStepInfo": {

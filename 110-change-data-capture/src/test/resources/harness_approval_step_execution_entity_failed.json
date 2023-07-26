@@ -1,0 +1,60 @@
+{
+  "_id" : "649d5a9dd7805242fbe52fe0",
+  "createdAt" : 1688033949712,
+  "lastModifiedAt" : 1688033949712,
+  "accountIdentifier" : "kmpySmUISimoRrJL6NL73w",
+  "orgIdentifier" : "default",
+  "projectIdentifier" : "TAS",
+  "stageExecutionId" : "paQ2wGn3SMmJ8KgC3UUC_g",
+  "stepExecutionId" : "yAa9u1uGQm6CM8KjtcVxcA",
+  "planExecutionId" : "D30tnGm5SNmkxDlo7X9LyA",
+  "pipelineIdentifier" : "testApproval",
+  "stepIdentifier" : "HarnessApproval_1",
+  "status" : "APPROVAL_REJECTED",
+  "stepType" : "HarnessApproval",
+  "startts" : 1688033949639,
+  "_class" : "stepExecutionEntity",
+  "executionDetails" : {
+    "approvalActivities" : [
+      {
+        "user" : {
+          "name" : "Admin",
+          "email" : "admin@harness.io"
+        },
+        "approvalAction" : "APPROVE",
+        "approverInputs" : {
+
+        },
+        "comments" : "approve",
+        "approvedAt" : { "$date" : "2023-06-29T10:19:18.501Z" }
+      },
+      {
+        "user" : {
+          "name" : "Rbac",
+          "email" : "rbac1@harness.io"
+        },
+        "approvalAction" : "REJECT",
+        "approverInputs" : {
+
+        },
+        "comments" : "rejecting!",
+        "approvedAt" : { "$date" : "2023-06-29T10:19:18.501Z" }
+      }
+    ],
+    "_class" : "HarnessApprovalStepExecutionDetails"
+  },
+  "failureInfo" : {
+    "failureData" : [
+      {
+        "code" : "APPROVAL_REJECTION",
+        "level" : "ERROR",
+        "message" : "Approval Step has been Rejected",
+        "failureTypes" : [
+          "APPROVAL_REJECTION"
+        ]
+      }
+    ]
+  },
+  "stepName" : "HarnessApproval_1",
+  "endts" : 1688033958789
+}

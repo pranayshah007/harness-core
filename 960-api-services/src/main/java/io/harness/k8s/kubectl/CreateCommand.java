@@ -23,7 +23,7 @@ public class CreateCommand extends AbstractExecutable {
 
   @Override
   public String command() {
-    StringBuilder command = new StringBuilder();
+    StringBuilder command = new StringBuilder(128);
     command.append(client.command()).append("create -f ").append(this.createdManifestName).append(" -o=yaml ");
 
     int versionCheck = client.getVersion().compareTo(Version.parse("1.18"));

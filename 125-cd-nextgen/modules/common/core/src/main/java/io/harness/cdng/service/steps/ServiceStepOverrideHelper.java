@@ -43,6 +43,7 @@ import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.service.mappers.ManifestFilterHelper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
@@ -104,6 +105,8 @@ public class ServiceStepOverrideHelper {
                 ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null
                     ? StringUtils.EMPTY
                     : ngEnvironmentConfig.getNgEnvironmentInfoConfig().getIdentifier())
+            .manifestConfigurations(ManifestFilterHelper.getManifestConfigurationsFromKubernetesAndNativeHelm(
+                ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec()))
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -133,6 +136,8 @@ public class ServiceStepOverrideHelper {
             .environmentIdentifier(environmentRef)
             .svcManifests(svcManifests)
             .manifestsFromOverride(manifestsFromOverride)
+            .manifestConfigurations(ManifestFilterHelper.getManifestConfigurationsFromKubernetesAndNativeHelm(
+                ngServiceV2InfoConfig.getServiceDefinition().getServiceSpec()))
             .build();
     sweepingOutputService.consume(
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
@@ -380,17 +385,18 @@ public class ServiceStepOverrideHelper {
   private List<ApplicationSettingsConfiguration> prepareFinalAppSettingsV2(
       NGServiceV2InfoConfig serviceV2Config, Map<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs) {
     List<ApplicationSettingsConfiguration> applicationSettingsConfiguration = getSvcAppSettings(serviceV2Config);
-
+    ApplicationSettingsConfiguration configuration = null;
     for (ServiceOverridesType overridesType : OVERRIDE_IN_REVERSE_PRIORITY) {
       if (overrideV2Configs.containsKey(overridesType)) {
         ServiceOverridesSpec spec = overrideV2Configs.get(overridesType).getSpec();
-        ApplicationSettingsConfiguration configuration = spec.getApplicationSettings();
-        if (configuration != null) {
-          applicationSettingsConfiguration = Collections.singletonList(configuration);
+        if (spec.getApplicationSettings() != null) {
+          configuration = spec.getApplicationSettings();
         }
       }
     }
-
+    if (configuration != null) {
+      applicationSettingsConfiguration = Collections.singletonList(configuration);
+    }
     return applicationSettingsConfiguration;
   }
 
@@ -414,17 +420,18 @@ public class ServiceStepOverrideHelper {
   private List<ConnectionStringsConfiguration> prepareFinalConnectionStringsV2(
       NGServiceV2InfoConfig serviceV2Config, Map<ServiceOverridesType, NGServiceOverrideConfigV2> overrideV2Configs) {
     List<ConnectionStringsConfiguration> connectionStringsConfiguration = getSvcConnectionStrings(serviceV2Config);
-
+    ConnectionStringsConfiguration configuration = null;
     for (ServiceOverridesType overridesType : OVERRIDE_IN_REVERSE_PRIORITY) {
       if (overrideV2Configs.containsKey(overridesType)) {
         ServiceOverridesSpec spec = overrideV2Configs.get(overridesType).getSpec();
-        ConnectionStringsConfiguration configuration = spec.getConnectionStrings();
-        if (configuration != null) {
-          connectionStringsConfiguration = Collections.singletonList(configuration);
+        if (spec.getConnectionStrings() != null) {
+          configuration = spec.getConnectionStrings();
         }
       }
     }
-
+    if (configuration != null) {
+      connectionStringsConfiguration = Collections.singletonList(configuration);
+    }
     return connectionStringsConfiguration;
   }
 

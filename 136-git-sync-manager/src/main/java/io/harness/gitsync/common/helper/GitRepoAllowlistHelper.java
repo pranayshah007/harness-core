@@ -10,6 +10,9 @@ package io.harness.gitsync.common.helper;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.gitx.GitXSettingsHelper;
@@ -27,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class GitRepoAllowlistHelper {
   @Inject private GitXSettingsHelper gitXSettingsHelper;
+  @Inject private GitRepoHelper gitRepoHelper;
 
   public Set<String> filterRepoList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Set<String> repoList) {
@@ -49,18 +53,16 @@ public class GitRepoAllowlistHelper {
     return repoList;
   }
 
-  public void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier, String repoName) {
-    List<String> repoAllowlist = getGitRepoAllowlist(accountIdentifier, orgIdentifier, projectIdentifier);
-
+  public void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> repoAllowlist, String repoName) {
     if (!validateIfCurrentRepoIsAllowed(repoAllowlist, repoName)) {
       String currentScope = getCurrentScopeForErrorMessage(accountIdentifier, orgIdentifier, projectIdentifier);
       throw NestedExceptionUtils.hintWithExplanationException(
-          String.format("Please check if repo [%s] is in allowed repository list under default setting for current "
-                  + currentScope,
-              repoName),
           String.format(
-              "GIT operations on repo [%s] are restricted due to default setting for current scope: " + currentScope,
-              repoName),
+              "Please check if repo [%s] is in allowed repository list under default setting for current scope: %s",
+              repoName, currentScope),
+          String.format("GIT operations on repo [%s] are restricted due to default setting for current scope: %s",
+              repoName, currentScope),
           new InvalidRequestException(
               String.format("Failed to perform GIT operation as access to repo [%s] is forbidden", repoName)));
     }
@@ -69,13 +71,12 @@ public class GitRepoAllowlistHelper {
   private String getCurrentScopeForErrorMessage(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     if (orgIdentifier == null) {
-      return String.format("ACCOUNT scope with account Identifier [%s].", accountIdentifier);
+      return String.format("ACCOUNT with account Identifier [%s].", accountIdentifier);
     } else if (projectIdentifier == null) {
       return String.format(
-          "ORG scope with account Identifier [%s] and org identifier [%s].", accountIdentifier, orgIdentifier);
+          "ORG with account Identifier [%s] and org identifier [%s].", accountIdentifier, orgIdentifier);
     } else {
-      return String.format(
-          "PROJECT scope with account Identifier [%s], org identifier [%s] and project identifier [%s]",
+      return String.format("PROJECT with account Identifier [%s], org identifier [%s] and project identifier [%s]",
           accountIdentifier, orgIdentifier, projectIdentifier);
     }
   }
@@ -98,17 +99,43 @@ public class GitRepoAllowlistHelper {
     return false;
   }
 
+  public void validateRepo(Scope scope, ScmConnector scmConnector, String repo) {
+    List<String> repoAllowlist =
+        getGitRepoAllowlist(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+
+    String repoToValidate = repo;
+    if (isAbsoluteRepo(repo) && containsInstancesOfReposWithNamespace(repoAllowlist)) {
+      repoToValidate = gitRepoHelper.getRepoNameWithNamespace(scmConnector, repo);
+    }
+
+    validateRepo(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), repoAllowlist,
+        repoToValidate);
+  }
+
   private String getAbsoluteRepoName(String repoAllowlistElem) {
     return repoAllowlistElem.substring(repoAllowlistElem.lastIndexOf('/') + 1);
   }
 
   // Git providers have directory structures and user may give repoName as "org/repo".
   // This method indicates if the input string has only repo or not.
-  private boolean isAbsoluteRepo(String repo) {
+  public boolean isAbsoluteRepo(String repo) {
     return !repo.contains("/");
   }
 
-  private List<String> getGitRepoAllowlist(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public List<String> getGitRepoAllowlist(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return gitXSettingsHelper.getGitRepoAllowlist(accountIdentifier, orgIdentifier, projectIdentifier);
+  }
+
+  public boolean containsInstancesOfReposWithNamespace(List<String> repoAllowlist) {
+    if (EmptyPredicate.isEmpty(repoAllowlist)) {
+      return false;
+    }
+
+    for (String repo : repoAllowlist) {
+      if (!isAbsoluteRepo(repo)) {
+        return true;
+      }
+    }
+    return false;
   }
 }

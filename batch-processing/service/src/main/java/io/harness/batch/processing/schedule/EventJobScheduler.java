@@ -17,6 +17,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static java.lang.String.format;
 
 import io.harness.batch.processing.YamlPropertyLoaderFactory;
+import io.harness.batch.processing.billing.timeseries.service.impl.BatchJobMetadataCleanupServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.BillingDataServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.K8sUtilizationGranularDataServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.PodCountComputationServiceImpl;
@@ -69,6 +70,7 @@ import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -112,11 +114,15 @@ public class EventJobScheduler {
   @Autowired private K8sRecommendationDAO k8sRecommendationDAO;
   @Autowired private InstanceInfoTimescaleDAO instanceInfoTimescaleDAO;
   @Autowired private GovernanceRecommendationService governanceRecommendationService;
+  @Autowired private BatchJobMetadataCleanupServiceImpl batchJobMetadataCleanupService;
 
   @PostConstruct
   public void orderJobs() {
     jobs.sort(Comparator.comparingInt(job -> BatchJobType.valueOf(job.getName()).getOrder()));
   }
+
+  @Value(value = "${batchJobRepository.dataRetentionPeriodInDays}") private int days;
+  @Value(value = "${batchJobRepository.timescaleEnabled}") private boolean timescaleEnabled;
 
   // this job runs every 1 hours "0 0 * ? * *". For debugging, run every minute "* * * ? * *"
   @Scheduled(cron = "0 */20 * * * ?")
@@ -472,6 +478,18 @@ public class EventJobScheduler {
       }
     } catch (Exception ex) {
       log.error("Exception while running job {}", job);
+    }
+  }
+
+  @Scheduled(cron = "${batchJobRepository.metadataCleanupSchedule}") // Every 30 minutes for testing
+  public void processBatchJobMetadataCleanUp() {
+    if (timescaleEnabled) {
+      batchJobMetadataCleanupService.deleteOldBatchStepExecutionContext(days);
+      batchJobMetadataCleanupService.deleteOldBatchStepExecution(days);
+      batchJobMetadataCleanupService.deleteOldBatchJobExecutionContext(days);
+      batchJobMetadataCleanupService.deleteOldBatchJobExecutionParams(days);
+      batchJobMetadataCleanupService.deleteOldBatchJobExecution(days);
+      batchJobMetadataCleanupService.deleteOldBatchJobInstance(days);
     }
   }
 }

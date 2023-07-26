@@ -50,6 +50,8 @@ import io.harness.beans.steps.stepinfo.security.shared.STOYamlInstance;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlJavaParameters;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlLog;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlMendToolData;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlPrismaCloudToolData;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlSBOM;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlSonarqubeToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlTarget;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlVeracodeToolData;
@@ -62,6 +64,7 @@ import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 import io.harness.yaml.sto.variables.STOYamlImageType;
 import io.harness.yaml.sto.variables.STOYamlLogLevel;
 import io.harness.yaml.sto.variables.STOYamlLogSerializer;
+import io.harness.yaml.sto.variables.STOYamlSBOMFormat;
 import io.harness.yaml.sto.variables.STOYamlScanMode;
 import io.harness.yaml.sto.variables.STOYamlTargetType;
 
@@ -92,6 +95,7 @@ public final class STOSettingsUtils {
   public static final String PRODUCT_INCLUDE = "product_include";
   public static final String PRODUCT_SCAN_ID = "product_scan_id";
   public static final String PRODUCT_SITE_ID = "product_site_id";
+  public static final String PRODUCT_IMAGE_NAME = "product_image_name";
 
   public static final String TOOL_PROJECT_NAME = "tool.project_name";
   public static final String TOOL_PROJECT_KEY = "tool.project_key";
@@ -104,6 +108,7 @@ public final class STOSettingsUtils {
   public static final String TOOL_INCLUDE = "tool.include";
   public static final String TOOL_SCAN_ID = "tool.scan_id";
   public static final String TOOL_SITE_ID = "tool.site_id";
+  public static final String TOOL_IMAGE_NAME = "tool.image_name";
 
   private STOSettingsUtils() {
     throw new IllegalStateException("Utility class");
@@ -197,6 +202,21 @@ public final class STOSettingsUtils {
           resolveStringParameter("auth.region", stepType, identifier, authData.getRegion(), false));
     }
 
+    return map;
+  }
+
+  private static Map<String, String> processSTOSBOMFields(STOYamlSBOM sbom) {
+    Map<String, String> map = new HashMap<>();
+
+    if (sbom != null) {
+      Boolean sbomGenerate = resolveBooleanParameter(sbom.getGenerate(), Boolean.FALSE);
+      map.put(getSTOKey("generate_sbom"), String.valueOf(sbomGenerate));
+
+      ParameterField<STOYamlSBOMFormat> sbomFormat = sbom.getFormat();
+
+      map.put(getSTOKey("sbom_type"),
+          sbomFormat != null ? sbomFormat.fetchFinalValue().toString() : STOYamlSBOMFormat.SPDX.toString());
+    }
     return map;
   }
 
@@ -338,6 +358,7 @@ public final class STOSettingsUtils {
 
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+    map.putAll(processSTOSBOMFields(stepInfo.getSbom()));
 
     STOYamlBlackduckToolData toolData = stepInfo.getTool();
 
@@ -432,6 +453,13 @@ public final class STOSettingsUtils {
 
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    STOYamlPrismaCloudToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey(PRODUCT_IMAGE_NAME),
+          resolveStringParameter(TOOL_IMAGE_NAME, stepType, identifier, toolData.getImageName(), false));
+    }
 
     return map;
   }

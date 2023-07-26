@@ -8,9 +8,13 @@
 package io.harness.subscription.services;
 
 import static io.harness.rule.OwnerRule.TOMMY;
+import static io.harness.subscription.constant.CreditCardTestConstants.ALTERNATE_ACCOUNT_ID;
 import static io.harness.subscription.constant.CreditCardTestConstants.ALTERNATE_CREDIT_CARD_DTO;
+import static io.harness.subscription.constant.CreditCardTestConstants.ALTERNATE_CUSTOMER;
+import static io.harness.subscription.constant.CreditCardTestConstants.ALTERNATE_CUSTOMER_ID;
 import static io.harness.subscription.constant.CreditCardTestConstants.DEFAULT_CREDIT_CARD;
 import static io.harness.subscription.constant.CreditCardTestConstants.DEFAULT_CREDIT_CARD_DTO;
+import static io.harness.subscription.constant.CreditCardTestConstants.DEFAULT_CREDIT_CARD_IDENTIFIER;
 import static io.harness.subscription.constant.CreditCardTestConstants.DEFAULT_CUSTOMER;
 import static io.harness.subscription.constant.CreditCardTestConstants.DEFAULT_CUSTOMER_ID;
 import static io.harness.subscription.constant.CreditCardTestConstants.DEFAULT_FINGERPRINT;
@@ -24,10 +28,10 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.DuplicateFieldException;
 import io.harness.repositories.CreditCardRepository;
 import io.harness.repositories.StripeCustomerRepository;
 import io.harness.rule.Owner;
+import io.harness.subscription.dto.CardDTO;
 import io.harness.subscription.helpers.impl.StripeHelperImpl;
 import io.harness.subscription.responses.CreditCardResponse;
 import io.harness.subscription.services.impl.CreditCardServiceImpl;
@@ -56,20 +60,25 @@ public class CreditCardServiceImplTest extends CategoryTest {
   @Owner(developers = TOMMY)
   @Category(UnitTests.class)
   public void testSaveCreditCard() {
+    when(stripeCustomerRepository.findByAccountIdentifier(DEFAULT_ACCOUNT_ID)).thenReturn(DEFAULT_CUSTOMER);
+    when(stripeHelper.listPaymentMethods(DEFAULT_CUSTOMER_ID)).thenReturn(DEFAULT_PAYMENT_METHODS);
     when(creditCardRepository.findByFingerprint(DEFAULT_FINGERPRINT)).thenReturn(null);
     when(creditCardRepository.save(DEFAULT_CREDIT_CARD)).thenReturn(DEFAULT_CREDIT_CARD);
 
     CreditCardResponse response = creditCardService.saveCreditCard(DEFAULT_CREDIT_CARD_DTO);
     assertThat(response).isNotNull();
     assertThat(response.getCreditCardDTO().getAccountIdentifier()).isEqualTo(DEFAULT_ACCOUNT_ID);
-    assertThat(response.getCreditCardDTO().getFingerprint()).isEqualTo(DEFAULT_FINGERPRINT);
+    assertThat(response.getCreditCardDTO().getCreditCardIdentifier()).isEqualTo(DEFAULT_CREDIT_CARD_IDENTIFIER);
   }
 
-  @Test(expected = DuplicateFieldException.class)
+  @Test
   @Owner(developers = TOMMY)
   @Category(UnitTests.class)
   public void testSaveCreditCardDuplicate() {
+    when(stripeCustomerRepository.findByAccountIdentifier(DEFAULT_ACCOUNT_ID)).thenReturn(DEFAULT_CUSTOMER);
+    when(stripeHelper.listPaymentMethods(DEFAULT_CUSTOMER_ID)).thenReturn(DEFAULT_PAYMENT_METHODS);
     when(creditCardRepository.findByFingerprint(DEFAULT_FINGERPRINT)).thenReturn(DEFAULT_CREDIT_CARD);
+    when(creditCardRepository.save(DEFAULT_CREDIT_CARD)).thenReturn(DEFAULT_CREDIT_CARD);
 
     CreditCardResponse response = creditCardService.saveCreditCard(DEFAULT_CREDIT_CARD_DTO);
     assertThat(response).isNotNull();
@@ -79,6 +88,8 @@ public class CreditCardServiceImplTest extends CategoryTest {
   @Owner(developers = TOMMY)
   @Category(UnitTests.class)
   public void testSaveCreditCardBadRequest() {
+    when(stripeCustomerRepository.findByAccountIdentifier(ALTERNATE_ACCOUNT_ID)).thenReturn(ALTERNATE_CUSTOMER);
+    when(stripeHelper.listPaymentMethods(ALTERNATE_CUSTOMER_ID)).thenReturn(DEFAULT_PAYMENT_METHODS);
     when(creditCardRepository.findByFingerprint(DEFAULT_FINGERPRINT)).thenReturn(DEFAULT_CREDIT_CARD);
 
     CreditCardResponse response = creditCardService.saveCreditCard(ALTERNATE_CREDIT_CARD_DTO);
@@ -105,5 +116,17 @@ public class CreditCardServiceImplTest extends CategoryTest {
 
     creditCardService.hasValidCard(DEFAULT_ACCOUNT_ID);
     assertThat(creditCardService.hasValidCard(DEFAULT_ACCOUNT_ID)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = TOMMY)
+  @Category(UnitTests.class)
+  public void testGetDefaultCard() {
+    when(stripeCustomerRepository.findByAccountIdentifier(DEFAULT_ACCOUNT_ID)).thenReturn(DEFAULT_CUSTOMER);
+    when(stripeHelper.listPaymentMethods(DEFAULT_CUSTOMER_ID)).thenReturn(DEFAULT_PAYMENT_METHODS);
+
+    CardDTO cardDTO = creditCardService.getDefaultCreditCard(DEFAULT_ACCOUNT_ID);
+
+    assertThat(cardDTO.getIsDefaultCard()).isTrue();
   }
 }

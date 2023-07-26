@@ -33,7 +33,6 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.events.producers.IdpEntityCrudStreamProducer;
-import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
@@ -129,7 +128,6 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Mock StatusInfoService statusInfoService;
   @Mock TransactionHelper transactionHelper;
   @Mock IdpEntityCrudStreamProducer idpEntityCrudStreamProducer;
-  @Mock SetupUsageProducer setupUsageProducer;
   @Mock DelegateSelectorsCache delegateSelectorsCache;
   @Mock BackstageResourceClient backstageResourceClient;
   Call<Object> call;
@@ -268,6 +266,27 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SATHISH)
   @Category(UnitTests.class)
+  public void testGenerateYamlWithEntitiesMultiple() {
+    mockStatic(CommonUtils.class);
+    when(CommonUtils.readFileFromClassPath(any())).thenReturn(GENERATE_YAML_DEF);
+    GenerateYamlResponse generateYamlResponse = onboardingServiceImpl.generateYaml(ACCOUNT_IDENTIFIER,
+        new GenerateYamlRequest().entities(List.of(new EntitiesForImport()
+                                                       .identifier("orgId|"
+                                                           + "projectId|" + TEST_SERVICE_IDENTIFIER)
+                                                       .entityType("Service"),
+            new EntitiesForImport()
+                .identifier("orgId1|"
+                    + "projectId1|" + TEST_SERVICE_IDENTIFIER + "1")
+                .entityType("Service"))));
+    assertNotNull(generateYamlResponse);
+    assertEquals(onboardingModuleConfig.getDescriptionForEntitySelected(),
+        generateYamlResponse.getGeneratedYaml().getDescription());
+    assertEquals(GENERATE_YAML_DEF_WITH_ENTITIES, generateYamlResponse.getGeneratedYaml().getYamlDef());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
   public void testGenerateYamlWithNonExistentEntities() {
     mockStatic(CommonUtils.class);
     when(CommonUtils.readFileFromClassPath(any())).thenReturn(GENERATE_YAML_DEF);
@@ -281,6 +300,24 @@ public class OnboardingServiceImplTest extends CategoryTest {
     assertEquals(onboardingModuleConfig.getDescriptionForSampleEntity(),
         generateYamlResponse.getGeneratedYaml().getDescription());
     assertEquals(GENERATE_YAML_DEF, generateYamlResponse.getGeneratedYaml().getYamlDef());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testGenerateYamlForAccountLevelServices() {
+    mockStatic(CommonUtils.class);
+    when(CommonUtils.readFileFromClassPath(any())).thenReturn(GENERATE_YAML_DEF);
+    GenerateYamlResponse generateYamlResponse = onboardingServiceImpl.generateYaml(ACCOUNT_IDENTIFIER,
+        new GenerateYamlRequest().entities(
+            Collections.singletonList(new EntitiesForImport()
+                                          .identifier("Unknown|"
+                                              + "Unknown|" + TEST_SERVICE_IDENTIFIER + "test")
+                                          .entityType("Service"))));
+    assertNotNull(generateYamlResponse);
+    assertEquals(onboardingModuleConfig.getDescriptionForEntitySelected(),
+        generateYamlResponse.getGeneratedYaml().getDescription());
+    assertEquals(GENERATE_YAML_DEF_WITH_ENTITIES, generateYamlResponse.getGeneratedYaml().getYamlDef());
   }
 
   @Test
@@ -308,7 +345,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
-    doNothing().when(gitIntegrationService).createOrUpdateConnectorInBackstage(any(), any(), any(), any());
+    doNothing()
+        .when(gitIntegrationService)
+        .createOrUpdateConnectorInBackstage(any(), any(), any(), any(), eq(delegateSelectors));
     ImportEntitiesResponse importEntitiesResponse = onboardingServiceImpl.importHarnessEntities(ACCOUNT_IDENTIFIER,
         new SampleEntitiesImport()
             .type(ImportEntitiesBase.TypeEnum.SAMPLE)
@@ -321,7 +360,6 @@ public class OnboardingServiceImplTest extends CategoryTest {
                                       .path("idp")));
     assertNotNull(importEntitiesResponse);
     assertEquals("SUCCESS", importEntitiesResponse.getStatus());
-    verify(setupUsageProducer).publishConnectorSetupUsage(eq(ACCOUNT_IDENTIFIER), any(), any());
     verify(delegateSelectorsCache).put(eq(ACCOUNT_IDENTIFIER), any(), any());
   }
 
@@ -350,7 +388,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
-    doNothing().when(gitIntegrationService).createOrUpdateConnectorInBackstage(any(), any(), any(), any());
+    doNothing()
+        .when(gitIntegrationService)
+        .createOrUpdateConnectorInBackstage(any(), any(), any(), any(), eq(delegateSelectors));
     when(transactionHelper.performTransaction(any())).thenReturn(null);
     List<EntitiesForImport> entitiesForImports = new ArrayList<>();
     entitiesForImports.add(new EntitiesForImport()
@@ -364,7 +404,6 @@ public class OnboardingServiceImplTest extends CategoryTest {
             .catalogConnectorInfo(getCatalogConnectorInfo()));
     assertNotNull(importEntitiesResponse);
     assertEquals("SUCCESS", importEntitiesResponse.getStatus());
-    verify(setupUsageProducer).publishConnectorSetupUsage(eq(ACCOUNT_IDENTIFIER), any(), any());
   }
 
   @Test
@@ -392,13 +431,14 @@ public class OnboardingServiceImplTest extends CategoryTest {
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
-    doNothing().when(gitIntegrationService).createOrUpdateConnectorInBackstage(any(), any(), any(), any());
+    doNothing()
+        .when(gitIntegrationService)
+        .createOrUpdateConnectorInBackstage(any(), any(), any(), any(), eq(delegateSelectors));
     when(transactionHelper.performTransaction(any())).thenReturn(null);
     ImportEntitiesResponse importEntitiesResponse = onboardingServiceImpl.importHarnessEntities(ACCOUNT_IDENTIFIER,
         new AllEntitiesImport().type(ImportEntitiesBase.TypeEnum.ALL).catalogConnectorInfo(getCatalogConnectorInfo()));
     assertNotNull(importEntitiesResponse);
     assertEquals("SUCCESS", importEntitiesResponse.getStatus());
-    verify(setupUsageProducer).publishConnectorSetupUsage(eq(ACCOUNT_IDENTIFIER), any(), any());
   }
 
   @Test

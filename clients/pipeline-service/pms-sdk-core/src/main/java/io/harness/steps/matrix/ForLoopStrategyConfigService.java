@@ -56,7 +56,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
                   .setStrategyMetadata(StrategyMetadata.newBuilder()
                                            .setForMetadata(ForMetadata.newBuilder().addAllPartition(partition).build())
                                            .setCurrentIteration(currentIteration)
-                                           .setTotalIterations(partition.size())
+                                           .setTotalIterations(partitions.size())
                                            .build())
                   .build());
           currentIteration++;
@@ -252,7 +252,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
     }
     int maxConcurrency = jsonNodes.size();
     if (!ParameterField.isBlank(harnessForConfig.getMaxConcurrency())) {
-      maxConcurrency = Double.valueOf(String.valueOf(harnessForConfig.getMaxConcurrency().getValue())).intValue();
+      maxConcurrency = harnessForConfig.getMaxConcurrency().getValue();
     }
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }

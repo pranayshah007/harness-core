@@ -24,8 +24,9 @@ public class DataCollectionDSLFactory {
   private static final String SUMOLOGIC_LOG_DATACOLLECTION_FILE = "sumologic-log.datacollection";
   private static final String ELK_LOG_DATACOLLECTION_FILE = "elk-log-fetch-data.datacollection";
   private static final String GRAFANA_LOKI_LOG_DATACOLLECTION_FILE = "grafana-loki-log-fetch-data.datacollection";
-
   private static final String PROMETHEUS_METRIC_DATACOLLECTION_FILE = "prometheus-v2-dsl-metric.datacollection";
+  private static final String DATADOG_METRIC_DATACOLLECTION_FILE = "datadog-v2-dsl-metric.datacollection";
+  private static final String AZURE_LOGS_DATACOLLECTION_FILE = "azure-logs-fetch-data.datacollection";
   private static final Map<DataSourceType, String> dataSourceTypeToDslScriptMap = new HashMap<>();
   private static final Map<DataSourceType, String> dataSourceTypeToDslScriptPathMap = new HashMap<>();
 
@@ -34,6 +35,8 @@ public class DataCollectionDSLFactory {
     dataSourceTypeToDslScriptPathMap.put(DataSourceType.ELASTICSEARCH, ELK_LOG_DATACOLLECTION_FILE);
     dataSourceTypeToDslScriptPathMap.put(DataSourceType.GRAFANA_LOKI_LOGS, GRAFANA_LOKI_LOG_DATACOLLECTION_FILE);
     dataSourceTypeToDslScriptPathMap.put(DataSourceType.PROMETHEUS, PROMETHEUS_METRIC_DATACOLLECTION_FILE);
+    dataSourceTypeToDslScriptPathMap.put(DataSourceType.DATADOG_METRICS, DATADOG_METRIC_DATACOLLECTION_FILE);
+    dataSourceTypeToDslScriptPathMap.put(DataSourceType.AZURE_LOGS, AZURE_LOGS_DATACOLLECTION_FILE);
   }
 
   public static String readLogDSL(DataSourceType dataSourceType) {

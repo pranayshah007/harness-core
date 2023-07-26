@@ -28,7 +28,9 @@ public abstract class ProgressableStrategy implements ExecuteStrategy {
       ProgressData progressData = ((Progressable) step)
                                       .handleProgress(progressPackage.getAmbiance(),
                                           progressPackage.getStepParameters(), progressPackage.getProgressData());
-      sdkNodeExecutionService.handleProgressResponse(ambiance, progressData);
+      if (progressData != null) {
+        sdkNodeExecutionService.handleProgressResponse(ambiance, progressData);
+      }
       return;
     }
     throw new UnsupportedOperationException("Progress Update not supported for strategy: " + this.getClass().getName());

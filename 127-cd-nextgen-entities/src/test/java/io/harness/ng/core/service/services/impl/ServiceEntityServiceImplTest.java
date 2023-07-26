@@ -16,10 +16,10 @@ import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +39,8 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.exception.UnsupportedOperationException;
+import io.harness.exception.YamlException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -60,13 +62,19 @@ import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ErrorNodeSummary;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
@@ -75,19 +83,21 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -96,7 +106,7 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
-@RunWith(Parameterized.class)
+@RunWith(JUnitParamsRunner.class)
 public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private OutboxService outboxService;
   @Mock private EntitySetupUsageServiceImpl entitySetupUsageService;
@@ -107,25 +117,15 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private ServiceRepository serviceRepository;
 
   @Mock private TemplateResourceClient templateResourceClient;
+  @Mock NGSettingsClient settingsClient;
+  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
 
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
   private static final String PROJECT_ID = "PROJECT_ID";
   private static final String SERVICE_ID = "serviceId";
-
-  private String pipelineInputYamlPath;
-  private String actualEntityYamlPath;
-  private String mergedInputYamlPath;
-  private boolean isMergedYamlEmpty;
-
-  public ServiceEntityServiceImplTest(String pipelineInputYamlPath, String actualEntityYamlPath,
-      String mergedInputYamlPath, boolean isMergedYamlEmpty) {
-    this.pipelineInputYamlPath = pipelineInputYamlPath;
-    this.actualEntityYamlPath = actualEntityYamlPath;
-    this.mergedInputYamlPath = mergedInputYamlPath;
-    this.isMergedYamlEmpty = isMergedYamlEmpty;
-  }
 
   @Before
   public void setup() {
@@ -136,17 +136,18 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("entitySetupUsageHelper", entitySetupUsageHelper);
     Reflect.on(serviceEntityService).set("serviceEntityValidatorFactory", serviceEntityValidatorFactory);
     Reflect.on(serviceEntityService).set("templateResourceClient", templateResourceClient);
+    Reflect.on(serviceEntityService).set("overrideV2ValidationHelper", overrideV2ValidationHelper);
     when(serviceEntityValidatorFactory.getServiceEntityValidator(any())).thenReturn(noOpServiceEntityValidator);
   }
-  @Parameterized.Parameters
-  public static Collection<Object[]> data() {
-    return asList(new Object[][] {
+
+  private Object[][] data() {
+    return new Object[][] {
         {"service/serviceInputs-with-few-values-fixed.yaml", "service/service-with-primaryArtifactRef-runtime.yaml",
             "service/serviceInputs-merged.yaml", false},
         {"service/serviceInputs-with-few-values-fixed.yaml", "service/service-with-no-runtime-input.yaml",
             "infrastructure/empty-file.yaml", true},
         {"infrastructure/empty-file.yaml", "service/service-with-primaryArtifactRef-fixed.yaml",
-            "service/merged-service-input-fixed-prime-artifact.yaml", false}});
+            "service/merged-service-input-fixed-prime-artifact.yaml", false}};
   }
 
   @Test
@@ -315,6 +316,10 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(dtoList).containsOnly(ServiceElementMapper.writeDTO(upsertService));
 
     // Delete operations
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
+
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(Page.empty());
     boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", 1L, false);
@@ -464,6 +469,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Category(UnitTests.class)
   public void testErrorMessageWhenServiceIsReferenced() {
     List<EntitySetupUsageDTO> referencedByEntities = List.of(getEntitySetupUsageDTO());
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(new PageImpl<>(referencedByEntities));
     assertThatThrownBy(() -> serviceEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "SERVICE", 0L, false))
@@ -530,6 +538,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                       .build();
 
     serviceEntityService.create(serviceEntity);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(Page.empty());
     boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L, false);
@@ -761,7 +772,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
-  public void testMergeServiceInputs() {
+  @Parameters(method = "data")
+  public void testMergeServiceInputs(String pipelineInputYamlPath, String actualEntityYamlPath,
+      String mergedInputYamlPath, boolean isMergedYamlEmpty) {
     String yaml = readFile(actualEntityYamlPath);
     ServiceEntity createRequest = ServiceEntity.builder()
                                       .accountId(ACCOUNT_ID)
@@ -903,6 +916,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     assertThat(list.getContent().size()).isEqualTo(2);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
 
     boolean delete = serviceEntityService.delete("ACCOUNT_ID", null, null, "IDENTIFIER", 1L, false);
     assertThat(delete).isTrue();
@@ -959,6 +975,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     serviceEntityService.create(serviceEntity);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(Page.empty());
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    SettingValueResponseDTO settingValueResponseDTO = SettingValueResponseDTO.builder().value("false").build();
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
     serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L, true);
     verify(entitySetupUsageService, times(0))
         .listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString());
@@ -1199,6 +1218,71 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     String resFile = "service/merged-service-input-runtime-primary-artifact-expression.yaml";
     String resTemplate = readFile(resFile);
     assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetManifestIdentifiersListServiceV2KubernetesSpec() {
+    String filename = "service/service-with-primaryManifestRef-Kubernetes.yaml";
+    String yaml = readFile(filename);
+    ManifestsResponseDTO responseDTO = serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getIdentifiers()).isNotNull().isNotEmpty().hasSize(1);
+    assertThat(responseDTO.getIdentifiers()).hasSameElementsAs(Arrays.asList("mani_i1"));
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetManifestIdentifiersListServiceV2HelmSpec() {
+    String filename = "service/service-with-primaryManifestRef-NativeHelm.yaml";
+    String yaml = readFile(filename);
+    ManifestsResponseDTO responseDTO = serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
+    assertThat(responseDTO.getIdentifiers()).hasSameElementsAs(Arrays.asList("mani_i1", "mani_i2"));
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetManifestIdentifiersListServiceV2Others() {
+    String filename = "service/service-with-primaryManifestRef-Others.yaml";
+    String InvalidYaml = readFile(filename);
+    assertThatThrownBy(() -> serviceEntityService.getManifestIdentifiers(InvalidYaml, SERVICE_ID))
+        .isInstanceOf(UnsupportedOperationException.class)
+        .hasMessage("Service Spec Type ECS is not supported");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFailGetManifestIdentifiersServiceV2YamlException() {
+    assertThatThrownBy(() -> serviceEntityService.getManifestIdentifiers("service:", SERVICE_ID))
+        .isInstanceOf(YamlException.class)
+        .hasMessage("Yaml provided for service " + SERVICE_ID + " does not have service root field.");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetEmptyManifestIdentifiersListServiceV2() {
+    String filename = "service/service-with-no-manifests.yaml";
+    String yaml = readFile(filename);
+    assertThat(serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID)).isEqualTo(new ManifestsResponseDTO());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFailGetManifestIdentifiersServiceV2YamlExceptionServiceDefinition() {
+    assertThatThrownBy(()
+                           -> serviceEntityService.getManifestIdentifiers("service:\n"
+                                   + "  serviceDefinition:",
+                               SERVICE_ID))
+        .isInstanceOf(YamlException.class)
+        .hasMessage("Yaml provided for service " + SERVICE_ID + " does not have service definition field.");
   }
 
   private String readFile(String filename) {

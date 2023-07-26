@@ -1,6 +1,6 @@
 module "delegate" {
   source = "harness/harness-delegate/kubernetes"
-  version = "0.1.7"
+  version = "0.1.8"
 
   account_id = "${account_id}"
   delegate_token = "${token}"

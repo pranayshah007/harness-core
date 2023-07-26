@@ -462,7 +462,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
 
   @Override
   public void insertCostCategories(String tableName, String costCategoriesStatement, String startTime, String endTime,
-      CloudProvider cloudProvider, List<String> cloudProviderAccountIds) {
+      CloudProvider cloudProvider, List<String> cloudProviderAccountIds) throws InterruptedException {
     BigQuery bigQueryService = getBigQueryService();
     String cloudAccountIdColumn = getCloudAccountIdColumnName(cloudProvider);
     String cloudProviderAccountIdsString = "('" + String.join("', '", cloudProviderAccountIds) + "')";
@@ -475,12 +475,13 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       log.info("costCategory updated");
     } catch (BigQueryException | InterruptedException bigQueryException) {
       log.error("Error: ", bigQueryException);
+      throw bigQueryException;
     }
   }
 
   @Override
   public void addCostCategory(String tableName, String costCategoriesStatement, String startTime, String endTime,
-      CloudProvider cloudProvider, List<String> cloudProviderAccountIds) {
+      CloudProvider cloudProvider, List<String> cloudProviderAccountIds) throws InterruptedException {
     BigQuery bigQueryService = getBigQueryService();
     String cloudAccountIdColumn = getCloudAccountIdColumnName(cloudProvider);
     String cloudProviderAccountIdsString = "('" + String.join("', '", cloudProviderAccountIds) + "')";
@@ -493,6 +494,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       log.info("costCategory updated");
     } catch (BigQueryException | InterruptedException bigQueryException) {
       log.error("Error: ", bigQueryException);
+      throw bigQueryException;
     }
   }
 

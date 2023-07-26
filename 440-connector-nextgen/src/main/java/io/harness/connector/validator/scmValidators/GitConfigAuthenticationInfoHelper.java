@@ -19,6 +19,8 @@ import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitSSHAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
@@ -60,6 +62,13 @@ public class GitConfigAuthenticationInfoHelper {
       return getEncryptionDetail(getAPIAccessDecryptableEntity(scmConnector), ngAccess);
     }
     return emptyList();
+  }
+
+  public List<EncryptedDataDetail> getGithubAppEncryptedDataDetail(ScmConnector scmConnector, NGAccess ngAccess) {
+    GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
+    return getEncryptionDetail(
+        ((GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials()).getHttpCredentialsSpec(),
+        ngAccess);
   }
 
   private List<EncryptedDataDetail> getEncryptionDetail(DecryptableEntity decryptableEntity, NGAccess ngAccess) {

@@ -18,6 +18,7 @@ import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.functors.IacmFunctor;
 import io.harness.cache.CacheModule;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
@@ -49,6 +50,7 @@ import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkInitHelper;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
+import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
@@ -390,7 +392,14 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
         .orchestrationEventPoolConfig(config.getPmsSdkOrchestrationEventPoolConfig())
         .planCreatorServiceInternalConfig(config.getPmsPlanCreatorServicePoolConfig())
         .jsonExpansionHandlers(getJsonExpansionHandlers())
+        .sdkFunctors(getSdkFunctors())
         .build();
+  }
+
+  private Map<String, Class<? extends SdkFunctor>> getSdkFunctors() {
+    Map<String, Class<? extends SdkFunctor>> sdkFunctorMap = new HashMap<>();
+    sdkFunctorMap.put(IacmFunctor.IACM_FUNCTOR_NAME, IacmFunctor.class);
+    return sdkFunctorMap;
   }
 
   private List<JsonExpansionHandlerInfo> getJsonExpansionHandlers() {

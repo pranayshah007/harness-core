@@ -15,6 +15,7 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DatadogMetricCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.validators.UniqueIdentifierCheck;
+import io.harness.cvng.utils.DatadogQueryUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Sets;
@@ -28,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -96,6 +98,17 @@ public class DatadogMetricHealthSourceSpec extends MetricHealthSourceSpec {
   @Override
   public DataSourceType getType() {
     return DataSourceType.DATADOG_METRICS;
+  }
+
+  @Override
+  public void validate() {
+    super.validate();
+    Map<String, Boolean> validQueriesMap =
+        metricDefinitions.stream().collect(Collectors.toMap(DatadogMetricHealthDefinition::getMetric,
+            datadogMetricHealthDefinition -> DatadogQueryUtils.isValidQuery(datadogMetricHealthDefinition.getQuery())));
+    if (validQueriesMap.containsValue(false)) {
+      throw new BadRequestException("Invalid Query : " + validQueriesMap);
+    }
   }
 
   private List<DatadogMetricCVConfig> toCVConfigs(String accountId, String orgIdentifier, String projectIdentifier,

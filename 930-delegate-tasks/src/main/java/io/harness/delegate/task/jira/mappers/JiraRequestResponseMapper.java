@@ -6,12 +6,14 @@
  */
 
 package io.harness.delegate.task.jira.mappers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
@@ -25,6 +27,7 @@ import io.harness.jira.JiraInternalConfig;
 import lombok.experimental.UtilityClass;
 import okhttp3.Credentials;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @UtilityClass
 public class JiraRequestResponseMapper {

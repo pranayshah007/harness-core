@@ -75,6 +75,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.security.annotations.InternalApi;
+import io.harness.utils.PageUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
@@ -93,6 +94,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.springframework.data.domain.Page;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @ValidateOnExecution
@@ -244,10 +246,24 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
       filter = RoleAssignmentDTOMapper.fromV2(roleAssignmentFilterV2WithPermittedFilters);
     }
 
-    PageResponse<RoleAssignment> pageResponse = roleAssignmentService.list(pageRequest, filter);
-    PageResponse<RoleAssignment> filteredRoleAssignments =
-        filterRoleAssignmentForUnwantedUserGroup(pageResponse, userGroupsScopeIdentifiers);
-    PageResponse<RoleAssignmentAggregate> roleAssignmentAggregateWithScope = filteredRoleAssignments.map(response -> {
+    PageResponse<RoleAssignment> pageResponse;
+
+    if (principalFilter != null && USER.equals(principalFilter.getType())) {
+      PageRequest pageRequestForUserRoleAssignment = PageRequest.builder()
+                                                         .pageIndex(0)
+                                                         .pageSize(50000) // keeping the default max supported value
+                                                         .build();
+      PageResponse<RoleAssignment> userRoleAssignmentPageResponse =
+          roleAssignmentService.list(pageRequestForUserRoleAssignment, filter);
+      PageResponse<RoleAssignment> filteredRoleAssignments = filterRoleAssignmentForUnwantedUserGroup(
+          userRoleAssignmentPageResponse, userGroupsScopeIdentifiers, pageRequest);
+      pageResponse = filteredRoleAssignments;
+
+    } else {
+      pageResponse = roleAssignmentService.list(pageRequest, filter);
+    }
+
+    PageResponse<RoleAssignmentAggregate> roleAssignmentAggregateWithScope = pageResponse.map(response -> {
       String principalName = null;
       String principalEmail = null;
       if (USER.equals(response.getPrincipalType())) {
@@ -273,7 +289,10 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
 
   @VisibleForTesting
   protected PageResponse<RoleAssignment> filterRoleAssignmentForUnwantedUserGroup(
-      PageResponse<RoleAssignment> pageResponse, List<String> userGroupsScopeIdentifiers) {
+      PageResponse<RoleAssignment> pageResponse, List<String> userGroupsScopeIdentifiers, PageRequest pageRequest) {
+    if (pageResponse.isEmpty()) {
+      return PageResponse.getEmptyPageResponse(pageRequest);
+    }
     List<RoleAssignment> roleAssignments =
         pageResponse.getContent()
             .stream()
@@ -286,8 +305,18 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
               return true;
             })
             .collect(toList());
-    pageResponse.setContent(roleAssignments);
-    return pageResponse;
+
+    return getPaginatedResult(roleAssignments, pageRequest);
+  }
+
+  private PageResponse<RoleAssignment> getPaginatedResult(
+      List<RoleAssignment> unpagedResponse, PageRequest pageRequest) {
+    if (unpagedResponse.isEmpty()) {
+      return PageResponse.getEmptyPageResponse(pageRequest);
+    }
+    Page<RoleAssignment> roleAssignmentsPageResponse =
+        PageUtils.getPage(unpagedResponse, pageRequest.getPageIndex(), pageRequest.getPageSize());
+    return PageUtils.getNGPageResponse(roleAssignmentsPageResponse, roleAssignmentsPageResponse.getContent());
   }
 
   private String createScopeAndIdentifierPath(String scopeIdentifier, String principalIdentifier) {

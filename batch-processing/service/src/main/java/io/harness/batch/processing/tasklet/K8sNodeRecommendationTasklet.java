@@ -79,6 +79,11 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
             jobConstants.getAccountId(), nodePoolId.getClusterid());
         continue;
       }
+      if (k8sRecommendationDAO.fetchDistinctInstanceFamilies(jobConstants, nodePoolId).size() > 1) {
+        log.info("There is a node_pool with multiple instance families in [accountId:{}, nodePoolId:{}], skipping",
+            jobConstants.getAccountId(), nodePoolId);
+        continue;
+      }
 
       createTotalResourceUsageAndInsert(jobConstants, nodePoolId);
 
@@ -145,7 +150,8 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
     log.info("The monthly stat is: {}", stats);
 
     final String clusterName = clusterHelper.fetchClusterName(nodePoolId.getClusterid());
-    recommendationCrudService.upsertNodeRecommendation(mongoEntityId, jobConstants, nodePoolId, clusterName, stats);
+    recommendationCrudService.upsertNodeRecommendation(
+        mongoEntityId, jobConstants, nodePoolId, clusterName, stats, serviceProvider.getCloudProvider().name());
     ignoreListService.updateNodeRecommendationState(
         mongoEntityId, jobConstants.getAccountId(), clusterName, nodePoolId.getNodepoolname());
   }

@@ -78,6 +78,7 @@ io.harness.yaml.core.failurestrategy.retry.OnRetryFailureConfig
 io.harness.yaml.core.failurestrategy.manualintervention.OnTimeoutConfig
 io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig
 io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig
+io.harness.yaml.core.failurestrategy.retry.RetryStepGroupFailureSpecConfig
 io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig
 io.harness.plancreator.steps.StepElementConfig
 io.harness.plancreator.stages.stage.StageElementConfig

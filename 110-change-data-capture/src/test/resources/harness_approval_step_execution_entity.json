@@ -1,0 +1,48 @@
+{
+  "_id" : "64b64d5adca834008947a582",
+  "createdAt" : 1689668954830,
+  "lastModifiedAt" : 1689668954830,
+  "accountIdentifier" : "kmpySmUISimoRrJL6NL73w",
+  "orgIdentifier" : "default",
+  "projectIdentifier" : "TAS",
+  "stageExecutionId" : "i1irq3HVT_i1vkJKUq3jKA",
+  "stepExecutionId" : "o8LMZ7EwScieAc0Pb1mj5w",
+  "planExecutionId" : "tYn28B4nRqiq1Ys-W4AoWw",
+  "pipelineIdentifier" : "testApproval",
+  "stepIdentifier" : "HarnessApproval_1",
+  "status" : "SUCCEEDED",
+  "stepType" : "HarnessApproval",
+  "startts" : 1689668954796,
+  "_class" : "stepExecutionEntity",
+  "executionDetails" : {
+    "approvalActivities" : [
+      {
+        "user" : {
+          "name" : "Admin",
+          "email" : "admin@harness.io"
+        },
+        "approvalAction" : "APPROVE",
+        "approverInputs" : {
+
+        },
+        "comments" : "approving",
+        "approvedAt" : { "$date" : "2023-07-18T08:29:22.473Z" }
+      },
+      {
+        "user" : {
+          "name" : "Rbac",
+          "email" : "rbac1@harness.io"
+        },
+        "approvalAction" : "APPROVE",
+        "approverInputs" : {
+
+        },
+        "comments" : "approved!",
+        "approvedAt" : { "$date" : "2023-07-18T08:29:22.473Z" }
+      }
+    ],
+    "_class" : "HarnessApprovalStepExecutionDetails"
+  },
+  "stepName" : "HarnessApproval_1",
+  "endts" : 1689668962723
+}

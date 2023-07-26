@@ -30,6 +30,7 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import io.harness.workers.background.AccountStatusBasedEntityProcessController;
 
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.approval.ApprovalPollingJobEntity;
 import software.wings.beans.approval.ApprovalPollingJobEntity.ApprovalPollingJobEntityKeys;
 import software.wings.scheduler.ShellScriptApprovalService;
@@ -117,7 +118,8 @@ public class ApprovalPollingHandler
 
     String workflowExecutionId = entity.getWorkflowExecutionId();
     String appId = entity.getAppId();
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, WorkflowExecutionKeys.status);
     if (workflowExecution == null || ExecutionStatus.isFinalStatus(workflowExecution.getStatus())) {
       approvalPolingService.delete(entity.getApprovalId());
       return;

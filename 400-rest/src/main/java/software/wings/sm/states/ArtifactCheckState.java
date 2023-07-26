@@ -107,18 +107,16 @@ public class ArtifactCheckState extends State {
       return getExecutionResponse(artifacts);
     }
 
-    return ExecutionResponse.builder()
-        .async(true)
-        .correlationIds(correlationIds)
-        .errorMessage("Waiting for artifacts:" + artifactNamesForDownload + " to be downloaded")
-        .build();
+    final String outMessage = "Waiting for artifacts:" + artifactNamesForDownload + " to be downloaded";
+    log.info(outMessage + " [correlationIds={}]", correlationIds);
+    return ExecutionResponse.builder().async(true).correlationIds(correlationIds).errorMessage(outMessage).build();
   }
 
   private ExecutionResponse getExecutionResponse(List<Artifact> artifacts) {
-    return ExecutionResponse.builder()
-        .errorMessage(
-            "All artifacts: " + artifacts.stream().map(Artifact::getDisplayName).collect(toList()) + " are available.")
-        .build();
+    final String outMessage =
+        "All artifacts: " + artifacts.stream().map(Artifact::getDisplayName).collect(toList()) + " are available.";
+    log.info(outMessage);
+    return ExecutionResponse.builder().errorMessage(outMessage).build();
   }
 
   @Override

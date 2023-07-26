@@ -60,6 +60,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -247,7 +248,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
                     ? helper.prepareTerraformConfigFileInfo(inheritOutput.getFileStorageConfigDTO(), ambiance)
                     : helper.getFileStoreFetchFilesConfig(
                         inheritOutput.getFileStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
-            .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance))
+            .varFileInfos(helper.prepareTerraformVarFileInfo(inheritOutput.getVarFileConfigs(), ambiance, false))
             .backendConfig(inheritOutput.getBackendConfig())
             .backendConfigFileInfo(helper.prepareTerraformBackendConfigFileInfo(
                 inheritOutput.getBackendConfigurationFileConfig(), ambiance))
@@ -355,6 +356,11 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
+
+    Map<String, String> outputKeys = helper.getRevisionsMap(stepParameters.getConfiguration().getSpec().getVarFiles(),
+        terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
+
     return stepResponseBuilder.build();
   }
 
@@ -375,6 +381,10 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
               ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
     }
+
+    Map<String, String> outputKeys =
+        helper.getRevisionsMap(Collections.emptyList(), terraformTaskNGResponse.getCommitIdForConfigFilesMap());
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
     return stepResponseBuilder.build();
   }
 

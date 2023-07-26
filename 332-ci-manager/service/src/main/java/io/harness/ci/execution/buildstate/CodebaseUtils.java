@@ -46,6 +46,7 @@ import static org.apache.commons.lang3.StringUtils.stripEnd;
 import static org.apache.commons.lang3.StringUtils.stripStart;
 
 import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.ci.execution.GitBuildStatusUtility;
 import io.harness.ci.integrationstage.BuildEnvironmentUtils;
@@ -435,7 +436,8 @@ public class CodebaseUtils {
     //    }
   }
 
-  public ConnectorDetails getGitConnector(NGAccess ngAccess, CodeBase codeBase, boolean skipGitClone) {
+  public ConnectorDetails getGitConnector(
+      NGAccess ngAccess, CodeBase codeBase, boolean skipGitClone, Ambiance ambiance) {
     if (skipGitClone) {
       return null;
     }
@@ -444,15 +446,18 @@ public class CodebaseUtils {
       throw new CIStageExecutionException("CI codebase is mandatory in case git clone is enabled");
     }
 
-    String connectorRefValue = codeBase.getConnectorRef().getValue();
-    return getGitConnector(ngAccess, connectorRefValue);
+    String connectorRefValue = RunTimeInputHandler.resolveString(codeBase.getConnectorRef());
+    String repoName = RunTimeInputHandler.resolveString(codeBase.getRepoName());
+
+    return getGitConnector(ngAccess, connectorRefValue, ambiance, repoName);
   }
 
-  public ConnectorDetails getGitConnector(NGAccess ngAccess, String gitConnectorRefValue) {
+  public ConnectorDetails getGitConnector(
+      NGAccess ngAccess, String gitConnectorRefValue, Ambiance ambiance, String repoName) {
     if (gitConnectorRefValue == null) {
       log.warn("GitConnectorRefValue is empty");
     }
-    return connectorUtils.getConnectorDetails(ngAccess, gitConnectorRefValue, true);
+    return connectorUtils.getConnectorDetailsWithToken(ngAccess, gitConnectorRefValue, true, ambiance, repoName);
   }
 
   public static String getCompleteURLFromConnector(ConnectorDetails connectorDetails, String repoName) {

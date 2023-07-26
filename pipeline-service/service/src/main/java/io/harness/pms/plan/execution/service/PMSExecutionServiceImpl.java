@@ -559,6 +559,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   }
 
   @Override
+  public Page<PipelineExecutionSummaryEntity> getPipelineExecutionSummaryEntityWithProjection(
+      Criteria criteria, Pageable pageable, List<String> projections) {
+    return pmsExecutionSummaryRespository.findAllWithProjection(criteria, pageable, projections);
+  }
+
+  @Override
   public void sendGraphUpdateEvent(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
     graphGenerationService.sendUpdateEventIfAny(pipelineExecutionSummaryEntity);
   }

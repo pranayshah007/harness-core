@@ -107,6 +107,9 @@ grpcClientConfigs:
   iacm:
     target: localhost:15301
     authority: localhost
+  idp:
+    target: ${IDP_SERVICE_TARGET:-localhost:12501}
+    authority: ${IDP_SERVICE_AUTHORITY:-localhost}
 
 yamlSchemaClientConfig:
   yamlSchemaHttpClientMap:
@@ -224,11 +227,12 @@ ciServiceClientConfig:
 
 queueServiceClientConfig:
   httpClientConfig:
-    baseUrl: http://localhost:9091/
+    baseUrl: ${HSQS_BASE_URL:-http://localhost:9091/}
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
-  queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+  queueServiceSecret: ${HSQS_AUTH_TOKEN:-ThisIsMyUniqueJwtQueueServiceSecret}
   envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+  topic: ${HSQS_TOPIC:-pipeline}
 
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
@@ -258,6 +262,11 @@ triggerConfig:
 logStreamingServiceConfig:
   baseUrl: http://localhost:8079
   serviceToken: token
+  threadPoolConfig:
+    corePoolSize: ${LOG_STREAMING_CLIENT_POOL_CORE_SIZE:-1}
+    maxPoolSize: ${LOG_STREAMING_CLIENT_POOL_MAX_SIZE:-50}
+    idleTime: ${LOG_STREAMING_CLIENT_POOL_IDLE_TIME:-30}
+    timeUnit: ${LOG_STREAMING_CLIENT_POOL_TIME_UNIT:-SECONDS}
 
 # remove in a few cycles
 opaServerConfig:
@@ -284,6 +293,13 @@ iteratorsConfig:
     threadPoolCount: 5
     enabled: true
     targetIntervalInSeconds: 10
+  timeoutEngineRedisMode:
+    threadPoolSize: ${TIMEOUT_ITERATOR_REDIS_MODE_THREAD_POOL_SIZE:-5}
+    enabled: true
+    targetIntervalInSeconds: 10
+    threadPoolIntervalInSeconds: 2
+    redisLockTimeout: 5
+    redisBatchSize: ${TIMEOUT_ITERATOR_REDIS_BATCH_SIZE:-10}
   barrier:
     threadPoolCount: 2
     enabled: true
@@ -313,22 +329,22 @@ orchestrationStepConfig:
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
     delegateServiceEndpointVariableValue: "delegate-service:8080"
-    addonImage: harness/ci-addon:1.16.8
-    liteEngineImage: harness/ci-lite-engine:1.16.8
+    addonImage: harness/ci-addon:1.16.20
+    liteEngineImage: harness/ci-lite-engine:1.16.20
     isLocal: false
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
       sscaOrchestrationConfig:
-        image: harness/ssca-plugin:latest
+        image: ${SSCA_ORCHESTRATION_IMAGE:-harness/ssca-plugin:0.3.0}
         entrypoint:
           - /bin/ssca-plugin
       sscaEnforcementConfig:
-        image: harness/ssca-plugin:latest
+        image: ${SSCA_ENFORCEMENT_IMAGE:-harness/ssca-plugin:0.3.0}
         entrypoint:
           - /bin/ssca-plugin
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
-      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2" ]
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth"]
       ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
 
 
@@ -467,6 +483,12 @@ yamlSchemaExecutorServiceConfig:
   maxPoolSize: ${YAML_SCHEMA_EXECUTOR_POOL_MAX_SIZE:-10}
   idleTime: ${YAML_SCHEMA_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${YAML_SCHEmA_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+dashboardExecutorServiceConfig:
+  corePoolSize: ${DASHBOARD_EXECUTOR_POOL_CORE_SIZE:-3}
+  maxPoolSize: ${DASHBOARD_EXECUTOR_POOL_MAX_SIZE:-15}
+  idleTime: ${DASHBOARD_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${DASHBOARD_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pipelineRedisEventsConfig:
   setupUsage:
@@ -633,3 +655,10 @@ expandedJsonConfig:
   lockTimeOutInMinutes: 2
 
 staticSchemaFileURL: ${STATIC_SCHEMA_FILE_URL:-"https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s"}
+timeoutIteratorMode : ${TIMEOUT_ITERATOR_MODE:-LOOP}
+
+webhookEventHsqsDequeueConfig:
+  batchSize: ${WEBHOOK_EVENT_DEQUE_BATCH_SIZE:-20}
+  threadSleepTimeInMillis: ${WEBHOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
+
+useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}

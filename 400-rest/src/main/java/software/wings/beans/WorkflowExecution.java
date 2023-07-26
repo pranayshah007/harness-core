@@ -129,6 +129,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
       "accountId_appId_serviceIds_createdAt_cdPageCandidate_status";
   public static String ACCOUNTID_APPID_ENVIDS_CREATEDAT_CDPAGECANDIDATE_STATUS =
       "accountId_appId_envIds_createdAt_cdPageCandidate_status";
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()

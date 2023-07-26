@@ -52,6 +52,8 @@ import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
+import io.harness.delegate.beans.helm.HelmDeployProgressDataVersion;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
@@ -98,6 +100,7 @@ import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -162,6 +165,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Inject private SecretDecryptionService secretDecryptionService;
   private ILogStreamingTaskClient logStreamingTaskClient;
+  private ILogStreamingTaskClient taskProgressStreamingTaskClient;
+  private String taskId;
   @Inject private TimeLimiter timeLimiter;
   @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
   @Inject private HelmSteadyStateService helmSteadyStateService;
@@ -173,9 +178,20 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final String NON_DIGITS_REGEX = "\\D+";
   private static final int VERSION_LENGTH = 3;
   private static final int KUBERNETESS_116_VERSION = 116;
+
+  @Override
+  public void setTaskId(String taskId) {
+    this.taskId = taskId;
+  }
+
   @Override
   public void setLogStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient) {
     this.logStreamingTaskClient = iLogStreamingTaskClient;
+  }
+
+  @Override
+  public void setTaskProgressStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient) {
+    this.taskProgressStreamingTaskClient = iLogStreamingTaskClient;
   }
 
   @Override
@@ -188,6 +204,11 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     String initWorkingDir = commandRequest.getWorkingDir();
     ReleaseHistory releaseHistory = null;
     try {
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
+
+      List<K8sPod> existingPodList = k8sTaskHelperBase.getHelmPodList(
+          commandRequest.getTimeoutInMillis(), kubernetesConfig, commandRequest.getReleaseName(), logCallback);
       HelmInstallCmdResponseNG commandResponse;
       logCallback.saveExecutionLog(
           "List all existing deployed releases for release name: " + commandRequest.getReleaseName());
@@ -216,8 +237,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       serviceHookHandler.addToContext(MANIFEST_FILES_DIRECTORY.getContextName(), manifestFilesDirectory);
       serviceHookHandler.execute(
           ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES, serviceHookDTO.getWorkingDirectory(), logCallback);
-      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-          commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
       serviceHookHandler.execute(
@@ -259,6 +278,18 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       // list releases cmd passed
       isInstallUpgrade = true;
+
+      if (commandRequest.isSendTaskProgressEvents()) {
+        HelmDeployProgressData helmDeployProgressData =
+            HelmDeployProgressData.builder()
+                .progressDataVersion(HelmDeployProgressDataVersion.V1.getVersionName())
+                .prevReleaseVersion(prevVersion)
+                .hasInstallUpgradeStarted(isInstallUpgrade)
+                .build();
+        k8sTaskHelperBase.getTaskProgressCallback(taskProgressStreamingTaskClient, taskId)
+            .sendTaskProgressUpdate("Helm Install/Upgrade started", helmDeployProgressData);
+      }
+
       if (checkNewHelmInstall(helmListReleaseResponseNG)) {
         // install
         logCallback.saveExecutionLog("No previous deployment found for release. Installing chart");
@@ -308,7 +339,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
           serviceHookDTO.getWorkingDirectory(), logCallback);
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WrapUp);
-
+      List<K8sPod> newPodList =
+          helmTaskHelperBase.markNewPods(k8sTaskHelperBase.getHelmPodList(commandRequest.getTimeoutInMillis(),
+                                             kubernetesConfig, commandRequest.getReleaseName(), logCallback),
+              existingPodList);
+      commandResponse.setPreviousK8sPodList(existingPodList);
+      commandResponse.setK8sPodList(newPodList);
       return commandResponse;
 
     } catch (InterruptedException ex) {

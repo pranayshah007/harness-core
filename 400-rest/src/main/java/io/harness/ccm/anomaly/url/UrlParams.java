@@ -42,6 +42,8 @@ public enum UrlParams {
   CURRENT_TAB("currentTab"),
   FILTER("filter"),
   FILTERS("filters"),
+  TIME_RANGE("timeRange"),
+  AGGREGATION("aggregation"),
   SELECTED_VIEW("selectedView");
 
   private String param;

@@ -23,6 +23,7 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.nodes.BackgroundStepNode;
 import io.harness.beans.steps.nodes.RunStepNode;
 import io.harness.beans.steps.nodes.RunTestStepNode;
+import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.ff.CIFeatureFlagService;
@@ -82,6 +83,14 @@ public class ValidationUtils {
 
     for (ExecutionWrapperConfig executionWrapper : steps) {
       validateStageUtil(executionWrapper, infrastructure);
+    }
+  }
+
+  public void validateCacheIntel(Caching caching, Infrastructure infrastructure) {
+    if (caching != null && caching.getEnabled() != null && caching.getEnabled().getValue() != null) {
+      if (caching.getEnabled().getValue() && infrastructure.getType() != HOSTED_VM) {
+        throw new CIStageExecutionException("Cache Intelligence is only available on Harness Cloud Infrastructure");
+      }
     }
   }
 

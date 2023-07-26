@@ -294,8 +294,17 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       log.info("Done setting file permissions for script {}", scriptFile);
 
       String[] commandList = new String[] {"/bin/bash", scriptFilename};
-      ProcessStopper processStopper = new ChildProcessStopper(
-          scriptFilename, workingDirectory, new ProcessExecutor().environment(environment).directory(workingDirectory));
+
+      ProcessStopper processStopper = new ChildProcessStopper(scriptFilename, workingDirectory,
+          new ProcessExecutor()
+              .environment(environment)
+              .directory(workingDirectory)
+              .redirectOutput(new LogOutputStream() {
+                @Override
+                protected void processLine(String line) {
+                  log.info(line);
+                }
+              }));
 
       StringBuilder errorLog = new StringBuilder();
       ProcessExecutor processExecutor = new ProcessExecutor()

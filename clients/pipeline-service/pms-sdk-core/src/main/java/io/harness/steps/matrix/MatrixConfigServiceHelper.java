@@ -21,7 +21,6 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
@@ -124,21 +123,19 @@ public class MatrixConfigServiceHelper {
       Object o;
       try {
         if (isStepGroup) {
-          o = RecastOrchestrationUtils.toMap(YamlUtils.read(jsonNode.toString(), StepGroupElementConfig.class));
+          o = YamlUtils.read(jsonNode.toString(), StepGroupElementConfig.class);
         } else {
-          o = RecastOrchestrationUtils.toMap(YamlUtils.read(jsonNode.toString(), cls));
+          o = YamlUtils.read(jsonNode.toString(), cls);
         }
       } catch (Exception e) {
         throw new InvalidRequestException("Unable to read yaml.", e);
       }
-      // TODO(CI): Use the CIAbstractStepNode object here instead of JsonNode.
       StrategyUtils.replaceExpressions(o, combinations.get(currentIteration), currentIteration, totalCount, null);
       JsonNode resolvedJsonNode;
       if (isStepGroup) {
-        resolvedJsonNode = JsonPipelineUtils.asTree(
-            RecastOrchestrationUtils.fromMap((Map<String, Object>) o, StepGroupElementConfig.class));
+        resolvedJsonNode = JsonPipelineUtils.asTree(o);
       } else {
-        resolvedJsonNode = JsonPipelineUtils.asTree(RecastOrchestrationUtils.fromMap((Map<String, Object>) o, cls));
+        resolvedJsonNode = JsonPipelineUtils.asTree(o);
       }
 
       StrategyUtils.modifyJsonNode(
@@ -148,7 +145,7 @@ public class MatrixConfigServiceHelper {
     }
     int maxConcurrency = jsonNodes.size();
     if (!ParameterField.isBlank(maxConcurrencyParameterField)) {
-      maxConcurrency = Double.valueOf(String.valueOf(maxConcurrencyParameterField.getValue())).intValue();
+      maxConcurrency = maxConcurrencyParameterField.getValue();
     }
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }
@@ -185,7 +182,7 @@ public class MatrixConfigServiceHelper {
     }
     int maxConcurrency = jsonNodes.size();
     if (!ParameterField.isBlank(maxConcurrencyParameterField)) {
-      maxConcurrency = Double.valueOf(String.valueOf(maxConcurrencyParameterField.getValue())).intValue();
+      maxConcurrency = maxConcurrencyParameterField.getValue();
     }
     return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }
@@ -302,12 +299,15 @@ public class MatrixConfigServiceHelper {
 
     int i = 0;
     for (Object val : (List<Object>) value) {
-      if (val instanceof Map) {
-        currentCombinationRef.put(key, JsonUtils.asJson(val));
-      } else if (val instanceof String) {
+      if (val instanceof String) {
         currentCombinationRef.put(key, (String) val);
       } else {
-        throw new InvalidRequestException("Either Map or String expected. Found unknown");
+        try {
+          currentCombinationRef.put(key, JsonUtils.asJson(val));
+        } catch (Exception ex) {
+          throw new InvalidRequestException(
+              String.format("Either Map or String expected. Found value: [%s] for this key [%s]", key, val.toString()));
+        }
       }
       indexPath.add(i);
       fetchCombinations(currentCombinationRef, axes, expressionAxisConfigMap, combinationsRef, exclude,

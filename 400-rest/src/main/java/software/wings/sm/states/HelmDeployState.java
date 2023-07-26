@@ -112,6 +112,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.StoreType;
@@ -1665,8 +1666,8 @@ public class HelmDeployState extends State {
     try {
       if (helmCommandResponse instanceof HelmInstallCommandResponse) {
         HelmInstallCommandResponse helmInstallCommandResponse = (HelmInstallCommandResponse) helmCommandResponse;
-        WorkflowExecution workflowExecution =
-            workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
+        WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
+            context.getAppId(), context.getWorkflowExecutionId(), WorkflowExecutionKeys.helmExecutionSummary);
         if (workflowExecution == null) {
           return;
         }

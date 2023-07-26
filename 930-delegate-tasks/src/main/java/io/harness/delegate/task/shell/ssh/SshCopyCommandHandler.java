@@ -10,6 +10,12 @@ package io.harness.delegate.task.shell.ssh;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIFACT_CONFIGURATION_NOT_FOUND_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
@@ -33,6 +39,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -45,16 +52,19 @@ import io.harness.delegate.task.shell.FileBasedAbstractScriptExecutorNG;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
+import io.harness.delegate.utils.GithubPackageUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.FileSourceType;
@@ -118,76 +128,117 @@ public class SshCopyCommandHandler implements CommandHandler {
     CommandExecutionStatus result = CommandExecutionStatus.SUCCESS;
     FileBasedAbstractScriptExecutorNG executor =
         (FileBasedAbstractScriptExecutorNG) sshScriptExecutorFactory.getFileBasedExecutor(context);
-    if (FileSourceType.ARTIFACT.equals(copyCommandUnit.getSourceType())) {
-      log.info("About to copy artifact");
-      if (sshCommandTaskParameters.getArtifactDelegateConfig() == null) {
-        throw NestedExceptionUtils.hintWithExplanationException(ARTIFACT_CONFIGURATION_NOT_FOUND_HINT,
-            ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION,
-            new SshCommandExecutionException(ARTIFACT_CONFIGURATION_NOT_FOUND));
-      }
-      if (context.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
-        log.info(
-            "Docker {} registry found, skipping copy artifact.", context.getArtifactDelegateConfig().getArtifactType());
-        executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
+
+    try {
+      if (FileSourceType.ARTIFACT.equals(copyCommandUnit.getSourceType())) {
+        log.info("About to copy artifact");
+
+        verifyIfCopyArtifactIsSupported(sshCommandTaskParameters.getArtifactDelegateConfig());
+
+        if (context.getArtifactDelegateConfig() instanceof SkipCopyArtifactDelegateConfig) {
+          log.info("Docker {} registry found, skipping copy artifact.",
+              context.getArtifactDelegateConfig().getArtifactType());
+          closeLogStream(executor.getLogCallback(), result);
+          return ExecuteCommandResponse.builder().status(result).build();
+        }
+
+        result = executor.copyFiles(context);
+        closeLogStream(executor.getLogCallback(), result);
+
+        if (result == CommandExecutionStatus.FAILURE) {
+          String artifactId = sshCommandTaskParameters.getArtifactDelegateConfig().getIdentifier();
+          log.error("Failed to copy artifact with id: " + artifactId);
+          throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_ARTIFACT_HINT,
+              format(FAILED_TO_COPY_ARTIFACT_HINT_EXPLANATION, artifactId, copyCommandUnit.getDestinationPath()),
+              new SshCommandExecutionException(format(FAILED_TO_COPY_ARTIFACT, artifactId)));
+        }
         return ExecuteCommandResponse.builder().status(result).build();
       }
-      if (sshCommandTaskParameters.getArtifactDelegateConfig() instanceof CustomArtifactDelegateConfig) {
-        throw NestedExceptionUtils.hintWithExplanationException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
-            COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION,
-            new SshCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT));
-      }
 
-      result = executor.copyFiles(context);
-      executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
-      if (result == CommandExecutionStatus.FAILURE) {
-        String artifactId = sshCommandTaskParameters.getArtifactDelegateConfig().getIdentifier();
-        log.error("Failed to copy artifact with id: " + artifactId);
-        throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_ARTIFACT_HINT,
-            format(FAILED_TO_COPY_ARTIFACT_HINT_EXPLANATION, artifactId, copyCommandUnit.getDestinationPath()),
-            new SshCommandExecutionException(format(FAILED_TO_COPY_ARTIFACT, artifactId)));
-      }
-      return ExecuteCommandResponse.builder().status(result).build();
-    }
-
-    if (FileSourceType.CONFIG.equals(copyCommandUnit.getSourceType())) {
-      List<ConfigFileParameters> configFiles = getConfigFileParameters(sshCommandTaskParameters, copyCommandUnit);
-      log.info(format("About to copy config %s files", configFiles.size()));
-      for (ConfigFileParameters configFile : configFiles) {
-        log.info(format("Copy config file : %s, isEncrypted: %b", configFile.getFileName(), configFile.isEncrypted()));
-        if (configFile.isEncrypted()) {
-          SecretConfigFile secretConfigFile;
-          try {
-            secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
-                configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
-          } catch (Exception e) {
-            throw NestedExceptionUtils.hintWithExplanationException(
-                format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT, configFile.getFileName()),
-                format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION, configFile.getFileName()),
-                new SshCommandExecutionException(format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED, configFile.getFileName())));
+      if (FileSourceType.CONFIG.equals(copyCommandUnit.getSourceType())) {
+        List<ConfigFileParameters> configFiles = getConfigFileParameters(sshCommandTaskParameters, copyCommandUnit);
+        log.info(format("About to copy config %s files", configFiles.size()));
+        for (ConfigFileParameters configFile : configFiles) {
+          log.info(
+              format("Copy config file : %s, isEncrypted: %b", configFile.getFileName(), configFile.isEncrypted()));
+          if (configFile.isEncrypted()) {
+            SecretConfigFile secretConfigFile;
+            try {
+              secretConfigFile = (SecretConfigFile) secretDecryptionService.decrypt(
+                  configFile.getSecretConfigFile(), configFile.getEncryptionDataDetails());
+            } catch (Exception e) {
+              throw NestedExceptionUtils.hintWithExplanationException(
+                  format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_HINT, configFile.getFileName()),
+                  format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED_EXPLANATION, configFile.getFileName()),
+                  new SshCommandExecutionException(
+                      format(UNDECRYPTABLE_CONFIG_FILE_PROVIDED, configFile.getFileName())));
+            }
+            String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
+            configFile.setFileContent(fileData);
           }
-          String fileData = new String(secretConfigFile.getEncryptedConfigFile().getDecryptedValue());
-          configFile.setFileContent(fileData);
-        }
 
-        // Since file content might change after secret manager functor will be applied,
-        // there is no way to handle this on manager side and we need to recalculate file
-        // size before sending over the wire.
-        // This is applicable mostly in use cases when config file has a reference to secret variable in its content.
-        configFile.calculateFileSize();
+          // Since file content might change after secret manager functor will be applied,
+          // there is no way to handle this on manager side and we need to recalculate file
+          // size before sending over the wire.
+          // This is applicable mostly in use cases when config file has a reference to secret variable in its content.
+          configFile.calculateFileSize();
 
-        result = executor.copyConfigFiles(context.getEvaluatedDestinationPath(), configFile);
-        if (result == CommandExecutionStatus.FAILURE) {
-          log.error("Failed to copy config file: " + configFile.getFileName());
-          executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
-          throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_SSH_CONFIG_FILE_HINT,
-              format(FAILED_TO_COPY_CONFIG_FILE_EXPLANATION, configFile.getFileName(), configFile.getDestinationPath()),
-              new SshCommandExecutionException(format(FAILED_TO_COPY_CONFIG_FILE, configFile.getFileName())));
+          result = executor.copyConfigFiles(context.getEvaluatedDestinationPath(), configFile);
+          if (result == CommandExecutionStatus.FAILURE) {
+            closeLogStreamWithError(executor.getLogCallback());
+            log.error("Failed to copy config file: " + configFile.getFileName());
+            throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_SSH_CONFIG_FILE_HINT,
+                format(
+                    FAILED_TO_COPY_CONFIG_FILE_EXPLANATION, configFile.getFileName(), configFile.getDestinationPath()),
+                new SshCommandExecutionException(format(FAILED_TO_COPY_CONFIG_FILE, configFile.getFileName())));
+          }
         }
+        closeLogStream(executor.getLogCallback(), result);
       }
-      executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
+
+      return ExecuteCommandResponse.builder().status(result).build();
+    } catch (Exception e) {
+      closeLogStreamWithError(executor.getLogCallback());
+      throw e;
+    }
+  }
+
+  private void verifyIfCopyArtifactIsSupported(SshWinRmArtifactDelegateConfig artifactDelegateConfig) {
+    if (artifactDelegateConfig == null) {
+      throw NestedExceptionUtils.hintWithExplanationException(ARTIFACT_CONFIGURATION_NOT_FOUND_HINT,
+          ARTIFACT_CONFIGURATION_NOT_FOUND_EXPLANATION,
+          new SshCommandExecutionException(ARTIFACT_CONFIGURATION_NOT_FOUND));
     }
 
-    return ExecuteCommandResponse.builder().status(result).build();
+    if (artifactDelegateConfig instanceof CustomArtifactDelegateConfig) {
+      throw NestedExceptionUtils.hintWithExplanationException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT,
+          COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION,
+          new SshCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT));
+    }
+
+    if (artifactDelegateConfig instanceof GithubPackagesArtifactDelegateConfig) {
+      GithubPackagesArtifactDelegateConfig githubPackagesArtifactDelegateConfig =
+          (GithubPackagesArtifactDelegateConfig) artifactDelegateConfig;
+      if (!GithubPackageUtils.MAVEN_PACKAGE_TYPE.equals(githubPackagesArtifactDelegateConfig.getPackageType())) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_HINT,
+            format(COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_EXPLANATION,
+                githubPackagesArtifactDelegateConfig.getPackageType()),
+            new SshCommandExecutionException(
+                format(COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_FAILED,
+                    githubPackagesArtifactDelegateConfig.getPackageType())));
+      }
+    }
+
+    if (artifactDelegateConfig instanceof AzureArtifactDelegateConfig) {
+      AzureArtifactDelegateConfig azureArtifactDelegateConfig = (AzureArtifactDelegateConfig) artifactDelegateConfig;
+      if (AzureArtifactsProtocolType.upack.name().equals(azureArtifactDelegateConfig.getPackageType())) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_HINT,
+            COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_EXPLANATION,
+            new SshCommandExecutionException(COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_FAILED));
+      }
+    }
   }
 
   private List<ConfigFileParameters> getConfigFileParameters(

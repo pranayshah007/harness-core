@@ -23,6 +23,7 @@ public class ConnectorJacksonTestHelper {
   static String connectorIdentifier = "identifier";
   static String name = "name";
   static String description = "description";
+  static String accountIdentifier = "accountIdentifier";
   static String projectIdentifier = "projectIdentifier";
   static String orgIdentifier = "orgIdentifier";
 
@@ -47,6 +48,7 @@ public class ConnectorJacksonTestHelper {
         .name(name)
         .identifier(connectorIdentifier)
         .description(description)
+        .accountIdentifier(accountIdentifier)
         .projectIdentifier(projectIdentifier)
         .orgIdentifier(orgIdentifier)
         .tags(tags)

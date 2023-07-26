@@ -75,4 +75,21 @@ java_library(
     ],
 )
 
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/java/**/*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":module",
+        "//:lombok",
+        "//990-commons-test:module",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mockito_mockito_inline",
+    ],
+)
+
+run_tests()
+
 run_analysis()

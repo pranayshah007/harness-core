@@ -30,6 +30,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -63,6 +64,7 @@ import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDet
 import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
+import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.connector.ConnectorInfoDTO;
@@ -117,6 +119,7 @@ import io.harness.git.model.GitFile;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.mappers.SecretManagerConfigMapper;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -139,6 +142,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
 import io.harness.remote.client.CGRestUtils;
@@ -164,6 +168,7 @@ import software.wings.beans.TaskType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -180,14 +185,15 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 @Singleton
@@ -496,7 +502,7 @@ public class TerraformStepHelper {
     if (terraformPassThroughData != null) {
       builder.varFileConfigs(toTerraformVarFileConfigWithPTD(configuration.getVarFiles(), terraformPassThroughData));
     } else {
-      builder.varFileConfigs(toTerraformVarFileConfig(configuration.getVarFiles(), terraformTaskNGResponse, ambiance));
+      builder.varFileConfigs(toTerraformVarFileConfig(configuration.getVarFiles(), terraformTaskNGResponse));
     }
 
     builder.backendConfig(getBackendConfig(configuration.getBackendConfig()))
@@ -532,6 +538,57 @@ public class TerraformStepHelper {
     executionSweepingOutputService.consume(ambiance, outputName, planJsonOutput, StepCategory.STEP.name());
 
     return outputName;
+  }
+
+  @NotNull
+  public Map<String, String> getRevisionsMap(
+      LinkedHashMap<String, TerraformVarFile> varFiles, Map<String, String> commitIdForConfigFilesMap) {
+    Map<String, String> outputKeys = new HashMap();
+    if (isNotEmpty(commitIdForConfigFilesMap)) {
+      outputKeys.put(TF_CONFIG_FILES, commitIdForConfigFilesMap.get(TF_CONFIG_FILES));
+      outputKeys.put(TF_BACKEND_CONFIG_FILE, commitIdForConfigFilesMap.get(TF_BACKEND_CONFIG_FILE));
+      int i = 0;
+      for (Entry<String, TerraformVarFile> file : varFiles.entrySet()) {
+        if (file.getValue().getSpec().getType().equals(TerraformVarFileTypes.Remote)) {
+          i++;
+          if (ManifestStoreType.isInGitSubset(
+                  ((RemoteTerraformVarFileSpec) file.getValue().getSpec()).getStore().getSpec().getKind())) {
+            outputKeys.put(file.getKey(), commitIdForConfigFilesMap.get(format(TF_VAR_FILES, i)));
+          }
+        }
+      }
+    }
+    return outputKeys;
+  }
+
+  public void addTerraformRevisionOutcomeIfRequired(
+      StepResponseBuilder stepResponseBuilder, Map<String, String> outputKeys) {
+    if (isNotEmpty(outputKeys)) {
+      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
+                                          .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
+                                          .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
+                                          .build());
+    }
+  }
+
+  @NotNull
+  public Map<String, String> getRevisionsMap(
+      List<TerraformVarFileConfig> varFileConfigs, Map<String, String> commitIdForConfigFilesMap) {
+    Map<String, String> outputKeys = new HashMap();
+    if (isNotEmpty(commitIdForConfigFilesMap)) {
+      outputKeys.put(TF_CONFIG_FILES, commitIdForConfigFilesMap.get(TF_CONFIG_FILES));
+      outputKeys.put(TF_BACKEND_CONFIG_FILE, commitIdForConfigFilesMap.get(TF_BACKEND_CONFIG_FILE));
+      int i = 0;
+      for (TerraformVarFileConfig file : varFileConfigs) {
+        if (file instanceof TerraformRemoteVarFileConfig && isNotEmpty(file.getIdentifier())) {
+          i++;
+          if (((TerraformRemoteVarFileConfig) file).getGitStoreConfigDTO() != null) {
+            outputKeys.put(file.getIdentifier(), commitIdForConfigFilesMap.get(format(TF_VAR_FILES, i)));
+          }
+        }
+      }
+    }
+    return outputKeys;
   }
 
   @Nullable
@@ -662,7 +719,7 @@ public class TerraformStepHelper {
       if (executionDetails.getEncryptionConfig() != null) {
         if (!map.isEmpty()) {
           boolean isGrouped = false;
-          for (Map.Entry<EncryptionConfig, List<EncryptedRecordData>> entry : map.entrySet()) {
+          for (Entry<EncryptionConfig, List<EncryptedRecordData>> entry : map.entrySet()) {
             if (executionDetails.getEncryptionConfig() instanceof SecretManagerConfig) {
               SecretManagerConfig secretManagerConfig = (SecretManagerConfig) executionDetails.getEncryptionConfig();
               String identifier = secretManagerConfig.getIdentifier();
@@ -918,7 +975,7 @@ public class TerraformStepHelper {
     if (terraformPassThroughData != null) {
       builder.varFileConfigs(toTerraformVarFileConfigWithPTD(spec.getVarFiles(), terraformPassThroughData));
     } else {
-      builder.varFileConfigs(toTerraformVarFileConfig(spec.getVarFiles(), response, ambiance));
+      builder.varFileConfigs(toTerraformVarFileConfig(spec.getVarFiles(), response));
     }
     builder.backendConfig(getBackendConfig(spec.getBackendConfig()))
         .backendConfigFileConfig(toTerraformBackendConfigFileConfig(spec.getBackendConfig(), response))
@@ -1199,17 +1256,18 @@ public class TerraformStepHelper {
   }
 
   public List<TerraformVarFileConfig> toTerraformVarFileConfig(
-      Map<String, TerraformVarFile> varFilesMap, TerraformTaskNGResponse response, Ambiance ambiance) {
+      Map<String, TerraformVarFile> varFilesMap, TerraformTaskNGResponse response) {
     if (EmptyPredicate.isNotEmpty(varFilesMap)) {
       List<TerraformVarFileConfig> varFileConfigs = new ArrayList<>();
       int i = 0;
-      for (TerraformVarFile file : varFilesMap.values()) {
+      for (Entry<String, TerraformVarFile> file : varFilesMap.entrySet()) {
         if (file != null) {
-          TerraformVarFileSpec spec = file.getSpec();
+          TerraformVarFileSpec spec = file.getValue().getSpec();
           if (spec instanceof InlineTerraformVarFileSpec) {
             String content = getParameterFieldValue(((InlineTerraformVarFileSpec) spec).getContent());
             if (EmptyPredicate.isNotEmpty(content)) {
-              varFileConfigs.add(TerraformInlineVarFileConfig.builder().varFileContent(content).build());
+              varFileConfigs.add(
+                  TerraformInlineVarFileConfig.builder().varFileContent(content).identifier(file.getKey()).build());
             }
           } else if (spec instanceof RemoteTerraformVarFileSpec) {
             StoreConfigWrapper storeConfigWrapper = ((RemoteTerraformVarFileSpec) spec).getStore();
@@ -1220,6 +1278,7 @@ public class TerraformStepHelper {
                 varFileConfigs.add(
                     TerraformRemoteVarFileConfig.builder()
                         .fileStoreConfigDTO(((FileStorageStoreConfig) storeConfig).toFileStorageConfigDTO())
+                        .identifier(file.getKey())
                         .build());
               } else if (storeConfig.getKind().equals(ManifestStoreType.S3)) {
                 S3StoreConfig s3StoreConfig = (S3StoreConfig) storeConfig;
@@ -1227,14 +1286,19 @@ public class TerraformStepHelper {
                 Map<String, Map<String, String>> keyVersionMap = response.getKeyVersionMap();
                 fileStorageConfigDTO.setVersions(
                     isNotEmpty(keyVersionMap) ? keyVersionMap.get(format(TF_VAR_FILES, i)) : null);
-                varFileConfigs.add(
-                    TerraformRemoteVarFileConfig.builder().fileStoreConfigDTO(fileStorageConfigDTO).build());
+                varFileConfigs.add(TerraformRemoteVarFileConfig.builder()
+                                       .fileStoreConfigDTO(fileStorageConfigDTO)
+                                       .identifier(file.getKey())
+                                       .build());
               } else {
                 GitStoreConfigDTO gitStoreConfigDTO = getStoreConfigAtCommitId(
                     storeConfig, response.getCommitIdForConfigFilesMap().get(format(TF_VAR_FILES, i)))
                                                           .toGitStoreConfigDTO();
 
-                varFileConfigs.add(TerraformRemoteVarFileConfig.builder().gitStoreConfigDTO(gitStoreConfigDTO).build());
+                varFileConfigs.add(TerraformRemoteVarFileConfig.builder()
+                                       .gitStoreConfigDTO(gitStoreConfigDTO)
+                                       .identifier(file.getKey())
+                                       .build());
               }
             }
           }
@@ -1246,7 +1310,7 @@ public class TerraformStepHelper {
   }
 
   public List<TerraformVarFileInfo> prepareTerraformVarFileInfo(
-      List<TerraformVarFileConfig> varFileConfigs, Ambiance ambiance) {
+      List<TerraformVarFileConfig> varFileConfigs, Ambiance ambiance, boolean useOriginalIdentifier) {
     if (EmptyPredicate.isNotEmpty(varFileConfigs)) {
       int i = 0;
       List<TerraformVarFileInfo> varFileInfo = new ArrayList<>();
@@ -1260,14 +1324,24 @@ public class TerraformStepHelper {
           RemoteTerraformVarFileInfoBuilder remoteTerraformVarFileInfoBuilder = RemoteTerraformVarFileInfo.builder();
           TerraformRemoteVarFileConfig terraformRemoteVarFileConfig = (TerraformRemoteVarFileConfig) fileConfig;
           if (terraformRemoteVarFileConfig.getGitStoreConfigDTO() != null) {
+            String identifier;
+            if (useOriginalIdentifier && isNotEmpty(fileConfig.getIdentifier())) {
+              identifier = fileConfig.getIdentifier();
+            } else {
+              identifier = format(TerraformStepHelper.TF_VAR_FILES, i);
+            }
             GitStoreConfig gitStoreConfig =
                 ((TerraformRemoteVarFileConfig) fileConfig).getGitStoreConfigDTO().toGitStoreConfig();
-            remoteTerraformVarFileInfoBuilder.gitFetchFilesConfig(getGitFetchFilesConfig(
-                gitStoreConfig, ambiance, format(TerraformStepHelper.TF_VAR_FILES, i), "GIT VAR_FILES"));
+            remoteTerraformVarFileInfoBuilder.gitFetchFilesConfig(
+                getGitFetchFilesConfig(gitStoreConfig, ambiance, identifier, "GIT VAR_FILES"));
           }
           if (terraformRemoteVarFileConfig.getFileStoreConfigDTO() != null) {
-            remoteTerraformVarFileInfoBuilder.filestoreFetchFilesConfig(
-                prepareTerraformConfigFileInfo(terraformRemoteVarFileConfig.getFileStoreConfigDTO(), ambiance));
+            FileStoreFetchFilesConfig fileStoreFetchFilesConfig =
+                prepareTerraformConfigFileInfo(terraformRemoteVarFileConfig.getFileStoreConfigDTO(), ambiance);
+            if (useOriginalIdentifier) {
+              fileStoreFetchFilesConfig.setIdentifier(terraformRemoteVarFileConfig.getIdentifier());
+            }
+            remoteTerraformVarFileInfoBuilder.filestoreFetchFilesConfig(fileStoreFetchFilesConfig);
           }
           varFileInfo.add(remoteTerraformVarFileInfoBuilder.build());
         }
@@ -1350,6 +1424,13 @@ public class TerraformStepHelper {
 
   private void runCleanupTerraformSecretTask(Ambiance ambiance, EncryptionConfig encryptionConfig,
       List<EncryptedRecordData> encryptedRecordDataList, String cleanupSecretUuid) {
+    BaseNGAccess ngAccess = BaseNGAccess.builder()
+                                .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+                                .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+                                .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+                                .build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
+
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -1360,7 +1441,7 @@ public class TerraformStepHelper {
                                 .build())
             .taskType(TaskType.TERRAFORM_SECRET_CLEANUP_TASK_NG.name())
             .executionTimeout(Duration.ofMinutes(10))
-            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
+            .taskSetupAbstractions(abstractions)
             .logStreamingAbstractions(new LinkedHashMap<>() {
               { put(SetupAbstractionKeys.accountId, AmbianceUtils.getAccountId(ambiance)); }
             })
@@ -1479,23 +1560,6 @@ public class TerraformStepHelper {
         .collect(Collectors.toList());
   }
 
-  private List<TerraformVarFileInfo> getInlineAndArtifactory(List<TerraformVarFileInfo> toTerraformVarFileInfo) {
-    List<TerraformVarFileInfo> inlineAndArtifactory = new ArrayList<>();
-
-    toTerraformVarFileInfo.forEach(terraformVarFileInfo -> {
-      if (terraformVarFileInfo instanceof RemoteTerraformVarFileInfo) {
-        RemoteTerraformVarFileInfo remoteTerraformVarFileInfo = (RemoteTerraformVarFileInfo) terraformVarFileInfo;
-        if (remoteTerraformVarFileInfo.getFilestoreFetchFilesConfig() instanceof ArtifactoryStoreDelegateConfig) {
-          inlineAndArtifactory.add(terraformVarFileInfo);
-        }
-      }
-      if (terraformVarFileInfo instanceof InlineTerraformVarFileInfo) {
-        inlineAndArtifactory.add(terraformVarFileInfo);
-      }
-    });
-    return inlineAndArtifactory;
-  }
-
   private List<S3StoreTFDelegateConfig> getS3FilesConfigs(List<TerraformVarFileInfo> varFilesInfo) {
     List<S3StoreTFDelegateConfig> S3FetchFilesConfigs = new ArrayList<>();
 
@@ -1569,23 +1633,25 @@ public class TerraformStepHelper {
       Map<String, TerraformVarFile> varFilesMap, TerraformPassThroughData terraformPassThroughData) {
     if (EmptyPredicate.isNotEmpty(varFilesMap)) {
       List<TerraformVarFileConfig> varFileConfigs = new ArrayList<>();
-      int i = 0;
       for (TerraformVarFile file : varFilesMap.values()) {
         if (file != null) {
           TerraformVarFileSpec spec = file.getSpec();
           if (spec instanceof InlineTerraformVarFileSpec) {
             String content = getParameterFieldValue(((InlineTerraformVarFileSpec) spec).getContent());
             if (EmptyPredicate.isNotEmpty(content)) {
-              varFileConfigs.add(TerraformInlineVarFileConfig.builder().varFileContent(content).build());
+              varFileConfigs.add(TerraformInlineVarFileConfig.builder()
+                                     .identifier(file.getIdentifier())
+                                     .varFileContent(content)
+                                     .build());
             }
           } else if (spec instanceof RemoteTerraformVarFileSpec) {
             StoreConfigWrapper storeConfigWrapper = ((RemoteTerraformVarFileSpec) spec).getStore();
             if (storeConfigWrapper != null) {
-              i++;
               StoreConfig storeConfig = storeConfigWrapper.getSpec();
               if (storeConfig.getKind().equals(ManifestStoreType.ARTIFACTORY)) {
                 varFileConfigs.add(
                     TerraformRemoteVarFileConfig.builder()
+                        .identifier(file.getIdentifier())
                         .fileStoreConfigDTO(((FileStorageStoreConfig) storeConfig).toFileStorageConfigDTO())
                         .build());
               } else if (storeConfig.getKind().equals(ManifestStoreType.S3)) {
@@ -1594,14 +1660,19 @@ public class TerraformStepHelper {
                 Map<String, Map<String, String>> keyVersionMap = terraformPassThroughData.getKeyVersionMap();
                 fileStorageConfigDTO.setVersions(
                     isNotEmpty(keyVersionMap) ? keyVersionMap.get(file.getIdentifier()) : null);
-                varFileConfigs.add(
-                    TerraformRemoteVarFileConfig.builder().fileStoreConfigDTO(fileStorageConfigDTO).build());
+                varFileConfigs.add(TerraformRemoteVarFileConfig.builder()
+                                       .identifier(file.getIdentifier())
+                                       .fileStoreConfigDTO(fileStorageConfigDTO)
+                                       .build());
               } else {
                 GitStoreConfigDTO gitStoreConfigDTO = getStoreConfigAtCommitId(
                     storeConfig, terraformPassThroughData.getFetchedCommitIdsMap().get(file.getIdentifier()))
                                                           .toGitStoreConfigDTO();
 
-                varFileConfigs.add(TerraformRemoteVarFileConfig.builder().gitStoreConfigDTO(gitStoreConfigDTO).build());
+                varFileConfigs.add(TerraformRemoteVarFileConfig.builder()
+                                       .identifier(file.getIdentifier())
+                                       .gitStoreConfigDTO(gitStoreConfigDTO)
+                                       .build());
               }
             }
           }
@@ -1698,25 +1769,6 @@ public class TerraformStepHelper {
         .build();
   }
 
-  private List<TerraformVarFileInfo> getTerraformVarFiles(
-      Ambiance ambiance, List<String> remoteFilesContent, List<TerraformVarFileInfo> inlineAndArtifactoryVarFiles) {
-    List<TerraformVarFileInfo> transformedToInlineVarFiles = new ArrayList<>();
-    if (!remoteFilesContent.isEmpty()) {
-      remoteFilesContent.forEach(content -> {
-        if (EmptyPredicate.isNotEmpty(content)) {
-          transformedToInlineVarFiles.add(
-              InlineTerraformVarFileInfo.builder()
-                  .varFileContent(cdExpressionResolver.updateExpressions(ambiance, content).toString())
-                  .build());
-        }
-      });
-    }
-
-    return Stream.of(inlineAndArtifactoryVarFiles, transformedToInlineVarFiles)
-        .flatMap(Collection::stream)
-        .collect(Collectors.toList());
-  }
-
   public TaskChainResponse fetchRemoteVarFiles(TerraformPassThroughData terraformPassThroughData,
       List<TerraformVarFileInfo> varFilesInfo, Ambiance ambiance, StepElementParameters stepElementParameters,
       String commandUnitName, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
@@ -1730,8 +1782,7 @@ public class TerraformStepHelper {
         response = getGitFetchFileTaskChainResponse(ambiance, gitFetchFilesConfigs, stepElementParameters,
             terraformPassThroughData, commandUnitName, delegateSelectors);
       }
-    }
-    if (terraformPassThroughData.hasS3Files()) {
+    } else if (terraformPassThroughData.hasS3Files()) {
       List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs;
       s3FileConfigs = getS3FilesConfigs(varFilesInfo);
       awsS3FetchFileDelegateConfigs = getS3FetchFileDelegateConfigs(s3FileConfigs);
@@ -1744,32 +1795,11 @@ public class TerraformStepHelper {
     return response;
   }
 
-  private List<String> getGitFetchFiles(GitFetchResponse responseData) {
-    return responseData.getFilesFromMultipleRepo()
-        .values()
-        .stream()
-        .map(FetchFilesResult::getFiles)
-        .flatMap(Collection::stream)
-        .map(GitFile::getFileContent)
-        .collect(Collectors.toList());
-  }
-
-  private List<String> getS3RemoteFilesContent(AwsS3FetchFilesResponse responseData) {
-    return responseData.getS3filesDetails()
-        .values()
-        .stream()
-        .map(list -> list.stream().map(S3FileDetailResponse::getFileContent).collect(Collectors.toList()))
-        .flatMap(Collection::stream)
-        .collect(Collectors.toList());
-  }
-
   private TaskChainResponse handleGitFetchResponse(Ambiance ambiance, StepElementParameters stepElementParameters,
       TerraformPassThroughData terraformPassThroughData, GitFetchResponse responseData, String commandUnitName,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    List<String> gitRemoteFilesContent = getGitFetchFiles(responseData);
-
-    terraformPassThroughData.getRemoteVarFilesContent().addAll(gitRemoteFilesContent);
     terraformPassThroughData.setFetchedCommitIdsMap(responseData.getFetchedCommitIdsMap());
+    terraformPassThroughData.setGitVarFilesFromMultipleRepo(responseData.getFilesFromMultipleRepo());
     UnitProgressData unitProgressData;
     unitProgressData = responseData.getUnitProgressData();
 
@@ -1788,12 +1818,11 @@ public class TerraformStepHelper {
       terraformPassThroughData.getUnitProgresses().addAll(unitProgressData.getUnitProgresses());
     }
 
-    List<TerraformVarFileInfo> inlineAndArtifactoryVarFiles =
-        getInlineAndArtifactory(builder.build().getVarFileInfos());
+    List<TerraformVarFileInfo> varFiles = getVarFilesInCorrectOrder(ambiance, terraformPassThroughData, builder);
 
-    List<TerraformVarFileInfo> varFiles =
-        getTerraformVarFiles(ambiance, gitRemoteFilesContent, inlineAndArtifactoryVarFiles);
-    builder.varFileInfos(varFiles);
+    if (!varFiles.isEmpty()) {
+      builder.varFileInfos(varFiles);
+    }
     builder.commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(responseData.getUnitProgressData()));
 
     return executeTerraformTask(
@@ -1803,27 +1832,21 @@ public class TerraformStepHelper {
   private TaskChainResponse handleAwsS3FetchFileResponse(Ambiance ambiance, StepElementParameters stepElementParameters,
       TerraformPassThroughData terraformPassThroughData, AwsS3FetchFilesResponse responseData, String commandUnitName,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    List<String> s3RemoteFilesContent = getS3RemoteFilesContent(responseData);
-
     UnitProgressData unitProgressData;
     unitProgressData = responseData.getUnitProgressData();
     terraformPassThroughData.getUnitProgresses().addAll(unitProgressData.getUnitProgresses());
+    terraformPassThroughData.setS3VarFilesDetails(responseData.getS3filesDetails());
     if (responseData.getKeyVersionMap() != null && isNotEmpty(responseData.getKeyVersionMap())) {
       terraformPassThroughData.getKeyVersionMap().putAll(responseData.getKeyVersionMap());
     }
 
     TerraformTaskNGParametersBuilder builder = terraformPassThroughData.getTerraformTaskNGParametersBuilder();
 
-    List<TerraformVarFileInfo> inlineAndArtifactoryVarFiles =
-        getInlineAndArtifactory(builder.build().getVarFileInfos());
+    List<TerraformVarFileInfo> varFiles = getVarFilesInCorrectOrder(ambiance, terraformPassThroughData, builder);
 
-    List<String> allRemoteFileContents = new ArrayList<>();
-    allRemoteFileContents.addAll(s3RemoteFilesContent);
-    allRemoteFileContents.addAll(terraformPassThroughData.getRemoteVarFilesContent());
-    terraformPassThroughData.getRemoteVarFilesContent().addAll(s3RemoteFilesContent);
-
-    List<TerraformVarFileInfo> varFiles =
-        getTerraformVarFiles(ambiance, allRemoteFileContents, inlineAndArtifactoryVarFiles);
+    if (!varFiles.isEmpty()) {
+      builder.varFileInfos(varFiles);
+    }
     builder.varFileInfos(varFiles);
     builder.commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(responseData.getUnitProgressData()));
 
@@ -1936,5 +1959,170 @@ public class TerraformStepHelper {
       log.error(format("Exception in terraform %s step: %s", commandUnitName, e.getMessage()));
       return getExceptionTaskChainResponse(ambiance, unitProgressData, e);
     }
+  }
+
+  @NotNull
+  public Map<String, String> getRevisionsMap(
+      TerraformPassThroughData terraformPassThroughData, TerraformTaskNGResponse terraformTaskNGResponse) {
+    Map<String, String> outputKeys = new HashMap<>();
+    if (isNotEmpty(terraformTaskNGResponse.getCommitIdForConfigFilesMap())) {
+      outputKeys.put(TF_CONFIG_FILES, terraformTaskNGResponse.getCommitIdForConfigFilesMap().get(TF_CONFIG_FILES));
+      outputKeys.put(
+          TF_BACKEND_CONFIG_FILE, terraformTaskNGResponse.getCommitIdForConfigFilesMap().get(TF_BACKEND_CONFIG_FILE));
+    }
+    if (isNotEmpty(terraformPassThroughData.getFetchedCommitIdsMap())) {
+      outputKeys.putAll(terraformPassThroughData.getFetchedCommitIdsMap());
+    }
+    return outputKeys;
+  }
+
+  private List<String> getGitFetchFilesFromMultipleRepos(
+      Map<String, FetchFilesResult> gitVarFilesFromMultipleRepo, String gitVarFileIdentifier) {
+    Map<String, FetchFilesResult> filteredMapByIdentifier =
+        gitVarFilesFromMultipleRepo.entrySet()
+            .stream()
+            .filter(x -> x.getKey().equals(gitVarFileIdentifier))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+    return filteredMapByIdentifier.values()
+        .stream()
+        .map(FetchFilesResult::getFiles)
+        .flatMap(Collection::stream)
+        .map(GitFile::getFileContent)
+        .collect(Collectors.toList());
+  }
+
+  private List<String> getS3RemoteFilesContentFiltered(
+      Map<String, List<S3FileDetailResponse>> s3filesDetailsMap, String s3VarFileIdentifier) {
+    Map<String, List<S3FileDetailResponse>> s3filesDetails =
+        s3filesDetailsMap.entrySet()
+            .stream()
+            .filter(x -> x.getKey().equals(s3VarFileIdentifier))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+    return s3filesDetails.values()
+        .stream()
+        .map(list -> list.stream().map(S3FileDetailResponse::getFileContent).collect(Collectors.toList()))
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
+  }
+
+  @VisibleForTesting
+  protected List<TerraformVarFileInfo> getVarFilesWithStepIdentifiersOrder(Ambiance ambiance,
+      TerraformPassThroughData terraformPassThroughData, TerraformTaskNGParametersBuilder tfTaskParametersBuilder) {
+    List<TerraformVarFileInfo> varFileInfo = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(terraformPassThroughData.getOriginalStepVarFiles())) {
+      for (TerraformVarFile file : terraformPassThroughData.getOriginalStepVarFiles().values()) {
+        if (file != null) {
+          String varFileIdentifier = file.getIdentifier();
+          TerraformVarFileSpec spec = file.getSpec();
+          if (spec instanceof InlineTerraformVarFileSpec) {
+            String content = getParameterFieldValue(((InlineTerraformVarFileSpec) spec).getContent());
+            varFileInfo.add(InlineTerraformVarFileInfo.builder().varFileContent(content).build());
+          } else if (spec instanceof RemoteTerraformVarFileSpec) {
+            StoreConfigWrapper storeConfigWrapper = ((RemoteTerraformVarFileSpec) spec).getStore();
+            if (storeConfigWrapper != null) {
+              StoreConfig storeConfig = storeConfigWrapper.getSpec();
+              if (storeConfig != null && ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
+                List<String> gitVarFilesContent = getGitFetchFilesFromMultipleRepos(
+                    terraformPassThroughData.getGitVarFilesFromMultipleRepo(), varFileIdentifier);
+                gitVarFilesContent.forEach(
+                    gitFileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, gitFileContent)));
+              } else if (storeConfig != null && ManifestStoreType.S3.equals(storeConfig.getKind())) {
+                List<String> s3VarFilesContent =
+                    getS3RemoteFilesContentFiltered(terraformPassThroughData.getS3VarFilesDetails(), varFileIdentifier);
+                s3VarFilesContent.forEach(
+                    s3FileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, s3FileContent)));
+              } else if (storeConfig != null && ManifestStoreType.ARTIFACTORY.equals(storeConfig.getKind())) {
+                TerraformVarFileInfo artifactoryVarFileInfo =
+                    getArtifactoryVarFile(tfTaskParametersBuilder.build().getVarFileInfos(), varFileIdentifier);
+                if (artifactoryVarFileInfo != null) {
+                  varFileInfo.add(artifactoryVarFileInfo);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return varFileInfo;
+  }
+
+  @VisibleForTesting
+  protected List<TerraformVarFileInfo> getVarFilesWithInheritedConfigsOrder(Ambiance ambiance,
+      TerraformPassThroughData terraformPassThroughData, TerraformTaskNGParametersBuilder tfTaskParametersBuilder) {
+    List<TerraformVarFileInfo> varFileInfo = new ArrayList<>();
+
+    List<TerraformVarFileConfig> terraformVarFileConfigs = terraformPassThroughData.getOriginalVarFileConfigs();
+
+    terraformVarFileConfigs.forEach(terraformVarFileConfig -> {
+      String varFileIdentifier = terraformVarFileConfig.getIdentifier();
+      if (terraformVarFileConfig instanceof TerraformInlineVarFileConfig) {
+        TerraformInlineVarFileConfig inlineVarFileConfig = (TerraformInlineVarFileConfig) terraformVarFileConfig;
+        String content = inlineVarFileConfig.getVarFileContent();
+        varFileInfo.add(InlineTerraformVarFileInfo.builder().varFileContent(content).build());
+      } else if (terraformVarFileConfig instanceof TerraformRemoteVarFileConfig) {
+        TerraformRemoteVarFileConfig terraformRemoteVarFileConfig =
+            (TerraformRemoteVarFileConfig) terraformVarFileConfig;
+
+        if (terraformRemoteVarFileConfig.getGitStoreConfigDTO() != null) {
+          List<String> gitVarFilesContent = getGitFetchFilesFromMultipleRepos(
+              terraformPassThroughData.getGitVarFilesFromMultipleRepo(), varFileIdentifier);
+          gitVarFilesContent.forEach(
+              gitFileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, gitFileContent)));
+        } else if (terraformRemoteVarFileConfig.getFileStoreConfigDTO() != null) {
+          FileStorageConfigDTO fileStorageConfigDTO = terraformRemoteVarFileConfig.getFileStoreConfigDTO();
+
+          if (fileStorageConfigDTO.getKind().equals(ManifestStoreType.S3)) {
+            List<String> s3VarFilesContent =
+                getS3RemoteFilesContentFiltered(terraformPassThroughData.getS3VarFilesDetails(), varFileIdentifier);
+            s3VarFilesContent.forEach(
+                s3FileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, s3FileContent)));
+          } else if (fileStorageConfigDTO.getKind().equals(ManifestStoreType.ARTIFACTORY)) {
+            TerraformVarFileInfo artifactoryVarFileInfo =
+                getArtifactoryVarFile(tfTaskParametersBuilder.build().getVarFileInfos(), varFileIdentifier);
+            if (artifactoryVarFileInfo != null) {
+              varFileInfo.add(artifactoryVarFileInfo);
+            }
+          }
+        }
+      }
+    });
+    return varFileInfo;
+  }
+
+  private TerraformVarFileInfo createInlineAndUpdateExpression(Ambiance ambiance, String varFileContent) {
+    return InlineTerraformVarFileInfo.builder()
+        .varFileContent(cdExpressionResolver.updateExpressions(ambiance, varFileContent).toString())
+        .build();
+  }
+
+  private TerraformVarFileInfo getArtifactoryVarFile(
+      List<TerraformVarFileInfo> terraformVarFileInfos, String varFileIdentifier) {
+    return terraformVarFileInfos.stream()
+        .filter(terraformVarFileInfo -> {
+          if (terraformVarFileInfo instanceof RemoteTerraformVarFileInfo) {
+            RemoteTerraformVarFileInfo remoteTerraformVarFileInfo = (RemoteTerraformVarFileInfo) terraformVarFileInfo;
+            if (remoteTerraformVarFileInfo.getFilestoreFetchFilesConfig() instanceof ArtifactoryStoreDelegateConfig) {
+              FileStoreFetchFilesConfig fileStoreFetchFilesConfig =
+                  remoteTerraformVarFileInfo.getFilestoreFetchFilesConfig();
+              return fileStoreFetchFilesConfig.getIdentifier().equals(varFileIdentifier);
+            }
+          }
+          return false;
+        })
+        .findFirst()
+        .orElse(null);
+  }
+
+  private List<TerraformVarFileInfo> getVarFilesInCorrectOrder(
+      Ambiance ambiance, TerraformPassThroughData terraformPassThroughData, TerraformTaskNGParametersBuilder builder) {
+    List<TerraformVarFileInfo> varFiles;
+    if (!terraformPassThroughData.getOriginalStepVarFiles().isEmpty()) {
+      varFiles = getVarFilesWithStepIdentifiersOrder(ambiance, terraformPassThroughData, builder);
+    } else {
+      varFiles = getVarFilesWithInheritedConfigsOrder(ambiance, terraformPassThroughData, builder);
+    }
+    return varFiles;
   }
 }

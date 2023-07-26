@@ -22,27 +22,25 @@ import io.harness.ngtriggers.events.TriggerOutboxEvents;
 import io.harness.ngtriggers.events.TriggerUpdateEvent;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
+import io.harness.pms.yaml.YamlUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import io.serializer.HObjectMapper;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class TriggerOutboxEventHandler implements OutboxEventHandler {
-  private ObjectMapper objectMapper;
   private final AuditClientService auditClientService;
   @Inject
   public TriggerOutboxEventHandler(AuditClientService auditClientService) {
-    this.objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
     this.auditClientService = auditClientService;
   }
 
   private boolean handleTriggerCreateEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
-    TriggerCreateEvent event = objectMapper.readValue(outboxEvent.getEventData(), TriggerCreateEvent.class);
+    TriggerCreateEvent event =
+        YamlUtils.readWithDefaultObjectMapper(outboxEvent.getEventData(), TriggerCreateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.CREATE)
                                 .module(ModuleType.CORE)
@@ -57,7 +55,8 @@ public class TriggerOutboxEventHandler implements OutboxEventHandler {
   }
   private boolean handleTriggerUpdateEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
-    TriggerUpdateEvent event = objectMapper.readValue(outboxEvent.getEventData(), TriggerUpdateEvent.class);
+    TriggerUpdateEvent event =
+        YamlUtils.readWithDefaultObjectMapper(outboxEvent.getEventData(), TriggerUpdateEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
                                 .module(ModuleType.CORE)
@@ -73,7 +72,8 @@ public class TriggerOutboxEventHandler implements OutboxEventHandler {
 
   private boolean handleTriggerDeleteEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
-    TriggerDeleteEvent event = objectMapper.readValue(outboxEvent.getEventData(), TriggerDeleteEvent.class);
+    TriggerDeleteEvent event =
+        YamlUtils.readWithDefaultObjectMapper(outboxEvent.getEventData(), TriggerDeleteEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
                                 .module(ModuleType.CORE)

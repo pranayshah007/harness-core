@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
 import static junit.framework.TestCase.assertEquals;
@@ -34,8 +35,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
+import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.CacheState;
@@ -47,8 +51,13 @@ import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.ng.core.template.TemplateRetainVariablesRequestDTO;
+import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
+import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariableResponseMapValueProto;
@@ -61,16 +70,19 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.TemplateReferenceHelper;
 import io.harness.template.helpers.TemplateYamlConversionHelper;
+import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.beans.PermissionTypes;
 import io.harness.template.resources.beans.TemplateDeleteListRequestDTO;
 import io.harness.template.resources.beans.TemplateImportRequestDTO;
 import io.harness.template.resources.beans.TemplateImportSaveResponse;
 import io.harness.template.resources.beans.TemplateListRepoResponse;
+import io.harness.template.resources.beans.TemplateUpdateGitMetadataRequest;
 import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
 import io.harness.template.services.TemplateMergeService;
 import io.harness.template.services.TemplateVariableCreatorFactory;
+import io.harness.template.services.TemplateVariableCreatorService;
 import io.harness.utils.ThreadOperationContextHelper;
 
 import com.google.common.io.Resources;
@@ -119,6 +131,8 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Mock TemplateReferenceHelper templateReferenceHelper;
   @Mock CustomDeploymentResourceClient customDeploymentResourceClient;
   @Mock TemplateVariableCreatorFactory templateVariableCreatorFactory;
+  @Mock TemplateVariableCreatorService templateVariableCreatorService;
+  @Mock NGTemplateDtoMapper ngTemplateDtoMapper;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -229,6 +243,27 @@ public class NGTemplateResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCreateRemoteTemplate() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(templateService)
+        .validateGovernanceRules(entity);
+    doReturn(entityWithMongoVersion).when(templateService).create(entity, false, null, false);
+    GitEntityCreateInfoDTO gitEntityCreateInfoDTO =
+        GitEntityCreateInfoDTO.builder().commitMsg("cmt").branch("main").storeType(StoreType.REMOTE).build();
+    ResponseDTO<TemplateWrapperResponseDTO> responseDTO = templateResource.create(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, gitEntityCreateInfoDTO, yaml, false, "", false);
+    assertThat(responseDTO.getData()).isNotNull();
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    assertThat(responseDTO.getData().isValid()).isTrue();
+    assertThat(responseDTO.getData().getTemplateResponseDTO().getVersion()).isEqualTo(1L);
+    assertThat(responseDTO.getData().getTemplateResponseDTO().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+  }
+
+  @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testCreateTemplateForPolicyDeny() {
@@ -290,6 +325,27 @@ public class NGTemplateResourceTest extends CategoryTest {
     doReturn(entityWithMongoVersion).when(templateService).updateTemplateEntity(entity, ChangeType.MODIFY, false, "");
     ResponseDTO<TemplateWrapperResponseDTO> responseDTO = templateResource.updateExistingTemplateLabel("", ACCOUNT_ID,
         ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, yaml, false, "");
+    assertThat(responseDTO.getData()).isNotNull();
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    assertThat(responseDTO.getData().isValid()).isTrue();
+    assertThat(responseDTO.getData().getTemplateResponseDTO().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdateRemoteTemplate() {
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(templateService)
+        .validateGovernanceRules(entity);
+    doReturn(entityWithMongoVersion).when(templateService).updateTemplateEntity(entity, ChangeType.MODIFY, false, null);
+    GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO =
+        GitEntityUpdateInfoDTO.builder().commitMsg("cmt").branch("main").storeType(StoreType.REMOTE).build();
+    ResponseDTO<TemplateWrapperResponseDTO> responseDTO =
+        templateResource.updateExistingTemplateLabel("", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, gitEntityUpdateInfoDTO, yaml, false, "");
     assertThat(responseDTO.getData()).isNotNull();
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
@@ -428,6 +484,29 @@ public class NGTemplateResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetListMetaDataOfTemplates() {
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.createdAt));
+    PageImpl<TemplateEntity> templateEntities =
+        new PageImpl<>(Collections.singletonList(entityWithMongoVersion), pageable, 1);
+    doReturn(templateEntities).when(templateService).listTemplateMetadata(any(), any(), any(), any(), any());
+    List<TemplateMetadataSummaryResponseDTO> content =
+        templateResource
+            .listTemplateMetadata(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, 0, 25, null, null, null,
+                TemplateListType.ALL_TEMPLATE_TYPE, false, null, false)
+            .getData()
+            .getContent();
+    assertThat(content).isNotEmpty();
+    assertThat(content.size()).isEqualTo(1);
+
+    TemplateMetadataSummaryResponseDTO responseDTO = content.get(0);
+    assertThat(responseDTO.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
+    assertThat(responseDTO.getName()).isEqualTo(TEMPLATE_IDENTIFIER);
+    assertThat(responseDTO.getVersion()).isEqualTo(1L);
+  }
+
+  @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testValidateIdentifierIsUnique() {
@@ -461,6 +540,143 @@ public class NGTemplateResourceTest extends CategoryTest {
     assertThat(responseDTO.getData()).isEqualTo(templateMergeResponseDTO);
     verify(templateService)
         .checkLinkedTemplateAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateMergeResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testApplyTemplates() {
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+    doReturn(templateMergeResponseDTO)
+        .when(templateMergeService)
+        .applyTemplatesToYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false);
+
+    ResponseDTO<TemplateMergeResponseDTO> responseDTO =
+        templateResource.applyTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
+            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), "false", false);
+    assertThat(responseDTO.getData()).isEqualTo(templateMergeResponseDTO);
+    verify(templateService)
+        .checkLinkedTemplateAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateMergeResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testTemplateInputs() {
+    doReturn("templateInputs")
+        .when(templateMergeService)
+        .getTemplateInputs(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+
+    ResponseDTO<String> responseDTO = templateResource.getTemplateInputsYaml(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, "false", null);
+    assertThat(responseDTO.getData()).isEqualTo("templateInputs");
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetTemplateAlongWithInputsYaml() {
+    TemplateWithInputsResponseDTO templateWithInputsResponseDTO =
+        TemplateWithInputsResponseDTO.builder()
+            .templateInputs("templateInputs")
+            .templateResponseDTO(TemplateResponseDTO.builder().version(1L).yaml("yaml").build())
+            .build();
+    doReturn(templateWithInputsResponseDTO)
+        .when(templateService)
+        .getTemplateWithInputs(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+
+    ResponseDTO<TemplateWithInputsResponseDTO> responseDTO = templateResource.getTemplateAlongWithInputsYaml(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "false");
+    assertThat(responseDTO.getData().getTemplateInputs()).isEqualTo("templateInputs");
+    assertThat(responseDTO.getData().getTemplateResponseDTO().getVersion()).isEqualTo(1L);
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testDummyApiForSwaggerSchemaCheck() {
+    templateResource.dummyApiForSwaggerSchemaCheck();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCreateVariables() {
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+    doReturn(templateMergeResponseDTO)
+        .when(templateMergeService)
+        .applyTemplatesToYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false);
+    doReturn(yaml).when(templateYamlConversionHelper).convertTemplateYamlToEntityYaml(any(TemplateEntity.class));
+    templateResource.createVariables(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCreateVariablesV2() {
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+    doReturn(templateMergeResponseDTO)
+        .when(templateMergeService)
+        .applyTemplatesToYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false, false);
+    doReturn(yaml).when(templateYamlConversionHelper).convertTemplateYamlToEntityYaml(any(TemplateEntity.class));
+    doReturn(templateVariableCreatorService)
+        .when(templateVariableCreatorFactory)
+        .getVariablesService(any(TemplateEntityType.class));
+    templateResource.createVariablesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetMergedTemplateInputsYaml() {
+    doReturn(TemplateRetainVariablesResponse.builder().mergedTemplateInputs("tag: <+input>").build())
+        .when(templateMergeService)
+        .mergeTemplateInputs("tag: <+input>", "");
+
+    ResponseDTO<TemplateRetainVariablesResponse> responseDTO = templateResource.getMergedTemplateInputsYaml(ACCOUNT_ID,
+        TemplateRetainVariablesRequestDTO.builder().oldTemplateInputs("").newTemplateInputs("tag: <+input>").build());
+    assertThat(responseDTO.getData().getMergedTemplateInputs()).isEqualTo("tag: <+input>");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetTemplateReferences() {
+    templateResource.getTemplateReferences(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, TemplateReferenceRequestDTO.builder().build());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testMoveConfig() {
+    templateResource.moveConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+        TemplateMoveConfigRequestDTO.builder().build());
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testUpdateGitMetadataDetails() {
+    templateResource.updateGitMetadataDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+        TEMPLATE_VERSION_LABEL, TemplateUpdateGitMetadataRequest.builder().build());
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
   }
 
   @Test

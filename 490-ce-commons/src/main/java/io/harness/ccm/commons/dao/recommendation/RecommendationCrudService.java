@@ -23,5 +23,5 @@ public interface RecommendationCrudService {
       @NonNull K8sWorkloadRecommendation recommendation);
 
   void upsertNodeRecommendation(String entityUuid, @NonNull JobConstants jobConstants, @NonNull NodePoolId nodePoolId,
-      @NonNull String clusterName, @NonNull RecommendationOverviewStats stats);
+      @NonNull String clusterName, @NonNull RecommendationOverviewStats stats, String cloudProvider);
 }

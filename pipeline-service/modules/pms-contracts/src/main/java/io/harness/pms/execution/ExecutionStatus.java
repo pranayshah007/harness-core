@@ -18,6 +18,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @OwnedBy(PIPELINE)
 @Schema(name = "ExecutionStatus", description = "This is the Execution Status of the entity")
@@ -99,6 +102,10 @@ public enum ExecutionStatus {
       }
     }
     throw new IllegalArgumentException(String.format("No Execution Status mapper found for input status: %s", status));
+  }
+
+  public static List<ExecutionStatus> getListExecutionStatus(EnumSet<Status> statusList) {
+    return statusList.stream().map(ExecutionStatus::getExecutionStatus).collect(Collectors.toList());
   }
 
   @JsonValue

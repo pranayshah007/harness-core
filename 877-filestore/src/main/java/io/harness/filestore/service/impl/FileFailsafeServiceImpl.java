@@ -18,6 +18,7 @@ import io.harness.filestore.dto.mapper.FileDTOMapper;
 import io.harness.filestore.entities.NGFile;
 import io.harness.filestore.events.FileCreateEvent;
 import io.harness.filestore.events.FileDeleteEvent;
+import io.harness.filestore.events.FileForceDeleteEvent;
 import io.harness.filestore.events.FileUpdateEvent;
 import io.harness.filestore.service.FileActivityService;
 import io.harness.filestore.service.FileFailsafeService;
@@ -95,15 +96,21 @@ public class FileFailsafeServiceImpl implements FileFailsafeService {
   }
 
   @Override
-  public boolean deleteAndPublish(NGFile ngFile) {
+  public boolean deleteAndPublish(NGFile ngFile, boolean forceDelete) {
     try {
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         fileStoreRepository.delete(ngFile);
 
         deleteActivities(ngFile.getAccountIdentifier(), ngFile.getOrgIdentifier(), ngFile.getProjectIdentifier(),
             ngFile.getIdentifier());
-        outboxService.save(
-            new FileDeleteEvent(ngFile.getAccountIdentifier(), FileDTOMapper.getFileDTOFromNGFile(ngFile)));
+
+        if (forceDelete) {
+          outboxService.save(
+              new FileForceDeleteEvent(ngFile.getAccountIdentifier(), FileDTOMapper.getFileDTOFromNGFile(ngFile)));
+        } else {
+          outboxService.save(
+              new FileDeleteEvent(ngFile.getAccountIdentifier(), FileDTOMapper.getFileDTOFromNGFile(ngFile)));
+        }
         log.info("{} [{}] deleted.", ngFile.isFile() ? "File" : "Folder", ngFile.getName());
         return true;
       }));

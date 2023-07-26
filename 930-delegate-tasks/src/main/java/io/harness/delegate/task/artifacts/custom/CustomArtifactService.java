@@ -6,13 +6,15 @@
  */
 
 package io.harness.delegate.task.artifacts.custom;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.deleteFileIfExists;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
@@ -53,6 +55,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Created by shivam.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j

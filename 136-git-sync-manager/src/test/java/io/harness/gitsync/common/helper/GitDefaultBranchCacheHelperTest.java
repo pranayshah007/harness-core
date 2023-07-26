@@ -10,7 +10,9 @@ package io.harness.gitsync.common.helper;
 import static io.harness.rule.OwnerRule.ADITHYA;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -42,7 +44,7 @@ import org.mockito.MockitoAnnotations;
 public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
   @InjectMocks GitDefaultBranchCacheHelper gitDefaultBranchCacheHelper;
   @Mock GitDefaultBranchCacheService gitDefaultBranchCacheService;
-  @Mock GitRepoUrlHelper gitRepoUrlHelper;
+  @Mock GitRepoHelper gitRepoHelper;
   @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
   String accountIdentifier = "accountIdentifier";
   String repoName = "repoName";
@@ -106,7 +108,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
         GitDefaultBranchCacheResponse.builder().defaultBranch(defaultBranch).build();
     when(gitDefaultBranchCacheService.fetchFromCache(any())).thenReturn(gitDefaultBranchCacheResponse);
     String defaultBranchResponse =
-        gitDefaultBranchCacheHelper.setDefaultBranchIfInputBranchEmpty(accountIdentifier, scmConnector, repoName, "");
+        gitDefaultBranchCacheHelper.getDefaultBranchIfInputBranchEmpty(accountIdentifier, scmConnector, repoName, "");
     assertEquals(defaultBranchResponse, defaultBranch);
   }
 
@@ -117,7 +119,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(gitDefaultBranchCacheService.fetchFromCache(any())).thenReturn(null);
     String defaultBranchResponse =
-        gitDefaultBranchCacheHelper.setDefaultBranchIfInputBranchEmpty(accountIdentifier, scmConnector, repoName, "");
+        gitDefaultBranchCacheHelper.getDefaultBranchIfInputBranchEmpty(accountIdentifier, scmConnector, repoName, "");
     assertNull(defaultBranchResponse);
   }
 
@@ -125,7 +127,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testSetDefaultBranchIfInputBranchEmptyWhenInputBranchIsNotEmpty() {
-    String defaultBranchResponse = gitDefaultBranchCacheHelper.setDefaultBranchIfInputBranchEmpty(
+    String defaultBranchResponse = gitDefaultBranchCacheHelper.getDefaultBranchIfInputBranchEmpty(
         accountIdentifier, scmConnector, repoName, branch);
     assertEquals(defaultBranchResponse, branch);
   }
@@ -138,7 +140,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
     String branchName = defaultBranch;
     String responseBranch = defaultBranch;
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(
-        accountIdentifier, scmConnector, repoName, inputBranch, branchName, responseBranch);
+        accountIdentifier, scmConnector, repoName, branchName, responseBranch);
     verify(gitDefaultBranchCacheService, times(0)).upsertCache(any(), any());
   }
 
@@ -150,7 +152,7 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
     String branchName = "";
     String responseBranch = defaultBranch;
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(
-        accountIdentifier, scmConnector, repoName, inputBranch, branchName, responseBranch);
+        accountIdentifier, scmConnector, repoName, branchName, responseBranch);
     verify(gitDefaultBranchCacheService, times(1)).upsertCache(any(), any());
   }
 
@@ -162,7 +164,42 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
     String branchName = branch;
     String responseBranch = branch;
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(
-        accountIdentifier, scmConnector, repoName, inputBranch, branchName, responseBranch);
+        accountIdentifier, scmConnector, repoName, branchName, responseBranch);
     verify(gitDefaultBranchCacheService, times(0)).upsertCache(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testIsGitDefaultBranchWhenRequestBranchIsEmpty() {
+    String requestBranch = "";
+    String responseBranch = "main";
+    assertTrue(gitDefaultBranchCacheHelper.isGitDefaultBranch(
+        accountIdentifier, scmConnector, repoName, requestBranch, responseBranch));
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testIsGitDefaultBranchWhenRequestBranchIsNotEmptyAndIsDefaultBranch() {
+    String requestBranch = "main";
+    String responseBranch = "main";
+    GitDefaultBranchCacheResponse gitDefaultBranchCacheResponse =
+        GitDefaultBranchCacheResponse.builder().defaultBranch(requestBranch).build();
+    when(gitDefaultBranchCacheService.fetchFromCache(any())).thenReturn(gitDefaultBranchCacheResponse);
+    assertTrue(gitDefaultBranchCacheHelper.isGitDefaultBranch(
+        accountIdentifier, scmConnector, repoName, requestBranch, responseBranch));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testIsGitDefaultBranchWhenRequestBranchIsNotEmptyAndIsNotDefaultBranch() {
+    String requestBranch = "main-patch";
+    String responseBranch = "main-patch";
+    GitDefaultBranchCacheResponse gitDefaultBranchCacheResponse =
+        GitDefaultBranchCacheResponse.builder().defaultBranch(defaultBranch).build();
+    when(gitDefaultBranchCacheService.fetchFromCache(any())).thenReturn(gitDefaultBranchCacheResponse);
+    assertFalse(gitDefaultBranchCacheHelper.isGitDefaultBranch(
+        accountIdentifier, scmConnector, repoName, requestBranch, responseBranch));
   }
 }
