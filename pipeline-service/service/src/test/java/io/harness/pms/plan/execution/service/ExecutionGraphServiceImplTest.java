@@ -73,7 +73,8 @@ public class ExecutionGraphServiceImplTest extends CategoryTest {
     CloseableIterator<NodeExecution> emptyIterator = createCloseableIterator(Collections.emptyListIterator());
     List<String> parentIds = new ArrayList<>();
     parentIds.add("nodeExecutionId");
-    when(nodeExecutionService.fetchChildrenNodeExecutionsRecursivelyFromGivenParentId("planExecutionId", parentIds))
+    when(nodeExecutionService.fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithOldRetryAsFalse(
+             "planExecutionId", parentIds))
         .thenReturn(new LinkedList<>());
     MockedStatic<OrchestrationGraphDTOConverter> aStatic = Mockito.mockStatic(OrchestrationGraphDTOConverter.class);
     aStatic.when(() -> OrchestrationGraphDTOConverter.convertFrom(any(OrchestrationGraph.class)))

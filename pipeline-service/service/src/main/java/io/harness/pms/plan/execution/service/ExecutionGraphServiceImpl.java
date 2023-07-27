@@ -46,8 +46,8 @@ public class ExecutionGraphServiceImpl implements ExecutionGraphService {
       And Incase of Multiple Retries for any child entity, we will only consider the lastRetried NodeExecution
       And will exclude the children of OldRetries NodeExecutions
     */
-    nodeExecutions =
-        nodeExecutionService.fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, parentIds);
+    nodeExecutions = nodeExecutionService.fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithOldRetryAsFalse(
+        planExecutionId, parentIds);
     nodeExecutions.add(nodeExecutionService.get(nodeExecutionId));
     OrchestrationGraph graph = graphGenerationService.buildOrchestrationGraphForNodeExecution(
         planExecutionId, nodeExecutionId, nodeExecutions);

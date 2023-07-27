@@ -295,17 +295,16 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionReadHelper.fetchNodeExecutions(query);
   }
 
-  @Override
-  public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIteratorWithoutProjection(
-      String planExecutionId, List<String> parentIds, Direction sortOrderOfCreatedAt) {
+  private CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIteratorWithoutProjection(
+      String planExecutionId, List<String> parentIds) {
     // Uses planExecutionId_parentId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.parentId).in(parentIds))
-                      .with(Sort.by(sortOrderOfCreatedAt, NodeExecutionKeys.createdAt));
+                      .with(Sort.by(Direction.ASC, NodeExecutionKeys.createdAt));
     return nodeExecutionReadHelper.fetchNodeExecutionsIteratorWithoutProjections(query);
   }
 
-  public List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(
+  public List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithOldRetryAsFalse(
       String planExecutionId, List<String> parentIds) {
     return fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, parentIds, MAX_DEPTH);
   }
@@ -316,9 +315,12 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       throw new InvalidRequestException(
           String.format("Exceeded Max Depth level [%s] for the Node SubGraph", MAX_DEPTH));
     }
+    if (EmptyPredicate.isEmpty(parentIds)) {
+      return new ArrayList<>();
+    }
     List<NodeExecution> recursiveChildrenNodeExecutions = new LinkedList<>();
     try (CloseableIterator<NodeExecution> iterator =
-             fetchChildrenNodeExecutionsIteratorWithoutProjection(planExecutionId, parentIds, Sort.Direction.ASC)) {
+             fetchChildrenNodeExecutionsIteratorWithoutProjection(planExecutionId, parentIds)) {
       while (iterator.hasNext()) {
         recursiveChildrenNodeExecutions.add(iterator.next());
       }
