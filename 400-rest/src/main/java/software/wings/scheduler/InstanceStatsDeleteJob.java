@@ -36,13 +36,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.quartz.CronScheduleBuilder;
+import org.quartz.CronTrigger;
+import org.quartz.DateBuilder;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
-import org.quartz.SimpleScheduleBuilder;
-import org.quartz.SimpleTrigger;
 import org.quartz.TriggerBuilder;
 
 @DisallowConcurrentExecution
@@ -54,8 +55,6 @@ public class InstanceStatsDeleteJob implements Job {
   public static final long ONE_DAY_IN_MILLIS = 86400000L;
   public static final String ACCOUNT_ID_KEY = "accountId";
 
-  // 15 days
-  private static final int SYNC_INTERVAL = 360;
   static final int MAX_RETRY = 3;
 
   public static final String DELETE_INSTANCE_DATA_POINTS =
@@ -65,7 +64,7 @@ public class InstanceStatsDeleteJob implements Job {
   long intervalEndTimestamp;
   Timestamp oldestInstanceStats;
   // instance data migration cron
-  private static final long DATA_DELETION_CRON_LOCK_EXPIRY_IN_SECONDS = 300; // 60 * 30
+  private static final long DATA_DELETION_CRON_LOCK_EXPIRY_IN_SECONDS = 1800; // 60 * 30
   private static final String DATA_DELETION_CRON_LOCK_PREFIX = "INSTANCE_DATA_DELETION_CRON:";
   @Inject private TimeScaleDBService timeScaleDBService;
 
@@ -74,47 +73,6 @@ public class InstanceStatsDeleteJob implements Job {
 
   @Inject private AccountService accountService;
   @Inject private FeatureFlagService featureFlagService;
-
-  private static TriggerBuilder<SimpleTrigger> instanceStatsTriggerBuilder(String accountId) {
-    return TriggerBuilder.newTrigger()
-        .withIdentity(accountId, GROUP)
-        .withSchedule(SimpleScheduleBuilder.simpleSchedule()
-                          .withIntervalInHours(SYNC_INTERVAL)
-                          .repeatForever()
-                          .withMisfireHandlingInstructionNowWithExistingCount());
-  }
-
-  public TriggerBuilder<SimpleTrigger> getInstanceStatsTriggerBuilder(String accountId) {
-    return instanceStatsTriggerBuilder(accountId);
-  }
-
-  public static void addWithDelay(PersistentScheduler jobScheduler, String accountId) {
-    // Add some randomness in the trigger start time to avoid overloading quartz by firing jobs at the same time.
-    long startTime = System.currentTimeMillis() + random.nextInt((int) TimeUnit.MINUTES.toMillis(SYNC_INTERVAL));
-    addInternal(jobScheduler, accountId, new Date(startTime));
-  }
-
-  public static void add(PersistentScheduler jobScheduler, String accountId) {
-    addInternal(jobScheduler, accountId, null);
-  }
-
-  private static void addInternal(PersistentScheduler jobScheduler, String accountId, Date triggerStartTime) {
-    JobDetail job = JobBuilder.newJob(InstanceStatsDeleteJob.class)
-                        .withIdentity(accountId, GROUP)
-                        .usingJobData(ACCOUNT_ID_KEY, accountId)
-                        .build();
-
-    TriggerBuilder triggerBuilder = instanceStatsTriggerBuilder(accountId);
-    if (triggerStartTime != null) {
-      triggerBuilder.startAt(triggerStartTime);
-    }
-
-    jobScheduler.ensureJob__UnderConstruction(job, triggerBuilder.build());
-  }
-
-  public static void delete(PersistentScheduler jobScheduler, String accountId) {
-    jobScheduler.deleteJob(accountId, GROUP);
-  }
 
   @Override
   public void execute(JobExecutionContext jobExecutionContext) {
@@ -153,6 +111,9 @@ public class InstanceStatsDeleteJob implements Job {
   }
 
   private boolean shouldDeleteInstanceStatsData(LicenseInfo licenseInfo) {
+    if (licenseInfo == null) {
+      return false;
+    }
     return EXPIRED.equals(licenseInfo.getAccountStatus())
         && System.currentTimeMillis() > (licenseInfo.getExpiryTime() + TWO_MONTH_IN_MILLIS);
   }
@@ -211,5 +172,40 @@ public class InstanceStatsDeleteJob implements Job {
     calendar.setTimeInMillis(currentBatchTime.getTime());
     calendar.add(Calendar.HOUR, 1);
     return new Timestamp(calendar.getTimeInMillis());
+  }
+
+  private static TriggerBuilder<CronTrigger> instanceStatsTriggerBuilder(String accountId) {
+    return TriggerBuilder.newTrigger()
+        .withIdentity(accountId, GROUP)
+        .withSchedule(
+            CronScheduleBuilder.atHourAndMinuteOnGivenDaysOfWeek(12, 0, DateBuilder.SATURDAY, DateBuilder.SUNDAY));
+  }
+
+  public static void addWithDelay(PersistentScheduler jobScheduler, String accountId) {
+    // Add some randomness in the trigger start time to avoid overloading quartz by firing jobs at the same time.
+    long startTime = System.currentTimeMillis() + random.nextInt((int) TimeUnit.MINUTES.toMillis(30));
+    addInternal(jobScheduler, accountId, new Date(startTime));
+  }
+
+  public static void add(PersistentScheduler jobScheduler, String accountId) {
+    addInternal(jobScheduler, accountId, null);
+  }
+
+  private static void addInternal(PersistentScheduler jobScheduler, String accountId, Date triggerStartTime) {
+    JobDetail job = JobBuilder.newJob(InstanceStatsDeleteJob.class)
+                        .withIdentity(accountId, GROUP)
+                        .usingJobData(ACCOUNT_ID_KEY, accountId)
+                        .build();
+
+    TriggerBuilder triggerBuilder = instanceStatsTriggerBuilder(accountId);
+    if (triggerStartTime != null) {
+      triggerBuilder.startAt(triggerStartTime);
+    }
+
+    jobScheduler.ensureJob__UnderConstruction(job, triggerBuilder.build());
+  }
+
+  public static void delete(PersistentScheduler jobScheduler, String accountId) {
+    jobScheduler.deleteJob(accountId, GROUP);
   }
 }

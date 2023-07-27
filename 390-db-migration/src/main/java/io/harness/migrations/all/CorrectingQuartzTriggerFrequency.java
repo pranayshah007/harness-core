@@ -19,7 +19,6 @@ import software.wings.beans.Account;
 import software.wings.dl.WingsPersistence;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;
-import software.wings.scheduler.InstanceStatsDeleteJob;
 import software.wings.scheduler.LimitVicinityCheckerJob;
 
 import com.google.inject.Inject;
@@ -40,9 +39,6 @@ public class CorrectingQuartzTriggerFrequency implements Migration {
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler persistentScheduler;
 
   @Inject private InstanceStatsCollectorJob instanceStatsCollectorJob;
-
-  @Inject private InstanceStatsDeleteJob instanceStatsDeleteJob;
-
   @Inject private AlertCheckJob alertCheckJob;
   @Inject private LimitVicinityCheckerJob limitVicinityCheckerJob;
 
@@ -54,9 +50,6 @@ public class CorrectingQuartzTriggerFrequency implements Migration {
   private static final String INSTANCE_STATS_COLLECT_CRON_GROUP = "INSTANCE_STATS_COLLECT_CRON_GROUP";
 
   private static final String LIMIT_VICINITY_CHECKER_CRON_GROUP = "LIMIT_VICINITY_CHECKER_CRON_GROUP";
-
-  private static final String INSTANCE_STATS_DELETE_CRON_GROUP = "INSTANCE_STATS_DELETE_CRON_GROUP";
-
   @Override
   public void migrate() {
     log.info("{}: Starting migration", DEBUG_LINE);
@@ -104,9 +97,6 @@ public class CorrectingQuartzTriggerFrequency implements Migration {
               break;
             case LIMIT_VICINITY_CHECKER_CRON_GROUP:
               trigger = limitVicinityCheckerJob.getLimitVicinityTriggerBuilder(accountId).build();
-              break;
-            case INSTANCE_STATS_DELETE_CRON_GROUP:
-              trigger = instanceStatsDeleteJob.getInstanceStatsTriggerBuilder(accountId).build();
               break;
             default:
               continue;
