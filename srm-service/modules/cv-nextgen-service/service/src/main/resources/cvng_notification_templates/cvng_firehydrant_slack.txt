@@ -39,7 +39,7 @@
 					"text": "<${URL}|Change events (${TOTAL_CE_COUNT})>"
 				}
 			]
-		}
+		},
 		{
 			"type": "section",
 			"fields": [
