@@ -39,7 +39,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
-public class WebhookEventStreamListenerTest extends CategoryTest {
+public class
+
+    WebhookEventStreamListenerTest extends CategoryTest {
   @Mock TriggerWebhookExecutionServiceV2 triggerWebhookExecutionServiceV2;
   @InjectMocks WebhookEventStreamListener webhookEventStreamListener;
   @Before

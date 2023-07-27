@@ -25,6 +25,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.repositories.NGTemplateRepository;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.resources.beans.TemplateImportRequestDTO;
 import io.harness.template.utils.TemplateUtils;
@@ -51,6 +52,12 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
   GitAwareEntityHelper gitAwareEntityHelper;
 
   public boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
+    return isNewGitXEnabled(templateToSave.getAccountIdentifier(), templateToSave.getOrgIdentifier(),
+               templateToSave.getProjectIdentifier())
+        && (TemplateUtils.isRemoteEntity(gitEntityInfo) || StoreType.REMOTE.equals(templateToSave.getStoreType()));
+  }
+
+  public boolean isNewGitXEnabledAndIsRemoteEntity(GlobalTemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
     return isNewGitXEnabled(templateToSave.getAccountIdentifier(), templateToSave.getOrgIdentifier(),
                templateToSave.getProjectIdentifier())
         && (TemplateUtils.isRemoteEntity(gitEntityInfo) || StoreType.REMOTE.equals(templateToSave.getStoreType()));

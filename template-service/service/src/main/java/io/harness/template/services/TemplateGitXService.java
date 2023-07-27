@@ -10,12 +10,15 @@ package io.harness.template.services;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.resources.beans.TemplateImportRequestDTO;
 
 @OwnedBy(HarnessTeam.PL)
 public interface TemplateGitXService {
   boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo);
+
+  boolean isNewGitXEnabledAndIsRemoteEntity(GlobalTemplateEntity templateToSave, GitEntityInfo gitEntityInfo);
 
   boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 

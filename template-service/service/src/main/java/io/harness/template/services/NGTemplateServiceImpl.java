@@ -53,6 +53,7 @@ import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.TemplateAlreadyExistsException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitaware.helper.TemplateMoveConfigOperationDTO;
@@ -88,6 +89,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
 import io.harness.template.async.beans.SetupUsageParams;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -313,6 +315,150 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
+  @Override
+  public GlobalTemplateEntity create(
+      GlobalTemplateEntity globalTemplateEntity, boolean setStableTemplate, String comments, boolean isNewTemplate) {
+    enforcementClientService.checkAvailability(
+        FeatureRestrictionName.TEMPLATE_SERVICE, globalTemplateEntity.getAccountIdentifier());
+
+    NGTemplateServiceHelper.validatePresenceOfRequiredFields(globalTemplateEntity.getAccountId(),
+        globalTemplateEntity.getIdentifier(), globalTemplateEntity.getVersionLabel());
+    assureThatTheProjectAndOrgExists(globalTemplateEntity.getAccountId(), globalTemplateEntity.getOrgIdentifier(),
+        globalTemplateEntity.getProjectIdentifier());
+    if (TemplateUtils.remoteEnabledTemplateTypes.contains(globalTemplateEntity.getTemplateEntityType())) {
+      applyGitXSettingsIfApplicable(globalTemplateEntity.getAccountId(), globalTemplateEntity.getOrgIdentifier(),
+          globalTemplateEntity.getProjectIdentifier());
+    }
+
+    if (TemplateRefHelper.hasTemplateRef(globalTemplateEntity.getYaml())) {
+      TemplateUtils.setupGitParentEntityDetails(globalTemplateEntity.getAccountIdentifier(),
+          globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getProjectIdentifier(),
+          globalTemplateEntity.getRepo(), globalTemplateEntity.getConnectorRef());
+    }
+
+    if (!validateGlobalIdentifierIsUnique(globalTemplateEntity.getAccountId(), globalTemplateEntity.getOrgIdentifier(),
+            globalTemplateEntity.getProjectIdentifier(), globalTemplateEntity.getIdentifier(),
+            globalTemplateEntity.getVersionLabel())) {
+      throw new InvalidRequestException(String.format(
+          "The template with identifier %s and version label %s already exists in the account %s, org %s, project %s",
+          globalTemplateEntity.getIdentifier(), globalTemplateEntity.getVersionLabel(),
+          globalTemplateEntity.getAccountId(), globalTemplateEntity.getOrgIdentifier(),
+          globalTemplateEntity.getProjectIdentifier()));
+    }
+
+    if (isNewTemplate
+        && validateIsNewGlobalTemplateIdentifier(globalTemplateEntity.getAccountId(),
+            globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getProjectIdentifier(),
+            globalTemplateEntity.getIdentifier())) {
+      throw new TemplateAlreadyExistsException(String.format(
+          "The template with identifier %s already exists in account %s, org %s, project %s, if you want to create a new version %s of this template then use save as new version option from the given template or if you want to create a new Template then use a different identifier.",
+          globalTemplateEntity.getIdentifier(), globalTemplateEntity.getAccountId(),
+          globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getProjectIdentifier(),
+          globalTemplateEntity.getVersionLabel()));
+    }
+
+    //    if (!isRemoteTemplateAndGitEntity(globalTemplateEntity)) {
+    //      if (null != globalTemplateEntity.getOrgIdentifier() && null != globalTemplateEntity.getProjectIdentifier())
+    //      {
+    //        throw new InvalidRequestException(format(
+    //                "Remote template entity cannot be created for template type [%s] on git simplification enabled for
+    //                Project [%s] in Organisation [%s] in Account [%s]", globalTemplateEntity.getTemplateEntityType(),
+    //                globalTemplateEntity.getProjectIdentifier(), globalTemplateEntity.getOrgIdentifier(),
+    //                globalTemplateEntity.getAccountIdentifier()));
+    //      } else if (null != globalTemplateEntity.getOrgIdentifier()) {
+    //        throw new InvalidRequestException(format(
+    //                "Remote template entity cannot be created for template type [%s] on git simplification enabled in
+    //                Organisation [%s] in Account [%s]", globalTemplateEntity.getTemplateEntityType(),
+    //                globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getAccountIdentifier()));
+    //      } else {
+    //        throw new InvalidRequestException(format(
+    //                "Remote template entity cannot be created for template type [%s] on git simplification enabled in
+    //                Account [%s]", globalTemplateEntity.getTemplateEntityType(),
+    //                globalTemplateEntity.getAccountIdentifier()));
+    //      }
+    //    }
+
+    checkForChildTypesInTemplates(globalTemplateEntity, "create");
+
+    // apply templates to template yaml for validation and populating module info
+    // applyTemplatesToYamlAndValidateSchema(globalTemplateEntity);
+
+    // List<EntityDetailProtoDTO> referredEntities =
+    // templateReferenceHelper.calculateTemplateReferences(globalTemplateEntity);
+
+    try {
+      // Check if this is template identifier first entry, for marking it as stable template.
+      List<TemplateEntity> templates = getAllTemplatesForGivenIdentifier(globalTemplateEntity.getAccountId(),
+          globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getProjectIdentifier(),
+          globalTemplateEntity.getIdentifier(), false);
+      boolean firstVersionEntry = EmptyPredicate.isEmpty(templates);
+      validateTemplateTypeAndChildTypeOfTemplate(globalTemplateEntity, templates);
+      if (firstVersionEntry || setStableTemplate) {
+        globalTemplateEntity = globalTemplateEntity.withStableTemplate(true);
+      }
+
+      // a new template creation always means this is now the lastUpdated template.
+      globalTemplateEntity = globalTemplateEntity.withLastUpdatedTemplate(true);
+
+      comments = getActualComments(globalTemplateEntity.getAccountId(), globalTemplateEntity.getOrgIdentifier(),
+          globalTemplateEntity.getProjectIdentifier(), comments);
+
+      // check to make previous template stable as false
+      GlobalTemplateEntity finalTemplateEntity = globalTemplateEntity;
+
+      GlobalTemplateEntity template = null;
+
+      if (!firstVersionEntry && setStableTemplate) {
+        String finalComments = comments;
+        template = transactionHelper.performTransaction(() -> {
+          makePreviousStableTemplateFalse(finalTemplateEntity.getAccountIdentifier(),
+              finalTemplateEntity.getOrgIdentifier(), finalTemplateEntity.getProjectIdentifier(),
+              finalTemplateEntity.getIdentifier(), finalTemplateEntity.getVersionLabel());
+          makePreviousLastUpdatedTemplateFalse(finalTemplateEntity.getAccountIdentifier(),
+              finalTemplateEntity.getOrgIdentifier(), finalTemplateEntity.getProjectIdentifier(),
+              finalTemplateEntity.getIdentifier(), finalTemplateEntity.getVersionLabel());
+          return saveTemplate(finalTemplateEntity, finalComments);
+        });
+      } else {
+        String finalComments1 = comments;
+        template = transactionHelper.performTransaction(() -> {
+          makePreviousLastUpdatedTemplateFalse(finalTemplateEntity.getAccountIdentifier(),
+              finalTemplateEntity.getOrgIdentifier(), finalTemplateEntity.getProjectIdentifier(),
+              finalTemplateEntity.getIdentifier(), finalTemplateEntity.getVersionLabel());
+          return saveTemplate(finalTemplateEntity, finalComments1);
+        });
+      }
+
+      GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
+      //      if (doPublishSetupUsages(template)) {
+      //        templateReferenceHelper.publishTemplateReferences(
+      //                SetupUsageParams.builder().templateEntity(globalTemplateEntity).build(), referredEntities);
+      //      }
+      //
+      //      templateServiceHelper.sendTemplatesSaveTelemetryEvent(template, CREATING_TEMPLATE);
+
+      return template;
+
+    } catch (DuplicateKeyException ex) {
+      throw new DuplicateFieldException(
+          format(DUP_KEY_EXP_FORMAT_STRING, globalTemplateEntity.getIdentifier(),
+              globalTemplateEntity.getVersionLabel(), globalTemplateEntity.getProjectIdentifier(),
+              globalTemplateEntity.getOrgIdentifier()),
+          USER_SRE, ex);
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while creating template [%s] of versionLabel [%s]",
+                    globalTemplateEntity.getIdentifier(), globalTemplateEntity.getVersionLabel()),
+          e);
+      throw e;
+    } catch (Exception e) {
+      log.error(String.format("Error while saving template [%s] of versionLabel [%s]",
+                    globalTemplateEntity.getIdentifier(), globalTemplateEntity.getVersionLabel()),
+          e);
+      throw new InvalidRequestException(String.format("Error while saving template [%s] of versionLabel [%s]: %s",
+          globalTemplateEntity.getIdentifier(), globalTemplateEntity.getVersionLabel(), e.getMessage()));
+    }
+  }
+
   private boolean doPublishSetupUsages(TemplateEntity templateEntity) {
     boolean defaultBranchCheckForGitX = GitAwareContextHelper.getIsDefaultBranchFromGitEntityInfo();
 
@@ -326,6 +472,22 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   private void validateTemplateTypeAndChildTypeOfTemplate(
       TemplateEntity templateEntity, List<TemplateEntity> templates) {
+    if (EmptyPredicate.isNotEmpty(templates)) {
+      TemplateEntityType templateEntityType = templates.get(0).getTemplateEntityType();
+      String childType = templates.get(0).getChildType();
+      if (!Objects.equals(templateEntityType, templateEntity.getTemplateEntityType())) {
+        throw new InvalidRequestException(String.format(
+            "Template should have same template entity type %s as other template versions", templateEntityType));
+      }
+      if (!Objects.equals(childType, templateEntity.getChildType())) {
+        throw new InvalidRequestException(
+            String.format("Template should have same child type %s as other template versions", childType));
+      }
+    }
+  }
+
+  private void validateTemplateTypeAndChildTypeOfTemplate(
+      GlobalTemplateEntity templateEntity, List<TemplateEntity> templates) {
     if (EmptyPredicate.isNotEmpty(templates)) {
       TemplateEntityType templateEntityType = templates.get(0).getTemplateEntityType();
       String childType = templates.get(0).getChildType();
@@ -898,9 +1060,23 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
+  public boolean validateGlobalIdentifierIsUnique(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel) {
+    return !templateRepository.globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierAndVersionLabel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel);
+  }
+
+  @Override
   public boolean validateIsNewTemplateIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
     return templateRepository.existsByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier);
+  }
+
+  @Override
+  public boolean validateIsNewGlobalTemplateIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
+    return templateRepository.globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
         accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier);
   }
 
@@ -1022,6 +1198,25 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private void checkForChildTypesInTemplates(TemplateEntity templateEntity, String action) {
+    Set<TemplateEntityType> templatesWithChildTypes = new HashSet<>();
+    templatesWithChildTypes.add(TemplateEntityType.STAGE_TEMPLATE);
+    templatesWithChildTypes.add(TemplateEntityType.STEP_TEMPLATE);
+    templatesWithChildTypes.add(TemplateEntityType.STEPGROUP_TEMPLATE);
+    String error = "";
+    String actionType = action.equals("create") ? "save" : "import";
+    if (templatesWithChildTypes.contains(templateEntity.getTemplateEntityType())
+        && EmptyPredicate.isEmpty(templateEntity.getChildType())) {
+      if (templateEntity.getTemplateEntityType() == TemplateEntityType.STEPGROUP_TEMPLATE) {
+        error = "Unable to " + actionType + " the template. Missing property [stageType].";
+      } else {
+        error = "Unable to " + actionType + " the template. Missing property [type] for "
+            + templateEntity.getTemplateEntityType().toString() + " template";
+      }
+      throw new InvalidRequestException(error);
+    }
+  }
+
+  private void checkForChildTypesInTemplates(GlobalTemplateEntity templateEntity, String action) {
     Set<TemplateEntityType> templatesWithChildTypes = new HashSet<>();
     templatesWithChildTypes.add(TemplateEntityType.STAGE_TEMPLATE);
     templatesWithChildTypes.add(TemplateEntityType.STEP_TEMPLATE);
@@ -1371,6 +1566,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
+  GlobalTemplateEntity saveTemplate(GlobalTemplateEntity templateEntity, String comments)
+      throws InvalidRequestException {
+    return templateRepository.save(templateEntity, comments);
+  }
+
   private TemplateEntity getAndValidateOldTemplateEntity(
       TemplateEntity templateEntity, String oldOrgIdentifier, String oldProjectIdentifier) {
     TemplateUtils.setupGitParentEntityDetails(
@@ -1685,5 +1885,28 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return governanceService.evaluateGovernancePoliciesForTemplate(templateEntity.getYaml(),
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
         OpaConstants.OPA_EVALUATION_ACTION_SAVE, OpaConstants.OPA_EVALUATION_TYPE_TEMPLATE);
+  }
+
+  @Override
+  public GlobalTemplateEntity getGitContent(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache) {
+    return (GlobalTemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(
+        GlobalTemplateEntity.builder()
+            .branch("master")
+            .fallBackBranch("master")
+            .repo("shivam-test")
+            .filePath(".harness/TestPipeinet_v1.yaml")
+            .build(),
+        io.harness.beans.Scope.of(accountId, orgIdentifier, projectIdentifier),
+        GitContextRequestParams.builder()
+            .branchName("master")
+            .connectorRef("GitShivamtest")
+            .filePath(".harness/TestPipeinet_v1.yaml")
+            .repoName("shivam-test")
+            .entityType(EntityType.TEMPLATE)
+            .loadFromCache(loadFromCache)
+            .getOnlyFileContent(TemplateUtils.isExecutionFlow())
+            .build(),
+        Collections.emptyMap());
   }
 }

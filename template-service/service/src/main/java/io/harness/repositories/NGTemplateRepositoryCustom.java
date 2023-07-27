@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.events.TemplateUpdateEventType;
 
@@ -27,6 +28,7 @@ public interface NGTemplateRepositoryCustom {
   TemplateEntity saveForOldGitSync(TemplateEntity templateToSave, String comments);
 
   TemplateEntity save(TemplateEntity templateToSave, String comments) throws InvalidRequestException;
+  GlobalTemplateEntity save(GlobalTemplateEntity templateToSave, String comments) throws InvalidRequestException;
 
   Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
@@ -78,6 +80,10 @@ public interface NGTemplateRepositoryCustom {
 
   boolean existsByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier);
+  boolean globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier);
+  boolean globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierAndVersionLabel(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel);
 
   @Deprecated
   TemplateEntity update(

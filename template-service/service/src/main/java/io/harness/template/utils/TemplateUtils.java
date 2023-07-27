@@ -30,6 +30,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.ThreadOperationContextHelper;
@@ -52,6 +53,11 @@ public class TemplateUtils {
   public Scope buildScope(TemplateEntity templateEntity) {
     return Scope.of(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier());
+  }
+
+  public Scope buildScope(GlobalTemplateEntity globalTemplateEntity) {
+    return Scope.of(globalTemplateEntity.getAccountIdentifier(), globalTemplateEntity.getOrgIdentifier(),
+        globalTemplateEntity.getProjectIdentifier());
   }
 
   public boolean isInlineEntity(GitEntityInfo gitEntityInfo) {

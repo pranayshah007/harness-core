@@ -20,6 +20,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.resources.beans.FilterParamsDTO;
 import io.harness.template.resources.beans.PageParamsDTO;
@@ -38,6 +39,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface NGTemplateService {
   TemplateEntity create(
       TemplateEntity templateEntity, boolean setDefaultTemplate, String comments, boolean isNewTemplate);
+
+  GlobalTemplateEntity create(
+      GlobalTemplateEntity templateEntity, boolean setDefaultTemplate, String comments, boolean isNewTemplate);
 
   TemplateEntity updateTemplateEntity(
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments);
@@ -87,6 +91,10 @@ public interface NGTemplateService {
 
   boolean validateIsNewTemplateIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier);
+  boolean validateIsNewGlobalTemplateIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier);
+  boolean validateGlobalIdentifierIsUnique(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel);
 
   TemplateEntity updateGitFilePath(TemplateEntity templateEntity, String newFilePath);
 
@@ -114,4 +122,6 @@ public interface NGTemplateService {
       String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams);
   GovernanceMetadata validateGovernanceRules(TemplateEntity templateEntity);
   void populateSetupUsageAsync(TemplateEntity templateEntity);
+  GlobalTemplateEntity getGitContent(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache);
 }

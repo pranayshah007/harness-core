@@ -8,12 +8,18 @@
 package io.harness.template.services;
 
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.resources.beans.TemplateImportRequestDTO;
 
 public class NoOpTemplateGitXServiceImpl implements TemplateGitXService {
   @Override
   public boolean isNewGitXEnabledAndIsRemoteEntity(TemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
+    return false;
+  }
+
+  @Override
+  public boolean isNewGitXEnabledAndIsRemoteEntity(GlobalTemplateEntity templateToSave, GitEntityInfo gitEntityInfo) {
     return false;
   }
 

@@ -33,8 +33,11 @@ import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
+import io.harness.template.entity.GlobalTemplateEntity;
+import io.harness.template.entity.GlobalTemplateEntity.GlobalTemplateEntityKeys;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
+import io.harness.template.events.GlobalTemplateCreateEvent;
 import io.harness.template.events.TemplateCreateEvent;
 import io.harness.template.events.TemplateDeleteEvent;
 import io.harness.template.events.TemplateForceDeleteEvent;
@@ -121,6 +124,47 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     if (shouldLogAudits(
             templateToSave.getAccountId(), templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())) {
       outboxService.save(new TemplateCreateEvent(templateToSave.getAccountIdentifier(),
+          templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier(), templateToSave, comments));
+    }
+    return savedTemplateEntity;
+  }
+
+  @Override
+  public GlobalTemplateEntity save(GlobalTemplateEntity templateToSave, String comments)
+      throws InvalidRequestException {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (gitEntityInfo == null || TemplateUtils.isInlineEntity(gitEntityInfo)) {
+      templateToSave.setStoreType(StoreType.INLINE);
+      GlobalTemplateEntity savedTemplateEntity = mongoTemplate.save(templateToSave);
+      if (shouldLogAudits(templateToSave.getAccountId(), templateToSave.getOrgIdentifier(),
+              templateToSave.getProjectIdentifier())) {
+        outboxService.save(new GlobalTemplateCreateEvent(templateToSave.getAccountIdentifier(),
+            templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier(), templateToSave, comments));
+      }
+      return savedTemplateEntity;
+    }
+    if (templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, gitEntityInfo)) {
+      Scope scope = TemplateUtils.buildScope(templateToSave);
+      String yamlToPush = templateToSave.getYaml();
+      addGitParamsToTemplateEntity(templateToSave, gitEntityInfo);
+      gitAwareEntityHelper.createEntityOnGit(templateToSave, yamlToPush, scope);
+    } else {
+      if (templateToSave.getProjectIdentifier() != null) {
+        throw new InvalidRequestException(
+            format("Remote git simplification was not enabled for Project [%s] in Organisation [%s] in Account [%s]",
+                templateToSave.getProjectIdentifier(), templateToSave.getOrgIdentifier(),
+                templateToSave.getAccountIdentifier()));
+      } else {
+        throw new InvalidRequestException(
+            format("Remote git simplification or feature flag was not enabled for Organisation [%s] or Account [%s]",
+                templateToSave.getOrgIdentifier(), templateToSave.getAccountIdentifier()));
+      }
+    }
+    GlobalTemplateEntity savedTemplateEntity = mongoTemplate.save(templateToSave);
+    if (shouldLogAudits(
+            templateToSave.getAccountId(), templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())) {
+      outboxService.save(new GlobalTemplateCreateEvent(templateToSave.getAccountIdentifier(),
           templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier(), templateToSave, comments));
     }
     return savedTemplateEntity;
@@ -444,6 +488,22 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
+  public boolean globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierAndVersionLabel(String accountId,
+      String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel) {
+    return gitAwarePersistence.exists(Criteria.where(GlobalTemplateEntityKeys.identifier)
+                                          .is(templateIdentifier)
+                                          .and(GlobalTemplateEntityKeys.projectIdentifier)
+                                          .is(projectIdentifier)
+                                          .and(GlobalTemplateEntityKeys.orgIdentifier)
+                                          .is(orgIdentifier)
+                                          .and(GlobalTemplateEntityKeys.accountId)
+                                          .is(accountId)
+                                          .and(GlobalTemplateEntityKeys.versionLabel)
+                                          .is(versionLabel),
+        projectIdentifier, orgIdentifier, accountId, GlobalTemplateEntity.class);
+  }
+
+  @Override
   public boolean existsByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
     Optional<TemplateEntity> template = gitAwarePersistence.findOne(Criteria.where(TemplateEntityKeys.identifier)
@@ -455,6 +515,22 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
                                                                         .and(TemplateEntityKeys.accountId)
                                                                         .is(accountId),
         projectIdentifier, orgIdentifier, accountId, TemplateEntity.class);
+    return template.isPresent();
+  }
+
+  @Override
+  public boolean globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
+    Optional<GlobalTemplateEntity> template =
+        gitAwarePersistence.findOne(Criteria.where(GlobalTemplateEntityKeys.identifier)
+                                        .is(templateIdentifier)
+                                        .and(GlobalTemplateEntityKeys.projectIdentifier)
+                                        .is(projectIdentifier)
+                                        .and(GlobalTemplateEntityKeys.orgIdentifier)
+                                        .is(orgIdentifier)
+                                        .and(GlobalTemplateEntityKeys.accountId)
+                                        .is(accountId),
+            projectIdentifier, orgIdentifier, accountId, GlobalTemplateEntity.class);
     return template.isPresent();
   }
 
@@ -590,6 +666,18 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   private void addGitParamsToTemplateEntity(TemplateEntity templateEntity, GitEntityInfo gitEntityInfo) {
+    templateEntity.setStoreType(StoreType.REMOTE);
+    if (EmptyPredicate.isEmpty(templateEntity.getRepoURL())) {
+      templateEntity.setRepoURL(gitAwareEntityHelper.getRepoUrl(
+          templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier()));
+    }
+    templateEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    templateEntity.setRepo(gitEntityInfo.getRepoName());
+    templateEntity.setFilePath(gitEntityInfo.getFilePath());
+    templateEntity.setFallBackBranch(gitEntityInfo.getBranch());
+  }
+
+  private void addGitParamsToTemplateEntity(GlobalTemplateEntity templateEntity, GitEntityInfo gitEntityInfo) {
     templateEntity.setStoreType(StoreType.REMOTE);
     if (EmptyPredicate.isEmpty(templateEntity.getRepoURL())) {
       templateEntity.setRepoURL(gitAwareEntityHelper.getRepoUrl(
