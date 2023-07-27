@@ -47,16 +47,29 @@ git fetch origin refs/heads/${BASE_BRANCH}; git checkout ${BASE_BRANCH} && git b
 echo "INFO: Step 8: Checking $BASE_BRANCH and current branch are the same"
 check_branch_name "${BASE_BRANCH}"
 
-echo "INFO: Step 9: Checking for Not Merged Hot Fixes in BASE_BRANCH."
+echo "INFO: Step 9.1: Checking for Not Merged SRM Hot Fixes in BASE_BRANCH."
 export CURRENT_BRANCH=[${BASE_BRANCH:0:1}]${BASE_BRANCH:1}
-git log --remotes=origin/release/${PURPOSE}/* --pretty=oneline --abbrev-commit | grep -iE "\[SRM-[0-9]+]:" -o | sort | uniq > release.txt
-git log --remotes=origin/$CURRENT_BRANCH --pretty=oneline --abbrev-commit | grep -iE "\[SRM-[0-9]+]:" -o | sort | uniq > base.txt
+git log --remotes=origin/release/${PURPOSE}/* --pretty=oneline --abbrev-commit | grep -iE "\[SRM-[0-9]+]:" -o | sort | uniq > release_srm.txt
+git log --remotes=origin/$CURRENT_BRANCH --pretty=oneline --abbrev-commit | grep -iE "\[SRM-[0-9]+]:" -o | sort | uniq > base_srm.txt
 
-NOT_MERGED=$(comm -23 release.txt base.txt)
+NOT_MERGED=$(comm -23 release_srm.txt base_srm.txt)
 
 if [ ! -z "$NOT_MERGED" ]
 then
-    echo "ERROR: There are jira issues in srm-service release branches that are not reflected in ${BASE_BRANCH}."
+    echo "ERROR: There are SRM jira issues in srm-service release branches that are not reflected in ${BASE_BRANCH}."
+    exit 1
+fi
+
+echo "INFO: Step 9.2: Checking for Not Merged OIP Hot Fixes in BASE_BRANCH."
+export CURRENT_BRANCH=[${BASE_BRANCH:0:1}]${BASE_BRANCH:1}
+git log --remotes=origin/release/${PURPOSE}/* --pretty=oneline --abbrev-commit | grep -iE "\[OIP-[0-9]+]:" -o | sort | uniq > release_oip.txt
+git log --remotes=origin/$CURRENT_BRANCH --pretty=oneline --abbrev-commit | grep -iE "\[OIP-[0-9]+]:" -o | sort | uniq > base_oip.txt
+
+NOT_MERGED=$(comm -23 release_oip.txt base_oip.txt)
+
+if [ ! -z "$NOT_MERGED" ]
+then
+    echo "ERROR: There are OIP jira issues in srm-service release branches that are not reflected in ${BASE_BRANCH}."
     exit 1
 fi
 
