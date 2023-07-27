@@ -422,6 +422,7 @@ public enum FeatureName {
   GRAPHQL_DEV,
   GRAPHQL_WORKFLOW_EXECUTION_OPTIMIZATION(
       "Making multiple optimizations for workflow execution graphql in CG", HarnessTeam.SPG),
+  SPG_CG_FIXING_PIPELINE_RESUME("This fixes pipeline resume when a loop state is skipped", HarnessTeam.SPG),
   HARNESS_TAGS,
   HELM_CHART_AS_ARTIFACT,
   HELM_CHART_NAME_SPLIT,
