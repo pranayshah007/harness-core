@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng;
+
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
 import static java.util.stream.Collectors.toSet;
@@ -275,6 +276,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("webhookBranchHookEventHsqsDequeueConfig")
   private HsqsDequeueConfig webhookBranchHookEventHsqsDequeueConfig;
   @JsonProperty("webhookPushEventHsqsDequeueConfig") private HsqsDequeueConfig webhookPushEventHsqsDequeueConfig;
+  @JsonProperty("webhookTriggerEventHsqsDequeueConfig") private HsqsDequeueConfig webhookTriggerEventHsqsDequeueConfig;
   private boolean useQueueServiceForWebhookTriggers;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database

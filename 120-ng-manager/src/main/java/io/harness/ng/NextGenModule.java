@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng;
+
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_CONFIGURATION;
@@ -620,6 +621,13 @@ public class NextGenModule extends AbstractModule {
   @Named("webhookPushEventHsqsDequeueConfig")
   public HsqsDequeueConfig getWebhookPushEventHsqsDequeueConfig() {
     return appConfig.getWebhookPushEventHsqsDequeueConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("webhookTriggerEventHsqsDequeueConfig")
+  public HsqsDequeueConfig getWebhookTriggerEventHsqsDequeueConfig() {
+    return appConfig.getWebhookTriggerEventHsqsDequeueConfig();
   }
 
   @Override

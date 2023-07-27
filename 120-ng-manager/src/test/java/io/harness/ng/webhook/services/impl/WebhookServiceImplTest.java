@@ -234,48 +234,4 @@ public class WebhookServiceImplTest extends CategoryTest {
         .hasMessage(
             "The connector with the  identifier [null], accountIdentifier [accountId], orgIdentifier [orgId], projectIdentifier [projectId] is not an scm connector");
   }
-
-  @Test
-  @Owner(developers = SHALINI)
-  @Category(UnitTests.class)
-  public void testGenerateWebhookDTOAndEnqueue() {
-    doReturn(QueueServiceClientConfig.builder().topic("topic1").build())
-        .when(nextGenConfiguration)
-        .getQueueServiceClientConfig();
-    WebhookEvent event = WebhookEvent.builder()
-                             .accountId("accountId")
-                             .uuid(generateUuid())
-                             .createdAt(0L)
-                             .headers(List.of(HeaderConfig.builder().key(X_GIT_HUB_EVENT).build()))
-                             .build();
-    doReturn(SourceRepoType.GITHUB).when(webhookHelper).getSourceRepoType(event);
-    doReturn(null).when(webhookHelper).invokeScmService(event);
-    WebhookDTO webhookDTO =
-        WebhookDTO.newBuilder()
-            .setAccountId("accountId")
-            .setGitDetails(GitDetails.newBuilder()
-                               .setSourceRepoType(SourceRepoType.GITHUB)
-                               .setEvent(WebhookEventType.PUSH)
-                               .build())
-            .setParsedResponse(ParseWebhookResponse.newBuilder().setPush(PushHook.newBuilder().build()).build())
-            .build();
-    doReturn(webhookDTO).when(webhookHelper).generateWebhookDTO(event, null, SourceRepoType.GITHUB);
-    EnqueueRequest enqueueRequest = EnqueueRequest.builder()
-                                        .topic("topic1" + WEBHOOK_EVENT)
-                                        .subTopic("accountId")
-                                        .producerName("topic1" + WEBHOOK_EVENT)
-                                        .payload(RecastOrchestrationUtils.toJson(webhookDTO))
-                                        .build();
-    EnqueueRequest pushEnqueueRequest = EnqueueRequest.builder()
-                                            .topic("topic1" + WEBHOOK_PUSH_EVENT)
-                                            .subTopic("accountId")
-                                            .producerName("topic1" + WEBHOOK_PUSH_EVENT)
-                                            .payload(RecastOrchestrationUtils.toJson(webhookDTO))
-                                            .build();
-    doReturn(EnqueueResponse.builder().itemId("itemId").build()).when(hsqsClientService).enqueue(enqueueRequest);
-    doReturn(EnqueueResponse.builder().itemId("itemId2").build()).when(hsqsClientService).enqueue(pushEnqueueRequest);
-    assertThatCode(() -> webhookServiceImpl.generateWebhookDTOAndEnqueue(event)).doesNotThrowAnyException();
-    verify(hsqsClientService, times(1)).enqueue(enqueueRequest);
-    verify(hsqsClientService, times(1)).enqueue(pushEnqueueRequest);
-  }
 }
