@@ -23,13 +23,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import io.harness.PipelineServiceTestBase;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
@@ -106,11 +105,15 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Mock InputSetsApiUtils inputSetsApiUtils;
   @Mock PMSExecutionService executionService;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock AccessControlClient accessControlClient;
+  @Mock ResourceScope resourceScope;
+  @Mock Resource resource;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_IDENTIFIER = "orgId";
   private static final String PROJ_IDENTIFIER = "projId";
   private static final String PIPELINE_IDENTIFIER = "pipeId";
+  private static final String PIPELINE_RESOURCE_IDENTIFIER = "PIPELINE";
   private static final String INPUT_SET_ID = "inputSetId";
   private static final String INVALID_INPUT_SET_ID = "invalidInputSetId";
   private static final String OVERLAY_INPUT_SET_ID = "overlayInputSetId";
@@ -141,8 +144,21 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
+
+    resourceScope = ResourceScope.builder()
+            .accountIdentifier(ACCOUNT_ID)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .build();
+
+    resource = Resource.builder()
+            .resourceType(PIPELINE_RESOURCE_IDENTIFIER)
+            .build();
+
+    accessControlClient = mock(AccessControlClient.class);
+
     inputSetResourcePMSImpl = new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService,
-        validateAndMergeHelper, inputSetsApiUtils, executionService, pmsFeatureFlagService, null, null);
+        validateAndMergeHelper, inputSetsApiUtils, executionService, pmsFeatureFlagService, resourceScope, resource, accessControlClient);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -150,7 +166,6 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     overlayInputSetYaml = readFile(overlayInputSetFilename);
     String pipelineYamlFileName = "pipeline.yml";
     pipelineYaml = readFile(pipelineYamlFileName);
-
     inputSetEntity = InputSetEntity.builder()
                          .accountId(ACCOUNT_ID)
                          .orgIdentifier(ORG_IDENTIFIER)

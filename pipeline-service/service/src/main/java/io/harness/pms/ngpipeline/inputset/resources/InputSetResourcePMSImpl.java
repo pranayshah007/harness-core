@@ -114,12 +114,12 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   private final PmsFeatureFlagService pmsFeatureFlagService;
   private ResourceScope resourceScope;
   private Resource resource;
-
-  @Inject static AccessControlClient accessControlClient;
+  private AccessControlClient accessControlClient;
   private static final List<String> permissionsList = Arrays.asList(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT,
                                                                     PipelineRbacPermissions.PIPELINE_EXECUTE);
 
-  public static boolean checkForPipelineCreateEditOrExecAccess(ResourceScope resourceScope, Resource resourceType, String permission) throws AccessControlException {
+  // We can use this method in future if more permissions are to be checked at a single time / simultaneously.
+  public boolean checkForPipelineCreateEditOrExecAccess(ResourceScope resourceScope, Resource resourceType, String permission) throws AccessControlException {
     return permissionsList.contains(permission) && accessControlClient.hasAccess(resourceScope, resourceType, permission);
   }
 
