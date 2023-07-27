@@ -307,11 +307,15 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   public List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(
       String planExecutionId, List<String> parentIds) {
-    return fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, parentIds, 0);
+    return fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, parentIds, MAX_DEPTH);
   }
 
   private List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(
       String planExecutionId, List<String> parentIds, int depth) {
+    if (depth <= 0) {
+      throw new InvalidRequestException(
+          String.format("Exceeded Max Depth level [%s] for the Node SubGraph", MAX_DEPTH));
+    }
     List<NodeExecution> recursiveChildrenNodeExecutions = new LinkedList<>();
     try (CloseableIterator<NodeExecution> iterator =
              fetchChildrenNodeExecutionsIteratorWithoutProjection(planExecutionId, parentIds, Sort.Direction.ASC)) {
@@ -323,10 +327,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     if (EmptyPredicate.isEmpty(recursiveChildrenNodeExecutions)) {
       return new ArrayList<>();
     }
-    if (depth >= MAX_DEPTH) {
-      throw new InvalidRequestException(
-          String.format("Exceeded Max Depth level [%s] for the Node SubGraph", MAX_DEPTH));
-    }
     recursiveChildrenNodeExecutions = recursiveChildrenNodeExecutions.stream()
                                           .filter(o -> o.getOldRetry().equals(false))
                                           .collect(Collectors.toList());
@@ -334,7 +334,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       childParentIds.add(nodeExecution.getUuid());
     }
     List<NodeExecution> childNodeExecutions =
-        fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, childParentIds, depth + 1);
+        fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, childParentIds, depth - 1);
     recursiveChildrenNodeExecutions.addAll(childNodeExecutions);
     return recursiveChildrenNodeExecutions;
   }
