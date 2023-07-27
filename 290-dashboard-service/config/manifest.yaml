@@ -1,0 +1,2 @@
+DOCKER_FILE_PATH: /harness/harness-core/dist/ng-dashboard-service/Dockerfile-cie-jdk
+HELM_CHART_SOURCE_DIRECTORY: harness-core/290-dashboard-service/chart
