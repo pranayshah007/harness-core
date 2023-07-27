@@ -425,11 +425,11 @@ settings :
     allowedScopes:
       - ACCOUNT
   - identifier: aida
-      name: AIDA
-      category: EULA
-      defaultValue: false
-      valueType: BOOLEAN
-      allowOverrides: true
-      allowedScopes:
-        - ACCOUNT
-        - PROJECT
+    name: AIDA
+    category: EULA
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - PROJECT
