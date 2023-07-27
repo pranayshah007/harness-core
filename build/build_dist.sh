@@ -208,6 +208,20 @@ function copy_verification_service_jars(){
 
 }
 
+function copy_batch_processing_jars(){
+
+  cp ${HOME}/.bazel-dirs/bin/batch-processing/service/module_deploy.jar batch-processing-capsule.jar
+  cp ../../batch-processing/service/batch-processing-config.yml .
+  cp ../../batch-processing/build/container/Dockerfile-batch-processing-cie-jdk-multistage ./Dockerfile-batch-processing-cie-jdk-multistage
+  cp -r ../../batch-processing/build/container/scripts/ .
+  cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+  cp -R ../../dockerization/batch-processing/scripts/ .
+  copy_common_files
+  cd ../..
+
+}
+
 
 #prepare_to_copy_jars
 if [ "${SERVICE_NAME}" == "manager" ]; then
@@ -222,4 +236,6 @@ elif [ "${SERVICE_NAME}" == "verification-service" ]; then
     copy_verification_service_jars
 elif [ "${SERVICE_NAME}" == "event-server" ]; then
     copy_event_server_jars
+elif [ "${SERVICE_NAME}" == "batch-processing" ]; then
+    copy_batch_processing_jars
 fi
