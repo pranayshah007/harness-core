@@ -9,8 +9,8 @@ package io.harness.pms.events.base;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.eventsframework.api.AbstractConsumer;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.RedisAbstractConsumer;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.interrupts.InterruptEvent;
@@ -22,18 +22,28 @@ import io.harness.pms.events.PmsEventFrameworkConstants;
 import com.google.common.collect.ImmutableMap;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
+import org.redisson.api.RedissonClient;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class NoopRedisConsumer extends AbstractConsumer {
-  public NoopRedisConsumer(String topicName, String groupName) {
-    super(topicName, groupName);
+public class NoopRedisConsumer extends RedisAbstractConsumer {
+  public NoopRedisConsumer(String topicName, String groupName, RedissonClient client, int batchSize) {
+    super(topicName, groupName, client, Duration.ofSeconds(10), batchSize, "local");
   }
 
   @Override
   public List<Message> read(Duration maxWaitTime) {
-    return Collections.singletonList(
+    return Arrays.asList(Message.newBuilder()
+                             .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
+                                             .putMetadata(PmsEventFrameworkConstants.SERVICE_NAME, "RANDOM_SERVICE")
+                                             .setData(InterruptEvent.newBuilder()
+                                                          .setAmbiance(buildAmbiance())
+                                                          .setType(InterruptType.ABORT)
+                                                          .build()
+                                                          .toByteString())
+                                             .build())
+                             .build(),
         Message.newBuilder()
             .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
                             .putMetadata(PmsEventFrameworkConstants.SERVICE_NAME, "RANDOM_SERVICE")
