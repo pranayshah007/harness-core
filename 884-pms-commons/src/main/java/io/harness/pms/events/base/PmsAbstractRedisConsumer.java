@@ -113,6 +113,7 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
       messageProcessed = handleMessage(message);
       if (messageProcessed) {
         redisConsumer.acknowledge(messageId);
+        log.info("[Brijesh-scale-test] Acknowledged the message for message-id: " + message.getId());
       }
     }
     // Only checking the size for SDK_RESPONSE_EVENT_BATCH_SIZE now for testing. Will take the correct batch-size for
@@ -129,12 +130,17 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
   @Override
   protected boolean processMessage(Message message) {
     AtomicBoolean success = new AtomicBoolean(true);
+    log.info("[Brijesh-scale-test] Checking if message is processable or its already processed for message-id: "
+        + message.getId());
     if (messageListener.isProcessable(message) && !isAlreadyProcessed(message)) {
+      log.info("[Brijesh-scale-test] Checked if the message is already processed for message-id: " + message.getId());
       log.info("Read message with message id {} from redis", message.getId());
       insertMessageInCache(message);
+      log.info("[Brijesh-scale-test] Inserted message into the cache for message-id: " + message.getId());
       if (!messageListener.handleMessage(message)) {
         success.set(false);
       }
+      log.info("[Brijesh-scale-test] Handled the message for message-id: " + message.getId());
     }
     return success.get();
   }
