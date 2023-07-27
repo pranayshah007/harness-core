@@ -100,7 +100,7 @@ public class PipelineVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.identifier", "pipeline.sequenceId", "pipeline.executionId", "pipeline.startTs",
             "pipeline.endTs", "pipeline.properties", "pipeline.triggerType", "pipeline.triggeredBy.name",
-            "pipeline.triggeredBy.email");
+            "pipeline.triggeredBy.email", "pipeline.triggeredBy.triggerName");
   }
 
   @Test
@@ -124,7 +124,7 @@ public class PipelineVariableCreatorTest extends CategoryTest {
   public void testGetPipelineExtraProperties() {
     YamlExtraProperties yamlExtraProperties = pipelineVariableCreator.getPipelineExtraProperties(
         PipelineInfoConfig.builder().properties(NGProperties.builder().build()).build());
-    assertEquals(yamlExtraProperties.getPropertiesList().size(), 11);
+    assertEquals(yamlExtraProperties.getPropertiesList().size(), 12);
     assertThat(yamlExtraProperties.getPropertiesList().contains(
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".sequenceId").build()));
     assertThat(yamlExtraProperties.getPropertiesList().contains(
@@ -135,6 +135,8 @@ public class PipelineVariableCreatorTest extends CategoryTest {
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".triggeredBy.name").build()));
     assertThat(yamlExtraProperties.getPropertiesList().contains(
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".triggeredBy.email").build()));
+    assertThat(yamlExtraProperties.getPropertiesList().contains(
+        YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".triggeredBy.triggerName").build()));
     assertThat(yamlExtraProperties.getPropertiesList().contains(
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".startTs").build()));
     assertThat(yamlExtraProperties.getPropertiesList().contains(

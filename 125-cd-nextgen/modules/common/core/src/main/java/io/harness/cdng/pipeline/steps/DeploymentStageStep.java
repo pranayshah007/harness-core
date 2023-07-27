@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
@@ -65,11 +64,9 @@ public class DeploymentStageStep implements ChildExecutable<StageElementParamete
     log.info("Executing deployment stage with params [{}]", stepParameters);
     DeploymentStageStepParameters stageStepParameters = (DeploymentStageStepParameters) stepParameters.getSpecConfig();
     final String serviceNodeId = stageStepParameters.getChildNodeID();
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      stageExecutionInfoService.createStageExecutionInfo(
-          ambiance, stepParameters, getDeploymentStageStepCurrentLevel(ambiance));
-    }
+    stageExecutionInfoService.createStageExecutionInfo(
+        ambiance, stepParameters, getDeploymentStageStepCurrentLevel(ambiance));
+
     return ChildExecutableResponse.newBuilder().setChildNodeId(serviceNodeId).build();
   }
 
@@ -93,10 +90,7 @@ public class DeploymentStageStep implements ChildExecutable<StageElementParamete
     log.info("executed deployment stage =[{}]", stepParameters);
     RollbackUtility.publishRollbackInformation(ambiance, responseDataMap, executionSweepingOutputService);
     StepResponse stepResponse = createStepResponseFromChildResponse(responseDataMap);
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      stageExecutionInfoService.updateStageExecutionInfo(ambiance, createStageExecutionInfoUpdateDTO(stepResponse));
-    }
+    stageExecutionInfoService.updateStageExecutionInfo(ambiance, createStageExecutionInfoUpdateDTO(stepResponse));
     return stepResponse;
   }
 

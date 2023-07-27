@@ -90,8 +90,9 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<CloudformationTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<CloudformationTaskNGResponse> responseDataSupplier)
+      throws Exception {
     CloudformationTaskNGResponse cloudformationTaskNGResponse;
     try {
       cloudformationTaskNGResponse = responseDataSupplier.get();

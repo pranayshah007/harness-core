@@ -21,7 +21,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
@@ -77,10 +76,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     if (isDeploymentStageStep(event.getAmbiance())) {
       processDeploymentStageEvent(event);
     } else if (isRollbackStepNode(event.getAmbiance())) {
-      if (ngFeatureFlagHelperService.isEnabled(
-              AmbianceUtils.getAccountId(event.getAmbiance()), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-        processRollbackStepEvent(event);
-      }
+      processRollbackStepEvent(event);
     }
 
     try {
@@ -165,16 +161,13 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
             ex);
       }
 
-      if (ngFeatureFlagHelperService.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-        try {
-          Map<String, Object> updates = new HashMap<>();
-          updates.put(StageExecutionInfoKeys.status, status);
-          updates.put(StageExecutionInfoKeys.endts, event.getEndTs());
-          stageExecutionInfoService.update(scope, stageExecutionId, updates);
-        } catch (Exception ex) {
-          log.error(failureToUpdateStageExecutionSummary, ex);
-        }
+      try {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put(StageExecutionInfoKeys.status, status);
+        updates.put(StageExecutionInfoKeys.endts, event.getEndTs());
+        stageExecutionInfoService.update(scope, stageExecutionId, updates);
+      } catch (Exception ex) {
+        log.error(failureToUpdateStageExecutionSummary, ex);
       }
 
       InstanceDeploymentInfoStatus instanceDeploymentInfoStatus = status.equals(Status.SUCCEEDED)

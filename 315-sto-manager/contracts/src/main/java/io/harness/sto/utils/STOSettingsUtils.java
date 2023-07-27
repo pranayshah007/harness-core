@@ -212,10 +212,10 @@ public final class STOSettingsUtils {
       Boolean sbomGenerate = resolveBooleanParameter(sbom.getGenerate(), Boolean.FALSE);
       map.put(getSTOKey("generate_sbom"), String.valueOf(sbomGenerate));
 
-      ParameterField<STOYamlSBOMFormat> sbomFormat = sbom.getFormat();
+      String sbomFormat = (String) sbom.getFormat().fetchFinalValue();
+      sbomFormat = STOYamlSBOMFormat.getValue(sbomFormat).toString();
 
-      map.put(getSTOKey("sbom_type"),
-          sbomFormat != null ? sbomFormat.fetchFinalValue().toString() : STOYamlSBOMFormat.SPDX.toString());
+      map.put(getSTOKey("sbom_type"), sbomFormat != null ? sbomFormat : STOYamlSBOMFormat.SPDX_JSON.toString());
     }
     return map;
   }

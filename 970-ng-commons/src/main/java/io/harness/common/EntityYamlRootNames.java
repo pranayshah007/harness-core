@@ -258,4 +258,5 @@ public class EntityYamlRootNames {
   public static final String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
   public static final String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
   public static final String AWS_CDK_SYNTH = "AwsCdkSynth";
+  public static final String AWS_CDK_DIFF = "AwsCdkDiff";
 }

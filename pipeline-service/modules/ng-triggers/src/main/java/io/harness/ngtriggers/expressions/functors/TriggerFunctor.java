@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.expressions.functors;
+
 import static io.harness.ngtriggers.Constants.EVENT_PAYLOAD;
 import static io.harness.ngtriggers.Constants.HEADER;
 import static io.harness.ngtriggers.Constants.PAYLOAD;
@@ -51,7 +52,7 @@ public class TriggerFunctor implements LateBindingValue {
     Map<String, Object> jsonObject = TriggerHelper.buildJsonObjectFromAmbiance(metadata.getTriggerPayload());
 
     if (EmptyPredicate.isNotEmpty(metadata.getTriggerHeader())) {
-      jsonObject.put(HEADER, TriggerHelper.processTriggerHeader(metadata.getTriggerHeader()));
+      jsonObject.put(HEADER, new TriggerHeaderBindingMap(metadata.getTriggerHeader()));
     }
 
     if (isNotBlank(metadata.getTriggerJsonPayload())) {

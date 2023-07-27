@@ -17,10 +17,13 @@ import static org.assertj.core.util.Lists.newArrayList;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.exception.InvalidRequestException;
@@ -214,5 +217,24 @@ public class VmInitializeTaskHelper {
     } catch (IOException e) {
       throw new InvalidRequestException("Could not read resource file: " + filename);
     }
+  }
+
+  public static Infrastructure getVMInfra(OSType os) {
+    VmPoolYaml vmPoolYaml = getPoolWithName(POOL_NAME);
+    vmPoolYaml.getSpec().setOs(ParameterField.createValueField(os));
+    VmInfraYaml vmInfraYaml = VmInfraYaml.builder().spec(vmPoolYaml).build();
+    return vmInfraYaml;
+  }
+
+  public static Infrastructure getHostedInfra(OSType os) {
+    HostedVmInfraYaml hostedVmInfraYaml =
+        HostedVmInfraYaml.builder()
+            .spec(HostedVmInfraYaml.HostedVmInfraSpec.builder()
+                      .platform(ParameterField.createValueField(
+                          Platform.builder().os(ParameterField.createValueField(os)).build()))
+                      .build())
+            .build();
+
+    return hostedVmInfraYaml;
   }
 }

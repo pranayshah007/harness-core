@@ -112,8 +112,9 @@ public class TasAppResizeStep extends CdTaskExecutable<CfCommandResponseNG> {
     return StepElementParameters.class;
   }
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<CfCommandResponseNG> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<CfCommandResponseNG> responseDataSupplier)
+      throws Exception {
     StepResponseBuilder builder = StepResponse.builder();
     CfDeployCommandResponseNG response;
     try {

@@ -254,7 +254,7 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "Details of the Environment to be created")
       @Valid EnvironmentRequestDTO environmentRequestDTO) {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
-    validateEnvironmentScope(environmentRequestDTO, accountId);
+    validateEnvironmentScope(environmentRequestDTO);
 
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
@@ -269,10 +269,6 @@ public class EnvironmentResourceV2 {
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
     return ResponseDTO.newResponse(EnvironmentMapper.toResponseWrapper(createdEnvironment));
-  }
-
-  private boolean checkFeatureFlagForEnvOrgAccountLevel(String accountId) {
-    return featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_OrgAccountLevelServiceEnvEnvGroup);
   }
 
   private boolean checkFeatureFlagForOverridesV2(String accountId) {
@@ -331,7 +327,7 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "Details of the Environment to be updated")
       @Valid EnvironmentRequestDTO environmentRequestDTO) {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
-    validateEnvironmentScope(environmentRequestDTO, accountId);
+    validateEnvironmentScope(environmentRequestDTO);
     Map<String, String> environmentAttributes = new HashMap<>();
     if (environmentRequestDTO.getType() != null) {
       environmentAttributes = getEnvironmentAttributesMap(environmentRequestDTO.getType().toString());
@@ -366,7 +362,7 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "Details of the Environment to be updated")
       @Valid EnvironmentRequestDTO environmentRequestDTO) {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
-    validateEnvironmentScope(environmentRequestDTO, accountId);
+    validateEnvironmentScope(environmentRequestDTO);
     Map<String, String> environmentAttributes = new HashMap<>();
     if (environmentRequestDTO.getType() != null) {
       environmentAttributes = getEnvironmentAttributesMap(environmentRequestDTO.getType().toString());
@@ -720,7 +716,7 @@ public class EnvironmentResourceV2 {
       @Parameter(description = "Details of the Service Override to be upserted")
       @Valid io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO serviceOverrideRequestDTO) {
     throwExceptionForInvalidRequestDTO(serviceOverrideRequestDTO);
-    validateServiceOverrideScope(serviceOverrideRequestDTO, accountId);
+    validateServiceOverrideScope(serviceOverrideRequestDTO);
 
     NGServiceOverridesEntity serviceOverridesEntity =
         ServiceOverridesMapper.toServiceOverridesEntity(accountId, serviceOverrideRequestDTO);
@@ -1085,18 +1081,11 @@ public class EnvironmentResourceV2 {
     }
   }
 
-  private void validateEnvironmentScope(EnvironmentRequestDTO requestDTO, String accountId) {
+  private void validateEnvironmentScope(EnvironmentRequestDTO requestDTO) {
     try {
-      if (checkFeatureFlagForEnvOrgAccountLevel(accountId)) {
-        if (isNotEmpty(requestDTO.getProjectIdentifier())) {
-          Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
-              "org identifier must be specified when project identifier is specified. Environments can be created at Project/Org/Account scope");
-        }
-      } else {
+      if (isNotEmpty(requestDTO.getProjectIdentifier())) {
         Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
-            "org identifier must be specified. Environments only be created at Project scope");
-        Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
-            "project identifier must be specified. Environments can only be created at Project scope");
+            "org identifier must be specified when project identifier is specified. Environments can be created at Project/Org/Account scope");
       }
     } catch (Exception ex) {
       log.error("failed to validate environment scope", ex);
@@ -1105,18 +1094,11 @@ public class EnvironmentResourceV2 {
     }
   }
 
-  private void validateServiceOverrideScope(ServiceOverrideRequestDTO requestDTO, String accountId) {
+  private void validateServiceOverrideScope(ServiceOverrideRequestDTO requestDTO) {
     try {
-      if (checkFeatureFlagForEnvOrgAccountLevel(accountId)) {
-        if (isNotEmpty(requestDTO.getProjectIdentifier())) {
-          Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
-              "org identifier must be specified when project identifier is specified. Service Overrides can be created at Project/Org/Account scope");
-        }
-      } else {
+      if (isNotEmpty(requestDTO.getProjectIdentifier())) {
         Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
-            "org identifier must be specified. Service overrides can only be created at Project scope");
-        Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
-            "project identifier must be specified. Service overrides can only be created at Project scope");
+            "org identifier must be specified when project identifier is specified. Service Overrides can be created at Project/Org/Account scope");
       }
     } catch (Exception ex) {
       log.error("failed to validate service override scope", ex);

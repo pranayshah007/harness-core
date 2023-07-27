@@ -78,7 +78,7 @@ public class EcsRollingRollbackStep extends CdTaskExecutable<EcsCommandResponse>
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<EcsCommandResponse> responseDataSupplier)
       throws Exception {
     StepResponse stepResponse = null;

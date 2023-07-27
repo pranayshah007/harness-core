@@ -13,7 +13,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
 import static io.harness.rule.OwnerRule.ADWAIT;
-import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
@@ -850,13 +849,6 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> ngTriggerServiceImpl.addEventToQueue(triggerWebhookEvent))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Webhook event could not be received");
-  }
-
-  @Test
-  @Owner(developers = HARSH)
-  @Category(UnitTests.class)
-  public void testIsBranchExpr() {
-    assertThat(ngTriggerServiceImpl.isBranchExpr("<+trigger.branch>")).isEqualTo(true);
   }
 
   @Test

@@ -14,6 +14,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.data.structure.MongoMapSanitizer;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -120,6 +121,7 @@ public final class K8sWorkloadRecommendation
   HarnessServiceInfo harnessServiceInfo;
 
   CCMJiraDetails jiraDetails;
+  CCMServiceNowDetails serviceNowDetails;
 
   // decision whether to show the recommendation in the Recommendation Overview List page or not.
   public boolean shouldShowRecommendation() {

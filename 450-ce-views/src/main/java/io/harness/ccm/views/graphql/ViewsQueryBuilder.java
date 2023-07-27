@@ -13,6 +13,7 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.SUM;
 import static io.harness.ccm.views.graphql.QLCEViewTimeGroupType.DAY;
+import static io.harness.ccm.views.graphql.ViewsMetaDataFields.COST;
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_KEY;
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_KEY_UN_NESTED;
 import static io.harness.ccm.views.graphql.ViewsMetaDataFields.LABEL_VALUE_UN_NESTED;
@@ -90,6 +91,7 @@ import com.healthmarketscience.sqlbuilder.FunctionCall;
 import com.healthmarketscience.sqlbuilder.InCondition;
 import com.healthmarketscience.sqlbuilder.OrderObject;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
+import com.healthmarketscience.sqlbuilder.SqlObject;
 import com.healthmarketscience.sqlbuilder.UnaryCondition;
 import com.healthmarketscience.sqlbuilder.UnionQuery;
 import com.healthmarketscience.sqlbuilder.custom.postgresql.PgLimitClause;
@@ -131,6 +133,7 @@ public class ViewsQueryBuilder {
   public static final String LABEL_KEY_ALIAS = "labels_key";
   public static final String LABEL_VALUE_ALIAS = "labels_value";
   public static final String aliasStartTimeMaxMin = "%s_%s";
+  private static final String IF_NULL_COLUMN_ZERO = "ifNull(%s, 0)";
   private static final String DISTINCT = " DISTINCT(%s)";
   private static final String LOWER = "LOWER(%s)";
   private static final String COALESCE = " COALESCE(%s, %s)";
@@ -169,8 +172,8 @@ public class ViewsQueryBuilder {
       List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName, ViewQueryParams queryParams,
       List<BusinessMapping> sharedCostBusinessMappings) {
     return getQuery(rules, filters, timeFilters, Collections.emptyList(), groupByList, Collections.emptyList(),
-        aggregations, sortCriteriaList, cloudProviderTableName, queryParams, null, sharedCostBusinessMappings,
-        Collections.emptyMap());
+        aggregations, Collections.emptyList(), sortCriteriaList, cloudProviderTableName, queryParams, null,
+        sharedCostBusinessMappings, Collections.emptyMap());
   }
 
   /**
@@ -182,6 +185,7 @@ public class ViewsQueryBuilder {
    * @param groupByList groupBys applied
    * @param sharedCostGroupBy shared bucket business mapping groupBy, used only for decoration
    * @param aggregations aggregations applied
+   * @param viewPreferenceAggregations viewPreferenceAggregations applied, used for perspective preferences
    * @param sortCriteriaList sort criteria applied
    * @param cloudProviderTableName cloud provider table name
    * @param queryParams query parameters
@@ -193,9 +197,9 @@ public class ViewsQueryBuilder {
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
       List<QLCEInExpressionFilter> inExpressionFilters, List<QLCEViewGroupBy> groupByList,
       List<QLCEViewGroupBy> sharedCostGroupBy, List<QLCEViewAggregation> aggregations,
-      List<QLCEViewSortCriteria> sortCriteriaList, String cloudProviderTableName, ViewQueryParams queryParams,
-      BusinessMapping sharedCostBusinessMapping, List<BusinessMapping> sharedCostBusinessMappings,
-      Map<String, String> labelsKeyAndColumnMapping) {
+      List<QLCEViewPreferenceAggregation> viewPreferenceAggregations, List<QLCEViewSortCriteria> sortCriteriaList,
+      String cloudProviderTableName, ViewQueryParams queryParams, BusinessMapping sharedCostBusinessMapping,
+      List<BusinessMapping> sharedCostBusinessMappings, Map<String, String> labelsKeyAndColumnMapping) {
     SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(cloudProviderTableName);
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
@@ -259,12 +263,17 @@ public class ViewsQueryBuilder {
       }
     }
 
+    if (!Lists.isNullOrEmpty(viewPreferenceAggregations)) {
+      decorateQueryWithViewPreferenceAggregations(
+          selectQuery, viewPreferenceAggregations, tableIdentifier, viewLabelsFlattened);
+      aggregations = removeCostAggregationColumn(aggregations);
+    }
     if (!aggregations.isEmpty()) {
       decorateQueryWithAggregations(selectQuery, aggregations, tableIdentifier, false);
     }
 
-    decorateQueryWithSharedCostAggregations(selectQuery, sharedCostGroupByEntity, isClusterTable, tableIdentifier,
-        sharedCostBusinessMapping, viewLabelsFlattened);
+    decorateQueryWithSharedCostAggregations(selectQuery, viewPreferenceAggregations, sharedCostGroupByEntity,
+        isClusterTable, tableIdentifier, sharedCostBusinessMapping, viewLabelsFlattened);
 
     if (!sortCriteriaList.isEmpty()) {
       decorateQueryWithSortCriteria(selectQuery, sortCriteriaList);
@@ -1352,6 +1361,77 @@ public class ViewsQueryBuilder {
     }
   }
 
+  private void decorateQueryWithViewPreferenceAggregations(SelectQuery selectQuery,
+      List<QLCEViewPreferenceAggregation> aggregations, String tableIdentifier,
+      ViewLabelsFlattened viewLabelsFlattened) {
+    String viewPreferenceAggregations =
+        getViewPreferenceAggregations(aggregations, true, tableIdentifier, viewLabelsFlattened);
+    selectQuery.addCustomColumns(
+        Converter.toCustomColumnSqlObject(new CustomSql(viewPreferenceAggregations), COST.getFieldName()));
+  }
+
+  @NotNull
+  private String getViewPreferenceAggregations(List<QLCEViewPreferenceAggregation> aggregations,
+      boolean useAggregationFunction, String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
+    StringBuilder viewPreferenceAggregations = new StringBuilder();
+    boolean isFirstAggregation = true;
+    for (QLCEViewPreferenceAggregation aggregation : aggregations) {
+      SqlObject sqlObject =
+          getViewPreferenceAggregation(aggregation, useAggregationFunction, tableIdentifier, viewLabelsFlattened);
+      // Added check on first aggregation to support query in clickhouse
+      if (isFirstAggregation && aggregation.getArithmeticOperationType() == QLCEViewAggregateArithmeticOperation.ADD) {
+        viewPreferenceAggregations.append(sqlObject);
+      } else {
+        viewPreferenceAggregations.append(
+            String.format("%s%s", aggregation.getArithmeticOperationType().getSymbol(), sqlObject));
+      }
+      isFirstAggregation = false;
+    }
+    return viewPreferenceAggregations.toString();
+  }
+
+  private SqlObject getViewPreferenceAggregation(QLCEViewPreferenceAggregation aggregation,
+      boolean useAggregationFunction, String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
+    FunctionCall functionCall = getFunctionCallType(aggregation.getOperationType());
+    CustomSql customSql;
+    if (isClickHouseQuery()) {
+      customSql = getSQLCaseStatementForViewPreferenceClickHouse(aggregation, tableIdentifier, viewLabelsFlattened);
+    } else {
+      customSql = getSQLCaseStatementForViewPreferenceBigQuery(aggregation, tableIdentifier, viewLabelsFlattened);
+    }
+    return useAggregationFunction
+        ? Converter.toCustomColumnSqlObject(Objects.requireNonNull(functionCall).addCustomParams(customSql))
+        : Converter.toCustomColumnSqlObject(customSql);
+  }
+
+  private CustomSql getSQLCaseStatementForViewPreferenceBigQuery(
+      QLCEViewPreferenceAggregation aggregation, String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
+    CaseStatement caseStatement = new CaseStatement();
+    String columnName = getColumnNameForField(tableIdentifier, aggregation.getColumnName());
+    Condition condition = getCondition(aggregation.getFilter(), tableIdentifier, viewLabelsFlattened);
+    caseStatement.addWhen(condition, new CustomSql(String.format(IF_NULL_COLUMN_ZERO, columnName)));
+    caseStatement.addElse(0);
+    return new CustomSql(caseStatement);
+  }
+
+  private CustomSql getSQLCaseStatementForViewPreferenceClickHouse(
+      QLCEViewPreferenceAggregation aggregation, String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
+    StringBuilder multiIfStatement = new StringBuilder(MULTI_IF_STATEMENT_OPENING);
+    Condition condition = getCondition(aggregation.getFilter(), tableIdentifier, viewLabelsFlattened);
+    String columnName = getColumnNameForField(tableIdentifier, aggregation.getColumnName());
+    multiIfStatement.append(condition).append(
+        String.format(", %s, 0)", new CustomSql(String.format(IF_NULL_COLUMN_ZERO, columnName))));
+    return new CustomSql(multiIfStatement);
+  }
+
+  private List<QLCEViewAggregation> removeCostAggregationColumn(List<QLCEViewAggregation> aggregations) {
+    return Objects.nonNull(aggregations)
+        ? aggregations.stream()
+              .filter(aggregation -> !COST.getFieldName().equalsIgnoreCase(aggregation.getColumnName()))
+              .collect(Collectors.toList())
+        : Collections.emptyList();
+  }
+
   private void decorateQueryWithAggregation(
       SelectQuery selectQuery, QLCEViewAggregation aggregation, String tableIdentifier, boolean isSharedCostQuery) {
     FunctionCall functionCall = getFunctionCallType(aggregation.getOperationType());
@@ -1401,7 +1481,8 @@ public class ViewsQueryBuilder {
     }
   }
 
-  private void decorateQueryWithSharedCostAggregations(SelectQuery selectQuery, List<QLCEViewFieldInput> groupByEntity,
+  private void decorateQueryWithSharedCostAggregations(SelectQuery selectQuery,
+      List<QLCEViewPreferenceAggregation> viewPreferenceAggregations, List<QLCEViewFieldInput> groupByEntity,
       boolean isClusterTable, String tableIdentifier, BusinessMapping sharedCostBusinessMapping,
       ViewLabelsFlattened viewLabelsFlattened) {
     List<QLCEViewFieldInput> groupByBusinessMapping =
@@ -1418,8 +1499,8 @@ public class ViewsQueryBuilder {
         List<SharedCost> sharedCosts = businessMapping.getSharedCosts();
         if (sharedCosts != null) {
           sharedCosts.forEach(sharedCost
-              -> decorateQueryWithSharedCostAggregation(
-                  selectQuery, sharedCost, isClusterTable, tableIdentifier, viewLabelsFlattened));
+              -> decorateQueryWithSharedCostAggregation(selectQuery, viewPreferenceAggregations, sharedCost,
+                  isClusterTable, tableIdentifier, viewLabelsFlattened));
         }
       }
     } else if (sharedCostBusinessMapping != null) {
@@ -1433,31 +1514,62 @@ public class ViewsQueryBuilder {
     }
   }
 
-  private void decorateQueryWithSharedCostAggregation(SelectQuery selectQuery, SharedCost sharedCost,
-      boolean isClusterTable, String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
+  private void decorateQueryWithSharedCostAggregation(SelectQuery selectQuery,
+      List<QLCEViewPreferenceAggregation> viewPreferenceAggregations, SharedCost sharedCost, boolean isClusterTable,
+      String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
     FunctionCall functionCall = getFunctionCallType(SUM);
     selectQuery.addCustomColumns(Converter.toCustomColumnSqlObject(
-        new CoalesceExpression(Objects.requireNonNull(functionCall)
-                                   .addCustomParams(getSQLCaseStatementBusinessMappingSharedCost(
-                                       sharedCost.getRules(), isClusterTable, tableIdentifier, viewLabelsFlattened)),
+        new CoalesceExpression(
+            Objects.requireNonNull(functionCall)
+                .addCustomParams(getSQLCaseStatementBusinessMappingSharedCost(viewPreferenceAggregations,
+                    sharedCost.getRules(), isClusterTable, tableIdentifier, viewLabelsFlattened)),
             Collections.singletonList(0)),
         modifyStringToComplyRegex(sharedCost.getName())));
   }
 
-  private CustomSql getSQLCaseStatementBusinessMappingSharedCost(List<ViewRule> sharedCostRules, boolean isClusterTable,
-      String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
-    String columnName =
-        isClusterTable ? ViewsMetaDataFields.CLUSTER_COST.getAlias() : ViewsMetaDataFields.COST.getAlias();
-    if (isClickHouseQuery()) {
-      columnName = isClusterTable
-          ? String.format("%s.%s", ClickHouseConstants.CLICKHOUSE_CLUSTER_DATA_TABLE, columnName)
-          : String.format("%s.%s", ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE, columnName);
-    }
+  private CustomSql getSQLCaseStatementBusinessMappingSharedCost(
+      List<QLCEViewPreferenceAggregation> viewPreferenceAggregations, List<ViewRule> sharedCostRules,
+      boolean isClusterTable, String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
+    String sharedCostColumn =
+        getSharedCostColumn(viewPreferenceAggregations, isClusterTable, tableIdentifier, viewLabelsFlattened);
     CaseStatement caseStatement = new CaseStatement();
-    caseStatement.addWhen(
-        getConsolidatedRuleCondition(sharedCostRules, tableIdentifier, viewLabelsFlattened), new CustomSql(columnName));
+    caseStatement.addWhen(getConsolidatedRuleCondition(sharedCostRules, tableIdentifier, viewLabelsFlattened),
+        new CustomSql(sharedCostColumn));
     caseStatement.addElseNull();
     return new CustomSql(caseStatement);
+  }
+
+  private String getSharedCostColumn(List<QLCEViewPreferenceAggregation> viewPreferenceAggregations,
+      boolean isClusterTable, String tableIdentifier, ViewLabelsFlattened viewLabelsFlattened) {
+    String sharedCostColumn =
+        isClusterTable ? ViewsMetaDataFields.CLUSTER_COST.getAlias() : ViewsMetaDataFields.COST.getAlias();
+    if (isClickHouseQuery()) {
+      sharedCostColumn = isClusterTable
+          ? String.format("%s.%s", ClickHouseConstants.CLICKHOUSE_CLUSTER_DATA_TABLE, sharedCostColumn)
+          : String.format("%s.%s", ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE, sharedCostColumn);
+    }
+    if (!Lists.isNullOrEmpty(viewPreferenceAggregations)) {
+      if (isClickHouseQuery()) {
+        viewPreferenceAggregations = addTableNamePrefixInViewPreferenceAggregationColumns(viewPreferenceAggregations);
+      }
+      sharedCostColumn =
+          getViewPreferenceAggregations(viewPreferenceAggregations, false, tableIdentifier, viewLabelsFlattened);
+    }
+    return sharedCostColumn;
+  }
+
+  private List<QLCEViewPreferenceAggregation> addTableNamePrefixInViewPreferenceAggregationColumns(
+      List<QLCEViewPreferenceAggregation> viewPreferenceAggregations) {
+    return viewPreferenceAggregations.stream()
+        .map(viewPreferenceAggregation
+            -> QLCEViewPreferenceAggregation.builder()
+                   .operationType(viewPreferenceAggregation.getOperationType())
+                   .columnName(String.format("%s.%s", ClickHouseConstants.CLICKHOUSE_UNIFIED_TABLE,
+                       viewPreferenceAggregation.getColumnName()))
+                   .arithmeticOperationType(viewPreferenceAggregation.getArithmeticOperationType())
+                   .filter(viewPreferenceAggregation.getFilter())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   private FunctionCall getFunctionCallType(QLCEViewAggregateOperation operationType) {

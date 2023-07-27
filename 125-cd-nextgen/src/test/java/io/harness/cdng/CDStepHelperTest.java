@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.PRATYUSH;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
@@ -67,6 +68,7 @@ import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
@@ -85,6 +87,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswo
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
@@ -1173,5 +1176,99 @@ public class CDStepHelperTest extends CategoryTest {
                        .baseLogKey("")
                        .executionTimeout(Duration.ofNanos(100000000))
                        .build());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetGitFetchFilesConfigForGithubApp() {
+    Ambiance ambiance = getAmbiance();
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .authentication(
+                GithubAuthenticationDTO.builder()
+                    .authType(GitAuthType.HTTP)
+                    .credentials(GithubHttpCredentialsDTO.builder()
+                                     .type(GithubHttpAuthenticationType.GITHUB_APP)
+                                     .httpCredentialsSpec(GithubAppDTO.builder()
+                                                              .installationId("id")
+                                                              .applicationId("app")
+                                                              .privateKeyRef(SecretRefData.builder().build())
+                                                              .build())
+                                     .build())
+                    .build())
+            .build();
+    ConnectorInfoDTO connectorDTO =
+        ConnectorInfoDTO.builder().connectorConfig(githubConnectorDTO).connectorType(GITHUB).build();
+    GitStoreConfig githubStore = GithubStore.builder()
+                                     .paths(ParameterField.createValueField(paths))
+                                     .repoName(ParameterField.createValueField("repo"))
+                                     .connectorRef(ParameterField.createValueField("connectorId"))
+                                     .build();
+    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+    List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
+
+    doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
+    doReturn(Collections.emptyList())
+        .when(gitConfigAuthenticationInfoHelper)
+        .getGithubAppEncryptedDataDetail(any(), any());
+    doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        cdStepHelper.getGitStoreDelegateConfig(githubStore, connectorDTO, paths, ambiance, "type", "menifest", false);
+
+    assertThat(gitStoreDelegateConfig.isOptimizedFilesFetch()).isFalse();
+    assertThat(gitStoreDelegateConfig.isGithubAppAuthentication()).isTrue();
+    assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(ScmConnector.class);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetGitFetchFilesConfigForGithubAppWithOptimizedFileFetch() {
+    Ambiance ambiance = getAmbiance();
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .authentication(
+                GithubAuthenticationDTO.builder()
+                    .authType(GitAuthType.HTTP)
+                    .credentials(GithubHttpCredentialsDTO.builder()
+                                     .type(GithubHttpAuthenticationType.GITHUB_APP)
+                                     .httpCredentialsSpec(GithubAppDTO.builder()
+                                                              .installationId("id")
+                                                              .applicationId("app")
+                                                              .privateKeyRef(SecretRefData.builder().build())
+                                                              .build())
+                                     .build())
+                    .build())
+            .build();
+    ConnectorInfoDTO connectorDTO =
+        ConnectorInfoDTO.builder().connectorConfig(githubConnectorDTO).connectorType(GITHUB).build();
+    GitStoreConfig githubStore = GithubStore.builder()
+                                     .paths(ParameterField.createValueField(paths))
+                                     .repoName(ParameterField.createValueField("repo"))
+                                     .connectorRef(ParameterField.createValueField("connectorId"))
+                                     .build();
+    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+    List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
+
+    doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
+    doReturn(Collections.emptyList())
+        .when(gitConfigAuthenticationInfoHelper)
+        .getGithubAppEncryptedDataDetail(any(), any());
+    doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        cdStepHelper.getGitStoreDelegateConfig(githubStore, connectorDTO, paths, ambiance, "type", "menifest", true);
+
+    assertThat(gitStoreDelegateConfig.isOptimizedFilesFetch()).isTrue();
+    assertThat(gitStoreDelegateConfig.isGithubAppAuthentication()).isTrue();
+    assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(ScmConnector.class);
   }
 }

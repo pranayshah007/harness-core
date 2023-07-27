@@ -110,7 +110,7 @@ public class PipelinesApiImpl implements PipelinesApi {
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
       throw new PolicyEvaluationFailureException(
-          "Policy Evaluation Failure", governanceMetadata, createdEntity.getYaml());
+          "Policy Evaluation Failure", governanceMetadata, pipelineEntity.getYaml());
     }
     PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
     responseBody.setIdentifier(createdEntity.getIdentifier());

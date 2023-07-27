@@ -552,6 +552,11 @@ message ListBranchesWithDefaultRequest {
   string slug = 1;
   PageRequest pagination = 2;
   Provider provider = 3;
+  BranchFilterParams branchFilterParams = 4;
+}
+
+message BranchFilterParams {
+  string branchName = 1;
 }
 
 message ListBranchesResponse {

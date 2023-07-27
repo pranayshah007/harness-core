@@ -119,8 +119,9 @@ public class AzureARMRollbackStep extends CdTaskExecutable<AzureARMTaskNGRespons
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<AzureARMTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<AzureARMTaskNGResponse> responseDataSupplier)
+      throws Exception {
     AzureARMTaskNGResponse response;
     String provisionerID =
         getParameterFieldValue(((AzureARMRollbackStepParameters) stepParameters.getSpec()).getProvisionerIdentifier());

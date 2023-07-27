@@ -339,7 +339,10 @@ public enum NGStepType {
       "Infrastructure Provisioners/AWS CDK Bootstrap", StepSpecTypeConstants.AWS_CDK_BOOTSTRAP),
   @JsonProperty(StepSpecTypeConstants.AWS_CDK_SYNTH)
   AWS_CDK_SYNTH("AWS CDK Synth", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/AWS CDK Synth", StepSpecTypeConstants.AWS_CDK_SYNTH);
+      "Infrastructure Provisioners/AWS CDK Synth", StepSpecTypeConstants.AWS_CDK_SYNTH),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_DIFF)
+  AWS_CDK_DIFF("AWS CDK Diff", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Diff", StepSpecTypeConstants.AWS_CDK_DIFF);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

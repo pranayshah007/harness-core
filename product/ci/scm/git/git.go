@@ -401,7 +401,7 @@ func ListBranches(ctx context.Context, request *pb.ListBranchesRequest, log *zap
 		return nil, err
 	}
 
-	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 	if err != nil {
 		log.Errorw("ListBranches failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		if response == nil {
@@ -440,7 +440,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		return nil, err
 	}
 
-	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 	if err != nil {
 		// this is an error from the git provider, e.g. authentication.
 		log.Errorw("ListBranchesWithDefault failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))

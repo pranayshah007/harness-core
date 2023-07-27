@@ -6,8 +6,11 @@
  */
 
 package io.harness.ngmigration.service.entity;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_TEMPLATE;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -45,6 +48,7 @@ import software.wings.beans.ConfigFile;
 import software.wings.beans.EntityType;
 import software.wings.beans.Environment;
 import software.wings.beans.Service;
+import software.wings.beans.ServiceTemplate;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -109,6 +113,10 @@ public class ConfigFileMigrationService extends NgMigrationService {
         children.add(
             CgEntityId.builder().id(parentConfigFile.getEntityId()).type(NGMigrationEntityType.SERVICE).build());
       }
+    }
+    if (EntityType.SERVICE_TEMPLATE.equals(configFile.getEntityType())
+        && StringUtils.isNotBlank(configFile.getEntityId())) {
+      children.add(CgEntityId.builder().type(SERVICE_TEMPLATE).id(configFile.getEntityId()).build());
     }
     return DiscoveryNode.builder().children(children).entityNode(cgEntityNode).build();
   }
@@ -302,6 +310,17 @@ public class ConfigFileMigrationService extends NgMigrationService {
     return (ConfigFile) node.getEntity();
   }
 
+  private static ServiceTemplate getServiceTemplate(MigrationContext context, String id) {
+    if (StringUtils.isBlank(id)) {
+      return null;
+    }
+    CgEntityNode node = context.getEntities().get(CgEntityId.builder().id(id).type(SERVICE_TEMPLATE).build());
+    if (node == null) {
+      return null;
+    }
+    return (ServiceTemplate) node.getEntity();
+  }
+
   public static String getServiceId(MigrationContext context, CgEntityId cgEntityId) {
     String serviceId = null;
     CgEntityNode node = context.getEntities().get(cgEntityId);
@@ -316,6 +335,11 @@ public class ConfigFileMigrationService extends NgMigrationService {
       ConfigFile parentConfigFile = getParentConfigFile(context, configFile.getParentConfigFileId());
       if (parentConfigFile != null && parentConfigFile.getEntityType().equals(EntityType.SERVICE)) {
         serviceId = parentConfigFile.getEntityId();
+      }
+      ServiceTemplate serviceTemplate = getServiceTemplate(context, configFile.getEntityId());
+      if (serviceTemplate != null && StringUtils.isBlank(serviceId)
+          && StringUtils.isNotBlank(serviceTemplate.getServiceId())) {
+        serviceId = serviceTemplate.getServiceId();
       }
     }
     return serviceId;

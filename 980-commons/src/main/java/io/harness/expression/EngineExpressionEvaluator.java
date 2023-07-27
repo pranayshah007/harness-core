@@ -226,12 +226,29 @@ public class EngineExpressionEvaluator {
       @NotNull String expression, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     checkDepth(depth, expression);
     RenderExpressionResolver resolver = new RenderExpressionResolver(this, ctx, depth, expressionMode);
-    String finalExpression = runStringReplacer(expression, resolver);
-    if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
-        && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
-      throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
+    try {
+      String finalExpression = runStringReplacer(expression, resolver);
+      if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
+          && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
+        throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
+      }
+      return finalExpression;
+    } catch (Exception e) {
+      // Adding fallback mechanism for any failures due to concat flow
+      if (ctx.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
+        ctx.removeFeatureFlag(PIE_EXPRESSION_CONCATENATION);
+        resolver = new RenderExpressionResolver(this, ctx, depth, expressionMode);
+        String finalExpression = runStringReplacer(expression, resolver);
+        log.warn("[EXPRESSION_CONCATENATE]: Failed to render expression in new flow for - " + expression
+            + " whose value is - " + finalExpression);
+        if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
+            && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
+          throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
+        }
+        return finalExpression;
+      }
+      throw e;
     }
-    return finalExpression;
   }
 
   @Deprecated
@@ -253,9 +270,21 @@ public class EngineExpressionEvaluator {
     if (expression == null || EmptyPredicate.isEmpty(expression.trim())) {
       return null;
     }
-    return evaluateExpressionInternal(expression, prepareContext(ctx), MAX_DEPTH, expressionMode);
+    EngineJexlContext engineJexlContext = prepareContext(ctx);
+    try {
+      return evaluateExpressionInternal(expression, engineJexlContext, MAX_DEPTH, expressionMode);
+    } catch (Exception e) {
+      // Adding fallback mechanism for any failures due to concat flow
+      if (engineJexlContext.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
+        engineJexlContext.removeFeatureFlag(PIE_EXPRESSION_CONCATENATION);
+        Object expressionValue = evaluateExpressionInternal(expression, engineJexlContext, MAX_DEPTH, expressionMode);
+        log.warn("[EXPRESSION_CONCATENATE]: Failed to evaluate expression in new flow for - " + expression
+            + " whose value is - " + expressionValue);
+        return expressionValue;
+      }
+      throw e;
+    }
   }
-
   protected Object evaluateExpressionInternal(
       @NotNull String expression, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     checkDepth(depth, expression);

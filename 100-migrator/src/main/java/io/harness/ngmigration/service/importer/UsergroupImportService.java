@@ -15,6 +15,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.dto.ImportDTO;
+import io.harness.ngmigration.dto.UsergroupFilter;
 import io.harness.ngmigration.service.DiscoveryService;
 
 import software.wings.beans.security.UserGroup;
@@ -35,19 +36,23 @@ public class UsergroupImportService implements ImportService {
 
   @Override
   public DiscoveryResult discover(ImportDTO importDTO) {
+    UsergroupFilter filter = (UsergroupFilter) importDTO.getFilter();
     String accountId = importDTO.getAccountIdentifier();
-    List<UserGroup> userGroups = userGroupService.listByAccountId(accountId);
-    if (EmptyPredicate.isEmpty(userGroups)) {
-      return null;
+    List<String> filterIds = filter.getIds();
+    if (EmptyPredicate.isEmpty(filterIds)) {
+      List<UserGroup> userGroups = userGroupService.listByAccountId(accountId);
+      if (EmptyPredicate.isEmpty(userGroups)) {
+        return null;
+      }
+      filterIds = userGroups.stream().map(UserGroup::getUuid).collect(Collectors.toList());
     }
 
     return discoveryService.discoverMulti(accountId,
         DiscoveryInput.builder()
             .exportImage(false)
-            .entities(
-                userGroups.stream()
-                    .map(group -> DiscoverEntityInput.builder().entityId(group.getUuid()).type(USER_GROUP).build())
-                    .collect(Collectors.toList()))
+            .entities(filterIds.stream()
+                          .map(id -> DiscoverEntityInput.builder().entityId(id).type(USER_GROUP).build())
+                          .collect(Collectors.toList()))
             .build());
   }
 }

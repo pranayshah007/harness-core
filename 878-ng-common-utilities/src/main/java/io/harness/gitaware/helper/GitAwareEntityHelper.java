@@ -344,4 +344,9 @@ public class GitAwareEntityHelper {
     }
     return gitEntityInfo.getParentEntityRepoName().equals(repoName) ? branchName : "";
   }
+
+  public void validateRepo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repo) {
+    scmGitSyncHelper.validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repo);
+  }
 }

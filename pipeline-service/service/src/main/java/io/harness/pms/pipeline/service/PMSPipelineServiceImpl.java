@@ -51,6 +51,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
@@ -159,9 +160,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
   @Inject GitXSettingsHelper gitXSettingsHelper;
-
   @Inject private final AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
+  @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -940,6 +941,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, updateGitDetailsParams);
+
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, true);
     Update update = PMSPipelineFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);
@@ -951,6 +954,33 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
 
     return pipelineAfterUpdate.getIdentifier();
+  }
+
+  private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    if (isEmpty(updateGitDetailsParams.getRepoName())) {
+      return;
+    }
+
+    String connectorRef = updateGitDetailsParams.getConnectorRef();
+    if (isEmpty(connectorRef)) {
+      Optional<PipelineEntity> optionalPipelineEntity =
+          getPipeline(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+      checkIfPipelineIsPresent(orgIdentifier, projectIdentifier, pipelineIdentifier, optionalPipelineEntity);
+
+      connectorRef = optionalPipelineEntity.get().getConnectorRef();
+    }
+
+    gitAwareEntityHelper.validateRepo(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, updateGitDetailsParams.getRepoName());
+  }
+
+  private void checkIfPipelineIsPresent(String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
+      Optional<PipelineEntity> optionalPipelineEntity) {
+    if (optionalPipelineEntity.isEmpty()) {
+      throw new EntityNotFoundException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
+          orgIdentifier, projectIdentifier, pipelineIdentifier));
+    }
   }
 
   @VisibleForTesting

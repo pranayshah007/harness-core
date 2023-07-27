@@ -110,7 +110,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class PollingResponseHandler {
-  private static final int MAX_FAILED_ATTEMPTS = 3500;
+  private static final int MAX_FAILED_ATTEMPTS = 7200;
   private PollingService pollingService;
   private PollingPerpetualTaskService pollingPerpetualTaskService;
   private PolledItemPublisher polledItemPublisher;
@@ -157,6 +157,8 @@ public class PollingResponseHandler {
 
     if (pollingDocument.getFailedAttempts() > 0) {
       pollingService.updateFailedAttempts(accountId, pollDocId, 0);
+      pollingService.updateTriggerPollingStatus(
+          pollingDocument.getAccountId(), pollingDocument.getSignatures(), true, null, Collections.emptyList());
     }
 
     switch (pollingDocument.getPollingType()) {
@@ -337,16 +339,17 @@ public class PollingResponseHandler {
 
   private void handleFailureResponse(PollingDocument pollingDocument, String errorMessage) {
     int failedCount = pollingDocument.getFailedAttempts() + 1;
-
-    if (failedCount % 25 == 0 && failedCount != MAX_FAILED_ATTEMPTS) {
-      pollingPerpetualTaskService.resetPerpetualTask(pollingDocument);
-    }
-
+    log.error(
+        "Received failure response from polling delegate perpetual task for pollingDocId: {} , failedCount: {}, errorMessage: {}",
+        pollingDocument.getUuid(), failedCount, errorMessage);
     pollingService.updateFailedAttempts(pollingDocument.getAccountId(), pollingDocument.getUuid(), failedCount);
     pollingService.updateTriggerPollingStatus(
         pollingDocument.getAccountId(), pollingDocument.getSignatures(), false, errorMessage, Collections.emptyList());
 
-    if (failedCount == MAX_FAILED_ATTEMPTS) {
+    if (failedCount >= MAX_FAILED_ATTEMPTS) {
+      log.warn(
+          "Failed count {} from polling delegate perpetual task for pollingDocId {} is above MAX_FAILED_ATTEMPTS ({}). Deleting the perpetual task.",
+          failedCount, pollingDocument.getUuid(), MAX_FAILED_ATTEMPTS);
       pollingPerpetualTaskService.deletePerpetualTask(
           pollingDocument.getPerpetualTaskId(), pollingDocument.getAccountId());
     }

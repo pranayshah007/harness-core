@@ -110,6 +110,9 @@ public class ParameterDocumentFieldProcessor {
 
   // Handling primitive types and wrappers when value class of document field doesn't match the class of finalValue
   private Object getCastedFinalValueForPrimitiveTypesAndWrappers(Object finalValue, ParameterDocumentField field) {
+    if (field.getValueClass() == null) {
+      return finalValue;
+    }
     try {
       Class<?> fieldClass = Class.forName(field.getValueClass());
       if (ClassUtils.isPrimitiveOrWrapper(fieldClass) && !fieldClass.isAssignableFrom(finalValue.getClass())) {
@@ -136,8 +139,11 @@ public class ParameterDocumentFieldProcessor {
         }
       }
     } catch (Exception ex) {
-      log.error(String.format("Exception in casting newValue of type %s into parameter field of type %s",
-          finalValue.getClass().toString(), field.getValueClass()));
+      log.warn(
+          String.format(
+              "[ParameterDocumentFieldProcessor] Exception in casting newValue of type %s into parameter field of type %s",
+              finalValue.getClass().toString(), field.getValueClass()),
+          ex);
     }
     return finalValue;
   }

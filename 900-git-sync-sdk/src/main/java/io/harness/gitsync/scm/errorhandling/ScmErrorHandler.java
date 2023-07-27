@@ -36,6 +36,24 @@ public class ScmErrorHandler {
     handleError(statusCode, errorDetails, errorMetadata);
   }
 
+  public final void processAndThrowException(int statusCode, ScmErrorDetails errorDetails) {
+    handleError(statusCode, errorDetails);
+  }
+
+  void handleError(int statusCode, ScmErrorDetails errorDetails) {
+    switch (statusCode) {
+      case 400:
+      case 401:
+        throw prepareException(new ScmBadRequestException(errorDetails.getErrorMessage()), errorDetails);
+      case 409:
+        throw prepareException(new ScmConflictException(errorDetails.getErrorMessage()), errorDetails);
+      case 500:
+        throw prepareException(new ScmInternalServerErrorException(errorDetails.getErrorMessage()), errorDetails);
+      default:
+        throw prepareException(new ScmUnexpectedException(errorDetails.getErrorMessage()), errorDetails);
+    }
+  }
+
   void handleError(int statusCode, ScmErrorDetails errorDetails, ScmGitMetaData errorMetadata) {
     switch (statusCode) {
       case 400:

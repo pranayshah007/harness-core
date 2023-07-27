@@ -7,6 +7,7 @@
 
 package io.harness.pms.ngpipeline.inputset.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.HintException.HINT_INPUT_SET_ACCOUNT_SETTING;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -156,10 +157,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       boolean hasNewYamlStructure, boolean loadFromFallbackBranch, boolean loadFromCache) {
     Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, identifier, deleted, loadFromFallbackBranch, loadFromCache);
-    if (optionalInputSetEntity.isEmpty()) {
-      throw new EntityNotFoundException(
-          String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
-    }
+    checkIfInputSetIsPresent(identifier, optionalInputSetEntity);
 
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
     if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
@@ -543,6 +541,8 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String inputSetIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier,
+        updateGitDetailsParams);
     Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, true);
     Update update = PMSInputSetFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);
@@ -554,6 +554,32 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     }
 
     return inputSetAfterUpdate.getIdentifier();
+  }
+
+  private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    if (isEmpty(updateGitDetailsParams.getRepoName())) {
+      return;
+    }
+
+    String connectorRef = updateGitDetailsParams.getConnectorRef();
+    if (isEmpty(connectorRef)) {
+      Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountIdentifier, orgIdentifier,
+          projectIdentifier, pipelineIdentifier, inputSetIdentifier, false, false, false);
+      checkIfInputSetIsPresent(inputSetIdentifier, optionalInputSetEntity);
+
+      connectorRef = optionalInputSetEntity.get().getConnectorRef();
+    }
+
+    gitAwareEntityHelper.validateRepo(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, updateGitDetailsParams.getRepoName());
+  }
+
+  private void checkIfInputSetIsPresent(String inputSetIdentifier, Optional<InputSetEntity> optionalInputSetEntity) {
+    if (optionalInputSetEntity.isEmpty()) {
+      throw new EntityNotFoundException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
+    }
   }
 
   @VisibleForTesting

@@ -8,6 +8,8 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
@@ -82,8 +84,11 @@ public class DelegateAgentResourceV2 {
               .loggingToken(delegateTaskPackage.getLogStreamingToken())
               .logStreamingAbstractions(delegateTaskPackage.getLogStreamingAbstractions())
               .build();
-      TaskType taskType = TaskType.valueOf(delegateTaskPackage.getData().getTaskType());
-
+      String taskType = delegateTaskPackage.getTaskDataV2().getTaskType();
+      if (isEmpty(taskType)) {
+        taskType = delegateTaskPackage.getData().getTaskType();
+      }
+      TaskType taskTypeValue = isNotEmpty(taskType) ? TaskType.valueOf(taskType) : null;
       return DelegateTaskPackageV2.builder()
           .id(taskId)
           .delegate(delegateInfo)
@@ -95,7 +100,7 @@ public class DelegateAgentResourceV2 {
           .secretDetails(delegateTaskPackage.getSecretDetails())
           .delegateTaskLogging(delegateTaskLoggingV2)
           .secrets(delegateTaskPackage.getSecrets())
-          .taskType(taskType)
+          .taskType(taskTypeValue)
           .build();
     }
   }

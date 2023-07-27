@@ -8,6 +8,7 @@
 package io.harness.pms.expressions.functors;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -60,6 +61,9 @@ public class PipelineExecutionFunctor implements LateBindingValue {
         "name", pipelineExecutionSummaryEntity.getExecutionTriggerInfo().getTriggeredBy().getIdentifier());
     triggeredByMap.put("email",
         pipelineExecutionSummaryEntity.getExecutionTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email"));
+    String triggerName =
+        pipelineExecutionSummaryEntity.getExecutionTriggerInfo().getTriggeredBy().getTriggerIdentifier();
+    triggeredByMap.put("triggerName", isNotEmpty(triggerName) ? triggerName : null);
     jsonObject.put("triggeredBy", triggeredByMap);
 
     // Removed run sequence From PipelineStepParameter as run sequence is set just before start of execution and not

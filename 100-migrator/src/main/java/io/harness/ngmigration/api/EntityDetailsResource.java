@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.api;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
@@ -26,6 +27,7 @@ import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.Application;
+import software.wings.beans.Base.BaseKeys;
 import software.wings.beans.Environment;
 import software.wings.beans.Environment.EnvironmentKeys;
 import software.wings.beans.Pipeline;
@@ -36,6 +38,8 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowKeys;
+import software.wings.beans.security.UserGroup;
+import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.Template.TemplateKeys;
 import software.wings.beans.trigger.Trigger;
@@ -267,6 +271,28 @@ public class EntityDetailsResource {
 
     if (EmptyPredicate.isNotEmpty(templates)) {
       entities = templates.stream()
+                     .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
+                     .collect(Collectors.toList());
+    }
+    return new RestResponse<>(entities);
+  }
+
+  @GET
+  @Path("/usergroups")
+  @Timed
+  @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  public RestResponse<List<BaseEntityDetailsDTO>> listUserGroups(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @QueryParam("appId") String appId) {
+    List<BaseEntityDetailsDTO> entities = new ArrayList<>();
+    List<UserGroup> groups = hPersistence.createQuery(UserGroup.class)
+                                 .filter(UserGroupKeys.accountId, accountId)
+                                 .project(BaseKeys.uuid, true)
+                                 .project(UserGroupKeys.name, true)
+                                 .asList();
+
+    if (EmptyPredicate.isNotEmpty(groups)) {
+      entities = groups.stream()
                      .map(entity -> BaseEntityDetailsDTO.builder().id(entity.getUuid()).name(entity.getName()).build())
                      .collect(Collectors.toList());
     }

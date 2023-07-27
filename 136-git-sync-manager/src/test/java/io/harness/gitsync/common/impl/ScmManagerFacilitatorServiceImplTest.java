@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.RepoFilterParamsDTO;
@@ -253,16 +254,29 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void testListBranches() {
-    when(scmClient.listBranchesWithDefault(any(), any()))
+    when(scmClient.listBranchesWithDefault(any(), any(), any()))
         .thenReturn(ListBranchesWithDefaultResponse.newBuilder()
                         .addAllBranches(Arrays.asList(branch))
                         .setDefaultBranch(defaultBranch)
                         .build());
-    final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
-        scmManagerFacilitatorService.listBranches(accountIdentifier, orgIdentifier, projectIdentifier,
-            (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build());
+    final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = scmManagerFacilitatorService.listBranches(
+        accountIdentifier, orgIdentifier, projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(),
+        PageRequestDTO.builder().build(), BranchFilterParamsDTO.builder().build());
     assertThat(listBranchesWithDefaultResponse.getBranchesCount()).isEqualTo(1);
     assertThat(listBranchesWithDefaultResponse.getDefaultBranch()).isEqualTo(defaultBranch);
+    assertThat(listBranchesWithDefaultResponse.getBranchesList().get(0)).isEqualTo(branch);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testListBranchesWithBranchFilters() {
+    when(scmClient.listBranchesWithDefault(any(), any(), any()))
+        .thenReturn(ListBranchesWithDefaultResponse.newBuilder().addAllBranches(Arrays.asList(branch)).build());
+    final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = scmManagerFacilitatorService.listBranches(
+        accountIdentifier, orgIdentifier, projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(),
+        PageRequestDTO.builder().build(), BranchFilterParamsDTO.builder().branchName(branch).build());
+    assertThat(listBranchesWithDefaultResponse.getBranchesCount()).isEqualTo(1);
     assertThat(listBranchesWithDefaultResponse.getBranchesList().get(0)).isEqualTo(branch);
   }
 

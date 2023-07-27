@@ -24,10 +24,8 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -58,17 +56,6 @@ public class BambooArtifactDelegateRequest implements ArtifactSourceDelegateRequ
   private String buildDisplayName;
   private String buildFullDisplayName;
   private String description;
-
-  public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-    if (bambooConnectorDTO != null && bambooConnectorDTO.getDelegateSelectors() != null) {
-      combinedDelegateSelectors.addAll(bambooConnectorDTO.getDelegateSelectors());
-    }
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-    return combinedDelegateSelectors;
-  }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

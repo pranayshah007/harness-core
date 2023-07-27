@@ -67,6 +67,10 @@ public class ParameterFieldExpressionProcessor {
 
       if (newValue instanceof String && EngineExpressionEvaluator.hasExpressions((String) newValue)) {
         String newExpression = (String) newValue;
+        // This is added for CD step as they depend upon getValue, this is possible only for fields which are string
+        if (field.isTypeString()) {
+          field.updateValueOnly(newExpression);
+        }
         if (newExpression.equals(field.getExpressionValue())) {
           return ProcessorResult.builder().build();
         }

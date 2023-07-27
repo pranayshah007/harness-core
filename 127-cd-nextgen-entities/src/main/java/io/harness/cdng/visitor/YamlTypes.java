@@ -238,4 +238,5 @@ public interface YamlTypes {
   String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2;
   String AWS_CDK_BOOTSTRAP = StepSpecTypeConstants.AWS_CDK_BOOTSTRAP;
   String AWS_CDK_SYNTH = StepSpecTypeConstants.AWS_CDK_SYNTH;
+  String AWS_CDK_DIFF = StepSpecTypeConstants.AWS_CDK_DIFF;
 }

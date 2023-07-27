@@ -19,6 +19,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.ContentType;
 import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.FileGitDetails;
@@ -38,6 +39,7 @@ import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.constants.Constants;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ConnectException;
 import io.harness.exception.ExceptionUtils;
@@ -52,6 +54,7 @@ import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logger.RepoBranchLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.ResponseTimeRecorder;
+import io.harness.product.ci.scm.proto.BranchFilterParams;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CompareCommitsRequest;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
@@ -412,15 +415,21 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public ListBranchesWithDefaultResponse listBranchesWithDefault(
       ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    final String slug = scmGitProviderHelper.getSlug(scmConnector);
-    final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    int pageNumber = 1;
     ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
-        ListBranchesWithDefaultRequest.newBuilder()
-            .setSlug(slug)
-            .setProvider(provider)
-            .setPagination(PageRequest.newBuilder().setPage(pageNumber).build())
-            .build();
+        buildListBranchesWithDefaultRequest(scmConnector, pageRequest, null);
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = ScmGrpcClientUtils.retryAndProcessException(
+        scmBlockingStub::listBranchesWithDefault, listBranchesWithDefaultRequest);
+    if (isNotEmpty(listBranchesWithDefaultResponse.getError())) {
+      return listBranchesWithDefaultResponse;
+    }
+    return listMoreBranches(scmConnector, listBranchesWithDefaultResponse, pageRequest.getPageSize(), scmBlockingStub);
+  }
+
+  @Override
+  public ListBranchesWithDefaultResponse listBranchesWithDefault(ScmConnector scmConnector, PageRequestDTO pageRequest,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, BranchFilterParamsDTO branchFilterParamsDTO) {
+    ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
+        buildListBranchesWithDefaultRequest(scmConnector, pageRequest, branchFilterParamsDTO);
     ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = ScmGrpcClientUtils.retryAndProcessException(
         scmBlockingStub::listBranchesWithDefault, listBranchesWithDefaultRequest);
     if (isNotEmpty(listBranchesWithDefaultResponse.getError())) {
@@ -1293,13 +1302,47 @@ public class ScmServiceClientImpl implements ScmServiceClient {
                                                   .setFetchAllRepos(pageRequest.isFetchAll())
                                                   .build();
     if (repoFilterParamsDTO != null) {
-      getUserReposRequest = GetUserReposRequest.newBuilder(getUserReposRequest)
-                                .setRepoFilterParams(RepoFilterParams.newBuilder()
-                                                         .setUserName(scmGitProviderHelper.getRepoOwner(scmConnector))
-                                                         .setRepoName(repoFilterParamsDTO.getRepoName())
-                                                         .build())
-                                .build();
+      if (isNotEmpty(repoFilterParamsDTO.getRepoName())) {
+        if (scmConnector instanceof GithubConnectorDTO) {
+          getUserReposRequest =
+              GetUserReposRequest.newBuilder(getUserReposRequest)
+                  .setRepoFilterParams(RepoFilterParams.newBuilder()
+                                           .setRepoName(repoFilterParamsDTO.getRepoName())
+                                           .setUserName(scmGitProviderHelper.getRepoOwner(scmConnector))
+                                           .build())
+                  .build();
+        } else {
+          getUserReposRequest =
+              GetUserReposRequest.newBuilder(getUserReposRequest)
+                  .setRepoFilterParams(
+                      RepoFilterParams.newBuilder().setRepoName(repoFilterParamsDTO.getRepoName()).build())
+                  .build();
+        }
+      }
     }
     return getUserReposRequest;
+  }
+
+  private ListBranchesWithDefaultRequest buildListBranchesWithDefaultRequest(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, BranchFilterParamsDTO branchFilterParamsDTO) {
+    final String slug = scmGitProviderHelper.getSlug(scmConnector);
+    final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    int pageNumber = 1;
+    ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
+        ListBranchesWithDefaultRequest.newBuilder()
+            .setSlug(slug)
+            .setProvider(provider)
+            .setPagination(PageRequest.newBuilder().setPage(pageNumber).setSize(pageRequest.getPageSize()).build())
+            .build();
+    if (branchFilterParamsDTO != null) {
+      if (isNotEmpty(branchFilterParamsDTO.getBranchName())) {
+        listBranchesWithDefaultRequest =
+            ListBranchesWithDefaultRequest.newBuilder(listBranchesWithDefaultRequest)
+                .setBranchFilterParams(
+                    BranchFilterParams.newBuilder().setBranchName(branchFilterParamsDTO.getBranchName()).build())
+                .build();
+      }
+    }
+    return listBranchesWithDefaultRequest;
   }
 }

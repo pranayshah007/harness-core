@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.connector.helper;
+package io.harness.delegate.task.git;
 
 import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
 import static io.harness.rule.OwnerRule.SOURABH;
@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.task.git.GitAuthenticationDecryptionHelper;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;

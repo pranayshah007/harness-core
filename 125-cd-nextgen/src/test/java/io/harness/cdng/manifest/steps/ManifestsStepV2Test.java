@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -162,7 +163,7 @@ public class ManifestsStepV2Test extends CategoryTest {
                              .build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
-    doReturn(logCallback).when(serviceStepsHelper).getServiceLogCallback(any());
+    doReturn(logCallback).when(serviceStepsHelper).getServiceLogCallback(any(), anyBoolean(), anyString());
   }
 
   @After

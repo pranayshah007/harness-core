@@ -1515,6 +1515,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Override
   public void updateGitDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams) {
+    validateRepo(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, updateGitDetailsParams);
     Criteria templateCriteria = Criteria.where(TemplateEntityKeys.accountId)
                                     .is(accountIdentifier)
                                     .and(TemplateEntityKeys.orgIdentifier)
@@ -1696,5 +1698,34 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return governanceService.evaluateGovernancePoliciesForTemplate(templateEntity.getYaml(),
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
         OpaConstants.OPA_EVALUATION_ACTION_SAVE, OpaConstants.OPA_EVALUATION_TYPE_TEMPLATE);
+  }
+
+  private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams) {
+    if (isEmpty(updateGitDetailsParams.getRepoName())) {
+      return;
+    }
+
+    String connectorRef = updateGitDetailsParams.getConnectorRef();
+    if (isEmpty(connectorRef)) {
+      Optional<TemplateEntity> optionalTemplateEntity = get(
+          accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, false, false);
+      checkIfTemplateIsPresent(
+          accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, optionalTemplateEntity);
+
+      connectorRef = optionalTemplateEntity.get().getConnectorRef();
+    }
+
+    gitAwareEntityHelper.validateRepo(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, updateGitDetailsParams.getRepoName());
+  }
+
+  private void checkIfTemplateIsPresent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, Optional<TemplateEntity> optionalTemplateEntity) {
+    if (!optionalTemplateEntity.isPresent()) {
+      throw new InvalidRequestException(
+          format("Template with identifier [%s] under Project[%s], Organization [%s], Account [%s] does not exist.",
+              templateIdentifier, projectIdentifier, orgIdentifier, accountIdentifier));
+    }
   }
 }

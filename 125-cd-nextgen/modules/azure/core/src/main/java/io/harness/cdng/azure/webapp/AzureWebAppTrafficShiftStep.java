@@ -99,8 +99,9 @@ public class AzureWebAppTrafficShiftStep extends CdTaskExecutable<AzureWebAppTas
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<AzureWebAppTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<AzureWebAppTaskResponse> responseDataSupplier)
+      throws Exception {
     StepResponseBuilder builder = StepResponse.builder();
 
     AzureWebAppTaskResponse response;

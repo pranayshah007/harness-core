@@ -8,6 +8,7 @@
 package io.harness.ccm.graphql.dto.recommendation;
 
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 
 import software.wings.graphql.datafetcher.ce.recommendation.entity.ContainerRecommendation;
 import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
@@ -28,4 +29,5 @@ public class WorkloadRecommendationDTO implements RecommendationDetailsDTO {
   List<ContainerHistogramDTO> items;
   Cost lastDayCost;
   CCMJiraDetails jiraDetails;
+  CCMServiceNowDetails serviceNowDetails;
 }

@@ -13,6 +13,7 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIR
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDE_IN_REVERSE_PRIORITY;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_OVERRIDES;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -164,7 +165,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance, logCallback);
 
     List<String> callbackIds = new ArrayList<>();
@@ -222,7 +224,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Deprecated // Can be removed with next releases
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance, logCallback);
 
     manifestsOutcome.ifPresent(outcome -> saveManifestsOutcome(ambiance, outcome, new HashMap<>()));
@@ -337,6 +340,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
                                                       .map(ManifestConfigWrapper::getManifest)
                                                       .map(ManifestConfig::getSpec)
                                                       .collect(Collectors.toList());
+
+    // rendering expressions with mode RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED to keep step group overrides as it is
+    // these will be rendered by each step
     cdExpressionResolver.updateExpressions(ambiance, manifestAttributes);
 
     if (isOverridesV2Enabled) {

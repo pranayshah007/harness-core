@@ -40,7 +40,6 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.IssuedBy;
@@ -60,6 +59,7 @@ import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.ResolveInputYamlType;
+import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.plan.execution.ModuleInfoOperators;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -392,7 +392,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
 
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
-      addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
+      PMSPipelineServiceHelper.addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineLabels())) {
       addPipelineLabelsCriteria(criteria, pipelineFilter.getPipelineLabels());
@@ -417,18 +417,6 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   private void populatePipelineFilterOROperator(
       Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, List<Criteria> criteriaList) {
     populatePipelineFilterParametrisedOperatorOnModules(criteria, pipelineFilter, ModuleInfoOperators.OR, criteriaList);
-  }
-
-  private void addPipelineTagsCriteria(Criteria criteria, List<NGTag> pipelineTags) {
-    List<String> tags = new ArrayList<>();
-    pipelineTags.forEach(o -> {
-      tags.add(o.getKey());
-      tags.add(o.getValue());
-    });
-    Criteria tagsCriteria = new Criteria();
-    tagsCriteria.orOperator(
-        where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
-    criteria.andOperator(tagsCriteria);
   }
 
   private void addPipelineLabelsCriteria(Criteria criteria, List<NGLabel> pipelineLabels) {

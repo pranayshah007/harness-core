@@ -103,7 +103,7 @@ public class NoOpGitAwarePersistenceImpl implements GitAwarePersistence {
 
   @Override
   public <B extends GitSyncableEntity, Y extends YamlDTO> List<B> find(@NotNull Criteria criteria, Pageable pageable,
-      String projectIdentifier, String orgIdentifier, String accountId, Class<B> entityClass) {
+      String projectIdentifier, String orgIdentifier, String accountId, Class<B> entityClass, boolean useCollation) {
     Query query = new Query(criteria).with(pageable);
     return mongoTemplate.find(query, entityClass);
   }

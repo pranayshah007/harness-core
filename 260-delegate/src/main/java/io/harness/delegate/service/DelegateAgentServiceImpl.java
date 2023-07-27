@@ -426,6 +426,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private double maxPodRSSThresholdMB;
   private final AtomicBoolean rejectRequest = new AtomicBoolean(false);
 
+  private final String defaultJREVersion = "11.0.19+7";
+
   public static Optional<String> getDelegateId() {
     return Optional.ofNullable(delegateId);
   }
@@ -1686,8 +1688,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         // resetting version matched timestamp
         messageService.putData(WATCHER_DATA, WATCHER_HEARTBEAT, clock.millis());
         watcherVersionMatchedAt = clock.millis();
+        final String jreVersion = getWatcherJREVersion();
         StartedProcess newWatcher = new ProcessExecutor()
-                                        .command("nohup", "./start.sh")
+                                        .command("nohup", "./start.sh", "", "", jreVersion)
                                         .redirectError(Slf4jStream.of("RestartWatcherScript").asError())
                                         .redirectOutput(Slf4jStream.of("RestartWatcherScript").asInfo())
                                         .readOutput(true)
@@ -1703,6 +1706,23 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.error("Error restarting watcher {}", watcherProcess, e);
       }
     }
+  }
+
+  private String getWatcherJREVersion() {
+    try {
+      if (multiVersion) {
+        RestResponse<String> restResponse = ManagerCallHelper.executeRestCall(
+            delegateAgentManagerClient.getJREVersion(delegateConfiguration.getAccountId(), false),
+            this::handleErrorResponse);
+        if (restResponse != null && !isEmpty(restResponse.getResource())) {
+          return restResponse.getResource();
+        }
+      }
+    } catch (Exception ex) {
+      log.warn("Failed to fetch jre version from Manager ", ex);
+    }
+    // for smp it will return empty and take default value defined above
+    return defaultJREVersion;
   }
 
   private boolean downloadRunScriptsForWatcher(String version) {

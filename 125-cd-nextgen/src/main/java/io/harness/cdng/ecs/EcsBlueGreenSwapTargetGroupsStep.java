@@ -89,8 +89,9 @@ public class EcsBlueGreenSwapTargetGroupsStep extends CdTaskExecutable<EcsComman
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<EcsCommandResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<EcsCommandResponse> responseDataSupplier)
+      throws Exception {
     StepResponse stepResponse = null;
     try {
       EcsBlueGreenSwapTargetGroupsResponse ecsBlueGreenSwapTargetGroupsResponse =

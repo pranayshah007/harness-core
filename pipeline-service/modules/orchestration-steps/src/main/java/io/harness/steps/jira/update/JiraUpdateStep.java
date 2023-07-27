@@ -26,6 +26,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.execution.step.jira.update.JiraUpdateStepExecutionDetails;
 import io.harness.jira.JiraActionNG;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -94,7 +95,8 @@ public class JiraUpdateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
             .delegateSelectors(
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()));
     return jiraStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
-        specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(), "Jira Task: Update Issue");
+        specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(), "Jira Task: Update Issue",
+        TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
   }
 
   @Override

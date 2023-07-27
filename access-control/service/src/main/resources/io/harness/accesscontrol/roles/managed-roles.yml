@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 55
+version: 56
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -158,6 +158,13 @@ roles:
         - chaos_chaossecuritygovernance_edit
         - chaos_chaossecuritygovernance_delete
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_token_create
+        - cet_token_revoke
+        - cet_criticalevent_view
+        - cet_criticalevent_create
+        - cet_criticalevent_delete
       allowedScopeLevels:
         - project
       managed: true
@@ -213,6 +220,9 @@ roles:
         - code_repo_view
         - servicediscovery_networkmap_view
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_criticalevent_view
       allowedScopeLevels:
         - project
       managed: true
@@ -378,6 +388,13 @@ roles:
         - chaos_chaossecuritygovernance_edit
         - chaos_chaossecuritygovernance_delete
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_token_create
+        - cet_token_revoke
+        - cet_criticalevent_view
+        - cet_criticalevent_create
+        - cet_criticalevent_delete
       allowedScopeLevels:
         - organization
       managed: true
@@ -435,6 +452,9 @@ roles:
         - code_repo_view
         - servicediscovery_networkmap_view
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_criticalevent_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -646,6 +666,13 @@ roles:
         - chaos_chaossecuritygovernance_edit
         - chaos_chaossecuritygovernance_delete
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_token_create
+        - cet_token_revoke
+        - cet_criticalevent_view
+        - cet_criticalevent_create
+        - cet_criticalevent_delete
       allowedScopeLevels:
         - account
       managed: true
@@ -719,6 +746,9 @@ roles:
         - code_repo_view
         - servicediscovery_networkmap_view
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_criticalevent_view
       allowedScopeLevels:
         - account
       managed: true

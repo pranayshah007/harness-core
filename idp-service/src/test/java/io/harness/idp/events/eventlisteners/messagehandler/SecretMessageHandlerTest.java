@@ -62,9 +62,11 @@ public class SecretMessageHandlerTest extends CategoryTest {
                     .setData(entityChangeDTO.toByteString())
                     .build())
             .build();
-    doNothing().when(backstageEnvVariableService).processSecretUpdate(any());
+
     secretMessageHandler.handleMessage(message, entityChangeDTO, DELETE_ACTION);
     secretMessageHandler.handleMessage(message, entityChangeDTO, UPDATE_ACTION);
+
     verify(backstageEnvVariableService).processSecretUpdate(entityChangeDTO);
+    verify(backstageEnvVariableService).processSecretDelete(entityChangeDTO);
   }
 }

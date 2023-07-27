@@ -29,7 +29,6 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
@@ -63,7 +62,6 @@ import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
@@ -152,7 +150,6 @@ public class InfrastructureResource {
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private final SshEntityHelper sshEntityHelper;
-  private final NGFeatureFlagHelperService featureFlagHelperService;
   private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
 
   public static final String INFRA_PARAM_MESSAGE = "Infrastructure Identifier for the entity";
@@ -216,7 +213,7 @@ public class InfrastructureResource {
     InfrastructureEntity infrastructureEntity =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
     validateDeploymentTypeSpecificInfrastructureYaml(infrastructureEntity);
-    validateProjectLevelInfraScope(infrastructureEntity, accountId);
+    validateProjectLevelInfraScope(infrastructureEntity);
 
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(), accountId);
@@ -244,17 +241,12 @@ public class InfrastructureResource {
       @Parameter(description = "Details of the Infrastructures to be created")
       @Valid List<InfrastructureRequestDTO> infrastructureRequestDTOS) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTOS);
-    boolean isInfraScoped = checkFeatureFlagForEnvOrgAccountLevel(accountId);
     infrastructureRequestDTOS.forEach(dto -> infrastructureYamlSchemaHelper.validateSchema(accountId, dto.getYaml()));
     List<InfrastructureEntity> entities = infrastructureRequestDTOS.stream()
                                               .map(dto -> InfrastructureMapper.toInfrastructureEntity(accountId, dto))
                                               .collect(Collectors.toList());
     entities.forEach(entity -> {
-      if (isInfraScoped) {
-        validateProjectLevelInfraScope(entity);
-      } else {
-        mustBeAtProjectLevel(entity);
-      }
+      validateProjectLevelInfraScope(entity);
       orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
           entity.getOrgIdentifier(), entity.getProjectIdentifier(), accountId);
       environmentValidationHelper.checkThatEnvExists(
@@ -315,7 +307,7 @@ public class InfrastructureResource {
     infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-    validateProjectLevelInfraScope(infrastructureEntity, accountId);
+    validateProjectLevelInfraScope(infrastructureEntity);
 
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(), accountId);
@@ -349,7 +341,7 @@ public class InfrastructureResource {
     infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
-    validateProjectLevelInfraScope(infrastructureEntity, accountId);
+    validateProjectLevelInfraScope(infrastructureEntity);
 
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureEntity.getOrgIdentifier(), infrastructureEntity.getProjectIdentifier(), accountId);
@@ -552,24 +544,6 @@ public class InfrastructureResource {
     }
   }
 
-  private void validateProjectLevelInfraScope(InfrastructureEntity entity, String accountId) {
-    try {
-      if (checkFeatureFlagForEnvOrgAccountLevel(accountId)) {
-        if (isNotEmpty(entity.getProjectIdentifier())) {
-          Preconditions.checkArgument(isNotEmpty(entity.getOrgIdentifier()),
-              "org identifier must be specified when project identifier is specified. Infra can be created at Project/Org/Account scope");
-        }
-      } else {
-        Preconditions.checkArgument(isNotEmpty(entity.getOrgIdentifier()),
-            "org identifier must be specified. Infrastructure Definitions can only be created at Project scope");
-        Preconditions.checkArgument(isNotEmpty(entity.getProjectIdentifier()),
-            "project identifier must be specified. Infrastructure Definitions can only be created at Project scope");
-      }
-    } catch (Exception ex) {
-      throw new InvalidRequestException(ex.getMessage());
-    }
-  }
-
   private void validateProjectLevelInfraScope(InfrastructureEntity entity) {
     try {
       if (isNotEmpty(entity.getProjectIdentifier())) {
@@ -579,20 +553,5 @@ public class InfrastructureResource {
     } catch (Exception ex) {
       throw new InvalidRequestException(ex.getMessage());
     }
-  }
-
-  private void mustBeAtProjectLevel(InfrastructureEntity requestDTO) {
-    try {
-      Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
-          "org identifier must be specified. Infrastructure Definitions can only be created at Project scope");
-      Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
-          "project identifier must be specified. Infrastructure Definitions can only be created at Project scope");
-    } catch (Exception ex) {
-      throw new InvalidRequestException(ex.getMessage());
-    }
-  }
-
-  private boolean checkFeatureFlagForEnvOrgAccountLevel(String accountId) {
-    return featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_OrgAccountLevelServiceEnvEnvGroup);
   }
 }

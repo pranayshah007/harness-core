@@ -111,4 +111,5 @@ public final class EventsFrameworkMetadataConstants {
   public static final String ASYNC_CATALOG_IMPORT_ENTITY = "asyncCatalogImport";
 
   public static final String CD_ACCOUNT_EXECUTION_METADATA = "cdAccountExecutionMetadata";
+  public static final String DEPLOYMENT_ACCOUNTS = "DeploymentAccounts";
 }

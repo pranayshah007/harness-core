@@ -70,6 +70,7 @@ import io.harness.queueservice.infc.DelegateCapacityManagementService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateRingService;
 
 import software.wings.beans.Account;
 import software.wings.beans.dto.ThirdPartyApiCallLog;
@@ -139,6 +140,8 @@ public class DelegateAgentResource {
   private DelegatePollingHeartbeatService delegatePollingHeartbeatService;
   private DelegateCapacityManagementService delegateCapacityManagementService;
 
+  private DelegateRingService delegateRingService;
+
   @Inject
   public DelegateAgentResource(DelegateService delegateService, AccountService accountService, HPersistence persistence,
       SubdomainUrlHelperIntfc subdomainUrlHelper, ArtifactCollectionResponseHandler artifactCollectionResponseHandler,
@@ -148,7 +151,7 @@ public class DelegateAgentResource {
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
       InstanceSyncResponsePublisher instanceSyncResponsePublisher,
       DelegatePollingHeartbeatService delegatePollingHeartbeatService,
-      DelegateCapacityManagementService delegateCapacityManagementService) {
+      DelegateCapacityManagementService delegateCapacityManagementService, DelegateRingService delegateRingService) {
     this.instanceHelper = instanceHelper;
     this.delegateService = delegateService;
     this.accountService = accountService;
@@ -165,6 +168,7 @@ public class DelegateAgentResource {
     this.instanceSyncResponsePublisher = instanceSyncResponsePublisher;
     this.delegatePollingHeartbeatService = delegatePollingHeartbeatService;
     this.delegateCapacityManagementService = delegateCapacityManagementService;
+    this.delegateRingService = delegateRingService;
   }
 
   @DelegateAuth
@@ -190,6 +194,24 @@ public class DelegateAgentResource {
 
       return null;
     }
+  }
+
+  @DelegateAuth
+  @GET
+  @Path("jreVersion")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<String> getJREVersion(
+      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("isDelegate") boolean isDelegate) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      String jreVersion = delegateRingService.getJREVersion(accountId, isDelegate);
+      if (isNotEmpty(jreVersion)) {
+        return new RestResponse<>(jreVersion);
+      }
+    } catch (Exception ex) {
+      log.error("Unable to fetch jre version from ring for accountId {}", accountId, ex);
+    }
+    return null;
   }
 
   @DelegateAuth

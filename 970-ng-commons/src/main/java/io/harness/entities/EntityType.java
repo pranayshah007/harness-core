@@ -633,7 +633,9 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.AWS_CDK_BOOTSTRAP, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_BOOTSTRAP),
   @JsonProperty(EntityTypeConstants.AWS_CDK_SYNTH)
   AWS_CDK_SYNTH(
-      ModuleType.CD, EntityTypeConstants.AWS_CDK_SYNTH, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_SYNTH);
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_SYNTH, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_SYNTH),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_DIFF)
+  AWS_CDK_DIFF(ModuleType.CD, EntityTypeConstants.AWS_CDK_DIFF, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DIFF);
 
   private final ModuleType moduleType;
   String yamlName;

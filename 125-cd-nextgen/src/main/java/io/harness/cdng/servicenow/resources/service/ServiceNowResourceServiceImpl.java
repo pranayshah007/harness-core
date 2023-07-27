@@ -240,7 +240,7 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new ServiceNowException("Unexpected error during authentication to ServiceNow server "
                 + remoteMethodReturnValueData.getReturnValue(),
@@ -292,7 +292,6 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
         .accountId(baseNGAccess.getAccountIdentifier())
         .taskType(NGTaskType.SERVICENOW_TASK_NG.name())
         .taskParameters(taskNGParameters)
-        .taskSelectors(taskNGParameters.getDelegateSelectors())
         .executionTimeout(TIMEOUT)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .build();

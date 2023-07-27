@@ -10,6 +10,7 @@ package io.harness.service;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.RepoFilterParamsDTO;
@@ -101,6 +102,8 @@ public interface ScmServiceClient {
 
   ListBranchesWithDefaultResponse listBranchesWithDefault(
       ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub);
+  ListBranchesWithDefaultResponse listBranchesWithDefault(ScmConnector scmConnector, PageRequestDTO pageRequest,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, BranchFilterParamsDTO branchFilterParamsDTO);
 
   ListCommitsResponse listCommits(ScmConnector scmConnector, String branch, SCMGrpc.SCMBlockingStub scmBlockingStub);
 

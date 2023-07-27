@@ -80,8 +80,9 @@ public class ElastigroupDeployStep extends CdTaskExecutable<ElastigroupDeployTas
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<ElastigroupDeployTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<ElastigroupDeployTaskResponse> responseDataSupplier)
+      throws Exception {
     ElastigroupDeployTaskResponse taskResponse;
     try {
       taskResponse = responseDataSupplier.get();

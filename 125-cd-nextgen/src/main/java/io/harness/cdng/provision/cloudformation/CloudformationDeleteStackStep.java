@@ -98,8 +98,9 @@ public class CloudformationDeleteStackStep extends CdTaskExecutable<Cloudformati
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<CloudformationTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<CloudformationTaskNGResponse> responseDataSupplier)
+      throws Exception {
     log.info("Handling Task Result With Security Context for the DeleteStack Step");
     StepResponseBuilder builder = StepResponse.builder();
     CloudformationTaskNGResponse response = responseDataSupplier.get();

@@ -191,7 +191,7 @@ public class JiraResourceServiceImpl implements JiraResourceService {
     } else if (responseData instanceof RemoteMethodReturnValueData) {
       RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
       if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
-        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+        throw (InvalidRequestException) (remoteMethodReturnValueData.getException());
       } else {
         throw new HarnessJiraException(
             "Unexpected error during authentication to JIRA server " + remoteMethodReturnValueData.getReturnValue(),
@@ -243,7 +243,6 @@ public class JiraResourceServiceImpl implements JiraResourceService {
         .accountId(baseNGAccess.getAccountIdentifier())
         .taskType(NGTaskType.JIRA_TASK_NG.name())
         .taskParameters(taskNGParameters)
-        .taskSelectors(taskNGParameters.getDelegateSelectors())
         .executionTimeout(TIMEOUT)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .build();

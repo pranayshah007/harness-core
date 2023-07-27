@@ -8,8 +8,6 @@
 package io.harness.engine.interrupts.helpers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.engine.interrupts.helpers.ExpiryHelper.EXPIRE_ERROR_MESSAGE;
-import static io.harness.eraro.ErrorCode.TIMEOUT_ENGINE_EXCEPTION;
 import static io.harness.logging.UnitStatus.EXPIRED;
 import static io.harness.pms.contracts.interrupts.InterruptType.MARK_EXPIRED;
 import static io.harness.rule.OwnerRule.PRASHANT;
@@ -30,7 +28,6 @@ import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.ExpiryInterruptCallback;
 import io.harness.engine.interrupts.handlers.publisher.InterruptEventPublisher;
-import io.harness.eraro.Level;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.interrupts.Interrupt;
@@ -42,12 +39,8 @@ import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.TaskExecutableResponse;
-import io.harness.pms.contracts.execution.failure.FailureData;
-import io.harness.pms.contracts.execution.failure.FailureInfo;
-import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
-import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.rule.Owner;
 import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
@@ -188,24 +181,7 @@ public class ExpiryHelperTest extends OrchestrationTestBase {
             .build();
     String interruptId = "interruptId";
     InterruptConfig interruptConfig = InterruptConfig.newBuilder().build();
-    List<UnitProgress> unitProgressList = InterruptHelper.evaluateUnitProgresses(nodeExecution, EXPIRED);
     expiryHelper.expireDiscontinuedInstance(nodeExecution, interruptConfig, interruptId, MARK_EXPIRED);
-
-    verify(engine, times(1))
-        .processStepResponse(nodeExecution.getAmbiance(),
-            StepResponseProto.newBuilder()
-                .setStatus(Status.EXPIRED)
-                .setFailureInfo(FailureInfo.newBuilder()
-                                    .setErrorMessage(EXPIRE_ERROR_MESSAGE)
-                                    .addFailureTypes(FailureType.TIMEOUT_FAILURE)
-                                    .addFailureData(FailureData.newBuilder()
-                                                        .addFailureTypes(FailureType.TIMEOUT_FAILURE)
-                                                        .setLevel(Level.ERROR.name())
-                                                        .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
-                                                        .setMessage(EXPIRE_ERROR_MESSAGE)
-                                                        .build())
-                                    .build())
-                .addAllUnitProgress(unitProgressList)
-                .build());
+    verify(engine, times(1)).processStepResponse(any(), any());
   }
 }

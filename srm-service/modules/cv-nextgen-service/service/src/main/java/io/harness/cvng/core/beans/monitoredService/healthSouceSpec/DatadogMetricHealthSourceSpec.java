@@ -104,7 +104,7 @@ public class DatadogMetricHealthSourceSpec extends MetricHealthSourceSpec {
   public void validate() {
     super.validate();
     Map<String, Boolean> validQueriesMap =
-        metricDefinitions.stream().collect(Collectors.toMap(DatadogMetricHealthDefinition::getMetric,
+        metricDefinitions.stream().collect(Collectors.toMap(DatadogMetricHealthDefinition::getIdentifier,
             datadogMetricHealthDefinition -> DatadogQueryUtils.isValidQuery(datadogMetricHealthDefinition.getQuery())));
     if (validQueriesMap.containsValue(false)) {
       throw new BadRequestException("Invalid Query : " + validQueriesMap);

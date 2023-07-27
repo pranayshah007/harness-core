@@ -138,6 +138,7 @@ public class VmInitializeTaskParamsBuilder {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String poolId;
     List<String> fallbackPoolIds = new ArrayList<>();
+    vmInitializeUtils.validateDebug(hostedVmInfraYaml, ambiance);
     if (isBareMetalEnabled(accountId, hostedVmInfraYaml.getSpec().getPlatform(), initializeStepInfo)) {
       poolId = getHostedBareMetalPoolId(hostedVmInfraYaml.getSpec().getPlatform());
       fallbackPoolIds.add(getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId));
@@ -164,7 +165,7 @@ public class VmInitializeTaskParamsBuilder {
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
     validateInfrastructure(infrastructure);
-
+    vmInitializeUtils.validateDebug(infrastructure, ambiance);
     VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
     String poolId = getPoolName(vmPoolYaml);
     return getVmInitializeParams(initializeStepInfo, ambiance, poolId, Collections.emptyList());

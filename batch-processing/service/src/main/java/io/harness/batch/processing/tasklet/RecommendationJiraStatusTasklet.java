@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.dao.recommendation.AzureRecommendationDAO;
@@ -24,8 +25,11 @@ import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.jira.CCMJiraUtils;
+import io.harness.ccm.serviceNow.CCMServiceNowHelper;
+import io.harness.ccm.serviceNow.CCMServiceNowUtils;
 import io.harness.ccm.views.dao.RuleExecutionDAO;
 import io.harness.jira.JiraIssueNG;
+import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.timescaledb.tables.pojos.CeRecommendations;
 
 import java.time.temporal.ChronoUnit;
@@ -45,6 +49,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @OwnedBy(CE)
 public class RecommendationJiraStatusTasklet implements Tasklet {
   @Autowired private CCMJiraHelper jiraHelper;
+  @Autowired private CCMServiceNowHelper serviceNowHelper;
+  @Autowired private CCMServiceNowUtils serviceNowUtils;
   @Autowired private K8sRecommendationDAO k8sRecommendationDAO;
   @Autowired private ECSRecommendationDAO ecsRecommendationDAO;
   @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
@@ -120,7 +126,83 @@ public class RecommendationJiraStatusTasklet implements Tasklet {
         }
       }
     }
+
+    try {
+      int servicenowRecommendationsCount =
+          k8sRecommendationDAO.fetchRecommendationsCount(accountId, getValidRecommendationWithServicenowTicketFilter());
+      for (long offset = 0; offset < servicenowRecommendationsCount; offset += BATCH_SIZE) {
+        List<CeRecommendations> ceRecommendationsList = k8sRecommendationDAO.fetchRecommendationsOverview(
+            accountId, getValidRecommendationWithServicenowTicketFilter(), offset, BATCH_SIZE);
+        updateServicenowTicketStatus(accountId, ceRecommendationsList);
+      }
+
+    } catch (Exception e) {
+      log.warn("Error in updating status of servicenow tickets. error: {}", e.getMessage());
+    }
     return null;
+  }
+
+  private void updateServicenowTicketStatus(String accountId, List<CeRecommendations> ceRecommendationsList) {
+    for (CeRecommendations recommendation : ceRecommendationsList) {
+      ServiceNowTicketNG serviceNowTicketNG;
+      CCMServiceNowDetails serviceNowDetails;
+      try {
+        serviceNowTicketNG = serviceNowHelper.getIssue(accountId, recommendation.getServicenowconnectorref(),
+            recommendation.getServicenowtickettype(), recommendation.getServicenowissuekey());
+        serviceNowDetails = CCMServiceNowDetails.builder()
+                                .connectorRef(recommendation.getServicenowconnectorref())
+                                .serviceNowTicket(serviceNowTicketNG)
+                                .build();
+      } catch (Exception e) {
+        log.warn("Couldn't fetch recommendation servicenow ticket for recommendationId: {}, error: {}",
+            recommendation.getId(), e);
+        continue;
+      }
+      try {
+        String status = serviceNowUtils.getStatus(serviceNowTicketNG);
+        if (!Objects.equals(recommendation.getServicenowstatus(), status)) {
+          // updates in timescale
+          k8sRecommendationDAO.updateServicenowDetailsInTimescale(recommendation.getId(),
+              recommendation.getServicenowconnectorref(), recommendation.getServicenowtickettype(),
+              recommendation.getServicenowissuekey(), status);
+
+          // updates in mongo
+          switch (ResourceType.valueOf(recommendation.getResourcetype())) {
+            case NODE_POOL:
+              k8sRecommendationDAO.updateServicenowDetailsInNodeRecommendation(
+                  accountId, recommendation.getId(), serviceNowDetails);
+              break;
+            case WORKLOAD:
+              k8sRecommendationDAO.updateServicenowDetailsInWorkloadRecommendation(
+                  accountId, recommendation.getId(), serviceNowDetails);
+              break;
+            case ECS_SERVICE:
+              ecsRecommendationDAO.updateServicenowDetailsInECSRecommendation(
+                  accountId, recommendation.getId(), serviceNowDetails);
+              break;
+            case EC2_INSTANCE:
+              ec2RecommendationDAO.updateServicenowDetailsInEC2Recommendation(
+                  accountId, recommendation.getId(), serviceNowDetails);
+              break;
+            case GOVERNANCE:
+              ruleExecutionDAO.updateServicenowDetailsInGovernanceRecommendation(
+                  accountId, recommendation.getId(), serviceNowDetails);
+              break;
+            case AZURE_INSTANCE:
+              azureRecommendationDAO.updateServicenowDetailsInAzureRecommendation(
+                  accountId, recommendation.getId(), serviceNowDetails);
+              break;
+            default:
+              log.warn("Unknown resource type {} for recommendation id {}", recommendation.getResourcetype(),
+                  recommendation.getId());
+          }
+        }
+      } catch (Exception e) {
+        log.warn("Error getting status of servicenow ticket: {}, recommendationId: {}, error: {}",
+            recommendation.getServicenowissuekey(), recommendation.getId(), e);
+        log.info("Servicenow issue fetched: {}", serviceNowTicketNG);
+      }
+    }
   }
 
   private static Condition getValidRecommendationFilter() {
@@ -135,6 +217,20 @@ public class RecommendationJiraStatusTasklet implements Tasklet {
         .and(CE_RECOMMENDATIONS.JIRACONNECTORREF.notIn("", " "))
         .and(CE_RECOMMENDATIONS.JIRAISSUEKEY.isNotNull())
         .and(CE_RECOMMENDATIONS.JIRAISSUEKEY.notIn("", " "));
+  }
+
+  private static Condition getValidRecommendationWithServicenowTicketFilter() {
+    return CE_RECOMMENDATIONS.ISVALID
+        .eq(true)
+        // based on current-gen workload recommendation dataFetcher
+        .and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
+            offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION)))
+        .and(nonDelegate())
+        .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.notEqual("APPLIED"))
+        .and(CE_RECOMMENDATIONS.SERVICENOWCONNECTORREF.isNotNull())
+        .and(CE_RECOMMENDATIONS.SERVICENOWCONNECTORREF.notIn("", " "))
+        .and(CE_RECOMMENDATIONS.SERVICENOWISSUEKEY.isNotNull())
+        .and(CE_RECOMMENDATIONS.SERVICENOWISSUEKEY.notIn("", " "));
   }
 
   private static Condition nonDelegate() {

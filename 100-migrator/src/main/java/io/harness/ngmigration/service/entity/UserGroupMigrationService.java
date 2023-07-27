@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.entity;
+
 import static software.wings.ngmigration.NGMigrationEntityType.USER_GROUP;
 
 import io.harness.annotations.dev.CodePulse;
@@ -158,7 +159,7 @@ public class UserGroupMigrationService extends NgMigrationService {
     UserGroupYamlDTO yamlDTO = UserGroupYamlDTO.builder()
                                    .userGroupDTO(UserGroupDTO.builder()
                                                      .identifier(identifier)
-                                                     .name(userGroup.getName())
+                                                     .name(name)
                                                      .description(userGroup.getDescription())
                                                      .users(userGroup.getMemberIds())
                                                      .accountIdentifier(userGroup.getAccountId())

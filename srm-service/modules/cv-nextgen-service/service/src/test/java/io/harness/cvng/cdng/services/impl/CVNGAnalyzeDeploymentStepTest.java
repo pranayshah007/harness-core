@@ -253,6 +253,7 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
     assertThat(stepExecutionDetail.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
     assertThat(stepExecutionDetail.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceDTO.getIdentifier());
     assertThat(stepExecutionDetail.getPipelineName()).isEqualTo("Mocked Pipeline");
+    assertThat(activity.getUuid()).isEqualTo(stepExecutionDetail.getUuid());
   }
 
   @Test

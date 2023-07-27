@@ -34,8 +34,6 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
 
   @Inject PluginExecutionConfig pluginExecutionConfig;
 
-  @Inject private AwsSamPluginInfoProviderHelper awsSamPluginInfoProviderHelper;
-
   @Inject private DownloadManifestsStepHelper downloadManifestsStepHelper;
 
   @Override

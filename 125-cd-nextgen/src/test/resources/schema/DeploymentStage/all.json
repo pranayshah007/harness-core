@@ -1662,6 +1662,107 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsCdkDiffStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "appPath": {
+              "type": "string"
+            },
+            "commandOptions": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "stackNames": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AwsCdkSynthStepInfo": {
       "allOf": [
         {
@@ -17907,6 +18008,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AwsCdkDiff"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsCdkDiffStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "AwsCdkSynth"
               }
             }
@@ -21337,7 +21454,7 @@
         },
         "versionLabel": {
           "type": "string",
-          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+          "pattern": "^[0-9a-zA-Z][^\\s/&]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"

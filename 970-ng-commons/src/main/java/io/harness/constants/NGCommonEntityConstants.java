@@ -82,6 +82,7 @@ public class NGCommonEntityConstants {
   public static final String SEARCH_TERM = "searchTerm";
   public static final String REPO_NAME_SEARCH_TERM = "repoNameSearchTerm";
   public static final String USER_NAME_SEARCH_TERM = "userNameSearchTerm";
+  public static final String BRANCH_NAME_SEARCH_TERM = "branchNameSearchTerm";
   public static final String USER_ID = "userId";
   public static final String PAGE = "page";
   public static final String PAGE_SIZE = "page_size";

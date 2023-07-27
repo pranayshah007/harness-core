@@ -150,9 +150,13 @@ public class ServiceStepsHelper {
   }
 
   public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
-    return new NGLogCallback(logStreamingStepClientFactory, prepareServiceAmbiance(ambiance), null, shouldOpenStream);
+    return getServiceLogCallback(prepareServiceAmbiance(ambiance), shouldOpenStream, null);
   }
 
+  public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream, String commandUnit) {
+    return new NGLogCallback(
+        logStreamingStepClientFactory, prepareServiceAmbiance(ambiance), commandUnit, shouldOpenStream);
+  }
   private Ambiance prepareServiceAmbiance(Ambiance ambiance) {
     List<Level> levels = ambiance.getLevelsList();
     for (int i = levels.size() - 1; i >= 0; i--) {

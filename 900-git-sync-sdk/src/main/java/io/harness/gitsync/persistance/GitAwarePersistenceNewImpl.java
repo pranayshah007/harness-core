@@ -241,13 +241,16 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
 
   @Override
   public <B extends GitSyncableEntity, Y extends YamlDTO> List<B> find(Criteria criteria, Pageable pageable,
-      String projectIdentifier, String orgIdentifier, String accountId, Class<B> entityClass) {
+      String projectIdentifier, String orgIdentifier, String accountId, Class<B> entityClass, boolean useCollation) {
     final Criteria gitSyncCriteria = getCriteriaWithGitSync(projectIdentifier, orgIdentifier, accountId, entityClass);
     List<Criteria> criteriaList = Arrays.asList(criteria, gitSyncCriteria);
     Query query = new Query()
                       .addCriteria(new Criteria().andOperator(criteriaList.toArray(new Criteria[criteriaList.size()])))
                       .with(pageable);
-    query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
+    // adding collation as per list requirements
+    if (useCollation) {
+      query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
+    }
     return mongoTemplate.find(query, entityClass);
   }
 

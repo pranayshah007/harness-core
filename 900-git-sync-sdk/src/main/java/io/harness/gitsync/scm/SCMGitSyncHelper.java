@@ -6,6 +6,7 @@
  */
 
 package io.harness.gitsync.scm;
+
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -13,10 +14,8 @@ import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 
 import io.harness.EntityType;
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.ScopeIdentifiers;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;
@@ -42,6 +41,8 @@ import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoSe
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.UpdateFileResponse;
+import io.harness.gitsync.ValidateRepoRequest;
+import io.harness.gitsync.ValidateRepoResponse;
 import io.harness.gitsync.common.beans.GitOperation;
 import io.harness.gitsync.common.helper.CacheRequestMapper;
 import io.harness.gitsync.common.helper.ChangeTypeMapper;
@@ -91,7 +92,6 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(DX)
@@ -330,6 +330,27 @@ public class SCMGitSyncHelper {
     }
 
     return prepareScmGetBatchFilesResponse(getBatchFilesResponse);
+  }
+
+  public void validateRepo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repo) {
+    final ValidateRepoResponse validateRepoResponse =
+        GitSyncGrpcClientUtils.retryAndProcessExceptionV2(harnessToGitPushInfoServiceBlockingStub::validateRepo,
+            ValidateRepoRequest.newBuilder()
+                .setScope(ScopeIdentifiers.newBuilder()
+                              .setAccountIdentifier(accountIdentifier)
+                              .setOrgIdentifier(orgIdentifier)
+                              .setProjectIdentifier(projectIdentifier)
+                              .build())
+                .setConnectorRef(connectorRef)
+                .setRepo(repo)
+                .build());
+
+    if (isFailureResponse(validateRepoResponse.getStatusCode())) {
+      log.error("Git SDK validateRepo Failure: {}", validateRepoResponse);
+      scmErrorHandler.processAndThrowException(validateRepoResponse.getStatusCode(),
+          getScmErrorDetailsFromGitProtoResponse(validateRepoResponse.getError()));
+    }
   }
 
   private ScmGetBatchFilesResponse prepareScmGetBatchFilesResponse(GetBatchFilesResponse getBatchFilesResponse) {

@@ -10,7 +10,6 @@ package io.harness.cdng.infra.steps;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -23,7 +22,6 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -99,9 +97,6 @@ public class InfrastructureTaskExecutableStep extends AbstractInfrastructureTask
   }
 
   private void saveInfraExecutionDataToStageInfo(Ambiance ambiance, StepResponse stepResponse) {
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      infrastructureStepHelper.saveInfraExecutionDataToStageInfo(ambiance, stepResponse);
-    }
+    infrastructureStepHelper.saveInfraExecutionDataToStageInfo(ambiance, stepResponse);
   }
 }

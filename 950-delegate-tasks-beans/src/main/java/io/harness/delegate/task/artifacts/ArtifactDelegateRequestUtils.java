@@ -273,7 +273,7 @@ public class ArtifactDelegateRequestUtils {
 
   public BambooArtifactDelegateRequest getBambooDelegateArtifactRequest(String connectorRef,
       BambooConnectorDTO jenkinsConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
-      ArtifactSourceType sourceType, String planKey, List<String> artifactPath, String BuildNumber) {
+      ArtifactSourceType sourceType, String planKey, List<String> artifactPath, String BuildNumber, String buildRegex) {
     return BambooArtifactDelegateRequest.builder()
         .connectorRef(connectorRef)
         .bambooConnectorDTO(jenkinsConnectorDTO)
@@ -282,6 +282,7 @@ public class ArtifactDelegateRequestUtils {
         .planKey(planKey)
         .artifactPaths(artifactPath)
         .buildNumber(BuildNumber)
+        .buildRegex(buildRegex)
         .build();
   }
 

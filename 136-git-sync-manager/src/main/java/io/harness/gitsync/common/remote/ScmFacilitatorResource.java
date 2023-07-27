@@ -24,6 +24,8 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.BranchFilterParameters;
+import io.harness.beans.RepoFilterParameters;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.gitsync.common.YamlConstants;
@@ -38,6 +40,7 @@ import io.harness.gitsync.common.dtos.RepoValidationResponse;
 import io.harness.gitsync.common.dtos.SaasGitDTO;
 import io.harness.gitsync.common.dtos.ScmBatchGetFileRequestDTO;
 import io.harness.gitsync.common.dtos.ScmBatchGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmBranchFilterParams;
 import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetBatchFileRequestIdentifier;
@@ -359,9 +362,18 @@ public class ScmFacilitatorResource {
       @Parameter(description = GitSyncApiConstants.APPLY_GITX_REPO_ALLOW_LIST_FILTER_PARAM_MESSAGE)
       @QueryParam(NGCommonEntityConstants.APPLY_GITX_REPO_ALLOW_LIST_FILTER) @DefaultValue("false")
       boolean applyGitXRepoAllowListFilter, @BeanParam ScmRepoFilterParams scmRepoFilterParams) {
+    RepoFilterParameters repoFilterParameters;
+    if (scmRepoFilterParams == null) {
+      repoFilterParameters = RepoFilterParameters.builder().build();
+    } else {
+      repoFilterParameters = RepoFilterParameters.builder()
+                                 .repoName(scmRepoFilterParams.getRepoName())
+                                 .userName(scmRepoFilterParams.getUserName())
+                                 .build();
+    }
     return ResponseDTO.newResponse(scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier,
         projectIdentifier, connectorRef, PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(),
-        scmRepoFilterParams, applyGitXRepoAllowListFilter));
+        repoFilterParameters, applyGitXRepoAllowListFilter));
   }
 
   @GET
@@ -416,10 +428,17 @@ public class ScmFacilitatorResource {
               + "(max 100)"
               + "Default Value: 50") @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("50") @Max(100)
       int listSize,
-      @Parameter(description = GitSyncApiConstants.SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.SEARCH_TERM) @DefaultValue("") String searchTerm) {
-    return ResponseDTO.newResponse(scmFacilitatorService.listBranchesV2(accountIdentifier, orgIdentifier,
-        projectIdentifier, connectorRef, repoName, PageRequest.builder().pageSize(listSize).build(), searchTerm));
+      @BeanParam ScmBranchFilterParams scmBranchFilterParams) {
+    BranchFilterParameters branchFilterParameters;
+    if (scmBranchFilterParams == null) {
+      branchFilterParameters = BranchFilterParameters.builder().build();
+    } else {
+      branchFilterParameters =
+          BranchFilterParameters.builder().branchName(scmBranchFilterParams.getBranchName()).build();
+    }
+    return ResponseDTO.newResponse(
+        scmFacilitatorService.listBranchesV2(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
+            repoName, PageRequest.builder().pageSize(listSize).build(), branchFilterParameters));
   }
 
   @GET

@@ -209,8 +209,9 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<TerraformTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<TerraformTaskNGResponse> responseDataSupplier)
+      throws Exception {
     log.info("Handling Task Result With Security Context for the Rollback Step");
     StepResponse stepResponse = null;
 

@@ -121,6 +121,9 @@ public enum FeatureName {
   CDS_ENABLE_TRIGGER_YAML_VALIDATION("Enables trigger yaml validation", HarnessTeam.SPG),
   CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT(
       "FF for providing the terraform apply json output as a secret", HarnessTeam.CDP),
+  CDS_ENABLE_NEW_PARAMETER_FIELD_PROCESSOR(
+      "FF for turning on new parameterField processor which handles all expression resolution for ParameterField",
+      HarnessTeam.CDC),
   CDS_ENV_PROPAGATION("FF for enabling env infra propagation for CD", HarnessTeam.CDC),
   CDS_GIT_CONFIG_FILES("Enable config files from GIT repositories", HarnessTeam.CDP),
   CDS_HELM_FETCH_CHART_METADATA_NG(
@@ -168,7 +171,6 @@ public enum FeatureName {
       "Support resolution of Objects via JSON Select Command in HTTP Step", HarnessTeam.CDC),
   CDS_SERVERLESS_V2("FF for enabling Serverless 2.0 deployments", HarnessTeam.CDP),
   CDS_SERVICENOW_REFRESH_TOKEN_AUTH("Refresh Token auth support for servicenow connector", HarnessTeam.CDC),
-  CDS_SERVICENOW_TICKET_TYPE_V2("FF to use servicenow ticketTypesV2 endpoint", HarnessTeam.CDC),
   CDS_SERVICENOW_USE_METADATA_V2(
       "Using METADATA_V2 in /metadata (create update) and /createMetadata (approval) API in Servicenow Steps NG; and changing /metadata parsing to manager",
       HarnessTeam.CDC),
@@ -566,6 +568,7 @@ public enum FeatureName {
       "This is to regenerate acls for default account viewer roles", HarnessTeam.PL),
   PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS("Enable removal of user level viewer role assignments", HarnessTeam.PL),
   PL_SUPPORT_JWT_TOKEN_SCIM_API("Enable support for external OAuth JWT token for SCIM API calls", HarnessTeam.PL),
+  PL_UPDATE_CONNECTOR_HEARTBEAT_PPT("To update the perpetualTask", HarnessTeam.PL),
   PL_USER_ACCOUNT_LEVEL_DATA_FLOW(
       "Enables the new flow for all User CRUD where User's Account level Data is also considered.", HarnessTeam.PL),
   PL_USER_ACCOUNT_LEVEL_DATA_MIGRATION(
@@ -707,6 +710,7 @@ public enum FeatureName {
       "Will fire the artifact and manifest triggers for all the versions in the polling response instead of the latest only",
       HarnessTeam.SPG),
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
+  SPG_GC_ALLOW_GRAPHQL_GET_EXECUTIONS_RUNNING("Enables running rollout deployment in graphql", HarnessTeam.SPG),
   SPG_USE_NEW_METADATA("To use new metadata endpoint for jira server version greater than 9.0", HarnessTeam.SPG),
   SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
   SPG_WFE_PROJECTIONS_GRAPHQL_DEPLOYMENTS_PAGE(

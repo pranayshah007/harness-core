@@ -71,6 +71,7 @@ public class BackstageEnvVariableRepositoryCustomImplTest extends CategoryTest {
         BackstageEnvSecretVariableEntity.builder().harnessSecretIdentifier(TEST_SECRET_IDENTIFIER).build();
     envSecretEntity.setAccountIdentifier(TEST_ACCOUNT_IDENTIFIER);
     envSecretEntity.setEnvName(TEST_ENV_NAME);
+    envSecretEntity.setDeleted(false);
     Criteria criteria = Criteria.where(BackstageEnvVariableKeys.accountIdentifier)
                             .is(envSecretEntity.getAccountIdentifier())
                             .and(BackstageEnvVariableKeys.envName)
@@ -78,6 +79,7 @@ public class BackstageEnvVariableRepositoryCustomImplTest extends CategoryTest {
     Query query = new Query(criteria);
     Update update = new Update();
     update.set(BackstageEnvSecretVariableKeys.harnessSecretIdentifier, TEST_SECRET_IDENTIFIER);
+    update.set(BackstageEnvSecretVariableKeys.isDeleted, false);
     when(mongoTemplate.findAndModify(
              eq(query), eq(update), any(FindAndModifyOptions.class), eq(BackstageEnvVariableEntity.class)))
         .thenReturn(envSecretEntity);
@@ -100,6 +102,33 @@ public class BackstageEnvVariableRepositoryCustomImplTest extends CategoryTest {
         .thenReturn(envConfigEntity);
 
     assertEquals(envConfigEntity, envVariableRepoCustomImpl.update(envConfigEntity));
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testUpdateSecretIsDeleted() {
+    BackstageEnvSecretVariableEntity envSecretEntity =
+        BackstageEnvSecretVariableEntity.builder().harnessSecretIdentifier(TEST_SECRET_IDENTIFIER).build();
+    envSecretEntity.setAccountIdentifier(TEST_ACCOUNT_IDENTIFIER);
+    envSecretEntity.setDeleted(true);
+    Criteria criteria = Criteria.where(BackstageEnvVariableKeys.accountIdentifier)
+                            .is(TEST_ACCOUNT_IDENTIFIER)
+                            .and(BackstageEnvSecretVariableKeys.harnessSecretIdentifier)
+                            .is(TEST_SECRET_IDENTIFIER);
+    Query query = new Query(criteria);
+    Update update = new Update();
+    update.set(BackstageEnvSecretVariableKeys.isDeleted, true);
+
+    when(mongoTemplate.findAndModify(
+             eq(query), eq(update), any(FindAndModifyOptions.class), eq(BackstageEnvVariableEntity.class)))
+        .thenReturn(envSecretEntity);
+
+    Optional<BackstageEnvVariableEntity> actualEnvSecretEntityOpt =
+        envVariableRepoCustomImpl.updateSecretIsDeleted(TEST_ACCOUNT_IDENTIFIER, TEST_SECRET_IDENTIFIER, true);
+
+    assertTrue(actualEnvSecretEntityOpt.isPresent());
+    assertEquals(envSecretEntity, actualEnvSecretEntityOpt.get());
   }
 
   @Test

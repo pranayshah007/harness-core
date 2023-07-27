@@ -203,7 +203,7 @@ public class TasSwapRollbackStep extends CdTaskExecutable<CfCommandResponseNG> {
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<CfCommandResponseNG> responseDataSupplier)
       throws Exception {
     StepResponseBuilder builder = StepResponse.builder();

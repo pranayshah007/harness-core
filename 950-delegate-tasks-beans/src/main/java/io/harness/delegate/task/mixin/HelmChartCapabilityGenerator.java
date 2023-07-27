@@ -19,7 +19,6 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
@@ -51,8 +50,7 @@ public class HelmChartCapabilityGenerator {
       GitStoreDelegateConfig gitStoreDelegateConfig =
           (GitStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
       capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),
-          gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+          gitStoreDelegateConfig, gitStoreDelegateConfig.getEncryptedDataDetails()));
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
     }

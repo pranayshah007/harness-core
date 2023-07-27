@@ -187,8 +187,9 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier)
+      throws Exception {
     try {
       FetchInstanceScriptTaskNGResponse response;
       try {

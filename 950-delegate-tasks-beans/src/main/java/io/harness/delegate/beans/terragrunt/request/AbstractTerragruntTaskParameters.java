@@ -58,7 +58,6 @@ public abstract class AbstractTerragruntTaskParameters
   @Expression(ALLOW_SECRETS) StoreDelegateConfig backendFilesStore;
   @Expression(ALLOW_SECRETS) List<StoreDelegateConfig> varFiles;
   EncryptionConfig planSecretManager;
-
   @Expression(ALLOW_SECRETS) List<String> targets;
   @Expression(ALLOW_SECRETS) String workspace;
   @Expression(ALLOW_SECRETS) Map<String, String> envVars;
@@ -115,9 +114,8 @@ public abstract class AbstractTerragruntTaskParameters
   private void addStoreCapabilities(StoreDelegateConfig storeConfig, List<ExecutionCapability> executionCapabilities) {
     if (storeConfig.getType() == StoreDelegateConfigType.GIT) {
       GitStoreDelegateConfig gitStoreConfig = (GitStoreDelegateConfig) storeConfig;
-      executionCapabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ScmConnectorMapper.toGitConfigDTO(gitStoreConfig.getGitConfigDTO()), encryptedDataDetailList,
-          gitStoreConfig.getSshKeySpecDTO()));
+      executionCapabilities.addAll(
+          GitCapabilityHelper.fetchRequiredExecutionCapabilities(gitStoreConfig, encryptedDataDetailList));
     }
   }
 

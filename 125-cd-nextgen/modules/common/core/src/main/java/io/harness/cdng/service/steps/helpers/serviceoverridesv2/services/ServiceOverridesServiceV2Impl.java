@@ -665,7 +665,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
           findAll(addProjectScopeCriteria(accountId, orgId, projectId, criteria));
       if (projectScopedEntity.size() > 1 && logCallback != null) {
         logCallback.saveExecutionLog(
-            "Found more tha one override at project scope. Only one entity will be considered at execution time",
+            "Found more than one override at project scope. Only one entity will be considered at execution time",
             LogLevel.WARN);
       }
       projectScopedEntity.stream().findFirst().ifPresent(
@@ -676,7 +676,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
       List<NGServiceOverridesEntity> orgScopedEntity = findAll(addOrgScopeCriteria(accountId, orgId, criteria));
       if (orgScopedEntity.size() > 1 && logCallback != null) {
         logCallback.saveExecutionLog(
-            "Found more tha one override at org scope. Only one entity will be considered at execution time",
+            "Found more than one override at org scope. Only one entity will be considered at execution time",
             LogLevel.WARN);
       }
       orgScopedEntity.stream().findFirst().ifPresent(overrideEntity -> scopedEntities.put(Scope.ORG, overrideEntity));
@@ -685,7 +685,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     List<NGServiceOverridesEntity> accountScopedEntity = findAll(addAccountScopeCriteria(accountId, criteria));
     if (accountScopedEntity.size() > 1 && logCallback != null) {
       logCallback.saveExecutionLog(
-          "Found more tha one override at account scope. Only one entity will be considered at execution time",
+          "Found more than one override at account scope. Only one entity will be considered at execution time",
           LogLevel.WARN);
     }
     accountScopedEntity.stream().findFirst().ifPresent(

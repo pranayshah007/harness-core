@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.servicev2;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -129,7 +131,8 @@ public interface ServiceV2Mapper {
       return null;
     }
     List<HelmChartConfig> helmCharts = manifests.stream()
-                                           .map(applicationManifest -> applicationManifest.getHelmChartConfig())
+                                           .map(ApplicationManifest::getHelmChartConfig)
+                                           .filter(Objects::nonNull)
                                            .collect(Collectors.toList());
     if (helmCharts.size() <= 1) {
       return null;

@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.utils;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.network.Http.getOkHttpClientBuilder;
@@ -33,6 +34,8 @@ import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
+import io.harness.ngmigration.beans.MigrationInputSettings;
+import io.harness.ngmigration.beans.MigrationInputSettingsType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.ImportDTO;
@@ -88,6 +91,7 @@ import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient.Builder;
 import okhttp3.Request;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
 import org.apache.commons.validator.routines.UrlValidator;
@@ -699,10 +703,12 @@ public class MigratorUtility {
     Map<NGMigrationEntityType, InputDefaults> defaults = new HashMap<>();
     Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
     Map<String, Object> expressions = new HashMap<>();
+    List<MigrationInputSettings> settings = new ArrayList<>();
     if (importDTO.getInputs() != null) {
       overrides = importDTO.getInputs().getOverrides();
       defaults = importDTO.getInputs().getDefaults();
       expressions = importDTO.getInputs().getExpressions();
+      settings = importDTO.getInputs().getSettings();
     }
 
     // We do not want to auto migrate WFs/Pipelines. We want customers to migrate WFs/Pipelines by choice.
@@ -730,6 +736,7 @@ public class MigratorUtility {
         .overrides(overrides)
         .defaults(defaults)
         .customExpressions(expressions)
+        .settings(settings)
         .identifierCaseFormat(
             importDTO.getIdentifierCaseFormat() == null ? CAMEL_CASE : importDTO.getIdentifierCaseFormat())
         .build();
@@ -800,27 +807,47 @@ public class MigratorUtility {
     String timeString = "10m";
 
     long days = TimeUnit.SECONDS.toDays(tSec);
+    boolean isTimeStringChanged = false;
     if (days > 0) {
       timeString = days + "d";
       tSec -= TimeUnit.DAYS.toSeconds(days);
+      isTimeStringChanged = true;
     }
 
     long hours = TimeUnit.SECONDS.toHours(tSec);
     if (hours > 0) {
-      timeString = hours + "h";
+      timeString = (isTimeStringChanged ? timeString + " " : "") + hours + "h";
       tSec -= TimeUnit.HOURS.toSeconds(hours);
+      isTimeStringChanged = true;
     }
 
     long minutes = TimeUnit.SECONDS.toMinutes(tSec);
     if (minutes > 0) {
-      timeString = minutes + "m";
+      timeString = (isTimeStringChanged ? timeString + " " : "") + minutes + "m";
       tSec -= TimeUnit.MINUTES.toSeconds(minutes);
+      isTimeStringChanged = true;
     }
 
     long seconds = tSec;
     if (seconds > 0) {
-      timeString = seconds + "s";
+      timeString = (isTimeStringChanged ? timeString + " " : "") + seconds + "s";
     }
     return timeString;
+  }
+
+  public static String getSettingValue(
+      MigrationInputDTO inputDTO, MigrationInputSettingsType settingsKey, String defaultValue) {
+    List<MigrationInputSettings> migrationInputSettings = inputDTO.getSettings();
+    if (CollectionUtils.isNotEmpty(migrationInputSettings)) {
+      MigrationInputSettings infraSimultaneousDeploySetting =
+          migrationInputSettings.stream()
+              .filter(setting -> setting.getType().equals(settingsKey))
+              .findFirst()
+              .orElse(null);
+      if (infraSimultaneousDeploySetting != null) {
+        return infraSimultaneousDeploySetting.getValue();
+      }
+    }
+    return defaultValue;
   }
 }

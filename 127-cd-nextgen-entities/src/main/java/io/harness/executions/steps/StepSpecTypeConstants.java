@@ -144,4 +144,5 @@ public interface StepSpecTypeConstants {
   String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
   String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
   String AWS_CDK_SYNTH = "AwsCdkSynth";
+  String AWS_CDK_DIFF = "AwsCdkDiff";
 }

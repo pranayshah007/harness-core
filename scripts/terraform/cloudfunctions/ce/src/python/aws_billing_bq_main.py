@@ -15,7 +15,7 @@ from util import create_dataset, if_tbl_exists, createTable, print_, run_batch_q
     PREAGGREGATED, CEINTERNALDATASET, CURRENCYCONVERSIONFACTORUSERINPUT, update_connector_data_sync_status, \
     add_currency_preferences_columns_to_schema, CURRENCY_LIST, BACKUP_CURRENCY_FX_RATES, send_event, \
     flatten_label_keys_in_table, LABELKEYSTOCOLUMNMAPPING, run_bq_query_with_retries, add_msp_markup_column_to_schema,\
-    MSPMARKUP
+    MSPMARKUP, ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE
 from calendar import monthrange
 from google.cloud import bigquery
 from google.cloud import storage
@@ -758,7 +758,9 @@ def ingest_data_to_awscur(jsonData):
 
     desirable_columns = ["resourceid", "usagestartdate", "productname", "productfamily", "servicecode", "servicename", "blendedrate", "blendedcost",
                          "unblendedrate", "unblendedcost", "region", "availabilityzone", "usageaccountid", "instancetype",
-                         "usagetype", "lineitemtype", "effectivecost", "billingentity", "instanceFamily", "marketOption", "usageamount"]
+                         "usagetype", "lineitemtype", "effectivecost", "billingentity", "instancefamily", "marketoption", "usageamount"]
+    if jsonData.get('accountId') in ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE:
+        desirable_columns += ["payeraccountid", "lineitemdescription"]
     available_columns = list(set(desirable_columns) & set(jsonData["available_columns"]))
     select_available_columns = prepare_select_query(jsonData, available_columns)  # passing updated available_columns
     available_columns = ", ".join(f"{w}" for w in available_columns)
@@ -978,6 +980,17 @@ def ingest_data_to_unified(jsonData):
         if additionalColumn.lower() in jsonData["available_columns"]:
             insert_columns = insert_columns + ", aws%s" % additionalColumn
             select_columns = select_columns + ", %s as aws%s" % (additionalColumn, additionalColumn)
+
+    # supporting additional fields in unifiedTable for Elevance
+    if jsonData.get('accountId') in ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE:
+        for additionalColumn in ["payeraccountid", "lineitemdescription", "resourceid",
+                                 "instancefamily", "marketoption", "servicecode", "usageamount"]:
+            if additionalColumn.lower() in jsonData["available_columns"]:
+                insert_columns = insert_columns + ", aws%s%s" % (additionalColumn,
+                                                                 "" if additionalColumn != "servicecode" else "_simplified")
+                select_columns = select_columns + ", %s as aws%s%s" % (additionalColumn,
+                                                                       additionalColumn,
+                                                                       "" if additionalColumn != "servicecode" else "_simplified")
 
     query = """DELETE FROM `%s` WHERE DATE(startTime) >= '%s' AND DATE(startTime) <= '%s'  AND cloudProvider = "AWS"
                     AND awsUsageAccountId IN (%s);

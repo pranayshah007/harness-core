@@ -173,8 +173,9 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<AbstractTerragruntTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<AbstractTerragruntTaskResponse> responseDataSupplier)
+      throws Exception {
     log.info("Handling Task Result With Security Context for Terragrunt Rollback Step");
     StepResponse stepResponse = null;
     List<UnitProgress> unitProgresses = null;

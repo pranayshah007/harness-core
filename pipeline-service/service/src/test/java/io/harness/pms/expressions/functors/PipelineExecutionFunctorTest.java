@@ -168,7 +168,10 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
             .runSequence(32)
             .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
                                       .setTriggerType(TriggerType.WEBHOOK)
-                                      .setTriggeredBy(TriggeredBy.newBuilder().setIdentifier("system").build())
+                                      .setTriggeredBy(TriggeredBy.newBuilder()
+                                                          .setIdentifier("system")
+                                                          .setTriggerIdentifier("triggerIdentifier")
+                                                          .build())
                                       .build())
             .build();
 
@@ -188,6 +191,7 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     Map<String, String> triggeredByMap = (Map<String, String>) response.get("triggeredBy");
     assertNull(triggeredByMap.get("email"));
     assertEquals(triggeredByMap.get("name"), "system");
+    assertEquals(triggeredByMap.get("triggerName"), "triggerIdentifier");
     assertEquals(response.get("resumedExecutionId"),
         pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId());
 
@@ -217,6 +221,7 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     triggeredByMap = (Map<String, String>) response.get("triggeredBy");
     assertEquals(triggeredByMap.get("email"), "admin@harness.io");
     assertEquals(triggeredByMap.get("name"), "Admin");
+    assertNull(triggeredByMap.get("triggerName"));
     Map<String, String> executionMap = (Map<String, String>) response.get("execution");
     assertEquals(executionMap.size(), 1);
     assertEquals(executionMap.get("url"), executionUrl);

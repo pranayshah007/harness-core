@@ -415,7 +415,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
           TemplateEntityKeys.identifier, TemplateEntityKeys.versionLabel);
     }
     List<TemplateEntity> templateEntities = gitAwarePersistence.find(
-        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, TemplateEntity.class);
+        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, TemplateEntity.class, false);
     return PageableExecutionUtils.getPage(templateEntities, pageable,
         ()
             -> gitAwarePersistence.count(

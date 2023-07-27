@@ -60,6 +60,8 @@ import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.UserDetailsRequest;
 import io.harness.gitsync.UserDetailsResponse;
+import io.harness.gitsync.ValidateRepoRequest;
+import io.harness.gitsync.ValidateRepoResponse;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.beans.BranchSyncStatus;
 import io.harness.gitsync.common.beans.GitBranch;
@@ -242,6 +244,30 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                   yamlGitConfigDTO.getOrganizationIdentifier(), yamlGitConfigDTO.getProjectIdentifier(),
                   yamlGitConfigDTO.getIdentifier(), yamlGitConfigDTO.getRepo(), pushInfo.getBranchName(),
                   Arrays.asList(ScmGitUtils.createFilePath(pushInfo.getFolderPath(), pushInfo.getFilePath()))));
+    }
+  }
+
+  @Override
+  public ValidateRepoResponse validateRepo(ValidateRepoRequest validateRepoRequest) {
+    try {
+      scmFacilitatorService.validateRepo(validateRepoRequest.getScope().getAccountIdentifier(),
+          validateRepoRequest.getScope().getOrgIdentifier(), validateRepoRequest.getScope().getProjectIdentifier(),
+          validateRepoRequest.getConnectorRef(), validateRepoRequest.getRepo());
+      return ValidateRepoResponse.newBuilder().setIsValid(true).setStatusCode(HTTP_200).build();
+    } catch (WingsException ex) {
+      ScmException scmException = ScmExceptionUtils.getScmException(ex);
+      if (scmException == null) {
+        return ValidateRepoResponse.newBuilder()
+            .setIsValid(false)
+            .setError(prepareDefaultErrorDetails(ex))
+            .setStatusCode(ex.getCode().getStatus().getCode())
+            .build();
+      }
+      return ValidateRepoResponse.newBuilder()
+          .setIsValid(false)
+          .setError(prepareDefaultErrorDetails(ex))
+          .setStatusCode(ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode()))
+          .build();
     }
   }
 
@@ -513,7 +539,10 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
             .title(createPRRequest.getTitle())
             .build());
 
-    return CreatePRResponse.newBuilder().setStatusCode(200).setPrNumber(scmCreatePRResponseDTO.getPrNumber()).build();
+    return CreatePRResponse.newBuilder()
+        .setStatusCode(HTTP_200)
+        .setPrNumber(scmCreatePRResponseDTO.getPrNumber())
+        .build();
   }
 
   @Override

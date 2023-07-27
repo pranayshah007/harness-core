@@ -213,7 +213,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<TerraformTaskNGResponse> responseSupplier)
       throws Exception {
     log.info("Handling Task result with Security Context for the Plan Step");

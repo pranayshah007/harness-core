@@ -56,6 +56,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
+import io.harness.expression.common.ExpressionConstants;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
@@ -225,5 +226,10 @@ public class TriggerHelper {
     Map<String, String> headerJsonObject = new HashMap<>();
     triggerHeader.forEach(header -> { headerJsonObject.put(header.getKey(), String.join(",", header.getValues())); });
     return headerJsonObject;
+  }
+
+  public boolean isBranchExpr(String pipelineBranch) {
+    return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
+        && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
   }
 }

@@ -53,4 +53,5 @@ public class Constants {
   public static final String SLASH_DELIMITER = "/";
   public static final String SOURCE_FORMAT = "blob";
   public static final String LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES = "LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES";
+  public static final String PLUGIN_REQUEST_NOTIFICATION_SLACK_WEBHOOK = "pluginRequestsNotificationSlack";
 }

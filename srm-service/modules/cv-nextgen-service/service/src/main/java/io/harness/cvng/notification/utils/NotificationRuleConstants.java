@@ -95,13 +95,13 @@ public class NotificationRuleConstants {
 
   public static String SLO_PERFORMANCE_SECTION = "SLO Name: <${SLO_URL}|${SLO_NAME}>\n"
       + "SLO Target: ${SLO_TARGET}%\n"
-      + "Actual SLO 1 hour before: ${PAST_SLO_TARGET}%\n"
-      + "Actual SLO now: ${CURRENT_SLO_TARGET}%\n"
+      + "SLI 1 hour before: ${PAST_SLO_TARGET}%\n"
+      + "SLI now: ${CURRENT_SLO_TARGET}%\n"
       + "Error budget burned: ${ERROR_BUDGET_BURNED} min\n\n";
 
   public static String SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT = "SLO Name: <${SLO_URL}|${SLO_NAME}>\n"
       + "SLO Target: ${SLO_TARGET}%\n"
-      + "Actual SLO at the start of the analysis: ${PAST_SLO_TARGET}%\n"
-      + "Actual SLO at the end of the analysis: ${CURRENT_SLO_TARGET}%\n"
+      + "SLI at the start of the analysis: ${PAST_SLO_TARGET}%\n"
+      + "SLI at the end of the analysis: ${CURRENT_SLO_TARGET}%\n"
       + "Error budget burned: ${ERROR_BUDGET_BURNED} min\n\n";
 }

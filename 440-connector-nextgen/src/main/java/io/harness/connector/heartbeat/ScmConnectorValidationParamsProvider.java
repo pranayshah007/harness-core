@@ -13,7 +13,7 @@ import io.harness.account.AccountClient;
 import io.harness.beans.FeatureName;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
-import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
+import io.harness.connector.task.git.GitAuthenticationDecryptionHelper;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;

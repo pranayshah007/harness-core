@@ -13,6 +13,8 @@ COPY --chown=65534:65534 config.yml /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
+COPY --chown=65534:65534 default.jfc /opt/harness/
+COPY --chown=65534:65534 profile.jfc /opt/harness/
 
 CMD [ "./run.sh" ]
 

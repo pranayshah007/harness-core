@@ -46,7 +46,7 @@ import org.slf4j.Logger;
 @Singleton
 public class ConnectorHeartbeatServiceImpl implements ConnectorHeartbeatService {
   private static final Logger log = org.slf4j.LoggerFactory.getLogger(ConnectorHeartbeatServiceImpl.class);
-  private final long CONNECTIVITY_CHECK_INTERVAL = 10;
+  private final long CONNECTIVITY_CHECK_INTERVAL = 30;
   private final long CONNECTIVITY_CHECK_TIMEOUT = 2;
   DelegateServiceGrpcClient delegateServiceGrpcClient;
   ConnectorService connectorService;

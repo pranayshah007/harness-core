@@ -38,6 +38,7 @@ public class IdpBGMigrationDetails implements MigrationDetails {
         .add(Pair.of(4, PluginInfoMigration.class))
         .add(Pair.of(5, PluginInfoMigration.class))
         .add(Pair.of(6, PluginInfoMigration.class))
+        .add(Pair.of(7, BackstageEnvSecretIsDeletedMigration.class))
         .build();
   }
 }

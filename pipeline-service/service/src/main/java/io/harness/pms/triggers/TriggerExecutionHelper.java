@@ -42,7 +42,6 @@ import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TriggerException;
 import io.harness.execution.PlanExecution;
-import io.harness.expression.common.ExpressionConstants;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
@@ -56,6 +55,7 @@ import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.git.GitAware;
 import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
+import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
 import io.harness.ngtriggers.utils.WebhookTriggerFilterUtils;
 import io.harness.pipeline.remote.PipelineServiceClient;
@@ -215,7 +215,7 @@ public class TriggerExecutionHelper {
       // Case for remote pipeline
       String branch = null;
       if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
-        if (isBranchExpr(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
+        if (TriggerHelper.isBranchExpr(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
           branch = resolveBranchExpression(
               triggerDetails.getNgTriggerConfigV2().getPipelineBranchName(), triggerWebhookEvent);
         } else {
@@ -460,7 +460,7 @@ public class TriggerExecutionHelper {
 
     String branch = null;
     if (isNotEmpty(pipelineBranch)) {
-      if (isBranchExpr(pipelineBranch)) {
+      if (TriggerHelper.isBranchExpr(pipelineBranch)) {
         branch = resolveBranchExpression(pipelineBranch, triggerWebhookEvent);
       } else {
         branch = pipelineBranch;
@@ -525,11 +525,6 @@ public class TriggerExecutionHelper {
       throw new TriggerException(
           String.format("Please ensure the expression %s has the right branch information", expression), USER);
     }
-  }
-
-  public boolean isBranchExpr(String pipelineBranch) {
-    return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
-        && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
   }
 
   @VisibleForTesting

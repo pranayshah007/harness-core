@@ -2596,13 +2596,6 @@ public class DelegateServiceImpl implements DelegateService {
 
     log.info("Registering delegate for Hostname: {} IP: {}", delegateParams.getHostName(), delegateParams.getIp());
 
-    String delegateGroupId = delegateParams.getDelegateGroupId();
-    if (isBlank(delegateGroupId) && isNotBlank(delegateParams.getDelegateGroupName())) {
-      final DelegateGroup delegateGroup =
-          upsertDelegateGroup(delegateParams.getDelegateGroupName(), delegateParams.getAccountId(), null);
-      delegateGroupId = delegateGroup.getUuid();
-    }
-
     String delegateGroupName = delegateParams.getDelegateGroupName();
 
     Optional<String> delegateTokenName = getDelegateTokenNameFromGlobalContext();
@@ -2618,17 +2611,24 @@ public class DelegateServiceImpl implements DelegateService {
               .orElse(null);
 
     // tokenName here will be used for auditing the delegate register event
-    DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
-                                                    .name(delegateParams.getDelegateName())
-                                                    .hostName(delegateParams.getHostName())
-                                                    .orgIdentifier(orgIdentifier)
-                                                    .projectIdentifier(projectIdentifier)
-                                                    .description(delegateParams.getDescription())
-                                                    .delegateType(delegateParams.getDelegateType())
-                                                    .tokenName(delegateTokenName.orElse(null))
-                                                    .build();
+    DelegateSetupDetails delegateSetupDetails =
+        DelegateSetupDetails.builder()
+            .name(delegateParams.getDelegateName())
+            .hostName(delegateParams.getHostName())
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .description(delegateParams.getDescription())
+            .delegateType(delegateParams.getDelegateType())
+            .tags(isNotEmpty(delegateParams.getTags()) ? new HashSet<>(delegateParams.getTags()) : null)
+            .tokenName(delegateTokenName.orElse(null))
+            .build();
 
-    // TODO: ARPIT for cg grouped delegates we should save tags only in delegateGroup
+    String delegateGroupId = delegateParams.getDelegateGroupId();
+    if (isBlank(delegateGroupId) && isNotBlank(delegateParams.getDelegateGroupName())) {
+      final DelegateGroup delegateGroup =
+          upsertDelegateGroup(delegateParams.getDelegateGroupName(), delegateParams.getAccountId(), null);
+      delegateGroupId = delegateGroup.getUuid();
+    }
 
     if (delegateParams.isNg()) {
       final DelegateGroup delegateGroup =

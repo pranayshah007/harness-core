@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
@@ -61,7 +62,8 @@ public class BigQueryDataResponseServiceImpl implements DataResponseService {
   public Map<String, Double> getCostBucketEntityCost(final List<QLCEViewFilterWrapper> filters,
       final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
       final String cloudProviderTableName, final ViewQueryParams queryParams, final boolean skipRoundOff,
-      final BusinessMapping sharedCostBusinessMapping, final Map<String, String> labelsKeyAndColumnMapping) {
+      final BusinessMapping sharedCostBusinessMapping, final Map<String, String> labelsKeyAndColumnMapping,
+      final ViewPreferences viewPreferences) {
     BigQuery bigQuery = bigQueryService.get();
     final Map<String, Double> entityCosts = new HashMap<>();
     final List<QLCEViewGroupBy> businessMappingGroupBy =
@@ -70,7 +72,7 @@ public class BigQueryDataResponseServiceImpl implements DataResponseService {
         viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid());
     final SelectQuery query = viewBillingServiceHelper.getQuery(modifiedFilters, groupBy, businessMappingGroupBy,
         aggregateFunction, Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMapping,
-        Collections.emptyList(), labelsKeyAndColumnMapping);
+        Collections.emptyList(), labelsKeyAndColumnMapping, viewPreferences);
     final TableResult result = getTableResultWithLimitAndOffset(bigQuery, query);
 
     if (Objects.isNull(result)) {

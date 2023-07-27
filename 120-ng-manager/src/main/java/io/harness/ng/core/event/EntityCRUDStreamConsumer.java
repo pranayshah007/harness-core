@@ -16,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_ACC
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_TELEMETRY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CLOUDFORMATION_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DEPLOYMENT_ACCOUNTS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.FILE_ENTITY;
@@ -116,6 +117,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(YAML_CHANGE_SET + ENTITY_CRUD) MessageListener yamlChangeSetEventListener,
       @Named(FILE_ENTITY + ENTITY_CRUD) MessageListener fileEntityCRUDStreamListener,
       @Named(CD_ACCOUNT_EXECUTION_METADATA + ENTITY_CRUD) MessageListener accountExecutionMetadataCRUDStreamListener,
+      @Named(DEPLOYMENT_ACCOUNTS + ENTITY_CRUD) MessageListener deploymentAccountsCRUDStreamListener,
       QueueController queueController) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
@@ -153,6 +155,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(customDeploymentEntityCRUDStreamEventListener);
     messageListenersList.add(fileEntityCRUDStreamListener);
     messageListenersList.add(accountExecutionMetadataCRUDStreamListener);
+    messageListenersList.add(deploymentAccountsCRUDStreamListener);
     processorMap = new HashMap<>();
     processorMap.put(SETUP_USAGE_ENTITY, setupUsageChangeEventMessageProcessor);
   }
