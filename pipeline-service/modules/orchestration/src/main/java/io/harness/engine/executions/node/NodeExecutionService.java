@@ -157,7 +157,7 @@ public interface NodeExecutionService {
    * @param parentIds
    * @return
    */
-  List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithOldRetryAsFalse(
+  List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithoutOldRetries(
       String planExecutionId, List<String> parentIds);
 
   /**

@@ -304,7 +304,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionReadHelper.fetchNodeExecutionsIteratorWithoutProjections(query);
   }
 
-  public List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithOldRetryAsFalse(
+  public List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithoutOldRetries(
       String planExecutionId, List<String> parentIds) {
     return fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, parentIds, MAX_DEPTH);
   }
