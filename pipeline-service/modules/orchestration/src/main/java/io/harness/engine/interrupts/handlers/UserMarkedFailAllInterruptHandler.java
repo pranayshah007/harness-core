@@ -133,7 +133,7 @@ public class UserMarkedFailAllInterruptHandler extends InterruptPropagatorHandle
 
     List<NodeExecution> finalList = new ArrayList<>();
     // Extract all the running leaf nodes and queued nodeswith the parent id as nodeExecutionId passed in as param
-    nodeExecutionService.extractChildExecutions(nodeExecutionId, true, finalList, allExecutions, true, false);
+    nodeExecutionService.extractChildExecutions(nodeExecutionId, true, finalList, allExecutions, true);
 
     List<String> targetIds = finalList.stream()
                                  .filter(ne

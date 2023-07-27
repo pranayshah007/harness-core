@@ -100,6 +100,16 @@ public class ExecutionGraphMapper {
         .build();
   }
 
+  public ExecutionGraph toExecutionGraph(OrchestrationGraphDTO orchestrationGraph) {
+    return ExecutionGraph.builder()
+        .rootNodeId(orchestrationGraph.getRootNodeIds().isEmpty() ? null : orchestrationGraph.getRootNodeIds().get(0))
+        .nodeMap(orchestrationGraph.getAdjacencyList().getGraphVertexMap().entrySet().stream().collect(
+            Collectors.toMap(Map.Entry::getKey, entry -> toExecutionNode(entry.getValue()))))
+        .nodeAdjacencyListMap(orchestrationGraph.getAdjacencyList().getAdjacencyMap().entrySet().stream().collect(
+            Collectors.toMap(Map.Entry::getKey, entry -> toExecutionNodeAdjacencyList.apply(entry.getValue()))))
+        .build();
+  }
+
   public Map<String, String> getMetadataMap(PipelineExecutionSummaryEntity summaryEntity) {
     Map<String, String> executionMetadata = new HashMap<>();
     if (summaryEntity.getAccountId() != null) {

@@ -151,13 +151,24 @@ public interface NodeExecutionService {
       String planExecutionId, String parentId, Direction sortOrderOfCreatedAt, Set<String> fieldsToBeIncluded);
 
   /**
-   * Returns iterator for all children nodeExecution for given parentId without projection sort by
-   * CreatedAt (Desc) Uses - planExecutionId_createdAt_idx
+   * Returns iterator for children nodeExecution for given parentId(direct children only) with projection sort by
+   * CreatedAt (Desc) Uses - planExecutionId_parentId_createdAt_idx
    * @param planExecutionId
+   * @param parentIds
    * @return
    */
-  CloseableIterator<NodeExecution> fetchAllChildrenNodeExecutionsIterator(
-      String planExecutionId, Direction sortOrderOfCreatedAt);
+  CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIteratorWithoutProjection(
+      String planExecutionId, List<String> parentIds, Direction sortOrderOfCreatedAd);
+
+  /**
+   * Returns List for all children nodeExecution for given parentId recursively without projection sort by
+   * CreatedAt (Asc) Uses - planExecutionId_parentId_createdAt_idx
+   * @param planExecutionId
+   * @param parentIds
+   * @return
+   */
+  List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(
+      String planExecutionId, List<String> parentIds);
 
   /**
    * Returns iterator for children nodeExecution for given parentId(direct children only) with projection (No Sort, thus
@@ -197,11 +208,10 @@ public interface NodeExecutionService {
    * @param finalList                 -> it contains the result from allExecutions
    * @param allExecutions
    * @param includeChildrenOfStrategy
-   * @param excludeChildOfOldRetries  -> it will exclude the children of oldRetries
    * @return
    */
   List<NodeExecution> extractChildExecutions(String parentId, boolean includeParent, List<NodeExecution> finalList,
-      List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy, boolean excludeChildOfOldRetries);
+      List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy);
 
   // stepType, parentId and Status are already included into projections
 

@@ -396,7 +396,7 @@ public class ExecutionDetailsResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
     NodeExecutionSubGraphResponse nodeExecutionSubGraph =
-        executionGraphService.getNodeExecutionSubGraph(nodeExecutionId, planExecutionId, executionSummaryEntity);
+        executionGraphService.getNodeExecutionSubGraph(nodeExecutionId, planExecutionId);
     return ResponseDTO.newResponse(nodeExecutionSubGraph);
   }
 

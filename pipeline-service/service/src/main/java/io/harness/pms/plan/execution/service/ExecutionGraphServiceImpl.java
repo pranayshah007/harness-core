@@ -17,19 +17,16 @@ import io.harness.dto.converter.OrchestrationGraphDTOConverter;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
-import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.NodeExecutionSubGraphResponse;
 import io.harness.service.GraphGenerationService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.util.CloseableIterator;
 
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -40,28 +37,22 @@ public class ExecutionGraphServiceImpl implements ExecutionGraphService {
   GraphGenerationService graphGenerationService;
 
   @Override
-  public NodeExecutionSubGraphResponse getNodeExecutionSubGraph(
-      String nodeExecutionId, String planExecutionId, PipelineExecutionSummaryEntity executionSummaryEntity) {
-    List<NodeExecution> nodeExecutions = new LinkedList<>();
-    List<NodeExecution> allNodeExecutions = new LinkedList<>();
-    try (CloseableIterator<NodeExecution> iterator =
-             nodeExecutionService.fetchAllChildrenNodeExecutionsIterator(planExecutionId, Sort.Direction.ASC)) {
-      while (iterator.hasNext()) {
-        allNodeExecutions.add(iterator.next());
-      }
-    }
+  public NodeExecutionSubGraphResponse getNodeExecutionSubGraph(String nodeExecutionId, String planExecutionId) {
+    List<NodeExecution> nodeExecutions;
+    List<String> parentIds = new ArrayList<>();
+    parentIds.add(nodeExecutionId);
     /*
       Extracting recursive child NodeExecutions for given nodeExecutionId
       And Incase of Multiple Retries for any child entity, we will only consider the lastRetried NodeExecution
       And will exclude the children of OldRetries NodeExecutions
     */
-    nodeExecutions = nodeExecutionService.extractChildExecutions(
-        nodeExecutionId, true, nodeExecutions, allNodeExecutions, true, true);
+    nodeExecutions =
+        nodeExecutionService.fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, parentIds);
+    nodeExecutions.add(nodeExecutionService.get(nodeExecutionId));
     OrchestrationGraph graph = graphGenerationService.buildOrchestrationGraphForNodeExecution(
         planExecutionId, nodeExecutionId, nodeExecutions);
     OrchestrationGraphDTO orchestrationGraphDTO = OrchestrationGraphDTOConverter.convertFrom(graph);
-    ExecutionGraph executionGraph =
-        ExecutionGraphMapper.toExecutionGraph(orchestrationGraphDTO, executionSummaryEntity);
+    ExecutionGraph executionGraph = ExecutionGraphMapper.toExecutionGraph(orchestrationGraphDTO);
     return NodeExecutionSubGraphResponse.builder().executionGraph(executionGraph).build();
   }
 }

@@ -117,6 +117,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject = new Subject<>();
 
+  private final int MAX_DEPTH = 15;
+
   @Override
   public NodeExecution get(String nodeExecutionId) {
     Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
@@ -294,12 +296,47 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public CloseableIterator<NodeExecution> fetchAllChildrenNodeExecutionsIterator(
-      String planExecutionId, Direction sortOrderOfCreatedAt) {
-    // Uses planExecutionId_createdAt_idx
+  public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIteratorWithoutProjection(
+      String planExecutionId, List<String> parentIds, Direction sortOrderOfCreatedAt) {
+    // Uses planExecutionId_parentId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.parentId).in(parentIds))
                       .with(Sort.by(sortOrderOfCreatedAt, NodeExecutionKeys.createdAt));
     return nodeExecutionReadHelper.fetchNodeExecutionsIteratorWithoutProjections(query);
+  }
+
+  public List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(
+      String planExecutionId, List<String> parentIds) {
+    return fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, parentIds, 0);
+  }
+
+  private List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(
+      String planExecutionId, List<String> parentIds, int depth) {
+    List<NodeExecution> recursiveChildrenNodeExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator =
+             fetchChildrenNodeExecutionsIteratorWithoutProjection(planExecutionId, parentIds, Sort.Direction.ASC)) {
+      while (iterator.hasNext()) {
+        recursiveChildrenNodeExecutions.add(iterator.next());
+      }
+    }
+    List<String> childParentIds = new LinkedList<>();
+    if (EmptyPredicate.isEmpty(recursiveChildrenNodeExecutions)) {
+      return new ArrayList<>();
+    }
+    if (depth >= MAX_DEPTH) {
+      throw new InvalidRequestException(
+          String.format("Exceeded Max Depth level [%s] for the Node SubGraph", MAX_DEPTH));
+    }
+    recursiveChildrenNodeExecutions = recursiveChildrenNodeExecutions.stream()
+                                          .filter(o -> o.getOldRetry().equals(false))
+                                          .collect(Collectors.toList());
+    for (NodeExecution nodeExecution : recursiveChildrenNodeExecutions) {
+      childParentIds.add(nodeExecution.getUuid());
+    }
+    List<NodeExecution> childNodeExecutions =
+        fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, childParentIds, depth + 1);
+    recursiveChildrenNodeExecutions.addAll(childNodeExecutions);
+    return recursiveChildrenNodeExecutions;
   }
 
   @Override
@@ -338,13 +375,9 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public List<NodeExecution> extractChildExecutions(String parentId, boolean includeParent,
-      List<NodeExecution> finalList, List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy,
-      boolean excludeChildOfOldRetries) {
+      List<NodeExecution> finalList, List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy) {
     Map<String, List<NodeExecution>> parentChildrenMap = new HashMap<>();
     for (NodeExecution execution : allExecutions) {
-      if (excludeChildOfOldRetries && execution.getOldRetry()) {
-        continue;
-      }
       if (execution.getParentId() == null) {
         parentChildrenMap.put(execution.getUuid(), new ArrayList<>());
       } else if (parentChildrenMap.containsKey(execution.getParentId())) {
@@ -399,7 +432,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         allExecutions.add(iterator.next());
       }
     }
-    return extractChildExecutions(parentId, includeParent, finalList, allExecutions, includeChildrenOfStrategy, false);
+    return extractChildExecutions(parentId, includeParent, finalList, allExecutions, includeChildrenOfStrategy);
   }
 
   @Override

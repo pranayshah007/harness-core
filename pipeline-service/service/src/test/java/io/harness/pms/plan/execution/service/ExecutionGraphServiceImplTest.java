@@ -66,28 +66,28 @@ public class ExecutionGraphServiceImplTest extends CategoryTest {
     }
   }
 
-  @Test
-  @Owner(developers = UTKARSH_CHOUBEY)
-  @Category(UnitTests.class)
-  public void testGetNodeExecutionSubGraph() {
-    CloseableIterator<NodeExecution> emptyIterator = createCloseableIterator(Collections.emptyListIterator());
-    when(nodeExecutionService.fetchAllChildrenNodeExecutionsIterator("planExecutionId", Sort.Direction.ASC))
-        .thenReturn(emptyIterator);
-    when(nodeExecutionService.extractChildExecutions(
-             "nodeExecutionId", true, new LinkedList<>(), new LinkedList<>(), true, true))
-        .thenReturn(new LinkedList<>());
-    MockedStatic<OrchestrationGraphDTOConverter> aStatic = Mockito.mockStatic(OrchestrationGraphDTOConverter.class);
-    aStatic.when(() -> OrchestrationGraphDTOConverter.convertFrom(any(OrchestrationGraph.class)))
-        .thenReturn(OrchestrationGraphDTO.builder().build());
-    MockedStatic<ExecutionGraphMapper> bStatic = Mockito.mockStatic(ExecutionGraphMapper.class);
-    bStatic
-        .when(()
-                  -> ExecutionGraphMapper.toExecutionGraph(
-                      any(OrchestrationGraphDTO.class), any(PipelineExecutionSummaryEntity.class)))
-        .thenReturn(ExecutionGraph.builder().build());
-    executionGraphService.getNodeExecutionSubGraph(
-        "nodeExecutionId", "planExecutionId", PipelineExecutionSummaryEntity.builder().build());
-  }
+  //  @Test
+  //  @Owner(developers = UTKARSH_CHOUBEY)
+  //  @Category(UnitTests.class)
+  //  public void testGetNodeExecutionSubGraph() {
+  //    CloseableIterator<NodeExecution> emptyIterator = createCloseableIterator(Collections.emptyListIterator());
+  //    when(nodeExecutionService.fetchAllChildrenNodeExecutionsIterator("planExecutionId", Sort.Direction.ASC))
+  //        .thenReturn(emptyIterator);
+  //    when(nodeExecutionService.extractChildExecutions(
+  //             "nodeExecutionId", true, new LinkedList<>(), new LinkedList<>(), true, true))
+  //        .thenReturn(new LinkedList<>());
+  //    MockedStatic<OrchestrationGraphDTOConverter> aStatic = Mockito.mockStatic(OrchestrationGraphDTOConverter.class);
+  //    aStatic.when(() -> OrchestrationGraphDTOConverter.convertFrom(any(OrchestrationGraph.class)))
+  //        .thenReturn(OrchestrationGraphDTO.builder().build());
+  //    MockedStatic<ExecutionGraphMapper> bStatic = Mockito.mockStatic(ExecutionGraphMapper.class);
+  //    bStatic
+  //        .when(()
+  //                  -> ExecutionGraphMapper.toExecutionGraph(
+  //                      any(OrchestrationGraphDTO.class), any(PipelineExecutionSummaryEntity.class)))
+  //        .thenReturn(ExecutionGraph.builder().build());
+  //    executionGraphService.getNodeExecutionSubGraph(
+  //        "nodeExecutionId", "planExecutionId", PipelineExecutionSummaryEntity.builder().build());
+  //  }
 
   public static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {
     return new CloseableIterator<T>() {

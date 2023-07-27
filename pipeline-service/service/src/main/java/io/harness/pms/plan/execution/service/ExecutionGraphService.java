@@ -10,11 +10,9 @@ package io.harness.pms.plan.execution.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.NodeExecutionSubGraphResponse;
 
 @OwnedBy(PIPELINE)
 public interface ExecutionGraphService {
-  NodeExecutionSubGraphResponse getNodeExecutionSubGraph(
-      String nodeExecutionId, String planExecutionId, PipelineExecutionSummaryEntity executionSummaryEntity);
+  NodeExecutionSubGraphResponse getNodeExecutionSubGraph(String nodeExecutionId, String planExecutionId);
 }
