@@ -80,9 +80,16 @@ git add ${VERSION_FILE}
 git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${VERSION}xx"
 git push origin release/${PURPOSE}/${VERSION}xx
 
-echo "INFO: Step 12: Creating the fix version."
+echo "INFO: Step 12: Creating the srm fix version."
 chmod +x srm-service/release/release-branch-create-srm-versions.sh
-#srm-service/release/release-branch-create-srm-versions.sh
-echo "INFO: Step 13: Updating jiras."
-chmod +x srm-service/release/release-branch-update-jiras.sh
-#srm-service/release/release-branch-update-jiras.sh
+srm-service/release/release-branch-create-srm-versions.sh
+echo "INFO: Step 13: Updating srm jiras."
+chmod +x srm-service/release/release-branch-update-srm-jiras.sh
+srm-service/release/release-branch-update-srm-jiras.sh
+
+echo "INFO: Step 14: Creating the oip fix version."
+chmod +x srm-service/release/release-branch-create-oip-versions.sh
+srm-service/release/release-branch-create-oip-versions.sh
+echo "INFO: Step 15: Updating oip jiras."
+chmod +x srm-service/release/release-branch-update-oip-jiras.sh
+srm-service/release/release-branch-update-oip-jiras.sh
