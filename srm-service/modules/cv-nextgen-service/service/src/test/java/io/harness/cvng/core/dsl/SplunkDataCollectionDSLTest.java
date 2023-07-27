@@ -12,7 +12,6 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
@@ -144,8 +143,8 @@ public class SplunkDataCollectionDSLTest extends HoverflyTestBase {
                                               .commonHeaders(splunkConnectorValidationInfo.collectionHeaders())
                                               .baseUrl(splunkConnectorValidationInfo.getBaseUrl())
                                               .build();
-    assertThatThrownBy(() -> dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {}))
-        .hasMessageContaining("Response code: 405");
+    String isValid = (String) dataCollectionDSLService.execute(code, runtimeParameters, callDetails -> {});
+    assertThat(isValid).isEqualTo("true");
   }
 
   @Test

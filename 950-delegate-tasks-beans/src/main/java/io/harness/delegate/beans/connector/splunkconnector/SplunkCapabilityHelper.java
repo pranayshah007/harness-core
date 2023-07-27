@@ -19,14 +19,15 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class SplunkCapabilityHelper extends ConnectorCapabilityBaseHelper {
+  public static String SERVER_INFO_URL = "services/server/info?output_mode=json";
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
       ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     SplunkConnectorDTO splunkConnectorDTO = (SplunkConnectorDTO) connectorConfigDTO;
-    final String splunkUrl = splunkConnectorDTO.getSplunkUrl();
+    final String splunkUrl = splunkConnectorDTO.getSplunkUrl() + SERVER_INFO_URL;
     capabilityList.add(
-
-        HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(splunkUrl, maskingEvaluator));
+        HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+            splunkUrl, maskingEvaluator, true));
     populateDelegateSelectorCapability(capabilityList, splunkConnectorDTO.getDelegateSelectors());
     return capabilityList;
   }
