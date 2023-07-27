@@ -93,7 +93,7 @@ public class RedisStreamsMetricsAggregatorImpl implements RedisStreamsMetricsAgg
 
   @Override
   public AggregateRedisStreamMetricsDTO getStreamStats() {
-    Iterator<String> keysIterator = redisClient.getKeys().getKeysByPattern("*:streams:*", 1000).iterator();
+    Iterator<String> keysIterator = redisClient.getKeys().getKeysByPattern("streams*", 1000).iterator();
 
     List<RedisStreamMetricsDTO> redisStreamMetricsDTOList = new ArrayList<>();
     while (keysIterator.hasNext()) {
@@ -109,7 +109,7 @@ public class RedisStreamsMetricsAggregatorImpl implements RedisStreamsMetricsAgg
 
         long streamLength = getStreamLength(currentStream);
         double averageMessageSize = getAverageMessageSize(streamName);
-        double memoryUsageInMBs = redisClient.getStream(streamName).sizeInMemory();
+        double memoryUsageInMBs = averageMessageSize * streamLength / 1024;
 
         long deadletterQueueLength = getDeadletterQueueLength(redisStreamDTO);
         List<StreamGroup> groups = redisClient.getStream(streamName).listGroups();
