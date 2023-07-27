@@ -305,47 +305,48 @@ public class LoginSettingsServiceImpl implements LoginSettingsService {
 
   @Override
   public void updateUserLockoutInfo(User user, Account account, int newCountOfFailedLoginAttempts) {
+    if (newCountOfFailedLoginAttempts == 0 && user.getUserLockoutInfo() != null
+        && user.getUserLockoutInfo().getNumberOfFailedLoginAttempts() == 0) {
+      // skip userLockoutInfo and locked updates if user login successful and user didn't enter wrong password earlier
+      return;
+    }
+
     UserLockoutPolicy userLockoutPolicy = getLoginSettings(account.getUuid()).getUserLockoutPolicy();
-    log.info("Updating user lockout info: {} for user: {}, new failedCount: {}",
-        userLockoutPolicy.isEnableLockoutPolicy(), user.getEmail(), newCountOfFailedLoginAttempts);
-
-    createUserLockoutInfoOperationsAndUpdateUser(user, newCountOfFailedLoginAttempts, userLockoutPolicy);
-  }
-
-  private void createUserLockoutInfoOperationsAndUpdateUser(
-      User user, int newCountOfFailedLoginAttempts, UserLockoutPolicy userLockoutPolicy) {
     UpdateOperations<User> operations = wingsPersistence.createUpdateOperations(User.class);
-    updateUserLockoutInfoOperations(user, newCountOfFailedLoginAttempts, userLockoutPolicy, operations);
-    userService.updateUser(user.getUuid(), operations);
-  }
 
-  private void updateUserLockoutInfoOperations(User user, int newCountOfFailedLoginAttempts,
-      UserLockoutPolicy userLockoutPolicy, UpdateOperations<User> operations) {
     boolean shouldLockUser = userLockoutPolicy.isEnableLockoutPolicy()
         && newCountOfFailedLoginAttempts >= userLockoutPolicy.getNumberOfFailedAttemptsBeforeLockout();
 
-    //    boolean shouldUnlockUser =
-    //        newCountOfFailedLoginAttempts < userLockoutPolicy.getNumberOfFailedAttemptsBeforeLockout();
-
     if (shouldLockUser) {
-      log.info("Locking user: [{}] because of {} incorrect password attempts", user.getUuid(),
-          newCountOfFailedLoginAttempts);
-      UserLockoutInfo userLockoutInfo =
-          createUserLockoutInfoInstance(newCountOfFailedLoginAttempts, System.currentTimeMillis());
-      updateUserLockoutOperations(operations, true, userLockoutInfo);
-      sendNotifications(user, userLockoutPolicy);
-      if (isNotEmpty(user.getAccounts())) {
-        user.getAccounts().forEach(account -> {
-          auditServiceHelper.reportForAuditingUsingAccountId(account.getUuid(), null, user, Event.Type.LOCK);
-          log.info("Auditing locking of user={} in account={}", user.getName(), account.getAccountName());
-        });
-      }
+      lockUserAndUpdateLockoutInfo(user, newCountOfFailedLoginAttempts, userLockoutPolicy, operations);
     } else {
-      log.info("Unlocking user: {}, current lock state = {}", user.getUuid(), user.isUserLocked());
-      UserLockoutInfo userLockoutInfo =
-          createUserLockoutInfoInstance(newCountOfFailedLoginAttempts, user.getUserLockoutInfo().getUserLockedAt());
-      updateUserLockoutOperations(operations, false, userLockoutInfo);
+      updateUserLockoutInfo(user, newCountOfFailedLoginAttempts, operations);
     }
+  }
+
+  private void lockUserAndUpdateLockoutInfo(User user, int newCountOfFailedLoginAttempts,
+      UserLockoutPolicy userLockoutPolicy, UpdateOperations<User> operations) {
+    log.info(
+        "Locking user: [{}] because of {} incorrect password attempts", user.getUuid(), newCountOfFailedLoginAttempts);
+    UserLockoutInfo userLockoutInfo =
+        createUserLockoutInfoInstance(newCountOfFailedLoginAttempts, System.currentTimeMillis());
+    updateUserLockoutOperations(operations, true, userLockoutInfo);
+    sendNotifications(user, userLockoutPolicy);
+    if (isNotEmpty(user.getAccounts())) {
+      user.getAccounts().forEach(account -> {
+        auditServiceHelper.reportForAuditingUsingAccountId(account.getUuid(), null, user, Event.Type.LOCK);
+        log.info("Auditing locking of user={} in account={}", user.getName(), account.getAccountName());
+      });
+    }
+  }
+
+  private void updateUserLockoutInfo(User user, int newCountOfFailedLoginAttempts, UpdateOperations<User> operations) {
+    log.info(
+        "Current lock state for user = {}. User: {}, if locked will be unlocked. Separately setting failed login attempts for user to = 0",
+        user.isUserLocked(), user.getUuid());
+    UserLockoutInfo userLockoutInfo =
+        createUserLockoutInfoInstance(newCountOfFailedLoginAttempts, user.getUserLockoutInfo().getUserLockedAt());
+    updateUserLockoutOperations(operations, false, userLockoutInfo);
   }
 
   private void sendNotifications(User user, UserLockoutPolicy userLockoutPolicy) {
