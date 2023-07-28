@@ -16,4 +16,3 @@ features:
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true
-        
