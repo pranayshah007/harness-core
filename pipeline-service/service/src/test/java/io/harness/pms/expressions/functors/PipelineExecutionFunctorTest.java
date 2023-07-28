@@ -191,7 +191,7 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     Map<String, String> triggeredByMap = (Map<String, String>) response.get("triggeredBy");
     assertNull(triggeredByMap.get("email"));
     assertEquals(triggeredByMap.get("name"), "system");
-    assertEquals(triggeredByMap.get("triggerName"), "triggerIdentifier");
+    assertEquals(triggeredByMap.get("triggerIdentifier"), "triggerIdentifier");
     assertEquals(response.get("resumedExecutionId"),
         pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId());
 
@@ -221,7 +221,7 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     triggeredByMap = (Map<String, String>) response.get("triggeredBy");
     assertEquals(triggeredByMap.get("email"), "admin@harness.io");
     assertEquals(triggeredByMap.get("name"), "Admin");
-    assertNull(triggeredByMap.get("triggerName"));
+    assertNull(triggeredByMap.get("triggerIdentifier"));
     Map<String, String> executionMap = (Map<String, String>) response.get("execution");
     assertEquals(executionMap.size(), 1);
     assertEquals(executionMap.get("url"), executionUrl);
