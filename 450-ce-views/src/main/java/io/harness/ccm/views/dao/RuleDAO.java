@@ -47,11 +47,11 @@ public class RuleDAO {
     log.info("deleted rule: {}", uuid);
     return hPersistence.delete(query);
   }
-  public List<Rule> forRecommendation(RuleCloudProviderType ruleCloudProviderType) {
+  public List<Rule> forRecommendation(RuleCloudProviderType ruleCloudProviderType, String accountId) {
     log.info("creating a query");
     Query<Rule> rules = hPersistence.createQuery(Rule.class)
                             .field(RuleId.accountId)
-                            .equal(GLOBAL_ACCOUNT_ID)
+                            .in(List.of(GLOBAL_ACCOUNT_ID, accountId))
                             .field(RuleId.forRecommendation)
                             .equal(true)
                             .field(RuleId.cloudProvider)
@@ -174,6 +174,9 @@ public class RuleDAO {
     }
     if (rule.getForRecommendation() != null) {
       updateOperations.set(RuleId.forRecommendation, rule.getForRecommendation());
+    }
+    if (rule.getResourceType() != null) {
+      updateOperations.set(RuleId.resourceType, rule.getResourceType());
     }
     log.info("Updated rule: {} {} {}", rule.getUuid(), hPersistence.update(query, updateOperations), query);
     hPersistence.update(query, updateOperations);

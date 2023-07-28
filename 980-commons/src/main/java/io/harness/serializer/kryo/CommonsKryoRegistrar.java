@@ -6,9 +6,11 @@
  */
 
 package io.harness.serializer.kryo;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileData;
 import io.harness.beans.KeyValuePair;
 import io.harness.context.GlobalContext;
@@ -105,6 +107,7 @@ import com.esotericsoftware.kryo.Kryo;
 import java.net.SocketException;
 import java.time.ZonedDateTime;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PL)
 public class CommonsKryoRegistrar implements KryoRegistrar {
   @Override

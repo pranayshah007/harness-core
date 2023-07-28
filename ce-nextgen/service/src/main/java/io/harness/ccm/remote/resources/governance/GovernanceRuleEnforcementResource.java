@@ -8,16 +8,19 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.TelemetryConstants.CLOUD_PROVIDER;
+import static io.harness.ccm.TelemetryConstants.EXECUTION_SCHEDULE;
+import static io.harness.ccm.TelemetryConstants.EXECUTION_TIMEZONE;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_CREATED;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_DELETE;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_UPDATED;
+import static io.harness.ccm.TelemetryConstants.MODULE;
+import static io.harness.ccm.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.TelemetryConstants.RULE_ENFORCEMENT_NAME;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
 import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_CONNECTOR;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_CREATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_DELETE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_UPDATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
-import static io.harness.ccm.remote.resources.TelemetryConstants.RULE_ENFORCEMENT_NAME;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
@@ -131,7 +134,7 @@ import retrofit2.Response;
 @NextGenManagerAuth
 public class GovernanceRuleEnforcementResource {
   public static final String ACCOUNT_ID = "accountId";
-  public static final String EXECUTION_SCHEDULE = "executionSchedule";
+  public static final String EXECUTION_SCHEDULE_LOCAL = "executionSchedule";
   public static final String RULE_ENFORCEMENT_ID = "ruleEnforcementId";
   public static final String SCHEDULER_EXECUTOR = "http";
   public static final String SCHEDULER_HTTP_METHOD = "POST";
@@ -258,7 +261,7 @@ public class GovernanceRuleEnforcementResource {
 
         Map<String, String> metadata = new HashMap<>();
         metadata.put(ACCOUNT_ID, ruleEnforcement.getAccountId());
-        metadata.put(EXECUTION_SCHEDULE, ruleEnforcement.getExecutionSchedule());
+        metadata.put(EXECUTION_SCHEDULE_LOCAL, ruleEnforcement.getExecutionSchedule());
         metadata.put(ENFORCEMENT_ID, ruleEnforcement.getUuid());
         JSONArray headers = new JSONArray();
         headers.add(CONTENT_TYPE_APPLICATION_JSON);
@@ -296,6 +299,9 @@ public class GovernanceRuleEnforcementResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
+    properties.put(CLOUD_PROVIDER, ruleEnforcement.getCloudProvider());
+    properties.put(EXECUTION_SCHEDULE, ruleEnforcement.getExecutionSchedule());
+    properties.put(EXECUTION_TIMEZONE, ruleEnforcement.getExecutionTimezone());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_CREATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
@@ -341,6 +347,9 @@ public class GovernanceRuleEnforcementResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
+    properties.put(CLOUD_PROVIDER, ruleEnforcement.getCloudProvider());
+    properties.put(EXECUTION_SCHEDULE, ruleEnforcement.getExecutionSchedule());
+    properties.put(EXECUTION_TIMEZONE, ruleEnforcement.getExecutionTimezone());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
@@ -415,11 +424,6 @@ public class GovernanceRuleEnforcementResource {
             String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
       }
     }
-    HashMap<String, Object> properties = new HashMap<>();
-    properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_UPDATED, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     // Update dkron if enforcement is toggled or schedule is changed or timezone is changed
     if (configuration.getGovernanceConfig().isUseDkron()) {
@@ -431,7 +435,7 @@ public class GovernanceRuleEnforcementResource {
         tags.put(configuration.getGovernanceConfig().getTagsKey(), configuration.getGovernanceConfig().getTagsValue());
         Map<String, String> metadata = new HashMap<>();
         metadata.put(ACCOUNT_ID, ruleEnforcement.getAccountId());
-        metadata.put(EXECUTION_SCHEDULE, ruleEnforcement.getExecutionSchedule());
+        metadata.put(EXECUTION_SCHEDULE_LOCAL, ruleEnforcement.getExecutionSchedule());
         metadata.put(ENFORCEMENT_ID, ruleEnforcement.getUuid());
         JSONArray headers = new JSONArray();
         headers.add(CONTENT_TYPE_APPLICATION_JSON);
@@ -468,6 +472,16 @@ public class GovernanceRuleEnforcementResource {
 
     ruleEnforcementService.update(ruleEnforcement);
     RuleEnforcement updatedRuleEnforcement = ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
+
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(RULE_ENFORCEMENT_NAME, updatedRuleEnforcement.getName());
+    properties.put(CLOUD_PROVIDER, updatedRuleEnforcement.getCloudProvider());
+    properties.put(EXECUTION_SCHEDULE, updatedRuleEnforcement.getExecutionSchedule());
+    properties.put(EXECUTION_TIMEZONE, updatedRuleEnforcement.getExecutionTimezone());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_UPDATED, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(
           new RuleEnforcementUpdateEvent(accountId, updatedRuleEnforcement.toDTO(), ruleEnforcementFromMongo.toDTO()));

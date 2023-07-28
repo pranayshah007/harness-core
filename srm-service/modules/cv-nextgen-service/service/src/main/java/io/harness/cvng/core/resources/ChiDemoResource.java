@@ -8,7 +8,7 @@
 package io.harness.cvng.core.resources;
 
 import io.harness.annotations.ExposeInternalException;
-import io.harness.cvng.beans.change.DemoChangeEventDTO;
+import io.harness.cvng.core.beans.change.DemoChangeEventDTO;
 import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.demo.ChiDemoService;
 import io.harness.rest.RestResponse;

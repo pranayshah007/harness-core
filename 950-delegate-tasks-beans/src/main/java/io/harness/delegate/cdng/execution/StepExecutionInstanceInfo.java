@@ -11,11 +11,15 @@ import io.harness.annotation.RecasterAlias;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @RecasterAlias("io.harness.delegate.cdng.execution.StepExecutionInstanceInfo")
 public class StepExecutionInstanceInfo {
   @NotNull List<StepInstanceInfo> deployedServiceInstances;

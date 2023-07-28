@@ -6,11 +6,13 @@
  */
 
 package io.harness.steps.approval.step.harness.entities;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -49,6 +51,7 @@ import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -78,7 +81,7 @@ public class HarnessApprovalInstance extends ApprovalInstance {
   }
 
   public void addApprovalActivity(EmbeddedUser user, HarnessApprovalActivityRequestDTO request) {
-    if (request.getAction() == HarnessApprovalAction.APPROVE
+    if (!request.isAutoApprove() && request.getAction() == HarnessApprovalAction.APPROVE
         && !validateApprovalInputsRequest(request.getApproverInputs())) {
       throw new InvalidRequestException("Invalid approver inputs");
     }
@@ -130,7 +133,8 @@ public class HarnessApprovalInstance extends ApprovalInstance {
                       .collect(Collectors.toList()))
         .approverInputs(approverInputs == null
                 ? Collections.emptyMap()
-                : approverInputs.stream().collect(Collectors.toMap(ApproverInput::getName, ApproverInput::getValue)))
+                : approverInputs.stream().collect(Collectors.toMap(
+                    ApproverInput::getName, approverInput -> Optional.ofNullable(approverInput.getValue()).orElse(""))))
         .build();
   }
 

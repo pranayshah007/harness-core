@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -16,6 +15,9 @@ import static io.harness.k8s.manifest.ManifestHelper.normalizeFolderPath;
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
@@ -79,6 +81,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jooq.tools.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_PIPELINE,
+        HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_FIRST_GEN})
 public class ServerlessV2PluginInfoProviderHelper {
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private OutcomeService outcomeService;

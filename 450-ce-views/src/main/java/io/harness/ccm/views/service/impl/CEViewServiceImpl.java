@@ -40,6 +40,7 @@ import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewState;
@@ -62,10 +63,10 @@ import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.helper.ViewFilterBuilderHelper;
 import io.harness.ccm.views.helper.ViewTimeRangeHelper;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
-import io.harness.ccm.views.utils.CEViewPreferenceUtils;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.common.collect.ImmutableSet;
@@ -129,6 +130,7 @@ public class CEViewServiceImpl implements CEViewService {
   @Inject private ViewFilterBuilderHelper viewFilterBuilderHelper;
   @Inject private ViewsQueryHelper viewsQueryHelper;
   @Inject private BusinessMappingService businessMappingService;
+  @Inject private CEViewPreferenceService ceViewPreferenceService;
 
   @Override
   public CEView save(CEView ceView, boolean clone) {
@@ -246,7 +248,7 @@ public class CEViewServiceImpl implements CEViewService {
 
     Set<ViewFieldIdentifier> viewFieldIdentifierSet = getViewFieldIdentifiers(ceView, validBusinessMappingIds);
     setDataSources(ceView, viewFieldIdentifierSet);
-    ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferences(ceView));
+    ceView.setViewPreferences(ceViewPreferenceService.getCEViewPreferences(ceView, Collections.emptySet()));
   }
 
   private ViewVisualization getDefaultViewVisualization() {
@@ -448,10 +450,11 @@ public class CEViewServiceImpl implements CEViewService {
       filters.add(
           viewFilterBuilderHelper.getViewTimeFilter(startEndTime.getEndTime(), QLCEViewTimeFilterOperator.BEFORE));
 
-      QLCEViewTrendInfo trendData = viewsBillingService
-                                        .getTrendStatsDataNg(filters, Collections.emptyList(),
-                                            totalCostAggregationFunction, getViewQueryParamsForTrendStats(ceView))
-                                        .getTotalCost();
+      QLCEViewTrendInfo trendData =
+          viewsBillingService
+              .getTrendStatsDataNg(filters, Collections.emptyList(), totalCostAggregationFunction,
+                  ceView.getViewPreferences(), getViewQueryParamsForTrendStats(ceView))
+              .getTotalCost();
       double totalCost = trendData.getValue().doubleValue();
       log.info("Total cost of view {}", totalCost);
       return ceViewDao.updateTotalCost(ceView.getUuid(), ceView.getAccountId(), totalCost);
@@ -503,6 +506,21 @@ public class CEViewServiceImpl implements CEViewService {
   @Override
   public List<CEView> getAllViews(String accountId) {
     return ceViewDao.list(accountId);
+  }
+
+  @Override
+  public void updateAllPerspectiveWithPerspectivePreferenceDefaultSettings(
+      String accountId, Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings) {
+    for (CEView ceView : getAllViews(accountId)) {
+      try {
+        ViewPreferences viewPreferences =
+            ceViewPreferenceService.getCEViewPreferences(ceView, viewPreferencesFieldsToUpdateWithDefaultSettings);
+        ceViewDao.updateViewPreferences(ceView.getUuid(), accountId, viewPreferences);
+      } catch (Exception ex) {
+        log.error("Unable to update view preferences with default settings for accountId {}, viewId {}, fields {}",
+            accountId, ceView.getUuid(), viewPreferencesFieldsToUpdateWithDefaultSettings, ex);
+      }
+    }
   }
 
   @Override

@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngtriggers.expressions;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
 import io.harness.exception.CriticalExpressionEvaluationException;
 import io.harness.expression.EngineExpressionEvaluator;
@@ -29,6 +31,7 @@ import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class TriggerExpressionEvaluator extends EngineExpressionEvaluator {

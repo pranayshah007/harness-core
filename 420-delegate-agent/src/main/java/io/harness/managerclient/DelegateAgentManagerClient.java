@@ -278,4 +278,8 @@ public interface DelegateAgentManagerClient {
   @POST("executions/response/{executionId}/executionInfra")
   Call<ResponseBody> sendSetupInfraResponse(@Path("executionId") String uuid, @Query("delegateId") String delegateId,
       @Query("accountId") String accountId, @Body SetupInfraResponse response);
+
+  @GET("agent/delegates/jreVersion")
+  Call<RestResponse<String>> getJREVersion(
+      @Query("accountId") String accountId, @Query("isDelegate") boolean isDelegate);
 }

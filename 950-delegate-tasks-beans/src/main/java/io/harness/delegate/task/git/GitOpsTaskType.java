@@ -6,5 +6,13 @@
  */
 
 package io.harness.delegate.task.git;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
-public enum GitOpsTaskType { MERGE_PR, UPDATE_RELEASE_REPO, REVERT_PR }
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
+public enum GitOpsTaskType {
+  MERGE_PR,
+  UPDATE_RELEASE_REPO,
+  REVERT_PR
+}

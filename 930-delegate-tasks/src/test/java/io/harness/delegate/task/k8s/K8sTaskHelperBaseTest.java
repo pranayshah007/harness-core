@@ -103,6 +103,7 @@ import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
@@ -328,6 +329,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Mock private K8sApiClient k8sApiClient;
   @Mock private K8sCliClient k8sCliClient;
   @Mock private K8sReleaseHandlerFactory releaseHandlerFactory;
+  @Mock private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Inject @InjectMocks private K8sTaskHelperBase k8sTaskHelperBase;
   @Spy @InjectMocks private K8sTaskHelperBase spyK8sTaskHelperBase;
@@ -3079,6 +3081,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
         K8sManifestDelegateConfig.builder().storeDelegateConfig(storeDelegateConfig).build();
 
     doReturn(sshSessionConfig).when(gitDecryptionHelper).getSSHSessionConfig(sshKeySpecDTO, encryptionDataDetails);
+    doReturn(gitConfigDTO).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
     doReturn("files").when(spyHelperBase).getManifestFileNamesInLogFormat("manifest");
 
     boolean result = spyHelperBase.fetchManifestFilesAndWriteToDirectory(
@@ -3198,9 +3201,10 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     K8sManifestDelegateConfig manifestDelegateConfig =
         K8sManifestDelegateConfig.builder().storeDelegateConfig(storeDelegateConfig).build();
 
+    doReturn(gitConfigDTO).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
     doAnswer(invocation -> { throw new RuntimeException("unable to decrypt"); })
         .when(gitDecryptionHelper)
-        .decryptGitConfig(gitConfigDTO, encryptionDataDetails);
+        .decryptGitConfig(any(GitConfigDTO.class), eq(encryptionDataDetails));
 
     assertThatThrownBy(()
                            -> k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(

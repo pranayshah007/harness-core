@@ -12,27 +12,27 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 NC="\e[0m"
 
-export BRANCH_PREFIX=`echo ${ghprbTargetBranch} | sed 's/\(........\).*/\1/g'`
+export BRANCH_PREFIX=$(echo ${ghprbTargetBranch} | sed 's/\(........\).*/\1/g')
 echo -e "${YELLOW}INFO: BRANCH_PREFIX=$BRANCH_PREFIX${NC}"
 
-function check_file_present(){
-     local_file=$1
-     if [ ! -f "$local_file" ]; then
-        echo -e "${RED}ERROR: $LINENO: File $local_file not found. Exiting${NC}"
-        exit 1
-     fi
+function check_file_present() {
+  local_file=$1
+  if [ ! -f "$local_file" ]; then
+    echo -e "${RED}ERROR: $LINENO: File $local_file not found. Exiting${NC}"
+    exit 1
+  fi
 }
 
 # function to check all field for Bug ticket
-function check_bug_ticket(){
+function check_bug_ticket() {
   if [ "$1" = "null" ]; then
-    echo -e "${RED}JIRA FIELD: The bug resolution field is empty. Please provide a resolution.${NC}" >> /tmp/error_fields
+    echo -e "${RED}JIRA FIELD: The bug resolution field is empty. Please provide a resolution.${NC}" >>/tmp/error_fields
   fi
   if [ "$2" = "null" ]; then
     echo -e "${RED}JIRA FIELD: The Jira Resolved As field is not selected. Please select a resolution option${NC}" >>/tmp/error_fields
   fi
-  # release note summary 
-   if [[ "$3" == "Yes"  &&  "$4" == "null" ]]; then 
+  # release note summary
+  if [[ "$3" == "Yes" && "$4" == "null" ]]; then
     echo -e ${RED}ERROR: The 'public_release_notes_summary' field is empty. Please provide a summary for the public release notes.${NC} >>/tmp/error_fields
   fi
   if [ -f /tmp/error_fields ]; then
@@ -42,12 +42,12 @@ function check_bug_ticket(){
 }
 
 # function to check field for Story ticket
-function check_story_ticket(){
+function check_story_ticket() {
   if [ $1 = "null" ]; then
-    echo -e "${RED}ERROR: The JIRA field 'FF Added' has not been updated. Please ensure that 'FF Added' is updated before proceeding${NC}">> /tmp/error_fields
+    echo -e "${RED}ERROR: The JIRA field 'FF Added' has not been updated. Please ensure that 'FF Added' is updated before proceeding${NC}" >>/tmp/error_fields
   fi
-  # release note summary 
-  if [[  "$2" == "Yes"  &&  "$3" == "null" ]]; then 
+  # release note summary
+  if [[ "$2" == "Yes" && "$3" == "null" ]]; then
     echo -e ${RED}ERROR: The 'public_release_notes_summary' field is empty. Please provide a summary for the public release notes.${NC} >>/tmp/error_fields
   fi
 
@@ -63,44 +63,41 @@ check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
 
 COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]|\[hotfixpreqa]|feat|fix|techdebt|hotfixpreqa"
-KEY=`echo "${ghprbPullTitle}" | grep -o -iE "\[(${PROJECTS})-[0-9]+][: ]" | grep -o -iE "(${PROJECTS})-[0-9]+"`
+KEY=$(echo "${ghprbPullTitle}" | grep -o -iE "\[(${PROJECTS})-[0-9]+][: ]" | grep -o -iE "(${PROJECTS})-[0-9]+")
 if [[ -z $KEY ]]; then
   echo -e "${RED}Cannot extract Jira key from $ghprbPullTitle${NC}"
   echo -e "${RED}Make sure that your PR Title is in format -> ${COMMIT_CONTENT}: [${PROJECTS}-<number>]: <description>${NC}"
   exit 1
 fi
 
-
-
 echo -e "${YELLOW}JIRA Key is : $KEY ${NC}"
 
-jira_response=`curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY}?fields=issuetype,customfield_10687,customfield_10709,customfield_10748,customfield_10763,customfield_10785,priority,customfield_10669,customfield_10719 --user $JIRA_USERNAME:$JIRA_PASSWORD`
+jira_response=$(curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY}?fields=issuetype,customfield_10687,customfield_10709,customfield_10748,customfield_10763,customfield_10785,priority,customfield_10669,customfield_10719 --user $JIRA_USERNAME:$JIRA_PASSWORD)
 
-errorsFound=`echo "${jira_response}" | jq ".errorMessages" | tr -d '"'`
+errorsFound=$(echo "${jira_response}" | jq ".errorMessages" | tr -d '"')
 if [[ ! $errorsFound == "null" ]]; then
   echo -e "${RED}ERROR returned fetching Jira key given in PR title ($KEY)${NC}"
   echo "$errorsFound"
   exit 1
 fi
 
-issuetype=`echo "${jira_response}" | jq ".fields.issuetype.name" | tr -d '"'`
-prioritytype=`echo "${jira_response}" | jq ".fields.priority.name" | tr -d '"'`
-release_notes_candidate=`echo "${jira_response}" | jq ".fields.customfield_10669[0].value" | tr -d '"'`
-public_release_notes_summary=`echo "${jira_response}" | jq ".fields.customfield_10719" | tr -d '"'`
+issuetype=$(echo "${jira_response}" | jq ".fields.issuetype.name" | tr -d '"')
+prioritytype=$(echo "${jira_response}" | jq ".fields.priority.name" | tr -d '"')
+release_notes_candidate=$(echo "${jira_response}" | jq ".fields.customfield_10669[0].value" | tr -d '"')
+public_release_notes_summary=$(echo "${jira_response}" | jq ".fields.customfield_10719" | tr -d '"')
 
 # No longer require what changed or phase injected in fields BT-950
 # Once again remove the check for what changed or phase injected BT-3453
 PRIORITY_LIST=("P2","P3","P4")
 
-if [[ $KEY == BT-* || $KEY == SPG-* ]]
-then
+if [[ $KEY == BT-* || $KEY == SPG-* ]]; then
   bug_resolution="n/a"
   ff_added="n/a"
   jira_resolved_as="n/a"
 else
-  bug_resolution=`echo "${jira_response}" | jq ".fields.customfield_10687" | tr -d '"'`
-  ff_added=`echo "${jira_response}" | jq ".fields.customfield_10785.value" | tr -d '"'`
-  jira_resolved_as=`echo "${jira_response}" | jq ".fields.customfield_10709.value" | tr -d '"'`
+  bug_resolution=$(echo "${jira_response}" | jq ".fields.customfield_10687" | tr -d '"')
+  ff_added=$(echo "${jira_response}" | jq ".fields.customfield_10785.value" | tr -d '"')
+  jira_resolved_as=$(echo "${jira_response}" | jq ".fields.customfield_10709.value" | tr -d '"')
 fi
 
 # BT-1465 - Disallow PRs on issuetype question
@@ -110,15 +107,14 @@ if [ "${issuetype}" = "Question" ]; then
 fi
 
 # shellcheck disable=SC2076
-if [[ "${BRANCH_PREFIX}" = "release/" ]]
-then
+if [[ "${BRANCH_PREFIX}" = "release/" ]]; then
   # check ticket fields
   if [ "${issuetype}" = "Story" ]; then
     check_story_ticket "${ff_added}"
   elif [ "${issuetype}" = "Bug" ]; then
     check_bug_ticket "${bug_resolution}" "${jira_resolved_as}"
   fi
-  exit 1
+
 fi
 
 echo -e "${YELLOW}ISSUETYPE is ${issuetype}${NC}"

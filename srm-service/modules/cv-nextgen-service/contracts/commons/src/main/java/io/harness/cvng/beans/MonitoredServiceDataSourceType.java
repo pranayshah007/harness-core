@@ -32,7 +32,8 @@ public enum MonitoredServiceDataSourceType {
   @JsonProperty("SumologicLogs") SUMOLOGIC_LOG,
   @JsonProperty("SplunkSignalFXMetrics") SPLUNK_SIGNALFX_METRICS,
   @JsonProperty("GrafanaLokiLogs") GRAFANA_LOKI_LOGS,
-  @JsonProperty("AzureLogs") AZURE_LOGS;
+  @JsonProperty("AzureLogs") AZURE_LOGS,
+  @JsonProperty("AzureMetrics") AZURE_METRICS;
   public static final Map<DataSourceType, MonitoredServiceDataSourceType>
       dataSourceTypeMonitoredServiceDataSourceTypeMap = new HashMap<>();
   static {
@@ -58,6 +59,7 @@ public enum MonitoredServiceDataSourceType {
         DataSourceType.SPLUNK_SIGNALFX_METRICS, SPLUNK_SIGNALFX_METRICS);
     dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.GRAFANA_LOKI_LOGS, GRAFANA_LOKI_LOGS);
     dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.AZURE_LOGS, AZURE_LOGS);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.AZURE_METRICS, AZURE_METRICS);
   }
 
   public static MonitoredServiceDataSourceType getMonitoredServiceDataSourceType(DataSourceType dataSourceType) {

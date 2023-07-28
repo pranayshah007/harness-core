@@ -6,9 +6,11 @@
  */
 
 package io.harness.migrations;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.migrations.all.AccountNextGenEnabledMigration;
 import io.harness.migrations.all.AddAccountIdToActivityCollection;
 import io.harness.migrations.all.AddAccountIdToBarrierInstanceCollection;
@@ -169,6 +171,8 @@ import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_SERVERLESS})
 @UtilityClass
 @OwnedBy(HarnessTeam.PL)
 public class MigrationBackgroundList {

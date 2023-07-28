@@ -50,6 +50,8 @@ public class CENGCoreMigrationDetails implements MigrationDetails {
         .add(Pair.of(16, CEViewCloudProviderDataSourcesMigration.class))
         .add(Pair.of(17, CEViewDataSourcesMigration.class))
         .add(Pair.of(18, GovernanceRuleCloudProviderMigration.class))
+        .add(Pair.of(19, GovernanceRuleResourceTypeMigration.class))
+        .add(Pair.of(20, CEViewPreferencesMigration.class))
         .build();
   }
 }

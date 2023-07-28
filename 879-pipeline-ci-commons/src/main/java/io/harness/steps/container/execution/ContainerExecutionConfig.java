@@ -6,8 +6,10 @@
  */
 
 package io.harness.steps.container.execution;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.ExecutionServiceConfig;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.steps.container.execution.plugin.PluginConfig;
@@ -20,6 +22,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("ContainerExecutionConfig")

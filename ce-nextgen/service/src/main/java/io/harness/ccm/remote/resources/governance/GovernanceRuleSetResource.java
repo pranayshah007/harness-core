@@ -8,15 +8,16 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.TelemetryConstants.CLOUD_PROVIDER;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_SET_CREATED;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_SET_DELETE;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_SET_UPDATED;
+import static io.harness.ccm.TelemetryConstants.MODULE;
+import static io.harness.ccm.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.TelemetryConstants.RULE_SET_NAME;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_CREATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_DELETE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_SET_UPDATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
-import static io.harness.ccm.remote.resources.TelemetryConstants.RULE_SET_NAME;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
@@ -199,6 +200,7 @@ public class GovernanceRuleSetResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_SET_NAME, ruleSet.getName());
+    properties.put(CLOUD_PROVIDER, ruleSet.getCloudProvider());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_SET_CREATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
@@ -254,11 +256,14 @@ public class GovernanceRuleSetResource {
     }
     ruleSetService.update(accountId, ruleSet);
     RuleSet updatedRuleSet = ruleSetService.fetchById(accountId, ruleSet.getUuid(), false);
+
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_SET_NAME, ruleSet.getName());
+    properties.put(RULE_SET_NAME, updatedRuleSet.getName());
+    properties.put(CLOUD_PROVIDER, updatedRuleSet.getCloudProvider());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_SET_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(new RuleSetUpdateEvent(accountId, updatedRuleSet.toDTO(), oldRuleSet.toDTO()));
       return updatedRuleSet;
@@ -375,6 +380,7 @@ public class GovernanceRuleSetResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_SET_NAME, ruleSet.getName());
+    properties.put(CLOUD_PROVIDER, ruleSet.getCloudProvider());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_SET_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {

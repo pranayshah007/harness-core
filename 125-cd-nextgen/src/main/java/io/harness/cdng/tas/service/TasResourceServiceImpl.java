@@ -10,6 +10,9 @@ package io.harness.cdng.tas.service;
 import static io.harness.delegate.task.pcf.request.CfDataFetchActionType.FETCH_ORG;
 import static io.harness.delegate.task.pcf.request.CfDataFetchActionType.FETCH_SPACE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.tas.TasEntityHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
@@ -25,6 +28,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 public class TasResourceServiceImpl implements TasResourceService {
   @Inject TasEntityHelper tasEntityHelper;
 

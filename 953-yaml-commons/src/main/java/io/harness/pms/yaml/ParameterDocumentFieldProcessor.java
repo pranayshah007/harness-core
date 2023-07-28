@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.yaml;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionResolver;
@@ -22,6 +24,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ClassUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ParameterDocumentFieldProcessor {
@@ -107,6 +110,9 @@ public class ParameterDocumentFieldProcessor {
 
   // Handling primitive types and wrappers when value class of document field doesn't match the class of finalValue
   private Object getCastedFinalValueForPrimitiveTypesAndWrappers(Object finalValue, ParameterDocumentField field) {
+    if (field.getValueClass() == null) {
+      return finalValue;
+    }
     try {
       Class<?> fieldClass = Class.forName(field.getValueClass());
       if (ClassUtils.isPrimitiveOrWrapper(fieldClass) && !fieldClass.isAssignableFrom(finalValue.getClass())) {
@@ -133,8 +139,11 @@ public class ParameterDocumentFieldProcessor {
         }
       }
     } catch (Exception ex) {
-      log.error(String.format("Exception in casting newValue of type %s into parameter field of type %s",
-          finalValue.getClass().toString(), field.getValueClass()));
+      log.warn(
+          String.format(
+              "[ParameterDocumentFieldProcessor] Exception in casting newValue of type %s into parameter field of type %s",
+              finalValue.getClass().toString(), field.getValueClass()),
+          ex);
     }
     return finalValue;
   }

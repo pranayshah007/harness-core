@@ -6,11 +6,13 @@
  */
 
 package io.harness.delegate.task.citasks.cik8handler;
-
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
@@ -32,6 +34,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_AMI_ASG, HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 @Singleton
 @OwnedBy(CI)

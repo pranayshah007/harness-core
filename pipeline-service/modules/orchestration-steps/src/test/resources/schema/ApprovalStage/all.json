@@ -45,7 +45,7 @@
     },
     "name": {
       "type": "string",
-      "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+      "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
     },
     "strategy": {
       "oneOf": [
@@ -588,7 +588,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+          "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
         },
         "strategy": {
           "oneOf": [
@@ -1338,8 +1338,7 @@
           "required": [
             "infrastructure",
             "policy",
-            "source",
-            "verifyAttestation"
+            "source"
           ],
           "properties": {
             "infrastructure": {
@@ -1371,7 +1370,6 @@
         {
           "type": "object",
           "required": [
-            "attestation",
             "infrastructure",
             "source",
             "tool"
@@ -4954,7 +4952,7 @@
           "properties": {
             "spec": {
               "readOnly": true,
-              "$ref": "#/definitions/RetryFailureSpecConfig"
+              "$ref": "#/definitions/RetryStepGroupFailureSpecConfig"
             },
             "type": {
               "type": "string",
@@ -4965,6 +4963,28 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RetryStepGroupFailureSpecConfig": {
+      "type": "object",
+      "required": [
+        "retryCount",
+        "retryIntervals"
+      ],
+      "properties": {
+        "retryCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "retryIntervals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 2147483647,
+          "minItems": 1
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "RunStepInfo": {
@@ -6650,7 +6670,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+          "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
         },
         "strategy": {
           "oneOf": [
@@ -7451,7 +7471,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+          "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
         },
         "sharedPaths": {
           "oneOf": [
@@ -7759,7 +7779,7 @@
         },
         "versionLabel": {
           "type": "string",
-          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+          "pattern": "^[0-9a-zA-Z][^\\s/&]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"

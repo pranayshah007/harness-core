@@ -44,6 +44,7 @@ import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -236,6 +237,15 @@ public class TerragruntStepHelperTest extends CategoryTest {
             .connectorRef(ParameterField.createValueField(gitStoreConfigFiles.getConnectoref().getValue()))
             .build();
 
+    doReturn(GitConfigDTO.builder()
+                 .gitAuthType(GitAuthType.HTTP)
+                 .gitConnectionType(GitConnectionType.ACCOUNT)
+                 .delegateSelectors(Collections.singleton("delegateName"))
+                 .url("https://github.com/wings-software/test-repo-name")
+                 .branchName("master")
+                 .build())
+        .when(cdStepHelper)
+        .getScmConnector(any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)
@@ -289,6 +299,15 @@ public class TerragruntStepHelperTest extends CategoryTest {
                                                               .branchName("master")
                                                               .build())
                                          .build();
+    doReturn(GitConfigDTO.builder()
+                 .gitAuthType(GitAuthType.HTTP)
+                 .gitConnectionType(GitConnectionType.ACCOUNT)
+                 .delegateSelectors(Collections.singleton("delegateName"))
+                 .url("https://github.com/wings-software/test-repo-name-var-file")
+                 .branchName("master")
+                 .build())
+        .when(cdStepHelper)
+        .getScmConnector(any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)
@@ -325,6 +344,16 @@ public class TerragruntStepHelperTest extends CategoryTest {
                                                               .branchName("master")
                                                               .build())
                                          .build();
+
+    doReturn(GitConfigDTO.builder()
+                 .gitAuthType(GitAuthType.HTTP)
+                 .gitConnectionType(GitConnectionType.ACCOUNT)
+                 .delegateSelectors(Collections.singleton("delegateName"))
+                 .url("https://github.com/wings-software/test-repo-name-be-file")
+                 .branchName("master")
+                 .build())
+        .when(cdStepHelper)
+        .getScmConnector(any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)
@@ -450,6 +479,16 @@ public class TerragruntStepHelperTest extends CategoryTest {
                                                               .branchName("master")
                                                               .build())
                                          .build();
+
+    doReturn(GitConfigDTO.builder()
+                 .gitAuthType(GitAuthType.HTTP)
+                 .gitConnectionType(GitConnectionType.ACCOUNT)
+                 .delegateSelectors(Collections.singleton("delegateName"))
+                 .url("https://github.com/wings-software/test-repo-name")
+                 .branchName("master")
+                 .build())
+        .when(cdStepHelper)
+        .getScmConnector(any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)
@@ -658,6 +697,16 @@ public class TerragruntStepHelperTest extends CategoryTest {
                                                               .branchName("master")
                                                               .build())
                                          .build();
+
+    doReturn(GitConfigDTO.builder()
+                 .gitAuthType(GitAuthType.HTTP)
+                 .gitConnectionType(GitConnectionType.ACCOUNT)
+                 .delegateSelectors(Collections.singleton("delegateName"))
+                 .url("https://github.com/wings-software/test-repo-name")
+                 .branchName("master")
+                 .build())
+        .when(cdStepHelper)
+        .getScmConnector(any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)
@@ -769,5 +818,59 @@ public class TerragruntStepHelperTest extends CategoryTest {
     boolean flag = helper.tfPlanEncryptionOnManager(
         "accountIdentifier", GcpKmsConfig.builder().accountId(GLOBAL_ACCOUNT_ID).build());
     assertThat(flag).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testFetchFileConfigForGithubApp() {
+    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
+                                         .name("terraform")
+                                         .identifier("terraform")
+                                         .connectorType(GITHUB)
+                                         .connectorConfig(GitConfigDTO.builder()
+                                                              .gitAuthType(GitAuthType.HTTP)
+                                                              .gitConnectionType(GitConnectionType.ACCOUNT)
+                                                              .delegateSelectors(Collections.singleton("delegateName"))
+                                                              .url("https://github.com/wings-software")
+                                                              .branchName("master")
+                                                              .build())
+                                         .build();
+
+    TerraformStepDataGenerator.GitStoreConfig gitStoreConfigFiles =
+        TerraformStepDataGenerator.GitStoreConfig.builder()
+            .branch("master")
+            .fetchType(FetchType.BRANCH)
+            .folderPath(ParameterField.createValueField("Config/"))
+            .connectoref(ParameterField.createValueField("terragrunt-configFiles"))
+            .build();
+
+    StoreConfig storeConfigFiles;
+    storeConfigFiles =
+        GithubStore.builder()
+            .repoName(ParameterField.createValueField("test-repo-name"))
+            .branch(ParameterField.createValueField(gitStoreConfigFiles.getBranch()))
+            .gitFetchType(gitStoreConfigFiles.getFetchType())
+            .folderPath(ParameterField.createValueField(gitStoreConfigFiles.getFolderPath().getValue()))
+            .connectorRef(ParameterField.createValueField(gitStoreConfigFiles.getConnectoref().getValue()))
+            .build();
+
+    doReturn(GithubConnectorDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any());
+    doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
+    doReturn(SSHKeySpecDTO.builder().build())
+        .when(gitConfigAuthenticationInfoHelper)
+        .getSSHKey(any(), anyString(), anyString(), anyString());
+    doReturn(Collections.emptyList())
+        .when(gitConfigAuthenticationInfoHelper)
+        .getEncryptedDataDetails(any(), any(), any());
+
+    GitStoreDelegateConfig storeDelegateConfig =
+        helper.getGitFetchFilesConfig(storeConfigFiles, getAmbiance(), "TG_CONFIG_FILES");
+
+    assertThat(storeDelegateConfig).isNotNull();
+    assertThat(storeDelegateConfig.getBranch()).isEqualTo("master");
+    assertThat(storeDelegateConfig.getConnectorName()).isEqualTo("terraform");
+    assertThat(storeDelegateConfig.getPaths().get(0)).isEqualTo("Config/");
+    assertThat(storeDelegateConfig.getGitConfigDTO()).isInstanceOf(GithubConnectorDTO.class);
   }
 }

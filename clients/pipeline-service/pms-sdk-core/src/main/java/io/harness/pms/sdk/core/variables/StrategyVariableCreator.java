@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.sdk.core.variables;
-
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.plan.YamlProperties;
@@ -21,9 +23,11 @@ import io.harness.pms.yaml.YamlField;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class StrategyVariableCreator implements VariableCreator<StrategyConfig> {
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
@@ -39,7 +43,7 @@ public class StrategyVariableCreator implements VariableCreator<StrategyConfig> 
   public VariableCreationResponse createVariablesForFieldV2(VariableCreationContext ctx, StrategyConfig config) {
     Map<String, YamlProperties> yamlPropertiesMap = new HashMap<>();
     if (ParameterField.isNotNull(config.getMatrixConfig()) && config.getMatrixConfig().getValue() != null) {
-      Set<String> axisKeys = ((MatrixConfig) config.getMatrixConfig().getValue()).getAxes().keySet();
+      Set<String> axisKeys = new HashSet<>(((MatrixConfig) config.getMatrixConfig().getValue()).getAxes().keySet());
       axisKeys.addAll(((MatrixConfig) config.getMatrixConfig().getValue()).getExpressionAxes().keySet());
       String placeHolder = "matrix.%s";
       for (String axis : axisKeys) {

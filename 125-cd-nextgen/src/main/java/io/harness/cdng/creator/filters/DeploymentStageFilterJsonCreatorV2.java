@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.creator.filters;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.executions.steps.StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE;
@@ -18,8 +17,11 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TERRAGRUNT_APPLY
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
@@ -74,6 +76,9 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT,
+        HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<DeploymentStageNode> {
@@ -289,7 +294,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
     if (!environmentRef.isExpression()) {
       if (!gitOpsEnabled && ParameterField.isNull(env.getInfrastructureDefinitions())
-          && ParameterField.isNull(env.getInfrastructureDefinition())) {
+          && ParameterField.isNull(env.getInfrastructureDefinition()) && ParameterField.isBlank(env.getFilters())) {
         throw new InvalidYamlRuntimeException(format(
             "infrastructureDefinitions or infrastructureDefinition should be present in stage [%s]. Please add it and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));

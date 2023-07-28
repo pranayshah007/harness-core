@@ -6,13 +6,15 @@
  */
 
 package io.harness.ngmigration.service.manifest;
-
 import static software.wings.settings.SettingVariableTypes.AMAZON_S3_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.GCS_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.HTTP_HELM_REPO;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
@@ -48,6 +50,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class K8sManifestHelmChartRepoStoreService implements NgManifestService {

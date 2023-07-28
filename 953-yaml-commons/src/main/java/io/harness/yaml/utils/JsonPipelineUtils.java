@@ -6,9 +6,11 @@
  */
 
 package io.harness.yaml.utils;
-
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.JsonSubtypeResolver;
@@ -42,6 +44,8 @@ import lombok.extern.slf4j.Slf4j;
  * End user will typically extend interface and define {@link com.fasterxml.jackson.annotation.JsonTypeName} annotation
  * with proper type name. This way framework is decoupled from concrete implementations.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @Slf4j
 public class JsonPipelineUtils {

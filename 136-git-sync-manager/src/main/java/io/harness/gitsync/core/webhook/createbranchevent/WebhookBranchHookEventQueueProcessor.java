@@ -6,11 +6,13 @@
  */
 
 package io.harness.gitsync.core.webhook.createbranchevent;
-
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_BRANCH_HOOK_EVENT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.core.service.webhookevent.GitBranchHookEventExecutionService;
@@ -26,6 +28,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class WebhookBranchHookEventQueueProcessor extends AbstractHsqsQueueProcessor {

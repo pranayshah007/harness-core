@@ -9,7 +9,7 @@ package io.harness.cvng.core.services.impl.demo;
 
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.beans.change.DemoChangeEventDTO;
+import io.harness.cvng.core.beans.change.DemoChangeEventDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;

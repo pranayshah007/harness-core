@@ -6,15 +6,19 @@
  */
 
 package io.harness.pms.expression;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 
 /**
  * This impl is taking EngineExpressionEvaluator to resolve expressions
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class EngineExpressionEvaluatorResolver implements EngineExpressionResolver {
   private final EngineExpressionEvaluator engineExpressionEvaluator;

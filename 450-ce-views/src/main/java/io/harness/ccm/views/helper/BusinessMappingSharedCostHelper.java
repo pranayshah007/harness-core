@@ -13,6 +13,7 @@ import static io.harness.ccm.views.businessmapping.entities.SharingStrategy.PROP
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.SharedCost;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
@@ -70,11 +71,11 @@ public class BusinessMappingSharedCostHelper {
       final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
       final List<QLCEViewSortCriteria> sort, final String cloudProviderTableName, final ViewQueryParams queryParams,
       final List<BusinessMapping> sharedCostBusinessMappings, final List<ViewRule> viewRules,
-      final Map<String, String> labelsKeyAndColumnMapping) {
+      final Map<String, String> labelsKeyAndColumnMapping, final ViewPreferences viewPreferences) {
     final UnionQuery unionQuery = new UnionQuery(SetOperationQuery.Type.UNION_ALL);
-    final SelectQuery baseQuery =
-        viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
-            cloudProviderTableName, queryParams, sharedCostBusinessMappings, labelsKeyAndColumnMapping);
+    final SelectQuery baseQuery = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction,
+        Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings,
+        labelsKeyAndColumnMapping, viewPreferences);
     unionQuery.addQueries(String.format("(%s)", baseQuery));
 
     final boolean isClusterPerspective =
@@ -82,7 +83,7 @@ public class BusinessMappingSharedCostHelper {
 
     final UnionQuery sharedCostUnionQuery =
         getSharedCostUnionQuery(filters, groupBy, aggregateFunction, cloudProviderTableName, queryParams,
-            sharedCostBusinessMappings, viewRules, isClusterPerspective, labelsKeyAndColumnMapping);
+            sharedCostBusinessMappings, viewRules, isClusterPerspective, labelsKeyAndColumnMapping, viewPreferences);
 
     if (Objects.isNull(sharedCostUnionQuery)) {
       return null;
@@ -100,22 +101,22 @@ public class BusinessMappingSharedCostHelper {
       final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
       final List<QLCEViewSortCriteria> sort, final String cloudProviderTableName, final ViewQueryParams queryParams,
       final List<BusinessMapping> sharedCostBusinessMappings, final List<ViewRule> viewRules,
-      final Map<String, String> labelsKeyAndColumnMapping) {
+      final Map<String, String> labelsKeyAndColumnMapping, final ViewPreferences viewPreferences) {
     final UnionQuery unionQuery = new UnionQuery(SetOperationQuery.Type.UNION_ALL);
     final List<QLCEViewFilterWrapper> modifiedFilters = viewParametersHelper.getFiltersForEntityStatsCostTrend(filters);
     final List<QLCEViewAggregation> modifiedAggregateFunctions =
         viewParametersHelper.getAggregationsForEntityStatsCostTrend(aggregateFunction);
-    final SelectQuery baseQuery =
-        viewBillingServiceHelper.getQuery(modifiedFilters, groupBy, modifiedAggregateFunctions, Collections.emptyList(),
-            cloudProviderTableName, queryParams, sharedCostBusinessMappings, labelsKeyAndColumnMapping);
+    final SelectQuery baseQuery = viewBillingServiceHelper.getQuery(modifiedFilters, groupBy,
+        modifiedAggregateFunctions, Collections.emptyList(), cloudProviderTableName, queryParams,
+        sharedCostBusinessMappings, labelsKeyAndColumnMapping, viewPreferences);
     unionQuery.addQueries(String.format("(%s)", baseQuery));
 
     final boolean isClusterPerspective =
         viewParametersHelper.isClusterPerspective(filters, groupBy) || queryParams.isClusterQuery();
 
-    final UnionQuery sharedCostUnionQuery =
-        getSharedCostUnionQuery(modifiedFilters, groupBy, modifiedAggregateFunctions, cloudProviderTableName,
-            queryParams, sharedCostBusinessMappings, viewRules, isClusterPerspective, labelsKeyAndColumnMapping);
+    final UnionQuery sharedCostUnionQuery = getSharedCostUnionQuery(modifiedFilters, groupBy,
+        modifiedAggregateFunctions, cloudProviderTableName, queryParams, sharedCostBusinessMappings, viewRules,
+        isClusterPerspective, labelsKeyAndColumnMapping, viewPreferences);
 
     if (Objects.isNull(sharedCostUnionQuery)) {
       return null;
@@ -133,11 +134,11 @@ public class BusinessMappingSharedCostHelper {
       final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
       final List<QLCEViewSortCriteria> sort, final String cloudProviderTableName, final ViewQueryParams queryParams,
       final List<BusinessMapping> sharedCostBusinessMappings, final List<ViewRule> viewRules,
-      final Map<String, String> labelsKeyAndColumnMapping) {
+      final Map<String, String> labelsKeyAndColumnMapping, final ViewPreferences viewPreferences) {
     final UnionQuery unionQuery = new UnionQuery(SetOperationQuery.Type.UNION_ALL);
-    final SelectQuery baseQuery =
-        viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
-            cloudProviderTableName, queryParams, sharedCostBusinessMappings, labelsKeyAndColumnMapping);
+    final SelectQuery baseQuery = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction,
+        Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings,
+        labelsKeyAndColumnMapping, viewPreferences);
     unionQuery.addQueries(String.format("(%s)", baseQuery));
 
     final boolean isClusterPerspective =
@@ -145,7 +146,7 @@ public class BusinessMappingSharedCostHelper {
 
     final UnionQuery sharedCostUnionQuery =
         getSharedCostUnionQuery(filters, groupBy, aggregateFunction, cloudProviderTableName, queryParams,
-            sharedCostBusinessMappings, viewRules, isClusterPerspective, labelsKeyAndColumnMapping);
+            sharedCostBusinessMappings, viewRules, isClusterPerspective, labelsKeyAndColumnMapping, viewPreferences);
 
     if (Objects.isNull(sharedCostUnionQuery)) {
       return null;
@@ -162,7 +163,7 @@ public class BusinessMappingSharedCostHelper {
   public SelectQuery getTotalCountSharedCostDataQuery(final List<QLCEViewFilterWrapper> filters,
       final List<QLCEViewGroupBy> groupBy, final String cloudProviderTableName, final ViewQueryParams queryParams,
       final List<BusinessMapping> sharedCostBusinessMappings, final List<ViewRule> viewRules,
-      final Map<String, String> labelsKeyAndColumnMapping) {
+      final Map<String, String> labelsKeyAndColumnMapping, ViewPreferences viewPreferences) {
     final UnionQuery unionQuery = new UnionQuery(SetOperationQuery.Type.UNION_ALL);
 
     final boolean isClusterPerspective =
@@ -170,14 +171,14 @@ public class BusinessMappingSharedCostHelper {
 
     final List<QLCEViewAggregation> aggregateFunction = viewParametersHelper.getCostAggregation(isClusterPerspective);
 
-    final SelectQuery baseQuery =
-        viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, Collections.emptyList(),
-            cloudProviderTableName, queryParams, sharedCostBusinessMappings, labelsKeyAndColumnMapping);
+    final SelectQuery baseQuery = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction,
+        Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMappings,
+        labelsKeyAndColumnMapping, viewPreferences);
     unionQuery.addQueries(String.format("(%s)", baseQuery));
 
     final UnionQuery sharedCostUnionQuery =
         getSharedCostUnionQuery(filters, groupBy, aggregateFunction, cloudProviderTableName, queryParams,
-            sharedCostBusinessMappings, viewRules, isClusterPerspective, labelsKeyAndColumnMapping);
+            sharedCostBusinessMappings, viewRules, isClusterPerspective, labelsKeyAndColumnMapping, viewPreferences);
 
     if (Objects.isNull(sharedCostUnionQuery)) {
       return null;
@@ -214,15 +215,16 @@ public class BusinessMappingSharedCostHelper {
       final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
       final String cloudProviderTableName, final ViewQueryParams queryParams,
       final List<BusinessMapping> sharedCostBusinessMappings, final List<ViewRule> viewRules,
-      final boolean isClusterPerspective, final Map<String, String> labelsKeyAndColumnMapping) {
+      final boolean isClusterPerspective, final Map<String, String> labelsKeyAndColumnMapping,
+      final ViewPreferences viewPreferences) {
     final UnionQuery unionQuery = new UnionQuery(SetOperationQuery.Type.UNION_ALL);
     for (final BusinessMapping sharedCostBusinessMapping : sharedCostBusinessMappings) {
       Map<String, Double> entityCosts = new HashMap<>();
       double totalCost = 0.0;
       if (isProportionalSharingStrategyPresent(sharedCostBusinessMapping)) {
-        entityCosts =
-            dataResponseService.getCostBucketEntityCost(filters, groupBy, aggregateFunction, cloudProviderTableName,
-                queryParams, queryParams.isSkipRoundOff(), sharedCostBusinessMapping, labelsKeyAndColumnMapping);
+        entityCosts = dataResponseService.getCostBucketEntityCost(filters, groupBy, aggregateFunction,
+            cloudProviderTableName, queryParams, queryParams.isSkipRoundOff(), sharedCostBusinessMapping,
+            labelsKeyAndColumnMapping, viewPreferences);
         if (Objects.isNull(entityCosts)) {
           return null;
         }
@@ -240,7 +242,7 @@ public class BusinessMappingSharedCostHelper {
       final UnionQuery sharedCostUnionQuery =
           viewBillingServiceHelper.getSharedCostUnionQuery(removedBusinessMappingFilters, groupBy, aggregateFunction,
               cloudProviderTableName, queryParams, sharedCostBusinessMapping, entityCosts, totalCost,
-              selectedCostTargets, isClusterPerspective, labelsKeyAndColumnMapping);
+              selectedCostTargets, isClusterPerspective, labelsKeyAndColumnMapping, viewPreferences);
       if (!sharedCostUnionQuery.toString().isEmpty()) {
         unionQuery.addQueries(String.format("(%s)", sharedCostUnionQuery));
       }

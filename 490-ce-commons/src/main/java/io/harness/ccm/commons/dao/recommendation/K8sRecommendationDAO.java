@@ -33,6 +33,7 @@ import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.K8sServiceProvider;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId.NodePoolIdKeys;
@@ -128,6 +129,16 @@ public class K8sRecommendationDAO {
                             .filter(K8sWorkloadRecommendationKeys.uuid, id),
         hPersistence.createUpdateOperations(K8sWorkloadRecommendation.class)
             .set(K8sWorkloadRecommendationKeys.jiraDetails, jiraDetails));
+  }
+
+  @NonNull
+  public void updateServicenowDetailsInWorkloadRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(K8sWorkloadRecommendation.class)
+                            .filter(K8sWorkloadRecommendationKeys.accountId, accountId)
+                            .filter(K8sWorkloadRecommendationKeys.uuid, id),
+        hPersistence.createUpdateOperations(K8sWorkloadRecommendation.class)
+            .set(K8sWorkloadRecommendationKeys.serviceNowDetails, serviceNowDetails));
   }
 
   public List<PartialRecommendationHistogram> fetchPartialRecommendationHistograms(
@@ -424,6 +435,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, clusterName) // for updating older rows having clusterId instead
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.UNKNOWN.name())
         .execute();
   }
 
@@ -443,7 +455,7 @@ public class K8sRecommendationDAO {
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
   public void upsertCeRecommendation(String entityUuid, @NonNull JobConstants jobConstants,
       @NonNull NodePoolId nodePoolId, String clusterName, @NonNull RecommendationOverviewStats stats,
-      Instant lastReceivedUntilAt) {
+      Instant lastReceivedUntilAt, String cloudProvider) {
     dslContext.insertInto(CE_RECOMMENDATIONS)
         .set(CE_RECOMMENDATIONS.ACCOUNTID, jobConstants.getAccountId())
         .set(CE_RECOMMENDATIONS.ID, entityUuid)
@@ -455,7 +467,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.ISVALID, true)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
-        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.UNKNOWN.name())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, cloudProvider)
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, stats.getTotalMonthlyCost())
@@ -464,6 +476,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, clusterName) // for updating older rows having clusterId instead
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, cloudProvider)
         .execute();
   }
 
@@ -474,6 +487,18 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.JIRACONNECTORREF, jiraConnectorRef)
         .set(CE_RECOMMENDATIONS.JIRAISSUEKEY, jiraIssueKey)
         .set(CE_RECOMMENDATIONS.JIRASTATUS, jiraStatus)
+        .where(CE_RECOMMENDATIONS.ID.eq(entityUuid))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void updateServicenowDetailsInTimescale(@NonNull String entityUuid, @Nullable String servicenowConnectorRef,
+      @Nullable String servicenowTicketType, @Nullable String servicenowIssueKey, @Nullable String servicenowStatus) {
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.SERVICENOWCONNECTORREF, servicenowConnectorRef)
+        .set(CE_RECOMMENDATIONS.SERVICENOWTICKETTYPE, servicenowTicketType)
+        .set(CE_RECOMMENDATIONS.SERVICENOWISSUEKEY, servicenowIssueKey)
+        .set(CE_RECOMMENDATIONS.SERVICENOWSTATUS, servicenowStatus)
         .where(CE_RECOMMENDATIONS.ID.eq(entityUuid))
         .execute();
   }
@@ -615,6 +640,16 @@ public class K8sRecommendationDAO {
                             .filter(K8sNodeRecommendationKeys.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(K8sNodeRecommendation.class)
             .set(K8sNodeRecommendationKeys.jiraDetails, jiraDetails));
+  }
+
+  @NonNull
+  public void updateServicenowDetailsInNodeRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(K8sNodeRecommendation.class)
+                            .filter(K8sNodeRecommendationKeys.accountId, accountId)
+                            .filter(K8sNodeRecommendationKeys.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(K8sNodeRecommendation.class)
+            .set(K8sNodeRecommendationKeys.serviceNowDetails, serviceNowDetails));
   }
 
   public int fetchRecommendationsCount(@NonNull String accountId, Condition condition) {

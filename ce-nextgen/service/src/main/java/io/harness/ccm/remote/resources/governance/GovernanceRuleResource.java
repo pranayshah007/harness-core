@@ -8,14 +8,16 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.TelemetryConstants.CLOUD_PROVIDER;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_CREATED;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_DELETE;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_UPDATED;
+import static io.harness.ccm.TelemetryConstants.MODULE;
+import static io.harness.ccm.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.TelemetryConstants.RESOURCE_TYPE;
+import static io.harness.ccm.TelemetryConstants.RULE_NAME;
 import static io.harness.ccm.rbac.CCMRbacPermissions.CONNECTOR_VIEW;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_CREATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_DELETE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_UPDATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
-import static io.harness.ccm.remote.resources.TelemetryConstants.RULE_NAME;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
@@ -303,8 +305,12 @@ public class GovernanceRuleResource {
     }
     if (!rule.getIsOOTB()) {
       rule.setAccountId(accountId);
-    } else if (rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
-      rule.setAccountId(GLOBAL_ACCOUNT_ID);
+    } else if (accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      if (rule.getAccountId() == null) {
+        rule.setAccountId(GLOBAL_ACCOUNT_ID);
+      } else {
+        rule.setAccountId(rule.getAccountId());
+      }
     } else {
       throw new InvalidRequestException("Not authorised to create OOTB rules. Make a custom rule instead");
     }
@@ -321,13 +327,21 @@ public class GovernanceRuleResource {
     rule.setStoreType(RuleStoreType.INLINE);
     rule.setVersionLabel("0.0.1");
     rule.setDeleted(false);
-    rule.setForRecommendation(false);
+    rule.setResourceType(governanceRuleService.getResourceType(rule.getRulesYaml()));
+    if (rule.getIsOOTB() && rule.getForRecommendation()
+        && accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+      rule.setForRecommendation(true);
+    } else {
+      rule.setForRecommendation(false);
+    }
     governanceRuleService.validateAWSSchema(rule);
     governanceRuleService.custodianValidate(rule);
     governanceRuleService.save(rule);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_NAME, rule.getName());
+    properties.put(CLOUD_PROVIDER, rule.getCloudProvider());
+    properties.put(RESOURCE_TYPE, rule.getResourceType());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_CREATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(
@@ -404,19 +418,23 @@ public class GovernanceRuleResource {
     if (oldRule.getIsOOTB()) {
       throw new InvalidRequestException("Editing OOTB rule is not allowed");
     }
-    HashMap<String, Object> properties = new HashMap<>();
-    properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_NAME, oldRule.getName());
     if (rule.getRulesYaml() != null) {
       Rule testSchema = Rule.builder().build();
       testSchema.setName(oldRule.getName());
       testSchema.setRulesYaml(rule.getRulesYaml());
       governanceRuleService.validateAWSSchema(testSchema);
       governanceRuleService.custodianValidate(testSchema);
+      rule.setResourceType(governanceRuleService.getResourceType(rule.getRulesYaml()));
     }
     rule.setForRecommendation(false);
     governanceRuleService.update(rule, accountId);
     Rule updatedRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(RULE_NAME, updatedRule.getName());
+    properties.put(CLOUD_PROVIDER, updatedRule.getCloudProvider());
+    properties.put(RESOURCE_TYPE, updatedRule.getResourceType());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
@@ -451,18 +469,20 @@ public class GovernanceRuleResource {
 
     Rule rule = createRuleDTO.getRule();
     rule.toDTO();
-    if (!rule.getAccountId().equals(configuration.getGovernanceConfig().getOOTBAccount())) {
+    if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       throw new InvalidRequestException("Editing OOTB rule is not allowed");
     }
-    Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    String updateAccountId = rule.getAccountId() == null ? GLOBAL_ACCOUNT_ID : rule.getAccountId();
+    Rule oldRule = governanceRuleService.fetchById(updateAccountId, rule.getUuid(), true);
     if (rule.getRulesYaml() != null) {
       Rule testSchema = Rule.builder().build();
       testSchema.setName(oldRule.getName());
       testSchema.setRulesYaml(rule.getRulesYaml());
       governanceRuleService.validateAWSSchema(testSchema);
       governanceRuleService.custodianValidate(testSchema);
+      rule.setResourceType(governanceRuleService.getResourceType(rule.getRulesYaml()));
     }
-    return ResponseDTO.newResponse(governanceRuleService.update(rule, GLOBAL_ACCOUNT_ID));
+    return ResponseDTO.newResponse(governanceRuleService.update(rule, updateAccountId));
   }
   // Internal API for deletion of OOTB rules
   @NextGenManagerAuth
@@ -488,12 +508,15 @@ public class GovernanceRuleResource {
   deleteOOTB(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("ruleID") @Parameter(
-          required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
+          required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid,
+      @QueryParam("customAccountId") @Parameter(
+          description = "Custom rule account identifier") String customAccountId) {
     if (!accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       throw new InvalidRequestException("Deleting OOTB rule is not allowed");
     }
-    governanceRuleService.fetchById(GLOBAL_ACCOUNT_ID, uuid, false);
-    boolean result = governanceRuleService.delete(GLOBAL_ACCOUNT_ID, uuid);
+    String deleteRuleAccountId = customAccountId == null ? GLOBAL_ACCOUNT_ID : customAccountId;
+    governanceRuleService.fetchById(deleteRuleAccountId, uuid, false);
+    boolean result = governanceRuleService.delete(deleteRuleAccountId, uuid);
     return ResponseDTO.newResponse(result);
   }
   @NextGenManagerAuth
@@ -522,6 +545,8 @@ public class GovernanceRuleResource {
     Rule rule = governanceRuleService.fetchById(accountId, uuid, false);
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_NAME, rule.getName());
+    properties.put(CLOUD_PROVIDER, rule.getCloudProvider());
+    properties.put(RESOURCE_TYPE, rule.getResourceType());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {

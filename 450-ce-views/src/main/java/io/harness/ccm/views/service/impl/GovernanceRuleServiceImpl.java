@@ -8,9 +8,16 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.TelemetryConstants.CLOUD_PROVIDER;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_EVALUATION_ADHOC_ENQUEUED;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_EVALUATION_ENQUEUED;
+import static io.harness.ccm.TelemetryConstants.MODULE;
+import static io.harness.ccm.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.TelemetryConstants.RESOURCE_TYPE;
 import static io.harness.ccm.views.helper.RuleCloudProviderType.AZURE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -44,6 +51,8 @@ import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -61,13 +70,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.Yaml;
 import org.zeroturnaround.exec.ProcessExecutor;
 
 @Slf4j
@@ -78,6 +91,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
   @Inject private YamlSchemaValidator yamlSchemaValidator;
   @Inject private ConnectorResourceClient connectorResourceClient;
   @Inject private RuleExecutionService ruleExecutionService;
+  @Inject private TelemetryReporter telemetryReporter;
   @Nullable @Inject @Named("governanceConfig") io.harness.remote.GovernanceConfig governanceConfig;
 
   @Override
@@ -369,6 +383,12 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
               .executionStatus(RuleExecutionStatusType.ENQUEUED)
               .build();
       response = ruleExecutionService.save(ruleExecution);
+      HashMap<String, Object> properties = new HashMap<>();
+      properties.put(MODULE, MODULE_NAME);
+      properties.put(CLOUD_PROVIDER, governanceJobEnqueueDTO.getRuleCloudProviderType());
+      properties.put(RESOURCE_TYPE, rulesList.get(0).getResourceType());
+      telemetryReporter.sendTrackEvent(GOVERNANCE_EVALUATION_ADHOC_ENQUEUED, null, accountId, properties,
+          Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     } catch (Exception e) {
       log.warn("Exception enqueueing job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
           ruleEnforcementUuid, governanceJobEnqueueDTO.getTargetAccountDetails().getTargetInfo(),
@@ -441,6 +461,18 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
     }
   }
 
+  @Override
+  public String getResourceType(String ruleYaml) {
+    Yaml yaml = new Yaml();
+    Map<String, Object> ruleYamlMap = yaml.load(ruleYaml);
+    ArrayList<Object> policies = (ArrayList<Object>) ruleYamlMap.get("policies");
+    if (policies != null && policies.size() >= 1) {
+      Map<String, Object> policyMap = (Map) policies.get(0);
+      return (String) policyMap.get("resource");
+    }
+    return null;
+  }
+
   private List<RuleExecution> enqueueAws(String accountId, RuleEnforcement ruleEnforcement, List<Rule> rulesList,
       ConnectorConfigDTO connectorConfig, String faktoryJobType, String faktoryQueueName) {
     CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorConfig;
@@ -488,6 +520,12 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
                                  .executionStatus(RuleExecutionStatusType.ENQUEUED)
                                  .executionType(RuleExecutionType.EXTERNAL)
                                  .build());
+          HashMap<String, Object> properties = new HashMap<>();
+          properties.put(MODULE, MODULE_NAME);
+          properties.put(CLOUD_PROVIDER, rule.getCloudProvider());
+          properties.put(RESOURCE_TYPE, rule.getResourceType());
+          telemetryReporter.sendTrackEvent(GOVERNANCE_EVALUATION_ENQUEUED, null, accountId, properties,
+              Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
         } catch (Exception e) {
           log.warn(
               "Exception enqueueing Aws job for ruleEnforcementUuid: {} for targetAccount: {} for targetRegions: {}, {}",
@@ -546,6 +584,12 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
                                  .executionStatus(RuleExecutionStatusType.ENQUEUED)
                                  .executionType(RuleExecutionType.EXTERNAL)
                                  .build());
+          HashMap<String, Object> properties = new HashMap<>();
+          properties.put(MODULE, MODULE_NAME);
+          properties.put(CLOUD_PROVIDER, rule.getCloudProvider());
+          properties.put(RESOURCE_TYPE, rule.getResourceType());
+          telemetryReporter.sendTrackEvent(GOVERNANCE_EVALUATION_ENQUEUED, null, accountId, properties,
+              Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
         } catch (Exception e) {
           log.warn(
               "Exception enqueueing Azure job for ruleEnforcementUuid: {} for targetSubscription: {} for targetRegions: {}, {}",

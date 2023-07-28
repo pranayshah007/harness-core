@@ -6,7 +6,6 @@
  */
 
 package io.harness.utils;
-
 import static io.harness.ci.commonconstants.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
@@ -17,6 +16,9 @@ import static java.lang.String.format;
 import static org.springframework.util.StringUtils.trimLeadingCharacter;
 import static org.springframework.util.StringUtils.trimTrailingCharacter;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -30,6 +32,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Singleton
 public class CiIntegrationStageUtils {
   public static String getGitURL(String repoName, GitConnectionType connectionType, String url) {

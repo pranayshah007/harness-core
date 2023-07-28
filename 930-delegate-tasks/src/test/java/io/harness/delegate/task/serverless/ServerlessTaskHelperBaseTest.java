@@ -37,6 +37,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.service.git.NGGitServiceImpl;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
@@ -95,6 +96,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -116,6 +118,7 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
   @Mock private AwsLambdaHelperServiceDelegateNG awsLambdaHelperServiceDelegateNG;
   @Mock private AwsApiHelperService awsApiHelperService;
   @Mock private DecryptionHelper decryptionHelper;
+  @Mock private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
   @InjectMocks @Spy private ServerlessTaskHelperBase serverlessTaskHelperBase;
 
   private static final String ARTIFACT_DIRECTORY = "./repository/serverless/";
@@ -155,6 +158,11 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
   @Mock NGGitServiceImpl ngGitService;
   @Mock SshSessionConfig sshSessionConfig;
   @Mock GitClientV2 gitClientV2;
+
+  @Before
+  public void setUp() {
+    doReturn(gitConfigDTO).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
+  }
 
   @Test
   @Owner(developers = ALLU_VAMSI)

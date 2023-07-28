@@ -6,15 +6,17 @@
  */
 
 package io.harness.cdng.provision.terraform;
-
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_BACKEND_CONFIG_FILE;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_CONFIG_FILES;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -66,6 +68,8 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformDestroyStepV2 extends CdTaskChainExecutable {

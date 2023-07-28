@@ -64,6 +64,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ChecksumType;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileUploadLimit;
+import io.harness.eraro.ErrorMessageConstants;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -89,6 +90,9 @@ import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.FileStoreRepository;
 import io.harness.rule.Owner;
 
@@ -112,6 +116,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.data.domain.Page;
@@ -132,6 +138,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Mock private AccountService accountService;
   @Mock private OrganizationService organizationService;
   @Mock private ProjectService projectService;
+  @Mock private NGSettingsClient settingsClient;
 
   @Spy @InjectMocks private FileValidationService fileValidationService = new FileValidationServiceImpl();
 
@@ -679,6 +686,17 @@ public class FileStoreServiceImplTest extends CategoryTest {
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1))
         .thenReturn(Arrays.asList(file));
     when(fileFailsafeService.deleteAndPublish(any(), anyBoolean())).thenReturn(true);
+
+    when(settingsClient.getSetting(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mock(retrofit2.Call.class));
+
+    SettingValueResponseDTO settingValueResponseDTOMock = mock(SettingValueResponseDTO.class);
+
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTOMock);
+
+    when(settingValueResponseDTOMock.getValue()).thenReturn("true");
+
     doThrow(
         new ReferencedEntityException(format(
             "Folder [%s], or its subfolders, contain file(s) referenced by %s other entities and can not be deleted.",
@@ -687,7 +705,31 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .validateReferenceByAndThrow(parentFolder);
 
     boolean result = fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1, true);
+
+    mockRestStatic.close();
     assertThat(result).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void shouldFailForceDeleteIfNotEnabled() {
+    when(settingsClient.getSetting(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mock(retrofit2.Call.class));
+
+    SettingValueResponseDTO settingValueResponseDTOMock = mock(SettingValueResponseDTO.class);
+
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTOMock);
+
+    when(settingValueResponseDTOMock.getValue()).thenReturn("false");
+
+    assertThatThrownBy(
+        () -> fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "fileId", true))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(ErrorMessageConstants.FORCE_DELETE_SETTING_NOT_ENABLED);
+
+    mockRestStatic.close();
   }
 
   @Test

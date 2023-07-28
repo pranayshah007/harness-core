@@ -23,6 +23,8 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(DX)
 public class ScmConnectorMapper {
   public static GitConfigDTO toGitConfigDTO(ScmConnector scmConnector) {
+    // this should be used on manager side only as some values in GitAuth might be dummy
+    // On delegate side ScmConnectorMapperDelegate should be used
     if (scmConnector instanceof GithubConnectorDTO) {
       return GithubToGitMapper.mapToGitConfigDTO((GithubConnectorDTO) scmConnector);
     } else if (scmConnector instanceof GitlabConnectorDTO) {

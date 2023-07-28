@@ -6,9 +6,11 @@
  */
 
 package io.harness.serializer.kryo;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
@@ -275,6 +277,7 @@ import io.harness.serializer.KryoRegistrar;
 import com.esotericsoftware.kryo.Kryo;
 import java.util.LinkedHashSet;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(HarnessTeam.PL)
 public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
   @Override

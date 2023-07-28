@@ -25,9 +25,11 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
@@ -230,7 +232,24 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
         .thenReturn(
             ScmGitRefTaskResponseData.builder().getUserReposResponse(getUserReposResponse.toByteArray()).build());
     getUserReposResponse = scmDelegateFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
-        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build());
+        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build(),
+        RepoFilterParamsDTO.builder().build());
+    assertThat(getUserReposResponse.getReposCount()).isEqualTo(1);
+    assertThat(getUserReposResponse.getRepos(0).getName()).isEqualTo(repoName);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void getListUserReposWithSearchTerm() {
+    GetUserReposResponse getUserReposResponse =
+        GetUserReposResponse.newBuilder().addRepos(Repository.newBuilder().setName(repoName).build()).build();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(
+            ScmGitRefTaskResponseData.builder().getUserReposResponse(getUserReposResponse.toByteArray()).build());
+    getUserReposResponse = scmDelegateFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
+        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build(),
+        RepoFilterParamsDTO.builder().repoName("repo").build());
     assertThat(getUserReposResponse.getReposCount()).isEqualTo(1);
     assertThat(getUserReposResponse.getRepos(0).getName()).isEqualTo(repoName);
   }
@@ -248,9 +267,27 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
                         .getListBranchesWithDefaultResponse(listBranchesWithDefaultResponse.toByteArray())
                         .build());
     listBranchesWithDefaultResponse = scmDelegateFacilitatorService.listBranches(accountIdentifier, orgIdentifier,
-        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build());
+        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build(),
+        BranchFilterParamsDTO.builder().build());
     assertThat(listBranchesWithDefaultResponse.getBranchesCount()).isEqualTo(1);
     assertThat(listBranchesWithDefaultResponse.getDefaultBranch()).isEqualTo(defaultBranch);
+    assertThat(listBranchesWithDefaultResponse.getBranchesList().get(0)).isEqualTo(branch);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testListBranchesWithBranchFilters() {
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
+        ListBranchesWithDefaultResponse.newBuilder().addAllBranches(Arrays.asList(branch)).build();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ScmGitRefTaskResponseData.builder()
+                        .getListBranchesWithDefaultResponse(listBranchesWithDefaultResponse.toByteArray())
+                        .build());
+    listBranchesWithDefaultResponse = scmDelegateFacilitatorService.listBranches(accountIdentifier, orgIdentifier,
+        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build(),
+        BranchFilterParamsDTO.builder().branchName(branch).build());
+    assertThat(listBranchesWithDefaultResponse.getBranchesCount()).isEqualTo(1);
     assertThat(listBranchesWithDefaultResponse.getBranchesList().get(0)).isEqualTo(branch);
   }
 

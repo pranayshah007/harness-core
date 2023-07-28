@@ -7,7 +7,11 @@
 
 package io.harness.app;
 
+import static io.harness.eventsframework.EventsFrameworkConstants.CI_ORCHESTRATION_NOTIFY_EVENT;
+
 import io.harness.authorization.AuthorizationServiceHeader;
+import io.harness.beans.execution.license.CILicenseService;
+import io.harness.ci.license.impl.CILicenseServiceImpl;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,4 +29,8 @@ public class CIManagerConfigurationOverride {
   private boolean useBuildEnforcer = true;
 
   private String mongoUri = "";
+
+  private String orchestrationEvent = CI_ORCHESTRATION_NOTIFY_EVENT;
+
+  private Class<? extends CILicenseService> licenseClass = CILicenseServiceImpl.class;
 }

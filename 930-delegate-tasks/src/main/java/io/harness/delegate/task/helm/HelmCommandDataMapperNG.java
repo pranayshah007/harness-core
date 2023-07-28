@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.helm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.helm.HelmCommandData;
 
@@ -15,6 +17,7 @@ import java.util.Optional;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @UtilityClass
 public class HelmCommandDataMapperNG {

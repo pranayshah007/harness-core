@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.service.impl;
-
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -31,7 +30,10 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.common.NGExpressionUtils;
@@ -46,7 +48,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
 import io.harness.exception.ngexception.NGPipelineNotFoundException;
-import io.harness.expression.common.ExpressionConstants;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.NgTriggerAutoLogContext;
@@ -157,6 +158,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.util.CollectionUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -1238,12 +1240,6 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
 
     return TriggerDetails.builder().ngTriggerConfigV2(config).ngTriggerEntity(entity).build();
-  }
-
-  @VisibleForTesting
-  public boolean isBranchExpr(String pipelineBranch) {
-    return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
-        && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
   }
 
   public Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId) {

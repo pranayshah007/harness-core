@@ -11,6 +11,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
@@ -93,13 +94,13 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
-import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.organization.OrganizationClientModule;
+import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -145,6 +146,7 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -224,7 +226,6 @@ public class IdpModule extends AbstractModule {
             .build();
       }
     });
-    install(new MetricsModule());
     install(new EventsFrameworkModule(appConfig.getEventsFrameworkConfiguration()));
     install(new AbstractModule() {
       @Override
@@ -260,6 +261,7 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ServiceResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, IDP_SERVICE.getServiceId(), false));
     install(new BackstageResourceClientModule());
     install(DelegateServiceDriverModule.getInstance(false, false));
     install(ExceptionModule.getInstance());
@@ -515,5 +517,12 @@ public class IdpModule extends AbstractModule {
   @Named("proxyAllowList")
   public ProxyAllowListConfig proxyAllowList() {
     return this.appConfig.getProxyAllowList();
+  }
+
+  @Provides
+  @Singleton
+  @Named("notificationConfigs")
+  public HashMap<String, String> notificationConfigs() {
+    return this.appConfig.getNotificationConfigs();
   }
 }

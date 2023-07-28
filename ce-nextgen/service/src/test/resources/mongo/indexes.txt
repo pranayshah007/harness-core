@@ -45,6 +45,7 @@ governanceRuleEnforcement {"name": "ruleEnforcement", "background": true} {"name
 governanceRuleEnforcement {"name": "sort1", "background": true} {"name": 1, "accountId": 1, "lastUpdatedAt": 1}
 governanceRuleEnforcement {"name": "sort2", "background": true} {"name": 1, "accountId": 1, "createdAt": 1}
 governanceRuleExecution {"name": "jobIdentifier", "background": true} {"jobId": 1}
+governanceRuleExecution {"name": "resourceTypeCount", "background": true} {"accountId": 1, "resourceType": 1, "executionType": 1, "lastUpdatedAt": 1}
 governanceRuleExecution {"name": "ruleExecution", "background": true} {"accountId": 1, "cloudProvider": 1, "ruleEnforcementIdentifier": 1, "rulePackIdentifier": 1, "ruleIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 governanceRuleExecution {"name": "ruleIdentifier", "background": true} {"ruleIdentifier": 1}
 governanceRuleExecution {"name": "sort1", "background": true} {"accountId": 1, "cloudProvider": 1, "lastUpdatedAt": 1}

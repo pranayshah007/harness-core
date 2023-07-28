@@ -23,6 +23,7 @@ import io.harness.CategoryTest;
 import io.harness.account.services.AccountService;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
@@ -91,6 +92,7 @@ public class HelmRollbackStepTest extends CategoryTest {
   @Mock private AccountService accountService;
   @Mock private StepHelper stepHelper;
   @Mock private TelemetryReporter telemetryReporter;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
   @Before
   public void setUp() {
@@ -119,6 +121,11 @@ public class HelmRollbackStepTest extends CategoryTest {
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
                 helmDeployFqn + "." + OutcomeExpressionConstants.HELM_DEPLOY_OUTCOME));
+    doReturn(optionalSweepingOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                helmDeployFqn + "." + OutcomeExpressionConstants.HELM_DEPLOY_RELEASE_OUTCOME));
 
     TaskRequest taskRequest = helmRollbackStep.obtainTask(ambiance, stepElementParameters, stepInputPackage);
     assertThat(taskRequest).isNotNull();
@@ -154,6 +161,7 @@ public class HelmRollbackStepTest extends CategoryTest {
                                                .output(NativeHelmDeployOutcome.builder().releaseName("test").build())
                                                .build();
     OptionalSweepingOutput deploymentOutput = OptionalSweepingOutput.builder().found(false).build();
+    OptionalSweepingOutput releaseOutput2 = OptionalSweepingOutput.builder().found(false).build();
 
     String deployFqn = "pipeline.stages.deploy.spec.execution.steps.helmDeployment";
     final HelmRollbackStepParams stepParameters =
@@ -171,6 +179,11 @@ public class HelmRollbackStepTest extends CategoryTest {
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
                 deployFqn + "." + OutcomeExpressionConstants.HELM_DEPLOY_OUTCOME));
+    doReturn(releaseOutput2)
+        .when(executionSweepingOutputService)
+        .resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                deployFqn + "." + OutcomeExpressionConstants.HELM_DEPLOY_RELEASE_OUTCOME));
 
     TaskRequest result = helmRollbackStep.obtainTask(ambiance, stepElementParameters, stepInputPackage);
 

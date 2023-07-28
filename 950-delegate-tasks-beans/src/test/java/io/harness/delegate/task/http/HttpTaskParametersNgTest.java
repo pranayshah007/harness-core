@@ -37,51 +37,12 @@ public class HttpTaskParametersNgTest {
   @Test
   @Owner(developers = OwnerRule.HINGER)
   @Category(UnitTests.class)
-  public void testBuildCapabilityWithHeadersWithFFEnabled() {
-    HttpTaskParametersNg httpTaskParametersNg =
-        HttpTaskParametersNg.builder()
-            .method("GET")
-            .url("http://www.abc.xyz")
-            .requestHeader(Collections.singletonList(HttpHeaderConfig.builder().key("x-api-key").value("test").build()))
-            .shouldAvoidHeadersInCapability(true)
-            .isIgnoreResponseCode(false)
-            .build();
-
-    List<ExecutionCapability> executionCapabilities = httpTaskParametersNg.fetchRequiredExecutionCapabilities(null);
-    HttpConnectionExecutionCapability httpCapability = (HttpConnectionExecutionCapability) executionCapabilities.get(0);
-    assertThat(httpCapability.getHeaders()).isNull();
-    assertThat(httpCapability.isIgnoreResponseCode()).isFalse();
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.SARTHAK_KASAT)
-  @Category(UnitTests.class)
-  public void testBuildCapabilityWithHeadersWithFFEnabledWithIgnoreResponseCode() {
-    HttpTaskParametersNg httpTaskParametersNg =
-        HttpTaskParametersNg.builder()
-            .method("GET")
-            .url("http://www.abc.xyz")
-            .requestHeader(Collections.singletonList(HttpHeaderConfig.builder().key("x-api-key").value("test").build()))
-            .shouldAvoidHeadersInCapability(true)
-            .isIgnoreResponseCode(true)
-            .build();
-
-    List<ExecutionCapability> executionCapabilities = httpTaskParametersNg.fetchRequiredExecutionCapabilities(null);
-    HttpConnectionExecutionCapability httpCapability = (HttpConnectionExecutionCapability) executionCapabilities.get(0);
-    assertThat(httpCapability.getHeaders()).isNull();
-    assertThat(httpCapability.isIgnoreResponseCode()).isTrue();
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.HINGER)
-  @Category(UnitTests.class)
   public void testBuildCapabilityWithHeadersWithFFDisabled() {
     HttpTaskParametersNg httpTaskParametersNg =
         HttpTaskParametersNg.builder()
             .method("GET")
             .url("http://www.abc.xyz")
             .requestHeader(Collections.singletonList(HttpHeaderConfig.builder().key("x-api-key").value("test").build()))
-            .shouldAvoidHeadersInCapability(false)
             .isIgnoreResponseCode(false)
             .build();
 
@@ -100,7 +61,6 @@ public class HttpTaskParametersNgTest {
             .method("GET")
             .url("http://www.abc.xyz")
             .requestHeader(Collections.singletonList(HttpHeaderConfig.builder().key("x-api-key").value("test").build()))
-            .shouldAvoidHeadersInCapability(false)
             .isIgnoreResponseCode(true)
             .build();
 

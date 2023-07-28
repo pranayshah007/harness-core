@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.plan.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.NGCommonEntityConstants;
@@ -18,7 +17,10 @@ import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -32,6 +34,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateInputsErrorResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplateDTO;
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
@@ -46,10 +49,12 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanEx
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.pms.plan.execution.beans.dto.ExpressionEvaluationDetailDTO;
+import io.harness.pms.plan.execution.beans.dto.NodeExecutionSubGraphResponse;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
+import io.harness.pms.plan.execution.service.ExecutionGraphService;
 import io.harness.pms.plan.execution.service.ExpressionEvaluatorService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
@@ -93,6 +98,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Api("pipelines/execution")
 @Path("pipelines/execution")
@@ -126,6 +132,7 @@ public class ExecutionDetailsResource {
   @Inject private final AccessControlClient accessControlClient;
   @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject private final ExecutionHelper executionHelper;
+  @Inject private final ExecutionGraphService executionGraphService;
   @Inject private final ExpressionEvaluatorService expressionEvaluatorService;
   @Inject private final PlanExecutionMetadataService planExecutionMetadataService;
 
@@ -225,8 +232,8 @@ public class ExecutionDetailsResource {
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.SIZE)
       @DefaultValue("10") int size, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info("Get List of executions");
-    Criteria criteria = pmsExecutionService.formCriteria(
-        accountId, orgId, projectId, pipelineIdentifier, null, null, null, null, Arrays.asList(), false, false, true);
+    Criteria criteria = pmsExecutionService.formCriteria(accountId, orgId, projectId, pipelineIdentifier, null, null,
+        null, null, ExecutionStatus.getListExecutionStatus(StatusUtils.finalStatuses()), false, false, true);
     Pageable pageRequest;
     if (page < 0 || !(size > 0 && size <= 1000)) {
       throw new InvalidRequestException(
@@ -235,9 +242,10 @@ public class ExecutionDetailsResource {
 
     pageRequest = PageRequest.of(page, size, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
 
-    List<String> projections = Arrays.asList(PlanExecutionSummaryKeys.planExecutionId,
-        PlanExecutionSummaryKeys.runSequence, PlanExecutionSummaryKeys.orgIdentifier,
-        PlanExecutionSummaryKeys.pipelineIdentifier, PlanExecutionSummaryKeys.projectIdentifier);
+    List<String> projections =
+        Arrays.asList(PlanExecutionSummaryKeys.planExecutionId, PlanExecutionSummaryKeys.runSequence,
+            PlanExecutionSummaryKeys.orgIdentifier, PlanExecutionSummaryKeys.pipelineIdentifier,
+            PlanExecutionSummaryKeys.projectIdentifier, PlanExecutionSummaryKeys.status);
 
     Page<PipelineExecutionIdentifierSummaryDTO> planExecutionSummaryDTOS =
         pmsExecutionService.getPipelineExecutionSummaryEntityWithProjection(criteria, pageRequest, projections)
@@ -357,6 +365,39 @@ public class ExecutionDetailsResource {
         childStageNodeId, renderFullBottomGraph, executionSummaryEntity, entityGitDetails);
 
     return ResponseDTO.newResponse(executionDetailDTO);
+  }
+
+  @GET
+  @Path("/subGraph/{planExecutionId}/{nodeExecutionId}")
+  @ApiOperation(
+      value = "Gets Execution SubGraph for nodeExecutionId", nickname = "getExecutionSubGraphForNodeExecution")
+  @Operation(operationId = "getExecutionSubGraphForNodeExecution",
+      description = "Returns the Pipeline Execution SubGraph for a Given NodeExecution ID",
+      summary = "Fetch Execution SubGraph for a Given NodeExecution ID",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Return Execution subGraph for a Given NodeExecution ID")
+      })
+  public ResponseDTO<NodeExecutionSubGraphResponse>
+  getExecutionSubGraphForNodeExecution(
+      @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @NotNull @Parameter(description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE, required = true) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = "Node Execution Id for which we want to get the Execution SubGraph",
+          required = true) @PathParam(NGCommonEntityConstants.NODE_KEY) String nodeExecutionId,
+      @Parameter(description = "Plan Execution Id for which we want to get the Execution details",
+          required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
+    PipelineExecutionSummaryEntity executionSummaryEntity =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecutionId, false);
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
+    NodeExecutionSubGraphResponse nodeExecutionSubGraph =
+        executionGraphService.getNodeExecutionSubGraph(nodeExecutionId, planExecutionId);
+    return ResponseDTO.newResponse(nodeExecutionSubGraph);
   }
 
   @POST

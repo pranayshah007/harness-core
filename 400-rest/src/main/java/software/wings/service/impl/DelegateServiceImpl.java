@@ -2571,7 +2571,7 @@ public class DelegateServiceImpl implements DelegateService {
 
     if (existingDelegate != null) {
       // if the version is same then delegate restarted
-      if (existingDelegate.getVersion() != null && existingDelegate.getVersion().equals(delegateParams.getVersion())
+      if (isNotEmpty(existingDelegate.getVersion()) && existingDelegate.getVersion().equals(delegateParams.getVersion())
           && !ECS.equals(existingDelegate.getDelegateType())) {
         delegateMetricsService.recordDelegateMetrics(existingDelegate, DELEGATE_RESTARTED);
       }
@@ -2596,13 +2596,6 @@ public class DelegateServiceImpl implements DelegateService {
 
     log.info("Registering delegate for Hostname: {} IP: {}", delegateParams.getHostName(), delegateParams.getIp());
 
-    String delegateGroupId = delegateParams.getDelegateGroupId();
-    if (isBlank(delegateGroupId) && isNotBlank(delegateParams.getDelegateGroupName())) {
-      final DelegateGroup delegateGroup =
-          upsertDelegateGroup(delegateParams.getDelegateGroupName(), delegateParams.getAccountId(), null);
-      delegateGroupId = delegateGroup.getUuid();
-    }
-
     String delegateGroupName = delegateParams.getDelegateGroupName();
 
     Optional<String> delegateTokenName = getDelegateTokenNameFromGlobalContext();
@@ -2618,17 +2611,24 @@ public class DelegateServiceImpl implements DelegateService {
               .orElse(null);
 
     // tokenName here will be used for auditing the delegate register event
-    DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
-                                                    .name(delegateParams.getDelegateName())
-                                                    .hostName(delegateParams.getHostName())
-                                                    .orgIdentifier(orgIdentifier)
-                                                    .projectIdentifier(projectIdentifier)
-                                                    .description(delegateParams.getDescription())
-                                                    .delegateType(delegateParams.getDelegateType())
-                                                    .tokenName(delegateTokenName.orElse(null))
-                                                    .build();
+    DelegateSetupDetails delegateSetupDetails =
+        DelegateSetupDetails.builder()
+            .name(delegateParams.getDelegateName())
+            .hostName(delegateParams.getHostName())
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .description(delegateParams.getDescription())
+            .delegateType(delegateParams.getDelegateType())
+            .tags(isNotEmpty(delegateParams.getTags()) ? new HashSet<>(delegateParams.getTags()) : null)
+            .tokenName(delegateTokenName.orElse(null))
+            .build();
 
-    // TODO: ARPIT for cg grouped delegates we should save tags only in delegateGroup
+    String delegateGroupId = delegateParams.getDelegateGroupId();
+    if (isBlank(delegateGroupId) && isNotBlank(delegateParams.getDelegateGroupName())) {
+      final DelegateGroup delegateGroup =
+          upsertDelegateGroup(delegateParams.getDelegateGroupName(), delegateParams.getAccountId(), null);
+      delegateGroupId = delegateGroup.getUuid();
+    }
 
     if (delegateParams.isNg()) {
       final DelegateGroup delegateGroup =
@@ -3205,12 +3205,11 @@ public class DelegateServiceImpl implements DelegateService {
                                      .filter(DelegateGroupKeys.ng, isNg)
                                      .filter(DelegateGroupKeys.name, name);
 
-    DelegateGroup existingEntity = query.get();
-
-    if (existingEntity != null && !matchOwners(existingEntity.getOwner(), owner)) {
-      throw new InvalidRequestException(
-          "Unable to create delegate group. Delegate with same name exists. Delegate name must be unique across account.");
+    if (owner != null) {
+      query.filter(DelegateGroupKeys.owner, owner);
     }
+
+    DelegateGroup existingEntity = query.get();
 
     // this statement is here because of identifier migration where we used normalized uuid for existing groups
     if (existingEntity != null && uuidToIdentifier(existingEntity.getUuid()).equals(existingEntity.getIdentifier())) {
@@ -3232,7 +3231,12 @@ public class DelegateServiceImpl implements DelegateService {
       setUnset(updateOperations, DelegateGroupKeys.k8sConfigDetails, k8sConfigDetails);
     }
 
-    setUnset(updateOperations, DelegateGroupKeys.owner, owner);
+    if (owner != null && existingEntity != null && !matchOwners(existingEntity.getOwner(), owner)) {
+      updateOperations.setOnInsert(DelegateGroupKeys.owner, owner);
+    } else {
+      setUnset(updateOperations, DelegateGroupKeys.owner, owner);
+    }
+
     setUnset(updateOperations, DelegateGroupKeys.description, description);
     setUnset(updateOperations, DelegateGroupKeys.tags, tags);
 

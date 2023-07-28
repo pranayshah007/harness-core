@@ -6,12 +6,17 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
-
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_APP_PATH;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_COMMAND_OPTIONS;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_EXPORT_BOOTSTRAP_TEMPLATE;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepInfo;
@@ -34,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public class AwsCdkBootstrapPluginInfoProvider implements CDPluginInfoProvider {
   @Override
@@ -93,16 +100,14 @@ public class AwsCdkBootstrapPluginInfoProvider implements CDPluginInfoProvider {
 
     HashMap<String, String> environmentVariablesMap = new HashMap<>();
 
-    environmentVariablesMap.put(
-        "PLUGIN_AWS_CDK_APP_PATH", getParameterFieldValue(awsCdkBootstrapStepInfo.getAppPath()));
+    environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, getParameterFieldValue(awsCdkBootstrapStepInfo.getAppPath()));
     List<String> commandOptions = getParameterFieldValue(awsCdkBootstrapStepInfo.getCommandOptions());
     if (isNotEmpty(commandOptions)) {
-      environmentVariablesMap.put("PLUGIN_AWS_CDK_COMMAND_OPTIONS", String.join(" ", commandOptions));
+      environmentVariablesMap.put(PLUGIN_AWS_CDK_COMMAND_OPTIONS, String.join(" ", commandOptions));
     }
     Boolean exportTemplate = getParameterFieldValue(awsCdkBootstrapStepInfo.getExportTemplate());
     if (exportTemplate != null && exportTemplate) {
-      environmentVariablesMap.put(
-          "PLUGIN_AWS_CDK_EXPORT_BOOTSTRAP_TEMPLATE", String.join(" ", exportTemplate.toString()));
+      environmentVariablesMap.put(PLUGIN_AWS_CDK_EXPORT_BOOTSTRAP_TEMPLATE, exportTemplate.toString());
     }
 
     if (envVariables != null && envVariables.getValue() != null) {

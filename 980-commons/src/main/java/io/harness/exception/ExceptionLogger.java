@@ -6,7 +6,6 @@
  */
 
 package io.harness.exception;
-
 import static io.harness.eraro.Level.ERROR;
 import static io.harness.exception.WingsException.ReportTarget.DELEGATE_LOG_SYSTEM;
 import static io.harness.exception.WingsException.ReportTarget.LOG_SYSTEM;
@@ -16,8 +15,11 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.util.stream.Collectors.joining;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCodeName;
 import io.harness.eraro.MessageManager;
@@ -33,6 +35,8 @@ import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.DX)
 @UtilityClass
 public class ExceptionLogger {

@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.sdk.core.plugin;
-
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
@@ -42,6 +44,9 @@ import java.util.EnumSet;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_SERVERLESS,
+        HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)

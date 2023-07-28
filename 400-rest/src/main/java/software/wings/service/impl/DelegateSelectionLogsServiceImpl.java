@@ -97,15 +97,13 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   public static final String ELIGIBLE_DELEGATES = "Delegate(s) eligible to execute task";
   public static final String PRE_ASSIGNED_ELIGIBLE_DELEGATES = "Pre assigned delegate(s) eligible to execute task";
   public static final String BROADCASTING_DELEGATES = "Broadcasting to delegate(s)";
-  public static final String CAN_NOT_ASSIGN_TASK_GROUP = "Delegate(s) not supported for task type";
+  public static final String CAN_NOT_ASSIGN_TASK_GROUP = "Task type not supported by delegate(s)";
   public static final String CAN_NOT_ASSIGN_CG_NG_TASK_GROUP =
       "Cannot assign - CG task to CG Delegate only and NG task to NG delegate(s)";
   public static final String CAN_NOT_ASSIGN_DELEGATE_SCOPE_GROUP = "Delegate scope(s) mismatched";
   public static final String CAN_NOT_ASSIGN_PROFILE_SCOPE_GROUP = "Delegate profile scope(s) mismatched ";
   public static final String CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP = "Delegate(s) don't have selectors";
   public static final String CAN_NOT_ASSIGN_OWNER = "There are no delegates with the right ownership to execute task\"";
-  public static final String TASK_VALIDATION_FAILED =
-      "No eligible delegate was able to confirm that it has the capability to execute ";
 
   public DelegateSelectionLogsServiceImpl() {
     // caffeine cache doesn't evict solely on time, it does it lazily only when new entries are added.

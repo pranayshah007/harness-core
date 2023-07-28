@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.usage.impl;
-
 import static io.harness.cdng.usage.jobs.CDLicenseDailyReportIteratorHandler.BULK_INSERT_LIMIT;
 import static io.harness.cdng.usage.jobs.CDLicenseDailyReportIteratorHandler.QUERY_ON_NUMBER_OF_DAYS;
 import static io.harness.cdng.usage.mapper.ServiceInstancesDateUsageMapper.buildDailyLicenseDateUsageFetchData;
@@ -16,8 +15,11 @@ import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.NOT_SU
 import static java.lang.String.format;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cd.CDLicenseType;
 import io.harness.cd.TimeScaleDAL;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
@@ -26,6 +28,7 @@ import io.harness.cdng.usage.CDLicenseUsageReportService;
 import io.harness.cdng.usage.pojos.LicenseDailyUsage;
 import io.harness.cdng.usage.pojos.LicenseDateUsageFetchData;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.services.LicenseService;
@@ -33,6 +36,7 @@ import io.harness.timescaledb.tables.pojos.ServiceInstancesLicenseDailyReport;
 import io.harness.timescaledb.tables.pojos.ServicesLicenseDailyReport;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -53,6 +57,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.exception.DataAccessException;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 @Slf4j
@@ -66,12 +72,24 @@ public class CDLicenseUsageReportServiceImpl implements CDLicenseUsageReportServ
   @Override
   public Optional<CDLicenseType> getCDLicenseTypePerAccount(String accountId) {
     List<ModuleLicenseDTO> moduleLicenses = licenseService.getModuleLicenses(accountId, ModuleType.CD);
-    return moduleLicenses.stream()
-        .filter(moduleLicenseDTO -> moduleLicenseDTO instanceof CDModuleLicenseDTO)
-        .map(CDModuleLicenseDTO.class ::cast)
-        .map(CDModuleLicenseDTO::getCdLicenseType)
-        .filter(Objects::nonNull)
-        .findFirst();
+    List<CDLicenseType> cdLicenseTypeList =
+        moduleLicenses.stream()
+            .filter(moduleLicenseDTO -> LicenseStatus.ACTIVE == moduleLicenseDTO.getStatus())
+            .filter(moduleLicenseDTO -> moduleLicenseDTO instanceof CDModuleLicenseDTO)
+            .map(CDModuleLicenseDTO.class ::cast)
+            .map(CDModuleLicenseDTO::getCdLicenseType)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    if (cdLicenseTypeList.isEmpty()) {
+      return Optional.empty();
+    }
+
+    if (cdLicenseTypeList.size() > 1) {
+      throw new InvalidArgumentsException(format("Found more active CD license types on account: %s, licence types: %s",
+          accountId, Joiner.on(",").join(cdLicenseTypeList)));
+    }
+
+    return Optional.ofNullable(cdLicenseTypeList.get(0));
   }
 
   @Override

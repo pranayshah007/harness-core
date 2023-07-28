@@ -19,6 +19,7 @@ import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.constants.CloudProvider;
@@ -104,6 +105,15 @@ public class ECSRecommendationDAO {
                             .filter(ECSServiceRecommendationKeys.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(ECSServiceRecommendation.class)
             .set(ECSServiceRecommendationKeys.jiraDetails, jiraDetails));
+  }
+
+  public void updateServicenowDetailsInECSRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(ECSServiceRecommendation.class, excludeValidate)
+                            .filter(ECSServiceRecommendationKeys.accountId, accountId)
+                            .filter(ECSServiceRecommendationKeys.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(ECSServiceRecommendation.class)
+            .set(ECSServiceRecommendationKeys.serviceNowDetails, serviceNowDetails));
   }
 
   public List<ECSPartialRecommendationHistogram> fetchPartialRecommendationHistograms(@NonNull String accountId,
@@ -217,6 +227,7 @@ public class ECSRecommendationDAO {
         .set(CE_RECOMMENDATIONS.MONTHLYSAVING, monthlySaving)
         .set(CE_RECOMMENDATIONS.ISVALID, shouldShowRecommendation)
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, clusterName) // for updating older rows having clusterId instead
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.AWS.name())
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .execute();

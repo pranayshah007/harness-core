@@ -6,12 +6,15 @@
  */
 
 package io.harness.cdng.manifest.yaml.summary;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.k8s.model.HelmVersion;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
@@ -19,6 +22,7 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Data
 @Builder
 @OwnedBy(CDP)
@@ -30,4 +34,5 @@ public class HelmChartManifestSummary implements ManifestSummary {
   String type;
   StoreConfig store;
   String chartVersion;
+  HelmVersion helmVersion;
 }

@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.AUTO_ACCEPT_SAML_ACCOUNT_INVITES;
@@ -35,6 +34,7 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.Account.DEFAULT_SESSION_TIMEOUT_IN_MINUTES;
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
+import static software.wings.beans.AccountStatus.MARKED_FOR_DELETION;
 import static software.wings.beans.Base.ID_KEY2;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.NotificationGroup.NotificationGroupBuilder.aNotificationGroup;
@@ -56,7 +56,10 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
 import io.harness.authenticationservice.beans.AuthenticationInfo.AuthenticationInfoBuilder;
@@ -247,6 +250,10 @@ import org.apache.commons.validator.routines.UrlValidator;
 /**
  * Created by peeyushaggarwal on 10/11/16.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_SERVERLESS,
+        HarnessModuleComponent.CDS_GITX})
 @OwnedBy(PL)
 @Singleton
 @ValidateOnExecution
@@ -378,6 +385,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   private void publishAccountChangeEventViaEventFramework(String accountId, String action) {
+    log.info("testDeletionLog: producing event to events framework for account {}, action {}", accountId, action);
     try {
       eventProducer.send(
           Message.newBuilder()
@@ -752,12 +760,27 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public boolean delete(String accountId) {
-    boolean success = accountId != null && deleteAccountHelper.deleteAccount(accountId);
-    accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
-    if (success) {
-      publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
+    if (accountId == null) {
+      return true;
     }
-    return success;
+    updateAccountStatus(accountId, MARKED_FOR_DELETION);
+    try {
+      publishAccountChangeEventViaEventFramework(accountId, DELETE_ACTION);
+      try {
+        accountLicenseObserverSubject.fireInform(AccountLicenseObserver::onLicenseChange, accountId);
+      } catch (Exception ex) {
+        log.info("testDeletionLog: exception occurred for accountLicenseObserverSubject {}", ex.getMessage());
+      }
+      boolean isCgEntitiesDeleted = deleteAccountHelper.deleteAccount(accountId, false);
+      if (isCgEntitiesDeleted) {
+        deleteAccountHelper.deleteAccountFromAccountsCollection(accountId);
+        return true;
+      }
+      return false;
+    } catch (Exception ex) {
+      log.info("testDeletionLog: some exception occurred - {}", ex);
+      return false;
+    }
   }
 
   @Override

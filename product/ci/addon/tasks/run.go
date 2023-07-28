@@ -261,7 +261,7 @@ func (r *runTask) getShell(ctx context.Context) (string, string, error) {
 
 func (r *runTask) getEarlyExitCommand() (string, error) {
 	if r.shellType == pb.ShellType_BASH || r.shellType == pb.ShellType_SH {
-		return "set -xe\n", nil
+		return "set -e\n", nil
 	} else if r.shellType == pb.ShellType_POWERSHELL || r.shellType == pb.ShellType_PWSH {
 		return "$ErrorActionPreference = 'Stop' \n", nil
 	} else if r.shellType == pb.ShellType_PYTHON {

@@ -125,7 +125,7 @@ public class GovernanceRecommendationService {
       RuleCloudProviderType ruleCloudProviderType, String fieldId, String fieldName, ViewFieldIdentifier identifier,
       String identifierName) {
     Set<Rule> ruleList = new HashSet<>();
-    ruleList.addAll(ruleDAO.forRecommendation(ruleCloudProviderType));
+    ruleList.addAll(ruleDAO.forRecommendation(ruleCloudProviderType, accountId));
 
     // getting the needed fields for recommendation
     List<RecommendationAdhocDTO> recommendationAdhocDTOList = new ArrayList<>();
@@ -269,7 +269,7 @@ public class GovernanceRecommendationService {
         QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.DESCENDING).sortType(QLCEViewSortType.COST).build());
     return viewsBillingService
         .getEntityStatsDataPointsNg(filters, groupBy, aggregateFunction, sort,
-            configuration.getRecommendationConfig().getRegionsLimit(), 0,
+            configuration.getRecommendationConfig().getRegionsLimit(), 0, null,
             viewsQueryHelper.buildQueryParams(accountId, false, false))
         .getData();
   }
@@ -303,7 +303,7 @@ public class GovernanceRecommendationService {
 
     return viewsBillingService
         .getEntityStatsDataPointsNg(filters, groupBy, aggregateFunction, sort,
-            configuration.getRecommendationConfig().getAccountLimit(), 0,
+            configuration.getRecommendationConfig().getAccountLimit(), 0, null,
             viewsQueryHelper.buildQueryParams(accountId, false, false))
         .getData();
   }

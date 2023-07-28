@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.template;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceImplBase;
@@ -26,6 +28,7 @@ import com.google.inject.Singleton;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 @Singleton

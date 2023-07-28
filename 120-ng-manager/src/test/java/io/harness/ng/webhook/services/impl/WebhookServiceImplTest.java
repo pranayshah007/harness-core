@@ -26,7 +26,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
@@ -68,7 +67,6 @@ import io.harness.product.ci.scm.proto.PushHook;
 import io.harness.product.ci.scm.proto.WebhookResponse;
 import io.harness.repositories.ng.webhook.spring.WebhookEventRepository;
 import io.harness.rule.Owner;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import java.net.MalformedURLException;
 import java.util.List;
@@ -88,7 +86,6 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Mock ConnectorService connectorService;
   @Mock ScmClientFacilitatorService scmClientFacilitatorService;
   @Mock ScmOrchestratorService scmOrchestratorService;
-  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock NextGenConfiguration nextGenConfiguration;
   @Mock WebhookHelper webhookHelper;
   @Mock HsqsClientService hsqsClientService;
@@ -101,7 +98,6 @@ public class WebhookServiceImplTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    doReturn(false).when(ngFeatureFlagHelperService).isEnabled("acc", FeatureName.CDS_QUEUE_SERVICE_FOR_TRIGGERS);
   }
 
   @Test

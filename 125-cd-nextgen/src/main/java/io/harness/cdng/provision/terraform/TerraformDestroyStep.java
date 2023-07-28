@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.provision.terraform;
-
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -61,6 +63,8 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGResponse> {
@@ -317,7 +321,7 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<TerraformTaskNGResponse> responseSupplier)
       throws Exception {
     log.info("Handling Task Result With Security Context for the Destroy Step");

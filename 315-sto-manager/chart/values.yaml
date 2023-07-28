@@ -50,7 +50,8 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
-
+  opa:
+    enabled: false
 
 
 replicaCount: 1

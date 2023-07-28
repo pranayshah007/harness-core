@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
@@ -53,6 +54,7 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
   @Mock private OrchestrationEngine engine;
   @Mock private ExecutorService executorService;
   @Mock private NodeAdviseHelper adviseHelper;
+  @Mock private PlanService planService;
   @InjectMocks private WaitForExecutionInputCallback waitForExecutionInputCallback;
   String nodeExecutionId = "nodeExecutionId";
 
@@ -72,15 +74,18 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
     verify(executorService, times(1)).submit(any(Runnable.class));
   }
 
+  // TODO (prashant): Refactor this test, this test should be broken into at-least 3 diff tests
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testNotifyTimeout() {
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("id").build();
     PlanNodeBuilder planNodeBuilder = PlanNode.builder();
+    doReturn(planNodeBuilder.build()).when(planService).fetchNode(any());
     doReturn(NodeExecution.builder().planNode(planNodeBuilder.build()).ambiance(ambiance).build())
         .when(nodeExecutionService)
         .get(nodeExecutionId);
+
     doReturn(NodeExecution.builder().planNode(planNodeBuilder.build()).ambiance(ambiance).build())
         .when(nodeExecutionService)
         .updateStatusWithOps(any(), eq(Status.EXPIRED), any(), any());
@@ -102,7 +107,12 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
             .build())
         .when(nodeExecutionService)
         .get(nodeExecutionId);
-
+    doReturn(planNodeBuilder
+                 .adviserObtainment(
+                     AdviserObtainment.newBuilder().setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE).build())
+                 .build())
+        .when(planService)
+        .fetchNode(any());
     waitForExecutionInputCallback.notifyTimeout(Map.of("key", ExecutionInputData.builder().build()));
     // It will remain 1. Because ProceedWithDefault adviser is present to NodeExecution will not be marked as expired.
     verify(nodeExecutionService, times(1))
@@ -118,7 +128,10 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
                  .build())
         .when(nodeExecutionService)
         .get(nodeExecutionId);
-
+    doReturn(
+        planNodeBuilder.clearAdviserObtainments().adviserObtainment(AdviserObtainment.getDefaultInstance()).build())
+        .when(planService)
+        .fetchNode(any());
     NodeExecution updatedNodeExecution = NodeExecution.builder().status(Status.EXPIRED).build();
     doReturn(updatedNodeExecution)
         .when(nodeExecutionService)

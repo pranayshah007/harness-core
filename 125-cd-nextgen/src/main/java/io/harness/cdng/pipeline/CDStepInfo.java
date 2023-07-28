@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.pipeline;
-
 import io.harness.advisers.rollback.OnFailRollbackParameters;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepInfo;
@@ -68,6 +70,8 @@ import io.harness.cdng.k8s.K8sScaleStepInfo;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkDiffStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkSynthStepInfo;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateBPStepInfo;
@@ -113,6 +117,9 @@ import io.harness.yaml.core.StepSpecType;
 
 import io.swagger.annotations.ApiModel;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITOPS, HarnessModuleComponent.CDS_SERVERLESS,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @ApiModel(
     subTypes = {MergePRStepInfo.class, RevertPRStepInfo.class, SyncStepInfo.class, K8sApplyStepInfo.class,
         K8sBlueGreenStepInfo.class, K8sCanaryStepInfo.class, K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class,
@@ -145,7 +152,7 @@ import io.swagger.annotations.ApiModel;
         GoogleFunctionsGenOneDeployStep.class, GoogleFunctionsGenOneRollbackStep.class, K8sBGStageScaleDownStep.class,
         ServerlessAwsLambdaPrepareRollbackV2StepInfo.class, ServerlessAwsLambdaDeployV2StepInfo.class,
         ServerlessAwsLambdaPackageV2StepInfo.class, ServerlessAwsLambdaRollbackV2StepInfo.class,
-        AwsCdkBootstrapStepInfo.class})
+        AwsCdkBootstrapStepInfo.class, AwsCdkSynthStepInfo.class, AwsCdkDiffStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

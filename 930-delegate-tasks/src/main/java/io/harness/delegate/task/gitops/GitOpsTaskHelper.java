@@ -6,16 +6,19 @@
  */
 
 package io.harness.delegate.task.gitops;
-
 import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
@@ -38,6 +41,7 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Singleton
 public class GitOpsTaskHelper {
   @Inject private SecretDecryptionService secretDecryptionService;
@@ -45,6 +49,7 @@ public class GitOpsTaskHelper {
   @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private NGGitService ngGitService;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public FetchFilesResult getFetchFilesResult(GitFetchFilesConfig gitFetchFilesConfig, String accountId,
       LogCallback logCallback, boolean closeLogStream) throws IOException {
@@ -94,7 +99,8 @@ public class GitOpsTaskHelper {
         gitFetchFilesResult = scmFetchFilesHelper.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePathsToFetch);
       }
     } else {
-      GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+      GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+          gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
       SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
           gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());

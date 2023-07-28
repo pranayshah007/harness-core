@@ -10,6 +10,7 @@ package io.harness.yaml.core.timeout;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidArgumentsException;
@@ -27,6 +28,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
+@RecasterAlias("io.harness.yaml.core.timeout.Timeout")
 public class Timeout {
   private static final String TIMEOUT_STRING = "timeout";
   private static final String SPACE = " ";

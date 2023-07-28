@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -23,7 +22,10 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.K8sHelmCommonStepHelper;
@@ -125,6 +127,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j

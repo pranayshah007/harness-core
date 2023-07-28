@@ -150,6 +150,7 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
         activity.setArtifactType(optionalArtifactsOutcome.get().getPrimary().getArtifactType());
         activity.setArtifactTag(optionalArtifactsOutcome.get().getPrimary().getTag());
       }
+      activity.setUuid(executionDetailsId);
       String activityId = activityService.upsert(activity);
       log.info("Saved Step Analysis Activity {}", activityId);
       return StepResponse.builder()

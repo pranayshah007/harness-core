@@ -22,12 +22,14 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.EntityType;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -45,6 +47,7 @@ import io.harness.steps.servicenow.beans.ServiceNowField;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetSpecParameters;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetStep;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -66,6 +69,8 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
   public static final String FIELD_NAME = "FIELD_NAME";
   public static final String FIELD_VAL = "FIELD_VAL";
   public static final String jsonString = String.format("{\"%s\":\"%s\"}", FIELD_NAME, FIELD_VAL);
+  private static final String DELEGATE_SELECTOR = "delegateSelector";
+  private static final String DELEGATE_SELECTOR_2 = "delegateSelector2";
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private ServiceNowStepHelperService serviceNowStepHelperService;
@@ -81,6 +86,12 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
   private static final String projectIdentifier = "projectIdentifier";
   private static final String pipelineIdentifier = "pipelineIdentifier";
   private ILogStreamingStepClient logStreamingStepClient;
+
+  private static final ParameterField DELEGATE_SELECTORS_PARAMETER = ParameterField.createValueField(
+      Arrays.asList(new TaskSelectorYaml(DELEGATE_SELECTOR), new TaskSelectorYaml(DELEGATE_SELECTOR_2)));
+
+  private static final List<TaskSelector> TASK_SELECTORS =
+      TaskSelectorYaml.toTaskSelector(DELEGATE_SELECTORS_PARAMETER);
 
   @Before
   public void setup() {
@@ -98,13 +109,13 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
     StepElementParameters parameters =
         getStepElementParameters(CONNECTOR, STAGING_TABLE_NAME, jsonImportDataSpecWrapper);
     TaskRequest taskRequest = TaskRequest.newBuilder().build();
-    when(serviceNowStepHelperService.prepareTaskRequest(
-             any(ServiceNowTaskNGParametersBuilder.class), any(Ambiance.class), anyString(), anyString(), anyString()))
+    when(serviceNowStepHelperService.prepareTaskRequest(any(ServiceNowTaskNGParametersBuilder.class),
+             any(Ambiance.class), anyString(), anyString(), anyString(), eq(TASK_SELECTORS)))
         .thenReturn(taskRequest);
     assertThat(serviceNowImportSetStep.obtainTaskAfterRbac(ambiance, parameters, null)).isInstanceOf(TaskRequest.class);
     verify(serviceNowStepHelperService, times(1))
         .prepareTaskRequest(paramsCaptor.capture(), eq(ambiance), eq(CONNECTOR), eq(TIMEOUT),
-            eq(String.format("ServiceNow Task: %s", ServiceNowActionNG.IMPORT_SET)));
+            eq(String.format("ServiceNow Task: %s", ServiceNowActionNG.IMPORT_SET)), eq(TASK_SELECTORS));
     assertThat(paramsCaptor.getValue().build().getAction()).isEqualTo(ServiceNowActionNG.IMPORT_SET);
     assertThat(paramsCaptor.getValue().build().getStagingTableName()).isEqualTo(STAGING_TABLE_NAME);
     assertThat(paramsCaptor.getValue().build().getImportData()).isEqualTo(jsonString);
@@ -136,13 +147,13 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
     StepElementParameters parameters =
         getStepElementParameters(CONNECTOR, STAGING_TABLE_NAME, keyValueImportDataSpecWrapper);
     TaskRequest taskRequest = TaskRequest.newBuilder().build();
-    when(serviceNowStepHelperService.prepareTaskRequest(
-             any(ServiceNowTaskNGParametersBuilder.class), any(Ambiance.class), anyString(), anyString(), anyString()))
+    when(serviceNowStepHelperService.prepareTaskRequest(any(ServiceNowTaskNGParametersBuilder.class),
+             any(Ambiance.class), anyString(), anyString(), anyString(), eq(TASK_SELECTORS)))
         .thenReturn(taskRequest);
     assertThat(serviceNowImportSetStep.obtainTaskAfterRbac(ambiance, parameters, null)).isInstanceOf(TaskRequest.class);
     verify(serviceNowStepHelperService, times(1))
         .prepareTaskRequest(paramsCaptor.capture(), eq(ambiance), eq(CONNECTOR), eq(TIMEOUT),
-            eq(String.format("ServiceNow Task: %s", ServiceNowActionNG.IMPORT_SET)));
+            eq(String.format("ServiceNow Task: %s", ServiceNowActionNG.IMPORT_SET)), eq(TASK_SELECTORS));
     assertThat(paramsCaptor.getValue().build().getAction()).isEqualTo(ServiceNowActionNG.IMPORT_SET);
     assertThat(paramsCaptor.getValue().build().getStagingTableName()).isEqualTo(STAGING_TABLE_NAME);
     assertThat(paramsCaptor.getValue().build().getImportData()).isEqualTo(jsonString);
@@ -204,6 +215,7 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
                   .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
                   .stagingTableName(ParameterField.<String>builder().value(stagingTable).build())
                   .importData(importDataSpecWrapper)
+                  .delegateSelectors(DELEGATE_SELECTORS_PARAMETER)
                   .build())
         .timeout(ParameterField.createValueField(TIMEOUT))
         .build();

@@ -6,9 +6,11 @@
  */
 
 package io.harness.serializer.morphia;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
@@ -36,6 +38,8 @@ import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_PLG_LICENSING})
 @OwnedBy(HarnessTeam.CDP)
 public class NGMorphiaRegistrar implements MorphiaRegistrar {
   @Override

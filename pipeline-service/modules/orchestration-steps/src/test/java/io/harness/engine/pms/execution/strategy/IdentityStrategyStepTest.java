@@ -13,6 +13,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -99,39 +100,38 @@ public class IdentityStrategyStepTest extends CategoryTest {
     IdentityStepParameters stepParameters =
         IdentityStepParameters.builder().originalNodeExecutionId(originalNodeExecutionId).build();
     List<NodeExecution> childrenNodeExecutions = new ArrayList<>();
+    PlanNode childNode1 = PlanNode.builder()
+                              .uuid("childId")
+                              .stepType(StepType.newBuilder()
+                                            .setType(HttpStep.STEP_TYPE.getType())
+                                            .setStepCategory(HttpStep.STEP_TYPE.getStepCategory())
+                                            .build())
+                              .build();
     childrenNodeExecutions.add(NodeExecution.builder()
                                    .uuid("uuid1")
                                    .ambiance(oldAmbiance)
                                    .status(Status.SUCCEEDED)
-                                   .planNode(PlanNode.builder()
-                                                 .uuid("childId")
-                                                 .stepType(StepType.newBuilder()
-                                                               .setType(HttpStep.STEP_TYPE.getType())
-                                                               .setStepCategory(HttpStep.STEP_TYPE.getStepCategory())
-                                                               .build())
-                                                 .build())
+                                   .planNode(childNode1)
                                    .build());
+    PlanNode childNode2 = PlanNode.builder()
+                              .uuid("childId2")
+                              .stepType(StepType.newBuilder()
+                                            .setType(HttpStep.STEP_TYPE.getType())
+                                            .setStepCategory(HttpStep.STEP_TYPE.getStepCategory())
+                                            .build())
+                              .build();
     childrenNodeExecutions.add(NodeExecution.builder()
                                    .uuid("uuid2")
                                    .ambiance(oldAmbiance)
                                    .status(Status.SUCCEEDED)
-                                   .planNode(PlanNode.builder()
-                                                 .uuid("childId2")
-                                                 .stepType(StepType.newBuilder()
-                                                               .setType(HttpStep.STEP_TYPE.getType())
-                                                               .setStepCategory(HttpStep.STEP_TYPE.getStepCategory())
-                                                               .build())
-                                                 .build())
+                                   .planNode(childNode2)
                                    .build());
-    childrenNodeExecutions.add(NodeExecution.builder()
-                                   .uuid("uuid3")
-                                   .planNode(PlanNode.builder().uuid("childId3").build())
-                                   .ambiance(oldAmbiance)
-                                   .status(Status.FAILED)
-                                   .build());
+    PlanNode childNode3 = PlanNode.builder().uuid("childId3").build();
+    childrenNodeExecutions.add(
+        NodeExecution.builder().uuid("uuid3").planNode(childNode3).ambiance(oldAmbiance).status(Status.FAILED).build());
     childrenNodeExecutions.add(NodeExecution.builder()
                                    .uuid("uuid4")
-                                   .planNode(PlanNode.builder().uuid("childId3").build())
+                                   .planNode(childNode3)
                                    .ambiance(oldAmbiance)
                                    .status(Status.ABORTED)
                                    .build());
@@ -154,6 +154,10 @@ public class IdentityStrategyStepTest extends CategoryTest {
         .when(nodeExecutionService)
         .getWithFieldsIncluded(
             stepParameters.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
+
+    doReturn(childNode1).when(planService).fetchNode(eq("childId"));
+    doReturn(childNode2).when(planService).fetchNode(eq("childId2"));
+    doReturn(childNode3).when(planService).fetchNode(eq("childId3"));
 
     CloseableIterator<NodeExecution> iterator =
         OrchestrationStepsTestHelper.createCloseableIterator(childrenNodeExecutions.iterator());
@@ -251,7 +255,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
     List<String> nodeIds = identityNodes.stream().map(UuidAccess::getUuid).collect(Collectors.toList());
     List<String> planNodeIds = childrenNodeExecutions.stream()
                                    .filter(o -> StatusUtils.brokeAndAbortedStatuses().contains(o.getStatus()))
-                                   .map(o -> o.getNode().getUuid())
+                                   .map(NodeExecution::getNodeId)
                                    .collect(Collectors.toList());
     long successFulNodeExecutions = childrenNodeExecutions.stream()
                                         .filter(o -> !StatusUtils.brokeAndAbortedStatuses().contains(o.getStatus()))

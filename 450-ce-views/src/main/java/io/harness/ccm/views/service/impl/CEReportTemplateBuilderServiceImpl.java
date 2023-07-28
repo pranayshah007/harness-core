@@ -198,7 +198,8 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
 
     // Generating Trend data
     QLCEViewTrendInfo trendData =
-        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregationFunction, viewQueryParams).getTotalCost();
+        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregationFunction, null, viewQueryParams)
+            .getTotalCost();
     if (trendData == null) {
       throw new InvalidRequestException("Exception while generating report. No data to for cost trend");
     }
@@ -207,7 +208,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     List<QLCEViewEntityStatsDataPoint> tableData =
         viewsBillingService
             .getEntityStatsDataPointsNg(filters, groupBy, aggregationFunction, sortCriteria, DEFAULT_LIMIT,
-                DEFAULT_OFFSET, viewsQueryHelper.buildQueryParams(accountId, false, false))
+                DEFAULT_OFFSET, null, viewsQueryHelper.buildQueryParams(accountId, false, false))
             .getData();
     if (isEmpty(tableData)) {
       throw new InvalidRequestException("Exception while generating report. No data to for table");
@@ -226,7 +227,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     } else {
       chartData = viewsBillingServiceImpl.convertToQLViewTimeSeriesData(
           viewsBillingService.getTimeSeriesStatsNg(filters, groupBy, aggregationFunction, sortCriteria, false,
-              DEFAULT_LIMIT, viewsQueryHelper.buildQueryParams(accountId, true, false, false, false)),
+              DEFAULT_LIMIT, null, viewsQueryHelper.buildQueryParams(accountId, true, false, false, false)),
           accountId, groupBy);
     }
     if (chartData == null) {

@@ -20,7 +20,7 @@ import lombok.Singular;
 import lombok.Value;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 @OwnedBy(CDP)
 public class GitStoreDelegateConfig implements StoreDelegateConfig {
   String branch;

@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.pipeline.executions;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.ModuleType;
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.cdng.pipeline.helpers.CDPipelineInstrumentationHelper;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
@@ -36,6 +38,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Singleton
 @Slf4j
 public class CDPipelineEndEventHandler implements OrchestrationEventHandler {

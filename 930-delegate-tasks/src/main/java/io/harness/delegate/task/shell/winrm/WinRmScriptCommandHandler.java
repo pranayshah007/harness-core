@@ -6,13 +6,15 @@
  */
 
 package io.harness.delegate.task.shell.winrm;
-
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getShellExecutorConfig;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getStatus;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWinRmSessionConfig;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -35,6 +37,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Map;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class WinRmScriptCommandHandler implements CommandHandler {

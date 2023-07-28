@@ -9,6 +9,10 @@ package io.harness.cvng.core.services.impl;
 
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundUpTo5MinBoundary;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.MS_HEALTH_REPORT;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.QueryChecks.COUNT;
@@ -24,18 +28,20 @@ import io.harness.cvng.activity.entities.ActivityBucket.ActivityBucketKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService.ServiceEnvironmentKeys;
 import io.harness.cvng.activity.services.api.ActivityService;
-import io.harness.cvng.beans.MSHealthReport;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
-import io.harness.cvng.beans.change.ChangeSummaryDTO.CategoryCountDetails;
 import io.harness.cvng.beans.change.CustomChangeEvent;
 import io.harness.cvng.beans.change.CustomChangeEventMetadata;
+import io.harness.cvng.beans.change.HarnessSRMAnalysisEventMetadata;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO.CategoryCountDetails;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.ChangeTimelineBuilder;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
+import io.harness.cvng.core.beans.change.MSHealthReport;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -52,11 +58,19 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
 import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
+import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.entities.FireHydrantReportNotificationCondition;
+import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.utils.MathUtils;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.utils.PageUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -69,8 +83,10 @@ import dev.morphia.annotations.Id;
 import dev.morphia.query.Criteria;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -99,6 +115,10 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   @Inject MSHealthReportService msHealthReportService;
   @Inject FeatureFlagService featureFlagService;
 
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
+
+  @Inject Clock clock;
+
   @Override
   public Boolean register(ChangeEventDTO changeEventDTO) {
     if (isEmpty(changeEventDTO.getMonitoredServiceIdentifier())) {
@@ -125,6 +145,32 @@ public class ChangeEventServiceImpl implements ChangeEventService {
             .projectIdentifier(changeEventDTO.getProjectIdentifier())
             .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())
             .build();
+    if (changeEventDTO.getMetadata().getType().equals(ChangeSourceType.SRM_STEP_ANALYSIS)) {
+      HarnessSRMAnalysisEventMetadata metadata = (HarnessSRMAnalysisEventMetadata) changeEventDTO.getMetadata();
+      Ambiance ambiance =
+          Ambiance.newBuilder()
+              .setPlanExecutionId(metadata.getPlanExecutionId())
+              .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier(metadata.getPipelineId()).build())
+              .addLevels(Level.newBuilder()
+                             .setSetupId(metadata.getStageStepId())
+                             .setIdentifier(metadata.getStageId())
+                             .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                             .build())
+              .build();
+      ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
+                                                              .accountIdentifier(changeEventDTO.getAccountId())
+                                                              .orgIdentifier(changeEventDTO.getOrgIdentifier())
+                                                              .projectIdentifier(changeEventDTO.getProjectIdentifier())
+                                                              .serviceIdentifier(changeEventDTO.getServiceIdentifier())
+                                                              .environmentIdentifier(changeEventDTO.getEnvIdentifier())
+                                                              .build();
+      String executionDetailId = srmAnalysisStepService.createSRMAnalysisStepExecution(ambiance,
+          changeEventDTO.getMonitoredServiceIdentifier(), serviceEnvironmentParams, metadata.getAnalysisDuration());
+      Activity activity = transformer.getEntity(changeEventDTO);
+      activity.setUuid(executionDetailId);
+      activityService.upsert(activity);
+      return true;
+    }
     if (changeEventDTO.getMetadata().getType().isInternal()) {
       activityService.upsert(transformer.getEntity(changeEventDTO));
       return true;
@@ -153,16 +199,23 @@ public class ChangeEventServiceImpl implements ChangeEventService {
                                       .orgIdentifier(changeEventDTO.getOrgIdentifier())
                                       .projectIdentifier(changeEventDTO.getProjectIdentifier())
                                       .build();
-    MSHealthReport msHealthReport =
-        msHealthReportService.getMSHealthReport(projectParams, changeEventDTO.getMonitoredServiceIdentifier());
+    MSHealthReport msHealthReport = msHealthReportService.getMSHealthReport(
+        projectParams, changeEventDTO.getMonitoredServiceIdentifier(), clock.instant().minus(1, ChronoUnit.HOURS));
     CustomChangeEvent customChangeEvent =
         ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent();
-    customChangeEvent.setMsHealthReport(msHealthReport);
     ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).setCustomChangeEvent(customChangeEvent);
 
     activityService.upsert(transformer.getEntity(changeEventDTO));
-    msHealthReportService.handleNotification(
-        projectParams, msHealthReport, webhookUrl, changeEventDTO.getMonitoredServiceIdentifier());
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+        MonitoredServiceParams.builderWithProjectParams(projectParams)
+            .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())
+            .build());
+    Map<String, Object> entityDetails = Map.of(ENTITY_IDENTIFIER, changeEventDTO.getMonitoredServiceIdentifier(),
+        ENTITY_NAME, monitoredService.getName(), SERVICE_IDENTIFIER, monitoredService.getServiceIdentifier(),
+        MS_HEALTH_REPORT, msHealthReport);
+    msHealthReportService.sendReportNotification(projectParams, entityDetails, NotificationRuleType.FIRE_HYDRANT,
+        FireHydrantReportNotificationCondition.builder().build(),
+        new NotificationRule.CVNGSlackChannel(null, webhookUrl), changeEventDTO.getMonitoredServiceIdentifier());
     return true;
   }
 
@@ -365,7 +418,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         });
     if (!featureFlagService.isFeatureFlagEnabled(
             projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_INTERNAL_CHANGE_SOURCE_CE)) {
-      changeCategoryToIndexToCount.remove(ChangeCategory.CHAOS_EXPERIMENT);
+      changeCategoryToIndexToCount.put(ChangeCategory.CHAOS_EXPERIMENT, Map.of(0, 0, 1, 0));
     }
 
     long currentTotalCount =

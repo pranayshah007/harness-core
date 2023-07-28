@@ -2,6 +2,7 @@
   "type": "ElasticSearch",
   "identifier": "elk_test",
   "name": "elk test",
+  "version" : "v1",
   "spec": {
     "connectorRef": "account.ELK_Connector",
     "feature": "ElasticSearch Logs",

@@ -15,10 +15,12 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
@@ -66,6 +68,8 @@ import org.springframework.data.util.CloseableIterator;
 public class RollbackModeExecutionHelperTest extends CategoryTest {
   @Spy RollbackModeExecutionHelper rollbackModeExecutionHelper;
   @Mock NodeExecutionService nodeExecutionService;
+
+  @Mock PlanService planService;
   @Mock PipelineMetadataService pipelineMetadataService;
   @Mock PrincipalInfoHelper principalInfoHelper;
   @Mock RollbackModeYamlTransformer rollbackModeYamlTransformer;
@@ -79,7 +83,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.openMocks(this);
     rollbackModeExecutionHelper = new RollbackModeExecutionHelper(
-        nodeExecutionService, pipelineMetadataService, principalInfoHelper, rollbackModeYamlTransformer);
+        nodeExecutionService, planService, pipelineMetadataService, principalInfoHelper, rollbackModeYamlTransformer);
   }
 
   @Test
@@ -214,6 +218,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
                                 .build();
     NodeExecution nodeExecutionForUuid1 =
         NodeExecution.builder().planNode(toBeReplaced).stepType(stepType).uuid("nodeExecForUuid1").build();
+
     List<NodeExecution> nodeExecutionList = Collections.singletonList(nodeExecutionForUuid1);
 
     PlanNode tobePreserved = PlanNode.builder().uuid("uuid2").stepType(stepType).skipGraphType(SkipType.NOOP).build();
@@ -227,6 +232,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
         .fetchNodeExecutionsForGivenStageFQNs(prevExecId, Collections.singletonList("pipeline.stages.s1"),
             NodeProjectionUtils.fieldsForIdentityNodeCreation);
 
+    when(planService.fetchNode(toBeReplaced.getUuid())).thenReturn(toBeReplaced);
     Plan transformedPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(createdPlan, prevExecId,
         Collections.singletonList("uuid2"), POST_EXECUTION_ROLLBACK, Collections.singletonList("pipeline.stages.s1"));
     List<Node> nodes = transformedPlan.getPlanNodes();

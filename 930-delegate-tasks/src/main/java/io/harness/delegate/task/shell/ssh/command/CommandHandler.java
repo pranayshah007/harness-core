@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.task.shell.ssh;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -20,6 +22,8 @@ import io.harness.shell.ExecuteCommandResponse;
 
 import java.util.Map;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(HarnessTeam.CDP)
 public interface CommandHandler {
   String RESOLVED_ENV_VARIABLES_KEY = "RESOLVED_ENV_VARIABLES";

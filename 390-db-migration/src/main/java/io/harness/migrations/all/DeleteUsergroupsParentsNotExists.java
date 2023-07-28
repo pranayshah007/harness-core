@@ -5,11 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 package io.harness.migrations.all;
-
 import static io.harness.governance.pipeline.service.GovernanceStatusEvaluator.EntityType.WORKFLOW;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 
@@ -28,6 +30,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @OwnedBy(HarnessTeam.SPG)
 public class DeleteUsergroupsParentsNotExists implements Migration {

@@ -107,6 +107,9 @@ grpcClientConfigs:
   iacm:
     target: localhost:15301
     authority: localhost
+  idp:
+    target: ${IDP_SERVICE_TARGET:-localhost:12501}
+    authority: ${IDP_SERVICE_AUTHORITY:-localhost}
 
 yamlSchemaClientConfig:
   yamlSchemaHttpClientMap:
@@ -224,11 +227,12 @@ ciServiceClientConfig:
 
 queueServiceClientConfig:
   httpClientConfig:
-    baseUrl: http://localhost:9091/
+    baseUrl: ${HSQS_BASE_URL:-http://localhost:9544/}
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
-  queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+  queueServiceSecret: ${HSQS_AUTH_TOKEN:-ThisIsMyUniqueJwtQueueServiceSecret}
   envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+  topic: ${HSQS_TOPIC:-pipeline}
 
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
@@ -340,7 +344,7 @@ orchestrationStepConfig:
           - /bin/ssca-plugin
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
-      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap"]
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth", "AwsCdkDiff", "ServerlessAwsLambdaRollbackV2"]
       ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
 
 
@@ -445,7 +449,7 @@ pipelineEventConsumersConfig:
   pollingEvent:
     threads: 1
   triggerExecutionEvent:
-    threads: 1
+    threads: ${TRIGGER_EXECUTION_EVENT_CONSUMER_THREAD_COUNT:-1}
 
 delegatePollingConfig:
   syncDelay: 2000
@@ -542,6 +546,7 @@ jsonExpansionRequestBatchSize: ${JSON_EXPANSION_BATCH_SIZE:-50}
 #############################################################
 
 orchestrationRestrictionConfiguration:
+  maxNestedLevelsCount: ${MAX_NESTED_LEVELS_COUNT:-25}
   useRestrictionForFree: ${USE_RESTRICTION_FOR_FREE:-false}
   useRestrictionForTeam: ${USE_RESTRICTION_FOR_TEAM:-false}
   useRestrictionForEnterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-false}
@@ -656,3 +661,5 @@ timeoutIteratorMode : ${TIMEOUT_ITERATOR_MODE:-LOOP}
 webhookEventHsqsDequeueConfig:
   batchSize: ${WEBHOOK_EVENT_DEQUE_BATCH_SIZE:-20}
   threadSleepTimeInMillis: ${WEBHOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
+
+useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}

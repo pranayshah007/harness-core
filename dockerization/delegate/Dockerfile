@@ -47,8 +47,8 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/kubectl/v1.24.3/kubectl https://app.harness.io/public/shared/tools/kubectl/release/v1.24.3/bin/linux/$TARGETARCH/kubectl \
   && mkdir -m 777 -p client-tools/helm/v2.13.1 \
   && curl -s -L -o client-tools/helm/v2.13.1/helm https://app.harness.io/public/shared/tools/helm/release/v2.13.1/bin/linux/$TARGETARCH/helm \
-  && mkdir -m 777 -p client-tools/helm/v3.8.0 \
-  && curl -s -L -o client-tools/helm/v3.8.0/helm https://app.harness.io/public/shared/tools/helm/release/v3.8.0/bin/linux/$TARGETARCH/helm \
+  && mkdir -m 777 -p client-tools/helm/v3.12.0 \
+  && curl -s -L -o client-tools/helm/v3.12.0/helm https://app.harness.io/public/shared/tools/helm/release/v3.12.0/bin/linux/$TARGETARCH/helm \
   && mkdir -m 777 -p client-tools/go-template/v0.4.3 \
   && curl -s -L -o client-tools/go-template/v0.4.3/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4.3/bin/linux/$TARGETARCH/go-template \
   && mkdir -m 777 -p client-tools/harness-pywinrm/v0.4-dev \
@@ -61,8 +61,8 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$TARGETARCH/oc \
   && mkdir -m 777 -p client-tools/kustomize/v4.5.4 \
   && curl -s -L -o client-tools/kustomize/v4.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.5.4/bin/linux/$TARGETARCH/kustomize \
-  && mkdir -m 777 -p client-tools/scm/0c5acd02 \
-  && curl -s -L -o client-tools/scm/0c5acd02/scm https://app.harness.io/public/shared/tools/scm/release/0c5acd02/bin/linux/$TARGETARCH/scm \
+  && mkdir -m 777 -p client-tools/scm/b4486350 \
+  && curl -s -L -o client-tools/scm/b4486350/scm https://app.harness.io/public/shared/tools/scm/release/b4486350/bin/linux/$TARGETARCH/scm \
   && chmod -R 775 /opt/harness-delegate \
   && chgrp -R 0 /opt/harness-delegate  \
   && chown -R 1001 /opt/harness-delegate

@@ -6,15 +6,16 @@
  */
 
 package io.harness.cdng.manifest.steps.task;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -22,21 +23,22 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ManifestTaskServiceImpl implements ManifestTaskService {
   @Inject private Map<String, ManifestTaskHandler> manifestTaskHandlers;
 
   @Override
-  public boolean isSupported(Ambiance ambiance, ManifestOutcome manifest) {
-    Optional<ManifestTaskHandler> manifestTaskHandler = getManifestTaskHandler(manifest.getType());
-    return manifestTaskHandler.map(handler -> handler.isSupported(ambiance, manifest)).orElse(false);
+  public boolean isSupported(FetchManifestTaskContext context) {
+    Optional<ManifestTaskHandler> manifestTaskHandler = getManifestTaskHandler(context.getType());
+    return manifestTaskHandler.map(handler -> handler.isSupported(context)).orElse(false);
   }
 
   @Override
-  public Optional<TaskData> createTaskData(Ambiance ambiance, ManifestOutcome manifest) {
-    Optional<ManifestTaskHandler> manifestTaskHandler = getManifestTaskHandler(manifest.getType());
-    return manifestTaskHandler.flatMap(handler -> handler.createTaskData(ambiance, manifest));
+  public Optional<TaskData> createTaskData(FetchManifestTaskContext context) {
+    Optional<ManifestTaskHandler> manifestTaskHandler = getManifestTaskHandler(context.getType());
+    return manifestTaskHandler.flatMap(handler -> handler.createTaskData(context));
   }
 
   @Override

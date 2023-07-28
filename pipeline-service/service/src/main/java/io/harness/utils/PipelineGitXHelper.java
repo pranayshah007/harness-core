@@ -6,12 +6,14 @@
  */
 
 package io.harness.utils;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -23,6 +25,8 @@ import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_GITX})
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineGitXHelper {

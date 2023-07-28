@@ -63,8 +63,8 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
       throw new CIStageExecutionException("Port can not be null");
     }
 
-    String gitSafeCMD = SerializerUtils.getSafeGitDirectoryCmd(
-        RunTimeInputHandler.resolveShellType(runStepInfo.getShell()), accountId, featureFlagService);
+    String gitSafeCMD =
+        SerializerUtils.getSafeGitDirectoryCmd(RunTimeInputHandler.resolveShellType(runStepInfo.getShell()));
 
     String command = null;
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);

@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.service.services.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -22,7 +21,10 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
@@ -53,6 +55,7 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.mappers.ManifestFilterHelper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
@@ -121,6 +124,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @Singleton
 @Slf4j
@@ -1084,14 +1089,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
       }
 
-      YamlField serviceDefinitionField = serviceYamlField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
-      YamlField manifestsField = ServiceFilterHelper.getManifestsNodeFromServiceDefinitionYaml(serviceDefinitionField);
+      YamlField manifestsField =
+          ManifestFilterHelper.getManifestsNodeFromServiceYaml(serviceYamlField, serviceIdentifier);
       if (manifestsField == null) {
         return new ManifestsResponseDTO();
       }
 
-      return new ManifestsResponseDTO().identifiers(ServiceFilterHelper.getManifestIdentifiersFilteredOnServiceType(
-          manifestsField, serviceDefinitionField.getType()));
+      return new ManifestsResponseDTO().identifiers(
+          ManifestFilterHelper.getManifestIdentifiersFilteredOnManifestType(manifestsField));
     } catch (IOException e) {
       throw new InvalidRequestException(
           String.format("Error occurred while fetching list of manifests for service %s", serviceIdentifier), e);

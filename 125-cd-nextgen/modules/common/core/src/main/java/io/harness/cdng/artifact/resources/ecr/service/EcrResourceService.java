@@ -6,16 +6,19 @@
  */
 
 package io.harness.cdng.artifact.resources.ecr.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrListImagesDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrRequestDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrResponseDTO;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(PIPELINE)
 public interface EcrResourceService {
   EcrResponseDTO getBuildDetails(IdentifierRef ecrConnectorRef, String registryId, String imagePath, String region,

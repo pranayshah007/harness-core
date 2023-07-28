@@ -21,11 +21,13 @@ public class Constants {
   public static final String IDP_RESOURCE_TYPE = "IDP_SETTINGS";
   public static final String IDP_PERMISSION = "idp_idpsettings_manage";
   public static final List<String> pluginIds =
-      List.of("circleci", "firehydrant", "github-actions", "github-insights", "github-pull-requests", "harness-ci-cd",
-          "harness-feature-flags", "jenkins", "jira", "kubernetes", "pager-duty", "todo");
+      List.of("circleci", "confluence", "firehydrant", "github-actions", "github-insights", "github-pull-requests",
+          "harness-ci-cd", "harness-feature-flags", "jenkins", "jira", "kubernetes", "pager-duty", "todo");
   public static final String GITHUB_TOKEN = "HARNESS_GITHUB_TOKEN";
   public static final String GITHUB_APP_ID = "HARNESS_GITHUB_APP_APPLICATION_ID";
   public static final String GITHUB_APP_PRIVATE_KEY_REF = "HARNESS_GITHUB_APP_PRIVATE_KEY_REF";
+  public static final String PRIVATE_KEY_START = "-----BEGIN PRIVATE KEY-----";
+  public static final String PRIVATE_KEY_END = "-----END PRIVATE KEY-----";
   public static final String GITLAB_TOKEN = "HARNESS_GITLAB_TOKEN";
   public static final String BITBUCKET_USERNAME = "HARNESS_BITBUCKET_USERNAME";
   public static final String BITBUCKET_USERNAME_API_ACCESS = "HARNESS_BITBUCKET_API_ACCESS_USERNAME";
@@ -51,4 +53,5 @@ public class Constants {
   public static final String SLASH_DELIMITER = "/";
   public static final String SOURCE_FORMAT = "blob";
   public static final String LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES = "LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES";
+  public static final String PLUGIN_REQUEST_NOTIFICATION_SLACK_WEBHOOK = "pluginRequestsNotificationSlack";
 }

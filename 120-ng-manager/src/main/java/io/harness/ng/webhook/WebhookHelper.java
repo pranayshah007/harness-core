@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.webhook;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
 import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
@@ -39,7 +38,10 @@ import static io.harness.security.PrincipalProtoMapper.toPrincipalProto;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.webhookpayloads.webhookdata.EventHeader;
@@ -67,6 +69,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedMap;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Slf4j
 @Singleton
 @OwnedBy(PIPELINE)

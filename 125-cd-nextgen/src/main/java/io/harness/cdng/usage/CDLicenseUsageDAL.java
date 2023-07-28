@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.usage;
-
 import static io.harness.cd.CDLicenseType.SERVICES;
 import static io.harness.cd.CDLicenseType.SERVICE_INSTANCES;
 import static io.harness.cdng.usage.pojos.ActiveService.ActiveServiceField.name;
@@ -29,8 +28,11 @@ import static java.lang.String.format;
 import static java.sql.Date.valueOf;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cd.CDLicenseType;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
 import io.harness.cdng.usage.impl.AggregateServiceUsageInfo;
@@ -65,6 +67,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Sort;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 @Singleton

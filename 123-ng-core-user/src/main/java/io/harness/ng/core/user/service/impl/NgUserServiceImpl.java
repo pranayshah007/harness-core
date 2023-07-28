@@ -1102,6 +1102,17 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   @Override
+  public Long getNgUsersCount(Scope scope) {
+    Criteria criteria = Criteria.where(UserMembershipKeys.scope + "." + ScopeKeys.accountIdentifier)
+                            .is(scope.getAccountIdentifier())
+                            .and(UserMembershipKeys.scope + "." + ScopeKeys.orgIdentifier)
+                            .is(scope.getOrgIdentifier())
+                            .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
+                            .is(scope.getProjectIdentifier());
+    return userMembershipRepository.count(criteria);
+  }
+
+  @Override
   public UserMetadata updateUserMetadataInternal(UserMetadataDTO user) {
     Optional<UserMetadata> savedUserOpt = userMetadataRepository.findDistinctByUserId(user.getUuid());
     if (!savedUserOpt.isPresent()) {

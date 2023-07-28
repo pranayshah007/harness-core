@@ -6,14 +6,17 @@
  */
 
 package io.harness.ngmigration.service.servicev2;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec.KubernetesServiceSpecBuilder;
 import io.harness.cdng.service.beans.ServiceDefinition;
@@ -32,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDC)
 public class K8sServiceV2Mapper implements ServiceV2Mapper {
   @Override
@@ -47,6 +51,10 @@ public class K8sServiceV2Mapper implements ServiceV2Mapper {
     List<NGVariable> variables = MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables());
     if (primaryArtifact != null) {
       kubernetesServiceSpec.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
+    }
+    ManifestConfigurations manifestConfigurations = getManifestConfigurations(entities, graph, service);
+    if (manifestConfigurations != null) {
+      kubernetesServiceSpec.manifestConfigurations(manifestConfigurations);
     }
     kubernetesServiceSpec.manifests(changeIdentifier(manifests, "k8s_"));
     kubernetesServiceSpec.configFiles(configFiles);

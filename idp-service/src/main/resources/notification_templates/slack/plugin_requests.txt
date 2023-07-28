@@ -1,0 +1,34 @@
+{
+	"blocks": [
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "New plugin request (Env - ${env})",
+				"emoji": true
+			}
+		},
+		{
+			"type": "section",
+			"fields": [
+				{
+					"type": "mrkdwn",
+					"text": "*Account Identifier:*\n${accountIdentifier}"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "*Account Name:*\n${accountName}"
+				}
+			]
+		},
+		{
+			"type": "section",
+			"fields": [
+				{
+					"type": "mrkdwn",
+					"text": "*Plugin details:*\nName - ${name}\nCreator - ${creator}\nPackage link - ${packageLink}\nDoc link - ${docLink}"
+				}
+			]
+		}
+	]
+}

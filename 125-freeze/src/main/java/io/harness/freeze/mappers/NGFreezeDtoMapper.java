@@ -6,7 +6,9 @@
  */
 
 package io.harness.freeze.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
@@ -39,6 +41,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @UtilityClass
 public class NGFreezeDtoMapper {
   private static final long MIN_FREEZE_WINDOW_TIME = 1800000L;

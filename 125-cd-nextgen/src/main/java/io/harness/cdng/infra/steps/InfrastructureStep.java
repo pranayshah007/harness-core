@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.infra.steps;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -21,8 +20,10 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
@@ -125,6 +126,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(CDC)
 public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure> {
@@ -225,10 +227,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       logCallback.saveExecutionLog(
           color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      saveInfraExecutionDataToStageInfo(ambiance, infrastructureOutcome);
-    }
+    saveInfraExecutionDataToStageInfo(ambiance, infrastructureOutcome);
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder()

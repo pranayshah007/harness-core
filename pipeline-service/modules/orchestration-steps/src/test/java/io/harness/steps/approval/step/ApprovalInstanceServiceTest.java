@@ -304,6 +304,47 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testaddHarnessApprovalActivityTestEmptyValue() throws Exception {
+    ApproversDTO approversDTO = ApproversDTO.builder().minimumCount(0).build();
+    HarnessApprovalInstance harnessApprovalInstance =
+        HarnessApprovalInstance.builder()
+            .approvers(approversDTO)
+            .approverInputs(Collections.singletonList(
+                ApproverInputInfoDTO.builder().name("NAME").defaultValue("DEFAULT_VAL").build()))
+            .build();
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("PlanExecutionId").build();
+    harnessApprovalInstance.setAmbiance(ambiance);
+    ApprovalInstance entity = (ApprovalInstance) harnessApprovalInstance;
+    entity.setDeadline(Long.MAX_VALUE);
+    entity.setType(ApprovalType.HARNESS_APPROVAL);
+    entity.setStatus(ApprovalStatus.WAITING);
+    Optional<ApprovalInstance> optional = Optional.of(entity);
+    when(approvalInstanceRepository.findById(any())).thenReturn(optional);
+    EmbeddedUser embeddedUser = EmbeddedUser.builder().name("embeddedUser").build();
+
+    HarnessApprovalActivityRequestDTO harnessApprovalActivityRequestDTO =
+        HarnessApprovalActivityRequestDTO.builder().build();
+    HarnessApprovalActivityRequestDTO harnessApprovalActivityRequestDTO1 =
+        HarnessApprovalActivityRequestDTO.builder()
+            .action(HarnessApprovalAction.APPROVE)
+            .comments("comment")
+            .approverInputs(Collections.singletonList(ApproverInput.builder().name("NAME").build()))
+            .build();
+    HarnessApprovalInstance instance = HarnessApprovalInstance.builder().build();
+
+    when(approvalInstanceRepository.save(any())).thenReturn(instance);
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      // default value taken for approver input variable
+
+      harnessApprovalInstance.addApprovalActivity(embeddedUser, harnessApprovalActivityRequestDTO1);
+      assertThat(harnessApprovalInstance.getApprovalActivities().get(0).getApproverInputs().get(0).getValue())
+          .isEqualTo("");
+    }
+  }
+
+  @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void testFindAllPreviousWaitingApprovals() {

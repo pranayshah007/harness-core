@@ -56,6 +56,7 @@ mongo:
   indexManagerMode: ${MONGO_INDEX_MANAGER_MODE:-AUTO}
   transactionsEnabled: ${MONGO_TRANSACTIONS_ENABLED:-true}
   aliasDBName: ${MONGO_ALIAS_DB_NAME:-accesscontrol}
+  maxDocumentsToBeFetched: 2147483647
 
 eventsConfig:
   redis:

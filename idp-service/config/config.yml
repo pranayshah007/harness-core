@@ -58,6 +58,26 @@ redisLockConfig:
   userName: ""
   password: ""
 
+pmsSdkGrpcServerConfig:
+  connectors:
+    - port: 12501
+      secure: true
+      keyFilePath: key.pem
+      certFilePath: cert.pem
+    - port: 12502
+
+pmsGrpcClientConfig:
+  target: localhost:12011
+  authority: localhost
+
+shouldConfigureWithPMS: true
+
+cacheConfig:
+  cacheBackend: REDIS
+  cacheNamespace: ""
+  disabledCaches: [ ]
+  enterpriseCacheEnabled: true
+
 logging:
   level: INFO
   loggers:
@@ -107,8 +127,8 @@ managerTarget: localhost:9880
 managerAuthority: localhost
 
 onboardingModuleConfig:
-  descriptionForEntitySelected: A YAML file will be created for each service inside your GitHub repository. An example of what the files will look like is shown below
-  descriptionForSampleEntity: Because you didn't choose any Harness services to import in the previous step, an example Harness service catalog-info.yaml will be created inside your GitHub repository as shown below
+  descriptionForEntitySelected: A YAML file will be created for each service inside your Git repository. An example of what the files will look like is shown below
+  descriptionForSampleEntity: Because you didn't choose any Harness services to import in the previous step, an example Harness service catalog-info.yaml will be created inside your Git repository as shown below
   useGitServiceGrpcForSingleEntityPush: true
   tmpPathForCatalogInfoYamlStore: /tmp/idp-catalog-onboarding
   catalogInfoLocationDefaultPath: /.harness-idp-entities
@@ -165,3 +185,24 @@ proxyAllowList:
         - /user/aggregate
         - /aggregate/acl/usergroups
         - /token/validate
+
+shouldConfigureWithNotification: ${SHOULD_CONFIGURE_WITH_NOTIFICATION:-false}
+
+notificationClient:
+  messageBroker:
+    type: MONGO
+    uri: mongodb://localhost:27017/notification
+    connectTimeout: 30000
+    serverSelectionTimeout: 90000
+    socketTimeout: 360000
+    maxConnectionIdleTime: 600000
+    connectionsPerHost: 300
+  httpClient:
+    baseUrl: http://localhost:9005/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  secrets:
+    notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+notificationConfigs:
+  pluginRequestsNotificationSlack: https://hooks.slack.com/services/dummy/dummy/dummy

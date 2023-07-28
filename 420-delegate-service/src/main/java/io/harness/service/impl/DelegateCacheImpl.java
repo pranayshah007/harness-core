@@ -177,6 +177,8 @@ public class DelegateCacheImpl implements DelegateCache {
         delegateCache.refresh(delegateId);
       }
 
+      delegate = delegateCache.get(delegateId).orElse(null);
+
       if (delegate != null && (delegate.getAccountId() == null || !delegate.getAccountId().equals(accountId))) {
         // TODO: this is serious, we should not return the delegate if the account is not the expected one
         //       just to be on the safe side, make sure that all such scenarios are first fixed

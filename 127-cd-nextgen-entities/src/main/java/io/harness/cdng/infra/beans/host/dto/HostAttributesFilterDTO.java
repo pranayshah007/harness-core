@@ -10,6 +10,7 @@ package io.harness.cdng.infra.beans.host.dto;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
@@ -24,6 +25,7 @@ import lombok.Value;
 @Value
 @OwnedBy(CDP)
 @Builder
+@RecasterAlias("io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO")
 public class HostAttributesFilterDTO implements HostFilterSpecDTO {
   Map<String, String> value;
 

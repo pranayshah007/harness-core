@@ -16,6 +16,7 @@ enum Team {
   PIPELINE = 5;
   PL = 6;
   GTM = 7;
+  IDP = 8;
 }
 
 message NotificationRequest {

@@ -6,11 +6,13 @@
  */
 
 package io.harness.kustomize;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.chartmuseum.ChartMuseumConstants.VERSION_PATTERN;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.version.Version;
 import io.harness.cli.CliHelper;
 
@@ -23,6 +25,7 @@ import java.util.regex.Matcher;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessResult;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @Singleton
 @OwnedBy(CDP)

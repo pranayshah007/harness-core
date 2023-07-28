@@ -44,9 +44,9 @@ public class AzureLogsDataCollectionInfo extends LogDataCollectionInfo<AzureConn
     envVars.put("clientSecret", String.valueOf(azureClientSecretKeyDTO.getSecretKey().getDecryptedValue()));
     envVars.put("azureTokenUrl", String.format(AZURE_TOKEN_URL_FORMAT, azureManualDetailsDTO.getTenantId()));
     envVars.put("query", query);
-    envVars.put("serviceInstanceIdentifier", "$." + serviceInstanceIdentifier);
-    envVars.put("timeStampIdentifier", "$." + timeStampIdentifier);
-    envVars.put("messageIdentifier", "$." + messageIdentifier);
+    envVars.put("serviceInstanceIdentifier", serviceInstanceIdentifier);
+    envVars.put("timeStampIdentifier", timeStampIdentifier);
+    envVars.put("messageIdentifier", messageIdentifier);
     return envVars;
   }
 

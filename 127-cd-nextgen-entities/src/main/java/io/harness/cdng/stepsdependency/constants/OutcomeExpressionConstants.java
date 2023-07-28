@@ -6,13 +6,19 @@
  */
 
 package io.harness.cdng.stepsdependency.constants;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_COMMON_STEPS,
+        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_K8S,
+        HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(CDP)
 @UtilityClass
 public class OutcomeExpressionConstants {
@@ -39,6 +45,7 @@ public class OutcomeExpressionConstants {
   public final String TERRAFORM_CLOUD_CONFIG = "terraformCloudConfig";
   public final String DEPLOYMENT_INFO_OUTCOME = "deploymentInfoOutcome";
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
+  public final String HELM_DEPLOY_RELEASE_OUTCOME = "helmDeployRelease";
   public final String HELM_ROLLBACK_OUTCOME = "helmRollbackOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME = "serverlessAwsLambdaRollbackDataOutcome";
   public final String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2 =

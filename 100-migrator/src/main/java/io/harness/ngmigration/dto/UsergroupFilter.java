@@ -9,8 +9,12 @@ package io.harness.ngmigration.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngmigration.beans.ImportMechanism;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.v3.oas.annotations.Parameter;
+import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -20,4 +24,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("USER_GROUP")
-public class UsergroupFilter extends Filter {}
+public class UsergroupFilter extends Filter {
+  @Parameter(description = "ALL: To migrate all services. ID: TO migrate only specific services.")
+  @NotNull
+  private ImportMechanism importType;
+  @Parameter(description = "To be provided if mechanism is ID") private List<String> ids;
+}

@@ -6,13 +6,17 @@
  */
 
 package io.harness.pms.yaml;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @UtilityClass
 @OwnedBy(CDC)
 public class YAMLFieldNameConstants {
@@ -117,4 +121,5 @@ public class YAMLFieldNameConstants {
   public final String STEP_GROUP_CHILD_NODE_ID = "stepsChildNodeId";
 
   public final String COMBINED_ROLLBACK_STATUS = "combinedRollbackStatus";
+  public final String RETRY_STEP_GROUP = "retryStepGroup";
 }

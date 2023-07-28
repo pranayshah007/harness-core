@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.pipeline;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -22,7 +21,10 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMP
 
 import io.harness.EntityType;
 import io.harness.PipelineSetupUsageUtils;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -49,7 +51,6 @@ import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.pipeline.observer.PipelineActionObserver;
 import io.harness.pms.pipeline.references.FilterCreationGitMetadata;
 import io.harness.pms.pipeline.references.FilterCreationParams;
-import io.harness.pms.rbac.InternalReferredEntityExtractor;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.remote.client.NGRestUtils;
@@ -70,13 +71,13 @@ import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PipelineSetupUsageHelper implements PipelineActionObserver {
   @Inject @Named(EventsFrameworkConstants.SETUP_USAGE) private Producer eventProducer;
   @Inject private EntitySetupUsageClient entitySetupUsageClient;
-  @Inject private InternalReferredEntityExtractor internalReferredEntityExtractor;
   @Inject private GitSyncSdkService gitSyncSdkService;
   private static final int PAGE = 0;
   private static final int SIZE = 100;
@@ -110,7 +111,6 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
             "Could not extract setup usage of pipeline with id " + pipelineId + " after {} attempts.");
     List<EntityDetail> entityDetails = PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineYamlWithUnresolvedTemplates, allReferredUsages);
-    entityDetails.addAll(internalReferredEntityExtractor.extractInternalEntities(accountIdentifier, entityDetails));
     return entityDetails;
   }
 
@@ -125,7 +125,6 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
             "Could not extract setup usage of pipeline with id " + pipelineId + " after {} attempts.");
     List<EntityDetail> entityDetails = PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(accountIdentifier,
         orgIdentifier, projectIdentifier, pipelineJsonNodeWithUnresolvedTemplates, allReferredUsages);
-    entityDetails.addAll(internalReferredEntityExtractor.extractInternalEntities(accountIdentifier, entityDetails));
     return entityDetails;
   }
 

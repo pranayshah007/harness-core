@@ -6,8 +6,10 @@
  */
 
 package io.harness.subscription.helpers.impl;
-
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.subscription.dto.AddressDto;
 import io.harness.subscription.dto.CardDTO;
@@ -67,6 +69,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Singleton
 public class StripeHelperImpl implements StripeHelper {
   private StripeHandlerImpl stripeHandler;

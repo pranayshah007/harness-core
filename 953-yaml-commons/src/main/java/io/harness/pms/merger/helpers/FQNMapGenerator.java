@@ -6,36 +6,71 @@
  */
 
 package io.harness.pms.merger.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YamlNode.UUID_FIELD_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @UtilityClass
 @Slf4j
 public class FQNMapGenerator {
   public Map<FQN, Object> generateFQNMap(JsonNode yamlMap) {
     return generateFQNMap(yamlMap, false);
+  }
+
+  public Map<String, Object> generateYamlMapWithFqnExpression(String yaml) {
+    HashMap<String, Object> mapData = new HashMap<>();
+    Map<FQN, Object> fqnObjectMap = FQNMapGenerator.generateFQNMap(YamlUtils.readAsJsonNode(yaml));
+
+    for (Map.Entry<FQN, Object> entry : fqnObjectMap.entrySet()) {
+      FQN key = entry.getKey();
+      String value = HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(entry.getValue().toString());
+      traverseMap(mapData, Arrays.asList(key.getExpressionFqn().split("\\.")), 0, value);
+    }
+    return mapData;
+  }
+
+  private static void traverseMap(Map<String, Object> mapData, List<String> fqnList, int index, String value) {
+    if (index == fqnList.size() - 1) {
+      mapData.put(fqnList.get(index), value);
+      return;
+    }
+    if (!mapData.containsKey(fqnList.get(index))) {
+      mapData.put(fqnList.get(index), new HashMap<>());
+    }
+    if (mapData.get(fqnList.get(index)) instanceof Map) {
+      traverseMap((Map<String, Object>) mapData.get(fqnList.get(index)), fqnList, index + 1, value);
+    } else {
+      log.warn("Value {} not instance of map ", mapData.get(fqnList.get(index)));
+    }
   }
 
   public Map<FQN, Object> generateFQNMap(JsonNode yamlMap, boolean keepUuidFields) {

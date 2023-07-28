@@ -6,14 +6,17 @@
  */
 
 package io.harness.repositories;
-
 import io.harness.annotation.HarnessRepo;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.subscription.entities.SubscriptionDetail;
 
 import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @HarnessRepo
 @Transactional
 public interface SubscriptionDetailRepository extends CrudRepository<SubscriptionDetail, String> {

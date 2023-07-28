@@ -6,7 +6,6 @@
  */
 
 package io.harness.ci.states;
-
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -16,7 +15,10 @@ import static io.harness.steps.StepUtils.buildAbstractions;
 
 import static java.util.Collections.singletonList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
@@ -113,6 +115,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(CI)
 public abstract class AbstractStepExecutable extends CommonAbstractStepExecutable {
@@ -170,11 +173,12 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
     if (isEmpty(vmDetailsOutcome.getIpAddress())) {
       throw new CIStageExecutionException("Ip address in initialise outcome cannot be empty");
     }
+    boolean isBareMetalUsed = vmExecuteStepUtils.isBareMetalUsed(vmDetailsOutcome.getPoolDriverUsed());
 
     logBackgroundStepForBackwardCompatibility(
         ciStepInfo, completeStepIdentifier, stepIdentifier, ambiance.getPlanExecutionId());
     Set<String> stepPreProcessSecrets =
-        vmStepSerializer.preProcessStep(ambiance, ciStepInfo, stageInfraDetails, stepIdentifier);
+        vmStepSerializer.preProcessStep(ambiance, ciStepInfo, stageInfraDetails, stepIdentifier, isBareMetalUsed);
     VmStepInfo vmStepInfo = vmStepSerializer.serialize(ambiance, ciStepInfo, stageInfraDetails, stepIdentifier,
         ParameterField.createValueField(Timeout.fromString(stringTimeout)), stageDetails.getRegistries(),
         stageDetails.getExecutionSource(), vmDetailsOutcome.getDelegateId());

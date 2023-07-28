@@ -27,17 +27,17 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.ActivityBucket;
-import io.harness.cvng.activity.entities.CustomChangeActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.beans.change.CustomChangeEventMetadata;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.InternalChangeEvent;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
@@ -109,6 +109,25 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
 
     Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
     Assertions.assertThat(activityFromDb).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testRegisterSRMAnalysisEvent_insert() {
+    ChangeEventDTO changeEventDTO = builderFactory.harnessSRMAnalysisChangeEventDTOBuilder().build();
+    changeEventDTO.setMonitoredServiceIdentifier(builderFactory.getContext().getMonitoredServiceIdentifier());
+
+    changeEventService.register(changeEventDTO);
+
+    Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
+    Assertions.assertThat(activityFromDb).isNotNull();
+
+    SRMAnalysisStepExecutionDetail executionDetail =
+        hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class).get();
+    Assertions.assertThat(executionDetail).isNotNull();
+
+    assertThat(executionDetail.getUuid()).isEqualTo(activityFromDb.getUuid());
   }
 
   @Test
@@ -289,7 +308,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
 
     Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
     assertThat(activityFromDb).isNotNull();
-    assertThat(((CustomChangeActivity) activityFromDb).getCustomChangeEvent().getMsHealthReport()).isNotNull();
   }
 
   @Test

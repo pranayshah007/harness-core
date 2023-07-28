@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.elastigroup;
-
 import static io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_NAME;
 import static io.harness.cdng.elastigroup.ElastigroupSetupStep.ELASTIGROUP_SETUP_COMMAND_NAME;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -25,6 +24,9 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
@@ -124,6 +126,7 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   private static final String STAGE_EXECUTION_INFO_KEY_FORMAT = "%s.%s";

@@ -6,7 +6,9 @@
  */
 
 package io.harness.steps.matrix;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -22,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class ParallelismStrategyConfigService implements StrategyConfigService {
   @Override
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {

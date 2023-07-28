@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.artifact.resources.ecr.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrResponseDTO;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 public class EcrResourceMapper {
   public EcrResponseDTO toEcrResponse(List<EcrArtifactDelegateResponse> ecrArtifactDelegateResponseList) {

@@ -37,6 +37,7 @@ import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewState;
@@ -70,6 +71,7 @@ import io.harness.ccm.views.helper.BusinessMappingDataSourceHelper;
 import io.harness.ccm.views.helper.ViewBillingServiceHelper;
 import io.harness.ccm.views.helper.ViewBusinessMappingResponseHelper;
 import io.harness.ccm.views.helper.ViewParametersHelper;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.LabelFlattenedService;
 import io.harness.ff.FeatureFlagService;
@@ -129,6 +131,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Mock private ViewsQueryHelper viewsQueryHelper;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private CEViewService viewService;
+  @Mock private CEViewPreferenceService ceViewPreferenceService;
   @Mock private AwsAccountFieldHelper awsAccountFieldHelper;
   @Mock private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
   @Mock private BigQuery bigQuery;
@@ -165,13 +168,16 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .getQuery(any(), any(), any(), any(), any(), any(), anyString(), any(), any());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
+        .getQuery(
+            any(), any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
+        .getQuery(
+            any(), any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
     doCallRealMethod()
         .when(viewsQueryBuilder)
-        .getQuery(any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
+        .getQuery(
+            any(), any(), any(), any(), any(), any(), any(), any(), any(), anyString(), any(), any(), any(), anyMap());
     doCallRealMethod()
         .when(viewsQueryBuilder)
         .getTotalCountQuery(any(), any(), any(), any(), anyString(), any(), anyMap());
@@ -465,7 +471,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective grid query
     QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
-        filters, groupBy, aggregations, sortCriteria, 100, 0, getMockViewQueryParams(false));
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(false));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -503,7 +509,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective grid query
     QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
-        filters, groupBy, aggregations, sortCriteria, 100, 0, getMockViewQueryParams(false));
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(false));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -546,7 +552,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective grid query
     QLCEViewGridData data = viewsBillingService.getEntityStatsDataPointsNg(
-        filters, groupBy, aggregations, sortCriteria, 100, 0, getMockViewQueryParams(true));
+        filters, groupBy, aggregations, sortCriteria, 100, 0, null, getMockViewQueryParams(true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -619,7 +625,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective chart query
     TableResult data = viewsBillingService.getTimeSeriesStatsNg(
-        filters, groupBy, aggregations, sortCriteria, false, 100, getMockViewQueryParams(false, true));
+        filters, groupBy, aggregations, sortCriteria, false, 100, null, getMockViewQueryParams(false, true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -653,7 +659,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective chart query
     TableResult data = viewsBillingService.getTimeSeriesStatsNg(
-        filters, groupBy, aggregations, sortCriteria, false, 100, getMockViewQueryParams(false, true));
+        filters, groupBy, aggregations, sortCriteria, false, 100, null, getMockViewQueryParams(false, true));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -718,7 +724,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective SummaryCard query
     QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(
-        filters, Collections.emptyList(), aggregations, getMockViewQueryParams(false));
+        filters, Collections.emptyList(), aggregations, null, getMockViewQueryParams(false));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -751,7 +757,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Perspective SummaryCard query
     QLCEViewTrendData data = viewsBillingService.getTrendStatsDataNg(
-        filters, Collections.emptyList(), aggregations, getMockViewQueryParams(false));
+        filters, Collections.emptyList(), aggregations, null, getMockViewQueryParams(false));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -781,7 +787,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
 
     // Total count query
     Integer data =
-        viewsBillingService.getTotalCountForQuery(filters, groupBy, getMockViewQueryParamsForTotalCount(false));
+        viewsBillingService.getTotalCountForQuery(filters, groupBy, null, getMockViewQueryParamsForTotalCount(false));
 
     // Assertions on result
     assertThat(data).isNotNull();
@@ -880,6 +886,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                                             .build())
                                .build())
         .dataSources(Collections.singletonList(identifier))
+        .viewPreferences(ViewPreferences.builder().build())
         .build();
   }
 

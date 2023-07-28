@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.notification.orchestration.helpers;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.AbortedBy;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.interrupts.Interrupt;
@@ -18,6 +20,7 @@ import io.harness.pms.contracts.interrupts.ManualIssuer;
 import com.google.inject.Inject;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class AbortInfoHelper {
   @Inject private InterruptService interruptService;
   private static final String SYSTEM_USER = "systemUser";
@@ -26,11 +29,16 @@ public class AbortInfoHelper {
     AbortedBy abortedBy = null;
     List<Interrupt> interruptsList = interruptService.fetchAbortAllPlanLevelInterrupt(planExecutionId);
     if (isNotEmpty(interruptsList)) {
+      Long createdAt = interruptsList.get(0).getCreatedAt();
       ManualIssuer manualIssuer = interruptsList.get(0).getInterruptConfig().getIssuedBy().getManualIssuer();
       if (isEmpty(manualIssuer.getUserId())) {
-        abortedBy = AbortedBy.builder().userName(SYSTEM_USER).build();
+        abortedBy = AbortedBy.builder().userName(SYSTEM_USER).createdAt(createdAt).build();
       } else {
-        abortedBy = AbortedBy.builder().email(manualIssuer.getEmailId()).userName(manualIssuer.getUserId()).build();
+        abortedBy = AbortedBy.builder()
+                        .email(manualIssuer.getEmailId())
+                        .userName(manualIssuer.getUserId())
+                        .createdAt(createdAt)
+                        .build();
       }
     }
     // In case of pipeline stage, if a child pipeline is aborted, interrupt won't be registered with parent pipeline's

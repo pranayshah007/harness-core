@@ -83,6 +83,8 @@ function copy_ng_dashboard_jars(){
 
 	cp ${BAZEL_BIN}/290-dashboard-service/module_deploy.jar ng-dashboard-service.jar
 	cp ../../290-dashboard-service/config.yml .
+	cp ../../290-dashboard-service/src/main/resources/jfr/default.jfc .
+	cp ../../290-dashboard-service/src/main/resources/jfr/profile.jfc .
 	cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-cie-jdk Dockerfile-cie-jdk
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .

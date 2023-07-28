@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.provision.terraformcloud.steps;
-
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.APPLY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_APPLY;
 import static io.harness.cdng.provision.terraformcloud.TerraformCloudRunType.PLAN_AND_DESTROY;
@@ -16,8 +15,11 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudTaskType.GET
 import static java.lang.String.format;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.executions.RunDetails;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudConstants;
@@ -90,6 +92,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TerraformCloudRunStep extends TaskChainExecutableWithRollbackAndRbac {

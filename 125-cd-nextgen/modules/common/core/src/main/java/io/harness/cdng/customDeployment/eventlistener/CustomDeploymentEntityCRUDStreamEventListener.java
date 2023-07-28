@@ -17,6 +17,9 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE
 
 import static software.wings.beans.AccountType.log;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
@@ -28,6 +31,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Map;
 import java.util.Objects;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 public class CustomDeploymentEntityCRUDStreamEventListener implements MessageListener {
   private final CustomDeploymentEntityCRUDEventHandler deploymentTemplateEntityCRUDEventHandler;
   @Inject

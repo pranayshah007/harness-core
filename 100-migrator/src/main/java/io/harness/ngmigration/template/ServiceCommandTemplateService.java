@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.template;
-
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_BOOLEAN_INPUT;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_DELEGATE_INPUT;
 
@@ -22,8 +21,11 @@ import static software.wings.beans.command.CommandUnitType.PROCESS_CHECK_STOPPED
 import static software.wings.beans.command.CommandUnitType.SCP;
 import static software.wings.beans.command.CommandUnitType.SETUP_ENV;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.ssh.CommandUnitSourceType;
 import io.harness.cdng.ssh.CommandUnitSpecType;
@@ -69,11 +71,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceCommandTemplateService implements NgTemplateService {
   private static final Set<CommandUnitType> SUPPORTED_COMMAND_UNITS =
@@ -105,6 +109,8 @@ public class ServiceCommandTemplateService implements NgTemplateService {
                                                        .map(commandUnit -> handleCommandUnit(context, commandUnit))
                                                        .filter(Objects::nonNull)
                                                        .collect(Collectors.toList());
+
+    updateTemplateSpecWithNewExpressions(context, commandUnitWrappers, variables);
 
     CommandStepInfo commandStepInfo = CommandStepInfo.infoBuilder()
                                           .commandUnits(commandUnitWrappers)
@@ -260,5 +266,20 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
   static ParameterField<String> valueOrDefaultEmpty(String val) {
     return ParameterField.createValueField(StringUtils.isNotBlank(val) ? val : "");
+  }
+
+  static void updateTemplateSpecWithNewExpressions(
+      MigrationContext context, List<CommandUnitWrapper> commandUnitWrappers, List<NGVariable> variables) {
+    // More details here: https://harness.atlassian.net/browse/CDS-73356
+    if (EmptyPredicate.isEmpty(variables)) {
+      return;
+    }
+    Map<String, Object> customExpressions =
+        variables.stream()
+            .map(NGVariable::getName)
+            .filter(StringUtils::isNotBlank)
+            .collect(Collectors.toMap(s -> s, s -> String.format("<+spec.environmentVariables.%s>", s)));
+
+    MigratorExpressionUtils.render(context, commandUnitWrappers, customExpressions);
   }
 }

@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.webhook.polling;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -30,9 +29,14 @@ import static io.harness.polling.contracts.Type.NEXUS2;
 import static io.harness.polling.contracts.Type.NEXUS3;
 import static io.harness.polling.contracts.Type.S3_HELM;
 
+import static java.lang.Boolean.parseBoolean;
+
 import io.harness.NgAutoLogContext;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
@@ -52,6 +56,8 @@ import io.harness.lock.PersistentLocker;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.NgPollingAutoLogContext;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.polling.artifact.ArtifactCollectionUtilsNg;
 import io.harness.polling.bean.ArtifactInfo;
 import io.harness.polling.bean.ArtifactPolledResponse;
@@ -84,6 +90,7 @@ import io.harness.polling.contracts.Metadata;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
@@ -99,15 +106,17 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class PollingResponseHandler {
-  private static final int MAX_FAILED_ATTEMPTS = 3500;
+  private static final int MAX_FAILED_ATTEMPTS = 7200;
   private PollingService pollingService;
   private PollingPerpetualTaskService pollingPerpetualTaskService;
   private PolledItemPublisher polledItemPublisher;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private PersistentLocker persistentLocker;
+  @Inject private NGSettingsClient settingsClient;
 
   @Inject
   public PollingResponseHandler(PollingService pollingService, PollingPerpetualTaskService pollingPerpetualTaskService,
@@ -148,6 +157,8 @@ public class PollingResponseHandler {
 
     if (pollingDocument.getFailedAttempts() > 0) {
       pollingService.updateFailedAttempts(accountId, pollDocId, 0);
+      pollingService.updateTriggerPollingStatus(
+          pollingDocument.getAccountId(), pollingDocument.getSignatures(), true, null, Collections.emptyList());
     }
 
     switch (pollingDocument.getPollingType()) {
@@ -224,8 +235,7 @@ public class PollingResponseHandler {
 
   private void publishPolledItemToTopic(PollingDocument pollingDocument, List<String> newVersions,
       PolledResponseResult polledResponseResult, List<Metadata> newArtifactsMetadata, List<String> signatures) {
-    if (ngFeatureFlagHelperService.isEnabled(
-            pollingDocument.getAccountId(), FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)) {
+    if (shouldTriggerForAllArtifactsOrManifests(pollingDocument)) {
       // This ff is added needed in a use case where in customer wanted their pipeline to be triggered via trigger for
       // all the new pushed artifacts and manifests that were collected by the perpetual task in a single execution.
       // Hence we are sending a polling response for all the artifact or manifest version to the pipeline service.
@@ -329,16 +339,17 @@ public class PollingResponseHandler {
 
   private void handleFailureResponse(PollingDocument pollingDocument, String errorMessage) {
     int failedCount = pollingDocument.getFailedAttempts() + 1;
-
-    if (failedCount % 25 == 0 && failedCount != MAX_FAILED_ATTEMPTS) {
-      pollingPerpetualTaskService.resetPerpetualTask(pollingDocument);
-    }
-
+    log.error(
+        "Received failure response from polling delegate perpetual task for pollingDocId: {} , failedCount: {}, errorMessage: {}",
+        pollingDocument.getUuid(), failedCount, errorMessage);
     pollingService.updateFailedAttempts(pollingDocument.getAccountId(), pollingDocument.getUuid(), failedCount);
     pollingService.updateTriggerPollingStatus(
         pollingDocument.getAccountId(), pollingDocument.getSignatures(), false, errorMessage, Collections.emptyList());
 
-    if (failedCount == MAX_FAILED_ATTEMPTS) {
+    if (failedCount >= MAX_FAILED_ATTEMPTS) {
+      log.warn(
+          "Failed count {} from polling delegate perpetual task for pollingDocId {} is above MAX_FAILED_ATTEMPTS ({}). Deleting the perpetual task.",
+          failedCount, pollingDocument.getUuid(), MAX_FAILED_ATTEMPTS);
       pollingPerpetualTaskService.deletePerpetualTask(
           pollingDocument.getPerpetualTaskId(), pollingDocument.getAccountId());
     }
@@ -492,14 +503,16 @@ public class PollingResponseHandler {
     return polledResponseResultBuilder.build();
   }
 
-  private List<String> getSignaturesWithNoLock(PollingDocument pollingDocument) {
+  public List<String> getSignaturesWithNoLock(PollingDocument pollingDocument) {
     // Returns signatures for triggers which are NOT of type MultiRegionArtifact.
     List<String> signatures = pollingDocument.getSignatures();
     Map<String, List<String>> signaturesLock = pollingDocument.getSignaturesLock();
     if (isEmpty(signaturesLock) || isEmpty(signatures)) {
       return signatures;
     }
-    return signatures.stream().filter(signature -> !signaturesLock.containsKey(signature)).collect(Collectors.toList());
+    return signatures.stream()
+        .filter(signature -> !signaturesLock.containsKey(signature) || isEmpty(signaturesLock.get(signature)))
+        .collect(Collectors.toList());
   }
 
   public List<String> getSignaturesWithLock(List<String> signatures, Map<String, List<String>> signaturesLock) {
@@ -508,7 +521,10 @@ public class PollingResponseHandler {
     if (isEmpty(signaturesLock) || isEmpty(signatures)) {
       signaturesWithLock = null;
     } else {
-      signaturesWithLock = signatures.stream().filter(signaturesLock::containsKey).collect(Collectors.toList());
+      signaturesWithLock =
+          signatures.stream()
+              .filter(signature -> signaturesLock.containsKey(signature) && isNotEmpty(signaturesLock.get(signature)))
+              .collect(Collectors.toList());
     }
     return signaturesWithLock;
   }
@@ -646,6 +662,25 @@ public class PollingResponseHandler {
           acquiredLock.release();
         }
       }
+    }
+  }
+
+  public boolean shouldTriggerForAllArtifactsOrManifests(PollingDocument pollingDocument) {
+    if (ngFeatureFlagHelperService.isEnabled(
+            pollingDocument.getAccountId(), FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)) {
+      return true;
+    }
+    try {
+      return parseBoolean(
+          NGRestUtils
+              .getResponse(settingsClient.getSetting(SettingIdentifiers.TRIGGER_FOR_ALL_ARTIFACTS_OR_MANIFESTS,
+                  pollingDocument.getAccountId(), pollingDocument.getOrgIdentifier(),
+                  pollingDocument.getProjectIdentifier()))
+              .getValue());
+    } catch (Exception e) {
+      log.error("Failed while evaluating settings value for {}, pollingDocId {}. Returning false as default value.",
+          SettingIdentifiers.TRIGGER_FOR_ALL_ARTIFACTS_OR_MANIFESTS, pollingDocument.getUuid());
+      return false;
     }
   }
 }

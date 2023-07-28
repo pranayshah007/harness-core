@@ -6,13 +6,15 @@
  */
 
 package io.harness.pms.triggers.webhook.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
 import io.harness.eventsframework.webhookpayloads.webhookdata.EventHeader;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)

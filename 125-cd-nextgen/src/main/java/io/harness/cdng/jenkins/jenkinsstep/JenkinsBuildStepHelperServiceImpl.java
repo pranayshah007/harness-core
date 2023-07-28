@@ -6,13 +6,15 @@
  */
 
 package io.harness.cdng.jenkins.jenkinsstep;
-
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
@@ -73,6 +75,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
   private final SecretManagerClientService secretManagerClientService;

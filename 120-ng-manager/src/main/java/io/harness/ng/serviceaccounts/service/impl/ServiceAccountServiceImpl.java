@@ -233,8 +233,9 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
         serviceAccountRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     if (serviceAccount == null) {
-      throw new NotFoundException(
-          String.format("Secret with identifier [%s] is not found in the given scope", identifier));
+      throw new NotFoundException(String.format(
+          "Service account with identifier [%s] is not found in the given scope accountIdentifier [%s], orgIdentifier [%s], projectIdentifier [%s]",
+          identifier, accountIdentifier, orgIdentifier, projectIdentifier));
     }
 
     return ServiceAccountDTOMapper.getDTOFromServiceAccount(serviceAccount);

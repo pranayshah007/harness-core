@@ -9,8 +9,12 @@ package io.harness.engine.facilitation;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -29,7 +33,9 @@ import io.harness.execution.NodeExecution;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.plan.PlanNode;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.run.ExpressionBlock;
@@ -41,6 +47,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -195,5 +202,30 @@ public class RunPreFacilitationCheckerTest extends OrchestrationTestBase {
     List<ExpressionBlock> allExpressions = checker.getAllExpressions(engineExpressionEvaluator);
     assertThat(allExpressions).isNotNull();
     assertThat(allExpressions.size()).isEqualTo(3);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testPerformPreFacilitationChecksWithMaximumLevelsDepth() {
+    List<Level> levelList = new ArrayList<>();
+    String setupId = generateUuid();
+    String runtimeId = generateUuid();
+    for (int i = 0; i < 25; i++) {
+      levelList.add(Level.newBuilder().setSetupId(setupId).setRuntimeId(runtimeId).build());
+    }
+    String planId = generateUuid();
+    Ambiance ambiance = Ambiance.newBuilder().setPlanId(planId).addAllLevels(levelList).build();
+    PlanNode planNode = PlanNode.builder().adviserObtainment(AdviserObtainment.newBuilder().build()).build();
+    ExecutionCheck executionCheck = checker.performCheck(ambiance, planNode);
+    assertTrue(executionCheck.isProceed());
+
+    levelList.add(Level.newBuilder().setSetupId(setupId).setRuntimeId(runtimeId).build());
+    ambiance = Ambiance.newBuilder().setPlanId(planId).addAllLevels(levelList).build();
+    planNode = PlanNode.builder().adviserObtainment(AdviserObtainment.newBuilder().build()).build();
+    executionCheck = checker.performCheck(ambiance, planNode);
+    assertFalse(executionCheck.isProceed());
+    assertEquals(executionCheck.getReason(),
+        "The pipeline has reached the maximum nesting allowed for an execution. Please simplify the pipeline configuration so that it does not breach the allowed limit of nesting");
   }
 }

@@ -46,6 +46,7 @@ import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -87,6 +88,7 @@ public class ServerlessDownloadManifestV2StepHelperTest extends CategoryTest {
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private ServerlessEntityHelper serverlessEntityHelper;
+  @Mock private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Mock GitCloneStep gitCloneStep;

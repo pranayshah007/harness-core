@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -73,7 +72,10 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileData;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.configuration.KubernetesCliCommandType;
@@ -82,6 +84,7 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.container.ContainerInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.CEFeatures;
@@ -95,12 +98,14 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.progresstaskstreaming.NGDelegateTaskProgressCallback;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
+import io.harness.delegate.beans.taskprogress.TaskProgressCallback;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
@@ -278,6 +283,8 @@ import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.StartedProcess;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -310,6 +317,7 @@ public class K8sTaskHelperBase {
   @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
   @Inject private K8sReleaseHandlerFactory releaseHandlerFactory;
   @Inject private K8sTaskManifestValidator k8sTaskManifestValidator;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator();
 
@@ -2497,6 +2505,11 @@ public class K8sTaskHelperBase {
     return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, shouldOpenStream, commandUnitsProgress);
   }
 
+  public TaskProgressCallback getTaskProgressCallback(
+      ILogStreamingTaskClient taskProgressStreamingTaskClient, String taskId) {
+    return new NGDelegateTaskProgressCallback(taskProgressStreamingTaskClient, taskId);
+  }
+
   public List<FileData> renderTemplate(K8sDelegateTaskParams k8sDelegateTaskParams,
       ManifestDelegateConfig manifestDelegateConfig, String manifestFilesDirectory, List<String> manifestOverrideFiles,
       String releaseName, String namespace, LogCallback executionLogCallback, Integer timeoutInMin) throws Exception {
@@ -2733,7 +2746,8 @@ public class K8sTaskHelperBase {
 
         scmFetchFilesHelper.downloadFilesUsingScm(manifestFilesDirectory, gitStoreDelegateConfig, executionLogCallback);
       } else {
-        GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+        GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+            gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
         gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
         SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
             gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());

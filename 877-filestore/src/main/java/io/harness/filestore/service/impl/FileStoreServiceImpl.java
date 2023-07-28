@@ -6,7 +6,6 @@
  */
 
 package io.harness.filestore.service.impl;
-
 import static io.harness.EntityType.PIPELINES;
 import static io.harness.EntityType.PIPELINE_STEPS;
 import static io.harness.EntityType.SECRETS;
@@ -20,6 +19,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.FileBucket.FILE_STORE;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.filestore.utils.FileStoreUtils.getSubPaths;
 import static io.harness.filestore.utils.FileStoreUtils.isPathValid;
 import static io.harness.filestore.utils.FileStoreUtils.nameChanged;
@@ -31,15 +31,20 @@ import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createF
 import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createFilesFilterCriteria;
 import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createSortByLastModifiedAtDesc;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FileReference;
 import io.harness.beans.Scope;
 import io.harness.beans.SearchPageParams;
+import io.harness.eraro.ErrorMessageConstants;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -65,6 +70,9 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.FileStoreRepository;
 import io.harness.stream.BoundedInputStream;
 
@@ -95,6 +103,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(CDP)
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -111,6 +120,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   private final FileFailsafeService fileFailsafeService;
   private final FileStructureService fileStructureService;
   private final FileValidationService fileValidationService;
+  private final NGSettingsClient settingsClient;
 
   @Override
   public FileDTO create(@NotNull FileDTO fileDto, InputStream content) {
@@ -292,6 +302,9 @@ public class FileStoreServiceImpl implements FileStoreService {
     }
     if (ROOT_FOLDER_IDENTIFIER.equals(identifier)) {
       throw new InvalidArgumentsException(format("Root folder [%s] can not be deleted.", ROOT_FOLDER_IDENTIFIER));
+    }
+    if (forceDelete && !isForceDeleteFFEnabledViaSettings(accountIdentifier)) {
+      throw new InvalidRequestException(ErrorMessageConstants.FORCE_DELETE_SETTING_NOT_ENABLED, USER);
     }
 
     NGFile file = findOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
@@ -699,5 +712,12 @@ public class FileStoreServiceImpl implements FileStoreService {
     }
 
     return format("%s%s%s", parent.get().getPath(), PATH_SEPARATOR, name);
+  }
+
+  private boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
+                            .getValue());
   }
 }

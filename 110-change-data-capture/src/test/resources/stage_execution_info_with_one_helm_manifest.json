@@ -53,6 +53,7 @@
               "_class" : "harnessStore"
             },
             "chartVersion" : "0.1.0",
+            "helmVersion" : "V3",
             "_class" : "HelmChartManifestSummary"
           }
         ]

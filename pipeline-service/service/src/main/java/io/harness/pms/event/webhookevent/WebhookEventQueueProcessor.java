@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.event.webhookevent;
-
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType;
@@ -34,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class WebhookEventQueueProcessor extends AbstractHsqsQueueProcessor {

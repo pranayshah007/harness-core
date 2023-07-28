@@ -6,7 +6,7 @@
  */
 
 package io.harness.ng.core.serviceoverrides.resources;
-
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
@@ -22,8 +22,11 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideCriteriaHelper;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
@@ -50,6 +53,7 @@ import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -89,6 +93,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @NextGenManagerAuth
 @Api("/serviceOverrides")
 @Path("/serviceOverrides")
@@ -141,7 +147,7 @@ public class ServiceOverridesResource {
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             description =
-                "Returns the Service Overrides by the identifier and scope derived from accountId, org identifier and project identifier")
+                "Returns the Service Override by the identifier and scope derived from accountId, org identifier and project identifier")
       })
   public ResponseDTO<ServiceOverridesResponseDTOV2>
   get(@Parameter(description = NGCommonEntityConstants.SERVICE_OVERRIDES_IDENTIFIER) @PathParam(
@@ -156,7 +162,7 @@ public class ServiceOverridesResource {
         serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, identifier);
     if (serviceOverridesEntityOptional.isEmpty()) {
       throw new NotFoundException(
-          format("ServiceOverrides entity with identifier [%s] in project [%s], org [%s] not found", identifier,
+          format("ServiceOverride entity with identifier [%s] in project [%s], org [%s] not found", identifier,
               projectIdentifier, orgIdentifier));
     }
     NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesEntityOptional.get();
@@ -336,7 +342,6 @@ public class ServiceOverridesResource {
 
   @POST
   @Path("/migrate")
-  @Hidden
   @ApiOperation(value = "Migrate ServiceOverride to V2", nickname = "migrateServiceOverride")
   @Operation(operationId = "migrateServiceOverride", summary = "Migrate ServiceOverride to V2",
       responses =
@@ -358,7 +363,6 @@ public class ServiceOverridesResource {
 
   @POST
   @Path("/migrateScope")
-  @Hidden
   @ApiOperation(value = "Migrate ServiceOverride to V2 at one scope", nickname = "migrateServiceOverrideScoped")
   @Operation(operationId = "migrateServiceOverrideScoped", summary = "Migrate ServiceOverride to V2 at one scope",
       responses =
@@ -455,5 +459,65 @@ public class ServiceOverridesResource {
         serviceOverrideV2SettingsUpdateService.settingsUpdateToV2(
             accountId, orgIdentifier, projectIdentifier, updateChildren, false);
     return ResponseDTO.newResponse(overrideV2SettingsUpdateResponseDTO);
+  }
+
+  @GET
+  @Path("/get-with-yaml/{identifier}")
+  @Hidden
+  @ApiOperation(value = "Gets Service Overrides by Identifier including the yaml of spec also in response",
+      nickname = "getWithYamlServiceOverridesV2")
+  @Operation(operationId = "getWithYamlServiceOverridesV2",
+      summary = "Gets Service Overrides by Identifier including the yaml of spec also in response",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description =
+                "Returns the Service Overrides by the identifier and scope derived from accountId, org identifier and project identifier")
+      })
+  public ResponseDTO<ServiceOverridesResponseDTOV2>
+  getWithYaml(@Parameter(description = NGCommonEntityConstants.SERVICE_OVERRIDES_IDENTIFIER) @PathParam(
+                  "identifier") @ResourceIdentifier @NotNull String identifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NonNull String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier) {
+    Optional<NGServiceOverridesEntity> serviceOverridesEntityOptional =
+        serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, identifier);
+    if (serviceOverridesEntityOptional.isEmpty()) {
+      throw new NotFoundException(
+          format("ServiceOverrides entity with identifier [%s] in project [%s], org [%s] not found", identifier,
+              projectIdentifier, orgIdentifier));
+    }
+    NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesEntityOptional.get();
+
+    IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRef(
+        serviceOverridesEntity.getEnvironmentRef(), accountId, orgIdentifier, projectIdentifier);
+
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
+            envIdentifierRef.getProjectIdentifier()),
+        Resource.of(ENVIRONMENT, envIdentifierRef.getIdentifier()), ENVIRONMENT_VIEW_PERMISSION,
+        format(
+            "Unauthorized to view environment %s referred in serviceOverrideEntity", envIdentifierRef.getIdentifier()));
+
+    ServiceOverridesSpec spec = serviceOverridesEntity.getSpec();
+    String yamlInternal = serviceOverridesEntity.getYamlInternal();
+    if (spec != null && isEmpty(yamlInternal)) {
+      try {
+        String yamlInternalFromSpec = JsonPipelineUtils.writeJsonString(spec);
+        serviceOverridesEntity.setYamlInternal(yamlInternalFromSpec);
+      } catch (Exception ex) {
+        log.error("Failed to generate yaml from the service override entity's spec", ex);
+        throw new InvalidRequestException(
+            format("Generation of yaml for service override entity's spec failed due to following error: [%s]",
+                ex.getMessage()));
+      }
+    }
+
+    return ResponseDTO.newResponse(
+        serviceOverridesEntityOptional.map(entity -> ServiceOverridesMapperV2.toResponseDTO(entity, false))
+            .orElse(null));
   }
 }

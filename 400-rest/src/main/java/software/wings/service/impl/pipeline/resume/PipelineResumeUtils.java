@@ -12,6 +12,7 @@ import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.isActiveStatus;
 import static io.harness.beans.ExecutionStatus.isNegativeStatus;
 import static io.harness.beans.ExecutionStatus.resumableStatuses;
+import static io.harness.beans.FeatureName.SPG_CG_FIXING_PIPELINE_RESUME;
 import static io.harness.beans.FeatureName.SPG_CG_LIST_RESUMED_PIPELINES;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.NOT_EXISTS;
@@ -41,6 +42,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 
 import software.wings.api.EnvStateExecutionData;
+import software.wings.api.SkipStateExecutionData;
 import software.wings.beans.ExecutionArgs;
 import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineStage;
@@ -163,6 +165,13 @@ public class PipelineResumeUtils {
     StateExecutionData stateExecutionData = null;
     if (stateExecutionInstance != null) {
       stateExecutionData = stateExecutionInstance.fetchStateExecutionData();
+    }
+
+    // we don't need to populate data for skipped states
+    if (featureFlagService.isEnabled(SPG_CG_FIXING_PIPELINE_RESUME, pipeline.getAccountId())) {
+      if (stateExecutionData instanceof SkipStateExecutionData) {
+        return;
+      }
     }
 
     Map<String, Object> properties = new HashMap<>();

@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.serverless.container.steps;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.steps.nodes.GitCloneStepNode;
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.cdng.aws.sam.DownloadManifestsCommonHelper;
@@ -38,6 +40,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -58,6 +61,8 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_SERVERLESS})
 @Slf4j
 public class ServerlessDownloadManifestsStepHelper {
   @Inject private OutcomeService outcomeService;
@@ -69,6 +74,8 @@ public class ServerlessDownloadManifestsStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
 
   @Inject private ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
+
+  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   @Inject DownloadManifestsCommonHelper downloadManifestsCommonHelper;
 
@@ -172,6 +179,8 @@ public class ServerlessDownloadManifestsStepHelper {
     if (valuesManifestOutcome != null) {
       ServerlessV2ValuesYamlDataOutcomeBuilder serverlessValuesYamlDataOutcomeBuilder =
           ServerlessV2ValuesYamlDataOutcome.builder();
+
+      containerStepExecutionResponseHelper.deserializeResponse(responseDataMap);
 
       for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
         ResponseData responseData = entry.getValue();

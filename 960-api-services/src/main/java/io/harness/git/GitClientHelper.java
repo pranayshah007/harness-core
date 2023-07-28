@@ -228,7 +228,10 @@ public class GitClientHelper {
 
   public static String getHarnessApiURL(String url) {
     String domain = GitClientHelper.getGitSCM(url);
-    return getHttpProtocolPrefix(url) + domain;
+    if (domain.startsWith("git.")) {
+      return getHttpProtocolPrefix(url) + domain;
+    }
+    return getHttpProtocolPrefix(url) + domain + "/gateway/code";
   }
 
   public static String convertToHarnessRepoName(String accountId, String orgId, String projectId, String repo) {
@@ -676,6 +679,13 @@ public class GitClientHelper {
     }
 
     return httpURL;
+  }
+
+  public static String convertToAlternateHTTPUrlForAzure(String httpUrl) {
+    final String AZURE_REPO_URL = "https://dev.azure.com/";
+    String afterHttps = StringUtils.remove(httpUrl, HTTPS + "://");
+    String orgName = StringUtils.remove(httpUrl, AZURE_REPO_URL).split("/")[0];
+    return HTTPS + "://" + orgName + "@" + afterHttps;
   }
 
   public static String convertToNewSSHUrlForAzure(String sshURL) {

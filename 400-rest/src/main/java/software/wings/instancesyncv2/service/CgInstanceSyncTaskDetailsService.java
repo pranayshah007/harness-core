@@ -6,11 +6,13 @@
  */
 
 package software.wings.instancesyncv2.service;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
@@ -27,6 +29,7 @@ import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j

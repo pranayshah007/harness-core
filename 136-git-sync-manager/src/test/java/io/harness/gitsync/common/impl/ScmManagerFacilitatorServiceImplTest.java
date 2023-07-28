@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.common.impl;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HARI;
@@ -23,8 +24,10 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.request.GitFileRequest;
@@ -224,11 +227,25 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void testListUserRepos() {
     Repository repoDetails = Repository.newBuilder().setName(repoName).build();
-    when(scmClient.getUserRepos(any(), any()))
+    when(scmClient.getUserRepos(any(), any(), any()))
         .thenReturn(GetUserReposResponse.newBuilder().addRepos(repoDetails).build());
-    final GetUserReposResponse userReposResponse =
-        scmManagerFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier,
-            (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build());
+    final GetUserReposResponse userReposResponse = scmManagerFacilitatorService.listUserRepos(accountIdentifier,
+        orgIdentifier, projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(),
+        PageRequestDTO.builder().build(), RepoFilterParamsDTO.builder().build());
+    assertThat(userReposResponse.getReposCount()).isEqualTo(1);
+    assertThat(userReposResponse.getRepos(0).getName()).isEqualTo(repoName);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testListUserReposWithRepoFilters() {
+    Repository repoDetails = Repository.newBuilder().setName(repoName).build();
+    when(scmClient.getUserRepos(any(), any(), any()))
+        .thenReturn(GetUserReposResponse.newBuilder().addRepos(repoDetails).build());
+    final GetUserReposResponse userReposResponse = scmManagerFacilitatorService.listUserRepos(accountIdentifier,
+        orgIdentifier, projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(),
+        PageRequestDTO.builder().build(), RepoFilterParamsDTO.builder().repoName("repo").build());
     assertThat(userReposResponse.getReposCount()).isEqualTo(1);
     assertThat(userReposResponse.getRepos(0).getName()).isEqualTo(repoName);
   }
@@ -237,16 +254,29 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void testListBranches() {
-    when(scmClient.listBranchesWithDefault(any(), any()))
+    when(scmClient.listBranchesWithDefault(any(), any(), any()))
         .thenReturn(ListBranchesWithDefaultResponse.newBuilder()
                         .addAllBranches(Arrays.asList(branch))
                         .setDefaultBranch(defaultBranch)
                         .build());
-    final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
-        scmManagerFacilitatorService.listBranches(accountIdentifier, orgIdentifier, projectIdentifier,
-            (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build());
+    final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = scmManagerFacilitatorService.listBranches(
+        accountIdentifier, orgIdentifier, projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(),
+        PageRequestDTO.builder().build(), BranchFilterParamsDTO.builder().build());
     assertThat(listBranchesWithDefaultResponse.getBranchesCount()).isEqualTo(1);
     assertThat(listBranchesWithDefaultResponse.getDefaultBranch()).isEqualTo(defaultBranch);
+    assertThat(listBranchesWithDefaultResponse.getBranchesList().get(0)).isEqualTo(branch);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testListBranchesWithBranchFilters() {
+    when(scmClient.listBranchesWithDefault(any(), any(), any()))
+        .thenReturn(ListBranchesWithDefaultResponse.newBuilder().addAllBranches(Arrays.asList(branch)).build());
+    final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = scmManagerFacilitatorService.listBranches(
+        accountIdentifier, orgIdentifier, projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(),
+        PageRequestDTO.builder().build(), BranchFilterParamsDTO.builder().branchName(branch).build());
+    assertThat(listBranchesWithDefaultResponse.getBranchesCount()).isEqualTo(1);
     assertThat(listBranchesWithDefaultResponse.getBranchesList().get(0)).isEqualTo(branch);
   }
 

@@ -28,6 +28,6 @@ java_library(
 )
 
 run_analysis(
-    ["api/src/**/*"],
-    ["api/src/main/**/*"],
+    checkstyle_srcs = glob(["api/src/main/**/*"]),
+    pmd_srcs = glob(["api/src/main/**/*"]),
 )

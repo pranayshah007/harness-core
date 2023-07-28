@@ -6,10 +6,12 @@
  */
 
 package io.harness.ngtriggers.mapper;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngtriggers.beans.dto.ArtifactTriggerEventInfo;
 import io.harness.ngtriggers.beans.dto.ManifestTriggerEventInfo;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
@@ -24,30 +26,15 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 @UtilityClass
 @Slf4j
 public class NGTriggerEventHistoryMapper {
   public NGTriggerEventHistoryDTO toTriggerEventHistoryDto(
       TriggerEventHistory triggerEventHistory, NGTriggerEntity triggerEntity) {
-    NGTriggerEventHistoryDTO ngTriggerEventHistoryDTO =
-        NGTriggerEventHistoryDTO.builder()
-            .triggerIdentifier(triggerEventHistory.getTriggerIdentifier())
-            .accountId(triggerEventHistory.getAccountId())
-            .orgIdentifier(triggerEventHistory.getOrgIdentifier())
-            .projectIdentifier(triggerEventHistory.getProjectIdentifier())
-            .targetIdentifier(triggerEventHistory.getTargetIdentifier())
-            .eventCorrelationId(triggerEventHistory.getEventCorrelationId())
-            .payload(triggerEventHistory.getPayload())
-            .eventCreatedAt(triggerEventHistory.getEventCreatedAt())
-            .finalStatus(
-                EnumUtils.getEnum(TriggerEventResponse.FinalStatus.class, triggerEventHistory.getFinalStatus(), null))
-            .triggerEventStatus(TriggerEventStatusHelper.toStatus(
-                EnumUtils.getEnum(TriggerEventResponse.FinalStatus.class, triggerEventHistory.getFinalStatus(), null)))
-            .message(triggerEventHistory.getMessage())
-            .targetExecutionSummary(triggerEventHistory.getTargetExecutionSummary())
-            .type(triggerEntity.getType())
-            .build();
+    NGTriggerEventHistoryDTO ngTriggerEventHistoryDTO = toTriggerEventHistoryDto(triggerEventHistory);
+    ngTriggerEventHistoryDTO.setType(triggerEntity.getType());
     if (ngTriggerEventHistoryDTO.getType().equals(NGTriggerType.ARTIFACT)) {
       ngTriggerEventHistoryDTO.setNgTriggerEventInfo(
           ArtifactTriggerEventInfo.builder()
@@ -62,5 +49,24 @@ public class NGTriggerEventHistoryMapper {
               .build());
     }
     return ngTriggerEventHistoryDTO;
+  }
+
+  public NGTriggerEventHistoryDTO toTriggerEventHistoryDto(TriggerEventHistory triggerEventHistory) {
+    return NGTriggerEventHistoryDTO.builder()
+        .triggerIdentifier(triggerEventHistory.getTriggerIdentifier())
+        .accountId(triggerEventHistory.getAccountId())
+        .orgIdentifier(triggerEventHistory.getOrgIdentifier())
+        .projectIdentifier(triggerEventHistory.getProjectIdentifier())
+        .targetIdentifier(triggerEventHistory.getTargetIdentifier())
+        .eventCorrelationId(triggerEventHistory.getEventCorrelationId())
+        .payload(triggerEventHistory.getPayload())
+        .eventCreatedAt(triggerEventHistory.getEventCreatedAt())
+        .finalStatus(
+            EnumUtils.getEnum(TriggerEventResponse.FinalStatus.class, triggerEventHistory.getFinalStatus(), null))
+        .triggerEventStatus(TriggerEventStatusHelper.toStatus(
+            EnumUtils.getEnum(TriggerEventResponse.FinalStatus.class, triggerEventHistory.getFinalStatus(), null)))
+        .message(triggerEventHistory.getMessage())
+        .targetExecutionSummary(triggerEventHistory.getTargetExecutionSummary())
+        .build();
   }
 }

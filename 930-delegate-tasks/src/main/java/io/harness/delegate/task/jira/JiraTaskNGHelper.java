@@ -6,12 +6,14 @@
  */
 
 package io.harness.delegate.task.jira;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -20,6 +22,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Slf4j
 @Singleton

@@ -6,7 +6,9 @@
  */
 
 package io.harness.event.timeseries.processor;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -19,6 +21,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 public class TimescaleDataCleanup {
   @Inject private TimeScaleDBService timeScaleDBService;

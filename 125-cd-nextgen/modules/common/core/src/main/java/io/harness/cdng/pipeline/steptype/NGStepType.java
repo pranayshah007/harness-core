@@ -6,13 +6,15 @@
  */
 
 package io.harness.cdng.pipeline.steptype;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 
@@ -25,6 +27,10 @@ import java.util.List;
 /*
    Todo: Change StepSpecTypeConstants.PLACEHOLDER to their respective type once the StepInfo for those is implemented.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_INFRA_PROVISIONERS,
+        HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(CDP)
 public enum NGStepType {
   // gitops steps
@@ -330,7 +336,13 @@ public enum NGStepType {
       StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2),
   @JsonProperty(StepSpecTypeConstants.AWS_CDK_BOOTSTRAP)
   AWS_CDK_BOOTSTRAP("AWS CDK Bootstrap", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/AWS CDK Bootstrap", StepSpecTypeConstants.AWS_CDK_BOOTSTRAP);
+      "Infrastructure Provisioners/AWS CDK Bootstrap", StepSpecTypeConstants.AWS_CDK_BOOTSTRAP),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_SYNTH)
+  AWS_CDK_SYNTH("AWS CDK Synth", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Synth", StepSpecTypeConstants.AWS_CDK_SYNTH),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_DIFF)
+  AWS_CDK_DIFF("AWS CDK Diff", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Diff", StepSpecTypeConstants.AWS_CDK_DIFF);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

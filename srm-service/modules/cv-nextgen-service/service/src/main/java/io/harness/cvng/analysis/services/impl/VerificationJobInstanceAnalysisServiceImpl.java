@@ -44,6 +44,7 @@ import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.data.structure.CollectionUtils;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -130,8 +131,8 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
     Set<String> oldHosts = new HashSet<>();
     if (verificationJobInstance.getServiceInstanceDetails() != null
         && verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD()) {
-      oldHosts =
-          new HashSet<>(verificationJobInstance.getServiceInstanceDetails().getServiceInstancesBeforeDeployment());
+      oldHosts = new HashSet<>(CollectionUtils.emptyIfNull(
+          verificationJobInstance.getServiceInstanceDetails().getServiceInstancesBeforeDeployment()));
     } else if (preDeploymentTimeRange.isPresent()) {
       Set<String> verificationTaskIds =
           verificationTaskService.maybeGetVerificationTaskIds(accountId, verificationJobInstance.getUuid());

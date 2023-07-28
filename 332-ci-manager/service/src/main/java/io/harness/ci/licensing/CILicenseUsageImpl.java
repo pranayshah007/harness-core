@@ -175,15 +175,12 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
   public Page<ActiveDevelopersDTO> listLicenseUsage(
       String accountIdentifier, ModuleType module, long currentTsInMs, PageableUsageRequestParams usageRequestParams) {
     validateInput(accountIdentifier, module, currentTsInMs);
-    int pageNumber = 1;
+    int pageNumber = 0;
     int pageSize = 30;
     String sortQuery = null;
     if (usageRequestParams != null && usageRequestParams.getPageRequest() != null) {
       Pageable pageable = usageRequestParams.getPageRequest();
       pageNumber = pageable.getPageNumber();
-      if (pageNumber == 0) {
-        pageNumber = 1;
-      }
       pageSize = pageable.getPageSize();
       List<String> orderByFields = new ArrayList<>();
       for (Map.Entry<String, String> entry : sortToColumnMap.entrySet()) {
@@ -231,7 +228,7 @@ public class CILicenseUsageImpl implements LicenseUsageInterface<CILicenseUsageD
         statement.setString(i + 4, extraParam.get(i));
       }
       if (usageRequestParams.getPageRequest() != null && usageRequestParams.getPageRequest().isPaged()) {
-        statement.setInt(extraParam.size() + 4, (pageNumber - 1) * pageSize);
+        statement.setInt(extraParam.size() + 4, pageNumber * pageSize);
         statement.setInt(extraParam.size() + 5, pageSize);
       }
       resultSet = statement.executeQuery();

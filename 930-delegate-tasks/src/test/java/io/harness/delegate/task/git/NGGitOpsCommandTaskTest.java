@@ -30,6 +30,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -85,6 +86,7 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
   @Mock private GitDecryptionHelper gitDecryptionHelper;
   @Mock private NGGitService gitService;
   @Mock private ScmFetchFilesHelperNG scmFetchFilesHelper;
+  @Mock private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Mock private GitOpsTaskHelper gitOpsTaskHelper;
   @InjectMocks
@@ -121,6 +123,7 @@ public class NGGitOpsCommandTaskTest extends CategoryTest {
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
     doNothing().when(gitDecryptionHelper).decryptGitConfig(any(GitConfigDTO.class), anyList());
     doNothing().when(gitDecryptionHelper).decryptApiAccessConfig(any(ScmConnector.class), anyList());
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
   }
 
   private void setUpForHierarchical() {

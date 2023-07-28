@@ -8,6 +8,7 @@
 package io.harness.yaml.sto.variables;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.ssca.beans.tools.SbomToolConstants;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -17,8 +18,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("stoYamlSBOMFormat")
 @RecasterAlias("io.harness.yaml.sto.variables.STOYamlSBOMFormat")
 public enum STOYamlSBOMFormat {
-  @JsonProperty("spdx-json") SPDX("spdx-json"),
-  @JsonProperty("cyclonedx-json") CYCLONEDX("cyclonedx-json");
+  @JsonProperty(SbomToolConstants.SPDX_JSON) SPDX_JSON(SbomToolConstants.SPDX_JSON),
+  @JsonProperty(SbomToolConstants.CYCLONEDX_JSON) CYCLONEDX_JSON(SbomToolConstants.CYCLONEDX_JSON);
 
   private final String yamlName;
 
@@ -29,7 +30,7 @@ public enum STOYamlSBOMFormat {
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static STOYamlSBOMFormat getValue(@JsonProperty("type") String yamlName) {
     for (STOYamlSBOMFormat value : STOYamlSBOMFormat.values()) {
-      if (value.yamlName.equalsIgnoreCase(yamlName)) {
+      if (value.yamlName.equalsIgnoreCase(yamlName) || value.name().equalsIgnoreCase(yamlName)) {
         return value;
       }
     }

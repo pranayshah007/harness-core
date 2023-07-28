@@ -90,6 +90,15 @@ if [[ "" != "$MONGO_CONNECTIONS_PER_HOST" ]]; then
   export MONGO_CONNECTIONS_PER_HOST; yq -i '.notificationServiceConfig.mongo.connectionsPerHost=env(MONGO_CONNECTIONS_PER_HOST)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.notificationServiceConfig.mongo.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT; yq -i '.resourceGroupServiceConfig.mongo.maxDocumentsToBeFetched=env(RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
+
 if [[ "" != "$MANAGER_CLIENT_SECRET" ]]; then
   export MANAGER_CLIENT_SECRET; yq -i '.secrets.managerServiceSecret=env(MANAGER_CLIENT_SECRET)' $CONFIG_FILE
 fi
@@ -167,6 +176,10 @@ fi
 
 if [[ "" != "$AUDIT_MONGO_CONNECT_TIMEOUT" ]]; then
   export AUDIT_MONGO_CONNECT_TIMEOUT; yq -i '.auditServiceConfig.mongo.connectTimeout=env(AUDIT_MONGO_CONNECT_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AUDIT_MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export AUDIT_MONGO_MAX_DOCUMENT_LIMIT; yq -i '.auditServiceConfig.mongo.maxDocumentsToBeFetched=env(AUDIT_MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_MONGO_SERVER_SELECTION_TIMEOUT" ]]; then

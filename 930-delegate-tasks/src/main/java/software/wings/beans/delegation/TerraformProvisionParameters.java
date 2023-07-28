@@ -6,13 +6,15 @@
  */
 
 package software.wings.beans.delegation;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -48,6 +50,8 @@ import java.util.concurrent.TimeUnit;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Value
 @Builder
 @TargetModule(HarnessModule._950_DELEGATE_TASKS_BEANS)

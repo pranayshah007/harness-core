@@ -55,6 +55,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
@@ -189,7 +190,7 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
                      .category(CVMonitoringCategory.PERFORMANCE)
                      .metricInfos(Collections.singletonList(
                          NextGenMetricInfo.builder()
-                             .query(queryRecordsRequest.getQuery().trim())
+                             .query(Optional.ofNullable(queryRecordsRequest.getQuery()).map(String::trim).orElse(null))
                              .identifier(SAMPLE_METRIC_INDENTIFIER)
                              .metricName(SAMPLE_METRIC_INDENTIFIER)
                              .queryParams(queryRecordsRequest.getHealthSourceQueryParams().getQueryParamsEntity())

@@ -6,11 +6,13 @@
  */
 
 package io.harness.ng.core.deploymentstage;
-
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -48,6 +50,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import org.jetbrains.annotations.Nullable;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @NextGenManagerAuth
 @Api("/cdStage")
 @Path("/cdStage")

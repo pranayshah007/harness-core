@@ -441,7 +441,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     boolean isUserPrincipal = roleAssignmentFilterV2DTO.getPrincipalFilter() != null
         && USER.equals(roleAssignmentFilterV2DTO.getPrincipalFilter().getType());
     if (isUserPrincipal) {
-      when(userGroupService.list(roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier()))
+      when(userGroupService.list(scope.toString(), roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier()))
           .thenReturn(Lists.newArrayList(UserGroup.builder().build()));
     }
     ArgumentCaptor<RoleAssignmentFilter> roleAssignmentFilterArgumentCaptor =
@@ -464,7 +464,8 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     ResponseDTO<PageResponse<RoleAssignmentAggregate>> responseDTO =
         roleAssignmentResource.getList(maxPageRequest, harnessScopeParams, roleAssignmentFilterV2DTO);
     if (isUserPrincipal) {
-      verify(userGroupService, times(1)).list(roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier());
+      verify(userGroupService, times(1))
+          .list(scope.toString(), roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier());
     }
     verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
     verify(roleAssignmentService, times(1)).list(eq(maxPageRequest), roleAssignmentFilterArgumentCaptor.capture());
@@ -537,7 +538,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
         .thenReturn(Scope.builder().instanceId(ACCOUNT_ID).level(HarnessScopeLevel.ORGANIZATION).build());
     ResponseDTO<PageResponse<RoleAssignmentAggregate>> responseDTO =
         roleAssignmentResource.getList(maxPageRequest, harnessScopeParams, roleAssignmentFilterV2);
-    verify(userGroupService, times(0)).list(anyString());
+    verify(userGroupService, times(0)).list(anyString(), anyString());
     verify(roleAssignmentAggregateMapper, times(1)).toDTO(roleAssignment1, null, null);
     verify(roleAssignmentAggregateMapper, times(1)).toDTO(roleAssignment2, null, null);
     verify(roleAssignmentAggregateMapper, times(1)).toDTO(roleAssignment3, null, null);
@@ -1202,7 +1203,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     boolean isUserPrincipal = roleAssignmentFilterV2.getPrincipalFilter() != null
         && USER.equals(roleAssignmentFilterV2.getPrincipalFilter().getType());
     if (isUserPrincipal) {
-      when(userGroupService.list(roleAssignmentFilterV2.getPrincipalFilter().getIdentifier()))
+      when(userGroupService.list(scope.toString(), roleAssignmentFilterV2.getPrincipalFilter().getIdentifier()))
           .thenReturn(Lists.newArrayList(UserGroup.builder().build()));
     }
     ArgumentCaptor<RoleAssignmentFilter> roleAssignmentFilterArgumentCaptor =
@@ -1220,7 +1221,8 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     ResponseDTO<PageResponse<RoleAssignmentAggregate>> responseDTO =
         roleAssignmentResource.getList(maxPageRequest, harnessScopeParams, roleAssignmentFilterV2);
     if (isUserPrincipal) {
-      verify(userGroupService, times(1)).list(roleAssignmentFilterV2.getPrincipalFilter().getIdentifier());
+      verify(userGroupService, times(1))
+          .list(scope.toString(), roleAssignmentFilterV2.getPrincipalFilter().getIdentifier());
     }
     verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
     verify(roleAssignmentService, times(1)).list(eq(maxPageRequest), roleAssignmentFilterArgumentCaptor.capture());

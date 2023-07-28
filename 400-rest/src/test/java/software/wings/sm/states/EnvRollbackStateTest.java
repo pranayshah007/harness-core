@@ -87,7 +87,9 @@ public class EnvRollbackStateTest extends WingsBaseTest {
     PipelineExecution pipelineExecution =
         aPipelineExecution().withPipelineStageExecutions(pipelineStageExecutions).build();
     WorkflowExecution mockExecution = WorkflowExecution.builder().pipelineExecution(pipelineExecution).build();
-    doReturn(mockExecution).when(executionService).getWorkflowExecution(APP_ID, "WORKFLOW_EXECUTION_ID");
+    doReturn(mockExecution)
+        .when(executionService)
+        .getWorkflowExecution(eq(APP_ID), eq("WORKFLOW_EXECUTION_ID"), any(String[].class));
 
     ExecutionResponse executionResponse = envRollbackState.execute(context);
 
@@ -111,7 +113,9 @@ public class EnvRollbackStateTest extends WingsBaseTest {
     PipelineExecution pipelineExecution =
         aPipelineExecution().withPipelineStageExecutions(pipelineStageExecutions).build();
     WorkflowExecution mockExecution = WorkflowExecution.builder().pipelineExecution(pipelineExecution).build();
-    doReturn(mockExecution).when(executionService).getWorkflowExecution(APP_ID, "WORKFLOW_EXECUTION_ID");
+    doReturn(mockExecution)
+        .when(executionService)
+        .getWorkflowExecution(eq(APP_ID), eq("WORKFLOW_EXECUTION_ID"), any(String[].class));
 
     ExecutionResponse executionResponse = envRollbackState.execute(context);
 

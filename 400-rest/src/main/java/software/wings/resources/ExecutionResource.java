@@ -6,7 +6,6 @@
  */
 
 package software.wings.resources;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE;
 import static io.harness.beans.SearchFilter.Operator.GE;
@@ -25,8 +24,11 @@ import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.CreatedByType;
 import io.harness.beans.ExecutionInterruptType;
@@ -109,6 +111,8 @@ import javax.ws.rs.QueryParam;
 /**
  * The Class ExecutionResource.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Api("executions")
 @Path("/executions")
@@ -317,7 +321,13 @@ public class ExecutionResource {
   public RestResponse<WorkflowExecution> triggerPipelineResumeExecution(@QueryParam("appId") String appId,
       @QueryParam("parallelIndexToResume") int parallelIndexToResume,
       @QueryParam("workflowExecutionId") String workflowExecutionId) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    String[] fields = {WorkflowExecutionKeys.accountId, WorkflowExecutionKeys.appId, WorkflowExecutionKeys.createdAt,
+        WorkflowExecutionKeys.envId, WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.latestPipelineResume,
+        WorkflowExecutionKeys.pipelineExecution, WorkflowExecutionKeys.pipelineResumeId,
+        WorkflowExecutionKeys.pipelineSummary, WorkflowExecutionKeys.uuid, WorkflowExecutionKeys.workflowId,
+        WorkflowExecutionKeys.workflowType};
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
 
     notNullCheck(EXECUTION_DOES_NOT_EXIST + workflowExecutionId, workflowExecution);
     deploymentAuthHandler.authorize(appId, workflowExecution);
@@ -337,7 +347,12 @@ public class ExecutionResource {
   @AuthRule(permissionType = DEPLOYMENT, action = READ)
   public RestResponse<List<PipelineStageGroupedInfo>> getResumeStages(
       @QueryParam("appId") String appId, @QueryParam("workflowExecutionId") String workflowExecutionId) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    String[] fields = {WorkflowExecutionKeys.accountId, WorkflowExecutionKeys.executionArgs,
+        WorkflowExecutionKeys.latestPipelineResume, WorkflowExecutionKeys.pipelineExecution,
+        WorkflowExecutionKeys.pipelineResumeId, WorkflowExecutionKeys.uuid, WorkflowExecutionKeys.workflowId,
+        WorkflowExecutionKeys.workflowType};
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
     notNullCheck(EXECUTION_DOES_NOT_EXIST + workflowExecutionId, workflowExecution);
     return new RestResponse<>(workflowExecutionService.getResumeStages(appId, workflowExecution));
   }
@@ -349,7 +364,8 @@ public class ExecutionResource {
   @AuthRule(permissionType = DEPLOYMENT, action = READ)
   public RestResponse<List<WorkflowExecution>> getResumeHistory(
       @QueryParam("appId") String appId, @QueryParam("workflowExecutionId") String workflowExecutionId) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId,
+        WorkflowExecutionKeys.accountId, WorkflowExecutionKeys.pipelineResumeId, WorkflowExecutionKeys.workflowType);
     notNullCheck(EXECUTION_DOES_NOT_EXIST + workflowExecutionId, workflowExecution);
     return new RestResponse<>(workflowExecutionService.getResumeHistory(appId, workflowExecution));
   }
@@ -362,7 +378,13 @@ public class ExecutionResource {
   @AuthRule(permissionType = DEPLOYMENT, action = EXECUTE, skipAuth = true)
   public RestResponse<WorkflowExecution> triggerRollbackExecution(
       @QueryParam("appId") String appId, @QueryParam("workflowExecutionId") String workflowExecutionId) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    String[] fields = {WorkflowExecutionKeys.accountId, WorkflowExecutionKeys.artifacts,
+        WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.appId, WorkflowExecutionKeys.infraMappingIds,
+        WorkflowExecutionKeys.name, WorkflowExecutionKeys.startTs, WorkflowExecutionKeys.pipelineExecutionId,
+        WorkflowExecutionKeys.status, WorkflowExecutionKeys.workflowType, WorkflowExecutionKeys.infraDefinitionIds,
+        WorkflowExecutionKeys.uuid, WorkflowExecutionKeys.workflowId, WorkflowExecutionKeys.envId};
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
     notNullCheck("No Workflow Execution exist for Id: " + workflowExecutionId, workflowExecution);
     deploymentAuthHandler.authorizeRollback(appId, workflowExecution);
     WorkflowExecution rollbackWorkflowExecution =
@@ -379,7 +401,13 @@ public class ExecutionResource {
   @AuthRule(permissionType = DEPLOYMENT, action = EXECUTE, skipAuth = true)
   public RestResponse<RollbackConfirmation> getRollbackConfirmation(
       @QueryParam("appId") String appId, @QueryParam("workflowExecutionId") String workflowExecutionId) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    String[] fields = {WorkflowExecutionKeys.accountId, WorkflowExecutionKeys.appId, WorkflowExecutionKeys.artifacts,
+        WorkflowExecutionKeys.envId, WorkflowExecutionKeys.infraDefinitionIds, WorkflowExecutionKeys.infraMappingIds,
+        WorkflowExecutionKeys.name, WorkflowExecutionKeys.onDemandRollback, WorkflowExecutionKeys.serviceIds,
+        WorkflowExecutionKeys.status, WorkflowExecutionKeys.useSweepingOutputs, WorkflowExecutionKeys.uuid,
+        WorkflowExecutionKeys.workflowId, WorkflowExecutionKeys.workflowId, WorkflowExecutionKeys.workflowType};
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
     notNullCheck("No Workflow Execution exist for Id: " + workflowExecutionId, workflowExecution);
     deploymentAuthHandler.authorizeRollback(appId, workflowExecution);
     RollbackConfirmation rollbackConfirmation =

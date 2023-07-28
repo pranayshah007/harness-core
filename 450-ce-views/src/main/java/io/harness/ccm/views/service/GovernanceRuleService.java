@@ -40,4 +40,5 @@ public interface GovernanceRuleService {
   String enqueueAdhoc(String accountId, GovernanceJobEnqueueDTO governanceJobEnqueueDTO);
   List<RuleExecution> enqueue(String accountId, RuleEnforcement ruleEnforcement, List<Rule> rulesList,
       ConnectorConfigDTO connectorConfig, String cloudConnectorId, String faktoryJobType, String faktoryQueueName);
+  String getResourceType(String ruleYaml);
 }

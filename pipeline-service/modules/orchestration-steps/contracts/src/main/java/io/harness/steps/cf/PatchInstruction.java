@@ -6,11 +6,13 @@
  */
 
 package io.harness.steps.cf;
-
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXISTING_PROPERTY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -18,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = EXISTING_PROPERTY, visible = true)
 @JsonSubTypes({
   @JsonSubTypes.Type(value = SetFeatureFlagStateYaml.class, name = "SetFeatureFlagState")

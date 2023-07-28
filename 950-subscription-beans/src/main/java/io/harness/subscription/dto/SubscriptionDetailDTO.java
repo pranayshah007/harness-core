@@ -6,6 +6,9 @@
  */
 
 package io.harness.subscription.dto;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -14,6 +17,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.jvnet.hk2.annotations.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)

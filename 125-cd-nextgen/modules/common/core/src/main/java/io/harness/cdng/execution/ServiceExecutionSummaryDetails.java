@@ -6,8 +6,10 @@
  */
 
 package io.harness.cdng.execution;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.manifest.yaml.summary.ManifestSummary;
 
@@ -16,6 +18,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Singular;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Data
 @Builder
 @RecasterAlias("io.harness.cdng.execution.ServiceExecutionSummaryDetails")

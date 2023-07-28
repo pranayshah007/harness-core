@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.serverless.container.steps;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.aws.sam.AwsSamStepHelper;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
@@ -44,6 +46,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<StepElementParameters> {
@@ -116,8 +120,8 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
           stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()));
     }
 
-    if (stepStatusTaskResponseData != null
-        && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
+    if (stepStatusTaskResponseData != null && stepStatusTaskResponseData.getStepStatus() != null
+        && StepExecutionStatus.SUCCESS == stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()) {
       StepOutput stepOutput = stepStatusTaskResponseData.getStepStatus().getOutput();
 
       if (stepOutput instanceof StepMapOutput) {

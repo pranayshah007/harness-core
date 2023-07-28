@@ -21,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.plan.IdentityPlanNode;
@@ -47,6 +48,7 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentityNodeExecutionStrategyHelperTest {
   @Mock NodeExecutionService nodeExecutionService;
+  @Mock PlanService planService;
   @InjectMocks IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
 
   @Before
@@ -128,23 +130,12 @@ public class IdentityNodeExecutionStrategyHelperTest {
     List<String> retryIdsList = List.of(retryId1, retryId2);
 
     List<NodeExecution> retriedNodeExecutions = new ArrayList<>();
-    retriedNodeExecutions.add(NodeExecution.builder()
-                                  .planNode(IdentityPlanNode.builder()
-                                                .uuid("uuid1")
-                                                .identifier("id1")
-                                                .stepType(StepType.newBuilder().build())
-                                                .build())
-                                  .uuid(retryId1)
-                                  .build());
-    retriedNodeExecutions.add(NodeExecution.builder()
-                                  .planNode(IdentityPlanNode.builder()
-                                                .uuid("uuid1")
-                                                .identifier("id1")
-                                                .stepType(StepType.newBuilder().build())
-                                                .build())
-                                  .uuid(retryId2)
-                                  .build());
+    IdentityPlanNode node =
+        IdentityPlanNode.builder().uuid("uuid1").identifier("id1").stepType(StepType.newBuilder().build()).build();
+    retriedNodeExecutions.add(NodeExecution.builder().planNode(node).uuid(retryId1).build());
+    retriedNodeExecutions.add(NodeExecution.builder().planNode(node).uuid(retryId2).build());
     doReturn(retriedNodeExecutions).when(nodeExecutionService).getAll(any());
+    doReturn(node).when(planService).fetchNode(eq("uuid1"));
 
     ArgumentCaptor<List> nodeExecutionArgumentCaptor = ArgumentCaptor.forClass(List.class);
 

@@ -6,11 +6,13 @@
  */
 
 package io.harness.delegate.task.ssh.artifact;
-
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
@@ -22,6 +24,8 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)

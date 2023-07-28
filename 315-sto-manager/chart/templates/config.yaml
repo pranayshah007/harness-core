@@ -59,3 +59,7 @@ data:
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}
+  {{- if .Values.global.opa.enabled }}
+  OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
+  OPA_SERVER_SECRET: "dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq"
+  {{- end }}

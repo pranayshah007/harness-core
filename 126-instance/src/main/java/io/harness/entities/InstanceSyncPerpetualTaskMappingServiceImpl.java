@@ -6,9 +6,11 @@
  */
 
 package io.harness.entities;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.dtos.InstanceSyncPerpetualTaskMappingDTO;
 import io.harness.mappers.InstanceSyncPerpetualTaskMappingMapper;
 import io.harness.repositories.instanceSyncPerpetualTaskMapping.InstanceSyncPerpetualTaskMappingRepository;
@@ -17,6 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class InstanceSyncPerpetualTaskMappingServiceImpl implements InstanceSyncPerpetualTaskMappingService {
