@@ -2847,6 +2847,24 @@ public class TerraformStepHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetRevisionsMapWithNullVarFilesWhenRollback() {
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commit_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commit_2");
+    commitIdForConfigFilesMap.put("TF_VAR_FILES_1", "commit_v1");
+    commitIdForConfigFilesMap.put("TF_VAR_FILES_2", "commit_v2");
+
+    List<TerraformVarFileConfig> varFiles = null;
+
+    Map<String, String> outputs = helper.getRevisionsMap(varFiles, commitIdForConfigFilesMap);
+
+    assertThat(outputs.get(TF_CONFIG_FILES)).isEqualTo("commit_1");
+    assertThat(outputs.get(TF_BACKEND_CONFIG_FILE)).isEqualTo("commit_2");
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testGetRevisions() {

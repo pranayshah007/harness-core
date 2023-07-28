@@ -579,11 +579,13 @@ public class TerraformStepHelper {
       outputKeys.put(TF_CONFIG_FILES, commitIdForConfigFilesMap.get(TF_CONFIG_FILES));
       outputKeys.put(TF_BACKEND_CONFIG_FILE, commitIdForConfigFilesMap.get(TF_BACKEND_CONFIG_FILE));
       int i = 0;
-      for (TerraformVarFileConfig file : varFileConfigs) {
-        if (file instanceof TerraformRemoteVarFileConfig && isNotEmpty(file.getIdentifier())) {
-          i++;
-          if (((TerraformRemoteVarFileConfig) file).getGitStoreConfigDTO() != null) {
-            outputKeys.put(file.getIdentifier(), commitIdForConfigFilesMap.get(format(TF_VAR_FILES, i)));
+      if (isNotEmpty(varFileConfigs)) {
+        for (TerraformVarFileConfig file : varFileConfigs) {
+          if (file instanceof TerraformRemoteVarFileConfig && isNotEmpty(file.getIdentifier())) {
+            i++;
+            if (((TerraformRemoteVarFileConfig) file).getGitStoreConfigDTO() != null) {
+              outputKeys.put(file.getIdentifier(), commitIdForConfigFilesMap.get(format(TF_VAR_FILES, i)));
+            }
           }
         }
       }
