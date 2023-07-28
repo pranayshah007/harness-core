@@ -29,6 +29,7 @@ import io.harness.ng.webhook.services.api.WebhookService;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.ng.webhook.spring.WebhookEventRepository;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -71,7 +72,8 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
     }
   }
 
-  private void enqueueWebhookEvent(WebhookEvent webhookEvent, String topic, String moduleName, String uuid) {
+  @VisibleForTesting
+  void enqueueWebhookEvent(WebhookEvent webhookEvent, String topic, String moduleName, String uuid) {
     // Consumer for webhook trigger event stream: WebhookTriggerEventQueueProcessor (in NG Manager)
     EnqueueRequest enqueueRequest = EnqueueRequest.builder()
                                         .topic(topic + WEBHOOK_TRIGGER_EVENT)

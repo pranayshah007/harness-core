@@ -135,7 +135,7 @@ public class WebhookHelperTest extends CategoryTest {
     doThrow(new StatusRuntimeException(Status.UNAVAILABLE))
         .when(webhookParserSCMService)
         .parseWebhookUsingSCMAPI(webhookEvent.getHeaders(), "payload");
-    assertThat(webhookHelper.invokeScmService(webhookEvent)).isNull();
+    assertThat(webhookHelper.invokeScmService(webhookEvent, SourceRepoType.GITHUB)).isNull();
   }
 
   @Test

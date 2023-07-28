@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.webhook.services.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
@@ -76,7 +77,7 @@ public class WebhookEventProcessingServiceImpl
     ParseWebhookResponse parseWebhookResponse = null;
     SourceRepoType sourceRepoType = webhookHelper.getSourceRepoType(event);
     if (sourceRepoType != SourceRepoType.UNRECOGNIZED) {
-      parseWebhookResponse = webhookHelper.invokeScmService(event);
+      parseWebhookResponse = webhookHelper.invokeScmService(event, sourceRepoType);
     }
 
     try {

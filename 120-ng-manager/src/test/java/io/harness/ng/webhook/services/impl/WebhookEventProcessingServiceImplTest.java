@@ -84,7 +84,7 @@ public class WebhookEventProcessingServiceImplTest extends CategoryTest {
     WebhookDTO webhookDTO = WebhookDTO.newBuilder().build();
     ParseWebhookResponse parseWebhookResponse = ParseWebhookResponse.newBuilder().build();
     when(webhookHelper.getSourceRepoType(webhookEvent)).thenReturn(SourceRepoType.GITHUB);
-    when(webhookHelper.invokeScmService(webhookEvent)).thenReturn(parseWebhookResponse);
+    when(webhookHelper.invokeScmService(webhookEvent, SourceRepoType.GITHUB)).thenReturn(parseWebhookResponse);
     when(webhookHelper.generateWebhookDTO(webhookEvent, parseWebhookResponse, SourceRepoType.GITHUB))
         .thenReturn(WebhookDTO.newBuilder().build());
     producers.add(gitPushEventProducer);

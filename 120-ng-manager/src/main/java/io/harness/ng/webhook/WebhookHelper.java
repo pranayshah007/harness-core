@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.webhook;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
 import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
@@ -199,7 +200,7 @@ public class WebhookHelper {
     return producers;
   }
 
-  public ParseWebhookResponse invokeScmService(WebhookEvent event) {
+  public ParseWebhookResponse invokeScmService(WebhookEvent event, SourceRepoType sourceRepoType) {
     try {
       Stopwatch stopwatch = Stopwatch.createStarted();
       ParseWebhookResponse parseWebhookResponse =
@@ -207,7 +208,7 @@ public class WebhookHelper {
       log.info("Finished parsing webhook payload in {} ", stopwatch.elapsed(TimeUnit.SECONDS));
       return parseWebhookResponse;
     } catch (Exception exception) {
-      logIfScmUnavailableException(event, exception);
+      logIfScmUnavailableException(event, exception, sourceRepoType);
     }
 
     // This failure could also mean, SCM could not parse payload. This may be some event SCM does not yet support.
@@ -215,15 +216,17 @@ public class WebhookHelper {
     return null;
   }
 
-  private void logIfScmUnavailableException(WebhookEvent event, Exception exception) {
+  private void logIfScmUnavailableException(WebhookEvent event, Exception exception, SourceRepoType sourceRepoType) {
     if (StatusRuntimeException.class.isAssignableFrom(exception.getClass())) {
       StatusRuntimeException e = (StatusRuntimeException) exception;
 
       if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
         // SCM service could not be accessed.
         log.error(new StringBuilder(128)
-                      .append("SCM service unavailable for parsing webhook payload. EventId")
+                      .append("SCM service unavailable for parsing webhook payload. EventId: ")
                       .append(event.getUuid())
+                      .append(", SourceRepoType: ")
+                      .append(sourceRepoType)
                       .append(", Exception: ")
                       .append(e)
                       .toString());

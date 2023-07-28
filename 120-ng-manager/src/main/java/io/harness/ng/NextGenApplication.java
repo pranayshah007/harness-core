@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng;
+
 import static io.harness.NGCommonEntityConstants.CONFIG_FILE_FUNCTOR;
 import static io.harness.NGCommonEntityConstants.FILE_STORE_FUNCTOR;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInterMsvcRequests;
@@ -160,6 +161,7 @@ import io.harness.ng.oauth.GitlabConnectorOAuthTokenRefresher;
 import io.harness.ng.oauth.GitlabSCMOAuthTokenRefresher;
 import io.harness.ng.overview.eventGenerator.DeploymentEventGenerator;
 import io.harness.ng.webhook.services.api.WebhookEventProcessingService;
+import io.harness.ng.webhook.services.impl.WebhookTriggerEventQueueProcessor;
 import io.harness.ngsettings.settings.SettingsCreationJob;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
@@ -890,6 +892,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     if (appConfig.isUseQueueServiceForWebhookTriggers()) {
+      environment.lifecycle().manage(injector.getInstance(WebhookTriggerEventQueueProcessor.class));
       environment.lifecycle().manage(injector.getInstance(WebhookBranchHookEventQueueProcessor.class));
       environment.lifecycle().manage(injector.getInstance(WebhookPushEventQueueProcessor.class));
     }

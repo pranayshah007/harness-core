@@ -48,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 public class WebhookTriggerEventQueueProcessor extends AbstractHsqsQueueProcessor {
   @Inject @Named("webhookTriggerEventHsqsDequeueConfig") HsqsDequeueConfig webhookTriggerEventHsqsDequeueConfig;
   @Inject private WebhookHelper webhookHelper;
-  private HsqsClientService hsqsClientService;
+  @Inject private HsqsClientService hsqsClientService;
 
   @Override
   public HsqsProcessMessageResponse processResponse(DequeueResponse message) {
@@ -74,7 +74,7 @@ public class WebhookTriggerEventQueueProcessor extends AbstractHsqsQueueProcesso
       ParseWebhookResponse parseWebhookResponse = null;
       SourceRepoType sourceRepoType = webhookHelper.getSourceRepoType(webhookEvent);
       if (sourceRepoType != SourceRepoType.UNRECOGNIZED) {
-        parseWebhookResponse = webhookHelper.invokeScmService(webhookEvent);
+        parseWebhookResponse = webhookHelper.invokeScmService(webhookEvent, sourceRepoType);
       }
       WebhookDTO webhookDTO = webhookHelper.generateWebhookDTO(webhookEvent, parseWebhookResponse, sourceRepoType);
       enqueueWebhookDTOs(webhookDTO, topic, moduleName, webhookEvent.getUuid());

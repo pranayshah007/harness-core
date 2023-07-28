@@ -72,7 +72,7 @@ public class WebhookTriggerEventQueueProcessorTest extends CategoryTest {
                              .headers(List.of(HeaderConfig.builder().key(X_GIT_HUB_EVENT).build()))
                              .build();
     doReturn(SourceRepoType.GITHUB).when(webhookHelper).getSourceRepoType(event);
-    doReturn(null).when(webhookHelper).invokeScmService(event);
+    doReturn(null).when(webhookHelper).invokeScmService(event, SourceRepoType.GITHUB);
     WebhookDTO webhookDTO =
         WebhookDTO.newBuilder()
             .setAccountId("accountId")
