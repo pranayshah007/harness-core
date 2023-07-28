@@ -22,10 +22,13 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ServiceVariableOverridesFunctor extends LateBindingMap {
   private final Ambiance ambiance;
   private final PmsEngineExpressionService pmsEngineExpressionService;
+  private static final String EXECUTION = "EXECUTION";
 
   public ServiceVariableOverridesFunctor(Ambiance ambiance, PmsEngineExpressionService pmsEngineExpressionService) {
     this.ambiance = ambiance;
@@ -43,6 +46,13 @@ public class ServiceVariableOverridesFunctor extends LateBindingMap {
     List<Level> levels = ambiance.getLevelsList();
     List<Level> subLevels;
     List<String> fqnList = new ArrayList<>();
+
+    Set<String> groups = levels.stream().map(Level::getGroup).collect(Collectors.toSet());
+    // step group overrides are rendered within execution context only
+    if (!groups.contains(EXECUTION)) {
+      // functor will return null to return original expression with mode RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED
+      return null;
+    }
 
     // base fqn is serviceVariables.variable_name
     fqnList.add(

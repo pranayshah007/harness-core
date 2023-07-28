@@ -73,7 +73,7 @@ public class AwsSamDownloadManifestsStepHelper {
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepInputPackage inputPackage, GitCloneStep gitCloneStep) {
     ManifestsOutcome manifestsOutcome = downloadManifestsCommonHelper.fetchManifestsOutcome(ambiance);
-
+    // @todo(hinger) render manifests here
     AsyncExecutableResponse samDirectoryAsyncExecutableResponse =
         getAsyncExecutableResponseForAwsSamDirectoryManifest(ambiance, inputPackage, gitCloneStep, manifestsOutcome);
 

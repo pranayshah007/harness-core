@@ -13,6 +13,7 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sRollingRollbackBaseStepInfo.K8sRollingRollbackBaseStepInfoKeys;
@@ -69,6 +70,7 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -132,6 +134,9 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
     }
 
     ManifestsOutcome manifestsOutcome = k8sStepHelper.resolveManifestsOutcome(ambiance);
+
+    // render manifests outcome
+    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
     ManifestOutcome k8sManifestOutcome = k8sStepHelper.getK8sSupportedManifestOutcome(manifestsOutcome.values());
 
     rollbackRequestBuilder.commandName(K8S_DEPLOYMENT_ROLLING_ROLLBACK_COMMAND_NAME)

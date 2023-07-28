@@ -171,7 +171,7 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
         (ManifestsOutcome) outcomeService
             .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
             .getOutcome();
-
+    // @todo(hinger) render manifests here
     AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
         (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
             manifestsOutcome.values());
