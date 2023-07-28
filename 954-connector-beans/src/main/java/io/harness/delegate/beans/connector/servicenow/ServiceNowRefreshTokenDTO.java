@@ -6,10 +6,12 @@
  */
 
 package io.harness.delegate.beans.connector.servicenow;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -21,6 +23,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.hibernate.validator.constraints.URL;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Builder

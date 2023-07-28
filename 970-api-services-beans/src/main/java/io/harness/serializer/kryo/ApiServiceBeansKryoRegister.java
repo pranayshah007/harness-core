@@ -6,12 +6,14 @@
  */
 
 package io.harness.serializer.kryo;
-
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.adfs.AdfsAccessTokenResponse;
 import io.harness.ami.AMITagsResponse;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryImagePath;
 import io.harness.aws.AwsAccessKeyCredential;
@@ -240,6 +242,7 @@ import java.nio.file.NoSuchFileException;
 import javax.ws.rs.core.MultivaluedHashMap;
 import org.json.JSONException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(DEL)
 public class ApiServiceBeansKryoRegister implements KryoRegistrar {
   @Override

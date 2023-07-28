@@ -24,6 +24,7 @@ import io.harness.springdata.TransactionHelper;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -115,5 +116,21 @@ public class PlanServiceImpl implements PlanService {
       planRepository.deleteAllByUuidIn(planIds);
       return true;
     });
+  }
+
+  @Override
+  public <T extends Node> T fetchNode(String nodeId) {
+    Optional<NodeEntity> nodeEntity = nodeEntityRepository.findById(nodeId);
+    return nodeEntity.map(entity -> (T) entity.getNode()).orElse(null);
+  }
+
+  @Override
+  public <T extends Node> Set<T> fetchAllNodes(Set<String> nodeIds) {
+    Iterable<NodeEntity> nodesEntities = nodeEntityRepository.findAllById(nodeIds);
+    Set<T> nodes = new HashSet<>();
+    for (NodeEntity nodeEntity : nodesEntities) {
+      nodes.add((T) nodeEntity.getNode());
+    }
+    return nodes;
   }
 }

@@ -77,6 +77,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.TaskType;
 import software.wings.sm.states.provision.S3UriParser;
@@ -120,6 +121,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
   @Mock private CloudformationStepExecutor cloudformationStepExecutor;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @InjectMocks private final CloudformationStepHelper cloudformationStepHelper = new CloudformationStepHelper();
   private static final String TAGS = "[\n"
       + "  {\n"
@@ -140,6 +142,8 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
     MockitoAnnotations.initMocks(this);
     Reflect.on(cdExpressionResolver).set("engineExpressionService", engineExpressionService);
     Reflect.on(cloudformationStepHelper).set("cdExpressionResolver", cdExpressionResolver);
+    Reflect.on(cdExpressionResolver).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
   }
 
   @Test

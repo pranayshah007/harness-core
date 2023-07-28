@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static io.harness.exception.WingsException.USER;
@@ -17,8 +16,11 @@ import static io.harness.validation.Validator.notNullCheck;
 import static software.wings.service.ApprovalUtils.checkApproval;
 import static software.wings.service.impl.AssignDelegateServiceImpl.SCOPE_WILDCARD;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
@@ -60,6 +62,8 @@ import net.sf.json.JSONArray;
 /**
  * All Jira apis should be accessed via this object.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @OwnedBy(CDC)
 @Slf4j
@@ -141,6 +145,9 @@ public class JiraHelperService {
   }
 
   public void handleJiraPolling(ApprovalPollingJobEntity entity) {
+    if (featureFlagService.isEnabled(FeatureName.CDS_PAUSE_JIRA_APPROVAL_CG, entity.getAccountId())) {
+      return;
+    }
     JiraExecutionData jiraExecutionData = null;
     String issueId = entity.getIssueId();
     String approvalId = entity.getApprovalId();
@@ -245,7 +252,11 @@ public class JiraHelperService {
     jiraTaskParameters.setJiraConfig(jiraConfig);
     jiraTaskParameters.setEncryptionDetails(
         secretManager.getEncryptionDetails(jiraConfig, appId, WORKFLOW_EXECUTION_ID));
-
+    long timeout = Long.max(timeoutMillis, JIRA_DELEGATE_TIMEOUT_MILLIS);
+    if (featureFlagService.isEnabled(FeatureName.CDS_RECONFIGURE_JIRA_APPROVAL_TIMEOUT, accountId)) {
+      timeout = Long.min(timeoutMillis, JIRA_DELEGATE_TIMEOUT_MILLIS);
+      log.info("Timeout configured for the Jira delegate task is {}", timeout);
+    }
     try {
       DelegateTask delegateTask = DelegateTask.builder()
                                       .accountId(accountId)
@@ -255,7 +266,7 @@ public class JiraHelperService {
                                                 .async(false)
                                                 .taskType(TaskType.JIRA.name())
                                                 .parameters(new Object[] {jiraTaskParameters})
-                                                .timeout(Long.max(timeoutMillis, JIRA_DELEGATE_TIMEOUT_MILLIS))
+                                                .timeout(timeout)
                                                 .build())
                                       .build();
       DelegateResponseData responseData = delegateService.executeTaskV2(delegateTask);

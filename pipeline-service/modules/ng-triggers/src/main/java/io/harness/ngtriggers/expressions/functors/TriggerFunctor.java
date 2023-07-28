@@ -13,8 +13,11 @@ import static io.harness.ngtriggers.Constants.PAYLOAD;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.InvalidRequestException;
@@ -28,6 +31,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class TriggerFunctor implements LateBindingValue {
   private final Ambiance ambiance;
@@ -48,7 +52,7 @@ public class TriggerFunctor implements LateBindingValue {
     Map<String, Object> jsonObject = TriggerHelper.buildJsonObjectFromAmbiance(metadata.getTriggerPayload());
 
     if (EmptyPredicate.isNotEmpty(metadata.getTriggerHeader())) {
-      jsonObject.put(HEADER, TriggerHelper.processTriggerHeader(metadata.getTriggerHeader()));
+      jsonObject.put(HEADER, new TriggerHeaderBindingMap(metadata.getTriggerHeader()));
     }
 
     if (isNotBlank(metadata.getTriggerJsonPayload())) {

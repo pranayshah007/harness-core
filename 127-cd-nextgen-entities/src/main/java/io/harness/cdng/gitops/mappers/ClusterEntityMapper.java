@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.gitops.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ScopeLevel;
 import io.harness.cdng.gitops.beans.ClusterBatchRequest;
 import io.harness.cdng.gitops.beans.ClusterFromGitops;
@@ -25,6 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(HarnessTeam.GITOPS)
 @UtilityClass
 public class ClusterEntityMapper {

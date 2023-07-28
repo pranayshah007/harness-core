@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.helm;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.CUSTOM_REMOTE;
@@ -45,6 +44,9 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
@@ -148,6 +150,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_K8S})
 @Slf4j
 public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final Set<StoreDelegateConfigType> HELM_SUPPORTED_STORE_TYPES =
@@ -340,8 +344,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           serviceHookDTO.getWorkingDirectory(), logCallback);
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WrapUp);
       List<K8sPod> newPodList =
-          helmTaskHelperBase.markNewPods(k8sTaskHelperBase.getHelmPodList(commandRequest.getTimeoutInMillis(),
-                                             kubernetesConfig, commandRequest.getReleaseName(), logCallback),
+          k8sTaskHelperBase.tagNewPods(k8sTaskHelperBase.getHelmPodList(commandRequest.getTimeoutInMillis(),
+                                           kubernetesConfig, commandRequest.getReleaseName(), logCallback),
               existingPodList);
       commandResponse.setPreviousK8sPodList(existingPodList);
       commandResponse.setK8sPodList(newPodList);
@@ -622,6 +626,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
     try {
+      List<K8sPod> existingPodList = k8sTaskHelperBase.getHelmPodList(
+          commandRequest.getTimeoutInMillis(), kubernetesConfig, commandRequest.getReleaseName(), logCallback);
+
       logCallback = markDoneAndStartNew(commandRequest, logCallback, Rollback);
       HelmInstallCmdResponseNG commandResponse = HelmCommandResponseMapper.getHelmInstCmdRespNG(
           helmClient.rollback(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true));
@@ -660,6 +667,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       commandResponse.setHelmChartInfo(helmChartInfo);
 
       logCallback.saveExecutionLog("\nDone", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      List<K8sPod> newPodList =
+          k8sTaskHelperBase.tagNewPods(k8sTaskHelperBase.getHelmPodList(commandRequest.getTimeoutInMillis(),
+                                           kubernetesConfig, commandRequest.getReleaseName(), logCallback),
+              existingPodList);
+      commandResponse.setPreviousK8sPodList(existingPodList);
+      commandResponse.setK8sPodList(newPodList);
       return commandResponse;
     } catch (UncheckedTimeoutException e) {
       log.error(TIMED_OUT_IN_STEADY_STATE, ExceptionMessageSanitizer.sanitizeException(e));

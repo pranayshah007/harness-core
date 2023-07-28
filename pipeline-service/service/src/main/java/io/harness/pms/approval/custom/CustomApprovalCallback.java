@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.approval.custom;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER_SRE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.exception.ApprovalStepNGException;
@@ -49,6 +51,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Slf4j
@@ -96,10 +99,14 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
     ShellScriptTaskResponseNG scriptTaskResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
-              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
-              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
+
+      // fallback : if inflated response is obtained, use it directly
+      if (responseData instanceof BinaryResponseData) {
+        BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+        responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+                ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+                : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
+      }
       if (responseData instanceof ErrorNotifyResponseData) {
         log.warn("Failed to run Custom Approval script");
         logCallback.saveExecutionLog("Failed to run custom approval script: " + responseData, LogLevel.WARN);

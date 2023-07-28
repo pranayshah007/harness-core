@@ -83,7 +83,7 @@ public class CloudWatchStateTest extends APMStateVerificationTestBase {
     setupCommon();
     initMocks(this);
     setupCommonMocks();
-    when(workflowExecutionService.getWorkflowExecution(any(), any()))
+    when(workflowExecutionService.getWorkflowExecution(any(), any(), any(String[].class)))
         .thenReturn(WorkflowExecution.builder().uuid(generateUuid()).build());
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(Collections.emptyList());
     setupCvActivityLogService(cloudWatchState);

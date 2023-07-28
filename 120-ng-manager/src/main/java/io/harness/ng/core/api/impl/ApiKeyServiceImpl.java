@@ -9,6 +9,7 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION;
 import static io.harness.ng.core.account.ServiceAccountConfig.DEFAULT_API_KEY_LIMIT;
@@ -47,6 +48,7 @@ import io.harness.ng.core.events.ApiKeyUpdateEvent;
 import io.harness.ng.core.mapper.ApiKeyDTOMapper;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.ApiKeyRepository;
 import io.harness.security.SourcePrincipalContextBuilder;
@@ -82,11 +84,11 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Inject private AccessControlClient accessControlClient;
   @Inject private AccountService accountService;
   @Inject private NgUserService ngUserService;
-
+  @Inject private ServiceAccountService serviceAccountService;
   @Override
   public ApiKeyDTO createApiKey(ApiKeyDTO apiKeyDTO) {
-    validateApiKeyRequest(
-        apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(), apiKeyDTO.getProjectIdentifier());
+    validateApiKeyRequest(apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(),
+        apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getParentIdentifier(), apiKeyDTO.getApiKeyType());
     validateApiKeyLimit(apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(),
         apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getParentIdentifier());
     try {
@@ -104,11 +106,21 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     }
   }
 
-  private void validateApiKeyRequest(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    if (!accountOrgProjectValidator.isPresent(accountIdentifier, orgIdentifier, projectIdentifier)) {
-      throw new InvalidArgumentsException(String.format("Project [%s] in Org [%s] and Account [%s] does not exist",
-                                              accountIdentifier, orgIdentifier, projectIdentifier),
-          USER_SRE);
+  private void validateApiKeyRequest(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String parentIdentifier, ApiKeyType apiKeyType) {
+    switch (apiKeyType) {
+      case USER:
+        if (!accountOrgProjectValidator.isPresent(accountIdentifier, orgIdentifier, projectIdentifier)) {
+          throw new InvalidArgumentsException(String.format("Project [%s] in Org [%s] and Account [%s] does not exist",
+                                                  projectIdentifier, orgIdentifier, accountIdentifier),
+              USER_SRE);
+        }
+        break;
+      case SERVICE_ACCOUNT:
+        serviceAccountService.getServiceAccountDTO(
+            accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier);
+        break;
+      default:
     }
   }
 
@@ -126,8 +138,8 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
   @Override
   public ApiKeyDTO updateApiKey(ApiKeyDTO apiKeyDTO) {
-    validateApiKeyRequest(
-        apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(), apiKeyDTO.getProjectIdentifier());
+    validateApiKeyRequest(apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(),
+        apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getParentIdentifier(), apiKeyDTO.getApiKeyType());
     Optional<ApiKey> optionalApiKey =
         apiKeyRepository
             .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
@@ -151,7 +163,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   @Override
   public boolean deleteApiKey(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier, String identifier) {
-    validateApiKeyRequest(accountIdentifier, orgIdentifier, projectIdentifier);
+    validateApiKeyRequest(accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier, apiKeyType);
     Optional<ApiKey> optionalApiKey =
         apiKeyRepository
             .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
@@ -334,6 +346,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
         break;
       case SERVICE_ACCOUNT:
+
         accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
             Resource.of(PlatformResourceTypes.SERVICEACCOUNT, parentIdentifier),
             MANAGEAPIKEY_SERVICEACCOUNT_PERMISSION);

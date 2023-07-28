@@ -6,7 +6,6 @@
  */
 
 package io.harness.plancreator.strategy;
-
 import static io.harness.plancreator.strategy.StrategyConstants.CURRENT_GLOBAL_ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
@@ -24,6 +23,9 @@ import static io.harness.strategy.StrategyValidationUtils.STRATEGY_IDENTIFIER_PO
 
 import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.jackson.JsonNodeUtils;
@@ -70,6 +72,7 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 public class StrategyUtils {
   @Inject IterationVariables iterationVariables;

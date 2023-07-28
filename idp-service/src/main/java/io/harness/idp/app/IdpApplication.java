@@ -20,6 +20,7 @@ import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.exception.UnexpectedException;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
@@ -46,6 +47,10 @@ import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.notification.Team;
+import io.harness.notification.module.NotificationClientModule;
+import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -164,6 +169,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     modules.add(PmsSdkModule.getInstance(idpPmsSdkConfiguration));
     modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
+    modules.add(new NotificationClientModule(configuration.getNotificationClientConfiguration()));
 
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);
@@ -176,6 +182,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
+    registerNotificationTemplates(configuration, injector);
     environment.jersey().register(RequestLoggingFilter.class);
     //    initMetrics(injector);
     log.info("Starting app done");
@@ -333,5 +340,23 @@ public class IdpApplication extends Application<IdpConfiguration> {
     final HealthService healthService = injector.getInstance(HealthService.class);
     environment.healthChecks().register("IDP", healthService);
     healthService.registerMonitor((HealthMonitor) injector.getInstance(MongoTemplate.class));
+  }
+
+  private void registerNotificationTemplates(IdpConfiguration configuration, Injector injector) {
+    NotificationClient notificationClient = injector.getInstance(NotificationClient.class);
+    List<PredefinedTemplate> templates =
+        new ArrayList<>(List.of(PredefinedTemplate.IDP_PLUGIN_REQUESTS_NOTIFICATION_SLACK));
+
+    if (configuration.getShouldConfigureWithNotification()) {
+      for (PredefinedTemplate template : templates) {
+        try {
+          log.info("Registering {} with NotificationService", template);
+          notificationClient.saveNotificationTemplate(Team.IDP, template, true);
+        } catch (UnexpectedException ex) {
+          log.error(
+              "Unable to save {} to NotificationService - skipping register notification templates.", template, ex);
+        }
+      }
+    }
   }
 }

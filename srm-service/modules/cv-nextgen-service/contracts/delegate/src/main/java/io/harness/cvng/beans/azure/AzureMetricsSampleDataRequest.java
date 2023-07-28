@@ -28,6 +28,8 @@ import lombok.experimental.SuperBuilder;
 @FieldNameConstants(innerTypeName = "AzureSampleDataRequestKeys")
 public class AzureMetricsSampleDataRequest extends AbstractAzureDataRequest {
   String metricName;
+  String metricNamespace;
+  String aggregationType;
   String dsl;
   Instant from;
   Instant to;
@@ -52,8 +54,9 @@ public class AzureMetricsSampleDataRequest extends AbstractAzureDataRequest {
   public Map<String, Object> fetchDslEnvVariables() {
     Map<String, Object> dslEnvVariables = super.fetchDslEnvVariables();
     dslEnvVariables.put("url",
-        String.format("%s%s/providers/Microsoft.Insights/metrics?api-version=2021-05-01&timespan=%s/%s&metricnames=%s",
-            getBaseUrl(), resourceId, from, to, metricName));
+        String.format(
+            "%s%s/providers/Microsoft.Insights/metrics?api-version=2021-05-01&timespan=%s/%s&metricnamespace=%s&metricnames=%s&aggregation=%s",
+            getBaseUrl(), resourceId, from, to, metricNamespace, metricName, aggregationType));
     return dslEnvVariables;
   }
 }

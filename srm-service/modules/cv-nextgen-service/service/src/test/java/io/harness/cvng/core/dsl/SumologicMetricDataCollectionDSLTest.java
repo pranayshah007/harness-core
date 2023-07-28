@@ -93,7 +93,6 @@ public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestB
     super.before();
     builderFactory = BuilderFactory.getDefault();
     dataCollectionDSLService = new DataCollectionServiceImpl();
-    ExecutorService executorService;
     executorService = Executors.newFixedThreadPool(THREADS);
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
     metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),

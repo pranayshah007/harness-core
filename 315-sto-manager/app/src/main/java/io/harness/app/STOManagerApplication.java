@@ -12,6 +12,8 @@ import static io.harness.app.STOManagerConfiguration.BASE_PACKAGE;
 import static io.harness.app.STOManagerConfiguration.NG_PIPELINE_PACKAGE;
 import static io.harness.authorization.AuthorizationServiceHeader.STO_MANAGER;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
+import static io.harness.eventsframework.EventsFrameworkConstants.STO_ORCHESTRATION_NOTIFY_EVENT;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
@@ -26,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.telemetry.STOTelemetryRecordsJob;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
+import io.harness.ci.execution.ObserverEventConsumer;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.execution.queue.CIExecutionPoller;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
@@ -92,6 +95,8 @@ import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
+import io.harness.sto.execution.STONotifyEventConsumerRedis;
+import io.harness.sto.execution.STONotifyEventPublisher;
 import io.harness.sto.plan.creator.STOPipelineServiceInfoProvider;
 import io.harness.sto.registrars.STOExecutionRegistrar;
 import io.harness.token.remote.TokenClient;
@@ -109,6 +114,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -138,6 +144,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -162,6 +170,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
   private static final SecureRandom random = new SecureRandom();
   public static final Store HARNESS_STORE = Store.builder().name("harness").build();
   private static final String APP_NAME = "STO Manager Service Application";
+  private static final String STO_ORCHESTRATION = "sto_orchestration";
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -269,8 +278,9 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     modules.add(new CIPersistenceModule());
     addGuiceValidationModule(modules);
     String mongoUri = STOManagerConfiguration.getHarnessSTOMongo(configuration.getHarnessCIMongo()).getUri();
-    modules.add(new CIManagerServiceModule(
-        configuration, new CIManagerConfigurationOverride(STO_MANAGER, "sto", false, false, mongoUri)));
+    modules.add(new CIManagerServiceModule(configuration,
+        new CIManagerConfigurationOverride(
+            STO_MANAGER, "sto", false, false, mongoUri, STO_ORCHESTRATION_NOTIFY_EVENT)));
     modules.add(new STOManagerServiceModule());
 
     modules.add(new AbstractModule() {
@@ -323,6 +333,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     initializeSTOUsageMonitoring(configuration, injector);
 
     initializePluginPublisher(injector);
+    registerEventConsumers(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
@@ -336,6 +347,12 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     classSet.addAll(pipelinePackageClasses.getTypesAnnotatedWith(Path.class));
 
     return classSet;
+  }
+
+  private void registerEventConsumers(final Injector injector) {
+    final ExecutorService observerEventConsumerExecutor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(OBSERVER_EVENT_CHANNEL).build());
+    observerEventConsumerExecutor.execute(injector.getInstance(ObserverEventConsumer.class));
   }
 
   private void registerOasResource(CIManagerConfiguration appConfig, Environment environment, Injector injector) {
@@ -454,8 +471,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
 
-    boolean local = config.getCiExecutionServiceConfig().isLocal();
-    if (!local) {
+    if (config.getEnableQueue()) {
       environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
     }
     // Do not remove as it's used for MaintenanceController for shutdown mode
@@ -474,6 +490,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(STONotifyEventConsumerRedis.class), 15);
   }
 
   private void registerHealthCheck(Environment environment, Injector injector) {
@@ -504,6 +521,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
         injector.getInstance(NotifyQueuePublisherRegister.class);
     notifyQueuePublisherRegister.register(
         NG_ORCHESTRATION, payload -> publisher.send(singletonList(NG_ORCHESTRATION), payload));
+    notifyQueuePublisherRegister.register(STO_ORCHESTRATION, injector.getInstance(STONotifyEventPublisher.class));
   }
 
   private void registerAuthFilters(CIManagerConfiguration configuration, Environment environment, Injector injector) {

@@ -6,8 +6,10 @@
  */
 
 package io.harness.subscription.services;
-
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.subscription.dto.CustomerDTO;
 import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
@@ -23,6 +25,7 @@ import io.harness.subscription.params.UsageKey;
 import java.util.EnumMap;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public interface SubscriptionService {
   EnumMap<UsageKey, Long> getRecommendation(String accountIdentifier, long numberOfMAUs, long numberOfUsers);
   EnumMap<UsageKey, Long> getRecommendationRc(String accountIdentifier, RecommendationRequest recommendationRequest);

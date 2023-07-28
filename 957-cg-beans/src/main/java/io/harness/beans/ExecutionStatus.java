@@ -6,13 +6,15 @@
  */
 
 package io.harness.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Collections.unmodifiableSet;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.logging.CommandExecutionStatus;
 
@@ -22,6 +24,8 @@ import java.util.Set;
 /**
  * Describes possible execution statuses for a state.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._957_CG_BEANS)
 public enum ExecutionStatus {

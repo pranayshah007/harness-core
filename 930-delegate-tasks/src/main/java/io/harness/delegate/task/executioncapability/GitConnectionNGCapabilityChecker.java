@@ -10,16 +10,22 @@ package io.harness.delegate.task.executioncapability;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.service.git.NGGitService;
+import io.harness.connector.service.scm.ScmDelegateClient;
+import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.service.ScmServiceClient;
 import io.harness.shell.SshSessionConfig;
 
 import com.google.inject.Inject;
@@ -33,11 +39,29 @@ public class GitConnectionNGCapabilityChecker implements CapabilityCheck {
   @Inject private NGGitService gitService;
   @Inject private DelegateConfiguration delegateConfiguration;
   @Inject private SshSessionConfigMapper sshSessionConfigMapper;
+  @Inject private GitDecryptionHelper gitDecryptionHelper;
+  @Inject private ScmDelegateClient scmDelegateClient;
+  @Inject private ScmServiceClient scmServiceClient;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Override
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     GitConnectionNGCapability capability = (GitConnectionNGCapability) delegateCapability;
-    GitConfigDTO gitConfig = capability.getGitConfig();
+    try {
+      if (capability.isOptimizedFilesFetch()) {
+        checkCapabilityForScm(capability.getGitConfig(), capability.getEncryptedDataDetails());
+      } else {
+        checkCapabilityForJgit(capability);
+      }
+    } catch (Exception e) {
+      return CapabilityResponse.builder().delegateCapability(capability).validated(false).build();
+    }
+    return CapabilityResponse.builder().delegateCapability(capability).validated(true).build();
+  }
+
+  private void checkCapabilityForJgit(GitConnectionNGCapability capability) {
+    GitConfigDTO gitConfig =
+        scmConnectorMapperDelegate.toGitConfigDTO(capability.getGitConfig(), capability.getEncryptedDataDetails());
     List<EncryptedDataDetail> encryptedDataDetails = capability.getEncryptedDataDetails();
     SshSessionConfig sshSessionConfig = null;
 
@@ -50,15 +74,19 @@ public class GitConnectionNGCapabilityChecker implements CapabilityCheck {
       }
     } catch (Exception e) {
       log.info("Failed to decrypt " + capability.getGitConfig(), e);
-      return CapabilityResponse.builder().delegateCapability(capability).validated(false).build();
+      throw e;
     }
-    String accountId = delegateConfiguration.getAccountId();
+    gitService.validateOrThrow(gitConfig, delegateConfiguration.getAccountId(), sshSessionConfig);
+  }
+
+  private void checkCapabilityForScm(ScmConnector scmConnector, List<EncryptedDataDetail> encryptedDataDetails) {
     try {
-      gitService.validateOrThrow(gitConfig, accountId, sshSessionConfig);
+      gitDecryptionHelper.decryptApiAccessConfig(scmConnector, encryptedDataDetails);
     } catch (Exception e) {
-      return CapabilityResponse.builder().delegateCapability(capability).validated(false).build();
+      log.info("Failed to decrypt " + scmConnector, e);
+      throw e;
     }
-    return CapabilityResponse.builder().delegateCapability(capability).validated(true).build();
+    scmDelegateClient.processScmRequest(c -> scmServiceClient.listBranches(scmConnector, SCMGrpc.newBlockingStub(c)));
   }
 
   private SshSessionConfig getSSHConfigIfSSHCredsAreUsed(

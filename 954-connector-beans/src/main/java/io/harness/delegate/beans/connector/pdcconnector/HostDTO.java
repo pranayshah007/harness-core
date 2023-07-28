@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.pdcconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -31,6 +32,7 @@ import lombok.NoArgsConstructor;
 @ApiModel("HostDTO")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "HostDTO", description = "This entity contains the Host details")
+@RecasterAlias("io.harness.delegate.beans.connector.pdcconnector.HostDTO")
 public class HostDTO {
   @JsonProperty("hostname") @NotNull String hostName;
   @JsonProperty("hostAttributes") Map<String, String> hostAttributes = new HashMap<>();

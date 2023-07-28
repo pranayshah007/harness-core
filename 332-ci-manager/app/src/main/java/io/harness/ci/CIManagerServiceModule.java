@@ -7,9 +7,6 @@
 
 package io.harness.app;
 
-import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
-import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
-import static io.harness.eventsframework.EventsFrameworkConstants.CI_ORCHESTRATION_NOTIFY_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
@@ -19,8 +16,11 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersi
 
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.impl.CIYamlSchemaServiceImpl;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.aws.AwsClient;
@@ -144,6 +144,8 @@ import javax.cache.expiry.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class CIManagerServiceModule extends AbstractModule {
@@ -215,7 +217,7 @@ public class CIManagerServiceModule extends AbstractModule {
   @Provides
   @Singleton
   public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
-    return new AsyncWaitEngineImpl(waitNotifyEngine, "ci_orchestration");
+    return new AsyncWaitEngineImpl(waitNotifyEngine, this.configurationOverride.getModulePrefix() + "_orchestration");
   }
 
   @Provides
@@ -261,6 +263,8 @@ public class CIManagerServiceModule extends AbstractModule {
     if (this.configurationOverride.isUseBuildEnforcer()) {
       bind(CIBuildEnforcer.class).to(CIBuildEnforcerImpl.class);
     }
+    String serviceId = this.configurationOverride.getServiceHeader().getServiceId();
+
     bind(CIManagerConfiguration.class).toInstance(ciManagerConfiguration);
     bind(CIInitTaskMessageProcessor.class).to(CIInitTaskMessageProcessorImpl.class);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
@@ -280,8 +284,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
     bind(CIAccountValidationService.class).to(CIAccountValidationServiceImpl.class).in(Singleton.class);
     install(NgLicenseHttpClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
 
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciInitTaskExecutor"))
@@ -355,13 +358,11 @@ public class CIManagerServiceModule extends AbstractModule {
         ciManagerConfiguration.getManagerTarget(), ciManagerConfiguration.getManagerAuthority(), true));
 
     install(new TokenClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(PersistentLockModule.getInstance());
-    install(new OpaClientModule(ciManagerConfiguration.getOpaClientConfig(),
-        ciManagerConfiguration.getPolicyManagerSecret(), this.configurationOverride.getServiceHeader().getServiceId()));
+    install(new OpaClientModule(
+        ciManagerConfiguration.getOpaClientConfig(), ciManagerConfiguration.getPolicyManagerSecret(), serviceId));
 
-    String appName = this.configurationOverride.getServiceHeader().getServiceId();
     install(new AbstractManagerGrpcClientModule() {
       @Override
       public ManagerGrpcClientModule.Config config() {
@@ -373,38 +374,31 @@ public class CIManagerServiceModule extends AbstractModule {
 
       @Override
       public String application() {
-        return appName;
+        return serviceId;
       }
     });
 
-    install(AccessControlClientModule.getInstance(ciManagerConfiguration.getAccessControlClientConfiguration(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+    install(
+        AccessControlClientModule.getInstance(ciManagerConfiguration.getAccessControlClientConfiguration(), serviceId));
     install(new EntitySetupUsageClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(new ConnectorResourceClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId(), ClientMode.PRIVILEGED));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId, ClientMode.PRIVILEGED));
     install(new SecretNGManagerClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(new CILogServiceClientModule(ciManagerConfiguration.getLogServiceConfig()));
-    install(UserClientModule.getInstance(ciManagerConfiguration.getManagerClientConfig(),
-        ciManagerConfiguration.getManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+    install(UserClientModule.getInstance(
+        ciManagerConfiguration.getManagerClientConfig(), ciManagerConfiguration.getManagerServiceSecret(), serviceId));
     install(new ProjectClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId()));
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));
     install(new STOServiceClientModule(ciManagerConfiguration.getStoServiceConfig()));
-    install(new SSCAServiceClientModuleV2(
-        ciManagerConfiguration.getSscaServiceConfig(), AuthorizationServiceHeader.CI_MANAGER.getServiceId()));
+    install(new SSCAServiceClientModuleV2(ciManagerConfiguration.getSscaServiceConfig(), serviceId));
     install(new IACMServiceClientModule(ciManagerConfiguration.getIacmServiceConfig()));
     install(new AccountClientModule(ciManagerConfiguration.getManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), this.configurationOverride.getServiceHeader().toString()));
     install(EnforcementClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
-        ciManagerConfiguration.getNgManagerServiceSecret(),
-        this.configurationOverride.getServiceHeader().getServiceId(),
+        ciManagerConfiguration.getNgManagerServiceSecret(), serviceId,
         ciManagerConfiguration.getEnforcementClientConfiguration()));
     install(new AbstractTelemetryModule() {
       @Override
@@ -422,7 +416,8 @@ public class CIManagerServiceModule extends AbstractModule {
 
   private void registerEventListeners() {
     final RedisConfig redisConfig = ciManagerConfiguration.getEventsFrameworkConfiguration().getRedisConfig();
-    String authorizationServiceHeader = MANAGER.getServiceId();
+    String orchestrationEvent = this.configurationOverride.getOrchestrationEvent();
+    String serviceId = this.configurationOverride.getServiceHeader().getServiceId();
 
     if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
       bind(Consumer.class)
@@ -434,20 +429,21 @@ public class CIManagerServiceModule extends AbstractModule {
       RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(Consumer.class)
           .annotatedWith(Names.named(OBSERVER_EVENT_CHANNEL))
-          .toInstance(RedisConsumer.of(OBSERVER_EVENT_CHANNEL, authorizationServiceHeader, redissonClient,
-              DEFAULT_MAX_PROCESSING_TIME, DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
+          .toInstance(RedisConsumer.of(OBSERVER_EVENT_CHANNEL, serviceId, redissonClient, DEFAULT_MAX_PROCESSING_TIME,
+              DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
 
       bind(MessageListener.class)
           .annotatedWith(Names.named(DELEGATE_ENTITY + OBSERVER_EVENT_CHANNEL))
           .to(DelegateTaskEventListener.class);
+
       bind(Producer.class)
-          .annotatedWith(Names.named(CI_ORCHESTRATION_NOTIFY_EVENT))
-          .toInstance(GitAwareRedisProducer.of(CI_ORCHESTRATION_NOTIFY_EVENT, redissonClient, 5000,
-              CI_MANAGER.getServiceId(), redisConfig.getEnvNamespace()));
+          .annotatedWith(Names.named(orchestrationEvent))
+          .toInstance(GitAwareRedisProducer.of(
+              orchestrationEvent, redissonClient, 5000, serviceId, redisConfig.getEnvNamespace()));
 
       bind(Consumer.class)
-          .annotatedWith(Names.named(CI_ORCHESTRATION_NOTIFY_EVENT))
-          .toInstance(RedisConsumer.of(CI_ORCHESTRATION_NOTIFY_EVENT, CI_MANAGER.getServiceId(), redissonClient,
+          .annotatedWith(Names.named(orchestrationEvent))
+          .toInstance(RedisConsumer.of(orchestrationEvent, serviceId, redissonClient,
               EventsFrameworkConstants.PLAN_NOTIFY_EVENT_MAX_PROCESSING_TIME,
               EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }

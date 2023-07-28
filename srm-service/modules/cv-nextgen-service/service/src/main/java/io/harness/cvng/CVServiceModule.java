@@ -194,6 +194,7 @@ import io.harness.cvng.core.services.impl.AwsPrometheusDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.AwsServiceImpl;
 import io.harness.cvng.core.services.impl.AzureLogsDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.AzureLogsNextGenHealthSourceHelper;
+import io.harness.cvng.core.services.impl.AzureMetricsDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.AzureMetricsNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.CVConfigServiceImpl;
 import io.harness.cvng.core.services.impl.CVNGLogServiceImpl;
@@ -343,6 +344,7 @@ import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGen
 import io.harness.cvng.notification.services.impl.BurnRateTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeImpactTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeObservedTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.DeploymentImpactReportTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.FireHydrantTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.HealthScoreTemplateDataGenerator;
@@ -474,6 +476,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
@@ -737,6 +740,9 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.AZURE_LOGS)
         .to(AzureLogsDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.AZURE_METRICS)
+        .to(AzureMetricsDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
     MapBinder<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionSLIInfoMapperMapBinder =
         MapBinder.newMapBinder(binder(), DataSourceType.class, DataCollectionSLIInfoMapper.class);
     dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.PROMETHEUS)
@@ -774,6 +780,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.SPLUNK_SIGNALFX_METRICS)
         .to(SignalFXMetricDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.AZURE_METRICS)
+        .to(AzureMetricsDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
     MapBinder<MonitoredServiceSpecType, PipelineStepMonitoredServiceResolutionService>
         verifyStepCvConfigServiceMapBinder = MapBinder.newMapBinder(
@@ -1024,6 +1033,11 @@ public class CVServiceModule extends AbstractModule {
     bind(DowntimeService.class).to(DowntimeServiceImpl.class);
     bind(EntityUnavailabilityStatusesService.class).to(EntityUnavailabilityStatusesServiceImpl.class);
     bind(AnnotationService.class).to(AnnotationServiceImpl.class);
+    install(new PipelineRemoteClientModule(
+        ServiceHttpClientConfig.builder()
+            .baseUrl(verificationConfiguration.getPipelineServiceClientConfig().getBaseUrl())
+            .build(),
+        verificationConfiguration.getPipelineServiceSecret(), CV_NEXT_GEN.getServiceId()));
     install(NgLicenseHttpClientModule.getInstance(verificationConfiguration.getNgManagerClientConfig(),
         verificationConfiguration.getNgManagerServiceSecret(), CV_NEXT_GEN.getServiceId()));
 
@@ -1325,6 +1339,10 @@ public class CVServiceModule extends AbstractModule {
     notificationRuleConditionTypeTemplateDataGeneratorMapBinder
         .addBinding(NotificationRuleConditionType.FIRE_HYDRANT_REPORT)
         .to(FireHydrantTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT)
+        .to(DeploymentImpactReportTemplateDataGenerator.class)
         .in(Scopes.SINGLETON);
 
     ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();

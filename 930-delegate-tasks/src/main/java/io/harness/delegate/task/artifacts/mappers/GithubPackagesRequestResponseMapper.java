@@ -14,6 +14,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
@@ -51,18 +52,22 @@ public class GithubPackagesRequestResponseMapper {
         GithubHttpCredentialsDTO httpDTO =
             (GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials();
 
-        if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
-          GithubUsernamePasswordDTO githubUsernamePasswordDTO =
-              (GithubUsernamePasswordDTO) httpDTO.getHttpCredentialsSpec();
-
-          username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
-              githubUsernamePasswordDTO.getUsername(), githubUsernamePasswordDTO.getUsernameRef());
-
-        } else if (httpDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
-          GithubUsernameTokenDTO githubUsernameTokenDTO = (GithubUsernameTokenDTO) httpDTO.getHttpCredentialsSpec();
-
-          username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
-              githubUsernameTokenDTO.getUsername(), githubUsernameTokenDTO.getUsernameRef());
+        switch (httpDTO.getType()) {
+          case USERNAME_AND_PASSWORD:
+            GithubUsernamePasswordDTO githubUsernamePasswordDTO =
+                (GithubUsernamePasswordDTO) httpDTO.getHttpCredentialsSpec();
+            username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
+                githubUsernamePasswordDTO.getUsername(), githubUsernamePasswordDTO.getUsernameRef());
+            break;
+          case USERNAME_AND_TOKEN:
+            GithubUsernameTokenDTO githubUsernameTokenDTO = (GithubUsernameTokenDTO) httpDTO.getHttpCredentialsSpec();
+            username = FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
+                githubUsernameTokenDTO.getUsername(), githubUsernameTokenDTO.getUsernameRef());
+            break;
+          case GITHUB_APP:
+            username = GithubAppDTO.username;
+            break;
+          default:
         }
       }
     }

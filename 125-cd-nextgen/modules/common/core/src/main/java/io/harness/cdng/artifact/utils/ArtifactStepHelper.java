@@ -130,9 +130,7 @@ public class ArtifactStepHelper {
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   public void saveArtifactExecutionDataToStageInfo(Ambiance ambiance, ArtifactsOutcome artifactsOutcome) {
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)
-        && artifactsOutcome != null) {
+    if (artifactsOutcome != null) {
       stageExecutionInfoService.updateStageExecutionInfo(ambiance,
           StageExecutionInfoUpdateDTO.builder()
               .artifactsSummary(mapArtifactsOutcomeToSummary(artifactsOutcome))

@@ -6,10 +6,12 @@
  */
 
 package io.harness.beans.converter;
-
 import io.harness.DelegateInfoHelper;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.GraphVertex;
 import io.harness.beans.stepDetail.NodeExecutionDetailsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
@@ -29,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public class GraphVertexConverter {

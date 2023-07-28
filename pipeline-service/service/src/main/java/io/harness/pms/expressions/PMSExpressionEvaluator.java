@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.expressions;
-
 import io.harness.ModuleType;
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -48,6 +50,8 @@ import com.google.inject.name.Named;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject Map<ModuleType, RemoteFunctorServiceBlockingStub> remoteFunctorServiceBlockingStubMap;

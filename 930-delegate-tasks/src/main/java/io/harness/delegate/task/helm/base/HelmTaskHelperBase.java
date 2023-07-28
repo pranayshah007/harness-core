@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.helm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.chartmuseum.ChartMuseumConstants.CHART_MUSEUM_SERVER_URL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -52,7 +51,10 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.chartmuseum.ChartMuseumServer;
 import io.harness.chartmuseum.ChartmuseumClient;
@@ -137,6 +139,7 @@ import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -192,17 +195,6 @@ public class HelmTaskHelperBase {
         .normalize()
         .toString();
   }
-
-  public List<K8sPod> markNewPods(List<K8sPod> latestK8sPods, List<K8sPod> previousK8sPods) {
-    Set<String> olderPodNames = previousK8sPods.stream().map(K8sPod::getName).collect(Collectors.toSet());
-    latestK8sPods.forEach(pod -> {
-      if (!olderPodNames.contains(pod.getName())) {
-        pod.setNewPod(true);
-      }
-    });
-    return latestK8sPods;
-  }
-
   public boolean doesChartExistInLocalRepo(String repoName, String chartName, String chartVersion) {
     if (isEmpty(chartVersion)) {
       chartVersion = "latest";

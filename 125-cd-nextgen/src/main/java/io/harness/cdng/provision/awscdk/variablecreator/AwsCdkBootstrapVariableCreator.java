@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.provision.awscdk.variablecreator;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
@@ -17,6 +19,8 @@ import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
 import java.util.Collections;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 public class AwsCdkBootstrapVariableCreator extends GenericStepVariableCreator<AwsCdkBootstrapStepNode> {
   @Override

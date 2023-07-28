@@ -13,17 +13,28 @@ import (
 	"os/signal"
 
 	"github.com/harness/harness-core/commons/go/lib/secret"
+	"github.com/harness/harness-core/product/platform/client"
+
+	consumerWorker "github.com/harness/harness-core/product/log-service/download/consumer"
+	"github.com/harness/harness-core/product/log-service/download/zipwork"
+	"github.com/harness/harness-core/product/log-service/queue"
+	redisQueue "github.com/harness/harness-core/product/log-service/queue/redis"
+	redisStream "github.com/harness/harness-core/product/log-service/stream/redis"
+
+	"github.com/harness/harness-core/product/log-service/cache"
+	memoryCache "github.com/harness/harness-core/product/log-service/cache/memory"
+	redisCache "github.com/harness/harness-core/product/log-service/cache/redis"
 	"github.com/harness/harness-core/product/log-service/config"
+	redisDb "github.com/harness/harness-core/product/log-service/db/redis"
 	"github.com/harness/harness-core/product/log-service/handler"
 	"github.com/harness/harness-core/product/log-service/logger"
+	memoryQueue "github.com/harness/harness-core/product/log-service/queue/memory"
 	"github.com/harness/harness-core/product/log-service/server"
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/store/bolt"
 	"github.com/harness/harness-core/product/log-service/store/s3"
 	"github.com/harness/harness-core/product/log-service/stream"
-	"github.com/harness/harness-core/product/log-service/stream/memory"
-	"github.com/harness/harness-core/product/log-service/stream/redis"
-	"github.com/harness/harness-core/product/platform/client"
+	memoryStream "github.com/harness/harness-core/product/log-service/stream/memory"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -95,25 +106,51 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	// create the stream server.
 	var stream stream.Stream
 
+	// create the cache server.
+	var cache cache.Cache
+
+	var queue queue.Queue
+
 	if config.Redis.UseSentinel {
 		// Create Redis Sentinel storage instance
-		stream = redis.New("", config.Redis.Password, false, false, true, "", config.Redis.MasterName, config.Redis.SentinelAddrs)
-		logrus.Infof("configuring log stream to use Redis Sentinel")
+		db := redisDb.NewConnection("", config.Redis.Password, false, true, "", config.Redis.MasterName, config.Redis.SentinelAddrs)
+		stream = redisStream.NewWithClient(db, config.Redis.DisableExpiryWatcher)
+		cache = redisCache.NewWithClient(db)
+		queue = redisQueue.NewWithClient(db)
+		queue.Create(ctx, config.ConsumerWorker.StreamName, config.ConsumerWorker.ConsumerGroup)
+		logrus.Infof("configuring log stream, cache and queue to use Redis Sentinel")
 	} else if config.Redis.Endpoint != "" {
-		stream = redis.New(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, config.Redis.DisableExpiryWatcher, false, config.Redis.CertPath, "", nil)
-		logrus.Infof("configuring log stream to use Redis: %s", config.Redis.Endpoint)
+		db := redisDb.NewConnection(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, false, config.Redis.CertPath, "", nil)
+		stream = redisStream.NewWithClient(db, config.Redis.DisableExpiryWatcher)
+		cache = redisCache.NewWithClient(db)
+		queue = redisQueue.NewWithClient(db)
+		queue.Create(ctx, config.ConsumerWorker.StreamName, config.ConsumerWorker.ConsumerGroup)
+		logrus.Infof("configuring log stream, cache and queue to use Redis: %s", config.Redis.Endpoint)
 	} else {
 		// create the in-memory stream
-		stream = memory.New()
-		logrus.Infoln("configuring log stream to use in-memory stream")
+		stream = memoryStream.New()
+		cache = memoryCache.New()
+		queue = memoryQueue.New()
+		logrus.Infoln("configuring log stream, cache and queue to use in-memory stream")
 	}
+
+	// create and start consume download pool
+	workerPool := consumerWorker.
+		NewWorkerPool(
+			config.ConsumerWorker.WorkerPool,
+			config.ConsumerWorker.ConsumerGroup,
+			config.ConsumerWorker.StreamName,
+		)
+
+	workerPool.Execute(zipwork.Work, queue, cache, store, config)
+
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
 	// create the http server.
 	server := server.Server{
 		Acme:    config.Server.Acme,
 		Addr:    config.Server.Bind,
-		Handler: handler.Handler(stream, store, config, ngClient),
+		Handler: handler.Handler(queue, cache, stream, store, config, ngClient),
 	}
 
 	// trap the os signal to gracefully shutdown the

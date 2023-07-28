@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.pipeline.labels;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.expression.common.ExpressionMode;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 public class OrchestrationEndLabelsResolveHandler implements OrchestrationEndObserver, AsyncInformObserver {
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;

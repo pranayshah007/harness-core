@@ -12,7 +12,6 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -48,8 +47,7 @@ public class ServerlessGitFetchRequest
 
     GitStoreDelegateConfig gitStoreDelegateConfig = serverlessGitFetchFileConfig.getGitStoreDelegateConfig();
     capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-        ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),
-        gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+        gitStoreDelegateConfig, gitStoreDelegateConfig.getEncryptedDataDetails()));
     capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
         gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
 

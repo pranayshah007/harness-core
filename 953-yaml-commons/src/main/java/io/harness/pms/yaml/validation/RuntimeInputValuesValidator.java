@@ -10,8 +10,11 @@ package io.harness.pms.yaml.validation;
 import static io.harness.beans.InputSetValidatorType.ALLOWED_VALUES;
 import static io.harness.beans.InputSetValidatorType.REGEX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 @Slf4j
@@ -148,49 +152,44 @@ public class RuntimeInputValuesValidator {
     }
 
     if (NGExpressionUtils.matchesInputSetPattern(sourceValue)) {
-      try {
-        ParameterField<?> sourceField = YamlUtils.read(sourceValue, ParameterField.class);
-        if (NGExpressionUtils.matchesInputSetPattern(objectToValidateFieldValue)) {
-          // RECONCILIATION LOGIC
-          if (sourceField.getInputSetValidator() != null) {
-            if (sourceField.getDefaultValue() != null) {
-              return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator())
-                  && sourceField.getDefaultValue().equals(inputSetField.getDefaultValue());
-            } else {
-              return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator());
-            }
+      ParameterField<?> sourceField = getInputSetParameterField(sourceValue);
+      if (NGExpressionUtils.matchesInputSetPattern(objectToValidateFieldValue)) {
+        // RECONCILIATION LOGIC
+        if (sourceField.getInputSetValidator() != null) {
+          if (sourceField.getDefaultValue() != null) {
+            return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator())
+                && sourceField.getDefaultValue().equals(inputSetField.getDefaultValue());
           } else {
-            if (sourceField.getDefaultValue() != null) {
-              return sourceField.getDefaultValue().equals(inputSetField.getDefaultValue());
-            }
-            return true;
+            return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator());
           }
-        } else if (EngineExpressionEvaluator.hasExpressions(objectToValidateFieldValue)) {
-          // if linked input is expression, return true.
-          return true;
         } else {
-          if (sourceField.getInputSetValidator() == null) {
-            return true;
+          if (sourceField.getDefaultValue() != null) {
+            return sourceField.getDefaultValue().equals(inputSetField.getDefaultValue());
           }
-
-          InputSetValidator inputSetValidator = sourceField.getInputSetValidator();
-          if (inputSetValidator.getValidatorType() == REGEX) {
-            return NGExpressionUtils.matchesPattern(
-                Pattern.compile(inputSetValidator.getParameters()), objectToValidateFieldValue);
-          } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
-            String[] allowedValues = inputSetValidator.getParameters().split(", *");
-            for (String allowedValue : allowedValues) {
-              if (NGExpressionUtils.isRuntimeOrExpressionField(allowedValue)
-                  || allowedValue.equals(objectToValidateFieldValue)) {
-                return true;
-              }
-            }
-            return false;
-          }
+          return true;
         }
-      } catch (IOException e) {
-        throw new InvalidRequestException(
-            "Input set expression " + sourceValue + " or " + objectToValidateFieldValue + " is not valid");
+      } else if (EngineExpressionEvaluator.hasExpressions(objectToValidateFieldValue)) {
+        // if linked input is expression, return true.
+        return true;
+      } else {
+        if (sourceField.getInputSetValidator() == null) {
+          return true;
+        }
+
+        InputSetValidator inputSetValidator = sourceField.getInputSetValidator();
+        if (inputSetValidator.getValidatorType() == REGEX) {
+          return NGExpressionUtils.matchesPattern(
+              Pattern.compile(inputSetValidator.getParameters()), objectToValidateFieldValue);
+        } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
+          String[] allowedValues = inputSetValidator.getParameters().split(", *");
+          for (String allowedValue : allowedValues) {
+            if (NGExpressionUtils.isRuntimeOrExpressionField(allowedValue)
+                || allowedValue.equals(objectToValidateFieldValue)) {
+              return true;
+            }
+          }
+          return false;
+        }
       }
     }
 

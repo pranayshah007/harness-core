@@ -9,6 +9,7 @@ package io.harness.delegate.task.helm;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -20,6 +21,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.task.helm.HelmFetchFileResult")
 public class HelmFetchFileResult implements Serializable {
   private List<String> valuesFileContents;
 

@@ -1090,7 +1090,7 @@ resource "google_cloudfunctions2_function" "ce-aws-billing-bq-function" {
   service_config {
     max_instance_count = 3000
     available_memory   = "256M"
-    timeout_seconds    = 1200
+    timeout_seconds    = 3600
     environment_variables = {
         disabled = "false"
         enable_for_accounts = ""

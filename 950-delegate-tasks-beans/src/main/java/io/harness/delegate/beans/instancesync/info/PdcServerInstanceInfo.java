@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.instancesync.info;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -19,6 +20,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo")
 public class PdcServerInstanceInfo extends SshWinrmServerInstanceInfo {
   @Builder
   public PdcServerInstanceInfo(String serviceType, String infrastructureKey, String host) {

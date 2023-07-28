@@ -53,7 +53,7 @@ public class GithubToGitMapper {
         passwordRef = githubUsernameTokenDTO.getTokenRef();
       } else if (credentials.getType() == GithubHttpAuthenticationType.GITHUB_APP) {
         final GithubAppDTO githubAppDTO = (GithubAppDTO) credentials.getHttpCredentialsSpec();
-        username = githubAppDTO.username;
+        username = GithubAppDTO.username;
         usernameRef = null;
         passwordRef = githubAppDTO.getPrivateKeyRef();
       } else {

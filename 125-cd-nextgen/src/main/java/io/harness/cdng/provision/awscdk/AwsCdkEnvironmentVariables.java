@@ -6,10 +6,14 @@
  */
 
 package io.harness.cdng.provision.awscdk;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public interface AwsCdkEnvironmentVariables {
   String PLUGIN_AWS_CDK_APP_PATH = "PLUGIN_AWS_CDK_APP_PATH";

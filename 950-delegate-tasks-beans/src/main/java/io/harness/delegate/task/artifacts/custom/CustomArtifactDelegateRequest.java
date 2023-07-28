@@ -6,12 +6,14 @@
  */
 
 package io.harness.delegate.task.artifacts.custom;
-
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.CUSTOM_ARTIFACT;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.TaskParameters;
@@ -34,6 +36,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Value
 @Data
 @Builder

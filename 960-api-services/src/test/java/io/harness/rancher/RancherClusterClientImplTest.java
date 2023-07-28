@@ -23,6 +23,8 @@ import io.harness.rule.Owner;
 
 import java.io.IOException;
 import java.util.List;
+import okhttp3.HttpUrl;
+import okhttp3.Request;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,6 +48,9 @@ public class RancherClusterClientImplTest extends CategoryTest {
   @Mock private List<RancherListClustersResponse.RancherClusterItem> clusters;
 
   @Mock Call<RancherListClustersResponse> mockListClustersCall;
+
+  @Mock Request mockRequest;
+  @Mock HttpUrl mockHttpUrl;
   @Mock Response<RancherListClustersResponse> mockListClustersResponseWrapper;
 
   @Mock Call<RancherGenerateKubeconfigResponse> mockGenerateKubeconfigCall;
@@ -62,6 +67,9 @@ public class RancherClusterClientImplTest extends CategoryTest {
   public void testListClustersSuccess() throws IOException {
     RancherListClustersResponse clustersResponse = RancherListClustersResponse.builder().data(clusters).build();
     doReturn(mockListClustersCall).when(rancherRestClient).listClusters(any());
+    doReturn(mockRequest).when(mockListClustersCall).request();
+    doReturn(mockHttpUrl).when(mockRequest).url();
+    doReturn("ENDPOINT").when(mockHttpUrl).toString();
     doReturn(mockListClustersResponseWrapper).when(mockListClustersCall).execute();
     doReturn(true).when(mockListClustersResponseWrapper).isSuccessful();
     doReturn(200).when(mockListClustersResponseWrapper).code();
@@ -76,19 +84,24 @@ public class RancherClusterClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListClustersUnsuccessfulOrEmptyResponse() throws IOException {
     doReturn(mockListClustersCall).when(rancherRestClient).listClusters(any());
+    doReturn(mockRequest).when(mockListClustersCall).request();
+    doReturn(mockHttpUrl).when(mockRequest).url();
+    doReturn("ENDPOINT").when(mockHttpUrl).toString();
     doReturn(mockListClustersResponseWrapper).when(mockListClustersCall).execute();
     doReturn(false).when(mockListClustersResponseWrapper).isSuccessful();
     doReturn(1234).when(mockListClustersResponseWrapper).code();
     assertThatThrownBy(() -> clusterClient.listClusters("TOKEN", "URL", emptyMap()))
         .isInstanceOf(RancherClientRuntimeException.class)
-        .hasMessageContaining("Status code: [1234]");
+        .hasMessageContaining("Status code: [1234]")
+        .hasMessageContaining("Endpoint: [ENDPOINT]");
 
     doReturn(true).when(mockListClustersResponseWrapper).isSuccessful();
     doReturn(null).when(mockListClustersResponseWrapper).body();
     doReturn(5678).when(mockListClustersResponseWrapper).code();
     assertThatThrownBy(() -> clusterClient.listClusters("TOKEN", "URL", emptyMap()))
         .isInstanceOf(RancherClientRuntimeException.class)
-        .hasMessageContaining("Status code: [5678]");
+        .hasMessageContaining("Status code: [5678]")
+        .hasMessageContaining("Endpoint: [ENDPOINT]");
   }
 
   @Test
@@ -107,6 +120,9 @@ public class RancherClusterClientImplTest extends CategoryTest {
     RancherGenerateKubeconfigResponse kubeconfigResponse =
         RancherGenerateKubeconfigResponse.builder().config("KUBECONFIG").build();
     doReturn(mockGenerateKubeconfigCall).when(rancherRestClient).generateKubeconfig(any());
+    doReturn(mockRequest).when(mockGenerateKubeconfigCall).request();
+    doReturn(mockHttpUrl).when(mockRequest).url();
+    doReturn("ENDPOINT").when(mockHttpUrl).toString();
     doReturn(mockGenerateKubeconfigResponseWrapper).when(mockGenerateKubeconfigCall).execute();
     doReturn(true).when(mockGenerateKubeconfigResponseWrapper).isSuccessful();
     doReturn(200).when(mockGenerateKubeconfigResponseWrapper).code();
@@ -121,19 +137,24 @@ public class RancherClusterClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGenerateKubeconfigUnsuccessfulOrEmptyResponse() throws IOException {
     doReturn(mockGenerateKubeconfigCall).when(rancherRestClient).generateKubeconfig(any());
+    doReturn(mockRequest).when(mockGenerateKubeconfigCall).request();
+    doReturn(mockHttpUrl).when(mockRequest).url();
+    doReturn("ENDPOINT").when(mockHttpUrl).toString();
     doReturn(mockGenerateKubeconfigResponseWrapper).when(mockGenerateKubeconfigCall).execute();
     doReturn(false).when(mockGenerateKubeconfigResponseWrapper).isSuccessful();
     doReturn(1234).when(mockGenerateKubeconfigResponseWrapper).code();
     assertThatThrownBy(() -> clusterClient.generateKubeconfig("TOKEN", "URL", "CLUSTER"))
         .isInstanceOf(RancherClientRuntimeException.class)
-        .hasMessageContaining("Status code: [1234]");
+        .hasMessageContaining("Status code: [1234]")
+        .hasMessageContaining("Endpoint: [ENDPOINT]");
 
     doReturn(true).when(mockGenerateKubeconfigResponseWrapper).isSuccessful();
     doReturn(null).when(mockGenerateKubeconfigResponseWrapper).body();
     doReturn(5678).when(mockGenerateKubeconfigResponseWrapper).code();
     assertThatThrownBy(() -> clusterClient.generateKubeconfig("TOKEN", "URL", "CLUSTER"))
         .isInstanceOf(RancherClientRuntimeException.class)
-        .hasMessageContaining("Status code: [5678]");
+        .hasMessageContaining("Status code: [5678]")
+        .hasMessageContaining("Endpoint: [ENDPOINT]");
   }
 
   @Test

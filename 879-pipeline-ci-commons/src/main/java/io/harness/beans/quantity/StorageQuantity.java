@@ -52,8 +52,9 @@ public class StorageQuantity {
 
       return StorageQuantity.builder().numericValue(numericValue).unit(unit).build();
     } else {
-      throw new InvalidArgumentsException(String.format(
-          "Invalid format: %s. value should match regex: %s", quantity, ResourceValidatorConstants.STORAGE_PATTERN));
+      String errorMessage = String.format("Invalid format for memory: %s. value should match regex: %s", quantity,
+          ResourceValidatorConstants.STORAGE_PATTERN);
+      throw new InvalidArgumentsException(errorMessage);
     }
   }
 

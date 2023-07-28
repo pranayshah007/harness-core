@@ -704,20 +704,6 @@ public class PipelineResourceTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testRefreshFFCache() {
-    doThrow(new InvalidRequestException("ff cache couldn't be refreshed"))
-        .when(featureFlagHelper)
-        .refreshCacheForGivenAccountId(ACCOUNT_ID);
-    ResponseDTO<Boolean> failResponse = pipelineResource.refreshFFCache(ACCOUNT_ID);
-    assertThat(failResponse.getData()).isFalse();
-    doReturn(true).when(featureFlagHelper).refreshCacheForGivenAccountId(ACCOUNT_ID);
-    ResponseDTO<Boolean> passResponse = pipelineResource.refreshFFCache(ACCOUNT_ID);
-    assertThat(passResponse.getData()).isTrue();
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
   public void testValidatePipelineByYAML() {
     pipelineResource.validatePipelineByYAML(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
     verify(pmsPipelineServiceHelper, times(1))

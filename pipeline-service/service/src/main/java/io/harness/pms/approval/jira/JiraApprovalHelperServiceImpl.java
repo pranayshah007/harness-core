@@ -71,7 +71,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
@@ -145,7 +144,8 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
 
       log.info("Queuing delegate task");
       String taskName = "Jira Task: Get Issue";
-      String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters, taskName);
+      String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters, taskName,
+          TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors()));
 
       sendTaskIdProgressUpdate(taskId, taskName, instanceId, waitNotifyEngine);
 
@@ -191,9 +191,9 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
         .build();
   }
 
-  private String queueTask(
-      Ambiance ambiance, String approvalInstanceId, JiraTaskNGParameters jiraTaskNGParameters, String taskName) {
-    TaskRequest jiraTaskRequest = prepareJiraTaskRequest(ambiance, jiraTaskNGParameters, taskName);
+  private String queueTask(Ambiance ambiance, String approvalInstanceId, JiraTaskNGParameters jiraTaskNGParameters,
+      String taskName, List<TaskSelector> selectors) {
+    TaskRequest jiraTaskRequest = prepareJiraTaskRequest(ambiance, jiraTaskNGParameters, taskName, selectors);
     String taskId =
         ngDelegate2TaskExecutor.queueTask(ambiance.getSetupAbstractionsMap(), jiraTaskRequest, Duration.ofSeconds(0));
     NotifyCallback callback = JiraApprovalCallback.builder().approvalInstanceId(approvalInstanceId).build();
@@ -202,7 +202,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
   }
 
   private TaskRequest prepareJiraTaskRequest(
-      Ambiance ambiance, JiraTaskNGParameters jiraTaskNGParameters, String taskName) {
+      Ambiance ambiance, JiraTaskNGParameters jiraTaskNGParameters, String taskName, List<TaskSelector> selectors) {
     TaskDetails taskDetails =
         TaskDetails.newBuilder()
             .setKryoParameters(
@@ -214,11 +214,6 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
             .setParked(false)
             .setType(TaskType.newBuilder().setType(software.wings.beans.TaskType.JIRA_TASK_NG.name()).build())
             .build();
-
-    List<TaskSelector> selectors = jiraTaskNGParameters.getDelegateSelectors()
-                                       .stream()
-                                       .map(s -> TaskSelector.newBuilder().setSelector(s).build())
-                                       .collect(Collectors.toList());
 
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskDetails, new ArrayList<>(), selectors, taskName, false);
   }

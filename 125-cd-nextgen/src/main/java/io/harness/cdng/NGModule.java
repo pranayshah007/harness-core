@@ -6,13 +6,15 @@
  */
 
 package io.harness.cdng;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.STAGE_EXEC_INFO;
 
 import io.harness.WalkTreeModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceServiceImpl;
 import io.harness.cdng.artifact.resources.ami.AMIResourceService;
@@ -79,6 +81,7 @@ import io.harness.cdng.manifest.steps.task.ManifestTaskHandler;
 import io.harness.cdng.manifest.steps.task.ManifestTaskService;
 import io.harness.cdng.manifest.steps.task.ManifestTaskServiceImpl;
 import io.harness.cdng.plugininfoproviders.AwsCdkBootstrapPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.AwsCdkDiffPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsCdkSynthPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
@@ -145,6 +148,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_K8S,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_ECS})
 @OwnedBy(CDP)
 @Slf4j
 public class NGModule extends AbstractModule {
@@ -240,6 +246,7 @@ public class NGModule extends AbstractModule {
     pluginInfoProviderMultibinder.addBinding().to(ServerlessAwsLambdaPackageV2PluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsCdkBootstrapPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsCdkSynthPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(AwsCdkDiffPluginInfoProvider.class);
 
     Multibinder<ManifestGroupingStrategy> groupingStrategyMultiBinder =
         Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});

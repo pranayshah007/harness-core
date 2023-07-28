@@ -61,7 +61,7 @@ public class SscaEnforcementStepInfo implements PluginCompatibleStep, WithConnec
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String name;
 
   @NotNull SbomSource source;
-  @NotNull VerifyAttestation verifyAttestation;
+  VerifyAttestation verifyAttestation;
   @NotNull EnforcementPolicy policy;
   ContainerResource resources;
 

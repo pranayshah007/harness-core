@@ -12,6 +12,8 @@ import io.harness.annotation.RecasterAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("stoYamlScanMode")
@@ -31,11 +33,12 @@ public enum STOYamlScanMode {
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static STOYamlScanMode getValue(@JsonProperty("mode") String yamlName) {
     for (STOYamlScanMode value : STOYamlScanMode.values()) {
-      if (value.yamlName.equalsIgnoreCase(yamlName)) {
+      if (value.yamlName.equalsIgnoreCase(yamlName) || value.name().equalsIgnoreCase(yamlName)) {
         return value;
       }
     }
-    throw new IllegalArgumentException("Invalid value: " + yamlName);
+    throw new IllegalArgumentException("Invalid value for log level: " + yamlName + ". Valid values are: "
+        + Arrays.stream(STOYamlScanMode.values()).map(Enum::toString).collect(Collectors.joining(", ")));
   }
 
   @JsonValue

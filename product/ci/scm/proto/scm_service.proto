@@ -552,6 +552,11 @@ message ListBranchesWithDefaultRequest {
   string slug = 1;
   PageRequest pagination = 2;
   Provider provider = 3;
+  BranchFilterParams branchFilterParams = 4;
+}
+
+message BranchFilterParams {
+  string branchName = 1;
 }
 
 message ListBranchesResponse {
@@ -776,6 +781,12 @@ message GetUserReposRequest {
   PageRequest pagination = 1;
   Provider provider = 2;
   bool fetchAllRepos = 3;
+  RepoFilterParams repoFilterParams = 4;
+}
+
+message RepoFilterParams {
+  string repoName = 1;
+  string userName = 2;
 }
 
 message GetUserReposResponse {

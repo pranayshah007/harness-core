@@ -32,7 +32,7 @@ public class CdSscaOrchestrationBaseStepInfo {
 
   @NotNull SbomSource source;
 
-  @NotNull Attestation attestation;
+  Attestation attestation;
 
   @NotNull @Valid ContainerStepInfra infrastructure;
 }

@@ -24,13 +24,13 @@ WORKSPACE pranay.shah@harness.io jyoti.raval@harness.io shaun.murphy@harness.io
 
 /420-delegate-agent/ @harness/del-team
 /420-delegate-service/ @harness/del-team
-/pipeline-service/service/src/main/java/io/harness/pms/plan/creation/PipelineServiceInternalInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io archit.singla@harness.io
-/320-ci-execution/src/main/java/io/harness/ci/plan/creator/CIPipelineServiceInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io sahil.hindwani@harness.io
+/pipeline-service/service/src/main/java/io/harness/pms/plan/creation/PipelineServiceInternalInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io archit.singla@harness.io prashant.pal@harness.io
+/320-ci-execution/src/main/java/io/harness/ci/plan/creator/CIPipelineServiceInfoProvider.java prashant.sharma@harness.io vaibhav.si@harness.io sahil.hindwani@harness.io prashant.pal@harness.io
 /300-cv-nextgen/src/main/java* praveen.sugavanam@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io
 /pipeline-service/service/src/main/java/**/*Resource*.java vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
 /332-ci-manager/ harsh.jain@harness.io shubham.agrawal@harness.io hemanth.mantri@harness.io tianyi.li@harness.io raghav.gupta@harness.io
 
-/pipeline-service/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
+/pipeline-service/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io ankit.tiwari@harness.io mohit.garg@harness.io prashant.pal@harness.io
 /dockerization/pipeline-service/ prashant.sharma@harness.io archit.singla@harness.io sanyasi.naidu@harness.io
 
 /315-sto-manager/ @harness/sto
@@ -84,7 +84,7 @@ WORKSPACE pranay.shah@harness.io jyoti.raval@harness.io shaun.murphy@harness.io
 /pipeline-service/service/src/main/java/io/harness/pms/servicenow/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io sridhar.balijepalli@harness.io rajendra.baviskar@harness.io vinicius.calasans@harness.io ankit.tiwari@harness.io
 /pipeline-service/service/src/main/java/io/harness/pms/triggers/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io sridhar.balijepalli@harness.io rajendra.baviskar@harness.io vinicius.calasans@harness.io ankit.tiwari@harness.io
 /pipeline-service/service/src/test/ vaibhav.si@harness.io archit.singla@harness.io sahil.hindwani@harness.io sanyasi.naidu@harness.io deepak.puthraya@harness.io abhinav.mittal@harness.io sridhar.balijepalli@harness.io rajendra.baviskar@harness.io vinicius.calasans@harness.io ankit.tiwari@harness.io
-/pipeline-service/pms-sdk-core/ archit.singla@harness.io sahil.hindwani@harness.io vaibhav.si@harness.io sanyasi.naidu@harness.io ankit.tiwari@harness.io
+/pipeline-service/pms-sdk-core/ archit.singla@harness.io sahil.hindwani@harness.io vaibhav.si@harness.io sanyasi.naidu@harness.io ankit.tiwari@harness.io prashant.pal@harness.io
 /srm-service/ praveen.sugavanam@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io varsha.lalwani@harness.io dhruv@harness.io ansuman.satapathy@harness.io
 /srm-service/modules/cv-nextgen-service/service/src/test/resources/recaster/alias/alias.txt archit.singla@harness.io sahil.hindwani@harness.io
 /tools/build-cleaner/ gaurav.nanda@harness.io
@@ -104,3 +104,4 @@ WORKSPACE pranay.shah@harness.io jyoti.raval@harness.io shaun.murphy@harness.io
 /953-yaml-commons/src/main/java/io/harness/pms/yaml/YamlUtils.java archit.singla@harness.io sahil.hindwani@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
 /970-ng-commons/src/main/java/io/harness/utils/yaml/YamlPipelineUtils.java archit.singla@harness.io sahil.hindwani@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
 /953-yaml-commons/src/main/java/io/harness/yaml/utils/JsonPipelineUtils.java archit.singla@harness.io sahil.hindwani@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
+/979-recaster/ prashant.pal@harness.io

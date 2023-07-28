@@ -43,8 +43,9 @@ public class BackstageEnvVariableRepositoryCustomImpl implements BackstageEnvVar
       update.set(BackstageEnvConfigVariableKeys.value,
           ((BackstageEnvConfigVariableEntity) backstageEnvVariableEntity).getValue());
     } else {
-      update.set(BackstageEnvSecretVariableKeys.harnessSecretIdentifier,
-          ((BackstageEnvSecretVariableEntity) backstageEnvVariableEntity).getHarnessSecretIdentifier());
+      BackstageEnvSecretVariableEntity secretEntity = ((BackstageEnvSecretVariableEntity) backstageEnvVariableEntity);
+      update.set(BackstageEnvSecretVariableKeys.harnessSecretIdentifier, secretEntity.getHarnessSecretIdentifier());
+      update.set(BackstageEnvSecretVariableKeys.isDeleted, secretEntity.isDeleted());
     }
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
     return mongoTemplate.findAndModify(query, update, options, BackstageEnvVariableEntity.class);
@@ -59,6 +60,20 @@ public class BackstageEnvVariableRepositoryCustomImpl implements BackstageEnvVar
                             .is(harnessSecretIdentifier);
     Query query = new Query(criteria);
     return Optional.ofNullable(mongoTemplate.findOne(query, BackstageEnvVariableEntity.class));
+  }
+
+  @Override
+  public Optional<BackstageEnvVariableEntity> updateSecretIsDeleted(
+      String accountIdentifier, String harnessSecretIdentifier, boolean isDeleted) {
+    Criteria criteria = Criteria.where(BackstageEnvVariableKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(BackstageEnvSecretVariableKeys.harnessSecretIdentifier)
+                            .is(harnessSecretIdentifier);
+    Query query = new Query(criteria);
+    Update update = new Update();
+    update.set(BackstageEnvSecretVariableKeys.isDeleted, isDeleted);
+    return Optional.ofNullable(
+        mongoTemplate.findAndModify(query, update, new FindAndModifyOptions(), BackstageEnvVariableEntity.class));
   }
 
   // TODO: Projection isn't working with inheritance in the entity. Have to debug further later.

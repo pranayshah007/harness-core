@@ -6,10 +6,12 @@
  */
 
 package io.harness.engine.executions.node;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.plan.Node;
@@ -29,6 +31,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface NodeExecutionService {
   /**
@@ -146,6 +149,16 @@ public interface NodeExecutionService {
    */
   CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
       String planExecutionId, String parentId, Direction sortOrderOfCreatedAt, Set<String> fieldsToBeIncluded);
+
+  /**
+   * Returns List for all children nodeExecution for given parentId recursively with oldRetry as false
+   * without projection, sort by CreatedAt (Asc) Uses - planExecutionId_parentId_createdAt_idx
+   * @param planExecutionId
+   * @param parentIds
+   * @return
+   */
+  List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithoutOldRetries(
+      String planExecutionId, List<String> parentIds);
 
   /**
    * Returns iterator for children nodeExecution for given parentId(direct children only) with projection (No Sort, thus

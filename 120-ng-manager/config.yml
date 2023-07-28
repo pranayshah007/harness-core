@@ -534,7 +534,7 @@ signupDomainDenylistConfig:
 
 queueServiceClientConfig:
   httpClientConfig:
-    baseUrl: http://localhost:9091/
+    baseUrl: http://localhost:9544/
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
   queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
@@ -549,4 +549,5 @@ webhookBranchHookEventHsqsDequeueConfig:
   batchSize: ${WEBHOOK_BRANCH_HOOK_EVENT_DEQUE_BATCH_SIZE:-20}
   threadSleepTimeInMillis: ${WEBHOOK_BRANCH_HOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
 
+useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
 

@@ -352,7 +352,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
             .createNextTask(dataCollectionTask);
       }
       // TODO: handle this logic in a better way and setup alert.
-      log.error("Task is in the past. Enqueuing next task with new data collection startTime. {}, {}, {}",
+      log.warn("Task is in the past. Enqueuing next task with new data collection startTime. {}, {}, {}",
           dataCollectionTask.getUuid(), dataCollectionTask.getException(), dataCollectionTask.getStacktrace());
     }
   }

@@ -15,7 +15,9 @@ import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
+import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability.GitConnectionNGCapabilityBuilder;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.git.GitClientHelper;
 import io.harness.helper.ScmGitCapabilityHelper;
@@ -58,13 +60,27 @@ public class GitCapabilityHelper extends ConnectorCapabilityBaseHelper {
   }
 
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
-      GitConfigDTO gitConfig, List<EncryptedDataDetail> encryptionDetails, SSHKeySpecDTO sshKeySpecDTO) {
+      GitStoreDelegateConfig gitStoreConfig, List<EncryptedDataDetail> encryptionDetails) {
+    GitConfigDTO gitConfig = ScmConnectorMapper.toGitConfigDTO(gitStoreConfig.getGitConfigDTO());
+    SSHKeySpecDTO sshKeySpecDTO = gitStoreConfig.getSshKeySpecDTO();
     List<ExecutionCapability> capabilityList = new ArrayList<>();
-    capabilityList.add(GitConnectionNGCapability.builder()
-                           .encryptedDataDetails(encryptionDetails)
-                           .gitConfig(ScmConnectorMapper.toGitConfigDTO(gitConfig))
-                           .sshKeySpecDTO(sshKeySpecDTO)
-                           .build());
+
+    GitConnectionNGCapabilityBuilder gitConnectionNGCapability = GitConnectionNGCapability.builder()
+                                                                     .encryptedDataDetails(encryptionDetails)
+                                                                     .gitConfig(gitConfig)
+                                                                     .sshKeySpecDTO(sshKeySpecDTO);
+
+    if (gitStoreConfig.isGithubAppAuthentication()) {
+      gitConnectionNGCapability.gitConfig(gitStoreConfig.getGitConfigDTO());
+      if (gitStoreConfig.isOptimizedFilesFetch()) {
+        gitConnectionNGCapability.optimizedFilesFetch(true);
+        List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>(encryptionDetails);
+        encryptedDataDetails.addAll(gitStoreConfig.getApiAuthEncryptedDataDetails());
+        gitConnectionNGCapability.encryptedDataDetails(encryptedDataDetails);
+      }
+    }
+
+    capabilityList.add(gitConnectionNGCapability.build());
     populateDelegateSelectorCapability(capabilityList, gitConfig.getDelegateSelectors());
     return capabilityList;
   }

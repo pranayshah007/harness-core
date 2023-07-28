@@ -13,6 +13,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.data.structure.MongoMapSanitizer;
 import io.harness.histogram.HistogramCheckpoint;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -124,6 +125,7 @@ public final class ECSServiceRecommendation
   HarnessServiceInfo harnessServiceInfo;
 
   CCMJiraDetails jiraDetails;
+  CCMServiceNowDetails serviceNowDetails;
 
   // decision whether to show the recommendation in the Recommendation Overview List page or not.
   public boolean shouldShowRecommendation() {

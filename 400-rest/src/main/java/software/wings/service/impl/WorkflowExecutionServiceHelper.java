@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.SPG_CG_LIST_RESUMED_PIPELINES;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
@@ -25,8 +24,11 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.CreatedByType;
 import io.harness.beans.ExecutionCause;
@@ -51,6 +53,7 @@ import software.wings.beans.Service;
 import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.deployment.WorkflowVariablesMetadata;
 import software.wings.dl.WingsPersistence;
@@ -88,6 +91,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @OwnedBy(CDC)
 @Singleton
@@ -108,7 +112,10 @@ public class WorkflowExecutionServiceHelper {
     if (isBlank(workflowExecutionId) || isEmpty(workflowVariables)) {
       return new WorkflowVariablesMetadata(workflowVariables);
     }
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    String[] fields = {WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.pipelineExecution,
+        WorkflowExecutionKeys.workflowId, WorkflowExecutionKeys.workflowType};
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
     if (workflowExecution == null || workflowExecution.getExecutionArgs() == null
         || executionArgs.getWorkflowType() != workflowExecution.getWorkflowType()
         || (ORCHESTRATION == workflowExecution.getWorkflowType()
@@ -406,7 +413,8 @@ public class WorkflowExecutionServiceHelper {
 
   private List<Variable> fetchWorkflowVariablesRunningPipeline(
       String appId, String pipelineExecutionId, String pipelineStageElementId) {
-    WorkflowExecution pipelineExecution = workflowExecutionService.getWorkflowExecution(appId, pipelineExecutionId);
+    WorkflowExecution pipelineExecution = workflowExecutionService.getWorkflowExecution(
+        appId, pipelineExecutionId, WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.workflowId);
 
     notNullCheck("No Executions found for given PipelineExecutionId " + pipelineExecutionId, pipelineExecution);
     String pipelineId = pipelineExecution.getWorkflowId();

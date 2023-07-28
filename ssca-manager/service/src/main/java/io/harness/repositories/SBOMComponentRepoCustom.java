@@ -10,6 +10,12 @@ package io.harness.repositories;
 import static io.harness.annotations.dev.HarnessTeam.SSCA;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
+
+import java.util.List;
+import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(SSCA)
-public interface SBOMComponentRepoCustom {}
+public interface SBOMComponentRepoCustom {
+  List<NormalizedSBOMComponentEntity> findAllByQuery(Query query);
+}

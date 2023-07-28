@@ -266,6 +266,27 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SATHISH)
   @Category(UnitTests.class)
+  public void testGenerateYamlWithEntitiesMultiple() {
+    mockStatic(CommonUtils.class);
+    when(CommonUtils.readFileFromClassPath(any())).thenReturn(GENERATE_YAML_DEF);
+    GenerateYamlResponse generateYamlResponse = onboardingServiceImpl.generateYaml(ACCOUNT_IDENTIFIER,
+        new GenerateYamlRequest().entities(List.of(new EntitiesForImport()
+                                                       .identifier("orgId|"
+                                                           + "projectId|" + TEST_SERVICE_IDENTIFIER)
+                                                       .entityType("Service"),
+            new EntitiesForImport()
+                .identifier("orgId1|"
+                    + "projectId1|" + TEST_SERVICE_IDENTIFIER + "1")
+                .entityType("Service"))));
+    assertNotNull(generateYamlResponse);
+    assertEquals(onboardingModuleConfig.getDescriptionForEntitySelected(),
+        generateYamlResponse.getGeneratedYaml().getDescription());
+    assertEquals(GENERATE_YAML_DEF_WITH_ENTITIES, generateYamlResponse.getGeneratedYaml().getYamlDef());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
   public void testGenerateYamlWithNonExistentEntities() {
     mockStatic(CommonUtils.class);
     when(CommonUtils.readFileFromClassPath(any())).thenReturn(GENERATE_YAML_DEF);
@@ -279,6 +300,24 @@ public class OnboardingServiceImplTest extends CategoryTest {
     assertEquals(onboardingModuleConfig.getDescriptionForSampleEntity(),
         generateYamlResponse.getGeneratedYaml().getDescription());
     assertEquals(GENERATE_YAML_DEF, generateYamlResponse.getGeneratedYaml().getYamlDef());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testGenerateYamlForAccountLevelServices() {
+    mockStatic(CommonUtils.class);
+    when(CommonUtils.readFileFromClassPath(any())).thenReturn(GENERATE_YAML_DEF);
+    GenerateYamlResponse generateYamlResponse = onboardingServiceImpl.generateYaml(ACCOUNT_IDENTIFIER,
+        new GenerateYamlRequest().entities(
+            Collections.singletonList(new EntitiesForImport()
+                                          .identifier("Unknown|"
+                                              + "Unknown|" + TEST_SERVICE_IDENTIFIER + "test")
+                                          .entityType("Service"))));
+    assertNotNull(generateYamlResponse);
+    assertEquals(onboardingModuleConfig.getDescriptionForEntitySelected(),
+        generateYamlResponse.getGeneratedYaml().getDescription());
+    assertEquals(GENERATE_YAML_DEF_WITH_ENTITIES, generateYamlResponse.getGeneratedYaml().getYamlDef());
   }
 
   @Test

@@ -36,7 +36,7 @@
         },
         "response": {
           "status": 200,
-          "body": "{\"token_type\":\"Bearer\",\"expires_in\":\"3599\",\"ext_expires_in\":\"3599\",\"expires_on\":\"1689832903\",\"not_before\":\"1689829003\",\"resource\":\"https://management.azure.com\",\"access_token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuYXp1cmUuY29tIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvYjIyOWIyYmItNWYzMy00ZDIyLWJjZTAtNzMwZjY0NzRlOTA2LyIsImlhdCI6MTY4OTgyOTAwMywibmJmIjoxNjg5ODI5MDAzLCJleHAiOjE2ODk4MzI5MDMsImFpbyI6IkUyWmdZSGpueU8rM01sOG5vYzdqNU9ZMVZqTGNBQT09IiwiYXBwaWQiOiIyZmZmY2M4My0wOWE4LTQ1MGYtODdmNS1hMjVlMzk0MmRkMTAiLCJhcHBpZGFjciI6IjEiLCJpZHAiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC9iMjI5YjJiYi01ZjMzLTRkMjItYmNlMC03MzBmNjQ3NGU5MDYvIiwiaWR0eXAiOiJhcHAiLCJvaWQiOiIzMDcxY2ZlZi00YTc1LTRhOTYtYTllNi05NzQwMjU0YmQxZjUiLCJyaCI6IjAuQVNrQXU3SXBzak5mSWsyODRITVBaSFRwQmtaSWYza0F1dGRQdWtQYXdmajJNQk1wQUFBLiIsInN1YiI6IjMwNzFjZmVmLTRhNzUtNGE5Ni1hOWU2LTk3NDAyNTRiZDFmNSIsInRpZCI6ImIyMjliMmJiLTVmMzMtNGQyMi1iY2UwLTczMGY2NDc0ZTkwNiIsInV0aSI6IkoyT2ZDXzZ4ekVpa1pMVXdVTTNyQUEiLCJ2ZXIiOiIxLjAiLCJ4bXNfdGNkdCI6MTUxOTc2ODk4Nn0.legzpZIzgdYF6NTS4V1OjDsfSErS1cyp-P4TId40cW4xuvG4AMKw_ak_GotcRsjeWiSimoSzRLsvfCkCJK3NGBClmLA88yTp_GG8JCrWJ9zOdaRGCi57xyZ0SAa-w6dZBEv7VFaUz0xvlEBUFJyrwSrT0M6FzR0U1xRUTHEbELDjdpHD71t0B09h6EtZ7oCbZDOwrXuLHRB2d54CIEjA4inwxKNZB1mgdp7qDHx0VwFbAXVhpU9nNe2ZxX9zW-0UCzC8nt57AzdgC_QuC6FuzTyPkh8fPd9xv9iq0hEKAnRl5nJx1hT-1G4Vc6wCScptWCR0PNzqDlRqBMeRPAa6gg\"}",
+          "body": "{\"token_type\":\"Bearer\",\"expires_in\":\"3599\",\"ext_expires_in\":\"3599\",\"expires_on\":\"1689758491\",\"not_before\":\"1689754591\",\"resource\":\"https://management.azure.com\",\"access_token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuYXp1cmUuY29tIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvYjIyOWIyYmItNWYzMy00ZDIyLWJjZTAtNzMwZjY0NzRlOTA2LyIsImlhdCI6MTY4OTc1NDU5MSwibmJmIjoxNjg5NzU0NTkxLCJleHAiOjE2ODk3NTg0OTEsImFpbyI6IkUyWmdZTmkyVisxNTJhU2lwMDdpVXpaY2EwcmhCZ0E9IiwiYXBwaWQiOiIyZmZmY2M4My0wOWE4LTQ1MGYtODdmNS1hMjVlMzk0MmRkMTAiLCJhcHBpZGFjciI6IjEiLCJpZHAiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC9iMjI5YjJiYi01ZjMzLTRkMjItYmNlMC03MzBmNjQ3NGU5MDYvIiwiaWR0eXAiOiJhcHAiLCJvaWQiOiIzMDcxY2ZlZi00YTc1LTRhOTYtYTllNi05NzQwMjU0YmQxZjUiLCJyaCI6IjAuQVNrQXU3SXBzak5mSWsyODRITVBaSFRwQmtaSWYza0F1dGRQdWtQYXdmajJNQk1wQUFBLiIsInN1YiI6IjMwNzFjZmVmLTRhNzUtNGE5Ni1hOWU2LTk3NDAyNTRiZDFmNSIsInRpZCI6ImIyMjliMmJiLTVmMzMtNGQyMi1iY2UwLTczMGY2NDc0ZTkwNiIsInV0aSI6IkNpRUNjWDBRUjBpNk1OcDdVTC1rQUEiLCJ2ZXIiOiIxLjAiLCJ4bXNfdGNkdCI6MTUxOTc2ODk4Nn0.mcvr8Kqgw_sl9mmKfrD9KUV47ttgKSR3a_L8VfgUlykdfl67yi-Pm7vl9Nx-rXT7zxBtrlpKI9P0vO2YO70cPHD93vcYKQNCvrLiXsiToi339aaKuYyim2WZg7u8jstcd4a1lBookpUW--n7nOOE_d2K9TRAXE_XIS0zjU4hvmr2NC31GA_tOYpOff62OSolR9dndIBCBvvbP_Z0pOgq4h6Z2kM8qeeTgeoJFAXK9uhGBYYVBkWX_O5sfoI4dP4PATrRaR7geZMkCtuxNmNuefz2ACt7CCmsAwfjKe87wHEU1Wadji17s8c76BDUjAQ8CNxq-BzrR5_62FiaG2WRiA\"}",
           "encodedBody": false,
           "templated": false,
           "headers": {
@@ -50,7 +50,7 @@
               "application/json; charset=utf-8"
             ],
             "Date": [
-              "Thu, 20 Jul 2023 05:01:42 GMT"
+              "Wed, 19 Jul 2023 08:21:31 GMT"
             ],
             "Expires": [
               "-1"
@@ -65,7 +65,7 @@
               "no-cache"
             ],
             "Set-Cookie": [
-              "fpc=AupRteABvUpMofLfBksXk9q6AFXmAQAAALe2StwOAAAA; expires=Sat, 19-Aug-2023 05:01:43 GMT; path=/; secure; HttpOnly; SameSite=None",
+              "fpc=Al_aPHJkevZKl_NSA5sGR_66AFXmAQAAAAuUSdwOAAAA; expires=Fri, 18-Aug-2023 08:21:31 GMT; path=/; secure; HttpOnly; SameSite=None",
               "x-ms-gateway-slice=estsfd; path=/; secure; samesite=none; httponly",
               "stsservicecookie=estsfd; path=/; secure; samesite=none; httponly"
             ],
@@ -76,10 +76,10 @@
               "nosniff"
             ],
             "X-Ms-Ests-Server": [
-              "2.1.15811.5 - NCUS ProdSlices"
+              "2.1.15811.5 - WUS2 ProdSlices"
             ],
             "X-Ms-Request-Id": [
-              "0b9f6327-b1fe-48cc-a464-b53050cdeb00"
+              "7102210a-107d-4847-ba30-da7b50bfa400"
             ],
             "X-Xss-Protection": [
               "0"
@@ -120,6 +120,12 @@
                 "value": "2021-05-01"
               }
             ],
+            "metricnamespace": [
+              {
+                "matcher": "exact",
+                "value": "microsoft.containerservice/managedclusters"
+              }
+            ],
             "metricnames": [
               {
                 "matcher": "exact",
@@ -130,6 +136,12 @@
               {
                 "matcher": "exact",
                 "value": "2023-07-13T20:20:00Z/2023-07-13T20:30:00Z"
+              }
+            ],
+            "aggregation": [
+              {
+                "matcher": "exact",
+                "value": "average"
               }
             ]
           },
@@ -159,7 +171,7 @@
               "application/json; charset=utf-8"
             ],
             "Date": [
-              "Thu, 20 Jul 2023 05:01:45 GMT"
+              "Wed, 19 Jul 2023 08:21:34 GMT"
             ],
             "Expires": [
               "-1"
@@ -183,16 +195,16 @@
               "nosniff"
             ],
             "X-Ms-Correlation-Request-Id": [
-              "8ac88591-d081-4dc2-906c-c39162945774"
+              "2cdcfe74-c0fc-41b1-84ef-067a5374d5e2"
             ],
             "X-Ms-Ratelimit-Remaining-Subscription-Reads": [
               "11999"
             ],
             "X-Ms-Request-Id": [
-              "{8ac88591-d081-4dc2-906c-c39162945774}"
+              "{2cdcfe74-c0fc-41b1-84ef-067a5374d5e2}"
             ],
             "X-Ms-Routing-Request-Id": [
-              "WESTINDIA:20230720T050145Z:8ac88591-d081-4dc2-906c-c39162945774"
+              "JIOINDIAWEST:20230719T082134Z:2cdcfe74-c0fc-41b1-84ef-067a5374d5e2"
             ]
           }
         }
@@ -205,6 +217,6 @@
   "meta": {
     "schemaVersion": "v5",
     "hoverflyVersion": "v1.1.5",
-    "timeExported": "2023-07-20T05:01:45Z"
+    "timeExported": "2023-07-19T08:21:34Z"
   }
 }

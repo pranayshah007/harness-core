@@ -6,7 +6,6 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
@@ -18,7 +17,10 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
@@ -150,6 +152,8 @@ import io.harness.pms.plan.creation.NodeTypeLookupServiceImpl;
 import io.harness.pms.plan.execution.PlanExecutionResource;
 import io.harness.pms.plan.execution.PlanExecutionResourceImpl;
 import io.harness.pms.plan.execution.mapper.PipelineExecutionFilterPropertiesMapper;
+import io.harness.pms.plan.execution.service.ExecutionGraphService;
+import io.harness.pms.plan.execution.service.ExecutionGraphServiceImpl;
 import io.harness.pms.plan.execution.service.ExpressionEvaluatorService;
 import io.harness.pms.plan.execution.service.ExpressionEvaluatorServiceImpl;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
@@ -264,6 +268,9 @@ import org.jooq.ExecuteListener;
 import org.redisson.api.RedissonClient;
 import org.springframework.core.convert.converter.Converter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TRIGGERS, HarnessModuleComponent.CDS_PIPELINE,
+        HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class PipelineServiceModule extends AbstractModule {
@@ -414,6 +421,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PipelineRbacService.class).to(PipelineRbacServiceImpl.class);
     bind(PMSInputSetService.class).to(PMSInputSetServiceImpl.class);
     bind(PMSExecutionService.class).to(PMSExecutionServiceImpl.class);
+    bind(ExecutionGraphService.class).to(ExecutionGraphServiceImpl.class);
     bind(ExpressionEvaluatorService.class).to(ExpressionEvaluatorServiceImpl.class);
     bind(PMSYamlSchemaService.class).to(PMSYamlSchemaServiceImpl.class);
     bind(ApprovalNotificationHandler.class).to(ApprovalNotificationHandlerImpl.class);
@@ -848,16 +856,6 @@ public class PipelineServiceModule extends AbstractModule {
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("schemaDetailsCache", SchemaCacheKey.class, YamlSchemaDetailsWrapperValue.class,
         CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 7)),
-        versionInfoManager.getVersionInfo().getBuildNo());
-  }
-
-  @Provides
-  @Singleton
-  @Named("staticSchemaCache")
-  public Cache<SchemaCacheKey, String> staticSchemaCache(
-      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
-    return harnessCacheManager.getCache("staticSchemaCache", SchemaCacheKey.class, String.class,
-        CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 7)),
         versionInfoManager.getVersionInfo().getBuildNo());
   }
 

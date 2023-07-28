@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.winrm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.winrm.DownloadWinRmScript.AUTHORIZATION;
 import static io.harness.delegate.task.winrm.DownloadWinRmScript.AZURE_ARTIFACTS_URL;
@@ -28,7 +27,10 @@ import static io.harness.delegate.utils.AzureArtifactsUtils.getAzureArtifactDele
 import static io.harness.delegate.utils.AzureArtifactsUtils.getDecryptedToken;
 import static io.harness.delegate.utils.AzureArtifactsUtils.getDownloadUrl;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.task.azure.artifact.AzureArtifactsHelper;
@@ -42,6 +44,8 @@ import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(CDP)

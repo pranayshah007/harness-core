@@ -681,6 +681,13 @@ public class GitClientHelper {
     return httpURL;
   }
 
+  public static String convertToAlternateHTTPUrlForAzure(String httpUrl) {
+    final String AZURE_REPO_URL = "https://dev.azure.com/";
+    String afterHttps = StringUtils.remove(httpUrl, HTTPS + "://");
+    String orgName = StringUtils.remove(httpUrl, AZURE_REPO_URL).split("/")[0];
+    return HTTPS + "://" + orgName + "@" + afterHttps;
+  }
+
   public static String convertToNewSSHUrlForAzure(String sshURL) {
     // Convert Old Azure URLs to new URLs if any
     if (sshURL.contains(AZURE_OLD_REPO_PREFIX)) {

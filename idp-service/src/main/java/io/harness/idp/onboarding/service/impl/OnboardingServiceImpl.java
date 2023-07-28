@@ -16,6 +16,7 @@ import static io.harness.idp.common.Constants.SOURCE_FORMAT;
 import static io.harness.idp.common.YamlUtils.writeObjectAsYaml;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_LOCATION_URL_TYPE;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_REQUIRED_ERROR_MESSAGE;
+import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_REF;
 import static io.harness.idp.onboarding.utils.Constants.ORGANIZATION;
 import static io.harness.idp.onboarding.utils.Constants.PAGE_LIMIT_FOR_ENTITY_FETCH;
 import static io.harness.idp.onboarding.utils.Constants.PROJECT;
@@ -541,14 +542,20 @@ public class OnboardingServiceImpl implements OnboardingService {
       projectDTOS = getProjects(accountIdentifier, null);
       serviceDTOS = getServices(accountIdentifier, (String) null);
     } else {
+      Map<String, Map<String, List<String>>> orgProjectsServicesMappingClone =
+          new HashMap<>(orgProjectsServicesMapping);
+      orgProjectsServicesMapping.remove(null);
       orgToImport = new ArrayList<>(orgProjectsServicesMapping.keySet());
       organizationDTOS = getOrganizationDTOS(accountIdentifier, orgToImport);
       orgProjectsServicesMapping.forEach((key, value) -> {
-        projectToImport.addAll(value.keySet());
-        orgProjectsMapping.put(key, new ArrayList<>(value.keySet()));
+        List<String> projectIdentifiers = value.keySet().stream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (key != null && !projectIdentifiers.isEmpty()) {
+          projectToImport.addAll(projectIdentifiers);
+          orgProjectsMapping.put(key, new ArrayList<>(projectIdentifiers));
+        }
       });
       projectDTOS = getProjectDTOS(accountIdentifier, orgProjectsMapping);
-      serviceDTOS = getServiceDTOS(accountIdentifier, orgProjectsServicesMapping);
+      serviceDTOS = getServiceDTOS(accountIdentifier, orgProjectsServicesMappingClone);
     }
     log.info("Fetched {} organizations, {} projects, {} services for IDP onboarding import", organizationDTOS.size(),
         projectDTOS.size(), serviceDTOS.size());
@@ -591,6 +598,8 @@ public class OnboardingServiceImpl implements OnboardingService {
     Map<String, Map<String, List<String>>> serviceIdentifiers = new HashMap<>();
     harnessEntitiesServices.forEach(service -> {
       String[] orgProjectService = service.split("\\|");
+      orgProjectService[0] = orgProjectService[0].equals(ENTITY_UNKNOWN_REF) ? null : orgProjectService[0];
+      orgProjectService[1] = orgProjectService[1].equals(ENTITY_UNKNOWN_REF) ? null : orgProjectService[1];
       if (serviceIdentifiers.containsKey(orgProjectService[0])) {
         Map<String, List<String>> existingProjectsServices =
             new HashMap<>(serviceIdentifiers.get(orgProjectService[0]));
@@ -604,8 +613,9 @@ public class OnboardingServiceImpl implements OnboardingService {
           serviceIdentifiers.put(orgProjectService[0], existingProjectsServices);
         }
       } else {
-        serviceIdentifiers.put(
-            orgProjectService[0], Map.of(orgProjectService[1], Collections.singletonList(orgProjectService[2])));
+        Map<String, List<String>> map = new HashMap<>();
+        map.put(orgProjectService[1], Collections.singletonList(orgProjectService[2]));
+        serviceIdentifiers.put(orgProjectService[0], map);
       }
     });
     return serviceIdentifiers;
@@ -616,8 +626,7 @@ public class OnboardingServiceImpl implements OnboardingService {
   }
 
   private List<ProjectDTO> getProjectDTOS(String accountIdentifier, Map<String, List<String>> orgProjectsMapping) {
-    return orgProjectsMapping.size() > 0 ? getProjects(accountIdentifier, orgProjectsMapping.keySet(),
-               orgProjectsMapping.values().stream().flatMap(Collection::stream).collect(Collectors.toList()))
+    return orgProjectsMapping.size() > 0 ? getProjectsByOrganization(accountIdentifier, orgProjectsMapping)
                                          : new ArrayList<>();
   }
 
@@ -655,20 +664,23 @@ public class OnboardingServiceImpl implements OnboardingService {
     return organizationDTOS;
   }
 
-  private List<ProjectDTO> getProjects(
-      String accountIdentifier, Set<String> organizationIdentifiers, List<String> identifiers) {
+  private List<ProjectDTO> getProjectsByOrganization(
+      String accountIdentifier, Map<String, List<String>> orgProjectsMapping) {
     List<ProjectDTO> projectDTOS = new ArrayList<>();
-    PageResponse<ProjectResponse> projects;
-    int page = 0;
-    do {
-      projects = getResponse(projectClient.listWithMultiOrg(accountIdentifier, organizationIdentifiers, false,
-          identifiers, null, null, page, PAGE_LIMIT_FOR_ENTITY_FETCH, null));
-      if (projects != null && isNotEmpty(projects.getContent())) {
-        projectDTOS.addAll(
-            projects.getContent().stream().map(ProjectResponse::getProject).collect(Collectors.toList()));
-      }
-      page++;
-    } while (projects != null && isNotEmpty(projects.getContent()));
+    for (var projectIdentifier : orgProjectsMapping.entrySet()) {
+      String org = projectIdentifier.getKey();
+      PageResponse<ProjectResponse> projects;
+      int page = 0;
+      do {
+        projects = getResponse(projectClient.listProjects(
+            accountIdentifier, org, projectIdentifier.getValue(), page, PAGE_LIMIT_FOR_ENTITY_FETCH));
+        if (projects != null && isNotEmpty(projects.getContent())) {
+          projectDTOS.addAll(
+              projects.getContent().stream().map(ProjectResponse::getProject).collect(Collectors.toList()));
+        }
+        page++;
+      } while (projects != null && isNotEmpty(projects.getContent()));
+    }
     return projectDTOS;
   }
 

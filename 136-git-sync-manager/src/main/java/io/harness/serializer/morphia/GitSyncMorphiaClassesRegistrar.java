@@ -6,10 +6,12 @@
  */
 
 package io.harness.serializer.morphia;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.caching.entity.GitDefaultBranchCache;
 import io.harness.gitsync.caching.entity.GitFileCache;
 import io.harness.gitsync.common.beans.AzureRepoSCM;
@@ -35,6 +37,7 @@ import io.harness.morphia.MorphiaRegistrarHelperPut;
 
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(DX)
 public class GitSyncMorphiaClassesRegistrar implements MorphiaRegistrar {
   @Override

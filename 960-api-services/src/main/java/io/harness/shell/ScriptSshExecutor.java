@@ -6,7 +6,6 @@
  */
 
 package io.harness.shell;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_EXECUTION_ID;
@@ -20,6 +19,9 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.SshRetryableException;
@@ -69,6 +71,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Created by anubhaw on 2/10/16.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @ValidateOnExecution
 @Slf4j
 public class ScriptSshExecutor extends AbstractScriptExecutor {

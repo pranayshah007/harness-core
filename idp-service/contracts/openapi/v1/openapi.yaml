@@ -867,6 +867,11 @@ components:
               type: string
               x-stoplight:
                 id: pu8uqht14yg13
+            is_deleted:
+              type: boolean
+              x-stoplight:
+                id: ic5iskbxcverc
+              default: false
           required:
             - type
             - harness_secret_identifier
@@ -1411,14 +1416,17 @@ components:
           type: integer
           x-stoplight:
             id: z84hfxygvrde5
+          default: 0
         tab_contents:
           type: integer
           x-stoplight:
             id: xsao98zphpvue
+          default: 0
         cards:
           type: integer
           x-stoplight:
             id: ksifiqe7f9p5w
+          default: 0
         default_entity_types:
           type: array
           x-stoplight:
@@ -2350,8 +2358,12 @@ components:
 tags:
   - name: AccountInfo
     description: Account Information
+  - name: AllowList
+    description: Backstage Allow List
   - name: AppConfig
     description: Backstage App Configurations
+  - name: AuthInfo
+    description: Auth Information
   - name: BackstageEnvVariable
     description: Backstage Environment Variable
   - name: BackstagePermissions
@@ -2360,6 +2372,8 @@ tags:
     description: Connector Information
   - name: LayoutProxy
     description: Layout Proxy
+  - name: MergedPluginsConfig
+    description: Merged Plugins Configurations
   - name: Namespace
     description: Backstage Namespace
   - name: OnboardingResource
@@ -2370,9 +2384,3 @@ tags:
     description: Provision
   - name: StatusInfo
     description: Status Information
-  - name: MergedPluginsConfig
-    description: Merged Plugins Configurations
-  - name: AllowList
-    description: Backstage Allow List
-  - name: AuthInfo
-    description: Auth Information

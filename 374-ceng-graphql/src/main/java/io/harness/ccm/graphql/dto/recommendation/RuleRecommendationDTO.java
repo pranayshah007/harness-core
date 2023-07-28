@@ -8,6 +8,7 @@
 package io.harness.ccm.graphql.dto.recommendation;
 
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.views.helper.ExecutionSummary;
 
 import java.util.List;
@@ -26,4 +27,5 @@ public class RuleRecommendationDTO implements RecommendationDetailsDTO {
   Boolean isValid;
   List<ExecutionSummary> executions;
   CCMJiraDetails jiraDetails;
+  CCMServiceNowDetails serviceNowDetails;
 }

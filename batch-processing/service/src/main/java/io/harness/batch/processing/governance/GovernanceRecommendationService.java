@@ -269,7 +269,7 @@ public class GovernanceRecommendationService {
         QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.DESCENDING).sortType(QLCEViewSortType.COST).build());
     return viewsBillingService
         .getEntityStatsDataPointsNg(filters, groupBy, aggregateFunction, sort,
-            configuration.getRecommendationConfig().getRegionsLimit(), 0,
+            configuration.getRecommendationConfig().getRegionsLimit(), 0, null,
             viewsQueryHelper.buildQueryParams(accountId, false, false))
         .getData();
   }
@@ -303,7 +303,7 @@ public class GovernanceRecommendationService {
 
     return viewsBillingService
         .getEntityStatsDataPointsNg(filters, groupBy, aggregateFunction, sort,
-            configuration.getRecommendationConfig().getAccountLimit(), 0,
+            configuration.getRecommendationConfig().getAccountLimit(), 0, null,
             viewsQueryHelper.buildQueryParams(accountId, false, false))
         .getData();
   }

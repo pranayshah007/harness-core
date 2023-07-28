@@ -71,8 +71,9 @@ public class AwsLambdaRollbackStep extends CdTaskExecutable<AwsLambdaCommandResp
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<AwsLambdaCommandResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<AwsLambdaCommandResponse> responseDataSupplier)
+      throws Exception {
     StepResponse stepResponse = null;
     try {
       AwsLambdaCommandResponse awsLambdaCommandResponse = (AwsLambdaCommandResponse) responseDataSupplier.get();

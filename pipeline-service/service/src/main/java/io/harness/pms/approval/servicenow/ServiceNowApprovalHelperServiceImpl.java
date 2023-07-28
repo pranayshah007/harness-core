@@ -74,7 +74,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
@@ -174,7 +173,8 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
       logCallback.saveExecutionLog(String.format(
           "ServiceNow url: %s", serviceNowTaskNGParameters.getServiceNowConnectorDTO().getServiceNowUrl()));
       String taskName = "ServiceNow Task: Get Ticket";
-      String taskId = queueTask(ambiance, instanceId, serviceNowTaskNGParameters, taskName);
+      String taskId = queueTask(ambiance, instanceId, serviceNowTaskNGParameters, taskName,
+          TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors()));
 
       sendTaskIdProgressUpdate(taskId, taskName, instanceId, waitNotifyEngine);
 
@@ -224,8 +224,9 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
   }
 
   private String queueTask(Ambiance ambiance, String approvalInstanceId,
-      ServiceNowTaskNGParameters serviceNowTaskNGParameters, String taskName) {
-    TaskRequest serviceNowTaskRequest = prepareServiceNowTaskRequest(ambiance, serviceNowTaskNGParameters, taskName);
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters, String taskName, List<TaskSelector> selectors) {
+    TaskRequest serviceNowTaskRequest =
+        prepareServiceNowTaskRequest(ambiance, serviceNowTaskNGParameters, taskName, selectors);
     String taskId = ngDelegate2TaskExecutor.queueTask(
         ambiance.getSetupAbstractionsMap(), serviceNowTaskRequest, Duration.ofSeconds(0));
     NotifyCallback callback = ServiceNowApprovalCallback.builder().approvalInstanceId(approvalInstanceId).build();
@@ -233,8 +234,8 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
     return taskId;
   }
 
-  private TaskRequest prepareServiceNowTaskRequest(
-      Ambiance ambiance, ServiceNowTaskNGParameters serviceNowTaskNGParameters, String taskName) {
+  private TaskRequest prepareServiceNowTaskRequest(Ambiance ambiance,
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters, String taskName, List<TaskSelector> selectors) {
     TaskDetails taskDetails = TaskDetails.newBuilder()
                                   .setKryoParameters(ByteString.copyFrom(
                                       referenceFalseKryoSerializer.asDeflatedBytes(serviceNowTaskNGParameters) == null
@@ -245,11 +246,6 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
                                   .setParked(false)
                                   .setType(TaskType.newBuilder().setType(SERVICENOW_TASK_NG.name()).build())
                                   .build();
-
-    List<TaskSelector> selectors = serviceNowTaskNGParameters.getDelegateSelectors()
-                                       .stream()
-                                       .map(s -> TaskSelector.newBuilder().setSelector(s).build())
-                                       .collect(Collectors.toList());
 
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskDetails, new ArrayList<>(), selectors, taskName, false);
   }

@@ -120,7 +120,7 @@ public class VmRunTestStepSerializer {
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
 
-    String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runTestsStepInfo.getShell());
+    String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runTestsStepInfo.getShell(), true);
     preCommand = earlyExitCommand + preCommand;
 
     VmRunTestStepBuilder runTestStepBuilder =

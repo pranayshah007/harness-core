@@ -87,6 +87,10 @@ public class CEMetaDataRecordUpdateService {
   public static final String CONNECTOR_NAME = "CONNECTOR_NAME";
   public static final String CCM_URL = "CCM_URL";
   public static final String USER_NAME = "USER_NAME";
+  public static final Map<ConnectorType, String> CONNECTOR_TYPE_MAP = Map.ofEntries(
+      Map.entry(ConnectorType.CE_AWS, "AWS"), Map.entry(ConnectorType.GCP_CLOUD_COST, "GCP"),
+      Map.entry(ConnectorType.CE_AZURE, "Azure"), Map.entry(ConnectorType.CE_KUBERNETES_CLUSTER, "Kubernetes Cluster"));
+
   public void updateCloudProviderMetadata() {
     List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     accountIds.forEach(this::updateCloudProviderMetadata);
@@ -196,7 +200,8 @@ public class CEMetaDataRecordUpdateService {
   private void sendMail(final String accountId, final ConnectorInfoDTO connector) throws URISyntaxException {
     List<CEUserInfo> users = getUsers(accountId);
     Map<String, String> templateModel = new HashMap<>();
-    templateModel.put(CONNECTOR_TYPE, connector.getConnectorType().getDisplayName());
+    templateModel.put(CONNECTOR_TYPE,
+        CONNECTOR_TYPE_MAP.getOrDefault(connector.getConnectorType(), connector.getConnectorType().getDisplayName()));
     templateModel.put(CONNECTOR_NAME, connector.getName());
     templateModel.put(CCM_URL, HarnessNgUrl.getCCMExplorerNGUrl(accountId, mainConfiguration.getBaseUrl()));
     if (!users.isEmpty()) {

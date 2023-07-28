@@ -34,11 +34,11 @@ public class DeploymentLogAnalysisDTO {
   List<HostSummary> hostSummaries;
 
   public enum ClusterType {
-    BASELINE("Baseline", 3),
-    KNOWN_EVENT("Known", 2),
-    UNEXPECTED_FREQUENCY("Unexpected Frequency", 1),
-    UNKNOWN_EVENT("Unknown", 0),
-    NO_BASELINE_AVAILABLE("No Baseline available", 4);
+    NO_BASELINE_AVAILABLE("New", 0),
+    BASELINE("Baseline", 4),
+    KNOWN_EVENT("Known", 1),
+    UNEXPECTED_FREQUENCY("Unexpected Frequency", 2),
+    UNKNOWN_EVENT("Unknown", 3);
     private final String displayName;
     private final int sortOrder;
     ClusterType(String displayName, int sortOrder) {

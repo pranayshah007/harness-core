@@ -8,6 +8,7 @@
 package io.harness.pms.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertEquals;
@@ -15,6 +16,8 @@ import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -26,6 +29,7 @@ import io.harness.common.NGTimeConversionHelper;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.jira.JiraAuthCredentialsDTO;
@@ -39,17 +43,24 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.jira.JiraIssueNG;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.TaskRequestsUtils;
 
+import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -60,6 +71,8 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(PIPELINE)
 @RunWith(MockitoJUnitRunner.class)
@@ -68,6 +81,35 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private KryoSerializer kryoSerializer;
   @InjectMocks JiraStepHelperServiceImpl jiraStepHelperService;
+
+  private static final String ACCOUNT = "account";
+  private static final String ORG = "org";
+  private static final String PROJECT = "project";
+  private static final String CONNECTOR = "connector";
+  private static final TaskSelectorYaml TASK_SELECTOR_YAML = getTaskSelectorYaml();
+  private static final ParameterField TASK_SELECTOR_YAML_PARAMETER =
+      ParameterField.createValueField(List.of(TASK_SELECTOR_YAML));
+
+  private static final List<TaskSelector> TASK_SELECTORS =
+      TaskSelectorYaml.toTaskSelector(TASK_SELECTOR_YAML_PARAMETER);
+
+  private static final Ambiance AMBIANCE = Ambiance.newBuilder()
+                                               .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT)
+                                               .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
+                                               .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
+                                               .build();
+  private static final ConnectorDTO JIRA_CONNECTOR =
+      ConnectorDTO.builder()
+          .connectorInfo(ConnectorInfoDTO.builder()
+                             .identifier(CONNECTOR)
+                             .connectorConfig(JiraConnectorDTO.builder()
+                                                  .jiraUrl("url")
+                                                  .auth(JiraAuthenticationDTO.builder()
+                                                            .credentials(JiraUserNamePasswordDTO.builder().build())
+                                                            .build())
+                                                  .build())
+                             .build())
+          .build();
 
   @Test
   @Owner(developers = BRIJESH)
@@ -84,13 +126,13 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
                             .build();
     assertThatCode(()
                        -> jiraStepHelperService.prepareTaskRequest(
-                           JiraTaskNGParameters.builder(), ambiance, "null", "time", "task"))
+                           JiraTaskNGParameters.builder(), ambiance, "null", "time", "task", TASK_SELECTORS))
         .isInstanceOf(InvalidRequestException.class);
 
     aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.empty());
     assertThatCode(()
                        -> jiraStepHelperService.prepareTaskRequest(
-                           JiraTaskNGParameters.builder(), ambiance, "connectorref", "time", "task"))
+                           JiraTaskNGParameters.builder(), ambiance, "connectorref", "time", "task", TASK_SELECTORS))
         .isInstanceOf(InvalidRequestException.class);
     aStatic.when(() -> NGRestUtils.getResponse(any()))
         .thenReturn(Optional.of(
@@ -99,12 +141,12 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
                 .build()));
     assertThatCode(()
                        -> jiraStepHelperService.prepareTaskRequest(
-                           JiraTaskNGParameters.builder(), ambiance, "connectorref", "time", "task"))
+                           JiraTaskNGParameters.builder(), ambiance, "connectorref", "time", "task", TASK_SELECTORS))
         .isInstanceOf(InvalidRequestException.class);
 
     aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(getConnector(false));
     jiraStepHelperService.prepareTaskRequest(JiraTaskNGParameters.builder(), ambiance, "connectorref",
-        new Timestamp(System.currentTimeMillis()).toString(), "task");
+        new Timestamp(System.currentTimeMillis()).toString(), "task", TASK_SELECTORS);
     ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
         ArgumentCaptor.forClass(DecryptableEntity.class);
     ArgumentCaptor<NGAccess> requestArgumentCaptorForNGAccess = ArgumentCaptor.forClass(NGAccess.class);
@@ -115,12 +157,56 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
 
     aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(getConnector(true));
     jiraStepHelperService.prepareTaskRequest(JiraTaskNGParameters.builder(), ambiance, "connectorref",
-        new Timestamp(System.currentTimeMillis()).toString(), "task");
+        new Timestamp(System.currentTimeMillis()).toString(), "task", TASK_SELECTORS);
     verify(secretManagerClientService, times(2))
         .getEncryptionDetails(
             requestArgumentCaptorForNGAccess.capture(), requestArgumentCaptorForSecretService.capture());
     assertTrue(requestArgumentCaptorForSecretService.getValue() instanceof JiraAuthCredentialsDTO);
     assertThat(requestArgumentCaptorForNGAccess.getValue()).isEqualTo(AmbianceUtils.getNgAccess(ambiance));
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testPrepareTestRequest_CreateStepDelegateSelectors() throws IOException {
+    Call mockCall = mock(Call.class);
+    doReturn(mockCall).when(connectorResourceClient).get(any(), any(), any(), any());
+    doReturn(mockCall).when(mockCall).clone();
+
+    doReturn(Response.success(ResponseDTO.newResponse(Optional.of(JIRA_CONNECTOR)))).when(mockCall).execute();
+    doReturn(List.of())
+        .when(secretManagerClientService)
+        .getEncryptionDetails(any(NGAccess.class), any(JiraUserNamePasswordDTO.class));
+
+    TaskRequest taskRequest = jiraStepHelperService.prepareTaskRequest(
+        JiraTaskNGParameters.builder(), AMBIANCE, CONNECTOR, "10m", "task", TASK_SELECTORS);
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getSelectors(0).getSelector())
+        .isEqualTo(TASK_SELECTOR_YAML.getDelegateSelectors());
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getSelectors(0).getOrigin())
+        .isEqualTo(TASK_SELECTOR_YAML.getOrigin());
+    verify(connectorResourceClient).get(CONNECTOR, ACCOUNT, ORG, PROJECT);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testPrepareTestRequest_UpdateStepDelegateSelectors() throws IOException {
+    Call mockCall = mock(Call.class);
+    doReturn(mockCall).when(connectorResourceClient).get(any(), any(), any(), any());
+    doReturn(mockCall).when(mockCall).clone();
+
+    doReturn(Response.success(ResponseDTO.newResponse(Optional.of(JIRA_CONNECTOR)))).when(mockCall).execute();
+    doReturn(List.of())
+        .when(secretManagerClientService)
+        .getEncryptionDetails(any(NGAccess.class), any(JiraUserNamePasswordDTO.class));
+
+    TaskRequest taskRequest = jiraStepHelperService.prepareTaskRequest(
+        JiraTaskNGParameters.builder(), AMBIANCE, CONNECTOR, "10m", "task", TASK_SELECTORS);
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getSelectors(0).getSelector())
+        .isEqualTo(TASK_SELECTOR_YAML.getDelegateSelectors());
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getSelectors(0).getOrigin())
+        .isEqualTo(TASK_SELECTOR_YAML.getOrigin());
+    verify(connectorResourceClient).get(CONNECTOR, ACCOUNT, ORG, PROJECT);
   }
 
   @Test
@@ -161,5 +247,11 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
                                                                  .build())
                                             .build();
     return Optional.of(ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build());
+  }
+  private static TaskSelectorYaml getTaskSelectorYaml() {
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml();
+    taskSelectorYaml.setOrigin("step");
+    taskSelectorYaml.setDelegateSelectors("step-selector");
+    return taskSelectorYaml;
   }
 }

@@ -16,7 +16,6 @@ import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.CIShellType;
-import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -39,6 +38,7 @@ import java.util.regex.Pattern;
 
 public class SerializerUtils {
   private static Pattern pattern = Pattern.compile("\\$\\{ngSecretManager\\.obtain[^\\}]*\\}");
+  private static final String boldYellowColor = "\u001b[33;1m";
 
   public static List<String> getEntrypoint(ParameterField<CIShellType> parametrizedShellType) {
     List<String> entrypoint;
@@ -150,11 +150,16 @@ public class SerializerUtils {
     }
     return getDebugCommand(accountId, timeoutSeconds, runStepInfo.getShell(), tmatePath);
   }
-  public static String getEarlyExitCommand(ParameterField<CIShellType> parametrizedShellType) {
+  public static String getEarlyExitCommand(ParameterField<CIShellType> parametrizedShellType, boolean enableDebug) {
     String cmd;
     CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
     if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
-      cmd = "set -xe; ";
+      cmd = "set ";
+      if (enableDebug) {
+        cmd = cmd + "-xe; \n";
+      } else {
+        cmd = cmd + "-e; \n";
+      }
     } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
       cmd = "$ErrorActionPreference = 'Stop' \n";
     } else if (shellType == CIShellType.PYTHON) {
@@ -163,6 +168,45 @@ public class SerializerUtils {
       throw new CIStageExecutionException(format("Invalid shell type: %s", shellType));
     }
     return cmd;
+  }
+
+  public static String prependPrintCommand(String command, ParameterField<CIShellType> parametrizedShellType) {
+    CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
+    String lines[] = command.split("\n");
+    StringBuilder printCommand;
+    switch (shellType) {
+      case BASH:
+      case SH:
+        printCommand = new StringBuilder(format("echo \"%sExecuting the following command(s):\"\n", boldYellowColor));
+        for (String line : lines) {
+          printCommand.append("echo \"" + boldYellowColor + line + "\"\n");
+        }
+        printCommand.append("echo \n");
+        printCommand.append(command);
+        break;
+      case POWERSHELL:
+      case PWSH:
+        printCommand =
+            new StringBuilder(format("Write-Host \"%sExecuting the following command(s):\"\n", boldYellowColor));
+        for (String line : lines) {
+          printCommand.append("Write-Host \"" + boldYellowColor + line + "\"\n");
+        }
+        printCommand.append("Write-Host \n");
+        printCommand.append(command);
+        break;
+      case PYTHON:
+        printCommand = new StringBuilder(format("print('''%sExecuting the following command(s):\n", boldYellowColor));
+        for (String line : lines) {
+          printCommand.append(boldYellowColor + line + "\n");
+        }
+        printCommand.append("''')\n\n");
+        printCommand.append(command);
+        break;
+      default:
+        throw new CIStageExecutionException(format("Invalid shell type: %s", shellType));
+    }
+
+    return printCommand.toString();
   }
 
   public static String convertJsonNodeToString(String key, JsonNode jsonNode) {
@@ -226,8 +270,7 @@ public class SerializerUtils {
     return true;
   }
 
-  public static String getSafeGitDirectoryCmd(
-      CIShellType shellType, String accountId, CIFeatureFlagService featureFlagService) {
+  public static String getSafeGitDirectoryCmd(CIShellType shellType) {
     // This adds the safe directory to the end of .gitconfig file
 
     String safeDirScript;
@@ -235,8 +278,7 @@ public class SerializerUtils {
       safeDirScript = "set +x\n"
           + "if [ -x \"$(command -v git)\" ]; then\n"
           + "  git config --global --add safe.directory '*' || true \n"
-          + "fi\n"
-          + "set -x\n";
+          + "fi\n";
     } else if (shellType == CIShellType.PYTHON) {
       safeDirScript = "import subprocess\n"
           + "try:\n"

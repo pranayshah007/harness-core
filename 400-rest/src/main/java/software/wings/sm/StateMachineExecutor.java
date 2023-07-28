@@ -6,7 +6,6 @@
  */
 
 package software.wings.sm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionInterruptType.CONTINUE_PIPELINE_STAGE;
 import static io.harness.beans.ExecutionInterruptType.PAUSE_ALL;
@@ -46,7 +45,6 @@ import static io.harness.threading.Morpheus.quietSleep;
 import static io.harness.validation.Validator.notNullCheck;
 import static io.harness.waiter.OrchestrationNotifyEventListener.ORCHESTRATION;
 
-import static software.wings.beans.ExecutionScope.WORKFLOW;
 import static software.wings.beans.NotificationRule.NotificationRuleBuilder.aNotificationRule;
 import static software.wings.beans.alert.AlertType.ManualInterventionNeeded;
 import static software.wings.common.NotificationMessageResolver.NotificationMessageType.MANUAL_INTERVENTION_NEEDED_NOTIFICATION;
@@ -74,8 +72,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EventType;
 import io.harness.beans.ExecutionInterruptType;
@@ -124,6 +125,7 @@ import software.wings.beans.NotificationRule;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.ManualInterventionNeededAlert;
 import software.wings.beans.alert.RuntimeInputsRequiredAlert;
@@ -194,6 +196,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author Rishi
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -258,7 +262,8 @@ public class StateMachineExecutor implements StateInspectionListener {
    */
   public StateExecutionInstance execute(String appId, String executionUuid, String executionName,
       List<ContextElement> contextParams, StateMachineExecutionCallback callback) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, executionUuid);
+    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
+        appId, executionUuid, WorkflowExecutionKeys.stateMachine, WorkflowExecutionKeys.stateMachineId);
     StateMachine stateMachine = workflowExecutionService.obtainStateMachine(workflowExecution);
     return execute(stateMachine, executionUuid, executionName, contextParams, callback, null);
   }
@@ -277,7 +282,8 @@ public class StateMachineExecutor implements StateInspectionListener {
   public StateExecutionInstance execute(String appId, String executionUuid, String executionName,
       List<ContextElement> contextParams, StateMachineExecutionCallback callback,
       ExecutionEventAdvisor executionEventAdvisor) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, executionUuid);
+    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
+        appId, executionUuid, WorkflowExecutionKeys.stateMachine, WorkflowExecutionKeys.stateMachineId);
     StateMachine stateMachine = workflowExecutionService.obtainStateMachine(workflowExecution);
     return execute(stateMachine, executionUuid, executionName, contextParams, callback, executionEventAdvisor);
   }
@@ -989,8 +995,13 @@ public class StateMachineExecutor implements StateInspectionListener {
         updateStateExecutionInstanceForManualInterventions(stateExecutionInstance, status, executionEventAdvice);
 
         // Open an alert
+        String[] fields = {WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.createdBy,
+            WorkflowExecutionKeys.createdByType, WorkflowExecutionKeys.envIds, WorkflowExecutionKeys.executionArgs,
+            WorkflowExecutionKeys.infraDefinitionIds, WorkflowExecutionKeys.name,
+            WorkflowExecutionKeys.pipelineExecution, WorkflowExecutionKeys.pipelineExecutionId,
+            WorkflowExecutionKeys.pipelineSummary, WorkflowExecutionKeys.serviceIds, WorkflowExecutionKeys.workflowId};
         WorkflowExecution workflowExecution =
-            workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
+            workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId(), fields);
         Environment environment = context.getEnv();
         String pipelineExecutionId = workflowExecution.getPipelineExecutionId();
         WorkflowType workflowType = pipelineExecutionId != null ? WorkflowType.PIPELINE : WorkflowType.ORCHESTRATION;
@@ -1291,18 +1302,6 @@ public class StateMachineExecutor implements StateInspectionListener {
 
   private boolean checkIfOnDemand(String appId, String executionUuid) {
     return workflowExecutionService.checkIfOnDemand(appId, executionUuid);
-  }
-
-  private Map<String, String> getManualInterventionPlaceholderValues(ExecutionContextImpl context) {
-    notNullCheck("context.getApp()", context.getApp());
-    WorkflowExecution workflowExecution = workflowExecutionService.getExecutionDetails(
-        context.getApp().getUuid(), context.getWorkflowExecutionId(), false, false);
-    String artifactsMessage =
-        workflowNotificationHelper.getArtifactsDetails(context, workflowExecution, WORKFLOW, null).getMessage();
-
-    return notificationMessageResolver.getPlaceholderValues(context, workflowExecution.getTriggeredBy().getName(),
-        workflowExecution.getStartTs(), System.currentTimeMillis(), "", "", artifactsMessage, ExecutionStatus.PAUSED,
-        AlertType.ManualInterventionNeeded);
   }
 
   protected void sendManualInterventionNeededNotification(ExecutionContextImpl context, long expiryTs) {

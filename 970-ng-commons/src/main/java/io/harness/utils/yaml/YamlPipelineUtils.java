@@ -6,9 +6,11 @@
  */
 
 package io.harness.utils;
-
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.JsonSubtypeResolver;
@@ -38,6 +40,8 @@ import lombok.experimental.UtilityClass;
  * End user will typically extend interface and define {@link com.fasterxml.jackson.annotation.JsonTypeName} annotation
  * with proper type name. This way framework is decoupled from concrete implementations.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @UtilityClass
 public class YamlPipelineUtils {
   private final ObjectMapper mapper;

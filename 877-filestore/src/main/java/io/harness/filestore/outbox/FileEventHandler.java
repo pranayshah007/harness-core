@@ -6,7 +6,6 @@
  */
 
 package io.harness.filestore.outbox;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
@@ -22,7 +21,10 @@ import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 import static java.lang.String.format;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.ResourceDTO;
@@ -59,6 +61,7 @@ import io.serializer.HObjectMapper;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @OwnedBy(CDP)
 public class FileEventHandler implements OutboxEventHandler {

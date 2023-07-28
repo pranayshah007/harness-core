@@ -6,11 +6,13 @@
  */
 
 package software.wings.service.intfc;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.PageRequest;
@@ -74,6 +76,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public interface WorkflowExecutionService extends StateStatusUpdate {
@@ -112,7 +115,18 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   WorkflowExecution getExecutionWithoutSummary(@NotNull String appId, @NotNull String workflowExecutionId);
 
-  WorkflowExecution getWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId);
+  /**
+   * Get a workflow execution using appId and workflowExecutionId (collection primary key).
+   *
+   * <p>As we know the {@code workflowExecution} collection has a higher number of fields and nested objects, the caller
+   * can optimize the resource usage when setting which fields want to be retrieved. When fields are provided the fields
+   * appId, accountId, and uuid are returned retrieved too by default.
+   *
+   * @param fields which fields should be retrieved, leave it empty to retrieve all document fields.
+   *
+   * @return a workflow execution or {@code null} when not found.
+   */
+  WorkflowExecution getWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId, String... fields);
 
   WorkflowExecution getUpdatedWorkflowExecution(@NotNull String appId, @NotNull String workflowExecutionId);
 

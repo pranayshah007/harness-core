@@ -4,11 +4,11 @@
       "request" : {
         "path" : [ {
           "matcher" : "exact",
-          "value" : "/services/search/jobs/"
+          "value" : "/services/server/info"
         } ],
         "method" : [ {
           "matcher" : "exact",
-          "value" : "POST"
+          "value" : "GET"
         } ],
         "destination" : [ {
           "matcher" : "exact",
@@ -19,22 +19,14 @@
           "value" : "https"
         } ],
         "query" : {
-          "exec_mode" : [ {
-            "matcher" : "exact",
-            "value" : "blocking"
-          } ],
           "output_mode" : [ {
             "matcher" : "exact",
             "value" : "json"
           } ]
-        },
-        "body" : [ {
-          "matcher" : "exact",
-          "value" : "search=search%20exception&earliest_time=1604054628&latest_time=1604054688"
-        } ]
+        }
       },
       "response" : {
-        "status" : 201,
+        "status" : 200,
         "body" : "{\"sid\":\"1643023476.181186\"}",
         "encodedBody" : false,
         "templated" : false,

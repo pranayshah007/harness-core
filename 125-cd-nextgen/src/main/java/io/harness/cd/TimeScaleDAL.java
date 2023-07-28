@@ -6,7 +6,6 @@
  */
 
 package io.harness.cd;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.timescaledb.Tables.ENVIRONMENTS;
@@ -20,7 +19,10 @@ import static io.harness.timescaledb.Tables.SERVICE_INSTANCES_LICENSE_DAILY_REPO
 import io.harness.aggregates.AggregateProjectInfo;
 import io.harness.aggregates.AggregateServiceInfo;
 import io.harness.aggregates.TimeWiseExecutionSummary;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.usage.pojos.LicenseDailyUsage;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.dashboards.GroupBy;
@@ -45,6 +47,8 @@ import org.jooq.Record3;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @Slf4j
 @OwnedBy(PIPELINE)
 public class TimeScaleDAL {

@@ -16,6 +16,8 @@ public interface BackstageEnvVariableRepositoryCustom {
   BackstageEnvVariableEntity update(BackstageEnvVariableEntity backstageEnvVariableEntity);
   Optional<BackstageEnvVariableEntity> findByAccountIdentifierAndHarnessSecretIdentifier(
       String accountIdentifier, String harnessSecretIdentifier);
+  Optional<BackstageEnvVariableEntity> updateSecretIsDeleted(
+      String accountIdentifier, String harnessSecretIdentifier, boolean isDeleted);
   List<BackstageEnvVariableEntity> findAllByAccountIdentifierAndMultipleEnvNames(
       String accountIdentifier, List<String> envNames);
   void deleteAllByAccountIdentifierAndEnvNames(String accountIdentifier, List<String> envName);

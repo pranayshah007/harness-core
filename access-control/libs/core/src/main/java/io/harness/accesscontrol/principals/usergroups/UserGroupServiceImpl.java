@@ -66,8 +66,8 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public List<UserGroup> list(String userIdentifier) {
-    return userGroupDao.list(userIdentifier);
+  public List<UserGroup> list(String scopeIdentifier, String userIdentifier) {
+    return userGroupDao.list(scopeIdentifier, userIdentifier);
   }
 
   @Override

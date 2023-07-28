@@ -6,9 +6,11 @@
  */
 
 package io.harness.ng.core.k8s.cluster.resources.rancher;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.infrastructure.resource.InfrastructureHelper;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -21,6 +23,7 @@ import javax.validation.constraints.Max;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
 @OwnedBy(HarnessTeam.CDP)

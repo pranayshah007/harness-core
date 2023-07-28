@@ -14,11 +14,18 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static software.wings.beans.TaskType.SCM_BATCH_GET_FILE_TASK;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.BranchFilterParameters;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.FeatureName;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterParameters;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.request.GitFileBatchRequest;
 import io.harness.beans.request.GitFileRequest;
@@ -122,6 +129,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
@@ -175,15 +184,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @Override
   public List<GitRepositoryResponseDTO> listReposByRefConnector(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorRef, PageRequest pageRequest, String searchTerm,
+      String projectIdentifier, String connectorRef, PageRequest pageRequest, RepoFilterParameters repoFilterParameters,
       boolean applyGitXRepoAllowListFilter) {
     ScmConnector scmConnector =
         gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-
+    RepoFilterParamsDTO repoFilterParams = buildRepoFilterParamsDTO(repoFilterParameters);
     GetUserReposResponse response = scmOrchestratorService.processScmRequestUsingConnectorSettings(
         scmClientFacilitatorService
         -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector,
-            PageRequestDTO.builder().pageIndex(pageRequest.getPageIndex()).pageSize(pageRequest.getPageSize()).build()),
+            PageRequestDTO.builder().pageIndex(pageRequest.getPageIndex()).pageSize(pageRequest.getPageSize()).build(),
+            repoFilterParams),
         scmConnector);
     if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
@@ -194,7 +204,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       response = filterResponseBasedOnGitXRepoAllowList(accountIdentifier, orgIdentifier, projectIdentifier, response);
     }
 
-    return prepareListRepoResponse(scmConnector, response);
+    return prepareListRepoResponse(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector, response);
   }
 
   @Override
@@ -216,7 +226,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             .get(()
                      -> scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
                          -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier,
-                             projectIdentifier, scmConnector, PageRequestDTO.builder().fetchAll(true).build()),
+                             projectIdentifier, scmConnector, PageRequestDTO.builder().fetchAll(true).build(), null),
                          scmConnector));
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {
@@ -233,10 +243,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @Override
   public GitBranchesResponseDTO listBranchesV2(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorRef, String repoName, PageRequest pageRequest, String searchTerm) {
+      String connectorRef, String repoName, PageRequest pageRequest, BranchFilterParameters branchFilterParameters) {
     final ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
-
+    BranchFilterParamsDTO branchFilterParamsDTO = buildBranchFilterParamsDTO(branchFilterParameters);
     ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
             -> scmClientFacilitatorService.listBranches(accountIdentifier, orgIdentifier, projectIdentifier,
@@ -244,7 +254,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                 PageRequestDTO.builder()
                     .pageIndex(pageRequest.getPageIndex())
                     .pageSize(pageRequest.getPageSize())
-                    .build()),
+                    .build(),
+                branchFilterParamsDTO),
             scmConnector);
 
     if (ScmApiErrorHandlingHelper.isFailureResponse(
@@ -255,7 +266,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           ErrorMetadata.builder().connectorRef(connectorRef).repoName(repoName).build());
     }
 
-    List<GitBranchDetailsDTO> gitBranches = prepareGitBranchList(listBranchesWithDefaultResponse);
+    List<GitBranchDetailsDTO> gitBranches =
+        prepareGitBranchList(listBranchesWithDefaultResponse, branchFilterParamsDTO.getBranchName());
     return GitBranchesResponseDTO.builder()
         .branches(gitBranches)
         .defaultBranch(GitBranchDetailsDTO.builder().name(listBranchesWithDefaultResponse.getDefaultBranch()).build())
@@ -780,9 +792,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @VisibleForTesting
   protected List<GitBranchDetailsDTO> prepareGitBranchList(
-      ListBranchesWithDefaultResponse listBranchesWithDefaultResponse) {
+      ListBranchesWithDefaultResponse listBranchesWithDefaultResponse, String branchNameSearchTerm) {
     List<String> branchList = new ArrayList<>(emptyIfNull(listBranchesWithDefaultResponse.getBranchesList()));
-    if (!branchList.isEmpty() && !branchList.contains(listBranchesWithDefaultResponse.getDefaultBranch())) {
+    if (isEmpty(branchNameSearchTerm) && !branchList.isEmpty()
+        && !branchList.contains(listBranchesWithDefaultResponse.getDefaultBranch())) {
       branchList.set(branchList.size() - 1, listBranchesWithDefaultResponse.getDefaultBranch());
     }
     return branchList.stream()
@@ -791,8 +804,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         .collect(Collectors.toList());
   }
 
-  private List<GitRepositoryResponseDTO> prepareListRepoResponse(
-      ScmConnector scmConnector, GetUserReposResponse response) {
+  private List<GitRepositoryResponseDTO> prepareListRepoResponse(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, ScmConnector scmConnector, GetUserReposResponse response) {
     GitRepositoryDTO gitRepository = scmConnector.getGitRepositoryDetails();
 
     if (isEmpty(gitRepository.getOrg())
@@ -804,7 +817,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           .collect(Collectors.toList());
     }
     if (isNotEmpty(gitRepository.getName())) {
-      return Collections.singletonList(GitRepositoryResponseDTO.builder().name(gitRepository.getName()).build());
+      return validateRepoAndPrepareResponse(
+          accountIdentifier, orgIdentifier, projectIdentifier, scmConnector, gitRepository);
     } else if (isNotEmpty(gitRepository.getOrg()) && isNamespaceNotEmpty(response)) {
       return prepareListRepoResponseWithNamespace(scmConnector, response, gitRepository);
     } else {
@@ -812,6 +826,21 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           .stream()
           .map(repository -> GitRepositoryResponseDTO.builder().name(repository.getName()).build())
           .collect(Collectors.toList());
+    }
+  }
+
+  private List<GitRepositoryResponseDTO> validateRepoAndPrepareResponse(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, ScmConnector scmConnector, GitRepositoryDTO gitRepository) {
+    try {
+      gitRepoAllowlistHelper.validateRepo(Scope.builder()
+                                              .accountIdentifier(accountIdentifier)
+                                              .orgIdentifier(orgIdentifier)
+                                              .projectIdentifier(projectIdentifier)
+                                              .build(),
+          scmConnector, gitRepository.getName());
+      return Collections.singletonList(GitRepositoryResponseDTO.builder().name(gitRepository.getName()).build());
+    } catch (WingsException ex) {
+      return Collections.EMPTY_LIST;
     }
   }
 
@@ -1255,5 +1284,22 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       gitRepoAllowlistHelper.validateRepo(
           scmGetFileByBranchRequestDTO.getScope(), scmConnector, scmGetFileByBranchRequestDTO.getRepoName());
     }
+  }
+
+  private RepoFilterParamsDTO buildRepoFilterParamsDTO(RepoFilterParameters repoFilterParameters) {
+    if (repoFilterParameters == null) {
+      return RepoFilterParamsDTO.builder().build();
+    }
+    return RepoFilterParamsDTO.builder()
+        .repoName(repoFilterParameters.getRepoName())
+        .userName(repoFilterParameters.getUserName())
+        .build();
+  }
+
+  private BranchFilterParamsDTO buildBranchFilterParamsDTO(BranchFilterParameters branchFilterParameters) {
+    if (branchFilterParameters == null) {
+      return BranchFilterParamsDTO.builder().build();
+    }
+    return BranchFilterParamsDTO.builder().branchName(branchFilterParameters.getBranchName()).build();
   }
 }

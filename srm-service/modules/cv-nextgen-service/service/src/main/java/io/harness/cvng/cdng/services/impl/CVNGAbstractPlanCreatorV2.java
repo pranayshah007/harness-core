@@ -6,7 +6,6 @@
  */
 
 package io.harness.cvng.cdng.services.impl;
-
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
@@ -21,8 +20,11 @@ import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cvng.cdng.beans.CVNGAbstractStepNode;
 import io.harness.cvng.cdng.beans.CVStepInfoBase;
 import io.harness.data.structure.EmptyPredicate;
@@ -79,6 +81,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CV)
 public abstract class CVNGAbstractPlanCreatorV2<T extends CVNGAbstractStepNode> extends AbstractStepPlanCreator<T> {
   public abstract Set<String> getSupportedStepTypes();

@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.plan.execution;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionErrorInfo;
 import io.harness.dto.converter.FailureInfoDTOConverter;
 import io.harness.engine.utils.OrchestrationUtils;
@@ -31,6 +33,8 @@ import org.springframework.data.mongodb.core.query.Update;
 /**
  * A utility to generate updates for the layout graph used in the list api for stage layout
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class ExecutionSummaryUpdateUtils {

@@ -8,11 +8,13 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
-
 import static java.util.Objects.requireNonNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.provision.terragrunt.TerragruntConfig.TerragruntConfigKeys;
 import io.harness.expression.EngineExpressionSecretUtils;
@@ -28,6 +30,7 @@ import dev.morphia.query.Sort;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)

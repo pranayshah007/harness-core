@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng;
-
 import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
@@ -27,8 +26,11 @@ import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NgAutoLogContext;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EntityReference;
 import io.harness.beans.FeatureName;
 import io.harness.beans.ScopeLevel;
@@ -101,6 +103,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.DX)
@@ -662,7 +665,7 @@ public class ConnectorServiceImpl implements ConnectorService {
         && connector.getHeartbeatPerpetualTaskId() == null && connector.getExecuteOnDelegate()) {
       PerpetualTaskId connectorHeartbeatTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(
           accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());
-      log.info("Started Heartbeat Perpetual task for connector {} with taskID {}", connector.getAccountIdentifier(),
+      log.info("Started Heartbeat Perpetual task for connector {} with taskID {}", connector.getIdentifier(),
           connectorHeartbeatTaskId.getId());
 
       connector.setHeartbeatPerpetualTaskId(connectorHeartbeatTaskId == null ? null : connectorHeartbeatTaskId.getId());
@@ -714,7 +717,7 @@ public class ConnectorServiceImpl implements ConnectorService {
           accountIdentifier, fullyQualifiedIdentifier, connector.getHeartbeatPerpetualTaskId());
       if (isConnectorHeartbeatDeleted) {
         log.info("Deleted Heartbeat Perpetual task for connector {} with taskID {} due to invalid Auth",
-            connector.getAccountIdentifier(), connector.getHeartbeatPerpetualTaskId());
+            connector.getIdentifier(), connector.getHeartbeatPerpetualTaskId());
         connector.setHeartbeatPerpetualTaskId(null);
       }
     }

@@ -9,6 +9,7 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.common.beans.ApiKeyType.SERVICE_ACCOUNT;
+import static io.harness.ng.core.common.beans.ApiKeyType.USER;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GAURAV_NANDA;
 import static io.harness.rule.OwnerRule.SOWMYA;
@@ -38,12 +39,14 @@ import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.entities.ApiKey;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.repositories.ng.core.spring.ApiKeyRepository;
 import io.harness.rule.Owner;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.serviceaccount.ServiceAccountDTO;
 
 import com.google.common.collect.ImmutableList;
 import io.fabric8.utils.Lists;
@@ -69,10 +72,12 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
   private String parentIdentifier;
   private ApiKeyDTO apiKeyDTO;
   private ApiKey apiKey;
+  private ServiceAccountDTO serviceAccountDTO;
   private AccountOrgProjectValidator accountOrgProjectValidator;
   private AccountService accountService;
   private TransactionTemplate transactionTemplate;
   private NgUserService ngUserService;
+  private ServiceAccountService serviceAccountService;
 
   private static final String TEST_PRINCIPAL = "TEST_PRINCIPAL";
   private static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
@@ -92,6 +97,7 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
     accountService = mock(AccountService.class);
     ngUserService = mock(NgUserService.class);
     transactionTemplate = mock(TransactionTemplate.class);
+    serviceAccountService = mock(ServiceAccountService.class);
 
     apiKeyDTO = ApiKeyDTO.builder()
                     .accountIdentifier(accountIdentifier)
@@ -119,12 +125,15 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
                  .build();
     when(accountOrgProjectValidator.isPresent(any(), any(), any())).thenReturn(true);
     when(transactionTemplate.execute(any())).thenReturn(apiKeyDTO);
+    when(serviceAccountService.getServiceAccountDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier))
+        .thenReturn(serviceAccountDTO);
     FieldUtils.writeField(apiKeyService, "apiKeyRepository", apiKeyRepository, true);
     FieldUtils.writeField(apiKeyService, "accountOrgProjectValidator", accountOrgProjectValidator, true);
     FieldUtils.writeField(apiKeyService, "accountService", accountService, true);
     FieldUtils.writeField(apiKeyService, "transactionTemplate", transactionTemplate, true);
     FieldUtils.writeField(apiKeyService, "ngUserService", ngUserService, true);
-
+    FieldUtils.writeField(apiKeyService, "serviceAccountService", serviceAccountService, true);
     Principal principal = new UserPrincipal(TEST_PRINCIPAL, TEST_USER_EMAIL, "", TEST_ACCOUNT_ID);
     SecurityContextBuilder.setContext(principal);
     SourcePrincipalContextBuilder.setSourcePrincipal(principal);
@@ -139,10 +148,14 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
                  .build())
         .when(accountService)
         .getAccount(any());
+    when(serviceAccountService.getServiceAccountDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier))
+        .thenReturn(serviceAccountDTO);
     apiKeyService.createApiKey(apiKeyDTO);
     doThrow(new DuplicateFieldException(String.format("Try using different Key name, [%s] already exists", identifier)))
         .when(transactionTemplate)
         .execute(any());
+
     assertThatThrownBy(() -> apiKeyService.createApiKey(apiKeyDTO))
         .isInstanceOf(DuplicateFieldException.class)
         .hasMessage(String.format("Try using different Key name, [%s] already exists", identifier));
@@ -169,6 +182,9 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
         .when(accountService)
         .getAccount(any());
     when(transactionTemplate.execute(any())).thenReturn(dto);
+    when(serviceAccountService.getServiceAccountDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier))
+        .thenReturn(serviceAccountDTO);
     ApiKeyDTO apiKey = apiKeyService.createApiKey(dto);
     assertThat(apiKey.getDescription()).isNull();
   }
@@ -180,13 +196,15 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
     doReturn(Optional.empty())
         .when(apiKeyRepository)
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndIdentifier(
-            accountIdentifier, orgIdentifier, projectIdentifier, SERVICE_ACCOUNT, parentIdentifier, identifier);
+            accountIdentifier, orgIdentifier, projectIdentifier, USER, parentIdentifier, identifier);
     doReturn(AccountDTO.builder()
                  .serviceAccountConfig(ServiceAccountConfig.builder().apiKeyLimit(5).tokenLimit(5).build())
                  .build())
         .when(accountService)
         .getAccount(any());
-
+    when(serviceAccountService.getServiceAccountDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier))
+        .thenReturn(serviceAccountDTO);
     assertThatThrownBy(() -> apiKeyService.updateApiKey(apiKeyDTO))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Api key not present in scope for identifier: " + identifier);

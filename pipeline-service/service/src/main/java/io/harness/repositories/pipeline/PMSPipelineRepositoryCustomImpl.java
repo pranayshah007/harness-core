@@ -89,7 +89,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
           PipelineEntityKeys.identifier);
     }
     List<PipelineEntity> pipelineEntities = gitAwarePersistence.find(
-        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class);
+        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, PipelineEntity.class, true);
     return PageableExecutionUtils.getPage(pipelineEntities, pageable,
         ()
             -> gitAwarePersistence.count(

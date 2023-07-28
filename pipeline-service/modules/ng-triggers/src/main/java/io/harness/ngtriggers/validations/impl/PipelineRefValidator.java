@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
+import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.validations.TriggerValidator;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.ngtriggers.validations.ValidationResult.ValidationResultBuilder;
@@ -31,6 +32,11 @@ public class PipelineRefValidator implements TriggerValidator {
   @Override
   public ValidationResult validate(TriggerDetails triggerDetails) {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
+    if (triggerDetails.getNgTriggerConfigV2() != null
+        && TriggerHelper.isBranchExpr(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
+      // Impossible to check if pipeline ref is valid in case pipelineBranchName is an expression.
+      return builder.build();
+    }
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineYamlForTrigger(triggerDetails);
 

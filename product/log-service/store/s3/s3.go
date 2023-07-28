@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
+
 	"github.com/harness/harness-core/product/log-service/store"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -146,4 +147,29 @@ func (s *Store) Ping() error {
 	}
 
 	return nil
+}
+
+func (s *Store) ListBlobPrefix(ctx context.Context, prefix string, limit int) ([]string, error) {
+	svc := s3.New(s.session)
+
+	var keys []string
+
+	params := &s3.ListObjectsInput{
+		Bucket:  aws.String(s.bucket),
+		Prefix:  aws.String(prefix),
+		MaxKeys: aws.Int64(int64(limit)),
+	}
+
+	err := svc.ListObjectsPages(params, func(p *s3.ListObjectsOutput, lastPage bool) bool {
+		for _, obj := range p.Contents {
+			keys = append(keys, *obj.Key)
+		}
+		return true
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return keys, nil
 }

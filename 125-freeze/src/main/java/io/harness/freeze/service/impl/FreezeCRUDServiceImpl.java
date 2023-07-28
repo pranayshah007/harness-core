@@ -6,10 +6,12 @@
  */
 
 package io.harness.freeze.service.impl;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.events.FreezeEntityCreateEvent;
@@ -57,6 +59,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Singleton
 @Slf4j
 public class FreezeCRUDServiceImpl implements FreezeCRUDService {

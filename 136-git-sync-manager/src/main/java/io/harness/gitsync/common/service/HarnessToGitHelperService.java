@@ -35,6 +35,8 @@ import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.UpdateFileResponse;
 import io.harness.gitsync.UserDetailsRequest;
 import io.harness.gitsync.UserDetailsResponse;
+import io.harness.gitsync.ValidateRepoRequest;
+import io.harness.gitsync.ValidateRepoResponse;
 import io.harness.security.dto.UserPrincipal;
 
 @OwnedBy(DX)
@@ -70,4 +72,6 @@ public interface HarnessToGitHelperService {
   GetBatchFilesResponse getBatchFiles(GetBatchFilesRequest getBatchFilesRequest);
 
   UserDetailsResponse getUserDetails(UserDetailsRequest request);
+
+  ValidateRepoResponse validateRepo(ValidateRepoRequest request);
 }

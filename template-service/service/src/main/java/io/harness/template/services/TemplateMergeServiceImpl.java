@@ -6,15 +6,17 @@
  */
 
 package io.harness.template.services;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.template.resources.beans.NGTemplateConstants.GIT_BRANCH;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_REF;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -49,6 +51,9 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_GITX,
+        HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class TemplateMergeServiceImpl implements TemplateMergeService {

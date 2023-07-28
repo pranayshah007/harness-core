@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.ssh;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.execution.ExecutionInfoUtility.getScope;
 import static io.harness.cdng.ssh.CommandUnitSpecType.COPY;
@@ -32,7 +31,10 @@ import static io.harness.utils.IdentifierRefHelper.getIdentifierRef;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.common.VariablesSweepingOutput;
@@ -117,6 +119,9 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_AMI_ASG, HarnessModuleComponent.CDS_TRADITIONAL,
+        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Singleton
 @OwnedBy(CDP)
 @Slf4j

@@ -26,6 +26,7 @@ import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
+import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.sidekick.DemoActivitySideKickData;
 import io.harness.cvng.core.entities.CVConfig;
@@ -42,6 +43,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Executio
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.opaclient.OpaServiceClient;
@@ -82,7 +84,7 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -102,6 +104,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   private Map<MonitoredServiceSpecType, PipelineStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
 
   @Inject private OpaServiceClient opaServiceClient;
+
+  @Inject private NextGenService nextGenService;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
@@ -241,7 +245,44 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
             .testNodeRegExPattern(getValueFromParameterisedField(cvngStepParameter.getTestNodeRegExPattern(), null))
             .controlNodeRegExPattern(
                 getValueFromParameterisedField(cvngStepParameter.getControlNodeRegExPattern(), null));
-    return serviceInstanceDetailsBuilder.build();
+
+    List<StepExecutionInstanceInfo> stepExecutionInstanceInfos = null;
+    try {
+      stepExecutionInstanceInfos = nextGenService.getCDStageInstanceInfo(AmbianceUtils.getAccountId(ambiance),
+          AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+          AmbianceUtils.getPipelineExecutionIdentifier(ambiance),
+          AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance));
+    } catch (Exception ex) {
+      log.error("Error while getting Service Instances from CD", ex);
+    }
+    if (CollectionUtils.isEmpty(stepExecutionInstanceInfos)) {
+      return serviceInstanceDetailsBuilder.build();
+    }
+
+    List<String> instanceNamesAfterDeployment =
+        CollectionUtils
+            .emptyIfNull(
+                stepExecutionInstanceInfos.get(stepExecutionInstanceInfos.size() - 1).getServiceInstancesAfter())
+            .stream()
+            .map(stepInstanceInfo -> stepInstanceInfo.getInstanceName())
+            .collect(Collectors.toList());
+    List<String> instanceNamesBeforeDeployment =
+        CollectionUtils.emptyIfNull(stepExecutionInstanceInfos.get(0).getServiceInstancesBefore())
+            .stream()
+            .map(stepInstanceInfo -> stepInstanceInfo.getInstanceName())
+            .collect(Collectors.toList());
+    List<String> deployedServiceInstanceDetails =
+        stepExecutionInstanceInfos.stream()
+            .flatMap(stepExecutionInstanceInfo
+                -> stepExecutionInstanceInfo.getDeployedServiceInstances().stream().map(
+                    stepInstanceInfo -> stepInstanceInfo.getInstanceName()))
+            .filter(instanceName -> instanceNamesAfterDeployment.contains(instanceName))
+            .distinct()
+            .collect(Collectors.toList());
+    return serviceInstanceDetailsBuilder.deployedServiceInstances(deployedServiceInstanceDetails)
+        .serviceInstancesBeforeDeployment(instanceNamesBeforeDeployment)
+        .serviceInstancesAfterDeployment(instanceNamesAfterDeployment)
+        .build();
   }
 
   private <T> T getValueFromParameterisedField(ParameterField<T> parameterField, T defaultValue) {

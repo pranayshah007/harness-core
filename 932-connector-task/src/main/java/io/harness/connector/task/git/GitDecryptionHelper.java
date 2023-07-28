@@ -13,7 +13,6 @@ import static io.harness.connector.helper.GitApiAccessDecryptionHelper.hasApiAcc
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
-import io.harness.connector.helper.GitAuthenticationDecryptionHelper;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitAuthenticationDTO;

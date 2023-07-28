@@ -3931,6 +3931,20 @@ go_repository(
     version = "v5.0.0",
 )
 
+go_repository(
+    name = "com_github_redis_go_redis_v9",
+    importpath = "github.com/redis/go-redis/v9",
+    sum = "h1:CuQcn5HIEeK7BgElubPP8CGtE0KakrnbBSTLjathl5o=",
+    version = "v9.0.5",
+)
+
+go_repository(
+    name = "com_github_go_redis_redismock_v9",
+    importpath = "github.com/go-redis/redismock/v9",
+    sum = "h1:mtHQi2l51lCmXIbTRTqb1EiHYe9tL5Yk5oorlSJJqR0=",
+    version = "v9.0.3",
+)
+
 rust_repositories(
     edition = "2018",
     version = "1.49.0",
