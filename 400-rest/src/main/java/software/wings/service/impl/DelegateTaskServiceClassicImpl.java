@@ -48,6 +48,7 @@ import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingInt;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -207,6 +208,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -289,14 +291,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
-
-  final Comparator<Map.Entry<String, Long>> delegateTaskCountComparator = (d1, d2) -> {
-    long diff = d1.getValue() - d2.getValue();
-    if (diff == 0) {
-      return (int) Math.max(random.nextLong(), 0);
-    }
-    return (int) diff;
-  };
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
       CacheBuilder.newBuilder()
@@ -798,10 +792,29 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                            .project(DelegateTaskKeys.uuid, true)
                                            .project(DelegateTaskKeys.delegateId, true)
                                            .asList();
-    Map<String, Long> tasksCount =
-        delegateTasks.stream().collect(groupingBy(DelegateTask::getDelegateId, Collectors.counting()));
-    eligibleListOfDelegates.forEach(delegate -> tasksCount.computeIfAbsent(delegate, key -> 0L));
-    return tasksCount.entrySet().stream().sorted(delegateTaskCountComparator).map(Map.Entry::getKey).collect(toList());
+    Map<String, Integer> tasksCount =
+        delegateTasks.stream().collect(groupingBy(DelegateTask::getDelegateId, summingInt(delegateTaskCount -> 1)));
+    eligibleListOfDelegates.forEach(delegate -> tasksCount.computeIfAbsent(delegate, key -> 0));
+
+    TreeMap<Integer, List<String>> taskCountToDelegates = tasksCount.entrySet().stream().collect(Collectors.groupingBy(
+        Map.Entry::getValue, TreeMap::new, Collectors.mapping(Map.Entry::getKey, Collectors.toList())));
+    // In order to improve randomness on delegate ids with same task counts, we apply the following
+    // 1: Add first map entry value(list of delegateIds) to an output list,
+    // 2: Do swap/shuffle if list has more than one delegateIds. Note we only concerned about shuffling delegateIds with
+    // min count
+    // 3: Add rest of map entry values to output list. 4:
+    List<String> delegateIds = new ArrayList<>(taskCountToDelegates.firstEntry().getValue());
+    if (delegateIds.size() > 1) {
+      Collections.swap(delegateIds, 0, random.nextInt(delegateIds.size()));
+      Collections.shuffle(delegateIds);
+    }
+
+    delegateIds.addAll(taskCountToDelegates.entrySet()
+                           .stream()
+                           .skip(1) // Skip the first entry
+                           .flatMap(entry -> entry.getValue().stream())
+                           .collect(Collectors.toList()));
+    return delegateIds;
   }
 
   private void handleTaskFailureResponse(DelegateTask task, Exception exception) {
