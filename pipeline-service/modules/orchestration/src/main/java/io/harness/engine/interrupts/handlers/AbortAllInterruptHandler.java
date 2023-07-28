@@ -135,7 +135,7 @@ public class AbortAllInterruptHandler extends InterruptPropagatorHandler impleme
     }
 
     waitNotifyEngine.waitForAllOnInList(
-        publisherName, AllInterruptCallback.builder().interrupt(updatedInterrupt).build(), notifyIds);
+        publisherName, AbortAllInterruptCallback.builder().interrupt(updatedInterrupt).build(), notifyIds);
     return updatedInterrupt;
   }
 

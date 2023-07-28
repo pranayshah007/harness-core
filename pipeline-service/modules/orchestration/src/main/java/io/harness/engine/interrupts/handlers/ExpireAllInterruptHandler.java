@@ -6,18 +6,14 @@
  */
 
 package io.harness.engine.interrupts.handlers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.CollectionUtils.isPresent;
 import static io.harness.eraro.ErrorCode.ABORT_ALL_ALREADY;
 import static io.harness.eraro.ErrorCode.EXPIRE_ALL_ALREADY;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 
-import io.harness.OrchestrationPublisherName;
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptHandler;
@@ -26,23 +22,18 @@ import io.harness.engine.interrupts.helpers.ExpiryHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
-import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
-@CodePulse(
-    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implements InterruptHandler {
@@ -51,8 +42,6 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private ExpiryHelper expiryHelper;
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
-  @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName;
-  @Inject private WaitNotifyEngine waitNotifyEngine;
 
   @Override
   public Interrupt registerInterrupt(Interrupt interrupt) {
@@ -118,26 +107,5 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
   @Override
   public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
     return handleChildNodes(interrupt, nodeExecutionId);
-  }
-
-  protected Interrupt processDiscontinuedInstances(
-      Interrupt updatedInterrupt, List<NodeExecution> discontinuingNodeExecutions) {
-    List<String> notifyIds = new ArrayList<>();
-    try (AutoLogContext ignore = updatedInterrupt.autoLogContext()) {
-      for (NodeExecution discontinuingNodeExecution : discontinuingNodeExecutions) {
-        log.info("Trying to expire discontinuing instance {}", discontinuingNodeExecution.getUuid());
-        handleMarkedInstance(discontinuingNodeExecution, updatedInterrupt);
-        notifyIds.add(discontinuingNodeExecution.getUuid() + "|" + updatedInterrupt.getUuid());
-      }
-
-    } catch (Exception ex) {
-      log.info("Exception occurred while expiring instance marking interrupt as PROCESSED_UNSUCCESSFULLY");
-      interruptService.markProcessed(updatedInterrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
-      throw ex;
-    }
-
-    waitNotifyEngine.waitForAllOnInList(
-        publisherName, AllInterruptCallback.builder().interrupt(updatedInterrupt).build(), notifyIds);
-    return updatedInterrupt;
   }
 }
