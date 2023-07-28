@@ -170,14 +170,17 @@ public class VerificationJobInstanceServiceInstanceUtils {
 
   private List<String> getControlNodesForBeforeAfterComparison(ServiceInstanceDetails serviceInstanceDetails) {
     return new ArrayList<>(getRegExFilterdControlNodes(
-        new HashSet<>(serviceInstanceDetails.getServiceInstancesBeforeDeployment()), serviceInstanceDetails));
+        new HashSet<>(CollectionUtils.emptyIfNull(serviceInstanceDetails.getServiceInstancesBeforeDeployment())),
+        serviceInstanceDetails));
   }
 
   private List<String> getControlNodesForCanaryComparison(ServiceInstanceDetails serviceInstanceDetails) {
     return new ArrayList<>(getRegExFilterdControlNodes(
         CollectionUtils.emptyIfNull(serviceInstanceDetails.getServiceInstancesAfterDeployment())
             .stream()
-            .filter(si -> serviceInstanceDetails.getServiceInstancesBeforeDeployment().contains(si))
+            .filter(si
+                -> CollectionUtils.emptyIfNull(serviceInstanceDetails.getServiceInstancesBeforeDeployment())
+                       .contains(si))
             .filter(si -> !serviceInstanceDetails.getDeployedServiceInstances().contains(si))
             .collect(Collectors.toSet()),
         serviceInstanceDetails));
