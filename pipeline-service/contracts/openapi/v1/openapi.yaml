@@ -1096,7 +1096,6 @@ components:
         git_details:
           $ref: '#/components/schemas/GitCreateDetails'
       required:
-        - pipeline_yaml
         - identifier
         - name
     PipelineCreateResponseBody:
