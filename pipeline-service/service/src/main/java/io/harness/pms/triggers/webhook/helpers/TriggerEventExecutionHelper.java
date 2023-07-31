@@ -67,6 +67,7 @@ import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistratio
 import io.harness.ngtriggers.beans.response.TargetExecutionSummary;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.helpers.WebhookEventMapperHelper;
@@ -226,14 +227,22 @@ public class TriggerEventExecutionHelper {
     }
     ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
     List<HeaderConfig> headerConfigList = triggerWebhookEvent.getHeaders();
+
+    WebhookTriggerConfigV2 webhookTriggerConfigV2 =
+        (WebhookTriggerConfigV2) triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
+    String connectorRef = null;
+    if (webhookTriggerConfigV2.getSpec().fetchGitAware() != null
+        && webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef() != null) {
+      connectorRef = webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef();
+    }
     eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
-        getTriggerPayloadForWebhookTrigger(parseWebhookResponse, triggerWebhookEvent, yamlVersion),
+        getTriggerPayloadForWebhookTrigger(parseWebhookResponse, triggerWebhookEvent, yamlVersion, connectorRef),
         triggerWebhookEvent.getPayload(), headerConfigList));
   }
 
   @VisibleForTesting
-  TriggerPayload getTriggerPayloadForWebhookTrigger(
-      ParseWebhookResponse parseWebhookResponse, TriggerWebhookEvent triggerWebhookEvent, long version) {
+  TriggerPayload getTriggerPayloadForWebhookTrigger(ParseWebhookResponse parseWebhookResponse,
+      TriggerWebhookEvent triggerWebhookEvent, long version, String connectorRef) {
     Builder builder = TriggerPayload.newBuilder().setType(Type.WEBHOOK);
 
     if (CUSTOM.getEntityMetadataName().equalsIgnoreCase(triggerWebhookEvent.getSourceRepoType())) {
@@ -263,6 +272,7 @@ public class TriggerEventExecutionHelper {
       }
     }
     builder.setVersion(version);
+    builder.setConnectorRef(connectorRef);
 
     return builder.setType(WEBHOOK).build();
   }

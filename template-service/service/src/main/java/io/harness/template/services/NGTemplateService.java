@@ -75,6 +75,8 @@ public interface NGTemplateService {
 
   Page<TemplateEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches);
+  Page<GlobalTemplateEntity> listGlobalTemplate(Criteria criteria, Pageable pageable, String accountId,
+      String orgIdentifier, String projectIdentifier, Boolean getDistinctFromBranches);
 
   Page<TemplateEntity> listTemplateMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       FilterParamsDTO filterParamsDTO, PageParamsDTO pageParamsDTO);
@@ -131,7 +133,8 @@ public interface NGTemplateService {
       String repoName, String branch, String fallBackBranch, String connectorRef, boolean loadFromCache);
   List<TemplateWrapperResponseDTO> createGlobalTemplate(String accountId, String orgId, String projectId,
       String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments,
-      boolean isNewTemplate);
+      boolean isNewTemplate, String connectorRef);
   List<TemplateWrapperResponseDTO> updateGlobalTemplate(String accountId, String orgId, String projectId,
-      String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments);
+      String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments,
+      String connectorRef);
 }

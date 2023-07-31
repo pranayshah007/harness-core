@@ -1062,6 +1062,19 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
+  public Page<GlobalTemplateEntity> listGlobalTemplate(Criteria criteria, Pageable pageable, String accountId,
+      String orgIdentifier, String projectIdentifier, Boolean getDistinctFromBranches) {
+    enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
+    if (Boolean.TRUE.equals(getDistinctFromBranches)
+        && gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
+      return templateRepository.findAllGlobalTemplates(
+          criteria, pageable, accountId, orgIdentifier, projectIdentifier, true);
+    }
+    return templateRepository.findAllGlobalTemplates(
+        criteria, pageable, accountId, orgIdentifier, projectIdentifier, false);
+  }
+
+  @Override
   public Page<TemplateEntity> listTemplateMetadata(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, FilterParamsDTO filterParamsDTO, PageParamsDTO pageParamsDTO) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountIdentifier);
@@ -2076,11 +2089,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Override
   public List<TemplateWrapperResponseDTO> createGlobalTemplate(String accountId, String orgId, String projectId,
       String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments,
-      boolean isNewTemplate) {
+      boolean isNewTemplate, String connectorRef) {
     List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = new ArrayList<>();
     for (String filePath : filePaths) {
       GlobalTemplateEntity globalTemplateEntity =
-          getGitContent(accountId, orgId, projectId, filePath, repoName, branch, "master", "GitShivamtest", false);
+          getGitContent(accountId, orgId, projectId, filePath, repoName, branch, "master", connectorRef, false);
       globalTemplateEntity.setReadMe("Readme");
       globalTemplateEntity =
           NGTemplateDtoMapper.toGlobalTemplateEntity(accountId, orgId, projectId, globalTemplateEntity.getYaml());
@@ -2097,11 +2110,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Override
   public List<TemplateWrapperResponseDTO> updateGlobalTemplate(String accountId, String orgId, String projectId,
-      String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments) {
+      String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments,
+      String connectorRef) {
     List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = new ArrayList<>();
     for (String filePath : filePaths) {
       GlobalTemplateEntity globalTemplateEntity =
-          getGitContent(accountId, orgId, projectId, filePath, repoName, branch, "master", "GitShivamtest", false);
+          getGitContent(accountId, orgId, projectId, filePath, repoName, branch, "master", connectorRef, false);
       globalTemplateEntity.setReadMe("Readme");
       globalTemplateEntity =
           NGTemplateDtoMapper.toGlobalTemplateEntity(accountId, orgId, projectId, globalTemplateEntity.getYaml());

@@ -79,6 +79,8 @@ public interface NGTemplateRepositoryCustom {
 
   Page<TemplateEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, boolean getDistinctFromBranches);
+  Page<GlobalTemplateEntity> findAllGlobalTemplates(Criteria criteria, Pageable pageable, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches);
 
   Page<TemplateEntity> findAll(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Pageable pageable);

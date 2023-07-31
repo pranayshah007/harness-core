@@ -70,6 +70,7 @@ public interface Constants {
   String EVENT = "event";
   String PR_NUMBER = "prNumber";
   String COMMIT_SHA = "commitSha";
+  String CONNECTOR_REF = "connectorRef";
   String BASE_COMMIT_SHA = "baseCommitSha";
   String TYPE = "type";
   String PAYLOAD = "payload";

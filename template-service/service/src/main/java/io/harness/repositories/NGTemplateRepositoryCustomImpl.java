@@ -503,6 +503,22 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
+  public Page<GlobalTemplateEntity> findAllGlobalTemplates(Criteria criteria, Pageable pageable,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches) {
+    if (getDistinctFromBranches) {
+      return EntityDistinctElementHelper.getDistinctElementPage(mongoTemplate, criteria, pageable,
+          GlobalTemplateEntity.class, TemplateEntityKeys.accountId, TemplateEntityKeys.orgIdentifier,
+          TemplateEntityKeys.projectIdentifier, TemplateEntityKeys.identifier, TemplateEntityKeys.versionLabel);
+    }
+    List<GlobalTemplateEntity> templateEntities = gitAwarePersistence.find(
+        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, GlobalTemplateEntity.class);
+    return PageableExecutionUtils.getPage(templateEntities, pageable,
+        ()
+            -> gitAwarePersistence.count(
+                criteria, projectIdentifier, orgIdentifier, accountIdentifier, GlobalTemplateEntity.class));
+  }
+
+  @Override
   public Page<TemplateEntity> findAll(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Pageable pageable) {
     Query query = new Query(criteria).with(pageable);
