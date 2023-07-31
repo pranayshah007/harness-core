@@ -69,7 +69,7 @@ function copy_change_data_capture_jars(){
 
 	cp ${BAZEL_BIN}/110-change-data-capture/module_deploy.jar change-data-capture.jar
 	cp ../../110-change-data-capture/config.yml .
-	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-cie-jdk Dockerfile-cie-jdk
+	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-cie-jdk-multistage Dockerfile-cie-jdk
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/change-data-capture/scripts/ .
