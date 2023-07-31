@@ -30,6 +30,9 @@ public class NGTemplateConstants {
   public static final String STAGE_TYPE = "stageType";
   public static final String STAGES = "stages";
   public static final String GIT_BRANCH = "gitBranch";
+  public static final String FILE_ADDED = "added";
+  public static final String FILE_REMOVED = "removed";
+  public static final String FILE_MODIFIED = "modified";
   public static final String API_SAMPLE_TEMPLATE_YAML = "template:\n"
       + "  name: pipelineTemplate\n"
       + "  identifier: pipelineTemplate\n"

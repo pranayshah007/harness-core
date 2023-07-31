@@ -46,6 +46,7 @@ import io.harness.persistence.gitaware.GitAware;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -514,6 +515,15 @@ public class NGTemplateServiceHelper {
     }
   }
 
+  public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    return templateRepository
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForGlobalTemplate(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly,
+            loadFromCache, loadFromFallbackBranch);
+  }
+
   /**
    * In both the request and the response, the key will remain the same, which will be a combination of the accountId,
    * OrgId, ProjectId, TemplateId and Version There can be 2 types of error cases:
@@ -563,6 +573,13 @@ public class NGTemplateServiceHelper {
         templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits, false);
   }
 
+  public GlobalTemplateEntity makeTemplateUpdateCall(GlobalTemplateEntity templateToUpdate,
+      GlobalTemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
+      TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
+    return makeUpdateCall(
+        templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits, true);
+  }
+
   public TemplateEntity makeTemplateUpdateInDB(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
     return makeUpdateCall(
@@ -592,6 +609,47 @@ public class NGTemplateServiceHelper {
             templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(),
             templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()));
       }
+      return updatedTemplate;
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(
+          String.format(
+              "Unexpected exception occurred while updating template [%s] and versionLabel [%s], under Project[%s], Organization [%s]",
+              templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(),
+              templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()),
+          e);
+      throw e;
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Unexpected exception occurred while updating template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s]",
+              templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(),
+              templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()),
+          e);
+      throw new InvalidRequestException(String.format(
+          "Unexpected exception occurred while updating template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] : %s",
+          templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(), templateToUpdate.getProjectIdentifier(),
+          templateToUpdate.getOrgIdentifier(), e.getMessage()));
+    }
+  }
+
+  private GlobalTemplateEntity makeUpdateCall(GlobalTemplateEntity templateToUpdate,
+      GlobalTemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
+      TemplateUpdateEventType templateUpdateEventType, boolean skipAudits, boolean makeOnlyDbUpdate) {
+    try {
+      GlobalTemplateEntity updatedTemplate = null;
+
+      if (makeOnlyDbUpdate) {
+        updatedTemplate = templateRepository.updateTemplateInDb(
+            templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits);
+      }
+
+      if (updatedTemplate == null) {
+        throw new InvalidRequestException(format(
+            "Unexpected exception occurred while updating template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] could not be updated.",
+            templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(),
+            templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()));
+      }
+
       return updatedTemplate;
     } catch (ExplanationException | HintException | ScmException e) {
       log.error(

@@ -59,7 +59,6 @@ import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.CustomDeploymentVariablesUtils;
@@ -559,22 +558,5 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
             .connectorRef(request.getConnectorRef())
             .build());
     return ResponseDTO.newResponse(TemplateUpdateGitMetadataResponse.builder().status(true).build());
-  }
-
-  @Override
-  public ResponseDTO<TemplateWrapperResponseDTO> createGlobalTemplate(@NotNull String accountId,
-      @OrgIdentifier String orgId, @ProjectIdentifier String projectId, GitEntityCreateInfoDTO gitEntityCreateInfo,
-      @NotNull String webhookEvent, boolean setDefaultTemplate, String comments, boolean isNewTemplate) {
-    GlobalTemplateEntity templateEntity =
-        templateService.getGitContent(accountId, orgId, projectId, "", "", false, false);
-    templateEntity = NGTemplateDtoMapper.toGlobalTemplateEntity(accountId, orgId, projectId, templateEntity.getYaml());
-    GlobalTemplateEntity createdTemplate =
-        templateService.create(templateEntity, setDefaultTemplate, comments, isNewTemplate);
-    TemplateWrapperResponseDTO templateWrapperResponseDTO =
-        TemplateWrapperResponseDTO.builder()
-            .isValid(true)
-            .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(createdTemplate))
-            .build();
-    return ResponseDTO.newResponse(createdTemplate.getVersion().toString(), templateWrapperResponseDTO);
   }
 }

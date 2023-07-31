@@ -39,6 +39,11 @@ public interface NGTemplateRepositoryCustom {
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
       boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
 
+  Optional<GlobalTemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForGlobalTemplate(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
+      boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
+
   Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted);
@@ -60,6 +65,9 @@ public interface NGTemplateRepositoryCustom {
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
 
   TemplateEntity updateTemplateInDb(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,
+      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
+
+  GlobalTemplateEntity updateTemplateInDb(GlobalTemplateEntity templateEntity, GlobalTemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
 
   TemplateEntity updateTemplateYaml(TemplateEntity templateEntity, TemplateEntity oldTemplateEntity,

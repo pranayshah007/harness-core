@@ -104,6 +104,7 @@ import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.TemplateImportRequestDTO;
 import io.harness.template.resources.beans.TemplateListRepoResponse;
 import io.harness.template.resources.beans.TemplateMoveConfigResponse;
+import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 import io.harness.template.resources.beans.UpdateGitDetailsParams;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.utils.TemplateUtils;
@@ -470,6 +471,17 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return false;
   }
 
+  private boolean doPublishSetupUsages(GlobalTemplateEntity templateEntity) {
+    boolean defaultBranchCheckForGitX = GitAwareContextHelper.getIsDefaultBranchFromGitEntityInfo();
+
+    if (templateEntity.getStoreType() == null || templateEntity.getStoreType().equals(StoreType.INLINE)
+        || (templateEntity.getStoreType() == StoreType.REMOTE && defaultBranchCheckForGitX)) {
+      return true;
+    }
+
+    return false;
+  }
+
   private void validateTemplateTypeAndChildTypeOfTemplate(
       TemplateEntity templateEntity, List<TemplateEntity> templates) {
     if (EmptyPredicate.isNotEmpty(templates)) {
@@ -516,6 +528,20 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         templateEntity.withYaml(templateMergeResponseDTO.getMergedPipelineYaml()));
   }
 
+  private void applyTemplatesToYamlAndValidateSchema(GlobalTemplateEntity templateEntity) {
+    TemplateMergeResponseDTO templateMergeResponseDTO = null;
+    templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
+        templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
+        YamlUtils.readAsJsonNode(templateEntity.getYaml()), false, false, false);
+    populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
+    checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+        templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
+
+    // validate schema on resolved yaml to validate template inputs value as well.
+    ngTemplateSchemaService.validateYamlSchemaInternal(
+        templateEntity.withYaml(templateMergeResponseDTO.getMergedPipelineYaml()));
+  }
+
   private void populateLinkedTemplatesModules(
       TemplateEntity templateEntity, TemplateMergeResponseDTO templateMergeResponseDTO) {
     if (EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
@@ -527,6 +553,21 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         }
       });
       templateEntity.setModules(templateModules);
+    }
+  }
+
+  private void populateLinkedTemplatesModules(
+      GlobalTemplateEntity globalTemplateEntity, TemplateMergeResponseDTO templateMergeResponseDTO) {
+    if (EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
+      Set<String> templateModules = EmptyPredicate.isNotEmpty(globalTemplateEntity.getModules())
+          ? globalTemplateEntity.getModules()
+          : new HashSet<>();
+      templateMergeResponseDTO.getTemplateReferenceSummaries().forEach(templateReferenceSummary -> {
+        if (EmptyPredicate.isNotEmpty(templateReferenceSummary.getModuleInfo())) {
+          templateModules.addAll(templateReferenceSummary.getModuleInfo());
+        }
+      });
+      globalTemplateEntity.setModules(templateModules);
     }
   }
 
@@ -557,6 +598,31 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           SetupUsageParams.builder().templateEntity(templateEntity).build(), referredEntities);
     }
 
+    return template;
+  }
+
+  @Override
+  public GlobalTemplateEntity updateTemplateEntity(
+      GlobalTemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments) {
+    enforcementClientService.checkAvailability(
+        FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
+    TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
+        templateEntity.getProjectIdentifier(), templateEntity.getRepo(), templateEntity.getConnectorRef());
+    // apply templates to template yaml for validations and populating module info
+    applyTemplatesToYamlAndValidateSchema(templateEntity);
+    // calculate the references, returns error if any errors occur while fetching references
+
+    GlobalTemplateEntity template = null;
+
+    template = transactionHelper.performTransaction(() -> {
+      makePreviousLastUpdatedTemplateFalse(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
+          templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
+
+      return updateTemplateHelper(templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
+          templateEntity, changeType, setDefaultTemplate, true, comments, null);
+    });
+
+    GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
     return template;
   }
 
@@ -644,6 +710,66 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       // Updating the stable template version.
       if (setStableTemplate && !templateToUpdate.isStableTemplate()) {
         TemplateEntity templateToUpdateWithStable = templateToUpdate.withStableTemplate(true);
+        String finalComments = comments;
+        return transactionHelper.performTransaction(() -> {
+          makePreviousStableTemplateFalse(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
+              templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(),
+              templateToUpdate.getVersionLabel());
+          return templateServiceHelper.makeTemplateUpdateCall(templateToUpdateWithStable, oldTemplateEntity, changeType,
+              finalComments, TemplateUpdateEventType.TEMPLATE_STABLE_TRUE_WITH_YAML_CHANGE_EVENT, false);
+        });
+      }
+      return templateServiceHelper.makeTemplateUpdateCall(templateToUpdate, oldTemplateEntity, changeType, comments,
+          eventType != null ? eventType : TemplateUpdateEventType.OTHERS_EVENT, false);
+    } catch (DuplicateKeyException ex) {
+      throw new DuplicateFieldException(
+          format(DUP_KEY_EXP_FORMAT_STRING, templateEntity.getIdentifier(), templateEntity.getVersionLabel(),
+              templateEntity.getProjectIdentifier(), templateEntity.getOrgIdentifier()),
+          USER_SRE, ex);
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while updating template [%s] of versionLabel [%s]", templateEntity.getIdentifier(),
+                    templateEntity.getVersionLabel()),
+          e);
+      throw e;
+    } catch (Exception e) {
+      log.error(String.format("Error while saving template [%s] of versionLabel [%s]", templateEntity.getIdentifier(),
+                    templateEntity.getVersionLabel()),
+          e);
+      throw new InvalidRequestException(
+          String.format("Error while saving template [%s] of versionLabel [%s] : [%s]", templateEntity.getIdentifier(),
+              templateEntity.getVersionLabel(), e.getMessage()),
+          e);
+    }
+  }
+
+  private GlobalTemplateEntity updateTemplateHelper(String oldOrgIdentifier, String oldProjectIdentifier,
+      GlobalTemplateEntity templateEntity, ChangeType changeType, boolean setStableTemplate,
+      boolean updateLastUpdatedTemplateFlag, String comments, TemplateUpdateEventType eventType) {
+    try {
+      NGTemplateServiceHelper.validatePresenceOfRequiredFields(
+          templateEntity.getAccountId(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
+
+      comments = getActualComments(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+          templateEntity.getProjectIdentifier(), comments);
+      GlobalTemplateEntity oldTemplateEntity =
+          getAndValidateOldTemplateEntity(templateEntity, oldOrgIdentifier, oldProjectIdentifier);
+
+      GlobalTemplateEntity templateToUpdate =
+          oldTemplateEntity.withYaml(templateEntity.getYaml())
+              .withTemplateScope(templateEntity.getTemplateScope())
+              .withName(templateEntity.getName())
+              .withDescription(templateEntity.getDescription())
+              .withTags(templateEntity.getTags())
+              .withOrgIdentifier(templateEntity.getOrgIdentifier())
+              .withProjectIdentifier(templateEntity.getProjectIdentifier())
+              .withIcon(templateEntity.getIcon())
+              .withFullyQualifiedIdentifier(templateEntity.getFullyQualifiedIdentifier())
+              .withLastUpdatedTemplate(updateLastUpdatedTemplateFlag)
+              .withIsEntityInvalid(false);
+
+      // Updating the stable template version.
+      if (setStableTemplate && !templateToUpdate.isStableTemplate()) {
+        GlobalTemplateEntity templateToUpdateWithStable = templateToUpdate.withStableTemplate(true);
         String finalComments = comments;
         return transactionHelper.performTransaction(() -> {
           makePreviousStableTemplateFalse(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
@@ -1608,6 +1734,43 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return oldTemplateEntity;
   }
 
+  private GlobalTemplateEntity getAndValidateOldTemplateEntity(
+      GlobalTemplateEntity templateEntity, String oldOrgIdentifier, String oldProjectIdentifier) {
+    TemplateUtils.setupGitParentEntityDetails(
+        templateEntity.getAccountIdentifier(), oldOrgIdentifier, oldProjectIdentifier, null, null);
+    Optional<GlobalTemplateEntity> optionalTemplate = templateServiceHelper.getGlobalTemplateWithVersionLabel(
+        templateEntity.getAccountId(), oldOrgIdentifier, oldProjectIdentifier, templateEntity.getIdentifier(),
+        templateEntity.getVersionLabel(), false, false, false, false);
+
+    if (!optionalTemplate.isPresent()) {
+      throw new InvalidRequestException(format(
+          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s] doesn't exist.",
+          templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getProjectIdentifier(),
+          templateEntity.getOrgIdentifier()));
+    }
+    GlobalTemplateEntity oldTemplateEntity = optionalTemplate.get();
+    if (!oldTemplateEntity.getTemplateEntityType().equals(templateEntity.getTemplateEntityType())) {
+      throw new InvalidRequestException(format(
+          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s] cannot update the template type, type is [%s].",
+          templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getProjectIdentifier(),
+          templateEntity.getOrgIdentifier(), oldTemplateEntity.getTemplateEntityType()));
+    }
+
+    if (EmptyPredicate.isEmpty(oldTemplateEntity.getChildType())
+        && EmptyPredicate.isNotEmpty(templateEntity.getChildType())) {
+      return oldTemplateEntity.withChildType(templateEntity.getChildType());
+    }
+
+    if (!((oldTemplateEntity.getChildType() == null && templateEntity.getChildType() == null)
+            || oldTemplateEntity.getChildType().equals(templateEntity.getChildType()))) {
+      throw new InvalidRequestException(format(
+          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s] cannot update the internal template type, type is [%s].",
+          templateEntity.getIdentifier(), templateEntity.getVersionLabel(), templateEntity.getProjectIdentifier(),
+          templateEntity.getOrgIdentifier(), oldTemplateEntity.getChildType()));
+    }
+    return oldTemplateEntity;
+  }
+
   private String getErrorMessage(String templateIdentifier, String versionLabel) {
     if (EmptyPredicate.isEmpty(versionLabel)) {
       return format("Error while retrieving stable template with identifier [%s] ", templateIdentifier);
@@ -1889,24 +2052,68 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Override
   public GlobalTemplateEntity getGitContent(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache) {
-    return (GlobalTemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(
-        GlobalTemplateEntity.builder()
-            .branch("master")
-            .fallBackBranch("master")
-            .repo("shivam-test")
-            .filePath(".harness/TestPipeinet_v1.yaml")
-            .build(),
+      String filePath, String repoName, String branch, String fallBackBranch, String connectorRef,
+      boolean loadFromCache) {
+    return (GlobalTemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(GlobalTemplateEntity.builder()
+                                                                                 .branch(branch)
+                                                                                 .fallBackBranch(fallBackBranch)
+                                                                                 .repo(repoName)
+                                                                                 .filePath(filePath)
+                                                                                 .build(),
         io.harness.beans.Scope.of(accountId, orgIdentifier, projectIdentifier),
         GitContextRequestParams.builder()
-            .branchName("master")
-            .connectorRef("GitShivamtest")
-            .filePath(".harness/TestPipeinet_v1.yaml")
-            .repoName("shivam-test")
+            .branchName(branch)
+            .connectorRef(connectorRef)
+            .filePath(filePath)
+            .repoName(repoName)
             .entityType(EntityType.TEMPLATE)
             .loadFromCache(loadFromCache)
             .getOnlyFileContent(TemplateUtils.isExecutionFlow())
             .build(),
         Collections.emptyMap());
+  }
+
+  @Override
+  public List<TemplateWrapperResponseDTO> createGlobalTemplate(String accountId, String orgId, String projectId,
+      String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments,
+      boolean isNewTemplate) {
+    List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = new ArrayList<>();
+    for (String filePath : filePaths) {
+      GlobalTemplateEntity globalTemplateEntity =
+          getGitContent(accountId, orgId, projectId, filePath, repoName, branch, "master", "GitShivamtest", false);
+      globalTemplateEntity.setReadMe("Readme");
+      globalTemplateEntity =
+          NGTemplateDtoMapper.toGlobalTemplateEntity(accountId, orgId, projectId, globalTemplateEntity.getYaml());
+      GlobalTemplateEntity createdTemplate = create(globalTemplateEntity, setDefaultTemplate, comments, isNewTemplate);
+      TemplateWrapperResponseDTO templateWrapperResponseDTO =
+          TemplateWrapperResponseDTO.builder()
+              .isValid(true)
+              .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(createdTemplate))
+              .build();
+      templateWrapperResponseDTOS.add(templateWrapperResponseDTO);
+    }
+    return templateWrapperResponseDTOS;
+  }
+
+  @Override
+  public List<TemplateWrapperResponseDTO> updateGlobalTemplate(String accountId, String orgId, String projectId,
+      String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments) {
+    List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = new ArrayList<>();
+    for (String filePath : filePaths) {
+      GlobalTemplateEntity globalTemplateEntity =
+          getGitContent(accountId, orgId, projectId, filePath, repoName, branch, "master", "GitShivamtest", false);
+      globalTemplateEntity.setReadMe("Readme");
+      globalTemplateEntity =
+          NGTemplateDtoMapper.toGlobalTemplateEntity(accountId, orgId, projectId, globalTemplateEntity.getYaml());
+      GlobalTemplateEntity updateTemplate =
+          updateTemplateEntity(globalTemplateEntity, ChangeType.MODIFY, setDefaultTemplate, comments);
+      TemplateWrapperResponseDTO templateWrapperResponseDTO =
+          TemplateWrapperResponseDTO.builder()
+              .isValid(true)
+              .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(updateTemplate))
+              .build();
+      templateWrapperResponseDTOS.add(templateWrapperResponseDTO);
+    }
+    return templateWrapperResponseDTOS;
   }
 }

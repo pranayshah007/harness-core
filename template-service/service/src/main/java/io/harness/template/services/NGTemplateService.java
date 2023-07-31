@@ -27,8 +27,11 @@ import io.harness.template.resources.beans.PageParamsDTO;
 import io.harness.template.resources.beans.TemplateImportRequestDTO;
 import io.harness.template.resources.beans.TemplateListRepoResponse;
 import io.harness.template.resources.beans.TemplateMoveConfigResponse;
+import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 import io.harness.template.resources.beans.UpdateGitDetailsParams;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -45,6 +48,8 @@ public interface NGTemplateService {
 
   TemplateEntity updateTemplateEntity(
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments);
+  GlobalTemplateEntity updateTemplateEntity(
+      GlobalTemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments);
 
   TemplateEntity updateTemplateEntity(TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate,
       String comments, TemplateResponseDTO templateResponse);
@@ -122,6 +127,11 @@ public interface NGTemplateService {
       String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams);
   GovernanceMetadata validateGovernanceRules(TemplateEntity templateEntity);
   void populateSetupUsageAsync(TemplateEntity templateEntity);
-  GlobalTemplateEntity getGitContent(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache);
+  GlobalTemplateEntity getGitContent(String accountId, String orgIdentifier, String projectIdentifier, String filePath,
+      String repoName, String branch, String fallBackBranch, String connectorRef, boolean loadFromCache);
+  List<TemplateWrapperResponseDTO> createGlobalTemplate(String accountId, String orgId, String projectId,
+      String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments,
+      boolean isNewTemplate);
+  List<TemplateWrapperResponseDTO> updateGlobalTemplate(String accountId, String orgId, String projectId,
+      String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments);
 }

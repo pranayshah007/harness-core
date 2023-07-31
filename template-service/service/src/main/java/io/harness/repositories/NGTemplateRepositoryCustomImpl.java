@@ -38,6 +38,7 @@ import io.harness.template.entity.GlobalTemplateEntity.GlobalTemplateEntityKeys;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.GlobalTemplateCreateEvent;
+import io.harness.template.events.GlobalTemplateUpdateEvent;
 import io.harness.template.events.TemplateCreateEvent;
 import io.harness.template.events.TemplateDeleteEvent;
 import io.harness.template.events.TemplateForceDeleteEvent;
@@ -194,6 +195,18 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
+  public Optional<GlobalTemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForGlobalTemplate(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
+      boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    Criteria criteria =
+        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
+    return getGlobalTemplateEntity(
+        criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
+  }
+
+  @Override
   public Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted) {
@@ -313,6 +326,20 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     return Optional.of(savedEntity);
   }
 
+  private Optional<GlobalTemplateEntity> getGlobalTemplateEntity(Criteria criteria, String accountId,
+      String orgIdentifier, String projectIdentifier, boolean getMetadataOnly, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
+    Query query = new Query(criteria);
+    GlobalTemplateEntity savedEntity = mongoTemplate.findOne(query, GlobalTemplateEntity.class);
+    if (savedEntity == null) {
+      return Optional.empty();
+    }
+    if (getMetadataOnly) {
+      return Optional.of(savedEntity);
+    }
+    return Optional.of(savedEntity);
+  }
+
   TemplateEntity fetchRemoteEntity(String accountId, String orgIdentifier, String projectIdentifier,
       TemplateEntity savedEntity, String branchName, boolean loadFromCache) {
     return (TemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
@@ -372,6 +399,19 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
     // This works considering that the templateToUpdate has the same _id as the oldTemplate
     TemplateEntity templateEntity = mongoTemplate.save(templateToUpdate);
+
+    if (isAuditEnabled(templateToUpdate, skipAudits)) {
+      generateUpdateOutboxEvent(templateToUpdate, oldTemplateEntity, comments, templateUpdateEventType);
+    }
+    return templateEntity;
+  }
+
+  @Override
+  public GlobalTemplateEntity updateTemplateInDb(GlobalTemplateEntity templateToUpdate,
+      GlobalTemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
+      TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
+    // This works considering that the templateToUpdate has the same _id as the oldTemplate
+    GlobalTemplateEntity templateEntity = mongoTemplate.save(templateToUpdate);
 
     if (isAuditEnabled(templateToUpdate, skipAudits)) {
       generateUpdateOutboxEvent(templateToUpdate, oldTemplateEntity, comments, templateUpdateEventType);
@@ -695,10 +735,24 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         && !skipAudits;
   }
 
+  private boolean isAuditEnabled(GlobalTemplateEntity templateEntity, boolean skipAudits) {
+    return shouldLogAudits(
+               templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier())
+        && !skipAudits;
+  }
+
   private OutboxEvent generateUpdateOutboxEvent(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
       String comments, TemplateUpdateEventType templateUpdateEventType) {
     return outboxService.save(
         new TemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate.getOrgIdentifier(),
+            templateToUpdate.getProjectIdentifier(), templateToUpdate, oldTemplateEntity, comments,
+            templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
+  }
+
+  private OutboxEvent generateUpdateOutboxEvent(GlobalTemplateEntity templateToUpdate,
+      GlobalTemplateEntity oldTemplateEntity, String comments, TemplateUpdateEventType templateUpdateEventType) {
+    return outboxService.save(
+        new GlobalTemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate.getOrgIdentifier(),
             templateToUpdate.getProjectIdentifier(), templateToUpdate, oldTemplateEntity, comments,
             templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
   }

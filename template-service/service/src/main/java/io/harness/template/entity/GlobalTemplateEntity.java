@@ -103,6 +103,7 @@ public class GlobalTemplateEntity
   @Setter @NonFinal String branch;
   @Setter @NonFinal String yamlGitConfigRef;
   @Wither @Setter @NonFinal String filePath;
+  @Setter @NonFinal String readMe;
   @Setter @NonFinal String rootFolder;
   @Wither @NonFinal Boolean isEntityInvalid;
 
