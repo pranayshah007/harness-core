@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -941,8 +942,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
-    validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, updateGitDetailsParams);
-
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, true);
     Update update = PMSPipelineFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);

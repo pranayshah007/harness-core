@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.services;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -1515,8 +1516,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Override
   public void updateGitDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams) {
-    validateRepo(
-        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, updateGitDetailsParams);
     Criteria templateCriteria = Criteria.where(TemplateEntityKeys.accountId)
                                     .is(accountIdentifier)
                                     .and(TemplateEntityKeys.orgIdentifier)

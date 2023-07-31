@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.ngpipeline.inputset.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -541,8 +542,6 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String inputSetIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
-    validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier,
-        updateGitDetailsParams);
     Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, true);
     Update update = PMSInputSetFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);
