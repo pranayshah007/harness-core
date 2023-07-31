@@ -9,6 +9,7 @@ package io.harness.cdng.hooks.steps;
 
 import static io.harness.cdng.hooks.ServiceHookConstants.POST_HOOK;
 import static io.harness.cdng.hooks.ServiceHookConstants.PRE_HOOK;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.cdng.service.steps.constants.ServiceStepV3Constants.SERVICE_HOOKS_SWEEPING_OUTPUT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
@@ -74,7 +75,8 @@ public class ServiceHooksStep implements SyncExecutable<EmptyStepParameters> {
         fetchServiceHooksMetadataFromSweepingOutput(ambiance);
 
     final List<ServiceHookWrapper> serviceHooks = serviceHooksSweepingOutput.getFinalServiceHooks();
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     if (EmptyPredicate.isEmpty(serviceHooks)) {
       logCallback.saveExecutionLog(
           "No service hooks configured in the service. hooks expressions will not work", LogLevel.WARN);

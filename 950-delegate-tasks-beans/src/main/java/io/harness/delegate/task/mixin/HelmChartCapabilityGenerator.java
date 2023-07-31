@@ -6,18 +6,19 @@
  */
 
 package io.harness.delegate.task.mixin;
-
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
 import static io.harness.delegate.task.k8s.ManifestType.HELM_CHART;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
@@ -33,6 +34,7 @@ import io.harness.k8s.model.HelmVersion;
 import java.util.ArrayList;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 public class HelmChartCapabilityGenerator {
   public static List<ExecutionCapability> generateCapabilities(
@@ -48,8 +50,7 @@ public class HelmChartCapabilityGenerator {
       GitStoreDelegateConfig gitStoreDelegateConfig =
           (GitStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
       capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),
-          gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+          gitStoreDelegateConfig, gitStoreDelegateConfig.getEncryptedDataDetails()));
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
     }

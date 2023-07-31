@@ -53,8 +53,11 @@ import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
 import static io.harness.ng.core.k8s.ServiceSpecType.SERVERLESS_AWS_LAMBDA;
 import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppRollbackStepVariableCreator;
 import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSlotDeploymentStepVariableCreator;
@@ -144,6 +147,7 @@ import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.DownloadManifestsStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkBootstrapStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkDiffStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkSynthStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
@@ -253,6 +257,7 @@ import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkBootstrapVariableCreator;
+import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkDiffVariableCreator;
 import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkSynthVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureARMRollbackStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateARMResourceStepVariableCreator;
@@ -300,6 +305,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_GITOPS,
+        HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
@@ -519,6 +527,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     // AWS CDK
     planCreators.add(new AwsCdkBootstrapStepPlanCreator());
     planCreators.add(new AwsCdkSynthStepPlanCreator());
+    planCreators.add(new AwsCdkDiffStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -671,6 +680,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     // AWS CDK
     variableCreators.add(new AwsCdkBootstrapVariableCreator());
     variableCreators.add(new AwsCdkSynthVariableCreator());
+    variableCreators.add(new AwsCdkDiffVariableCreator());
 
     return variableCreators;
   }
@@ -1074,9 +1084,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Bamboo Build")
             .setType(StepSpecTypeConstants.BAMBOO_BUILD)
-            .setFeatureRestrictionName(FeatureRestrictionName.BAMBOO_BUILD.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory(BUILD_STEP).addFolderPaths("Builds").build())
-            .setFeatureFlag(FeatureName.BAMBOO_BUILD.name())
             .build();
 
     StepInfo azureCreateARMResources =
@@ -1437,6 +1445,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                  .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
                                                  .setStepMetaData(StepMetaData.newBuilder()
                                                                       .addCategory("SERVERLESS_AWS_LAMBDA_ROLLBACK_V2")
+                                                                      .addCategory(PLUGIN)
                                                                       .setFolderPath("Serverless Lambda")
                                                                       .build())
                                                  .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())
@@ -1477,6 +1486,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("AWS CDK Synth")
             .setType(StepSpecTypeConstants.AWS_CDK_SYNTH)
+            .setStepMetaData(
+                StepMetaData.newBuilder().addAllCategory(AWS_CDK_CATEGORY).setFolderPath(AWS_CDK_STEP_METADATA).build())
+            .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
+            .build();
+
+    StepInfo awsCdkDiff =
+        StepInfo.newBuilder()
+            .setName("AWS CDK Diff")
+            .setType(StepSpecTypeConstants.AWS_CDK_DIFF)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(AWS_CDK_CATEGORY).setFolderPath(AWS_CDK_STEP_METADATA).build())
             .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
@@ -1579,6 +1597,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(serverlessAwsLambdaPackageV2);
     stepInfos.add(awsCdkBootstrap);
     stepInfos.add(awsCdkSynth);
+    stepInfos.add(awsCdkDiff);
     return stepInfos;
   }
 }

@@ -6,7 +6,6 @@
  */
 
 package io.harness;
-
 import static io.harness.TemplateServiceConfiguration.getResourceClasses;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
@@ -16,7 +15,10 @@ import static com.google.common.collect.ImmutableMap.of;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.cf.AbstractCfModule;
@@ -124,6 +126,8 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Slf4j
 @OwnedBy(CDC)
 public class TemplateServiceApplication extends Application<TemplateServiceConfiguration> {

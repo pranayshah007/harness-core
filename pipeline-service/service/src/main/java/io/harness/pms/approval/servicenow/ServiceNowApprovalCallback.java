@@ -6,13 +6,15 @@
  */
 
 package io.harness.pms.approval.servicenow;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.eraro.ErrorCode;
@@ -47,6 +49,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 public class ServiceNowApprovalCallback extends AbstractApprovalCallback implements PushThroughNotifyCallback {
   private final String approvalInstanceId;

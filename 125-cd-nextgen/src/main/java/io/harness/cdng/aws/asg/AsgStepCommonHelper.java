@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.aws.asg;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -21,6 +20,9 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
@@ -112,6 +114,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class AsgStepCommonHelper extends CDStepHelper {
   @Inject private CDExpressionResolver cdExpressionResolver;

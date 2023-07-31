@@ -1,2 +1,2 @@
-DOCKER_FILE_PATH: /harness/harness-core/dist/sto-manager-service/Dockerfile-gcr-ubi
+DOCKER_FILE_PATH: /harness/harness-core/dist/sto-manager-service/Dockerfile
 HELM_CHART_SOURCE_DIRECTORY: harness-core/315-sto-manager/chart

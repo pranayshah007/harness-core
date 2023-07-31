@@ -17,6 +17,7 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -59,8 +60,9 @@ public class BambooBuildStep extends CdTaskExecutable<ArtifactTaskResponse> {
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<ArtifactTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<ArtifactTaskResponse> responseDataSupplier)
+      throws Exception {
     try {
       return bambooBuildStepHelperService.prepareStepResponse(responseDataSupplier);
     } finally {
@@ -86,7 +88,8 @@ public class BambooBuildStep extends CdTaskExecutable<ArtifactTaskResponse> {
 
     return bambooBuildStepHelperService.prepareTaskRequest(paramBuilder, ambiance,
         specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(),
-        "Bamboo Task: Create Bamboo Build Task");
+        "Bamboo Task: Create Bamboo Build Task",
+        TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
   }
 
   @Override

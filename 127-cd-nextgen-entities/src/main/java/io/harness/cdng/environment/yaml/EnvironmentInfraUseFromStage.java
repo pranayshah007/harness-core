@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.environment.yaml;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.environment.helper.EnvironmentInfraUseFromStageV2VisitorHelper;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
@@ -26,6 +28,8 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Data
 @Builder

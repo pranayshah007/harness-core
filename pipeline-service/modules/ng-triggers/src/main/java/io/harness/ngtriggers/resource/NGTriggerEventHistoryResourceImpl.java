@@ -6,17 +6,21 @@
  */
 
 package io.harness.ngtriggers.resource;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.PollingInfoForTriggers;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryBaseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.mapper.NGTriggerEventHistoryBaseMapper;
 import io.harness.ngtriggers.mapper.NGTriggerEventHistoryMapper;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
@@ -37,6 +41,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @PipelineServiceAuth
 @Singleton
@@ -73,7 +78,27 @@ public class NGTriggerEventHistoryResourceImpl implements NGTriggerEventHistoryR
   }
 
   @Override
-  public ResponseDTO<Page<NGTriggerEventHistoryDTO>> getTriggerHistoryEventCorrelation(
+  public ResponseDTO<Page<NGTriggerEventHistoryBaseDTO>> getTriggerHistoryEventCorrelation(
+      String accountIdentifier, String eventCorrelationId, int page, int size, List<String> sort) {
+    Criteria criteria =
+        ngTriggerEventsService.formEventCriteria(accountIdentifier, eventCorrelationId, new ArrayList<>());
+    Pageable pageRequest;
+    if (EmptyPredicate.isEmpty(sort)) {
+      pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, TriggerEventHistoryKeys.createdAt));
+    } else {
+      pageRequest = PageUtils.getPageRequest(page, size, sort);
+    }
+
+    Page<TriggerEventHistory> eventHistoryList = ngTriggerEventsService.getEventHistory(criteria, pageRequest);
+
+    Page<NGTriggerEventHistoryBaseDTO> ngTriggerEventHistoryDTOS =
+        eventHistoryList.map(eventHistory -> NGTriggerEventHistoryBaseMapper.toEventHistory(eventHistory));
+
+    return ResponseDTO.newResponse(ngTriggerEventHistoryDTOS);
+  }
+
+  @Override
+  public ResponseDTO<Page<NGTriggerEventHistoryDTO>> getTriggerHistoryEventCorrelationV2(
       String accountIdentifier, String eventCorrelationId, int page, int size, List<String> sort) {
     Criteria criteria =
         ngTriggerEventsService.formEventCriteria(accountIdentifier, eventCorrelationId, new ArrayList<>());

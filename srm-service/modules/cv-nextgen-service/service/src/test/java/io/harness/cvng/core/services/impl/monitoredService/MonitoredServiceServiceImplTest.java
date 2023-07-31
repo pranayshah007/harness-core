@@ -3049,7 +3049,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
 
-    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService).getNotificationRules(monitoredService).size())
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
+                   .getEnabledAndEligibleNotificationRules(monitoredService)
+                   .size())
         .isEqualTo(1);
   }
 
@@ -3072,7 +3074,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
 
-    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService).getNotificationRules(monitoredService).size())
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
+                   .getEnabledAndEligibleNotificationRules(monitoredService)
+                   .size())
         .isEqualTo(0);
   }
   @Test

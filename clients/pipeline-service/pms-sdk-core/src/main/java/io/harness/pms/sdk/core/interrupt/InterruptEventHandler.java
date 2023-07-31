@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.sdk.core.interrupt;
-
 import static io.harness.govern.Switch.noop;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.interrupts.InterruptEvent;
@@ -29,6 +31,8 @@ import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
   @Inject private PMSInterruptService pmsInterruptService;

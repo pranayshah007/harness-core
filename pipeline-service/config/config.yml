@@ -227,7 +227,7 @@ ciServiceClientConfig:
 
 queueServiceClientConfig:
   httpClientConfig:
-    baseUrl: ${HSQS_BASE_URL:-http://localhost:9091/}
+    baseUrl: ${HSQS_BASE_URL:-http://localhost:9544/}
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
   queueServiceSecret: ${HSQS_AUTH_TOKEN:-ThisIsMyUniqueJwtQueueServiceSecret}
@@ -344,7 +344,7 @@ orchestrationStepConfig:
           - /bin/ssca-plugin
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
-      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth"]
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth", "AwsCdkDiff", "ServerlessAwsLambdaRollbackV2"]
       ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
 
 
@@ -449,7 +449,7 @@ pipelineEventConsumersConfig:
   pollingEvent:
     threads: 1
   triggerExecutionEvent:
-    threads: 1
+    threads: ${TRIGGER_EXECUTION_EVENT_CONSUMER_THREAD_COUNT:-1}
 
 delegatePollingConfig:
   syncDelay: 2000
@@ -546,6 +546,7 @@ jsonExpansionRequestBatchSize: ${JSON_EXPANSION_BATCH_SIZE:-50}
 #############################################################
 
 orchestrationRestrictionConfiguration:
+  maxNestedLevelsCount: ${MAX_NESTED_LEVELS_COUNT:-25}
   useRestrictionForFree: ${USE_RESTRICTION_FOR_FREE:-false}
   useRestrictionForTeam: ${USE_RESTRICTION_FOR_TEAM:-false}
   useRestrictionForEnterprise: ${USE_RESTRICTION_FOR_ENTERPRISE:-false}

@@ -74,7 +74,7 @@ public class ConnectorCustomRepositoryImpl implements ConnectorCustomRepository 
       Criteria criteria, Pageable pageable, String projectIdentifier, String orgIdentifier, String accountIdentifier) {
     pageable = getPageableWithSortFieldAsTimeWhenConnectorIsLastUpdated(pageable);
     List<Connector> connectors = gitAwarePersistence.find(
-        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, Connector.class);
+        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, Connector.class, false);
     return PageableExecutionUtils.getPage(connectors, pageable,
         ()
             -> gitAwarePersistence.count(

@@ -6,7 +6,9 @@
  */
 
 package io.harness.connector.entities.embedded.servicenow;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowRefreshTokenDTO;
 import io.harness.encryption.SecretRefHelper;
@@ -18,6 +20,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Value
 @Builder
 @FieldNameConstants(innerTypeName = "ServiceNowAuthenticationKeys")

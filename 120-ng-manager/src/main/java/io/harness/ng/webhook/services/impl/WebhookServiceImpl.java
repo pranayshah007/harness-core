@@ -16,8 +16,12 @@ import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEven
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType.DELETE_BRANCH;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType.PUSH;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.exception.InvalidRequestException;
@@ -44,6 +48,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -63,7 +68,9 @@ public class WebhookServiceImpl implements WebhookService, WebhookEventService {
       log.info(
           "received webhook event with id {} in the accountId {}", webhookEvent.getUuid(), webhookEvent.getAccountId());
       // TODO: add a check based on env to use iterators in community edition and on prem
-      if (!nextGenConfiguration.isUseQueueServiceForWebhookTriggers()) {
+      if (!nextGenConfiguration.isUseQueueServiceForWebhookTriggers()
+          || !ngFeatureFlagHelperService.isEnabled(
+              webhookEvent.getAccountId(), FeatureName.CDS_QUEUE_SERVICE_FOR_TRIGGERS)) {
         return webhookEventRepository.save(webhookEvent);
       } else {
         generateWebhookDTOAndEnqueue(webhookEvent);

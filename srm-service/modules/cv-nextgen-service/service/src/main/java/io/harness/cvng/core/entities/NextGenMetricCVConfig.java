@@ -129,7 +129,7 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
     metricInfos.add(NextGenMetricInfo.builder()
                         .metricName(queryDefinition.getName())
                         .metricType(metricType)
-                        .query(queryDefinition.getQuery().trim())
+                        .query(Optional.ofNullable(queryDefinition.getQuery()).map(String::trim).orElse(null))
                         .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
                         .identifier(queryDefinition.getIdentifier())
                         .sli(SLIMetricTransformer.transformQueryDefinitiontoEntity(queryDefinition))

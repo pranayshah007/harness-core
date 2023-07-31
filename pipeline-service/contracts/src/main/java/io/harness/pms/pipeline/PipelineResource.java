@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.pipeline;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
@@ -18,7 +17,10 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.beans.ExecutionNode;
 import io.harness.gitaware.helper.GitImportInfoDTO;
@@ -69,6 +71,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.springframework.data.domain.Page;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Api("pipelines")
 @Path("pipelines")
@@ -507,20 +510,6 @@ public interface PipelineResource {
   @Hidden
   // do not delete this.
   ResponseDTO<TemplateStageNode> getTemplateStageNode();
-
-  @GET
-  @Path("/ffCache/refresh")
-  @ApiOperation(value = "Refresh the feature flag cache", nickname = "refreshFFCache")
-  @Operation(operationId = "refreshFFCache", summary = "Refresh the feature flag cache",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Refresh the feature flag cache")
-      })
-  @Hidden
-  ResponseDTO<Boolean>
-  refreshFFCache(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE,
-      required = true) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId);
 
   @POST
   @Path("/validate-yaml-with-schema")

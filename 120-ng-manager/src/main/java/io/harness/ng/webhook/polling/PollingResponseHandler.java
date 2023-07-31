@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.webhook.polling;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -33,8 +32,11 @@ import static io.harness.polling.contracts.Type.S3_HELM;
 import static java.lang.Boolean.parseBoolean;
 
 import io.harness.NgAutoLogContext;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
@@ -104,10 +106,11 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class PollingResponseHandler {
-  private static final int MAX_FAILED_ATTEMPTS = 3500;
+  private static final int MAX_FAILED_ATTEMPTS = 7200;
   private PollingService pollingService;
   private PollingPerpetualTaskService pollingPerpetualTaskService;
   private PolledItemPublisher polledItemPublisher;
@@ -154,6 +157,8 @@ public class PollingResponseHandler {
 
     if (pollingDocument.getFailedAttempts() > 0) {
       pollingService.updateFailedAttempts(accountId, pollDocId, 0);
+      pollingService.updateTriggerPollingStatus(
+          pollingDocument.getAccountId(), pollingDocument.getSignatures(), true, null, Collections.emptyList());
     }
 
     switch (pollingDocument.getPollingType()) {
@@ -334,16 +339,17 @@ public class PollingResponseHandler {
 
   private void handleFailureResponse(PollingDocument pollingDocument, String errorMessage) {
     int failedCount = pollingDocument.getFailedAttempts() + 1;
-
-    if (failedCount % 25 == 0 && failedCount != MAX_FAILED_ATTEMPTS) {
-      pollingPerpetualTaskService.resetPerpetualTask(pollingDocument);
-    }
-
+    log.error(
+        "Received failure response from polling delegate perpetual task for pollingDocId: {} , failedCount: {}, errorMessage: {}",
+        pollingDocument.getUuid(), failedCount, errorMessage);
     pollingService.updateFailedAttempts(pollingDocument.getAccountId(), pollingDocument.getUuid(), failedCount);
     pollingService.updateTriggerPollingStatus(
         pollingDocument.getAccountId(), pollingDocument.getSignatures(), false, errorMessage, Collections.emptyList());
 
-    if (failedCount == MAX_FAILED_ATTEMPTS) {
+    if (failedCount >= MAX_FAILED_ATTEMPTS) {
+      log.warn(
+          "Failed count {} from polling delegate perpetual task for pollingDocId {} is above MAX_FAILED_ATTEMPTS ({}). Deleting the perpetual task.",
+          failedCount, pollingDocument.getUuid(), MAX_FAILED_ATTEMPTS);
       pollingPerpetualTaskService.deletePerpetualTask(
           pollingDocument.getPerpetualTaskId(), pollingDocument.getAccountId());
     }

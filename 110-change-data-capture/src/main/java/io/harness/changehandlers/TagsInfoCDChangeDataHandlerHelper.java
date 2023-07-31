@@ -6,7 +6,9 @@
  */
 
 package io.harness.changehandlers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.changestreamsframework.ChangeEvent;
@@ -29,6 +31,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @UtilityClass
 public class TagsInfoCDChangeDataHandlerHelper {
   public String getParentIdentifier(ChangeEvent<?> changeEvent, DBObject dbObject) {

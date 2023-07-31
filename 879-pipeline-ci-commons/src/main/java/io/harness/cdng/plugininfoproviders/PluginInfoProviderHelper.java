@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
-
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
@@ -30,6 +32,7 @@ import com.google.protobuf.StringValue;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 public class PluginInfoProviderHelper {

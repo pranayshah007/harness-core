@@ -6,12 +6,14 @@
  */
 
 package io.harness.polling.service.impl.manifest;
-
 import static io.harness.delegate.task.helm.HelmValuesFetchRequest.getHelmExecutionCapabilities;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
@@ -36,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Singleton
 @OwnedBy(HarnessTeam.CDC)

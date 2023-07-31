@@ -6,13 +6,15 @@
  */
 
 package io.harness.filestore.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.filestore.dto.mapper.FileDTOMapper;
 import io.harness.filestore.entities.NGFile;
@@ -37,6 +39,7 @@ import net.jodah.failsafe.RetryPolicy;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j

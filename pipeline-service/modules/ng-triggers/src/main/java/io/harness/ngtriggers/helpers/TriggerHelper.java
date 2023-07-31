@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ngtriggers.Constants.ARTIFACT_BUILD_EXPR;
@@ -52,8 +51,12 @@ import static io.harness.pms.contracts.triggers.Type.SCHEDULED;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
+import io.harness.expression.common.ExpressionConstants;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
@@ -71,6 +74,7 @@ import java.util.Map;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @UtilityClass
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -222,5 +226,10 @@ public class TriggerHelper {
     Map<String, String> headerJsonObject = new HashMap<>();
     triggerHeader.forEach(header -> { headerJsonObject.put(header.getKey(), String.join(",", header.getValues())); });
     return headerJsonObject;
+  }
+
+  public boolean isBranchExpr(String pipelineBranch) {
+    return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
+        && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
   }
 }

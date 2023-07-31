@@ -6,7 +6,6 @@
  */
 
 package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorExplanations.INVALID_CONNECTOR_CREDS;
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorExplanations.OAUTH_ACCESS_DENIED;
@@ -14,7 +13,10 @@ import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorHints.OAUTH_ACCESS_FAILURE;
 import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.ScmErrorHints.REPO_NOT_FOUND;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ScmBadRequestException;
@@ -28,6 +30,7 @@ import io.harness.gitsync.common.scmerrorhandling.util.ErrorMessageFormatter;
 
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Slf4j
 @OwnedBy(PL)
 public class BitbucketUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {

@@ -4622,8 +4622,8 @@ go_repository(
 go_repository(
     name = "com_github_harness_ti_client",
     importpath = "github.com/harness/ti-client",
-    sum = "h1:5bAthnUBEV3zE9utLY4b6AKs/ZQ5y188uv2GkVJeetI=",
-    version = "v0.0.0-20230628234729-894f996b3046",
+    sum = "h1:XXOg2PARWL1s4lpy4WXPcWqt8fXfV9e9KjDozeefzdk=",
+    version = "v0.0.0-20230720204407-c0e24ffb7964",
 )
 
 go_rules_dependencies()
@@ -4857,7 +4857,7 @@ plain_artifacts = [
     "com.jakewharton.retrofit:retrofit1-okhttp3-client:1.1.0",
     "com.jakewharton.retrofit:retrofit2-reactor-adapter:2.1.0",
     "com.jayway.jsonpath:json-path:2.2.0",
-    "com.jcraft.harness:jsch-0-1-54-harness-patch:1.1",
+    "com.github.mwiede:jsch:0.2.8",
     "com.jcraft:jzlib:1.1.3",
     "com.lmax:disruptor:jar:3.4.2",
     "com.mashape.unirest:unirest-java:1.4.9",
@@ -5427,7 +5427,7 @@ amazon_v2_artifacts = [
             "commons-logging:commons-logging",
         ],
         group = "software.amazon.awssdk",
-        version = "2.17.220",
+        version = "2.20.109",
     )
     for x in [
         "ecs",
@@ -5574,7 +5574,7 @@ maven_install(
     maven_install_json = "//project:main_maven_install.json",
     override_targets = {
         "org.apache.commons:commons-io": "@maven//:commons_io_commons_io",
-        "com.jcraft:jsch": "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
+        "com.jcraft:jsch": "@maven//:com_github_mwiede_jsch",
         "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongodb_driver_core",
     },
     repositories = [
@@ -5616,7 +5616,7 @@ maven_install(
         "com.azure:azure-storage-common:12.15.1",
         "com.azure.resourcemanager:azure-resourcemanager-advisor:1.0.0-beta.2",
         "com.azure.resourcemanager:azure-resourcemanager-compute:2.26.0",
-        "software.amazon.awssdk:account:2.20.74",
+        "software.amazon.awssdk:account:2.20.109",
     ],
     repositories = [
         "https://harness-artifactory.harness.io/artifactory/portal-maven",

@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.usage.task;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.usage.task.CDLicenseReportAccounts.CDLicenseReportAccountsKeys;
 import io.harness.entities.DeploymentSummary;
 import io.harness.entities.DeploymentSummary.DeploymentSummaryKeys;
@@ -23,6 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @Singleton
 @OwnedBy(CDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))

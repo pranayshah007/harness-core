@@ -97,6 +97,7 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
     SRMStepAnalysisActivity stepAnalysisActivity = builderFactory.getSRMStepAnalysisActivityBuilder()
                                                        .executionNotificationDetailsId(analysisExecutionDetailsId)
                                                        .build();
+    stepAnalysisActivity.setUuid(analysisExecutionDetailsId);
     activityId = activityService.createActivity(stepAnalysisActivity);
   }
 

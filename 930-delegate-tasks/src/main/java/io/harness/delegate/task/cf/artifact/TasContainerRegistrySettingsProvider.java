@@ -11,8 +11,11 @@ import static io.harness.azure.model.AzureConstants.ACR_DEFAULT_DOCKER_USERNAME;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureContainerRegistryClient;
 import io.harness.azure.model.AzureAuthenticationType;
@@ -29,6 +32,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class TasContainerRegistrySettingsProvider extends AbstractTasRegistrySettingsProvider {

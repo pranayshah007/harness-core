@@ -6,7 +6,6 @@
  */
 
 package io.harness.ci.integrationstage;
-
 import static io.harness.beans.FeatureName.CIE_ENABLED_RBAC;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
@@ -61,8 +60,11 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.CharUtils.isAsciiAlphanumeric;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -134,6 +136,7 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CI)

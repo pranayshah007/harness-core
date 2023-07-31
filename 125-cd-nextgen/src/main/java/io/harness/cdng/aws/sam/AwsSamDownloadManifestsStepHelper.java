@@ -6,16 +6,15 @@
  */
 
 package io.harness.cdng.aws.sam;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.steps.nodes.GitCloneStepNode;
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome;
 import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome.AwsSamValuesYamlDataOutcomeBuilder;
-import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
-import io.harness.cdng.manifest.yaml.GitStoreConfig;
-import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.plugininfoproviders.GitClonePluginInfoProvider;
@@ -49,15 +48,14 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
 public class AwsSamDownloadManifestsStepHelper {
   @Inject private OutcomeService outcomeService;
@@ -70,10 +68,12 @@ public class AwsSamDownloadManifestsStepHelper {
 
   @Inject private DownloadManifestsCommonHelper downloadManifestsCommonHelper;
 
+  @Inject private AwsSamStepHelper awsSamStepHelper;
+
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepInputPackage inputPackage, GitCloneStep gitCloneStep) {
     ManifestsOutcome manifestsOutcome = downloadManifestsCommonHelper.fetchManifestsOutcome(ambiance);
-
+    // @todo(hinger) render manifests here
     AsyncExecutableResponse samDirectoryAsyncExecutableResponse =
         getAsyncExecutableResponseForAwsSamDirectoryManifest(ambiance, inputPackage, gitCloneStep, manifestsOutcome);
 
@@ -81,7 +81,7 @@ public class AwsSamDownloadManifestsStepHelper {
     List<String> logKeys = new ArrayList<>(samDirectoryAsyncExecutableResponse.getLogKeysList());
 
     ValuesManifestOutcome valuesManifestOutcome =
-        (ValuesManifestOutcome) getAwsSamValuesManifestOutcome(manifestsOutcome.values());
+        (ValuesManifestOutcome) awsSamStepHelper.getAwsSamValuesManifestOutcome(manifestsOutcome.values());
 
     if (valuesManifestOutcome != null) {
       AsyncExecutableResponse valuesAsyncExecutableResponse =
@@ -114,7 +114,7 @@ public class AwsSamDownloadManifestsStepHelper {
   private AsyncExecutableResponse getAsyncExecutableResponseForAwsSamDirectoryManifest(
       Ambiance ambiance, StepInputPackage inputPackage, GitCloneStep gitCloneStep, ManifestsOutcome manifestsOutcome) {
     AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
-        (AwsSamDirectoryManifestOutcome) getAwsSamDirectoryManifestOutcome(manifestsOutcome.values());
+        (AwsSamDirectoryManifestOutcome) awsSamStepHelper.getAwsSamDirectoryManifestOutcome(manifestsOutcome.values());
 
     GitCloneStepInfo gitCloneStepInfo =
         downloadManifestsCommonHelper.getGitCloneStepInfoFromManifestOutcome(awsSamDirectoryManifestOutcome);
@@ -139,7 +139,7 @@ public class AwsSamDownloadManifestsStepHelper {
   private void handleResponseForValuesManifest(
       Ambiance ambiance, Map<String, ResponseData> responseDataMap, ManifestsOutcome manifestsOutcome) {
     ValuesManifestOutcome valuesManifestOutcome =
-        (ValuesManifestOutcome) getAwsSamValuesManifestOutcome(manifestsOutcome.values());
+        (ValuesManifestOutcome) awsSamStepHelper.getAwsSamValuesManifestOutcome(manifestsOutcome.values());
 
     if (valuesManifestOutcome != null) {
       AwsSamValuesYamlDataOutcomeBuilder awsSamValuesYamlDataOutcomeBuilder = AwsSamValuesYamlDataOutcome.builder();
@@ -163,7 +163,7 @@ public class AwsSamDownloadManifestsStepHelper {
       ValuesManifestOutcome valuesManifestOutcome,
       AwsSamValuesYamlDataOutcomeBuilder awsSamValuesYamlDataOutcomeBuilder, StepOutput stepOutput) {
     if (stepOutput instanceof StepMapOutput) {
-      String valuesYamlPath = getValuesPathFromValuesManifestOutcome(valuesManifestOutcome);
+      String valuesYamlPath = awsSamStepHelper.getValuesPathFromValuesManifestOutcome(valuesManifestOutcome);
 
       StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
       if (EmptyPredicate.isNotEmpty(stepMapOutput.getMap())) {
@@ -210,7 +210,7 @@ public class AwsSamDownloadManifestsStepHelper {
     // Values Yaml
 
     ValuesManifestOutcome valuesManifestOutcome =
-        (ValuesManifestOutcome) getAwsSamValuesManifestOutcome(manifestsOutcome.values());
+        (ValuesManifestOutcome) awsSamStepHelper.getAwsSamValuesManifestOutcome(manifestsOutcome.values());
 
     if (valuesManifestOutcome != null) {
       PluginCreationResponseWrapper valuesPluginCreationResponseWrapper =
@@ -227,7 +227,7 @@ public class AwsSamDownloadManifestsStepHelper {
     GitCloneStepInfo valuesGitCloneStepInfo =
         downloadManifestsCommonHelper.getGitCloneStepInfoFromManifestOutcome(valuesManifestOutcome);
 
-    String valuesYamlPath = getValuesPathFromValuesManifestOutcome(valuesManifestOutcome);
+    String valuesYamlPath = awsSamStepHelper.getValuesPathFromValuesManifestOutcome(valuesManifestOutcome);
 
     valuesGitCloneStepInfo.setOutputFilePathsContent(
         ParameterField.<List<String>>builder().value(Collections.singletonList(valuesYamlPath)).build());
@@ -245,7 +245,7 @@ public class AwsSamDownloadManifestsStepHelper {
       PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance, CdAbstractStepNode cdAbstractStepNode,
       ManifestsOutcome manifestsOutcome) {
     AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
-        (AwsSamDirectoryManifestOutcome) getAwsSamDirectoryManifestOutcome(manifestsOutcome.values());
+        (AwsSamDirectoryManifestOutcome) awsSamStepHelper.getAwsSamDirectoryManifestOutcome(manifestsOutcome.values());
 
     GitCloneStepInfo gitCloneStepInfo =
         downloadManifestsCommonHelper.getGitCloneStepInfoFromManifestOutcome(awsSamDirectoryManifestOutcome);
@@ -257,26 +257,5 @@ public class AwsSamDownloadManifestsStepHelper {
         request.toBuilder().setStepJsonNode(YamlUtils.writeYamlString(gitCloneStepNode)).build();
 
     return gitClonePluginInfoProvider.getPluginInfo(pluginCreationRequest, usedPorts, ambiance);
-  }
-
-  public ManifestOutcome getAwsSamDirectoryManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {
-    List<ManifestOutcome> manifestOutcomeList =
-        manifestOutcomes.stream()
-            .filter(manifestOutcome -> ManifestType.AwsSamDirectory.equals(manifestOutcome.getType()))
-            .collect(Collectors.toList());
-    return manifestOutcomeList.isEmpty() ? null : manifestOutcomeList.get(0);
-  }
-
-  public ManifestOutcome getAwsSamValuesManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {
-    List<ManifestOutcome> manifestOutcomeList =
-        manifestOutcomes.stream()
-            .filter(manifestOutcome -> ManifestType.VALUES.equals(manifestOutcome.getType()))
-            .collect(Collectors.toList());
-    return manifestOutcomeList.isEmpty() ? null : manifestOutcomeList.get(0);
-  }
-
-  public String getValuesPathFromValuesManifestOutcome(ValuesManifestOutcome valuesManifestOutcome) {
-    GitStoreConfig gitStoreConfig = (GitStoreConfig) valuesManifestOutcome.getStore();
-    return "/harness/" + valuesManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
   }
 }

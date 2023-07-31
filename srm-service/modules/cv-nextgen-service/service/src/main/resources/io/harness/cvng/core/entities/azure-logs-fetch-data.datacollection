@@ -10,14 +10,38 @@ Var:azureTokenBodyMap.put("client_secret", Env:clientSecret)
 
 Var response = sync-call-azure(url=Var:url, header=Env:commonHeaders, options=Env:commonOptions, body=Var:bodyMap, bodyType=JSON, method=POST, azureTokenUrl=Env:azureTokenUrl, azureTokenBody=Var:azureTokenBodyMap)
 Var table = extract(Var:response, "$.tables.[0]")
-Var rows = extract(Var:table, "$.rows")
+Var columns = extract(Var:table, "$.columns")
 
+Var zero = 0
+Var messageIdx = 0
+Var timestampIdx = 0
+Var hostNameIdx = 0
+Var index = 0
+Var one = 1
+Var columnsLength = Var:columns.length()
+while Var:index != Var:columnsLength {
+    Var column = Var:columns[Var:index]
+    Var key = extract(Var:column, $.name)
+    Var clonedIdx = Var:index + Var:zero
+    if Var:key == Env:messageIdentifier {
+        messageIdx = Var:clonedIdx + Var:zero
+    }
+    if Var:key == Env:timeStampIdentifier {
+        timestampIdx = Var:clonedIdx + Var:zero
+    }
+    if Var:key == Env:serviceInstanceIdentifier {
+        hostNameIdx = Var:clonedIdx + Var:zero
+    }
+    index = Var:index + Var:one
+}
+
+Var rows = extract(Var:table, "$.rows")
 Var responseList = []
 foreach row in Var:rows {
-    Var message = extract(Var:row, Env:messageIdentifier)
-    Var timestamp = extract(Var:row, Env:timeStampIdentifier)
+    Var message = Var:row[Var:messageIdx]
+    Var timestamp = Var:row[Var:timestampIdx]
     Var timeStampVal = string-to-time(Var:timestamp)
-    Var host = extract(Var:row, Env:serviceInstanceIdentifier)
+    Var host = Var:row[Var:hostNameIdx]
 
     Var logToReturn = new LogDataRecord(log=Var:message, timestamp=Var:timeStampVal, host=Var:host)
     Var:responseList.append(Var:logToReturn)

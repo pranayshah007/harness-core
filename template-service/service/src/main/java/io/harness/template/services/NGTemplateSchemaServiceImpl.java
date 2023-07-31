@@ -16,8 +16,11 @@ import static io.harness.yaml.schema.beans.SchemaConstants.TEMPLATE_NODE;
 import io.harness.EntityType;
 import io.harness.TemplateServiceConfiguration;
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.common.EntityTypeConstants;
 import io.harness.encryption.Scope;
@@ -50,6 +53,8 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(CDC)

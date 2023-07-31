@@ -73,6 +73,10 @@ if [[ "" != "$ALLOWED_ORIGINS" ]]; then
   done
 fi
 
+if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.mongo.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"

@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.environment.yaml;
-
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.utils.YamlConstants.INPUT;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.common.NGExpressionUtils;
@@ -36,6 +38,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.experimental.FieldNameConstants;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Data
 @Builder
 @RecasterAlias("io.harness.cdng.environment.yaml.EnvironmentsYaml")

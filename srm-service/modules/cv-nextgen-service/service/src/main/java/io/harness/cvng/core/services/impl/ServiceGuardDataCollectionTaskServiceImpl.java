@@ -10,6 +10,7 @@ package io.harness.cvng.core.services.impl;
 import static io.harness.cvng.core.entities.DataCollectionTask.Type.SERVICE_GUARD;
 
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
+import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
@@ -145,6 +146,12 @@ public class ServiceGuardDataCollectionTaskServiceImpl implements DataCollection
     String dataCollectionWorkerId = monitoringSourcePerpetualTaskService.getLiveMonitoringWorkerId(
         cvConfig.getAccountId(), cvConfig.getOrgIdentifier(), cvConfig.getProjectIdentifier(),
         cvConfig.getConnectorIdentifier(), cvConfig.getIdentifier());
+    DataCollectionInfoMapper dataCollectionInfoMapper =
+        dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType());
+    DataCollectionInfo<?> dataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, TaskType.LIVE_MONITORING);
+    dataCollectionInfoMapper.postProcessDataCollectionInfo(dataCollectionInfo, cvConfig, TaskType.LIVE_MONITORING);
+
     return ServiceGuardDataCollectionTask.builder()
         .accountId(cvConfig.getAccountId())
         .type(SERVICE_GUARD)
@@ -154,8 +161,7 @@ public class ServiceGuardDataCollectionTaskServiceImpl implements DataCollection
         .endTime(endTime)
         .verificationTaskId(
             verificationTaskService.getServiceGuardVerificationTaskId(cvConfig.getAccountId(), cvConfig.getUuid()))
-        .dataCollectionInfo(dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
-                                .toDataCollectionInfo(cvConfig, TaskType.LIVE_MONITORING))
+        .dataCollectionInfo(dataCollectionInfo)
         .build();
   }
 }

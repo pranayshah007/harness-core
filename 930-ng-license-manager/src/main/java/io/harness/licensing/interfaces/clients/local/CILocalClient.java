@@ -6,10 +6,12 @@
  */
 
 package io.harness.licensing.interfaces.clients.local;
-
 import static io.harness.licensing.LicenseConstant.UNLIMITED;
 import static io.harness.licensing.interfaces.ModuleLicenseImpl.TRIAL_DURATION;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
@@ -21,6 +23,7 @@ import io.harness.licensing.interfaces.clients.CIModuleLicenseClient;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class CILocalClient implements CIModuleLicenseClient {
   private static final int ENTERPRISE_TRIAL_DEVELOPERS = 200;
   private static final int TEAM_TRIAL_DEVELOPERS = 200;

@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.terragrunt;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateFile.Builder.aDelegateFile;
@@ -22,7 +21,10 @@ import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -72,6 +74,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.lang.JoseException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(CDP)
 public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
@@ -107,6 +111,7 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
         TerragruntTaskService.getBaseDir(planTaskParameters.getAccountId(), planTaskParameters.getEntityId());
     try (PlanJsonLogOutputStream planJsonLogOutputStream = taskService.getPlanJsonLogOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
+      taskService.mapGitConfig(planTaskParameters);
       taskService.decryptTaskParameters(planTaskParameters);
 
       LogCallback fetchFilesLogCallback =

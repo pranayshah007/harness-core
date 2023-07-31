@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.beans.connector.helm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.ConnectorTaskParams;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
@@ -19,6 +21,8 @@ import java.util.List;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Data
 @SuperBuilder
 public class HttpHelmValidationParams

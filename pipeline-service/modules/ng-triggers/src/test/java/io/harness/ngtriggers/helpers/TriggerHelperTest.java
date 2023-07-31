@@ -34,6 +34,7 @@ import static io.harness.ngtriggers.Constants.WEBHOOK_TYPE;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.pms.contracts.triggers.SourceType.GITHUB_REPO;
 import static io.harness.pms.contracts.triggers.Type.SCHEDULED;
+import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -159,5 +160,12 @@ public class TriggerHelperTest extends CategoryTest {
     TriggerPayload scheduledPayload = TriggerPayload.newBuilder().setType(SCHEDULED).build();
     Map<String, Object> jsonObject = TriggerHelper.buildJsonObjectFromAmbiance(scheduledPayload);
     assertThat(jsonObject.get(TYPE)).isEqualTo(SCHEDULED_TYPE);
+  }
+
+  @Test
+  @Owner(developers = HARSH)
+  @Category(UnitTests.class)
+  public void testIsBranchExpr() {
+    assertThat(TriggerHelper.isBranchExpr("<+trigger.branch>")).isEqualTo(true);
   }
 }

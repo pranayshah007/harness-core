@@ -19,6 +19,8 @@ public interface RecastObjectFactory {
 
   <T> T createInstance(Class<T> clazz, RecasterMap recasterMap);
 
+  Object createGivenInstance(RecasterMap recasterMap);
+
   Object createInstance(Recaster recaster, CastedField cf, RecasterMap recasterMap);
 
   List<Object> createList(CastedField mf);

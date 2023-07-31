@@ -6,13 +6,15 @@
  */
 
 package io.harness.rancher;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Collections.emptyMap;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.exception.ExceptionUtils;
@@ -26,6 +28,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)

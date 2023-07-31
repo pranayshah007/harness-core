@@ -70,7 +70,6 @@ import static io.harness.network.Localhost.getLocalHostAddress;
 import static io.harness.network.Localhost.getLocalHostName;
 import static io.harness.network.SafeHttpCall.execute;
 import static io.harness.threading.Morpheus.sleep;
-import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
 import static io.harness.utils.SecretUtils.isBase64SecretIdentifier;
 
 import static software.wings.beans.TaskType.SCRIPT;
@@ -190,20 +189,19 @@ import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.sun.management.OperatingSystemMXBean;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -225,6 +223,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -373,6 +372,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject AcquireTaskHelper acquireTaskHelper;
   @Inject Context context;
 
+  private static final LogPerformanceImpl logPerformanceImpl = new LogPerformanceImpl();
   private final AtomicBoolean waiter = new AtomicBoolean(true);
 
   private final Set<String> currentlyAcquiringTasks = ConcurrentHashMap.newKeySet();
@@ -399,6 +399,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicBoolean closingSocket = new AtomicBoolean(false);
   private final AtomicBoolean sentFirstHeartbeat = new AtomicBoolean(false);
   private final Set<String> supportedTaskTypes = new HashSet<>();
+  private final ScheduledExecutorService topProcessLogThread = Executors.newSingleThreadScheduledExecutor(
+      new ThreadFactoryBuilder().setNameFormat("TopProcessLogThread").build());
 
   private Client client;
   private Socket socket;
@@ -426,6 +428,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private double maxPodRSSThresholdMB;
   private final AtomicBoolean rejectRequest = new AtomicBoolean(false);
 
+  private final String defaultJREVersion = "11.0.19+7";
+
   public static Optional<String> getDelegateId() {
     return Optional.ofNullable(delegateId);
   }
@@ -440,6 +444,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   @Override
   public void shutdown(final boolean shouldUnregister) throws InterruptedException {
+    // Log the top processes before shutting down.
+    logTopProcessesByCpuAndMemory();
     shutdownExecutors();
     if (shouldUnregister) {
       unregisterDelegate();
@@ -533,6 +539,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       DelegateStackdriverLogAppender.setManagerClient(delegateAgentManagerClient);
 
       logProxyConfiguration();
+
+      // Start a thread to log the top processes in the environment every 10 minutes.
+      topProcessLogThread.scheduleAtFixedRate(
+          DelegateAgentServiceImpl::logTopProcessesByCpuAndMemory, 0, 10, TimeUnit.MINUTES);
 
       connectionHeartbeat = DelegateConnectionHeartbeat.builder()
                                 .delegateConnectionId(delegateConnectionId)
@@ -1405,6 +1415,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     log.info("Stopping executors");
     taskExecutor.shutdown();
     taskPollExecutor.shutdown();
+    topProcessLogThread.shutdown();
 
     final boolean terminatedTaskExec = taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     final boolean terminatedPoll = taskPollExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -1686,8 +1697,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         // resetting version matched timestamp
         messageService.putData(WATCHER_DATA, WATCHER_HEARTBEAT, clock.millis());
         watcherVersionMatchedAt = clock.millis();
+        final String jreVersion = getWatcherJREVersion();
         StartedProcess newWatcher = new ProcessExecutor()
-                                        .command("nohup", "./start.sh")
+                                        .command("nohup", "./start.sh", "", "", jreVersion)
                                         .redirectError(Slf4jStream.of("RestartWatcherScript").asError())
                                         .redirectOutput(Slf4jStream.of("RestartWatcherScript").asInfo())
                                         .readOutput(true)
@@ -1703,6 +1715,23 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.error("Error restarting watcher {}", watcherProcess, e);
       }
     }
+  }
+
+  private String getWatcherJREVersion() {
+    try {
+      if (multiVersion) {
+        RestResponse<String> restResponse = ManagerCallHelper.executeRestCall(
+            delegateAgentManagerClient.getJREVersion(delegateConfiguration.getAccountId(), false),
+            this::handleErrorResponse);
+        if (restResponse != null && !isEmpty(restResponse.getResource())) {
+          return restResponse.getResource();
+        }
+      }
+    } catch (Exception ex) {
+      log.warn("Failed to fetch jre version from Manager ", ex);
+    }
+    // for smp it will return empty and take default value defined above
+    return defaultJREVersion;
   }
 
   private boolean downloadRunScriptsForWatcher(String version) {
@@ -1977,22 +2006,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     builder.put("maxExecutingTasksCount", Integer.toString(maxExecutingTasksCount.getAndSet(0)));
     builder.put("maxExecutingFuturesCount", Integer.toString(maxExecutingFuturesCount.getAndSet(0)));
 
-    OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-    builder.put("cpu-process",
-        BigDecimal.valueOf(osBean.getProcessCpuLoad() * 100).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
-    builder.put("cpu-system",
-        BigDecimal.valueOf(osBean.getSystemCpuLoad() * 100).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
-
     for (Entry<String, ThreadPoolExecutor> executorEntry : getLogExecutors().entrySet()) {
       builder.put(executorEntry.getKey(), Integer.toString(executorEntry.getValue().getActiveCount()));
     }
-    MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
 
-    memoryUsage(builder, "heap-", memoryMXBean.getHeapMemoryUsage());
-
-    memoryUsage(builder, "non-heap-", memoryMXBean.getNonHeapMemoryUsage());
-
-    return builder.build();
+    return logPerformanceImpl.obtainDelegateCpuMemoryPerformance(builder);
   }
 
   public double getCPULoadAverage() {
@@ -2005,6 +2023,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     try (AutoLogContext ignore = new AutoLogContext(obtainPerformance(), OVERRIDE_NESTS)) {
       log.info("Current performance");
     }
+  }
+
+  private static void logTopProcessesByCpuAndMemory() {
+    logPerformanceImpl.logTopCpuMemoryProcesses();
   }
 
   private void abortDelegateTask(DelegateTaskAbortEvent delegateTaskEvent) {

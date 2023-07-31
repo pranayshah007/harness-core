@@ -6,11 +6,13 @@
  */
 
 package io.harness.serializer;
-
 import io.harness.EntityType;
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepNode;
 import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepNode;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepNode;
@@ -73,6 +75,7 @@ import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.cdng.k8s.K8sScaleStepNode;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepNode;
+import io.harness.cdng.provision.awscdk.AwsCdkDiffStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkSynthStepNode;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepNode;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepNode;
@@ -125,6 +128,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 public class CDNGRegistrars {
@@ -1334,6 +1340,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(AwsCdkSynthStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.AWS_CDK_DIFF)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AwsCdkDiffStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))

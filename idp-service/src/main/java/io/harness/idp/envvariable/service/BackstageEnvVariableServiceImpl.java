@@ -265,11 +265,23 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
         backstageEnvVariableRepository.findByAccountIdentifierAndHarnessSecretIdentifier(
             accountIdentifier, secretIdentifier);
     if (envVariableEntityOpt.isPresent()) {
+      log.info("Secret {} is used by backstage env variable {}. Processing secret update for account {}",
+          secretIdentifier, envVariableEntityOpt.get().getEnvName(), accountIdentifier);
       BackstageEnvVariableMapper envVariableMapper = getEnvVariableMapper((envVariableEntityOpt.get().getType()));
       sync(Collections.singletonList(envVariableMapper.toDto(envVariableEntityOpt.get())), accountIdentifier, false);
-    } else {
-      // TODO: There might be too many secrets overall. We might have to consider removing this log line in future
-      log.info("Secret {} is not tracker by IDP, hence not processing it", secretIdentifier);
+    }
+  }
+
+  @Override
+  public void processSecretDelete(EntityChangeDTO entityChangeDTO) {
+    String secretIdentifier = entityChangeDTO.getIdentifier().getValue();
+    secretIdentifier = CommonUtils.removeAccountFromIdentifier(secretIdentifier);
+    String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
+    Optional<BackstageEnvVariableEntity> backstageEnvVariableOpt =
+        backstageEnvVariableRepository.updateSecretIsDeleted(accountIdentifier, secretIdentifier, true);
+    if (backstageEnvVariableOpt.isPresent()) {
+      log.info("Marking backstage env variable {} as deleted as it uses deleted secret {} for account {}",
+          backstageEnvVariableOpt.get().getEnvName(), secretIdentifier, accountIdentifier);
     }
   }
 

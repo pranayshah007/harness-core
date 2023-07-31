@@ -37,6 +37,7 @@ import io.harness.delegate.k8s.K8sCanaryBaseHandler;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.istio.IstioTaskHelper;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
@@ -83,6 +84,7 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
   @Inject private transient ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   @Inject private transient K8sTaskHelper k8sTaskHelper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
+  @Inject private IstioTaskHelper istioTaskHelper;
   @Inject private transient K8sCanaryBaseHandler k8sCanaryBaseHandler;
   private K8sReleaseHandler releaseHandler;
 
@@ -269,10 +271,10 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
       k8sRequestHandlerContext.setResources(resources);
       k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());
 
-      k8sTaskHelperBase.updateDestinationRuleManifestFilesWithSubsets(resources,
+      istioTaskHelper.updateDestinationRuleManifestFilesWithSubsets(resources,
           asList(HarnessLabelValues.trackCanary, HarnessLabelValues.trackStable), kubernetesConfig,
           executionLogCallback);
-      k8sTaskHelperBase.updateVirtualServiceManifestFilesWithRoutesForCanary(
+      istioTaskHelper.updateVirtualServiceManifestFilesWithRoutesForCanary(
           resources, kubernetesConfig, executionLogCallback);
       canaryHandlerConfig.setResources(resources);
     } catch (Exception e) {

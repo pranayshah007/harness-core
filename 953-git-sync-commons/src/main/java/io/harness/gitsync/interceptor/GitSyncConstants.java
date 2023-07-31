@@ -6,10 +6,15 @@
  */
 
 package io.harness.gitsync.interceptor;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(DX)
 public class GitSyncConstants {
   public static final String DEFAULT = "__default__";

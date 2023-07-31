@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.sdk.core.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.sdk.core.execution.invokers.AsyncChainStrategy;
@@ -24,6 +26,7 @@ import io.harness.pms.sdk.core.execution.invokers.TaskStrategy;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 public class ExecutableProcessorFactory {
   @Inject Injector injector;

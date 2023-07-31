@@ -28,6 +28,7 @@ import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
@@ -56,9 +57,11 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
     Set<String> preDeploymentHosts, postDeploymentHosts, newHosts, commonHosts;
     if (VerificationJobInstanceServiceInstanceUtils.canUseNodesFromCD(verificationJobInstance)) {
       preDeploymentHosts =
-          new HashSet<>(verificationJobInstance.getServiceInstanceDetails().getServiceInstancesBeforeDeployment());
-      postDeploymentHosts =
-          new HashSet<>(verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment());
+
+          new HashSet<>(CollectionUtils.emptyIfNull(
+              verificationJobInstance.getServiceInstanceDetails().getServiceInstancesBeforeDeployment()));
+      postDeploymentHosts = new HashSet<>(CollectionUtils.emptyIfNull(
+          verificationJobInstance.getServiceInstanceDetails().getServiceInstancesAfterDeployment()));
     } else {
       preDeploymentHosts =
           getPreDeploymentHosts(verificationJobInstance, analysisState.getInputs().getVerificationTaskId());

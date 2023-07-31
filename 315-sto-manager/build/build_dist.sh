@@ -34,9 +34,7 @@ cp ../../315-sto-manager/app/src/main/resources/enterprise-redisson-jcache.yaml 
 cp ../../315-sto-manager/app/src/main/resources/jfr/default.jfc .
 cp ../../315-sto-manager/app/src/main/resources/jfr/profile.jfc .
 
-cp ../../315-sto-manager/build/container/Dockerfile-stomanager-service-jenkins-k8-openjdk ./Dockerfile
-cp ../../315-sto-manager/build/container/Dockerfile-stomanager-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
-cp ../../315-sto-manager/build/container/Dockerfile-stomanager-ubi ./Dockerfile-gcr-ubi
+cp ../../315-sto-manager/build/container/Dockerfile ./Dockerfile
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../315-sto-manager/build/container/scripts/ .

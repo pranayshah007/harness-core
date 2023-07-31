@@ -146,6 +146,7 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -516,5 +517,12 @@ public class IdpModule extends AbstractModule {
   @Named("proxyAllowList")
   public ProxyAllowListConfig proxyAllowList() {
     return this.appConfig.getProxyAllowList();
+  }
+
+  @Provides
+  @Singleton
+  @Named("notificationConfigs")
+  public HashMap<String, String> notificationConfigs() {
+    return this.appConfig.getNotificationConfigs();
   }
 }

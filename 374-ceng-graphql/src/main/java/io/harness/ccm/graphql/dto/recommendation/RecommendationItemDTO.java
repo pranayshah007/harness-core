@@ -31,6 +31,9 @@ public class RecommendationItemDTO {
   String jiraConnectorRef;
   String jiraIssueKey;
   String jiraStatus;
+  String servicenowConnectorRef;
+  String servicenowIssueKey;
+  String servicenowIssueStatus;
   RecommendationDetailsDTO recommendationDetails;
   String perspectiveId;
   String perspectiveName;

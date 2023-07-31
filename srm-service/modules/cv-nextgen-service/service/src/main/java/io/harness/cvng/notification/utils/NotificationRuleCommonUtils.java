@@ -86,9 +86,9 @@ public class NotificationRuleCommonUtils {
         notificationChannelType.getTemplateSuffixIdentifier().toLowerCase());
   }
 
-  public static String getSloPerformanceDetailsForReport(
+  public static String getSloPerformanceSectionForReport(
       List<MSHealthReport.AssociatedSLOsDetails> associatedSLOsDetails, Instant currentInstant, String baseUrl,
-      String SLOPerformanceSection) {
+      String SLOPerformanceSectionTemplate) {
     StringBuilder sb = new StringBuilder();
 
     sb.append(getSLOSummaryForReport(associatedSLOsDetails));
@@ -105,7 +105,7 @@ public class NotificationRuleCommonUtils {
           put(ERROR_BUDGET_BURNED, String.format("%.2f", sloDetails.getErrorBudgetBurned()));
         }
       };
-      final String[] sloPerformanceSection = {SLOPerformanceSection};
+      final String[] sloPerformanceSection = {SLOPerformanceSectionTemplate};
       templateDataMap.forEach((key, value) -> {
         String variable = String.format("${%s}", key);
         sloPerformanceSection[0] = sloPerformanceSection[0].replace(variable, value);

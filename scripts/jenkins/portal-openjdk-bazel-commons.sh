@@ -124,6 +124,8 @@ function copy_ng_dashboard_jars(){
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/ng-dashboard-service/scripts/ .
+	cp ../../290-dashboard-service/src/main/resources/jfr/default.jfc .
+  cp ../../290-dashboard-service/src/main/resources/jfr/profile.jfc .
 
 	copy_common_files
 

@@ -6,9 +6,11 @@
  */
 
 package io.harness.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.context.GlobalContext;
 import io.harness.gitx.ThreadOperationContext;
 import io.harness.gitx.USER_FLOW;
@@ -16,6 +18,7 @@ import io.harness.manage.GlobalContextManager;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ThreadOperationContextHelper {

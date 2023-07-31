@@ -6,13 +6,15 @@
  */
 
 package io.harness.k8s.model;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.model.Kind.HorizontalPodAutoscaler;
 import static io.harness.k8s.model.Kind.NOOP;
 import static io.harness.k8s.model.Kind.PodDisruptionBudget;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,6 +22,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @Slf4j
 public class KubernetesResourceEventHandler {

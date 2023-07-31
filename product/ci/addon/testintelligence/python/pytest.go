@@ -56,6 +56,10 @@ func (b *pytestRunner) AutoDetectTests(ctx context.Context, testGlobs []string) 
 	return GetPythonTests(testGlobs)
 }
 
+func (b *pytestRunner) ReadPackages(files []types.File) []types.File {
+	return files
+}
+
 func (b *pytestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	// Run all the tests
 	testCmd := ""

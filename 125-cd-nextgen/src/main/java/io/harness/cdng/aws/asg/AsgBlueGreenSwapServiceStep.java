@@ -77,8 +77,9 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
     // Nothing to validate
   }
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<AsgCommandResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<AsgCommandResponse> responseDataSupplier)
+      throws Exception {
     StepResponse stepResponse;
     try {
       AsgBlueGreenSwapServiceResponse asgBlueGreenSwapServiceResponse =

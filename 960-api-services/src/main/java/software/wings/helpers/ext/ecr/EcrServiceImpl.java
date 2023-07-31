@@ -6,12 +6,14 @@
  */
 
 package software.wings.helpers.ext.ecr;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.beans.BuildDetailsInternal.BuildDetailsInternalMetadataKeys;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
@@ -57,6 +59,9 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Created by brett on 7/15/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j

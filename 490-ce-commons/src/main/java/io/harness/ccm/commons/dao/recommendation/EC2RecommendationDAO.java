@@ -19,6 +19,7 @@ import static io.harness.timescaledb.Tables.UTILIZATION_DATA;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.EC2InstanceUtilizationData;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
@@ -161,6 +162,16 @@ public class EC2RecommendationDAO {
                             .filter(EC2RecommendationKeys.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(EC2Recommendation.class)
             .set(EC2RecommendationKeys.jiraDetails, jiraDetails));
+  }
+
+  @NonNull
+  public void updateServicenowDetailsInEC2Recommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(EC2Recommendation.class)
+                            .filter(EC2RecommendationKeys.accountId, accountId)
+                            .filter(EC2RecommendationKeys.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(EC2Recommendation.class)
+            .set(EC2RecommendationKeys.serviceNowDetails, serviceNowDetails));
   }
 
   /**

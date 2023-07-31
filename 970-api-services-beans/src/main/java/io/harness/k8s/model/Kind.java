@@ -6,9 +6,11 @@
  */
 
 package io.harness.k8s.model;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidArgumentsException;
 
 import com.google.common.collect.ImmutableSet;
@@ -16,6 +18,7 @@ import java.util.Set;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public enum Kind {
   Namespace,
   ResourceQuota,

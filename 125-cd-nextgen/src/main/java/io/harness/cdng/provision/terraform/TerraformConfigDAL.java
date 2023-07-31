@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.provision.terraform;
-
 import static java.util.Objects.requireNonNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigKeys;
 import io.harness.expression.EngineExpressionSecretUtils;
@@ -24,6 +26,7 @@ import dev.morphia.query.Query;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)

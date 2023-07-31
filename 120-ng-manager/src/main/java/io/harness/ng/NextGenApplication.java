@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng;
-
 import static io.harness.NGCommonEntityConstants.CONFIG_FILE_FUNCTOR;
 import static io.harness.NGCommonEntityConstants.FILE_STORE_FUNCTOR;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInterMsvcRequests;
@@ -36,7 +35,10 @@ import io.harness.SCMGrpcClientModule;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.filter.NGScopeAccessCheckFilter;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheModule;
 import io.harness.cdng.creator.CDNGModuleInfoProvider;
 import io.harness.cdng.creator.CDNGPlanCreatorProvider;
@@ -137,6 +139,7 @@ import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
+import io.harness.ng.core.remote.UsersRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ApiKeyRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ApiTokenRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.CloudCostK8sConnectorRestrictionsUsageImpl;
@@ -298,6 +301,7 @@ import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.model.Resource;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PL)
 @Slf4j
 public class NextGenApplication extends Application<NextGenConfiguration> {
@@ -1095,6 +1099,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                     .put(FeatureRestrictionName.MULTIPLE_ORGANIZATIONS, OrgRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_SECRETS, SecretRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_USER_GROUPS, UserGroupRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_USERS, UsersRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_SERVICE_ACCOUNTS, ServiceAccountRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_VARIABLES, VariableRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_CONNECTORS, ConnectorRestrictionUsageImpl.class)

@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.analysis;
-
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -26,6 +25,9 @@ import static software.wings.common.VerificationConstants.DEMO_SUCCESS_LOG_STATE
 import static software.wings.common.VerificationConstants.IGNORED_ERRORS_METRIC_NAME;
 import static software.wings.delegatetasks.ElkLogzDataCollectionTask.parseElkResponse;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
@@ -133,6 +135,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 /**
  * Created by rsingh on 4/17/17.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @ValidateOnExecution
 @Slf4j
 public class AnalysisServiceImpl implements AnalysisService {

@@ -27,6 +27,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
@@ -35,6 +36,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationTestHelper;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
@@ -79,6 +81,7 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Mock private Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject;
+  @Mock private PlanService planService;
   @Inject @InjectMocks @Spy private NodeExecutionServiceImpl nodeExecutionService;
 
   @Before
@@ -570,19 +573,20 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     String nodeExecutionUuid = generateUuid();
 
     // Node execution of type other than stage
+    PlanNode node1 = PlanNode.builder()
+                         .uuid(nodeUuid)
+                         .name("name")
+                         .identifier("stage1")
+                         .stageFqn(stage1Fqn)
+                         .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+                         .serviceName("CD")
+                         .build();
     NodeExecution nodeExecution1 =
         NodeExecution.builder()
             .uuid(nodeExecutionUuid)
             .parentId(parentId)
             .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .planNode(PlanNode.builder()
-                          .uuid(nodeUuid)
-                          .name("name")
-                          .identifier("stage1")
-                          .stageFqn(stage1Fqn)
-                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-                          .serviceName("CD")
-                          .build())
+            .planNode(node1)
             .status(Status.RUNNING)
             .nodeId(nodeUuid)
             .name("name")
@@ -599,14 +603,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .uuid(nodeExecutionUuid12)
             .parentId(parentId)
             .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .planNode(PlanNode.builder()
-                          .uuid(nodeUuid)
-                          .name("name")
-                          .identifier("stage1")
-                          .stageFqn(stage1Fqn)
-                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-                          .serviceName("CD")
-                          .build())
+            .planNode(node1)
             .status(Status.RUNNING)
             .nodeId(nodeUuid)
             .name("name")
@@ -619,19 +616,20 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     String nodeUuid2 = generateUuid();
     String nodeExecutionUuid2 = generateUuid();
     // Node execution of type stage
+    PlanNode node2 = PlanNode.builder()
+                         .uuid(nodeUuid2)
+                         .name("name")
+                         .identifier("stage2")
+                         .stageFqn(stage2Fqn)
+                         .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
+                         .serviceName("CD")
+                         .build();
     NodeExecution nodeExecution2 =
         NodeExecution.builder()
             .uuid(nodeExecutionUuid2)
             .parentId(parentId)
             .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .planNode(PlanNode.builder()
-                          .uuid(nodeUuid2)
-                          .name("name")
-                          .identifier("stage2")
-                          .stageFqn(stage2Fqn)
-                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
-                          .serviceName("CD")
-                          .build())
+            .planNode(node2)
             .status(Status.RUNNING)
             .nodeId(nodeUuid2)
             .name("name")
@@ -645,19 +643,20 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     String nodeUuid3 = generateUuid();
     String nodeExecutionUuid3 = generateUuid();
     // Node execution of type stage
+    PlanNode node3 = PlanNode.builder()
+                         .uuid(nodeUuid3)
+                         .name("name")
+                         .stageFqn(stage3Fqn)
+                         .identifier("stage3")
+                         .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
+                         .serviceName("CD")
+                         .build();
     NodeExecution nodeExecution3 =
         NodeExecution.builder()
             .uuid(nodeExecutionUuid3)
             .parentId(parentId)
             .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
-            .planNode(PlanNode.builder()
-                          .uuid(nodeUuid3)
-                          .name("name")
-                          .stageFqn(stage3Fqn)
-                          .identifier("stage3")
-                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STAGE).build())
-                          .serviceName("CD")
-                          .build())
+            .planNode(node3)
             .status(Status.RUNNING)
             .nodeId(nodeUuid3)
             .name("name")
@@ -675,6 +674,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     nodeExecutionService.save(nodeExecution2);
     nodeExecutionService.save(nodeExecution3);
 
+    when(planService.fetchAllNodes(Set.of(nodeUuid, nodeUuid2, nodeUuid3))).thenReturn(Set.of(node1, node2, node3));
     Map<String, Node> uuidNodeMap = nodeExecutionService.mapNodeExecutionIdWithPlanNodeForGivenStageFQN(
         planExecutionUuid, Arrays.asList(stage1Fqn, stage2Fqn, stage3Fqn));
     // Total 4 nodeExecutions but only 3 will be returned. Because nodeExecution1 and nodeExecution12 correspond to same

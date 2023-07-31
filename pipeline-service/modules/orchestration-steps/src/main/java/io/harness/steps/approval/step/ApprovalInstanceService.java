@@ -6,10 +6,12 @@
  */
 
 package io.harness.steps.approval.step;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.execution.NodeExecution;
 import io.harness.jira.JiraIssueNG;
@@ -30,6 +32,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 public interface ApprovalInstanceService {
   ApprovalInstance save(@NotNull ApprovalInstance instance);

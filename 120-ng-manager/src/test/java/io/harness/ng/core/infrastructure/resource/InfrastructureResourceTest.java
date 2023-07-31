@@ -7,7 +7,6 @@
 
 package io.harness.ng.core.infrastructure.resource;
 
-import static io.harness.beans.FeatureName.CDS_OrgAccountLevelServiceEnvEnvGroup;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -66,8 +65,6 @@ public class InfrastructureResourceTest extends CategoryTest {
         .thenReturn(false);
 
     when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
-
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, CDS_OrgAccountLevelServiceEnvEnvGroup)).thenReturn(false);
 
     String yaml = readFile("InfraYamlWithIncorrectDeploymentType.yaml");
 

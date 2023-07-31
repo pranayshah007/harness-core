@@ -38,4 +38,7 @@ public class ServiceStepConstants {
 
   public static final List<ServiceOverridesType> OVERRIDE_IN_REVERSE_PRIORITY =
       List.of(ENV_GLOBAL_OVERRIDE, ENV_SERVICE_OVERRIDE, INFRA_GLOBAL_OVERRIDE, INFRA_SERVICE_OVERRIDE);
+
+  public static final String SERVICE_STEP_COMMAND_UNIT = "Service Step";
+  public static final String OVERRIDES_COMMAND_UNIT = "Service Overrides";
 }

@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.security.auth;
-
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
@@ -23,7 +22,10 @@ import static software.wings.security.PermissionAttribute.PermissionType.DEPLOYM
 
 import static java.util.Arrays.asList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
@@ -57,6 +59,8 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Created by ujjawal on 05/24/20.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @OwnedBy(PL)

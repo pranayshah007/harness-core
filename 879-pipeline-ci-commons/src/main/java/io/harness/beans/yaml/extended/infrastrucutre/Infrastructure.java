@@ -6,6 +6,9 @@
  */
 
 package io.harness.beans.yaml.extended.infrastrucutre;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -14,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModelProperty;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true,
     include = JsonTypeInfo.As.EXISTING_PROPERTY, defaultImpl = UseFromStageInfraYaml.class)
 @JsonSubTypes({

@@ -6,13 +6,14 @@
  */
 
 package io.harness.cdng.service.steps;
-
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_ENV_OUTCOME;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_GROUP_REF;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_REF;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENV_VARIABLES_PATTERN_REGEX;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDES_COMMAND_UNIT;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDE_IN_REVERSE_PRIORITY;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_CONFIGURATION_NOT_FOUND;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_VARIABLES_PATTERN_REGEX;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -25,9 +26,11 @@ import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.EN
 import static java.lang.String.format;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.ConfigFilesOutcome;
@@ -64,6 +67,8 @@ import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.freeze.service.FrozenExecutionService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
+import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
@@ -148,6 +153,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters> {
@@ -187,15 +194,18 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, StepInputPackage inputPackage) {
     validate(stepParameters);
     try {
-      final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
+      final NGLogCallback serviceStepLogCallback =
+          serviceStepsHelper.getServiceLogCallback(ambiance, true, SERVICE_STEP_COMMAND_UNIT);
+      final NGLogCallback overrideLogCallback =
+          serviceStepsHelper.getServiceLogCallback(ambiance, true, OVERRIDES_COMMAND_UNIT);
 
-      saveExecutionLog(logCallback, "Starting service step...");
+      saveExecutionLog(serviceStepLogCallback, "Starting service step...");
 
       Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters, entityMap);
 
-      saveExecutionLog(logCallback,
+      saveExecutionLog(serviceStepLogCallback,
           "Service Name: " + servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig().getName()
               + " , Identifier: "
               + servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig().getIdentifier());
@@ -207,9 +217,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       // If environment group is only set for GitOps or if GitOps flow and deploying to multi-environments
       if (ParameterField.isNotNull(stepParameters.getGitOpsMultiSvcEnvEnabled())
           && stepParameters.getGitOpsMultiSvcEnvEnabled().getValue()) {
-        handleMultipleEnvironmentsPart(ambiance, stepParameters, servicePartResponse, logCallback);
+        handleMultipleEnvironmentsPart(ambiance, stepParameters, servicePartResponse, serviceStepLogCallback);
       } else {
-        executeEnvironmentPart(ambiance, stepParameters, servicePartResponse, logCallback, entityMap);
+        executeEnvironmentPart(
+            ambiance, stepParameters, servicePartResponse, serviceStepLogCallback, entityMap, overrideLogCallback);
       }
 
       ChildrenExecutableResponse childrenExecutableResponse = executeFreezePart(ambiance, entityMap);
@@ -218,8 +229,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       }
 
       return ChildrenExecutableResponse.newBuilder()
-          .addAllLogKeys(emptyIfNull(
-              StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
+          .addAllLogKeys(emptyIfNull(StepUtils.generateLogKeys(
+              StepUtils.generateLogAbstractions(ambiance), List.of(SERVICE_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT))))
+          .addAllUnits(List.of(SERVICE_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT))
           .addAllChildren(stepParameters.getChildrenNodeIds()
                               .stream()
                               .map(id -> ChildrenExecutableResponse.Child.newBuilder().setChildNodeId(id).build())
@@ -322,7 +334,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
    * the flow is being used for GitOps Flows deploying to multiple environments.
    */
   private void handleMultipleEnvironmentsPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
-      ServicePartResponse servicePartResponse, NGLogCallback logCallback) {
+      ServicePartResponse servicePartResponse, NGLogCallback serviceStepLogCallback) {
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
     Map<String, Map<String, Object>> envToEnvVariables = new HashMap<>();
@@ -397,7 +409,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     sweepingOutputService.consume(ambiance, GITOPS_ENV_OUTCOME, gitOpsEnvOutCome, StepCategory.STAGE.name());
 
-    processServiceVariables(ambiance, servicePartResponse, logCallback, null, false, new HashMap<>());
+    processServiceVariables(ambiance, servicePartResponse, serviceStepLogCallback, null, false, new HashMap<>());
 
     serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
         servicePartResponse.getNgServiceConfig(), null, null, ambiance,
@@ -457,8 +469,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
-      ServicePartResponse servicePartResponse, NGLogCallback logCallback, Map<FreezeEntityType, List<String>> entityMap)
-      throws IOException {
+      ServicePartResponse servicePartResponse, NGLogCallback serviceStepLogCallback,
+      Map<FreezeEntityType, List<String>> entityMap, NGLogCallback overrideLogCallback) throws IOException {
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     final String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     final String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -495,7 +507,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           resolve(ambiance, parameters.getInfraId());
         }
         mergedOverrideV2Configs = serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            accountId, orgIdentifier, projectIdentifier, parameters, environment.get(), logCallback);
+            accountId, orgIdentifier, projectIdentifier, parameters, environment.get(), overrideLogCallback);
       }
 
       NGEnvironmentConfig ngEnvironmentConfig;
@@ -576,8 +588,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       sweepingOutputService.consume(
           ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepCategory.STAGE.name());
 
-      processServiceVariables(ambiance, servicePartResponse, logCallback, environmentOutcome, isOverridesV2enabled,
-          mergedOverrideV2Configs);
+      processServiceVariables(ambiance, servicePartResponse, serviceStepLogCallback, environmentOutcome,
+          isOverridesV2enabled, mergedOverrideV2Configs);
 
       if (isOverridesV2enabled) {
         NGServiceV2InfoConfig ngServiceV2InfoConfig =
@@ -653,18 +665,20 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   }
 
   private void processServiceVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
-      NGLogCallback logCallback, EnvironmentOutcome environmentOutcome, boolean isOverridesV2Enabled,
+      NGLogCallback serviceStepLogCallback, EnvironmentOutcome environmentOutcome, boolean isOverridesV2Enabled,
       Map<ServiceOverridesType, NGServiceOverrideConfigV2> overridesV2Configs) {
     VariablesSweepingOutput variablesSweepingOutput;
     if (isOverridesV2Enabled) {
-      variablesSweepingOutput = getVariablesSweepingOutputFromOverridesV2(
-          servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), logCallback, overridesV2Configs);
+      variablesSweepingOutput =
+          getVariablesSweepingOutputFromOverridesV2(servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(),
+              serviceStepLogCallback, overridesV2Configs);
     } else if (environmentOutcome != null) {
-      variablesSweepingOutput = getVariablesSweepingOutput(
-          servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), logCallback, environmentOutcome);
+      variablesSweepingOutput =
+          getVariablesSweepingOutput(servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(),
+              serviceStepLogCallback, environmentOutcome);
     } else {
       variablesSweepingOutput = getVariablesSweepingOutputForGitOps(
-          servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), logCallback);
+          servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig(), serviceStepLogCallback);
     }
 
     sweepingOutputService.consume(ambiance, YAMLFieldNameConstants.VARIABLES, variablesSweepingOutput, null);
@@ -677,13 +691,15 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     sweepingOutputService.consume(ambiance, YAMLFieldNameConstants.SERVICE_VARIABLES,
         (VariablesSweepingOutput) outputObj, StepCategory.STAGE.name());
 
-    saveExecutionLog(logCallback, "Processed service variables");
+    saveExecutionLog(serviceStepLogCallback, "Processed service variables");
   }
 
   @Override
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
     final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
+    UnitProgress serviceStepUnitProgress = null;
+    long serviceStepStartTs = AmbianceUtils.getCurrentLevelStartTs(ambiance);
 
     final ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT));
@@ -710,12 +726,25 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     stepResponse = SdkCoreStepUtils.createStepResponseFromChildResponse(responseDataMap);
 
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     if (StatusUtils.brokeStatuses().contains(stepResponse.getStatus())) {
       saveExecutionLog(logCallback, LogHelper.color("Failed to complete service step", LogColor.Red), LogLevel.INFO,
           CommandExecutionStatus.FAILURE);
+      serviceStepUnitProgress = UnitProgress.newBuilder()
+                                    .setStatus(UnitStatus.FAILURE)
+                                    .setUnitName(SERVICE_STEP_COMMAND_UNIT)
+                                    .setStartTime(serviceStepStartTs)
+                                    .setEndTime(System.currentTimeMillis())
+                                    .build();
     } else {
       saveExecutionLog(logCallback, "Completed service step", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      serviceStepUnitProgress = UnitProgress.newBuilder()
+                                    .setStatus(UnitStatus.SUCCESS)
+                                    .setUnitName(SERVICE_STEP_COMMAND_UNIT)
+                                    .setStartTime(serviceStepStartTs)
+                                    .setEndTime(System.currentTimeMillis())
+                                    .build();
     }
     stepOutcomes.add(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.SERVICE)
@@ -767,11 +796,16 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
     // Todo: Add azure outcomes here
     stepResponse = stepResponse.withStepOutcomes(stepOutcomes);
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
-    }
-    return stepResponse;
+    serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
+
+    UnitProgress overridesUnit = UnitProgress.newBuilder()
+                                     .setStatus(UnitStatus.SUCCESS)
+                                     .setUnitName(OVERRIDES_COMMAND_UNIT)
+                                     .setStartTime(serviceStepStartTs)
+                                     .setEndTime(System.currentTimeMillis())
+                                     .build();
+
+    return stepResponse.toBuilder().unitProgressList(List.of(overridesUnit, serviceStepUnitProgress)).build();
   }
 
   private ServicePartResponse executeServicePart(
@@ -999,9 +1033,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       notificationHelper.sendNotificationForFreezeConfigs(
           manualFreezeConfigs, globalFreezeConfigs, ambiance, executionUrl, baseUrl);
       return ChildrenExecutableResponse.newBuilder()
-          .addAllLogKeys(emptyIfNull(
-              StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
+          .addAllLogKeys(emptyIfNull(StepUtils.generateLogKeys(
+              StepUtils.generateLogAbstractions(ambiance), List.of(SERVICE_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT))))
           .addAllChildren(Collections.emptyList())
+          .addAllUnits(List.of(SERVICE_STEP_COMMAND_UNIT, OVERRIDES_COMMAND_UNIT))
           .build();
     }
     return null;

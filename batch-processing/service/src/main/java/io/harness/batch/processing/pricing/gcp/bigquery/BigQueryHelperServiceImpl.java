@@ -38,6 +38,8 @@ import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldList;
 import com.google.cloud.bigquery.FieldValue;
 import com.google.cloud.bigquery.FieldValueList;
+import com.google.cloud.bigquery.Job;
+import com.google.cloud.bigquery.JobInfo;
 import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.TableResult;
@@ -453,10 +455,12 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     log.info("Remove cost categories query: {}", query);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     try {
-      bigQueryService.query(queryConfig);
+      Job job = bigQueryService.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Table name: {}, Job id: {} cost categories remove", tableName, job.getJobId());
+      job.getQueryResults();
       log.info("costCategories removed");
     } catch (BigQueryException | InterruptedException bigQueryException) {
-      log.warn("Error: ", bigQueryException);
+      log.warn("Error in processing query in table: {}", tableName, bigQueryException);
     }
   }
 
@@ -471,10 +475,12 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     log.info("Update cost category column query: {}", query);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     try {
-      bigQueryService.query(queryConfig);
+      Job job = bigQueryService.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Table name: {}, Job id: {} cost categories update", tableName, job.getJobId());
+      job.getQueryResults();
       log.info("costCategory updated");
     } catch (BigQueryException | InterruptedException bigQueryException) {
-      log.error("Error: ", bigQueryException);
+      log.error("Error in processing query in table: {}", tableName, bigQueryException);
       throw bigQueryException;
     }
   }
@@ -490,10 +496,12 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     log.info("Update cost category column query: {}", query);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
     try {
-      bigQueryService.query(queryConfig);
+      Job job = bigQueryService.create(JobInfo.newBuilder(queryConfig).build());
+      log.info("Table name: {}, Job id: {} cost categories update", tableName, job.getJobId());
+      job.getQueryResults();
       log.info("costCategory updated");
     } catch (BigQueryException | InterruptedException bigQueryException) {
-      log.error("Error: ", bigQueryException);
+      log.error("Error in processing query in table: {}", tableName, bigQueryException);
       throw bigQueryException;
     }
   }

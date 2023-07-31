@@ -260,6 +260,7 @@ import software.wings.service.impl.ExecutionEventListener;
 import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
 import software.wings.service.impl.SettingsServiceImpl;
+import software.wings.service.impl.UpdateHeartBeatIntervalAndResetPerpetualTaskJob;
 import software.wings.service.impl.UserAccountLevelDataMigrationJob;
 import software.wings.service.impl.WorkflowExecutionServiceHelper;
 import software.wings.service.impl.WorkflowExecutionServiceImpl;
@@ -1210,6 +1211,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().manage(injector.getInstance(AuditCleanupJob.class));
     environment.lifecycle().manage(injector.getInstance(RedisConsumerControllerCg.class));
     environment.lifecycle().manage(injector.getInstance(UserAccountLevelDataMigrationJob.class));
+    environment.lifecycle().manage(injector.getInstance(UpdateHeartBeatIntervalAndResetPerpetualTaskJob.class));
   }
 
   private void registerManagedBeansManager(

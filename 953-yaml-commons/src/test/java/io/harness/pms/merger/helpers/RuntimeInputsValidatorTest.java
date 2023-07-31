@@ -123,6 +123,22 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
     assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(a).allowedValues(a,b,c)"),
                    convertYamlToJsonNode("field: <+input>.default(b).allowedValues(a,b,c)")))
         .isFalse();
+    assertThat(
+        areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(true).allowedValues(a,b,c)"),
+            convertYamlToJsonNode("field: <+input>.default(true).allowedValues(a,b,c)")))
+        .isTrue();
+    assertThat(
+        areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(123).allowedValues(a,b,c)"),
+            convertYamlToJsonNode("field: <+input>.default(123).allowedValues(a,b,c)")))
+        .isTrue();
+    assertThat(
+        areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(true).allowedValues(a,b,c)"),
+            convertYamlToJsonNode("field: <+input>.default(false).allowedValues(a,b,c)")))
+        .isFalse();
+    assertThat(
+        areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(123).allowedValues(a,b,c)"),
+            convertYamlToJsonNode("field: <+input>.default(234).allowedValues(a,b,c)")))
+        .isFalse();
     assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(a).allowedValues(a,b,c)"),
                    convertYamlToJsonNode("field: <+input>.allowedValues(a,b,c)")))
         .isTrue();

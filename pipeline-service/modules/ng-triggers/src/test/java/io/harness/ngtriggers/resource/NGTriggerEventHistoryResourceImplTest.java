@@ -10,8 +10,10 @@ package io.harness.ngtriggers.resource;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,6 +41,7 @@ import io.harness.ngtriggers.beans.response.TriggerEventStatus;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.target.TargetType;
+import io.harness.ngtriggers.mapper.NGTriggerEventHistoryMapper;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.rule.Owner;
@@ -50,6 +53,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -237,7 +241,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
         .formEventCriteria(eq(ACCOUNT_ID), eq(EVENT_CORRELATION_ID), anyList());
     doReturn(eventHistoryPage).when(ngTriggerEventsService).getEventHistory(criteria, pageable);
 
-    Page<NGTriggerEventHistoryDTO> content =
+    Page<NGTriggerEventHistoryBaseDTO> content =
         ngTriggerEventHistoryResource
             .getTriggerHistoryEventCorrelation(ACCOUNT_ID, EVENT_CORRELATION_ID, 0, 10, new ArrayList<>())
             .getData();
@@ -251,6 +255,39 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
     assertThat(responseDto.getFinalStatus())
         .isEqualTo(TriggerEventResponse.FinalStatus.valueOf(eventHistory.getFinalStatus()));
     assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("No matching trigger for repo");
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGetTriggerHistoryEventCorrelationV2() {
+    // Prepare test data
+    String accountIdentifier = "accountId";
+    String eventCorrelationId = "correlationId";
+    int page = 0;
+    int size = 10;
+    List<String> sort = new ArrayList<>();
+
+    TriggerEventHistory eventHistory = TriggerEventHistory.builder()
+                                           .accountId(ACCOUNT_ID)
+                                           .triggerIdentifier(IDENTIFIER)
+                                           .eventCorrelationId(EVENT_CORRELATION_ID)
+                                           .finalStatus("NO_MATCHING_TRIGGER_FOR_REPO")
+                                           .build();
+    List<TriggerEventHistory> eventHistoryList = new ArrayList<>();
+    eventHistoryList.add(eventHistory);
+    Page<TriggerEventHistory> eventHistoryPage = new PageImpl<>(eventHistoryList);
+
+    // Mock the behavior of ngTriggerEventsService.getEventHistory
+    doReturn(eventHistoryPage).when(ngTriggerEventsService).getEventHistory(any(), any(Pageable.class));
+
+    // Perform the test
+    ResponseDTO<Page<NGTriggerEventHistoryDTO>> response =
+        ngTriggerEventHistoryResource.getTriggerHistoryEventCorrelationV2(
+            accountIdentifier, eventCorrelationId, page, size, sort);
+
+    // Verify the result
+    assertEquals(eventHistoryPage.map(NGTriggerEventHistoryMapper::toTriggerEventHistoryDto), response.getData());
   }
 
   @Test
@@ -273,7 +310,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
         .formEventCriteria(eq(ACCOUNT_ID), eq(EVENT_CORRELATION_ID), anyList());
     doReturn(eventHistoryPage).when(ngTriggerEventsService).getEventHistory(criteria, pageable);
 
-    Page<NGTriggerEventHistoryDTO> content =
+    Page<NGTriggerEventHistoryBaseDTO> content =
         ngTriggerEventHistoryResource
             .getTriggerHistoryEventCorrelation(ACCOUNT_ID, EVENT_CORRELATION_ID, 0, 10, new ArrayList<>())
             .getData();

@@ -7,6 +7,7 @@
 
 package io.harness.idp.plugin.services;
 
+import static io.harness.idp.common.Constants.PLUGIN_REQUEST_NOTIFICATION_SLACK_WEBHOOK;
 import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
@@ -28,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.FileUtils;
+import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.service.PluginsProxyInfoService;
 import io.harness.idp.configmanager.utils.ConfigType;
@@ -64,6 +66,8 @@ public class PluginInfoServiceImplTest {
   @Mock private PluginRequestRepository pluginRequestRepository;
   @Mock private ConfigManagerService configManagerService;
   @Mock private PluginsProxyInfoService pluginsProxyInfoService;
+  @Mock private IdpCommonService idpCommonService;
+  @Mock private HashMap<String, String> notificationConfigs = new HashMap<>();
   private final ObjectMapper objectMapper = mock(ObjectMapper.class);
 
   private static final String ACCOUNT_ID = "123";
@@ -159,6 +163,8 @@ public class PluginInfoServiceImplTest {
   public void testSavePluginRequest() {
     PluginRequestEntity pluginRequestEntity = PluginRequestEntity.builder().build();
     when(pluginRequestRepository.save(any(PluginRequestEntity.class))).thenReturn(pluginRequestEntity);
+    when(notificationConfigs.get(PLUGIN_REQUEST_NOTIFICATION_SLACK_WEBHOOK)).thenReturn("");
+    doNothing().when(idpCommonService).sendSlackNotification(any());
     pluginInfoServiceImpl.savePluginRequest(ACCOUNT_ID, getRequestPlugin());
     verify(pluginRequestRepository, times(1)).save(any(PluginRequestEntity.class));
   }

@@ -28,6 +28,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.ActivityBucket;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
@@ -108,6 +109,25 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
 
     Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
     Assertions.assertThat(activityFromDb).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testRegisterSRMAnalysisEvent_insert() {
+    ChangeEventDTO changeEventDTO = builderFactory.harnessSRMAnalysisChangeEventDTOBuilder().build();
+    changeEventDTO.setMonitoredServiceIdentifier(builderFactory.getContext().getMonitoredServiceIdentifier());
+
+    changeEventService.register(changeEventDTO);
+
+    Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
+    Assertions.assertThat(activityFromDb).isNotNull();
+
+    SRMAnalysisStepExecutionDetail executionDetail =
+        hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class).get();
+    Assertions.assertThat(executionDetail).isNotNull();
+
+    assertThat(executionDetail.getUuid()).isEqualTo(activityFromDb.getUuid());
   }
 
   @Test

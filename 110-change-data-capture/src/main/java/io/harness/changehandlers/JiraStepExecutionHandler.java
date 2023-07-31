@@ -6,7 +6,9 @@
  */
 
 package io.harness.changehandlers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.changehandlers.helper.ChangeHandlerHelper;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.changestreamsframework.ChangeType;
@@ -24,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 public class JiraStepExecutionHandler extends AbstractChangeDataHandler {
   private static final Set<String> JIRA_STEPS_TO_UPDATE = Sets.newHashSet(

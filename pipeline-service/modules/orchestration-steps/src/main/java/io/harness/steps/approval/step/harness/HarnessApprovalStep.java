@@ -6,13 +6,15 @@
  */
 
 package io.harness.steps.approval.step.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.CollectionUtils;
@@ -69,6 +71,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
 @Slf4j
 public class HarnessApprovalStep extends PipelineAsyncExecutable {
@@ -91,10 +94,15 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     HarnessApprovalInstance approvalInstance = HarnessApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    final List<String> userGroups = approvalInstance.getApprovers().getUserGroups();
+    final boolean isAnyValidUserGroupPresent = userGroups.stream().anyMatch(EmptyPredicate::isNotEmpty);
+    if (!isAnyValidUserGroupPresent) {
+      throw new InvalidRequestException("All the provided user groups are empty");
+    }
 
     List<UserGroupDTO> validatedUserGroups = approvalNotificationHandler.getUserGroups(approvalInstance);
     if (EmptyPredicate.isEmpty(validatedUserGroups)) {
-      throw new InvalidRequestException("At least 1 valid user group is required");
+      throw new InvalidRequestException(String.format("At least 1 valid user group is required in %s", userGroups));
     }
     approvalInstance.setValidatedUserGroups(validatedUserGroups);
     approvalInstance.setValidatedApprovalUserGroups(
@@ -251,7 +259,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
   @Override
   public void handleAbort(
       Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    approvalInstanceService.expireByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    approvalInstanceService.abortByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     closeLogStream(ambiance);
   }
 

@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.helm;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
@@ -14,9 +13,12 @@ import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
@@ -63,6 +65,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
@@ -73,6 +76,7 @@ public class HelmChartManifestTaskService {
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
 
   @Inject private GitFetchTaskHelper gitFetchTaskHelper;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private final Cache<HelmChartKey, HelmChartManifest> cache =
       CacheBuilder.newBuilder()
@@ -150,7 +154,8 @@ public class HelmChartManifestTaskService {
     }
 
     final String chartPath = gitStoreDelegateConfig.getPaths().get(0);
-    GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+    GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+        gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
     String chartYamlPath = getChartYamlPath(manifestConfig, chartPath);
 
     FetchFilesResult result = gitFetchTaskHelper.fetchFileFromRepo(

@@ -199,7 +199,7 @@ shared_dependencies = [
     "@maven//:com_j256_two_factor_auth_two_factor_auth",
     "@maven//:com_jakewharton_retrofit_retrofit1_okhttp3_client",
     "@maven//:com_jayway_jsonpath_json_path",
-    "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
+    "@maven//:com_github_mwiede_jsch",
     "@maven//:com_jcraft_jzlib",
     "@maven//:com_mashape_unirest_unirest_java",
     "@maven//:com_mchange_c3p0",

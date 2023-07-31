@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.sdk.core.variables;
-
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.plan.YamlProperties;
@@ -25,6 +27,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class StrategyVariableCreator implements VariableCreator<StrategyConfig> {
   @Override
   public Map<String, Set<String>> getSupportedTypes() {

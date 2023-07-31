@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.api.impl;
-
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
@@ -33,7 +32,10 @@ import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.SecretManagerType.KMS;
 import static io.harness.security.encryption.SecretManagerType.VAULT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.beans.FeatureName;
@@ -108,6 +110,8 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(PL)
 @Singleton
 @Slf4j

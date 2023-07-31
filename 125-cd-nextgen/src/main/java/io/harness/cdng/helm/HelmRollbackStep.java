@@ -6,12 +6,15 @@
  */
 
 package io.harness.cdng.helm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.NativeHelmRollbackOutcome.NativeHelmRollbackOutcomeBuilder;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
@@ -59,6 +62,8 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
@@ -75,6 +80,7 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private StepHelper stepHelper;
   @Inject CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -82,8 +88,9 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<HelmCmdExecResponseNG> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<HelmCmdExecResponseNG> responseDataSupplier)
+      throws Exception {
     StepResponse stepResponse = null;
     try {
       HelmCmdExecResponseNG executionResponse = responseDataSupplier.get();
@@ -176,6 +183,8 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
           .build();
     }
     ManifestsOutcome manifestsOutcome = nativeHelmStepHelper.resolveManifestsOutcome(ambiance);
+    // render manifests outcome
+    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
     ManifestOutcome manifestOutcome = nativeHelmStepHelper.getHelmSupportedManifestOutcome(manifestsOutcome.values());
     HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
 

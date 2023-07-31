@@ -9,6 +9,7 @@ package io.harness.steps.approval.harness;
 
 import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -36,6 +37,7 @@ import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -147,6 +149,32 @@ public class HarnessApprovalStepTest {
     assertThat(instance.getIsAutoRejectEnabled()).isEqualTo(false);
     assertThat(instance.getApprovalKey()).isEqualTo("#_id");
     verify(logStreamingStepClient, times(2)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testExecuteAsyncAfterRbacWithEmptyUserGroup() {
+    Ambiance ambiance = buildAmbiance();
+    StepElementParameters parameters = getStepElementParametersWithEmptyUserGroup();
+    try {
+      harnessApprovalStep.executeAsyncAfterRbac(ambiance, parameters, null);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage()).isEqualTo("All the provided user groups are empty");
+    }
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testExecuteAsyncAfterRbacWithNoUserGroup() {
+    Ambiance ambiance = buildAmbiance();
+    StepElementParameters parameters = getStepElementParametersWithNoUserGroup();
+    try {
+      harnessApprovalStep.executeAsyncAfterRbac(ambiance, parameters, null);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage()).isEqualTo("At least 1 user group is required");
+    }
   }
 
   @Test
@@ -319,7 +347,7 @@ public class HarnessApprovalStepTest {
     Ambiance ambiance = buildAmbiance();
     StepElementParameters parameters = getStepElementParameters();
     harnessApprovalStep.handleAbort(ambiance, parameters, null);
-    verify(approvalInstanceService).expireByNodeExecutionId(null);
+    verify(approvalInstanceService).abortByNodeExecutionId(INSTANCE_ID);
     verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
@@ -342,12 +370,48 @@ public class HarnessApprovalStepTest {
                 .build())
         .build();
   }
+  private StepElementParameters getStepElementParametersWithEmptyUserGroup() {
+    return StepElementParameters.builder()
+        .identifier("_id")
+        .type("HARNESS_APPROVAL")
+        .spec(
+            HarnessApprovalSpecParameters.builder()
+                .approvalMessage(ParameterField.<String>builder().value(APPROVAL_MESSAGE).build())
+                .includePipelineExecutionHistory(ParameterField.<Boolean>builder().value(false).build())
+                .approvers(
+                    Approvers.builder()
+                        .userGroups(ParameterField.<List<String>>builder().value(Collections.singletonList("")).build())
+                        .minimumCount(ParameterField.<Integer>builder().value(1).build())
+                        .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
+                        .build())
+                .isAutoRejectEnabled(ParameterField.<Boolean>builder().value(false).build())
+                .build())
+        .build();
+  }
+  private StepElementParameters getStepElementParametersWithNoUserGroup() {
+    return StepElementParameters.builder()
+        .identifier("_id")
+        .type("HARNESS_APPROVAL")
+        .spec(HarnessApprovalSpecParameters.builder()
+                  .approvalMessage(ParameterField.<String>builder().value(APPROVAL_MESSAGE).build())
+                  .includePipelineExecutionHistory(ParameterField.<Boolean>builder().value(false).build())
+                  .approvers(
+                      Approvers.builder()
+                          .userGroups(ParameterField.<List<String>>builder().value(Collections.emptyList()).build())
+                          .minimumCount(ParameterField.<Integer>builder().value(1).build())
+                          .disallowPipelineExecutor(ParameterField.<Boolean>builder().value(false).build())
+                          .build())
+                  .isAutoRejectEnabled(ParameterField.<Boolean>builder().value(false).build())
+                  .build())
+        .build();
+  }
 
   private Ambiance buildAmbiance() {
     return Ambiance.newBuilder()
         .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+        .addLevels(Level.newBuilder().setRuntimeId(INSTANCE_ID).build())
         .build();
   }
 

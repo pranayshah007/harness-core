@@ -154,12 +154,12 @@ public class FetchInstanceScriptTaskNGTest extends CategoryTest {
                                                    .outputPathKey(OUTPUT_PATH_KEY)
                                                    .build();
     doReturn(mock(LogCallback.class)).when(fetchInstanceScriptTaskNG).getLogCallback(any(), any(), anyBoolean(), any());
-    doThrow(new InvalidRequestException("error")).when(shellExecutorFactory).getExecutor(any(), any(), any());
+    doThrow(new InvalidRequestException("INVALID_REQUEST")).when(shellExecutorFactory).getExecutor(any(), any(), any());
 
     FetchInstanceScriptTaskNGResponse response = fetchInstanceScriptTaskNG.run(request);
 
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
-    assertThat(response.getErrorMessage()).isEqualTo("error");
+    assertThat(response.getErrorMessage()).isEqualTo("INVALID_REQUEST");
     assertThat(response.getUnitProgressData()).isNotNull();
   }
 }

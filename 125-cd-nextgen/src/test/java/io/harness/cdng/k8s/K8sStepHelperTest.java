@@ -214,6 +214,7 @@ import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
@@ -256,6 +257,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
   @Mock private ConnectorService connectorService;
   @Mock private EngineExpressionService engineExpressionService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private OutcomeService outcomeService;
   @Mock private K8sStepExecutor k8sStepExecutor;
   @Mock private KryoSerializer kryoSerializer;
@@ -301,6 +303,8 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .renderExpression(eq(ambiance), anyString());
     Reflect.on(cdExpressionResolver).set("engineExpressionService", engineExpressionService);
     Reflect.on(k8sStepHelper).set("cdExpressionResolver", cdExpressionResolver);
+    Reflect.on(cdExpressionResolver).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
     Reflect.on(k8sStepHelper).set("cdStepHelper", cdStepHelper);
   }
 

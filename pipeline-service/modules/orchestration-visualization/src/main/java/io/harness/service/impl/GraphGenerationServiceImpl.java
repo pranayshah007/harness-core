@@ -350,6 +350,18 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     }
   }
 
+  public OrchestrationGraph buildOrchestrationGraphForNodeExecution(
+      String planExecutionId, String nodeExecutionId, List<NodeExecution> nodeExecutions) {
+    return OrchestrationGraph.builder()
+        .cacheKey(planExecutionId)
+        .cacheContextOrder(System.currentTimeMillis())
+        .cacheParams(null)
+        .planExecutionId(planExecutionId)
+        .rootNodeIds(Lists.newArrayList(nodeExecutionId))
+        .adjacencyList(orchestrationAdjacencyListGenerator.generateAdjacencyList(nodeExecutionId, nodeExecutions, true))
+        .build();
+  }
+
   private OrchestrationGraphDTO generatePartialGraph(String startId, OrchestrationGraph orchestrationGraph) {
     EphemeralOrchestrationGraph ephemeralOrchestrationGraph =
         EphemeralOrchestrationGraph.builder()

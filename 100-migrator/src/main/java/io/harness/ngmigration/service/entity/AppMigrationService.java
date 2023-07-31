@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static io.harness.encryption.Scope.PROJECT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
@@ -14,8 +13,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.ngmigration.NGMigrationEntityType.TRIGGER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
@@ -79,6 +81,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class AppMigrationService extends NgMigrationService {

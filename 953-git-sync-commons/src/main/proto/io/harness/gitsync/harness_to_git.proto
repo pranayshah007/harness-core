@@ -32,6 +32,7 @@ service HarnessToGitPushInfoService {
   rpc listFiles(ListFilesRequest) returns (ListFilesResponse);
   rpc getBatchFiles(GetBatchFilesRequest) returns (GetBatchFilesResponse);
   rpc getUserDetails(UserDetailsRequest) returns (UserDetailsResponse);
+  rpc validateRepo(ValidateRepoRequest) returns (ValidateRepoResponse);
 }
 
 message PushInfo {
@@ -362,6 +363,18 @@ message CacheResponseParams {
 
 message GitSettings {
   bool applyRepoAllowListFilter = 1;
+}
+
+message ValidateRepoRequest {
+  ScopeIdentifiers scope = 1;
+  string connectorRef = 2;
+  string repo = 3;
+}
+
+message ValidateRepoResponse {
+  bool isValid = 1;
+  int32 statusCode = 2;
+  ErrorDetails error = 3;
 }
 
 enum ContentType {

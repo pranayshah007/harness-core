@@ -41,4 +41,11 @@ public class NGActivityCustomRepositoryImpl implements NGActivityCustomRepositor
   public <T> AggregationResults<T> aggregate(Aggregation aggregation, Class<T> classToFillResultIn) {
     return mongoTemplate.aggregate(aggregation, ACTIVITY_COLLECTION_NAME, classToFillResultIn);
   }
+
+  @Override
+  public List<String> findDistinctEntityTypes(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findDistinct(
+        query, NGActivity.ActivityHistoryEntityKeys.referredByEntityType, NGActivity.class, String.class);
+  }
 }

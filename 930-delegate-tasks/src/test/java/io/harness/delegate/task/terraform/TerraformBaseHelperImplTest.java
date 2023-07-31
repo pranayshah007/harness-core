@@ -50,6 +50,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.service.git.NGGitService;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateFileManagerBase;
@@ -156,6 +157,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Mock ObjectMetadata objectMetadata;
   @Mock HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
   @Mock HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNG;
+  @Mock ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private File tfBackendConfig;
   private final EncryptedRecordData encryptedPlanContent =
@@ -166,6 +168,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     spyTerraformBaseHelper = spy(terraformBaseHelper);
     tfBackendConfig = createBackendConfigFile("a1 = b1\na2 = b2\na3 = b3", "backendConfigFile.txt");
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
   }
 
   @After

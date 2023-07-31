@@ -6,11 +6,13 @@
  */
 
 package io.harness.delegate.beans.terragrunt.request;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
@@ -41,9 +43,11 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @OwnedBy(CDP)
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public abstract class AbstractTerragruntTaskParameters
     implements TaskParameters, ExecutionCapabilityDemander, NestedAnnotationResolver {
@@ -54,7 +58,6 @@ public abstract class AbstractTerragruntTaskParameters
   @Expression(ALLOW_SECRETS) StoreDelegateConfig backendFilesStore;
   @Expression(ALLOW_SECRETS) List<StoreDelegateConfig> varFiles;
   EncryptionConfig planSecretManager;
-
   @Expression(ALLOW_SECRETS) List<String> targets;
   @Expression(ALLOW_SECRETS) String workspace;
   @Expression(ALLOW_SECRETS) Map<String, String> envVars;
@@ -111,9 +114,8 @@ public abstract class AbstractTerragruntTaskParameters
   private void addStoreCapabilities(StoreDelegateConfig storeConfig, List<ExecutionCapability> executionCapabilities) {
     if (storeConfig.getType() == StoreDelegateConfigType.GIT) {
       GitStoreDelegateConfig gitStoreConfig = (GitStoreDelegateConfig) storeConfig;
-      executionCapabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ScmConnectorMapper.toGitConfigDTO(gitStoreConfig.getGitConfigDTO()), encryptedDataDetailList,
-          gitStoreConfig.getSshKeySpecDTO()));
+      executionCapabilities.addAll(
+          GitCapabilityHelper.fetchRequiredExecutionCapabilities(gitStoreConfig, encryptedDataDetailList));
     }
   }
 

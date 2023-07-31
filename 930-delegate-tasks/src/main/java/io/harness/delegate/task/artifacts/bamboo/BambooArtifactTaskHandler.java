@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.artifacts.bamboo;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
@@ -17,6 +16,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.beans.ExecutionStatus;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.BambooRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -90,35 +90,42 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
                                                             .build();
 
     try {
-      Pattern pattern = Pattern.compile(attributesRequest.getBuildNumber());
       List<BuildDetails> buildDetails = bambooBuildService.getBuilds(null, artifactStreamAttributes,
-          BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails());
-      if (isNotEmpty(buildDetails)) {
+          BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails(),
+          Integer.MAX_VALUE);
+      checkIfEmptyBuilds(buildDetails);
+
+      if (EmptyPredicate.isNotEmpty(attributesRequest.getBuildRegex())) {
+        Pattern pattern = Pattern.compile(attributesRequest.getBuildRegex());
         buildDetails = buildDetails.stream()
                            .filter(buildDetail -> pattern.matcher(buildDetail.getNumber()).find())
                            .sorted(new BuildDetailsComparatorDescending())
                            .collect(toList());
-        BambooArtifactDelegateResponse bambooArtifactDelegateResponse =
-            BambooRequestResponseMapper.toBambooArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
-        return getSuccessTaskExecutionResponse(
-            Collections.singletonList(bambooArtifactDelegateResponse), Collections.singletonList(buildDetails.get(0)));
       } else {
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Check if the version exist & check if the right connector chosen for fetching the build.",
-            "Version not found ", new InvalidRequestException("Version not found"));
+        buildDetails = buildDetails.stream()
+                           .filter(buildDetail -> attributesRequest.getBuildNumber().equals(buildDetail.getNumber()))
+                           .sorted(new BuildDetailsComparatorDescending())
+                           .collect(toList());
       }
-    } catch (PatternSyntaxException e) {
-      BuildDetails buildDetails = bambooBuildService.getLastSuccessfulBuild(null, artifactStreamAttributes,
-          BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails());
-      if (buildDetails != null && !buildDetails.getNumber().equals(attributesRequest.getBuildNumber())) {
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Check if the version exist & check if the right connector chosen for fetching the build.",
-            "Version didn't matched ", new InvalidRequestException("Version didn't matched"));
-      }
+
+      checkIfEmptyBuilds(buildDetails);
+
       BambooArtifactDelegateResponse bambooArtifactDelegateResponse =
-          BambooRequestResponseMapper.toBambooArtifactDelegateResponse(buildDetails, attributesRequest);
+          BambooRequestResponseMapper.toBambooArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
       return getSuccessTaskExecutionResponse(
-          Collections.singletonList(bambooArtifactDelegateResponse), Collections.singletonList(buildDetails));
+          Collections.singletonList(bambooArtifactDelegateResponse), Collections.singletonList(buildDetails.get(0)));
+
+    } catch (PatternSyntaxException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Check if the regex is correct", "Invalid regex syntax", new InvalidRequestException("Invalid regex syntax"));
+    }
+  }
+
+  private void checkIfEmptyBuilds(List<BuildDetails> buildDetails) {
+    if (EmptyPredicate.isEmpty(buildDetails)) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Check if the version exist & check if the right connector chosen for fetching the build.",
+          "Version not found ", new InvalidRequestException("Version not found"));
     }
   }
 

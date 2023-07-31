@@ -6,8 +6,10 @@
  */
 
 package io.harness.entities;
-
 import io.harness.ChangeHandler;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.changehandlers.CDStageExecutionHandler;
 import io.harness.changehandlers.CDStageHelmManifestInfoHandler;
@@ -16,6 +18,7 @@ import io.harness.changehandlers.TagsInfoNGCDChangeDataHandler;
 
 import com.google.inject.Inject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 public class CDStageExecutionCDCEntity implements CDCEntity<StageExecutionInfo> {
   @Inject private CDStageExecutionHandler cdStageExecutionHandler;
   @Inject private CDStageHelmManifestInfoHandler cdStageHelmManifestInfoHandler;

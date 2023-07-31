@@ -6,14 +6,17 @@
  */
 
 package io.harness.template.services;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 public interface TemplateMergeService {
   String getTemplateInputs(String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier,

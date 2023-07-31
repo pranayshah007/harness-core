@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
@@ -84,6 +86,7 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
   @Mock SecretDecryptionService secretDecryptionService;
   @Mock TerraformBaseHelper terraformBaseHelper;
   @Mock GitClientHelper gitClientHelper;
+  @Mock ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private final EncryptedRecordData encryptedPlanContent =
       EncryptedRecordData.builder().name("planName").encryptedValue("encryptedPlan".toCharArray()).build();
@@ -94,6 +97,7 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     when(terraformBaseHelper.getBaseDir(any())).thenReturn("./some/dir/entityId");
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
   }
 
   @Test

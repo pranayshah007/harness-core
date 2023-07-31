@@ -88,8 +88,9 @@ public class ElastigroupRollbackStep extends CdTaskExecutable<ElastigroupRollbac
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<ElastigroupRollbackTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<ElastigroupRollbackTaskResponse> responseDataSupplier)
+      throws Exception {
     ElastigroupRollbackTaskResponse taskResponse;
     try {
       taskResponse = responseDataSupplier.get();

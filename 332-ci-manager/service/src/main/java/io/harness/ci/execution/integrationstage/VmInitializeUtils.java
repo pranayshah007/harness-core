@@ -326,4 +326,32 @@ public class VmInitializeUtils {
     tags.put(BUILD_NUMBER_ATTR, String.valueOf(buildNumber));
     return tags;
   }
+
+  public boolean validateDebug(Infrastructure infrastructure, Ambiance ambiance) {
+    OSType os = OSType.Linux;
+
+    try {
+      if (ambiance.getMetadata().getIsDebug()) {
+        if (infrastructure.getType() == Infrastructure.Type.VM) {
+          VmInfraYaml vmInfraYaml = (VmInfraYaml) infrastructure;
+          VmPoolYaml poolYaml = (VmPoolYaml) vmInfraYaml.getSpec();
+          os = resolveOSType(poolYaml.getSpec().getOs());
+        }
+
+        if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
+          HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) infrastructure;
+          HostedVmInfraYaml.HostedVmInfraSpec spec = (HostedVmInfraYaml.HostedVmInfraSpec) hostedVmInfraYaml.getSpec();
+          os = resolveOSType(spec.getPlatform().getValue().getOs());
+        }
+      }
+    } catch (Exception e) {
+      log.error("Error extracting OS type for validating Debug mode", e);
+    }
+
+    if (os != OSType.Linux) {
+      throw new CIStageExecutionException(
+          "Running the pipeline in debug mode is not supported for the selected Operating System:" + os.toString());
+    }
+    return true;
+  }
 }

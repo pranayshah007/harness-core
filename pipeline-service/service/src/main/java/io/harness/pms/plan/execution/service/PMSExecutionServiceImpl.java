@@ -18,7 +18,10 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.engine.OrchestrationService;
@@ -38,7 +41,6 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.IssuedBy;
@@ -58,6 +60,7 @@ import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.ResolveInputYamlType;
+import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.plan.execution.ModuleInfoOperators;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -98,6 +101,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -389,7 +393,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
 
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
-      addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
+      PMSPipelineServiceHelper.addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineLabels())) {
       addPipelineLabelsCriteria(criteria, pipelineFilter.getPipelineLabels());
@@ -414,18 +418,6 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   private void populatePipelineFilterOROperator(
       Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, List<Criteria> criteriaList) {
     populatePipelineFilterParametrisedOperatorOnModules(criteria, pipelineFilter, ModuleInfoOperators.OR, criteriaList);
-  }
-
-  private void addPipelineTagsCriteria(Criteria criteria, List<NGTag> pipelineTags) {
-    List<String> tags = new ArrayList<>();
-    pipelineTags.forEach(o -> {
-      tags.add(o.getKey());
-      tags.add(o.getValue());
-    });
-    Criteria tagsCriteria = new Criteria();
-    tagsCriteria.orOperator(
-        where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
-    criteria.andOperator(tagsCriteria);
   }
 
   private void addPipelineLabelsCriteria(Criteria criteria, List<NGLabel> pipelineLabels) {
@@ -455,20 +447,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
       // InputSet yaml used during execution
       String yaml = executionSummaryEntity.getInputSetYaml();
-      if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
-        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
-            yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
-      }
+      yaml = resolveExpressionsInYaml(yaml, resolveExpressions, planExecutionId, resolveExpressionsType);
 
-      if (!resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
-        if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
-          yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
-              yaml, planExecutionId, ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS);
-        } else if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS)) {
-          yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
-              yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
-        }
-      }
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
       return InputSetYamlWithTemplateDTO
           .builder()
@@ -704,5 +684,39 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, mergedRuntimeInputYaml, false);
     }
     return mergeInputSetIntoPipelineForGivenStages(pipelineTemplate, mergedRuntimeInputYaml, false, stageIdentifiers);
+  }
+
+  @Override
+  public String mergeRuntimeInputIntoPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String planExecutionId, boolean resolveExpressions, ResolveInputYamlType resolveExpressionsType) {
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+        getPipelineExecutionSummaryEntity(accountId, orgIdentifier, projectIdentifier, planExecutionId);
+    String pipelineTemplate = pipelineExecutionSummaryEntity.getPipelineTemplate();
+    String inputSetYaml = pipelineExecutionSummaryEntity.getInputSetYaml();
+    inputSetYaml = resolveExpressionsInYaml(inputSetYaml, resolveExpressions, planExecutionId, resolveExpressionsType);
+    if (EmptyPredicate.isEmpty(pipelineTemplate)) {
+      return "";
+    }
+
+    return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, inputSetYaml, false);
+  }
+
+  private String resolveExpressionsInYaml(
+      String yaml, boolean resolveExpressions, String planExecutionId, ResolveInputYamlType resolveExpressionsType) {
+    if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
+      yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+          yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
+    }
+
+    if (!resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
+      if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
+        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+            yaml, planExecutionId, ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS);
+      } else if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS)) {
+        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+            yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
+      }
+    }
+    return yaml;
   }
 }

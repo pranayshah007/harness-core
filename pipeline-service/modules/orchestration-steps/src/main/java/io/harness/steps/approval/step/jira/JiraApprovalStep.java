@@ -6,12 +6,14 @@
  */
 
 package io.harness.steps.approval.step.jira;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 import static io.harness.jira.JiraConstantsNG.STATUS_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
@@ -48,6 +50,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
 @Slf4j
 public class JiraApprovalStep extends PipelineAsyncExecutable {

@@ -24,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.istio.IstioTaskHelper;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
@@ -64,6 +65,7 @@ public class K8sRollingBaseHandler {
   public static final Map.Entry<String, String> HARNESS_TRACK_STABLE_SELECTOR =
       Maps.immutableEntry(HarnessLabels.track, HarnessLabelValues.trackStable);
   @Inject K8sTaskHelperBase k8sTaskHelperBase;
+  @Inject IstioTaskHelper istioTaskHelper;
 
   @VisibleForTesting
   public void updateManagedWorkloadsRevision(
@@ -150,13 +152,13 @@ public class K8sRollingBaseHandler {
 
   public void updateDestinationRuleWithSubsets(LogCallback executionLogCallback, List<KubernetesResource> resources,
       KubernetesConfig kubernetesConfig) throws IOException {
-    k8sTaskHelperBase.updateDestinationRuleManifestFilesWithSubsets(resources,
+    istioTaskHelper.updateDestinationRuleManifestFilesWithSubsets(resources,
         asList(HarnessLabelValues.trackCanary, HarnessLabelValues.trackStable), kubernetesConfig, executionLogCallback);
   }
 
   public void updateVirtualServiceWithRoutes(LogCallback executionLogCallback, List<KubernetesResource> resources,
       KubernetesConfig kubernetesConfig) throws IOException {
-    k8sTaskHelperBase.updateVirtualServiceManifestFilesWithRoutesForCanary(
+    istioTaskHelper.updateVirtualServiceManifestFilesWithRoutesForCanary(
         resources, kubernetesConfig, executionLogCallback);
   }
 

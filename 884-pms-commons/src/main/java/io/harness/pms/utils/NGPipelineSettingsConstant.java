@@ -6,7 +6,11 @@
  */
 
 package io.harness.pms.utils;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public enum NGPipelineSettingsConstant {
   ENABLE_MATRIX_FIELD_NAME_SETTING("enable_matrix_label_by_name"),
   DEFAULT_IMAGE_PULL_POLICY_ADD_ON_CONTANER("default_image_pull_policy_for_add_on_container"),

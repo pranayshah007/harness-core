@@ -6,7 +6,6 @@
  */
 
 package io.harness.servicenow.auth.refreshtoken;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.network.Http.getOkHttpClientBuilder;
@@ -20,7 +19,10 @@ import static io.harness.servicenow.auth.refreshtoken.RefreshTokenExceptionUtils
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.GeneralException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ServiceNowOIDCException;
@@ -54,6 +56,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  *
  * Tested using ServiceNow and Okta as authentication severs.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @UtilityClass
 @Slf4j

@@ -36,6 +36,10 @@ public class CVNGTaskMetadataUtils {
     return CVNGLogTag.builder().key(tagKey).value(tagValue).type(CVNGLogTag.TagType.STRING).build();
   }
 
+  public static CVNGLogTag getCvngLogDebugTag(String tagKey, String tagValue) {
+    return CVNGLogTag.builder().key(tagKey).value(tagValue).type(CVNGLogTag.TagType.DEBUG).build();
+  }
+
   public static List<CVNGLogTag> getDataCollectionMetadataTags(DataCollectionTaskDTO.DataCollectionTaskResult result) {
     List<CVNGLogTag> cvngLogTags = new ArrayList<>();
     Map<String, String> dataCollectionMetadata = result.getDataCollectionMetadata();
@@ -46,7 +50,10 @@ public class CVNGTaskMetadataUtils {
           CVNGTaskMetadataConstants.QUERY_IDS, dataCollectionMetadata.get(CVNGTaskMetadataConstants.QUERY_IDS));
       CVNGLogTag cvngLogTagDelegate = CVNGTaskMetadataUtils.getCvngLogTag(
           CVNGTaskMetadataConstants.DELEGATE_ID, dataCollectionMetadata.get(CVNGTaskMetadataConstants.DELEGATE_ID));
-      cvngLogTags.addAll(List.of(cvngLogTagDelegate, cvngLogTagGroupId, cvngLogTagQueryId));
+      CVNGLogTag cvngLogTagPerpetualTaskId =
+          CVNGTaskMetadataUtils.getCvngLogDebugTag(CVNGTaskMetadataConstants.PERPETUAL_TASK_ID,
+              dataCollectionMetadata.get(CVNGTaskMetadataConstants.PERPETUAL_TASK_ID));
+      cvngLogTags.addAll(List.of(cvngLogTagPerpetualTaskId, cvngLogTagDelegate, cvngLogTagGroupId, cvngLogTagQueryId));
     }
     return cvngLogTags;
   }

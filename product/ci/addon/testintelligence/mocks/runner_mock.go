@@ -84,3 +84,17 @@ func (mr *MockTestRunnerMockRecorder) GetCmd(ctx, tests, userArgs, agentConfigPa
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCmd", reflect.TypeOf((*MockTestRunner)(nil).GetCmd), ctx, tests, userArgs, agentConfigPath, ignoreInstr, runAll)
 }
+
+// ReadPackages mocks base method.
+func (m *MockTestRunner) ReadPackages(files []types.File) []types.File {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadPackages", files)
+	ret0, _ := ret[0].([]types.File)
+	return ret0
+}
+
+// ReadPackages indicates an expected call of ReadPackages.
+func (mr *MockTestRunnerMockRecorder) ReadPackages(files interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadPackages", reflect.TypeOf((*MockTestRunner)(nil).ReadPackages), files)
+}

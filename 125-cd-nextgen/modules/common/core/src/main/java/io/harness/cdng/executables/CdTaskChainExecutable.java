@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.executables;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
 import io.harness.delegate.beans.CDDelegateTaskNotifyResponseData;
 import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
@@ -28,8 +30,11 @@ import io.harness.tasks.ResponseData;
 import io.harness.utils.PolicyEvalUtils;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDC)
+@Slf4j
 // Task Executable with RBAC, Rollback and postTaskValidation
 public abstract class CdTaskChainExecutable extends TaskChainExecutableWithCapabilities {
   @Inject OpaServiceClient opaServiceClient;
@@ -70,18 +75,22 @@ public abstract class CdTaskChainExecutable extends TaskChainExecutableWithCapab
       StepElementParameters stepParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception;
 
-  private void saveNodeInfo(Ambiance ambiance, ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
+  private void saveNodeInfo(Ambiance ambiance, ThrowingSupplier<ResponseData> responseSupplier) {
     if (responseSupplier != null) {
-      ResponseData responseData = responseSupplier.get();
-      if (responseData instanceof CDDelegateTaskNotifyResponseData) {
-        StepExecutionInstanceInfo stepExecutionInstanceInfo =
-            ((CDDelegateTaskNotifyResponseData) responseData).getStepExecutionInstanceInfo();
-        if (stepExecutionInstanceInfo != null) {
-          stageExecutionInstanceInfoService.append(AmbianceUtils.getAccountId(ambiance),
-              AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
-              AmbianceUtils.getPipelineExecutionIdentifier(ambiance),
-              AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance), stepExecutionInstanceInfo);
+      try {
+        ResponseData responseData = responseSupplier.get();
+        if (responseData instanceof CDDelegateTaskNotifyResponseData) {
+          StepExecutionInstanceInfo stepExecutionInstanceInfo =
+              ((CDDelegateTaskNotifyResponseData) responseData).getStepExecutionInstanceInfo();
+          if (stepExecutionInstanceInfo != null) {
+            stageExecutionInstanceInfoService.append(AmbianceUtils.getAccountId(ambiance),
+                AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+                AmbianceUtils.getPipelineExecutionIdentifier(ambiance),
+                AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance), stepExecutionInstanceInfo);
+          }
         }
+      } catch (Exception ex) {
+        log.error("Failed to save node info", ex);
       }
     }
   }

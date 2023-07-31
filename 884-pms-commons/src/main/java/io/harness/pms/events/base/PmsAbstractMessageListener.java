@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.events.base;
-
 import static io.harness.pms.events.PmsEventFrameworkConstants.SERVICE_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
@@ -27,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public abstract class PmsAbstractMessageListener<T extends com.google.protobuf.Message, H

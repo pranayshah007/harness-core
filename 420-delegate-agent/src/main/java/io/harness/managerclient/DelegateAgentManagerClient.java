@@ -151,7 +151,7 @@ public interface DelegateAgentManagerClient {
   Call<RestResponse<Boolean>> processInstanceSyncNGResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body InstanceSyncPerpetualTaskResponse responseData);
 
-  ///##############INSTANCE SYNC V2 ###################
+  /// ##############INSTANCE SYNC V2 ###################
   @POST("instancesync/instance-sync/v2/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishInstanceSyncResultV2(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body DelegateResponseData responseData);
@@ -278,4 +278,8 @@ public interface DelegateAgentManagerClient {
   @POST("executions/response/{executionId}/executionInfra")
   Call<ResponseBody> sendSetupInfraResponse(@Path("executionId") String uuid, @Query("delegateId") String delegateId,
       @Query("accountId") String accountId, @Body SetupInfraResponse response);
+
+  @GET("agent/delegates/jreVersion")
+  Call<RestResponse<String>> getJREVersion(
+      @Query("accountId") String accountId, @Query("isDelegate") boolean isDelegate);
 }

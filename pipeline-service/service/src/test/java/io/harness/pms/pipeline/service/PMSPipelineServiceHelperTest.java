@@ -47,6 +47,7 @@ import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.references.PipelineSetupUsageCreationHelper;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
@@ -195,15 +196,15 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testPopulateFilterUsingIdentifier() {
     String filterIdentifier = "filterIdentifier";
-    FilterDTO filterDTO =
-        FilterDTO.builder()
-            .filterProperties(PipelineFilterPropertiesDto.builder()
-                                  .name(pipelineIdentifier)
-                                  .description("some description")
-                                  .pipelineTags(Collections.singletonList(NGTag.builder().key("c").value("h").build()))
-                                  .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
-                                  .build())
-            .build();
+    FilterDTO filterDTO = FilterDTO.builder()
+                              .filterProperties(PipelineFilterPropertiesDto.builder()
+                                                    .name(pipelineIdentifier)
+                                                    .description("some description")
+                                                    .pipelineTags(List.of(NGTag.builder().key("c").value("h").build(),
+                                                        NGTag.builder().key("c").value(null).build()))
+                                                    .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
+                                                    .build())
+                              .build();
     doReturn(null)
         .when(filterService)
         .get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
@@ -228,6 +229,38 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
     assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.tags)).get("$in"))
                    .contains(NGTag.builder().key("c").value("h").build()))
         .isTrue();
+    assertThat(
+        ((List<?>) ((Map<?, ?>) ((Map<?, ?>) ((List<?>) ((Map<?, ?>) ((List<?>) criteriaObject.get("$and")).get(0))
+                                                  .get("$or"))
+                                     .get(0))
+                        .get(PlanExecutionSummaryKeys.tagsKey))
+                .get("$in"))
+            .contains("c"))
+        .isTrue();
+    assertThat(
+        ((List<?>) ((Map<?, ?>) ((Map<?, ?>) ((List<?>) ((Map<?, ?>) ((List<?>) criteriaObject.get("$and")).get(0))
+                                                  .get("$or"))
+                                     .get(0))
+                        .get(PlanExecutionSummaryKeys.tagsKey))
+                .get("$in"))
+            .contains("c"))
+        .isTrue();
+    filterDTO = FilterDTO.builder()
+                    .filterProperties(PipelineFilterPropertiesDto.builder()
+                                          .name(pipelineIdentifier)
+                                          .description("some description")
+                                          .pipelineTags(List.of(NGTag.builder().key(null).value("c").build()))
+                                          .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
+                                          .build())
+                    .build();
+    doReturn(filterDTO)
+        .when(filterService)
+        .get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
+    assertThatThrownBy(()
+                           -> pmsPipelineServiceHelper.populateFilterUsingIdentifier(
+                               criteria, accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Key in Pipeline Tags filter cannot be null");
   }
 
   @Test

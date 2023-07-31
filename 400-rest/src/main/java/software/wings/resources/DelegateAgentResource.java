@@ -6,7 +6,6 @@
  */
 
 package software.wings.resources;
-
 import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.agent.AgentGatewayUtils.isAgentConnectedUsingMtls;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
@@ -19,8 +18,11 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.beans.DelegateHeartbeatResponse;
@@ -68,6 +70,7 @@ import io.harness.queueservice.infc.DelegateCapacityManagementService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateRingService;
 
 import software.wings.beans.Account;
 import software.wings.beans.dto.ThirdPartyApiCallLog;
@@ -109,6 +112,7 @@ import okhttp3.RequestBody;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Api("/agent/delegates")
 @Path("/agent/delegates")
 @Produces("application/json")
@@ -136,6 +140,8 @@ public class DelegateAgentResource {
   private DelegatePollingHeartbeatService delegatePollingHeartbeatService;
   private DelegateCapacityManagementService delegateCapacityManagementService;
 
+  private DelegateRingService delegateRingService;
+
   @Inject
   public DelegateAgentResource(DelegateService delegateService, AccountService accountService, HPersistence persistence,
       SubdomainUrlHelperIntfc subdomainUrlHelper, ArtifactCollectionResponseHandler artifactCollectionResponseHandler,
@@ -145,7 +151,7 @@ public class DelegateAgentResource {
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
       InstanceSyncResponsePublisher instanceSyncResponsePublisher,
       DelegatePollingHeartbeatService delegatePollingHeartbeatService,
-      DelegateCapacityManagementService delegateCapacityManagementService) {
+      DelegateCapacityManagementService delegateCapacityManagementService, DelegateRingService delegateRingService) {
     this.instanceHelper = instanceHelper;
     this.delegateService = delegateService;
     this.accountService = accountService;
@@ -162,6 +168,7 @@ public class DelegateAgentResource {
     this.instanceSyncResponsePublisher = instanceSyncResponsePublisher;
     this.delegatePollingHeartbeatService = delegatePollingHeartbeatService;
     this.delegateCapacityManagementService = delegateCapacityManagementService;
+    this.delegateRingService = delegateRingService;
   }
 
   @DelegateAuth
@@ -187,6 +194,24 @@ public class DelegateAgentResource {
 
       return null;
     }
+  }
+
+  @DelegateAuth
+  @GET
+  @Path("jreVersion")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<String> getJREVersion(
+      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("isDelegate") boolean isDelegate) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      String jreVersion = delegateRingService.getJREVersion(accountId, isDelegate);
+      if (isNotEmpty(jreVersion)) {
+        return new RestResponse<>(jreVersion);
+      }
+    } catch (Exception ex) {
+      log.error("Unable to fetch jre version from ring for accountId {}", accountId, ex);
+    }
+    return null;
   }
 
   @DelegateAuth

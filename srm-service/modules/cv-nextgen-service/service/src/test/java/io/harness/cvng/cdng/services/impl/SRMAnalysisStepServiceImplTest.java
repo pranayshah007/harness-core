@@ -109,6 +109,7 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     SRMStepAnalysisActivity stepAnalysisActivity = builderFactory.getSRMStepAnalysisActivityBuilder()
                                                        .executionNotificationDetailsId(analysisExecutionDetailsId)
                                                        .build();
+    stepAnalysisActivity.setUuid(analysisExecutionDetailsId);
     activityId = activityService.createActivity(stepAnalysisActivity);
     FieldUtils.writeField(srmAnalysisStepService, "clock", clock, true);
   }

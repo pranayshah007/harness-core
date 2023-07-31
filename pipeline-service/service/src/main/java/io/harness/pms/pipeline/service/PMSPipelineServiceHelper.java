@@ -17,7 +17,10 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
@@ -43,6 +46,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.governance.PolicySetMetadata;
+import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
@@ -64,6 +68,7 @@ import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.pipeline.references.PipelineSetupUsageCreationHelper;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
@@ -80,6 +85,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -94,6 +100,8 @@ import org.bson.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -197,7 +205,7 @@ public class PMSPipelineServiceHelper {
       criteria.and(PipelineEntityKeys.description).is(pipelineFilter.getDescription());
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
-      criteria.and(PipelineEntityKeys.tags).in(pipelineFilter.getPipelineTags());
+      addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineIdentifiers())) {
       criteria.and(PipelineEntityKeys.identifier).in(pipelineFilter.getPipelineIdentifiers());
@@ -208,6 +216,29 @@ public class PMSPipelineServiceHelper {
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getRepoName())) {
       criteria.and(PipelineEntityKeys.repo).is(pipelineFilter.getRepoName());
+    }
+  }
+
+  public static void addPipelineTagsCriteria(Criteria criteria, List<NGTag> pipelineTags) {
+    List<NGTag> ngTagsList = new ArrayList<>();
+    List<String> tags = new ArrayList<>();
+    pipelineTags.forEach(o -> {
+      if (o.getKey() == null) {
+        throw new InvalidRequestException("Key in Pipeline Tags filter cannot be null");
+      } else if (o.getValue() == null) {
+        tags.add(o.getKey());
+      } else {
+        ngTagsList.add(o);
+      }
+    });
+    if (tags.size() > 0) {
+      Criteria tagsCriteria = new Criteria();
+      tagsCriteria.orOperator(
+          where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
+      criteria.andOperator(tagsCriteria);
+    }
+    if (ngTagsList.size() > 0) {
+      criteria.and(PlanExecutionSummaryKeys.tags).in(ngTagsList);
     }
   }
 

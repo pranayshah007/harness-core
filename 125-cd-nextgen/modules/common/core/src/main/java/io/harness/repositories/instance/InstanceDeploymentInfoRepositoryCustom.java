@@ -35,4 +35,6 @@ public interface InstanceDeploymentInfoRepositoryCustom {
 
   List<InstanceDeploymentInfo> listByHostsAndArtifact(ExecutionInfoKey executionInfoKey, List<String> hosts,
       ArtifactDetails artifactDetails, InstanceDeploymentInfoStatus... statuses);
+
+  boolean deleteByScope(Scope scope);
 }

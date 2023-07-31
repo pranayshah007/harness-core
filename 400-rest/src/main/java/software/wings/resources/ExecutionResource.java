@@ -6,7 +6,6 @@
  */
 
 package software.wings.resources;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE;
 import static io.harness.beans.SearchFilter.Operator.GE;
@@ -25,8 +24,11 @@ import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.CreatedByType;
 import io.harness.beans.ExecutionInterruptType;
@@ -109,6 +111,8 @@ import javax.ws.rs.QueryParam;
 /**
  * The Class ExecutionResource.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Api("executions")
 @Path("/executions")

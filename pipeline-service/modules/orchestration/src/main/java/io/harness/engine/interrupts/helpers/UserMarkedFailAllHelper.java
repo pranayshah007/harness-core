@@ -6,13 +6,15 @@
  */
 
 package io.harness.engine.interrupts.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eraro.ErrorCode.USER_MARKED_FAILURE;
 import static io.harness.pms.contracts.interrupts.InterruptType.USER_MARKED_FAIL_ALL;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.node.NodeExecutionUpdateFailedException;
@@ -44,6 +46,8 @@ import java.time.Duration;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 @OwnedBy(PIPELINE)
 public class UserMarkedFailAllHelper {

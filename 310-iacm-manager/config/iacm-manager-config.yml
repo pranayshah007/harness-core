@@ -125,7 +125,7 @@ ciExecutionServiceConfig:
     bucketName: null
   queueServiceClientConfig:
     httpClientConfig:
-      baseUrl: http://localhost:9091/
+      baseUrl: http://localhost:9544/
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
     queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM

@@ -59,8 +59,8 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class BambooBuildStepHelperServiceImpl implements BambooBuildStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
@@ -84,7 +84,7 @@ public class BambooBuildStepHelperServiceImpl implements BambooBuildStepHelperSe
 
   @Override
   public TaskRequest prepareTaskRequest(BambooArtifactDelegateRequestBuilder paramsBuilder, Ambiance ambiance,
-      String connectorRef, String timeStr, String taskName) {
+      String connectorRef, String timeStr, String taskName, List<TaskSelector> delegateSelectors) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
         connectorRef, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
@@ -103,8 +103,6 @@ public class BambooBuildStepHelperServiceImpl implements BambooBuildStepHelperSe
     }
 
     BambooConnectorDTO connectorDTO = (BambooConnectorDTO) configDTO;
-    BaseNGAccess baseNGAccess =
-        getBaseNGAccess(ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
     paramsBuilder.bambooConnectorDTO(connectorDTO);
     paramsBuilder.encryptedDataDetails(
         secretManagerClientService.getEncryptionDetails(ngAccess, connectorDTO.getAuth().getCredentials()));
@@ -121,11 +119,7 @@ public class BambooBuildStepHelperServiceImpl implements BambooBuildStepHelperSe
                             .parameters(new Object[] {artifactTaskParameters})
                             .build();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
-        TaskCategory.DELEGATE_TASK_V2, Collections.singletonList(COMMAND_UNIT), true, taskName,
-        params.getDelegateSelectors()
-            .stream()
-            .map(s -> TaskSelector.newBuilder().setSelector(s).build())
-            .collect(Collectors.toList()),
+        TaskCategory.DELEGATE_TASK_V2, Collections.singletonList(COMMAND_UNIT), true, taskName, delegateSelectors,
         io.harness.encryption.Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList(), false, null);
   }
 
@@ -184,7 +178,7 @@ public class BambooBuildStepHelperServiceImpl implements BambooBuildStepHelperSe
             .taskSetupAbstraction("ng", "true")
             .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
             .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
-            .taskSelectors(bambooArtifactDelegateRequest.getBambooConnectorDTO().getDelegateSelectors())
+            .taskSelectors(bambooArtifactDelegateRequest.getDelegateSelectors())
             .logStreamingAbstractions(logAbstractionMap)
             .build();
     return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);

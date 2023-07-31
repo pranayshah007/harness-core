@@ -95,18 +95,20 @@ public class VmRunStepSerializer {
                            .collect(Collectors.toList());
     }
 
-    String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runStepInfo.getShell());
+    String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runStepInfo.getShell(), false);
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
         && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, ngAccess.getAccountIdentifier())) {
       command = earlyExitCommand + System.lineSeparator()
           + SerializerUtils.getVmDebugCommand(ngAccess.getAccountIdentifier(),
               ciExecutionServiceConfig.getRemoteDebugTimeout(), runStepInfo, stageInfraDetails,
-              envVars.get("TMATE_PATH"))
+              envVars.get("TMATE_PATH"), ciExecutionServiceConfig.getTmateEndpoint())
           + System.lineSeparator() + command;
     } else {
       command = earlyExitCommand + command;
     }
+
+    command = SerializerUtils.prependPrintCommand(command, runStepInfo.getShell());
 
     VmRunStepBuilder runStepBuilder = VmRunStep.builder()
                                           .image(image)

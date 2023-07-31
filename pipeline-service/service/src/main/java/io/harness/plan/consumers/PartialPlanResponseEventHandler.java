@@ -6,9 +6,11 @@
  */
 
 package io.harness.plan.consumers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.async.plan.PartialPlanCreatorResponseData;
 import io.harness.pms.contracts.plan.PartialPlanResponse;
 import io.harness.pms.sdk.execution.events.PmsCommonsBaseEventHandler;
@@ -17,6 +19,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.inject.Inject;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PartialPlanResponseEventHandler implements PmsCommonsBaseEventHandler<PartialPlanResponse> {
   @Inject WaitNotifyEngine waitNotifyEngine;

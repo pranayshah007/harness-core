@@ -6,7 +6,6 @@
  */
 
 package io.harness.filestore.service.impl;
-
 import static io.harness.EntityType.PIPELINES;
 import static io.harness.EntityType.PIPELINE_STEPS;
 import static io.harness.EntityType.SECRETS;
@@ -37,7 +36,10 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FileReference;
 import io.harness.beans.Scope;
@@ -101,6 +103,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(CDP)
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))

@@ -6,7 +6,6 @@
  */
 
 package io.harness.platform;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
@@ -21,7 +20,10 @@ import static com.google.common.collect.ImmutableMap.of;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.eventframework.PlatformEventConsumerService;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.govern.ProviderModule;
@@ -90,6 +92,7 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.model.Resource;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 @OwnedBy(PL)
 public class PlatformApplication extends Application<PlatformConfiguration> {

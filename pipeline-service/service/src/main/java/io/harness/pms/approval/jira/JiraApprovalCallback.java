@@ -6,14 +6,16 @@
  */
 
 package io.harness.pms.approval.jira;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.exception.ApprovalStepNGException;
@@ -49,6 +51,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Slf4j

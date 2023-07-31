@@ -6,14 +6,16 @@
  */
 
 package io.harness.steps.jira.create;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 import static io.harness.jira.JiraConstantsNG.ISSUE_TYPE_NAME;
 import static io.harness.jira.JiraConstantsNG.STATUS_NAME;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegate.task.jira.JiraTaskNGParameters;
@@ -25,6 +27,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.execution.step.jira.create.JiraCreateStepExecutionDetails;
 import io.harness.jira.JiraActionNG;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -51,6 +54,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
 public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.JIRA_CREATE_STEP_TYPE;
@@ -91,7 +95,8 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
             .fields(JiraStepUtils.processJiraFieldsInParameters(specParameters.getFields()));
     return jiraStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
-        specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(), "Jira Task: Create Issue");
+        specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(), "Jira Task: Create Issue",
+        TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
   }
 
   @Override

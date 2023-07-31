@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.shell.ssh;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.utils.GithubPackageUtils.getGithubPackagesArtifactDelegateConfig;
 import static io.harness.logging.LogLevel.ERROR;
@@ -17,7 +16,10 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
@@ -43,6 +45,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(CDP)

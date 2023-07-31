@@ -7,6 +7,8 @@
 
 package io.harness.repositories.service.custom;
 
+import static io.harness.springdata.PersistenceUtils.getRetryPolicyWithDuplicateKeyException;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -62,7 +64,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
   public ServiceEntity upsert(Criteria criteria, ServiceEntity serviceEntity) {
     Query query = new Query(criteria);
     Update update = ServiceFilterHelper.getUpdateOperations(serviceEntity);
-    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+    RetryPolicy<Object> retryPolicy = getRetryPolicyWithDuplicateKeyException(
         "[Retrying]: Failed upserting Service; attempt: {}", "[Failed]: Failed upserting Service; attempt: {}");
     return Failsafe.with(retryPolicy)
         .get(()

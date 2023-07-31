@@ -6,7 +6,6 @@
  */
 
 package software.wings.sm.status.handlers;
-
 import static io.harness.beans.ExecutionStatus.ABORTED;
 import static io.harness.beans.ExecutionStatus.DISCONTINUING;
 import static io.harness.beans.ExecutionStatus.ERROR;
@@ -20,9 +19,12 @@ import static io.harness.beans.ExecutionStatus.WAITING;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.validation.Validator.notNullCheck;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.persistence.HPersistence;
@@ -39,6 +41,7 @@ import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class WorkflowStatusPropagatorHelper {

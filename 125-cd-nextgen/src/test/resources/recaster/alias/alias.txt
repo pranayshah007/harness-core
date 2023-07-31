@@ -1118,3 +1118,6 @@ io.harness.delegate.task.ssh.AwsWinrmInfraDelegateConfig
 io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO
 io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo
 io.harness.cdng.artifact.GcrArtifactSummary
+io.harness.cdng.provision.awscdk.AwsCdkDiffStepInfo
+io.harness.cdng.provision.awscdk.AwsCdkDiffStepNode
+io.harness.cdng.provision.awscdk.AwsCdkDiffStepParameters

@@ -6,14 +6,16 @@
  */
 
 package io.harness.pms.schema;
-
 import static io.harness.EntityType.PIPELINES;
 import static io.harness.EntityType.TRIGGERS;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.configuration.DeployVariant;
 import io.harness.encryption.Scope;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -35,6 +37,8 @@ import javax.ws.rs.NotSupportedException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @PipelineServiceAuth
 @Slf4j

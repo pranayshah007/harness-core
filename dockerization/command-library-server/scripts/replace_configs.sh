@@ -41,6 +41,10 @@ if [[ "" != "$MONGO_URI" ]]; then
   export MONGO_URI=${MONGO_URI//\\&/&}; yq -i '.mongo.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.mongo.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
 yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE
 yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
 yq -i '.server.requestLog.appenders[0].target="STDOUT"' $CONFIG_FILE

@@ -6,14 +6,16 @@
  */
 
 package io.harness.queuePoller;
-
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.beans.HsqsDequeueConfig;
 import io.harness.hsqs.client.beans.HsqsProcessMessageResponse;
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class AbstractHsqsQueueProcessor implements Managed {

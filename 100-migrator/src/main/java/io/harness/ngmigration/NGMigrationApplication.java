@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration;
-
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
@@ -19,7 +18,10 @@ import static com.google.common.collect.ImmutableMap.of;
 import static com.google.inject.matcher.Matchers.not;
 import static com.google.inject.name.Names.named;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.GraphQLModule;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
@@ -236,6 +238,8 @@ import ru.vyarus.guice.validator.ValidationModule;
 /**
  * The main application - entry point for the entire Wings Application.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(CDC)
 public class NGMigrationApplication extends Application<MigratorConfig> {
