@@ -7,9 +7,14 @@
 
 package io.harness.k8s.model.customObjects;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class PrimitiveCustomObject implements CustomObject {
   private Object value;
 

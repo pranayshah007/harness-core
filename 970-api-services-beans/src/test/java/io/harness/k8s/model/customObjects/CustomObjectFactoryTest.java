@@ -7,13 +7,14 @@
 
 package io.harness.k8s.model.customObjects;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
-import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -31,7 +32,7 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-@OwnedBy(CDP)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class CustomObjectFactoryTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @InjectMocks @Inject private CustomObjectFactory customObjectFactory;
