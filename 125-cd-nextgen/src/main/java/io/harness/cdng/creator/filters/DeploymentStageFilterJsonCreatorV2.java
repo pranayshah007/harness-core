@@ -65,7 +65,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -88,8 +87,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<DeploymentStageNode> {
   private static final String STEP_TYPE_FIELD = "type";
   private static final String STEP_IDENTIFIER_FIELD = "identifier";
-  private static final Set<String> SUPPORTED_FILTER_TAGS_EXPRESSIONS =
-      ImmutableSet.of("<+service.tags>", "<+pipeline.tags>");
+  private static final Set<String> SUPPORTED_FILTER_TAGS_EXPRESSIONS = Set.of("<+service.tags>", "<+pipeline.tags>");
 
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private EnvironmentService environmentService;
