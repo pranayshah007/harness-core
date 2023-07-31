@@ -10,6 +10,7 @@ package io.harness.cdng.creator.filters;
 import static io.harness.cdng.service.beans.ServiceDefinitionType.KUBERNETES;
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -23,9 +24,13 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
+import io.harness.cdng.environment.filters.FilterType;
+import io.harness.cdng.environment.filters.FilterYaml;
+import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.cdng.environment.yaml.EnvironmentInfraUseFromStage;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.InfrastructureDef;
@@ -63,7 +68,10 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -797,5 +805,81 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   private String getYaml(String filePath) throws IOException {
     final URL testFile = classLoader.getResource(filePath);
     return Resources.toString(testFile, Charsets.UTF_8);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testSavePipelineWithInvalidFilterTagsForEnv() throws IOException {
+    List<FilterYaml> filterYamls = new ArrayList<>();
+    Map<String, String> tags = new HashMap<>();
+    FilterYaml filter1 =
+        FilterYaml.builder()
+            .type(FilterType.tags)
+            .spec(TagsFilter.builder()
+                      .tags(ParameterField.createExpressionField(true, "<+pipeline.name>", null, false))
+                      .build())
+            .build();
+    filterYamls.add(filter1);
+
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder()
+                         .serviceRef(ParameterField.<String>builder().value(serviceEntity.getIdentifier()).build())
+                         .build())
+            .environments(EnvironmentsYaml.builder().filters(ParameterField.createValueField(filterYamls)).build())
+            .deploymentType(KUBERNETES)
+            .build());
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(new YamlField(new YamlNode(null)))
+                                    .build();
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .withMessageContaining(String.format(
+            "Tag expression [%s] used for an environment/infrastructure filter is not supported. Supported expressions for filter tags are <+service.tags> and <+pipeline.tags>",
+            "<+pipeline.name>"));
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testSavePipelineWithValidFilterTagsForEnvGroup() throws IOException {
+    List<FilterYaml> filterYamls = new ArrayList<>();
+    Map<String, String> tags = new HashMap<>();
+    FilterYaml filter1 = FilterYaml.builder()
+                             .type(FilterType.tags)
+                             .spec(TagsFilter.builder()
+                                       .tags(ParameterField.createExpressionField(true, "<+service.tags>", null, false))
+                                       .build())
+                             .build();
+    filterYamls.add(filter1);
+
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder()
+                         .serviceRef(ParameterField.<String>builder().value(serviceEntity.getIdentifier()).build())
+                         .build())
+            .environmentGroup(EnvironmentGroupYaml.builder()
+                                  .envGroupRef(ParameterField.createValueField("abc"))
+                                  .filters(ParameterField.createValueField(filterYamls))
+                                  .build())
+            .deploymentType(KUBERNETES)
+            .build());
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(new YamlField(new YamlNode(null)))
+                                    .build();
+    filterCreator.getFilter(ctx, node);
   }
 }

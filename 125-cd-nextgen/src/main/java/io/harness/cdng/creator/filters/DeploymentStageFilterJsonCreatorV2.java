@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator.filters;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.executions.steps.StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE;
@@ -26,7 +27,9 @@ import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.filters.Entity;
+import io.harness.cdng.environment.filters.FilterType;
 import io.harness.cdng.environment.filters.FilterYaml;
+import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -62,6 +65,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -84,6 +88,8 @@ import lombok.extern.slf4j.Slf4j;
 public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<DeploymentStageNode> {
   private static final String STEP_TYPE_FIELD = "type";
   private static final String STEP_IDENTIFIER_FIELD = "identifier";
+  private static final Set<String> SUPPORTED_FILTER_TAGS_EXPRESSIONS =
+      ImmutableSet.of("<+service.tags>", "<+pipeline.tags>");
 
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private EnvironmentService environmentService;
@@ -238,6 +244,8 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     } else if (deploymentStageConfig.getEnvironmentGroup() != null) {
       addFiltersFromEnvironmentGroup(filterCreationContext, deploymentStageConfig.getEnvironmentGroup());
     } else if (deploymentStageConfig.getEnvironments() != null) {
+      ParameterField<List<FilterYaml>> filters = deploymentStageConfig.getEnvironments().getFilters();
+      validateTagExpressionValue(filters);
       if (ParameterField.isNotNull(deploymentStageConfig.getEnvironments().getValues())
           && !deploymentStageConfig.getEnvironments().getValues().isExpression()) {
         for (EnvironmentYamlV2 environmentYamlV2 : deploymentStageConfig.getEnvironments().getValues().getValue()) {
@@ -290,6 +298,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
                 HarnessStringUtils.join(",", Entity.infrastructures.name(), Entity.gitOpsClusters.name()),
                 YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
+      validateTagExpressionValue(env.getFilters());
     }
 
     if (!environmentRef.isExpression()) {
@@ -370,6 +379,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           format("envGroupRef should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
+    validateTagExpressionForEnvGroupAndItsEnvs(envGroupYaml);
   }
 
   private void addFiltersForServices(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
@@ -628,5 +638,44 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   private List<String> findDuplicates(List<String> items) {
     Set<String> uniqueItems = new HashSet<>();
     return items.stream().filter(item -> !uniqueItems.add(item)).collect(Collectors.toList());
+  }
+
+  private void validateTagExpressionForEnvsList(List<EnvironmentYamlV2> environments) {
+    if (isEmpty(environments)) {
+      return;
+    }
+    environments.forEach(environment -> {
+      ParameterField<List<FilterYaml>> filters = environment.getFilters();
+      validateTagExpressionValue(filters);
+    });
+  }
+
+  public void validateTagExpressionForEnvGroupAndItsEnvs(EnvironmentGroupYaml environmentGroup) {
+    ParameterField<List<FilterYaml>> filters = environmentGroup.getFilters();
+    validateTagExpressionValue(filters);
+    ParameterField<List<EnvironmentYamlV2>> environments = environmentGroup.getEnvironments();
+    if (ParameterField.isNotNull(environments)) {
+      validateTagExpressionForEnvsList(environments.getValue());
+    }
+  }
+
+  private void validateTagExpressionValue(ParameterField<List<FilterYaml>> filters) {
+    if (ParameterField.isNull(filters) || isEmpty(filters.getValue())) {
+      return;
+    }
+    for (FilterYaml filterYaml : filters.getValue()) {
+      if (FilterType.tags == filterYaml.getType()) {
+        ParameterField<Map<String, String>> tags = ((TagsFilter) filterYaml.getSpec()).getTags();
+        if (tags.isExpression() && !isSupportedTagExpression(tags.getExpressionValue())) {
+          throw new InvalidRequestException(String.format(
+              "Tag expression [%s] used for an environment/infrastructure filter is not supported. Supported expressions for filter tags are <+service.tags> and <+pipeline.tags>",
+              tags.getExpressionValue()));
+        }
+      }
+    }
+  }
+
+  private boolean isSupportedTagExpression(String tagExpressionValue) {
+    return SUPPORTED_FILTER_TAGS_EXPRESSIONS.contains(tagExpressionValue);
   }
 }
