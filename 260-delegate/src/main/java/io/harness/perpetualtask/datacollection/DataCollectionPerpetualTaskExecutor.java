@@ -56,17 +56,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @Slf4j
@@ -176,83 +172,35 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
   protected void run(DataCollectionPerpetualTaskParams taskParams, ConnectorConfigDTO connectorConfigDTO,
       DataCollectionTaskDTO dataCollectionTask) {
     try (DataCollectionLogContext closableLogContext = new DataCollectionLogContext(dataCollectionTask)) {
-      DataCollectionInfo dataCollectionInfo = dataCollectionTask.getDataCollectionInfo();
+      DataCollectionInfo<ConnectorConfigDTO> dataCollectionInfo = dataCollectionTask.getDataCollectionInfo();
       log.info("collecting data for {}", dataCollectionTask.getVerificationTaskId());
       List<ExecutionLog> executionLogs = new ArrayList<>();
       final RuntimeParameters runtimeParameters =
           RuntimeParameters.builder()
-              .baseUrl(dataCollectionTask.getDataCollectionInfo().getBaseUrl(connectorConfigDTO))
-              .commonHeaders(dataCollectionTask.getDataCollectionInfo().collectionHeaders(connectorConfigDTO))
-              .commonOptions(dataCollectionTask.getDataCollectionInfo().collectionParams(connectorConfigDTO))
+              .baseUrl(dataCollectionInfo.getBaseUrl(connectorConfigDTO))
+              .commonHeaders(dataCollectionInfo.collectionHeaders(connectorConfigDTO))
+              .commonOptions(dataCollectionInfo.collectionParams(connectorConfigDTO))
               .otherEnvVariables(dataCollectionInfo.getDslEnvVariables(connectorConfigDTO))
               .hostNamesToCollect(dataCollectionInfo.getServiceInstances())
               .endTime(dataCollectionTask.getEndTime())
               .startTime(dataCollectionTask.getStartTime())
               .build();
+      ThirdPartyCallHandler thirdPartyCallHandler =
+          new ThirdPartyCallHandler(dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(),
+              delegateLogService, dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime());
       switch (dataCollectionInfo.getVerificationType()) {
         case TIME_SERIES:
           List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
-              dataCollectionInfo.getDataCollectionDsl(), runtimeParameters,
-              new ThirdPartyCallHandler(dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(),
-                  delegateLogService, dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime()));
-          timeSeriesRecords = getHostFilteredTimeSeriesRecordAndPopulateExecutionLogs(
+              dataCollectionInfo.getDataCollectionDsl(), runtimeParameters, thirdPartyCallHandler);
+          timeSeriesRecords = HostFilteringUtils.getHostFilteredTimeSeriesRecordAndPopulateExecutionLogs(
               timeSeriesRecords, dataCollectionInfo, executionLogs);
           timeSeriesDataStoreService.saveTimeSeriesDataRecords(
               dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(), timeSeriesRecords);
 
           break;
-
         case LOG:
-          List<LogDataRecord> logDataRecords = (List<LogDataRecord>) dataCollectionDSLService.execute(
-              dataCollectionInfo.getDataCollectionDsl(), runtimeParameters,
-              new ThirdPartyCallHandler(dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(),
-                  delegateLogService, dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime()));
-          logDataRecords =
-              getHostFilteredLogDataAndPopulateExecutionLogs(logDataRecords, dataCollectionInfo, executionLogs);
-          if (logDataRecords.size() > LOG_RECORD_THRESHOLD) {
-            logDataRecords = pickNRandomElements(logDataRecords);
-            ExecutionLog delegateLogs =
-                ExecutionLog.builder()
-                    .logLevel(LogLevel.WARN)
-                    .log(String.format("Log query is not optimized. Logs collected %s are capped at %s",
-                        logDataRecords.size(), LOG_RECORD_THRESHOLD))
-                    .build();
-            executionLogs.add(delegateLogs);
-          }
-          List<LogDataRecord> validRecords =
-              logDataRecords.stream()
-                  .filter(log -> isNotEmpty(log.getLog()) && isNotEmpty(log.getHostname()))
-                  .collect(Collectors.toList());
-          if (validRecords.size() < logDataRecords.size()) {
-            log.info(
-                "Log query is not optimized. Some records with invalid messageIdentifier and serviceInstanceIdentifier are present for verification task id: {}",
-                dataCollectionTask.getVerificationTaskId());
-            ExecutionLog delegateLog =
-                ExecutionLog.builder()
-                    .logLevel(LogLevel.WARN)
-                    .log(String.format(
-                        "Log query is not optimized. Some records with invalid messageIdentifier and serviceInstanceIdentifier are present."))
-                    .build();
-            executionLogs.add(delegateLog);
-          }
-          logRecordDataStoreService.save(
-              dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(), validRecords);
-          if (dataCollectionInfo.isCollectHostData()) {
-            Set<String> hosts;
-            LogDataCollectionInfo logDataCollectionInfo = (LogDataCollectionInfo) dataCollectionInfo;
-            if (isNotEmpty(logDataCollectionInfo.getHostCollectionDSL())) {
-              hosts = new HashSet<>((Collection<String>) dataCollectionDSLService.execute(
-                  logDataCollectionInfo.getHostCollectionDSL(), runtimeParameters,
-                  new ThirdPartyCallHandler(dataCollectionTask.getAccountId(),
-                      dataCollectionTask.getVerificationTaskId(), delegateLogService, dataCollectionTask.getStartTime(),
-                      dataCollectionTask.getEndTime())));
-            } else {
-              hosts = validRecords.stream().map(LogDataRecord::getHostname).collect(Collectors.toSet());
-            }
-            hostRecordDataStoreService.save(dataCollectionTask.getAccountId(),
-                dataCollectionTask.getVerificationTaskId(), dataCollectionTask.getStartTime(),
-                dataCollectionTask.getEndTime(), hosts);
-          }
+          executeLogDataCollection(
+              dataCollectionTask, dataCollectionInfo, executionLogs, runtimeParameters, thirdPartyCallHandler);
           break;
         default:
           throw new IllegalArgumentException("Invalid type " + dataCollectionInfo.getVerificationType());
@@ -271,57 +219,52 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
     }
   }
 
-  private List<TimeSeriesRecord> getHostFilteredTimeSeriesRecordAndPopulateExecutionLogs(
-      List<TimeSeriesRecord> timeSeriesRecords, DataCollectionInfo dataCollectionInfo,
-      List<ExecutionLog> executionLogs) {
-    Set<String> validHosts = getValidHostsAndPopulateExecutionLogs(
-        timeSeriesRecords.stream().map(timeSeriesRecord -> timeSeriesRecord.getHostname()).collect(Collectors.toSet()),
-        dataCollectionInfo, executionLogs);
-    return timeSeriesRecords.stream()
-        .filter(tsr -> CollectionUtils.emptyIfNull(validHosts).contains(tsr.getHostname()))
-        .collect(Collectors.toList());
-  }
-
-  private List<LogDataRecord> getHostFilteredLogDataAndPopulateExecutionLogs(
-      List<LogDataRecord> logDataRecords, DataCollectionInfo dataCollectionInfo, List<ExecutionLog> executionLogs) {
-    Set<String> validHosts = getValidHostsAndPopulateExecutionLogs(
-        logDataRecords.stream().map(timeSeriesRecord -> timeSeriesRecord.getHostname()).collect(Collectors.toSet()),
-        dataCollectionInfo, executionLogs);
-    return logDataRecords.stream()
-        .filter(tsr -> CollectionUtils.emptyIfNull(validHosts).contains(tsr.getHostname()))
-        .collect(Collectors.toList());
-  }
-
-  private Set<String> getValidHostsAndPopulateExecutionLogs(
-      Set<String> hosts, DataCollectionInfo dataCollectionInfo, List<ExecutionLog> executionLogs) {
-    Map<HostValidity, Set<String>> hostValidityMap = hosts.stream().collect(
-        Collectors.groupingBy(host -> getHostValidity(host, dataCollectionInfo), Collectors.toSet()));
-    hostValidityMap.entrySet()
-        .stream()
-        .filter(entry -> !entry.getKey().equals(HostValidity.VALID))
-        .map(entry
-            -> ExecutionLog.builder()
-                   .logLevel(LogLevel.INFO)
-                   .log(entry.getKey().getLogMessage(dataCollectionInfo, entry.getValue()))
-                   .build())
-        .forEach(executionLog -> executionLogs.add(executionLog));
-    return hostValidityMap.get(HostValidity.VALID);
-  }
-
-  private HostValidity getHostValidity(String hostName, DataCollectionInfo dataCollectionInfo) {
-    if (!dataCollectionInfo.isCollectHostData() || StringUtils.isEmpty(hostName)) {
-      return HostValidity.VALID;
+  private void executeLogDataCollection(DataCollectionTaskDTO dataCollectionTask,
+      DataCollectionInfo<ConnectorConfigDTO> dataCollectionInfo, List<ExecutionLog> executionLogs,
+      RuntimeParameters runtimeParameters, ThirdPartyCallHandler thirdPartyCallHandler) {
+    List<LogDataRecord> logDataRecords = (List<LogDataRecord>) dataCollectionDSLService.execute(
+        dataCollectionInfo.getDataCollectionDsl(), runtimeParameters, thirdPartyCallHandler);
+    logDataRecords = HostFilteringUtils.getHostFilteredLogDataAndPopulateExecutionLogs(
+        logDataRecords, dataCollectionInfo, executionLogs);
+    if (logDataRecords.size() > LOG_RECORD_THRESHOLD) {
+      logDataRecords = pickNRandomElements(logDataRecords);
+      ExecutionLog delegateLogs =
+          ExecutionLog.builder()
+              .logLevel(LogLevel.WARN)
+              .log(String.format("Log query is not optimized. Logs collected %s are capped at %s",
+                  logDataRecords.size(), LOG_RECORD_THRESHOLD))
+              .build();
+      executionLogs.add(delegateLogs);
     }
-    if (CollectionUtils.isNotEmpty(dataCollectionInfo.getServiceInstances())
-        && !dataCollectionInfo.getServiceInstances().contains(hostName)) {
-      return HostValidity.SERVICE_INSTANCE_LIST_VALIDATION_FAILED;
+    List<LogDataRecord> validRecords = logDataRecords.stream()
+                                           .filter(log -> isNotEmpty(log.getLog()) && isNotEmpty(log.getHostname()))
+                                           .collect(Collectors.toList());
+    if (validRecords.size() < logDataRecords.size()) {
+      log.info(
+          "Log query is not optimized. Some records with invalid messageIdentifier and serviceInstanceIdentifier are present for verification task id: {}",
+          dataCollectionTask.getVerificationTaskId());
+      ExecutionLog delegateLog =
+          ExecutionLog.builder()
+              .logLevel(LogLevel.WARN)
+              .log(
+                  "Log query is not optimized. Some records with invalid messageIdentifier and serviceInstanceIdentifier are present.")
+              .build();
+      executionLogs.add(delegateLog);
     }
-    if (CollectionUtils.isNotEmpty(dataCollectionInfo.getValidServiceInstanceRegExPatterns())
-        && dataCollectionInfo.getValidServiceInstanceRegExPatterns().stream().allMatch(
-            regEx -> !Pattern.matches((String) regEx, hostName))) {
-      return HostValidity.REGEX_VALIDATION_FAILED;
+    logRecordDataStoreService.save(
+        dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(), validRecords);
+    if (dataCollectionInfo.isCollectHostData()) {
+      Set<String> hosts;
+      LogDataCollectionInfo<?> logDataCollectionInfo = (LogDataCollectionInfo<?>) dataCollectionInfo;
+      if (isNotEmpty(logDataCollectionInfo.getHostCollectionDSL())) {
+        hosts = new HashSet<>((Collection<String>) dataCollectionDSLService.execute(
+            logDataCollectionInfo.getHostCollectionDSL(), runtimeParameters, thirdPartyCallHandler));
+      } else {
+        hosts = validRecords.stream().map(LogDataRecord::getHostname).collect(Collectors.toSet());
+      }
+      hostRecordDataStoreService.save(dataCollectionTask.getAccountId(), dataCollectionTask.getVerificationTaskId(),
+          dataCollectionTask.getStartTime(), dataCollectionTask.getEndTime(), hosts);
     }
-    return HostValidity.VALID;
   }
 
   private <E> List<E> pickNRandomElements(List<E> logDataRecords) {
@@ -356,28 +299,5 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
   @Override
   public boolean cleanup(PerpetualTaskId taskId, PerpetualTaskExecutionParams params) {
     return true;
-  }
-
-  private enum HostValidity {
-    VALID,
-    SERVICE_INSTANCE_LIST_VALIDATION_FAILED,
-    REGEX_VALIDATION_FAILED;
-
-    public String getLogMessage(DataCollectionInfo dataCollectionInfo, Set<String> ignoredNodes) {
-      if (CollectionUtils.isEmpty(ignoredNodes)) {
-        return null;
-      }
-      switch (this) {
-        case SERVICE_INSTANCE_LIST_VALIDATION_FAILED:
-          return "Data from following service instances ignored as they are not in sampled node list : "
-              + String.join(",", ignoredNodes);
-        case REGEX_VALIDATION_FAILED:
-          return "Data from following service instances ignored as they didn't pass any specified regex ["
-              + String.join(",",
-                  dataCollectionInfo.getValidServiceInstanceRegExPatterns() + "] :" + String.join(",", ignoredNodes));
-        default:
-          return null;
-      }
-    }
   }
 }
