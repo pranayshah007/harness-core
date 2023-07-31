@@ -37,6 +37,7 @@ public interface ViewFieldConstants {
   String GCP_PRODUCT_FIELD_ID = "gcpProduct";
   String GCP_PROJECT_FIELD_ID = "gcpProjectId";
   String GCP_SKU_DESCRIPTION_FIELD_ID = "gcpSkuDescription";
+  String GCP_INVOICE_MONTH_FIELD_ID = "gcpInvoiceMonth";
 
   String REGION_FIELD_ID = "region";
   String PRODUCT_FIELD_ID = "product";

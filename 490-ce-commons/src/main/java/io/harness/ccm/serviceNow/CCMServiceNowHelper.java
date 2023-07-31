@@ -14,4 +14,5 @@ import java.util.Map;
 public interface CCMServiceNowHelper {
   ServiceNowTicketNG createIssue(
       String accountId, String servicenowConnectorRef, String ticketType, Map<String, String> fields);
+  ServiceNowTicketNG getIssue(String accountId, String servicenowConnectorRef, String ticketType, String ticketNumber);
 }

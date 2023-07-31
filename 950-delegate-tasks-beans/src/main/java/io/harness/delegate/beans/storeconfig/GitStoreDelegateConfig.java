@@ -20,7 +20,7 @@ import lombok.Singular;
 import lombok.Value;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 @OwnedBy(CDP)
 public class GitStoreDelegateConfig implements StoreDelegateConfig {
   String branch;
@@ -37,7 +37,6 @@ public class GitStoreDelegateConfig implements StoreDelegateConfig {
   String manifestType;
   String manifestId;
   private boolean optimizedFilesFetch;
-  boolean isGithubAppAuthentication;
 
   @Override
   public StoreDelegateConfigType getType() {

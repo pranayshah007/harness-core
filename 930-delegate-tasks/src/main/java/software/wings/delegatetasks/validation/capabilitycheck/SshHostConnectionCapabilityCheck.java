@@ -86,7 +86,7 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
   }
 
   void connect(SshSessionConfig config) throws Exception {
-    if (config.isUseSshClient()) {
+    if (config.isUseSshClient() || config.isVaultSSH()) {
       SshClientManager.test(config);
     } else {
       Session session = SshSessionFactory.getSSHSession(config);

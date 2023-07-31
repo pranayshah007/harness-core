@@ -516,7 +516,6 @@ public class CDStepHelper {
         .manifestType(manifestType)
         .manifestId(manifestIdentifier)
         .optimizedFilesFetch(optimizedFilesFetch)
-        .isGithubAppAuthentication(githubAppAuthentication)
         .build();
   }
 
@@ -1113,5 +1112,14 @@ public class CDStepHelper {
                                                .stream()
                                                .map(TaskSelectorYaml::new)
                                                .collect(Collectors.toList()));
+  }
+
+  public ScmConnector getScmConnector(ScmConnector scmConnector, String accountIdentifier) {
+    if (scmConnector instanceof GithubConnectorDTO && isGithubAppAuth((GithubConnectorDTO) scmConnector)
+        && cdFeatureFlagHelper.isEnabled(accountIdentifier, CDS_GITHUB_APP_AUTHENTICATION)) {
+      return scmConnector;
+    } else {
+      return ScmConnectorMapper.toGitConfigDTO(scmConnector);
+    }
   }
 }

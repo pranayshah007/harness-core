@@ -130,8 +130,9 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<CommandTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<CommandTaskResponse> responseDataSupplier)
+      throws Exception {
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     CommandTaskResponse taskResponse;
     try {

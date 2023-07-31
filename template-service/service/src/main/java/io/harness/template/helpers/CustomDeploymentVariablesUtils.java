@@ -7,6 +7,9 @@
 
 package io.harness.template.helpers;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableResponseDTO;
 import io.harness.pms.contracts.plan.YamlProperties;
@@ -16,6 +19,8 @@ import io.harness.pms.variables.VariableMergeServiceResponse.VariableResponseMap
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 public class CustomDeploymentVariablesUtils {
   public static VariableMergeServiceResponse getVariablesFromResponse(
       CustomDeploymentVariableResponseDTO customDeploymentVariableResponseDTO) {

@@ -84,7 +84,7 @@ public class SSHConfigValidationDelegateTask extends AbstractDelegateRunnableTas
     sshSessionConfig.setHost(sshTaskParams.getHost());
     sshSessionConfig.setPort(sshTaskParams.getSshKeySpec().getPort());
     try {
-      if (sshSessionConfig.isUseSshClient()) {
+      if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
         SshClientManager.test(sshSessionConfig);
       } else {
         Session session = SshSessionFactory.getSSHSession(sshSessionConfig);

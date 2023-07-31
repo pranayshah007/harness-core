@@ -122,9 +122,9 @@ public class AzureLogsDataCollectionDSLTest extends HoverflyTestBase {
     AzureLogsDataCollectionInfo azureLogsDataCollectionInfo = AzureLogsDataCollectionInfo.builder()
                                                                   .query(query)
                                                                   .resourceId(resourceId)
-                                                                  .serviceInstanceIdentifier("[3]")
-                                                                  .timeStampIdentifier("[4]")
-                                                                  .messageIdentifier("[10]")
+                                                                  .serviceInstanceIdentifier("Computer")
+                                                                  .timeStampIdentifier("TimeOfCommand")
+                                                                  .messageIdentifier("LogEntry")
                                                                   .build();
     azureLogsDataCollectionInfo.setDataCollectionDsl(dataCollectionDsl);
     RuntimeParameters runtimeParameters =

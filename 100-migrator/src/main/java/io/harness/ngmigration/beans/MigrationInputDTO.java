@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.beans;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -44,4 +45,5 @@ public class MigrationInputDTO {
   @JsonDeserialize(keyUsing = CgEntityIdDeserializer.class) private Map<CgEntityId, BaseProvidedInput> overrides;
   private Map<String, Object> customExpressions;
   private CaseFormat identifierCaseFormat;
+  private List<MigrationInputSettings> settings;
 }

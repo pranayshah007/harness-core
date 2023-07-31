@@ -1,0 +1,356 @@
+{
+  "data": {
+    "pairs": [
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/b229b2bb-5f33-4d22-bce0-730f6474e906/oauth2/token"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "POST"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "login.microsoftonline.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "body": [
+            {
+              "matcher": "exact",
+              "value": "grant_type=client_credentials&resource=https%3A%2F%2Fmanagement.azure.com&client_secret=***&client_id=***"
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "{\"token_type\":\"Bearer\",\"expires_in\":\"3599\",\"ext_expires_in\":\"3599\",\"expires_on\":\"1690323089\",\"not_before\":\"1690319189\",\"resource\":\"https://management.azure.com\",\"access_token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiJodHRwczovL21hbmFnZW1lbnQuYXp1cmUuY29tIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvYjIyOWIyYmItNWYzMy00ZDIyLWJjZTAtNzMwZjY0NzRlOTA2LyIsImlhdCI6MTY5MDMxOTE4OSwibmJmIjoxNjkwMzE5MTg5LCJleHAiOjE2OTAzMjMwODksImFpbyI6IkUyRmdZSGl3MTJKTHFLWHk4WnBnVmJ0Y0RvNGpBQT09IiwiYXBwaWQiOiIyZmZmY2M4My0wOWE4LTQ1MGYtODdmNS1hMjVlMzk0MmRkMTAiLCJhcHBpZGFjciI6IjEiLCJpZHAiOiJodHRwczovL3N0cy53aW5kb3dzLm5ldC9iMjI5YjJiYi01ZjMzLTRkMjItYmNlMC03MzBmNjQ3NGU5MDYvIiwiaWR0eXAiOiJhcHAiLCJvaWQiOiIzMDcxY2ZlZi00YTc1LTRhOTYtYTllNi05NzQwMjU0YmQxZjUiLCJyaCI6IjAuQVNrQXU3SXBzak5mSWsyODRITVBaSFRwQmtaSWYza0F1dGRQdWtQYXdmajJNQk1wQUFBLiIsInN1YiI6IjMwNzFjZmVmLTRhNzUtNGE5Ni1hOWU2LTk3NDAyNTRiZDFmNSIsInRpZCI6ImIyMjliMmJiLTVmMzMtNGQyMi1iY2UwLTczMGY2NDc0ZTkwNiIsInV0aSI6IllzS05GeFMyQjBPc1ozVk8wclNEQUEiLCJ2ZXIiOiIxLjAiLCJ4bXNfdGNkdCI6MTUxOTc2ODk4Nn0.UsFXRsItmQ-OP_TTZLmG7s4GhIP6xIRjc-IocVh_OrSNOQEB4gizu4WOmWB981GTxzA6LFwNXOS56ruwkOu9CZby5YItEYut2K2O_JqKrzgEiFkIxfyl7v1QvLkL_yh8TSFflgzq7N5YTO2dkxLrENWZ4xrS8YMgEnVFH5H_ConlKDTnXNrUbDL7uZ-pHyTzxtEQZWNE77JiwlV7JDpfOs--5OL3LE1wzM_rdz4wKIrKcchw7ajf9MxmsdE9n7Ipwqu_NBVuAAgf4e76asTC6xEZmwvw7ZDftuESFD23L_TG_lpuURXAvQ71epRG7ZBpSJfb1awDN-IwXJJP5iPCvw\"}",
+          "encodedBody": false,
+          "templated": false,
+          "headers": {
+            "Cache-Control": [
+              "no-store, no-cache"
+            ],
+            "Content-Length": [
+              "1466"
+            ],
+            "Content-Type": [
+              "application/json; charset=utf-8"
+            ],
+            "Date": [
+              "Tue, 25 Jul 2023 21:11:29 GMT"
+            ],
+            "Expires": [
+              "-1"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "P3p": [
+              "CP=\"DSP CUR OTPi IND OTRi ONL FIN\""
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "Set-Cookie": [
+              "fpc=AqQwAt4VolNNtJbniJPkoGq6AFXmAQAAAIAxUtwOAAAA; expires=Thu, 24-Aug-2023 21:11:29 GMT; path=/; secure; HttpOnly; SameSite=None",
+              "x-ms-gateway-slice=estsfd; path=/; secure; samesite=none; httponly",
+              "stsservicecookie=estsfd; path=/; secure; samesite=none; httponly"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=31536000; includeSubDomains"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Ms-Ests-Server": [
+              "2.1.15868.6 - NCUS ProdSlices"
+            ],
+            "X-Ms-Request-Id": [
+              "178dc262-b614-4307-ac67-754ed2b48300"
+            ],
+            "X-Xss-Protection": [
+              "0"
+            ]
+          }
+        }
+      },
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/subscriptions/12d2db62-5aa9-471d-84bb-faa489b3e319/resourceGroups/srm-test/providers/Microsoft.ContainerService/managedClusters/srm-test/providers/Microsoft.Insights/metrics"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "management.azure.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "query": {
+            "$filter": [
+              {
+                "matcher": "exact",
+                "value": "node eq '*'"
+              }
+            ],
+            "aggregation": [
+              {
+                "matcher": "exact",
+                "value": "average"
+              }
+            ],
+            "api-version": [
+              {
+                "matcher": "exact",
+                "value": "2021-05-01"
+              }
+            ],
+            "metricnames": [
+              {
+                "matcher": "exact",
+                "value": "node_cpu_usage_millicores"
+              }
+            ],
+            "metricnamespace": [
+              {
+                "matcher": "exact",
+                "value": "microsoft.containerservice/managedclusters"
+              }
+            ],
+            "timespan": [
+              {
+                "matcher": "exact",
+                "value": "2023-07-13T20:20:00Z/2023-07-13T20:25:00Z"
+              }
+            ]
+          },
+          "body": [
+            {
+              "matcher": "json",
+              "value": ""
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "H4sIAAAAAAAEAO29B2AcSZYlJi9tynt/SvVK1+B0oQiAYBMk2JBAEOzBiM3mkuwdaUcjKasqgcplVmVdZhZAzO2dvPfee++999577733ujudTif33/8/XGZkAWz2zkrayZ4hgKrIHz9+fB8/In7xR9OqaT96tD/6qC0WebPKlh89+mhvZ+/e9s6D7d17b/Z2HtH/dnZ+6m7nw/v48KPRR8WyzevLrKTXXr7Z/YI+oT/W+UePvveLPypm9OndZj1ppnWxaotq2dzd3ZvtzSaf7m3fz7KH2/sPdmfbB/uTyfZ5lu0fPJzcy+/tPrxb5021rqf553W1XjV3m3qx3eZNe3dVV5fFLK+bu18U07pqqvN2fFIt26xY5vVrwqOY5ncX2TK7yGcn5boh1G54+2zZFBfztrm7yNu6mDZ3l9Us//2nq/Xvv24Iyu+/KMqymFaEEI2svV7RwD4afpvaLLMFtfnFhgofbYJXVtOsLH6Qz35SG5+8/Cr9Cu3SL1y7XzL6aFY0qzK7fppbQlLj44uLOr/I2nyWLvKsWdf5Il+2aXWeAsy6LQh0hrZpsUxdv2kG7Ju0nefpVGhEqKyXBbEBDY2anaAZfcYckdcF/YHZpDFms6zNeGTyUWyw9GJvXPw5jcO0y9422zTKZbuqqnJ7796nuw8f7ny6fblomh08ux/9ku/TqKkz7gaIvG6zxYpe7bAh8yZ1mV3mNUH86NHepw9/yWjjK7v9V/ZueGWv/8ruDa/c679ycMMr+71XHuz/ku/jpR8i6fc+gPT770/6+zs3vNIn/Y299Em/v3/DK33S33v4Qyf9ztcn/e7Dm0bYI/3uw09veKVH+ptf6ZH+ZsR6pN99eI9IT5TI67qqT0DERx+9Xk+neUPKkD4H/clSTfH5wuriqbEDpLJ8O6A6DgqN1BqbFVKbpBbpbVKb7br56Jf8P9m9U+MHBwAA",
+          "encodedBody": true,
+          "templated": false,
+          "headers": {
+            "Access-Control-Allow-Origin": [
+              "*"
+            ],
+            "Cache-Control": [
+              "no-cache"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=utf-8"
+            ],
+            "Date": [
+              "Tue, 25 Jul 2023 21:11:30 GMT"
+            ],
+            "Expires": [
+              "-1"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "Request-Context": [
+              "appId=cid-v1:b021da79-5252-4375-9df5-2e17c1dcd822"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=31536000; includeSubDomains"
+            ],
+            "Vary": [
+              "Accept-Encoding"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Ms-Correlation-Request-Id": [
+              "6b9b9459-d928-49a2-95f4-848298ae05f1"
+            ],
+            "X-Ms-Ratelimit-Remaining-Subscription-Reads": [
+              "11999"
+            ],
+            "X-Ms-Request-Id": [
+              "{6b9b9459-d928-49a2-95f4-848298ae05f1}"
+            ],
+            "X-Ms-Routing-Request-Id": [
+              "SOUTHINDIA:20230725T211130Z:6b9b9459-d928-49a2-95f4-848298ae05f1"
+            ]
+          }
+        }
+      },
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/subscriptions/12d2db62-5aa9-471d-84bb-faa489b3e319/resourceGroups/srm-test/providers/Microsoft.ContainerService/managedClusters/srm-test/providers/Microsoft.Insights/metrics"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "GET"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "management.azure.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "query": {
+            "$filter": [
+              {
+                "matcher": "exact",
+                "value": "node eq '*'"
+              }
+            ],
+            "aggregation": [
+              {
+                "matcher": "exact",
+                "value": "maximum"
+              }
+            ],
+            "api-version": [
+              {
+                "matcher": "exact",
+                "value": "2021-05-01"
+              }
+            ],
+            "metricnames": [
+              {
+                "matcher": "exact",
+                "value": "node_cpu_usage_millicores"
+              }
+            ],
+            "metricnamespace": [
+              {
+                "matcher": "exact",
+                "value": "microsoft.containerservice/managedclusters"
+              }
+            ],
+            "timespan": [
+              {
+                "matcher": "exact",
+                "value": "2023-07-13T20:20:00Z/2023-07-13T20:25:00Z"
+              }
+            ]
+          },
+          "body": [
+            {
+              "matcher": "json",
+              "value": ""
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "H4sIAAAAAAAEAO29B2AcSZYlJi9tynt/SvVK1+B0oQiAYBMk2JBAEOzBiM3mkuwdaUcjKasqgcplVmVdZhZAzO2dvPfee++999577733ujudTif33/8/XGZkAWz2zkrayZ4hgKrIHz9+fB8/In7xR9OqaT96tD/6qC0WebPKlh89+mhvZ+/e9s6D7d17b/Z2HtH/dnZ+6m7nw/v48KPRR8WyzevLrKTXXr7Z/YI+oT/W+UePvveLPypm9OndZj1ppnWxaotq2dzd3ZvtzSaf7m3fz7KH2/sPdmfbB/uTyfZ5lu0fPJzcy+/tPrxb5021rqf553W1XjV3m3qx3eZNe3dVV5fFLK+bu18U07pqqvN2fFIt26xY5vVrwqOY5ncX2TK7yGcn5boh1G54+2zZFBfztrm7yNu6mDZ3l9Us//2nq/Xvv24Iyu+/KMqymFaEEI2svV7RwD4afpvaLLMFtfnFhgofbYJXVtOsLH6Qz35SG5+8/Cr9Cu3SL1y7XzL6aFY0qzK7fppbQlLj44uLOr/I2nyWLvKsWdf5Il+2aXWeAsy6LQh0hrZpsUxdv2kG7Ju0nefpVGhEqKyXBbEBDY2anaAZfcYckdcF/YHZpDFms6zNeGTyUWyw9GJvXPw5jcO0y9422zTKZbuqqnJ7796nuw8f7ny6fblomh08ux/9ku/TqKkz7gaIvG6zxYpe7bAh8yZ1ucjeFYv14qNHe58+/CWjja/s9l/Zu+GVvf4ruze8cq//ysENr+z3Xnmw/0u+j5d+iKTf+wDS778/6e/v3PBKn/Q39tIn/f7+Da/0SX/v4Q+d9Dtfn/S7D28aYY/0uw8/veGVHulvfqVH+psR65F+9+E9Ij1RIq/rqj4BER999Ho9neYNKUP6HPQnSzXF5wuri6fGDpDK8u2A6jgoNFJrbFZIbZJapLdJbbbr5qNf8v8APdbaoQcHAAA=",
+          "encodedBody": true,
+          "templated": false,
+          "headers": {
+            "Access-Control-Allow-Origin": [
+              "*"
+            ],
+            "Cache-Control": [
+              "no-cache"
+            ],
+            "Content-Encoding": [
+              "gzip"
+            ],
+            "Content-Type": [
+              "application/json; charset=utf-8"
+            ],
+            "Date": [
+              "Tue, 25 Jul 2023 21:11:31 GMT"
+            ],
+            "Expires": [
+              "-1"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "Request-Context": [
+              "appId=cid-v1:b021da79-5252-4375-9df5-2e17c1dcd822"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=31536000; includeSubDomains"
+            ],
+            "Vary": [
+              "Accept-Encoding"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Ms-Correlation-Request-Id": [
+              "8570aeb2-e9b1-44cd-b96f-d488339305c4"
+            ],
+            "X-Ms-Ratelimit-Remaining-Subscription-Reads": [
+              "11998"
+            ],
+            "X-Ms-Request-Id": [
+              "{8570aeb2-e9b1-44cd-b96f-d488339305c4}"
+            ],
+            "X-Ms-Routing-Request-Id": [
+              "SOUTHINDIA:20230725T211132Z:8570aeb2-e9b1-44cd-b96f-d488339305c4"
+            ]
+          }
+        }
+      }
+    ],
+    "globalActions": {
+      "delays": []
+    }
+  },
+  "meta": {
+    "schemaVersion": "v5",
+    "hoverflyVersion": "v1.1.5",
+    "timeExported": "2023-07-25T21:11:32Z"
+  }
+}

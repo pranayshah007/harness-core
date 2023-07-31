@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
@@ -58,10 +59,11 @@ import org.springframework.data.util.CloseableIterator;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class RollbackModeExecutionHelper {
-  NodeExecutionService nodeExecutionService;
-  PipelineMetadataService pipelineMetadataService;
-  PrincipalInfoHelper principalInfoHelper;
-  RollbackModeYamlTransformer rollbackModeYamlTransformer;
+  private NodeExecutionService nodeExecutionService;
+  private PlanService planService;
+  private PipelineMetadataService pipelineMetadataService;
+  private PrincipalInfoHelper principalInfoHelper;
+  private RollbackModeYamlTransformer rollbackModeYamlTransformer;
 
   public ExecutionMetadata transformExecutionMetadata(ExecutionMetadata executionMetadata, String planExecutionID,
       ExecutionTriggerInfo triggerInfo, String accountId, String orgIdentifier, String projectIdentifier,
@@ -179,12 +181,11 @@ public class RollbackModeExecutionHelper {
 
     while (nodeExecutions.hasNext()) {
       NodeExecution nodeExecution = nodeExecutions.next();
-      Node planNodeFromNodeExec = nodeExecution.getNode();
-      String planNodeIdFromNodeExec = planNodeFromNodeExec.getUuid();
-      if (planNodeFromNodeExec.getStepType().getStepCategory() == StepCategory.STAGE) {
+      String planNodeIdFromNodeExec = nodeExecution.getNodeId();
+      if (nodeExecution.getStepType().getStepCategory() == StepCategory.STAGE) {
         continue;
       }
-      if (planNodeIDToUpdatedNodes.containsKey(planNodeIdFromNodeExec)) {
+      if (planNodeIDToUpdatedNodes.containsKey(nodeExecution.getNodeId())) {
         // this means that the current plan node ID was already added, hence this plan node has multiple node executions
         // mapped to it. Hence, the identity node created for the plan node needs to be updated to contain the IDs of
         // all the node executions mapped to it
@@ -192,8 +193,9 @@ public class RollbackModeExecutionHelper {
         previouslyAddedNode.convertToListOfOGNodeExecIds(nodeExecution.getUuid());
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, previouslyAddedNode);
       } else {
+        Node node = planService.fetchNode(nodeExecution.getNodeId());
         IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
-            nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid(), true);
+            node, nodeExecution.getStepType(), nodeExecution.getUuid(), true);
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, identityPlanNode);
       }
     }

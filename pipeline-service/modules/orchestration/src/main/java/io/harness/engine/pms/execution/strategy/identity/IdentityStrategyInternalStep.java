@@ -22,7 +22,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
-import io.harness.plan.PlanNode;
+import io.harness.plan.NodeType;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
@@ -151,9 +151,10 @@ public class IdentityStrategyInternalStep
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     List<Node> identityNodesToBeCreated = new ArrayList<>();
     for (NodeExecution nodeExecution : childrenNodeExecutions) {
-      if (nodeExecution.getNode() instanceof PlanNode) {
-        Node node = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), nodeExecution.getNode(),
-            nodeExecution.getIdentifier(), nodeExecution.getName(), nodeExecution.getNode().getStepType(),
+      if (nodeExecution.getNodeType() == NodeType.PLAN_NODE) {
+        Node originalNode = planService.fetchNode(nodeExecution.getNodeId());
+        Node node = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), originalNode,
+            nodeExecution.getIdentifier(), nodeExecution.getName(), nodeExecution.getStepType(),
             nodeExecution.getUuid());
         children.add(ChildrenExecutableResponse.Child.newBuilder()
                          .setChildNodeId(node.getUuid())
@@ -163,7 +164,7 @@ public class IdentityStrategyInternalStep
         identityNodesToBeCreated.add(node);
       } else {
         children.add(ChildrenExecutableResponse.Child.newBuilder()
-                         .setChildNodeId(nodeExecution.getNode().getUuid())
+                         .setChildNodeId(nodeExecution.getNodeId())
                          .setStrategyMetadata(
                              AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata())
                          .build());
@@ -175,8 +176,8 @@ public class IdentityStrategyInternalStep
 
   private ChildExecutableResponse getChildFromNodeExecutions(
       NodeExecution childNodeExecution, NodeExecution originalNodeExecution, String planId) {
-    Node node = childNodeExecution.getNode();
-    if (node instanceof PlanNode) {
+    Node node = planService.fetchNode(childNodeExecution.getNodeId());
+    if (node.getNodeType() == NodeType.PLAN_NODE) {
       IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), node,
           childNodeExecution.getIdentifier(), childNodeExecution.getName(), node.getStepType(),
           childNodeExecution.getUuid());

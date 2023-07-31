@@ -68,7 +68,13 @@ public class VmRunStepSerializerTest extends CategoryTest {
     VmRunStep vmRunStep = vmRunStepSerializer.serialize(runStepInfo, ambiance, "id", null, null, null, null, null);
     assertThat(vmRunStep.isPrivileged()).isTrue();
     assertThat(vmRunStep.getImage()).isEqualTo("image");
-    assertThat(vmRunStep.getCommand()).isEqualTo("set -xe; echo hello");
+    assertThat(vmRunStep.getCommand())
+        .isEqualTo("echo \"\u001B[33;1mExecuting the following command(s):\"\n"
+            + "echo \"\u001B[33;1mset -e; \"\n"
+            + "echo \"\u001B[33;1mecho hello\"\n"
+            + "echo \n"
+            + "set -e; \n"
+            + "echo hello");
     assertThat(vmRunStep.getRunAsUser()).isEqualTo("1000");
     assertThat(vmRunStep.getEnvVariables()).isEqualTo(Map.of("key1", "val1", "key2", "val2"));
   }

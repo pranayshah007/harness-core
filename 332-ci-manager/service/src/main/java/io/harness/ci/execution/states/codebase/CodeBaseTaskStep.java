@@ -268,9 +268,12 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       return null;
     }
 
+    String ref = String.format("refs/heads/%s", scmGitRefTaskResponseData.getBranch());
+
     Build build = new Build("branch");
     if (isNotEmpty(tag)) {
       build = new Build("tag");
+      ref = String.format("refs/tags/%s", tag);
     }
 
     String commitSha = latestCommitResponse.getCommit().getSha();
@@ -297,6 +300,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         .gitUserEmail(latestCommitResponse.getCommit().getAuthor().getEmail())
         .gitUserAvatar(latestCommitResponse.getCommit().getAuthor().getAvatar())
         .commitMessage(latestCommitResponse.getCommit().getMessage())
+        .commitRef(ref)
         .build();
   }
 
@@ -325,6 +329,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
       String mergeCommitSha = prWebhookEvent.getBaseAttributes().getMergeSha();
       String commitRef = prWebhookEvent.getBaseAttributes().getRef();
+      CodeBaseCommit codeBaseCommit =
+          isNotEmpty(codeBaseCommits) ? codeBaseCommits.get(0) : CodeBaseCommit.builder().build();
 
       return CodebaseSweepingOutput.builder()
           .commits(codeBaseCommits)
@@ -341,10 +347,13 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .baseCommitSha(prWebhookEvent.getBaseAttributes().getBefore())
           .repoUrl(prWebhookEvent.getRepository().getLink())
           .pullRequestLink(prWebhookEvent.getPullRequestLink())
-          .gitUser(prWebhookEvent.getBaseAttributes().getAuthorName())
-          .gitUserEmail(prWebhookEvent.getBaseAttributes().getAuthorEmail())
+          .gitUser(getPropertyFromCommitOrDefault(
+              prWebhookEvent.getBaseAttributes().getAuthorName(), codeBaseCommit.getOwnerName()))
+          .gitUserEmail(getPropertyFromCommitOrDefault(
+              prWebhookEvent.getBaseAttributes().getAuthorEmail(), codeBaseCommit.getOwnerEmail()))
           .gitUserAvatar(prWebhookEvent.getBaseAttributes().getAuthorAvatar())
-          .gitUserId(prWebhookEvent.getBaseAttributes().getAuthorLogin())
+          .gitUserId(getPropertyFromCommitOrDefault(
+              prWebhookEvent.getBaseAttributes().getAuthorLogin(), codeBaseCommit.getOwnerId()))
           .commitMessage(getCommitMessage(codeBaseCommits))
           .commitRef(commitRef)
           .build();
@@ -382,6 +391,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .gitUserAvatar(branchWebhookEvent.getBaseAttributes().getAuthorAvatar())
           .gitUserId(branchWebhookEvent.getBaseAttributes().getAuthorLogin())
           .commitMessage(getCommitMessage(codeBaseCommits))
+          .commitRef(branchWebhookEvent.getBaseAttributes().getRef())
           .build();
     } else if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.RELEASE) {
       ReleaseWebhookEvent releaseWebhookEvent = (ReleaseWebhookEvent) webhookExecutionSource.getWebhookEvent();
@@ -457,29 +467,32 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
 
     String commitSha = pr.getSha();
     String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+    CodeBaseCommit codeBaseCommit =
+        isNotEmpty(codeBaseCommits) ? codeBaseCommits.get(0) : CodeBaseCommit.builder().build();
 
-    codebaseSweepingOutput = CodebaseSweepingOutput.builder()
-                                 .branch(pr.getTarget())
-                                 .sourceBranch(pr.getSource())
-                                 .targetBranch(pr.getTarget())
-                                 .prNumber(String.valueOf(pr.getNumber()))
-                                 .prTitle(pr.getTitle())
-                                 .commitSha(commitSha)
-                                 .mergeSha(pr.getMergeSha())
-                                 .shortCommitSha(shortCommitSha)
-                                 .build(new Build("PR"))
-                                 .baseCommitSha(pr.getBase().getSha())
-                                 .commitRef(pr.getRef())
-                                 .repoUrl(repoUrl) // Add repo url to scm.PullRequest and get it from there
-                                 .gitUser(pr.getAuthor().getName())
-                                 .gitUserAvatar(pr.getAuthor().getAvatar())
-                                 .gitUserEmail(pr.getAuthor().getEmail())
-                                 .gitUserId(pr.getAuthor().getLogin())
-                                 .pullRequestLink(pr.getLink())
-                                 .commits(codeBaseCommits)
-                                 .state(getState(pr))
-                                 .commitMessage(getCommitMessage(codeBaseCommits))
-                                 .build();
+    codebaseSweepingOutput =
+        CodebaseSweepingOutput.builder()
+            .branch(pr.getTarget())
+            .sourceBranch(pr.getSource())
+            .targetBranch(pr.getTarget())
+            .prNumber(String.valueOf(pr.getNumber()))
+            .prTitle(pr.getTitle())
+            .commitSha(commitSha)
+            .mergeSha(pr.getMergeSha())
+            .shortCommitSha(shortCommitSha)
+            .build(new Build("PR"))
+            .baseCommitSha(pr.getBase().getSha())
+            .commitRef(pr.getRef())
+            .repoUrl(repoUrl) // Add repo url to scm.PullRequest and get it from there
+            .gitUser(getPropertyFromCommitOrDefault(pr.getAuthor().getName(), codeBaseCommit.getOwnerName()))
+            .gitUserAvatar(pr.getAuthor().getAvatar())
+            .gitUserEmail(getPropertyFromCommitOrDefault(pr.getAuthor().getEmail(), codeBaseCommit.getOwnerEmail()))
+            .gitUserId(getPropertyFromCommitOrDefault(pr.getAuthor().getLogin(), codeBaseCommit.getOwnerId()))
+            .pullRequestLink(pr.getLink())
+            .commits(codeBaseCommits)
+            .state(getState(pr))
+            .commitMessage(getCommitMessage(codeBaseCommits))
+            .build();
     return codebaseSweepingOutput;
   }
 
@@ -540,5 +553,12 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     }
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
     return stageDetails.getExecutionSource();
+  }
+
+  private String getPropertyFromCommitOrDefault(String value, String defaultValue) {
+    if (isNotEmpty(value)) {
+      return value;
+    }
+    return defaultValue;
   }
 }

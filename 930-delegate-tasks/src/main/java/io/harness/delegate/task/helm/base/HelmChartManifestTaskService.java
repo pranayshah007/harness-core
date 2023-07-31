@@ -18,7 +18,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
@@ -76,6 +76,7 @@ public class HelmChartManifestTaskService {
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
 
   @Inject private GitFetchTaskHelper gitFetchTaskHelper;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private final Cache<HelmChartKey, HelmChartManifest> cache =
       CacheBuilder.newBuilder()
@@ -153,7 +154,8 @@ public class HelmChartManifestTaskService {
     }
 
     final String chartPath = gitStoreDelegateConfig.getPaths().get(0);
-    GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+    GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+        gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
     String chartYamlPath = getChartYamlPath(manifestConfig, chartPath);
 
     FetchFilesResult result = gitFetchTaskHelper.fetchFileFromRepo(

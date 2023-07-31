@@ -105,7 +105,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
-
   @Inject private PlanExpansionService planExpansionService;
 
   @Inject @Named("EngineExecutorService") ExecutorService executorService;
@@ -371,7 +370,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @VisibleForTesting
   ExecutionCheck performPreFacilitationChecks(Ambiance ambiance, PlanNode planNode) {
     // Ignore facilitation checks if node is retried
-
     if (AmbianceUtils.isRetry(ambiance)) {
       return ExecutionCheck.builder().proceed(true).reason("Node is retried.").build();
     }

@@ -287,7 +287,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<TerraformTaskNGResponse> responseSupplier)
       throws Exception {
     log.info("Handling Task Result With Security Context for the Apply Step");

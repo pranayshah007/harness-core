@@ -959,6 +959,11 @@ public class NgUserServiceImpl implements NgUserService {
     return true;
   }
 
+  public boolean deleteUserMetadata(String userId) {
+    userMetadataRepository.deleteById(userId);
+    return true;
+  }
+
   private void validateUserMembershipsDeletion(Scope scope, String userId, NGRemoveUserFilter removeUserFilter) {
     if (!NGRemoveUserFilter.STRICTLY_FORCE_REMOVE_USER.equals(removeUserFilter) && isEmpty(scope.getOrgIdentifier())) {
       checkIfUserIsLastAccountAdmin(scope.getAccountIdentifier(), userId);
@@ -1099,6 +1104,17 @@ public class NgUserServiceImpl implements NgUserService {
                    .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
                    .is(scope.getProjectIdentifier());
     return UsersCountDTO.builder().totalCount(userMembershipRepository.count(criteria)).newCount(newUsersCount).build();
+  }
+
+  @Override
+  public Long getNgUsersCount(Scope scope) {
+    Criteria criteria = Criteria.where(UserMembershipKeys.scope + "." + ScopeKeys.accountIdentifier)
+                            .is(scope.getAccountIdentifier())
+                            .and(UserMembershipKeys.scope + "." + ScopeKeys.orgIdentifier)
+                            .is(scope.getOrgIdentifier())
+                            .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
+                            .is(scope.getProjectIdentifier());
+    return userMembershipRepository.count(criteria);
   }
 
   @Override

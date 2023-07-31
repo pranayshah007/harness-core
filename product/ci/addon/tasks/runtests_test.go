@@ -341,7 +341,6 @@ instrPackages: p1, p2, p3`
 	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
 	mf := filesystem.NewMockFile(ctrl)
 	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
-	fs.EXPECT().ReadFile(gomock.Any(), gomock.Any()).Return(nil)
 	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
 
 	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
@@ -388,6 +387,509 @@ echo y`
 	assert.Nil(t, err)
 	assert.Equal(t, r.runOnlySelectedTests, false) // Since it's a manual execution
 	assert.Equal(t, got, want)
+}
+
+
+func TestGetCmd_PushTrigger_CommitInfoError(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	outputFile := "test.out"
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	fs := filesystem.NewMockFileSystem(ctrl)
+
+	tmpFilePath := "/test/tmp"
+	packages := "p1, p2, p3"
+
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
+	expData := `outDir: /test/tmp/ti/callgraph/
+logLevel: 0
+logConsole: false
+writeTo: COVERAGE_JSON
+instrPackages: p1, p2, p3`
+	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
+	mf := filesystem.NewMockFile(ctrl)
+	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
+	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
+
+	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: true,
+		fs:                   fs,
+		preCommand:           "echo x",
+		diffFiles:            string(diffFiles),
+		args:                 "clean test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		tmpFilePath:          tmpFilePath,
+		packages:             packages,
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+	}
+
+	oldIsManual := isManualFn
+	defer func() {
+		isManualFn = oldIsManual
+	}()
+	isManualFn = func() bool {
+		return false
+	}
+
+	called := 0
+
+	oldIsPushTrigger := isPushTriggerFn
+	defer func() {
+		isPushTriggerFn = oldIsPushTrigger
+	}()
+	isPushTriggerFn = func() bool {
+		called++
+		return true
+	}
+
+	oldGetCommitInfo := getCommitInfoFn
+	defer func() {
+		getCommitInfoFn = oldGetCommitInfo
+	}()
+	getCommitInfoFn = func(ctx context.Context, stepID string, log *zap.SugaredLogger) (string, error) {
+		called++
+		return "dgf47655", errors.New("error in getting commit info")
+	}
+
+	oldGetChangedFilesPushTrigger := getChangedFilesPushTriggerFn
+	defer func() {
+		getChangedFilesPushTriggerFn = oldGetChangedFilesPushTrigger
+	}()
+	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+		called++
+		return []types.File{}, nil
+	}
+
+	oldSelect := selectTestsFn
+	defer func() {
+		selectTestsFn = oldSelect
+	}()
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+		called++
+		return types.SelectTestsResp{}, nil
+	}
+
+	want := `set -xe
+export TMPDIR=/test/tmp
+export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+echo x
+mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
+echo y`
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
+	assert.Nil(t, err)
+	assert.Equal(t, r.runOnlySelectedTests, false) // Since there was an error in execution
+	assert.Equal(t, got, want)
+	assert.Equal(t, called, 2)
+}
+
+func TestGetCmd_PushTrigger_CommitInfoEmpty(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	outputFile := "test.out"
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	fs := filesystem.NewMockFileSystem(ctrl)
+
+	tmpFilePath := "/test/tmp"
+	packages := "p1, p2, p3"
+
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
+	expData := `outDir: /test/tmp/ti/callgraph/
+logLevel: 0
+logConsole: false
+writeTo: COVERAGE_JSON
+instrPackages: p1, p2, p3`
+	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
+	mf := filesystem.NewMockFile(ctrl)
+	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
+	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
+
+	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: true,
+		fs:                   fs,
+		preCommand:           "echo x",
+		diffFiles:            string(diffFiles),
+		args:                 "clean test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		tmpFilePath:          tmpFilePath,
+		packages:             packages,
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+	}
+
+	oldIsManual := isManualFn
+	defer func() {
+		isManualFn = oldIsManual
+	}()
+	isManualFn = func() bool {
+		return false
+	}
+
+	called := 0
+
+	oldIsPushTrigger := isPushTriggerFn
+	defer func() {
+		isPushTriggerFn = oldIsPushTrigger
+	}()
+	isPushTriggerFn = func() bool {
+		called++
+		return true
+	}
+
+	oldGetCommitInfo := getCommitInfoFn
+	defer func() {
+		getCommitInfoFn = oldGetCommitInfo
+	}()
+	getCommitInfoFn = func(ctx context.Context, stepID string, log *zap.SugaredLogger) (string, error) {
+		called++
+		return "", nil
+	}
+
+	oldGetChangedFilesPushTrigger := getChangedFilesPushTriggerFn
+	defer func() {
+		getChangedFilesPushTriggerFn = oldGetChangedFilesPushTrigger
+	}()
+	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+		called++
+		return []types.File{}, nil
+	}
+
+	oldSelect := selectTestsFn
+	defer func() {
+		selectTestsFn = oldSelect
+	}()
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+		called++
+		return types.SelectTestsResp{}, nil
+	}
+
+	want := `set -xe
+export TMPDIR=/test/tmp
+export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+echo x
+mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
+echo y`
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
+	assert.Nil(t, err)
+	assert.Equal(t, r.runOnlySelectedTests, false) // Since there was an error in execution
+	assert.Equal(t, got, want)
+	assert.Equal(t, called, 2)
+}
+
+func TestGetCmd_PushTrigger_GetChangedFilesError(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	outputFile := "test.out"
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	fs := filesystem.NewMockFileSystem(ctrl)
+
+	tmpFilePath := "/test/tmp"
+	packages := "p1, p2, p3"
+
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
+	expData := `outDir: /test/tmp/ti/callgraph/
+logLevel: 0
+logConsole: false
+writeTo: COVERAGE_JSON
+instrPackages: p1, p2, p3`
+	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
+	mf := filesystem.NewMockFile(ctrl)
+	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
+	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
+
+	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: true,
+		fs:                   fs,
+		preCommand:           "echo x",
+		diffFiles:            string(diffFiles),
+		args:                 "clean test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		tmpFilePath:          tmpFilePath,
+		packages:             packages,
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+	}
+
+	oldIsManual := isManualFn
+	defer func() {
+		isManualFn = oldIsManual
+	}()
+	isManualFn = func() bool {
+		return false
+	}
+
+	called := 0
+
+	oldIsPushTrigger := isPushTriggerFn
+	defer func() {
+		isPushTriggerFn = oldIsPushTrigger
+	}()
+	isPushTriggerFn = func() bool {
+		called++
+		return true
+	}
+
+	oldGetCommitInfo := getCommitInfoFn
+	defer func() {
+		getCommitInfoFn = oldGetCommitInfo
+	}()
+	getCommitInfoFn = func(ctx context.Context, stepID string, log *zap.SugaredLogger) (string, error) {
+		called++
+		return "asddd", nil
+	}
+
+	oldGetChangedFilesPushTrigger := getChangedFilesPushTriggerFn
+	defer func() {
+		getChangedFilesPushTriggerFn = oldGetChangedFilesPushTrigger
+	}()
+	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+		called++
+		return []types.File{}, errors.New("error in getting changed files")
+	}
+
+	oldSelect := selectTestsFn
+	defer func() {
+		selectTestsFn = oldSelect
+	}()
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+		called++
+		return types.SelectTestsResp{}, nil
+	}
+
+	want := `set -xe
+export TMPDIR=/test/tmp
+export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+echo x
+mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
+echo y`
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
+	assert.Nil(t, err)
+	assert.Equal(t, r.runOnlySelectedTests, false) // Since there was an error in execution
+	assert.Equal(t, got, want)
+	assert.Equal(t, called, 3)
+}
+
+func TestGetCmd_PushTrigger_WithoutChangedFiles(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	outputFile := "test.out"
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	fs := filesystem.NewMockFileSystem(ctrl)
+
+	tmpFilePath := "/test/tmp"
+	packages := "p1, p2, p3"
+
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
+	expData := `outDir: /test/tmp/ti/callgraph/
+logLevel: 0
+logConsole: false
+writeTo: COVERAGE_JSON
+instrPackages: p1, p2, p3`
+	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
+	mf := filesystem.NewMockFile(ctrl)
+	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
+	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
+
+	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: true,
+		fs:                   fs,
+		preCommand:           "echo x",
+		diffFiles:            string(diffFiles),
+		args:                 "clean test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		tmpFilePath:          tmpFilePath,
+		packages:             packages,
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+	}
+
+	oldIsManual := isManualFn
+	defer func() {
+		isManualFn = oldIsManual
+	}()
+	isManualFn = func() bool {
+		return false
+	}
+
+	called := 0
+
+	oldIsPushTrigger := isPushTriggerFn
+	defer func() {
+		isPushTriggerFn = oldIsPushTrigger
+	}()
+	isPushTriggerFn = func() bool {
+		called++
+		return true
+	}
+
+	oldGetCommitInfo := getCommitInfoFn
+	defer func() {
+		getCommitInfoFn = oldGetCommitInfo
+	}()
+	getCommitInfoFn = func(ctx context.Context, stepID string, log *zap.SugaredLogger) (string, error) {
+		called++
+		return "asddd", nil
+	}
+
+	oldGetChangedFilesPushTrigger := getChangedFilesPushTriggerFn
+	defer func() {
+		getChangedFilesPushTriggerFn = oldGetChangedFilesPushTrigger
+	}()
+	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+		called++
+		return []types.File{}, nil
+	}
+
+	oldSelect := selectTestsFn
+	defer func() {
+		selectTestsFn = oldSelect
+	}()
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+		called++
+		return types.SelectTestsResp{}, nil
+	}
+
+	want := `set -xe
+export TMPDIR=/test/tmp
+export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+echo x
+mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
+echo y`
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
+	assert.Nil(t, err)
+	assert.Equal(t, r.runOnlySelectedTests, false) // Since there was an error in execution
+	assert.Equal(t, got, want)
+	assert.Equal(t, called, 3)
+}
+
+
+func TestGetCmd_PushTrigger_SelectAll(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	outputFile := "test.out"
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	fs := filesystem.NewMockFileSystem(ctrl)
+
+	tmpFilePath := "/test/tmp"
+	packages := "p1, p2, p3"
+
+	expDir := filepath.Join(tmpFilePath, outDir) + "/"
+	expData := `outDir: /test/tmp/ti/callgraph/
+logLevel: 0
+logConsole: false
+writeTo: COVERAGE_JSON
+instrPackages: p1, p2, p3`
+	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
+	mf := filesystem.NewMockFile(ctrl)
+	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
+	fs.EXPECT().ReadFile(gomock.Any(), gomock.Any()).Return(nil)
+	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
+
+	t1 := types.RunnableTest{Pkg: "pkg1", Class: "cls1", Method: "m1"}
+	t2 := types.RunnableTest{Pkg: "pkg2", Class: "cls2", Method: "m2"}
+
+	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
+
+	r := runTestsTask{
+		id:                   "id",
+		runOnlySelectedTests: true,
+		fs:                   fs,
+		preCommand:           "echo x",
+		diffFiles:            string(diffFiles),
+		args:                 "clean test",
+		postCommand:          "echo y",
+		buildTool:            "maven",
+		language:             "java",
+		tmpFilePath:          tmpFilePath,
+		packages:             packages,
+		log:                  log.Sugar(),
+		addonLogger:          log.Sugar(),
+	}
+
+	oldIsManual := isManualFn
+	defer func() {
+		isManualFn = oldIsManual
+	}()
+	isManualFn = func() bool {
+		return false
+	}
+
+	called := 0
+
+	oldIsPushTrigger := isPushTriggerFn
+	defer func() {
+		isPushTriggerFn = oldIsPushTrigger
+	}()
+	isPushTriggerFn = func() bool {
+		called++
+		return true
+	}
+
+	oldGetCommitInfo := getCommitInfoFn
+	defer func() {
+		getCommitInfoFn = oldGetCommitInfo
+	}()
+	getCommitInfoFn = func(ctx context.Context, stepID string, log *zap.SugaredLogger) (string, error) {
+		called++
+		return "asddd", nil
+	}
+
+	oldGetChangedFilesPushTrigger := getChangedFilesPushTriggerFn
+	defer func() {
+		getChangedFilesPushTriggerFn = oldGetChangedFilesPushTrigger
+	}()
+	getChangedFilesPushTriggerFn = func(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+		called++
+		return []types.File{{Name: "abc.java", Status: types.FileModified}}, nil
+	}
+
+	oldSelect := selectTestsFn
+	defer func() {
+		selectTestsFn = oldSelect
+	}()
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+		called++
+		return types.SelectTestsResp{
+			SelectAll: true,
+			Tests:     []types.RunnableTest{t1, t2}}, nil
+	}
+
+	want := `set -xe
+export TMPDIR=/test/tmp
+export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+echo x
+mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
+echo y`
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
+	assert.Nil(t, err)
+	assert.Equal(t, r.runOnlySelectedTests, false) // Since there was an error in execution
+	assert.Equal(t, got, want)
+	assert.Equal(t, called, 4)
 }
 
 func TestComputeSelected(t *testing.T) {
@@ -776,7 +1278,6 @@ instrPackages: p1, p2, p3`
 	fs.EXPECT().MkdirAll(expDir, os.ModePerm).Return(nil).AnyTimes()
 	mf := filesystem.NewMockFile(ctrl)
 	mf.EXPECT().Write([]byte(expData)).Return(0, nil).AnyTimes()
-	fs.EXPECT().ReadFile(gomock.Any(), gomock.Any()).Return(nil)
 	fs.EXPECT().Create("/test/tmp/config.ini").Return(mf, nil).AnyTimes()
 
 	diffFiles, _ := json.Marshal([]types.File{{Name: "abc.java", Status: types.FileModified}})
@@ -983,6 +1484,15 @@ instrPackages: p1, p2, p3`
 	collectCgFn = func(ctx context.Context, stepID, collectDataDir string, timeTakenMs int64, log *zap.SugaredLogger, start time.Time) error {
 		called += 1
 		return nil
+	}
+
+	// Set isManual to false
+	oldIsManual := isManualFn
+	defer func() {
+		isManualFn = oldIsManual
+	}()
+	isManualFn = func() bool {
+		return false
 	}
 
 	// Mock test reports

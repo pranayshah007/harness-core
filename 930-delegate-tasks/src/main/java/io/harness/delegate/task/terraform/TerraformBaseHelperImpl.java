@@ -63,6 +63,7 @@ import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.cli.CliResponse;
 import io.harness.connector.service.git.NGGitService;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateFile;
@@ -186,6 +187,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   @Inject AwsNgConfigMapper awsNgConfigMapper;
   @Inject HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
   @Inject HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNg;
+  @Inject ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Override
   public void downloadTfStateFile(String workspace, String accountId, String currentStateFileId, String scriptDirectory)
@@ -1090,7 +1092,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     if (remoteFileInfo.getGitFetchFilesConfig() != null) {
       GitStoreDelegateConfig gitStoreDelegateConfig =
           remoteFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig();
-      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
+      GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+          gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
       if (EmptyPredicate.isNotEmpty(gitStoreDelegateConfig.getPaths())) {
         String commitId = handleGitVarFiles(
             logCallback, accountId, tfVarDirectory, filesDirAbsPath, filePaths, gitStoreDelegateConfig, gitConfigDTO);

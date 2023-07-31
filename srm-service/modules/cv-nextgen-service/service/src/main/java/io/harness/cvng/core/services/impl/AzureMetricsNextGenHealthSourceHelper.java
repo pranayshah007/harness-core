@@ -88,7 +88,7 @@ public class AzureMetricsNextGenHealthSourceHelper implements NextGenHealthSourc
           .stream()
           .map(dimension
               -> HealthSourceParamValue.builder()
-                     .name(dimension.get("localizedValue"))
+                     .name(Optional.ofNullable(dimension.get("localizedValue")).orElse(dimension.get("value")))
                      .value(dimension.get("value"))
                      .build())
           .collect(Collectors.toList());

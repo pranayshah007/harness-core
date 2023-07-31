@@ -25,7 +25,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
@@ -213,10 +212,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     } catch (Exception ex) {
       stepResponse = prepareFailureResponse(ex);
     }
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      infrastructureStepHelper.saveInfraExecutionDataToStageInfo(ambiance, stepResponse);
-    }
+    infrastructureStepHelper.saveInfraExecutionDataToStageInfo(ambiance, stepResponse);
     return stepResponse;
   }
 

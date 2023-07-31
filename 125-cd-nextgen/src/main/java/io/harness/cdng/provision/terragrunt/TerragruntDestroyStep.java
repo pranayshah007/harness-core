@@ -249,7 +249,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<TerragruntDestroyTaskResponse> responseSupplier)
       throws Exception {
     log.info("Handling Task Result for the Terragrunt Destroy Step");

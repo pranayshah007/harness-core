@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.activityhistory.impl;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.activityhistory.NGActivityStatus.FAILED;
 import static io.harness.ng.core.activityhistory.NGActivityStatus.SUCCESS;
 import static io.harness.ng.core.activityhistory.NGActivityType.CONNECTIVITY_CHECK;
@@ -21,6 +22,7 @@ import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckSummaryDTO;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckSummaryDTO.ConnectivityCheckSummaryKeys;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;
+import io.harness.ng.core.activityhistory.dto.NGEntityListDTO;
 import io.harness.ng.core.activityhistory.entity.NGActivity;
 import io.harness.ng.core.activityhistory.entity.NGActivity.ActivityHistoryEntityKeys;
 import io.harness.ng.core.activityhistory.mapper.NGActivityDTOToEntityMapper;
@@ -90,6 +92,20 @@ public class NGActivityServiceImpl implements NGActivityService {
       connectivityCheckSummaryDTO.setEndTime(end);
     }
     return connectivityCheckSummaryDTO;
+  }
+
+  @Override
+  public NGEntityListDTO listReferredByEntityTypes(EntityType entityType, Set<NGActivityType> ngActivityTypes) {
+    Criteria criteria = Criteria.where(ActivityHistoryEntityKeys.referredEntityType).is(entityType.toString());
+    if (isNotEmpty(ngActivityTypes)) {
+      criteria.and(ActivityHistoryEntityKeys.type).in(ngActivityTypes);
+    }
+    return NGEntityListDTO.builder()
+        .entityTypeList(activityRepository.findDistinctEntityTypes(criteria)
+                            .stream()
+                            .map(entity -> EntityType.fromString(entity))
+                            .collect(Collectors.toList()))
+        .build();
   }
 
   private ProjectionOperation getProjectionOperationForProjectingSuccessfulAndFailedChecks() {

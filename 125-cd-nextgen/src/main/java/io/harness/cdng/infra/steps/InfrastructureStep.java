@@ -24,7 +24,6 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
@@ -228,10 +227,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       logCallback.saveExecutionLog(
           color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      saveInfraExecutionDataToStageInfo(ambiance, infrastructureOutcome);
-    }
+    saveInfraExecutionDataToStageInfo(ambiance, infrastructureOutcome);
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder()

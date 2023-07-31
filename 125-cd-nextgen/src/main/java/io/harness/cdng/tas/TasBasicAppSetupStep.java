@@ -75,9 +75,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_PCF, HarnessModuleComponent.CDS_GITX,
-        HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_FIRST_GEN})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac implements TasStepExecutor {

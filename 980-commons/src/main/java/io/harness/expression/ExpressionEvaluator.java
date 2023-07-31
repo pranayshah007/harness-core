@@ -32,6 +32,7 @@ import org.apache.commons.collections.map.SingletonMap;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.impl.NoOpLog;
@@ -55,6 +56,7 @@ public class ExpressionEvaluator {
   private static final Pattern serviceDefaultArtifactVariablePattern = Pattern.compile("\\$\\{artifact[.}]");
   private static final Pattern serviceArtifactVariablePattern = Pattern.compile("\\$\\{artifacts\\.([^.{}]+)[.}]");
   private static final Pattern emptyCustomExpression = Pattern.compile("\\$\\{[{ }]*}");
+  private static final Pattern newLineInParenthesesPattern = Pattern.compile("(.*\\n.*)");
   protected SecretManagerMode evaluationMode;
 
   private Map<String, Object> expressionFunctorMap = new HashMap<>();
@@ -89,7 +91,20 @@ public class ExpressionEvaluator {
       return null;
     }
 
-    JexlExpression jexlExpression = engine.createExpression(expression);
+    JexlExpression jexlExpression;
+    try {
+      jexlExpression = engine.createExpression(expression);
+    } catch (JexlException.Tokenization ex) {
+      if (newLineInParenthesesPattern.matcher(expression).find()) {
+        // Ref: https://stackoverflow.com/q/66498157
+        // Line break in JEXL String
+        expression = expression.replaceAll("\n", "\\\\u000a");
+        jexlExpression = engine.createExpression(expression);
+      } else {
+        throw ex;
+      }
+    }
+
     Object ret = jexlExpression.evaluate(context);
 
     LateBindingContext lateBindingContext = (LateBindingContext) context;

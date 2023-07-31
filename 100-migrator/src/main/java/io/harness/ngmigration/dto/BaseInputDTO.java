@@ -11,12 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.InputDefaults;
+import io.harness.ngmigration.beans.MigrationInputSettings;
 import io.harness.ngmigration.serializer.CgEntityIdDeserializer;
 
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.List;
 import java.util.Map;
 import lombok.Data;
 
@@ -26,4 +28,6 @@ public class BaseInputDTO {
   private Map<NGMigrationEntityType, InputDefaults> defaults;
   @JsonDeserialize(keyUsing = CgEntityIdDeserializer.class) private Map<CgEntityId, BaseProvidedInput> overrides;
   private Map<String, Object> expressions;
+
+  private List<MigrationInputSettings> settings;
 }

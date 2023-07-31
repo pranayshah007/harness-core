@@ -134,7 +134,7 @@ public class K8sBGSwapServicesStep extends CdTaskExecutable<K8sDeployResponse> {
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier)
       throws Exception {
     K8sDeployResponse executionResponse = responseSupplier.get();

@@ -243,7 +243,6 @@ public class JiraResourceServiceImpl implements JiraResourceService {
         .accountId(baseNGAccess.getAccountIdentifier())
         .taskType(NGTaskType.JIRA_TASK_NG.name())
         .taskParameters(taskNGParameters)
-        .taskSelectors(taskNGParameters.getDelegateSelectors())
         .executionTimeout(TIMEOUT)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .build();

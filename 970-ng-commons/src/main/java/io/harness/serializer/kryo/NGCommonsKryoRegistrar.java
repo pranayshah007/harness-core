@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.ModuleType;
 import io.harness.SchemaCacheKey;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterDelegateTaskParams;
 import io.harness.beans.InputSetValidatorType;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.RepoFilterDelegateTaskParams;
@@ -104,5 +105,6 @@ public class NGCommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(Timeout.class, 9300122);
     kryo.register(WebhookEncryptedSecretDTO.class, 9300123);
     kryo.register(RepoFilterDelegateTaskParams.class, 9300130);
+    kryo.register(BranchFilterDelegateTaskParams.class, 9300131);
   }
 }

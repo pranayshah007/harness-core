@@ -34,6 +34,8 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.AZURE_
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_ACCOUNT_EXECUTION_METADATA;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CLOUDFORMATION_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DEPLOYMENT_ACCOUNTS;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DEPLOYMENT_SUMMARY_NG;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
@@ -197,6 +199,8 @@ import io.harness.ng.core.event.ApiKeyEventListener;
 import io.harness.ng.core.event.AzureARMConfigEntityCRUDStreamListener;
 import io.harness.ng.core.event.CloudformationConfigEntityCRUDStreamListener;
 import io.harness.ng.core.event.ConnectorEntityCRUDStreamListener;
+import io.harness.ng.core.event.DeploymentAccountsCRUDStreamListener;
+import io.harness.ng.core.event.DeploymentSummaryNGCRUDStreamListener;
 import io.harness.ng.core.event.EnvironmentGroupEntityCrudStreamListener;
 import io.harness.ng.core.event.FilterEventListener;
 import io.harness.ng.core.event.FreezeEventListener;
@@ -1161,6 +1165,12 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(CD_ACCOUNT_EXECUTION_METADATA + ENTITY_CRUD))
         .to(AccountExecutionMetadataCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(DEPLOYMENT_ACCOUNTS + ENTITY_CRUD))
+        .to(DeploymentAccountsCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(DEPLOYMENT_SUMMARY_NG + ENTITY_CRUD))
+        .to(DeploymentSummaryNGCRUDStreamListener.class);
 
     bind(ServiceAccountService.class).to(ServiceAccountServiceImpl.class);
     bind(OpaService.class).to(OpaServiceImpl.class);

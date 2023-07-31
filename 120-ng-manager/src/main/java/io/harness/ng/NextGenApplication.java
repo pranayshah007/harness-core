@@ -139,6 +139,7 @@ import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
+import io.harness.ng.core.remote.UsersRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ApiKeyRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ApiTokenRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.CloudCostK8sConnectorRestrictionsUsageImpl;
@@ -1098,6 +1099,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                     .put(FeatureRestrictionName.MULTIPLE_ORGANIZATIONS, OrgRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_SECRETS, SecretRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_USER_GROUPS, UserGroupRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_USERS, UsersRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_SERVICE_ACCOUNTS, ServiceAccountRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_VARIABLES, VariableRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_CONNECTORS, ConnectorRestrictionUsageImpl.class)

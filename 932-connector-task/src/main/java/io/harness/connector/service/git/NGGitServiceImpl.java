@@ -117,7 +117,7 @@ public class NGGitServiceImpl implements NGGitService {
           throws JSchException {
         sshSessionConfig.setPort(port); // use port from repo URL
         sshSessionConfig.setHost(host);
-        if (sshSessionConfig.isUseSshClient()) {
+        if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
           return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
         } else {
           return getSSHSession(sshSessionConfig);

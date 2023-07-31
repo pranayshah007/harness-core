@@ -89,6 +89,6 @@ public class JiraTaskNGTest extends CategoryTest {
                                                     .build();
     assertThat(jiraTaskNGParameters.getDelegateSelectors()).containsExactlyInAnyOrder("selector1");
     jiraTaskNGParameters.getJiraConnectorDTO().setDelegateSelectors(ImmutableSet.of("selector2"));
-    assertThat(jiraTaskNGParameters.getDelegateSelectors()).containsExactlyInAnyOrder("selector1", "selector2");
+    assertThat(jiraTaskNGParameters.getDelegateSelectors()).containsExactlyInAnyOrder("selector1");
   }
 }

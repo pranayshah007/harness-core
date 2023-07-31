@@ -6,18 +6,13 @@
 package utils
 
 import (
-	"bufio"
 	"fmt"
-	"io"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	"github.com/harness/ti-client/types"
 	zglob "github.com/mattn/go-zglob"
-	"go.uber.org/zap"
 )
 
 type NodeType int32
@@ -321,85 +316,4 @@ func GetRepoUrl(repo string) string {
 		repo += ".git"
 	}
 	return repo
-}
-
-// ReadJavaPkg read java file and return it's package name
-func ReadJavaPkg(log *zap.SugaredLogger, fs filesystem.FileSystem, f string, excludeList []string, packageLen int) (string, error) {
-	absPath, err := filepath.Abs(f)
-	result := ""
-	if !strings.HasSuffix(absPath, ".java") && !strings.HasSuffix(absPath, ".scala") && !strings.HasSuffix(absPath, ".kt") {
-		return result, nil
-	}
-	if err != nil {
-		log.Errorw("could not get absolute path", "file_name", f, err)
-		return "", err
-	}
-	// TODO: (Vistaar)
-	// This doesn't handle some special cases right now such as when there is a package
-	// present in a multiline comment with multiple opening and closing comments.
-	// We will require to read all the lines together to handle this.
-	err = fs.ReadFile(absPath, func(fr io.Reader) error {
-		scanner := bufio.NewScanner(fr)
-		commentOpen := false
-		for scanner.Scan() {
-			l := strings.TrimSpace(scanner.Text())
-			if strings.Contains(l, "/*") {
-				commentOpen = true
-			}
-			if strings.Contains(l, "*/") {
-				commentOpen = false
-				continue
-			}
-			if commentOpen || strings.HasPrefix(l, "//") {
-				continue
-			}
-			prev := ""
-			pkg := ""
-			for _, token := range strings.Fields(l) {
-				if prev == "package" {
-					pkg = token
-					break
-				}
-				prev = token
-			}
-			if pkg != "" {
-				pkg = strings.TrimSuffix(pkg, ";")
-				tokens := strings.Split(pkg, ".")
-				for _, exclude := range excludeList {
-					if strings.HasPrefix(pkg, exclude) {
-						log.Infow(fmt.Sprintf("Found package: %s having same package prefix as: %s. Excluding this package from the list...", pkg, exclude))
-						return nil
-					}
-				}
-				pkg = tokens[0]
-				if packageLen == -1 {
-					for i, token := range tokens {
-						if i == 0 {
-							continue
-						}
-						pkg = pkg + "." + strings.TrimSpace(token)
-					}
-					result = pkg
-					return nil
-				}
-				for i := 1; i < packageLen && i < len(tokens); i++ {
-					pkg = pkg + "." + strings.TrimSpace(tokens[i])
-				}
-				if pkg == "" {
-					continue
-				}
-				result = pkg
-				return nil
-			}
-		}
-		if err := scanner.Err(); err != nil {
-			log.Errorw(fmt.Sprintf("could not scan all the files. Error: %s", err))
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		log.Errorw("had issues while trying to auto detect java packages", err)
-	}
-	return result, nil
 }

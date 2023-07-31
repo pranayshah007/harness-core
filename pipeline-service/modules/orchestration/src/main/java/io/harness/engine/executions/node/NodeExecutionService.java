@@ -151,6 +151,16 @@ public interface NodeExecutionService {
       String planExecutionId, String parentId, Direction sortOrderOfCreatedAt, Set<String> fieldsToBeIncluded);
 
   /**
+   * Returns List for all children nodeExecution for given parentId recursively with oldRetry as false
+   * without projection, sort by CreatedAt (Asc) Uses - planExecutionId_parentId_createdAt_idx
+   * @param planExecutionId
+   * @param parentIds
+   * @return
+   */
+  List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithoutOldRetries(
+      String planExecutionId, List<String> parentIds);
+
+  /**
    * Returns iterator for children nodeExecution for given parentId(direct children only) with projection (No Sort, thus
    * default db sort) Uses - parentId_status_idx
    * @param parentId

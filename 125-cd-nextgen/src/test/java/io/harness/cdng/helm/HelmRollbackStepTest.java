@@ -23,6 +23,7 @@ import io.harness.CategoryTest;
 import io.harness.account.services.AccountService;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
@@ -91,6 +92,7 @@ public class HelmRollbackStepTest extends CategoryTest {
   @Mock private AccountService accountService;
   @Mock private StepHelper stepHelper;
   @Mock private TelemetryReporter telemetryReporter;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
   @Before
   public void setUp() {

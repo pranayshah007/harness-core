@@ -63,7 +63,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
@@ -84,7 +83,7 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
 
   @Override
   public TaskRequest prepareTaskRequest(ServiceNowTaskNGParametersBuilder paramsBuilder, Ambiance ambiance,
-      String connectorRef, String timeStr, String taskName) {
+      String connectorRef, String timeStr, String taskName, List<TaskSelector> delegateSelectors) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
         connectorRef, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
@@ -120,12 +119,8 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
                             .parameters(new Object[] {params})
                             .build();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
-        Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT), true, taskName,
-        params.getDelegateSelectors()
-            .stream()
-            .map(s -> TaskSelector.newBuilder().setSelector(s).build())
-            .collect(Collectors.toList()),
-        Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList(), false, null);
+        Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT), true, taskName, delegateSelectors, Scope.PROJECT,
+        EnvironmentType.ALL, false, Collections.emptyList(), false, null);
   }
 
   @Override

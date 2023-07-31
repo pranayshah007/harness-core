@@ -111,6 +111,7 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
         TerragruntTaskService.getBaseDir(planTaskParameters.getAccountId(), planTaskParameters.getEntityId());
     try (PlanJsonLogOutputStream planJsonLogOutputStream = taskService.getPlanJsonLogOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
+      taskService.mapGitConfig(planTaskParameters);
       taskService.decryptTaskParameters(planTaskParameters);
 
       LogCallback fetchFilesLogCallback =

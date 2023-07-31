@@ -21,7 +21,6 @@ import java.util.Optional;
 @Singleton
 public class NormalizerRegistry {
   @Inject private Injector injector;
-
   private final Map<String, Class<? extends Normalizer>> registeredNormalizers = new HashMap<>();
 
   public NormalizerRegistry() {

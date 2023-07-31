@@ -340,6 +340,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
                                                       .map(ManifestConfigWrapper::getManifest)
                                                       .map(ManifestConfig::getSpec)
                                                       .collect(Collectors.toList());
+
+    // rendering expressions with mode RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED to keep step group overrides as it is
+    // these will be rendered by each step
     cdExpressionResolver.updateExpressions(ambiance, manifestAttributes);
 
     if (isOverridesV2Enabled) {

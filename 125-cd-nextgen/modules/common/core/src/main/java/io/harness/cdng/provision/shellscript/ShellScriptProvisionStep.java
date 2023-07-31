@@ -114,7 +114,7 @@ public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvis
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters,
       ThrowingSupplier<ShellScriptProvisionTaskNGResponse> responseSupplier) throws Exception {
     log.info("Handling Task Result With Security Context for Shell Script Provision step");

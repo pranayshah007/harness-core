@@ -1905,7 +1905,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @VisibleForTesting
-  List<NotificationRule> getNotificationRules(MonitoredService monitoredService) {
+  List<NotificationRule> getEnabledAndEligibleNotificationRules(MonitoredService monitoredService) {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(monitoredService.getAccountId())
                                       .orgIdentifier(monitoredService.getOrgIdentifier())
@@ -1920,6 +1920,21 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     return notificationRuleService.getEntities(projectParams, notificationRuleRefs);
   }
 
+  @VisibleForTesting
+  List<NotificationRule> getEnabledNotificationRules(MonitoredService monitoredService) {
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(monitoredService.getAccountId())
+                                      .orgIdentifier(monitoredService.getOrgIdentifier())
+                                      .projectIdentifier(monitoredService.getProjectIdentifier())
+                                      .build();
+    List<String> notificationRuleRefs = monitoredService.getNotificationRuleRefs()
+                                            .stream()
+                                            .filter(NotificationRuleRef::isEnabled)
+                                            .map(NotificationRuleRef::getNotificationRuleRef)
+                                            .collect(Collectors.toList());
+    return notificationRuleService.getEntities(projectParams, notificationRuleRefs);
+  }
+
   @Override
   public void handleNotification(MonitoredService monitoredService) {
     ProjectParams projectParams = ProjectParams.builder()
@@ -1927,7 +1942,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                       .orgIdentifier(monitoredService.getOrgIdentifier())
                                       .projectIdentifier(monitoredService.getProjectIdentifier())
                                       .build();
-    List<NotificationRule> notificationRules = getNotificationRules(monitoredService);
+    List<NotificationRule> notificationRules = getEnabledAndEligibleNotificationRules(monitoredService);
     Set<String> notificationRuleRefsWithChange = new HashSet<>();
 
     for (NotificationRule notificationRule : notificationRules) {
@@ -2011,7 +2026,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     if (monitoredService == null) {
       return new ArrayList<>();
     }
-    List<NotificationRule> notificationRules = getNotificationRules(monitoredService);
+    List<NotificationRule> notificationRules = getEnabledNotificationRules(monitoredService);
     List<MonitoredServiceNotificationRule> monitoredServiceNotificationRules =
         notificationRules.stream()
             .filter(notificationRule -> notificationRule.getType().equals(NotificationRuleType.MONITORED_SERVICE))

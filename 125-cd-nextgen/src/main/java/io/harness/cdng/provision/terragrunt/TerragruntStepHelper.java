@@ -294,8 +294,6 @@ public class TerragruntStepHelper {
     SSHKeySpecDTO sshKeySpecDTO =
         gitConfigAuthenticationInfoHelper.getSSHKey(gitConfigDTO, AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-    List<EncryptedDataDetail> encryptedDataDetails =
-        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
     String repoName = gitStoreConfig.getRepoName() != null ? gitStoreConfig.getRepoName().getValue() : null;
     if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
       String repoUrl = getGitRepoUrl(gitConfigDTO, repoName);
@@ -308,8 +306,12 @@ public class TerragruntStepHelper {
     } else {
       paths.addAll(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
     }
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(
+        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier());
+    List<EncryptedDataDetail> encryptedDataDetails =
+        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     return GitStoreDelegateConfig.builder()
-        .gitConfigDTO(gitConfigDTO)
+        .gitConfigDTO(scmConnector)
         .sshKeySpecDTO(sshKeySpecDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .fetchType(gitStoreConfig.getGitFetchType())
@@ -332,9 +334,10 @@ public class TerragruntStepHelper {
     SSHKeySpecDTO sshKeySpecDTO =
         gitConfigAuthenticationInfoHelper.getSSHKey(gitConfigDTO, AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(
+        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier());
     encryptedDataDetails.addAll(
-        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject));
+        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject));
   }
 
   public List<StoreDelegateConfig> toStoreDelegateVarFiles(

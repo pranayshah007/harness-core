@@ -60,8 +60,6 @@ public enum FeatureName {
   AWS_OVERRIDE_REGION,
   AZURE_BLOB_SM,
   AZURE_WEBAPP,
-  BAMBOO_ARTIFACT_NG("Bamboo Artifact Connector NG", HarnessTeam.CDC),
-  BAMBOO_BUILD("Bamboo Build Step", HarnessTeam.CDC),
   BIND_CUSTOM_VALUE_AND_MANIFEST_FETCH_TASK,
   BIND_FETCH_FILES_TASK_TO_DELEGATE,
   BOOKING_RECOMMENDATIONS("Feature flag for booking.com recommendations", HarnessTeam.CE),
@@ -118,9 +116,18 @@ public enum FeatureName {
       "This flag controls if you want Custom Stage execution data saved in mongodb and eventually synced to timescale",
       HarnessTeam.CDP),
   CDS_DEBEZIUM_ENABLED_CG("This flag is enable sync using debezium in cg", HarnessTeam.CDC, Scope.GLOBAL),
+  CDS_DISABLE_FABRIC8_CG(
+      "Enabling this FF switches the user to kubernetes java client instead of deprecated fabric8 client in CG.",
+      HarnessTeam.CDP),
+  CDS_DISABLE_FABRIC8_NG(
+      "Enabling this FF switches the user to kubernetes java client instead of deprecated fabric8 client in NG.",
+      HarnessTeam.CDP),
   CDS_ENABLE_TRIGGER_YAML_VALIDATION("Enables trigger yaml validation", HarnessTeam.SPG),
   CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT(
       "FF for providing the terraform apply json output as a secret", HarnessTeam.CDP),
+  CDS_ENABLE_NEW_PARAMETER_FIELD_PROCESSOR(
+      "FF for turning on new parameterField processor which handles all expression resolution for ParameterField",
+      HarnessTeam.CDC),
   CDS_ENV_PROPAGATION("FF for enabling env infra propagation for CD", HarnessTeam.CDC),
   CDS_GIT_CONFIG_FILES("Enable config files from GIT repositories", HarnessTeam.CDP),
   CDS_HELM_FETCH_CHART_METADATA_NG(
@@ -408,6 +415,7 @@ public enum FeatureName {
   FFM_7921_ARCHIVING_FEATURE_FLAGS("Enable archiving feature flags instead of permanent deletion", HarnessTeam.CF),
   FFM_7258_INTERCOM_VIDEO_LINKS("Enable links to launch Intercom window containing video tutorials", HarnessTeam.CF),
   FFM_8261_EXPRESSIONS_IN_PIPELINE_STEP("Enable expressions support in the FF pipeline step", HarnessTeam.CF),
+  FFM_8344_FLAG_CLEANUP("Enable Stale Flag Cleanup in Feature Flags filtered listing page", HarnessTeam.CF),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
   FF_FLAG_SYNC_THROUGH_GITEX_ENABLED,
   FF_GITSYNC,
@@ -418,6 +426,7 @@ public enum FeatureName {
   GCB_CI_SYSTEM,
   GCP_WORKLOAD_IDENTITY,
   GITHUB_WEBHOOK_AUTHENTICATION,
+  SPG_CG_FIXING_PIPELINE_RESUME("This fixes pipeline resume when a loop state is skipped", HarnessTeam.SPG),
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
   GITOPS_REVERT_PR("Support for Revert PR step in GitOps pipeline flow", HarnessTeam.GITOPS),
@@ -707,6 +716,7 @@ public enum FeatureName {
       "Will fire the artifact and manifest triggers for all the versions in the polling response instead of the latest only",
       HarnessTeam.SPG),
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
+  SPG_GC_ALLOW_GRAPHQL_GET_EXECUTIONS_RUNNING("Enables running rollout deployment in graphql", HarnessTeam.SPG),
   SPG_USE_NEW_METADATA("To use new metadata endpoint for jira server version greater than 9.0", HarnessTeam.SPG),
   SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
   SPG_WFE_PROJECTIONS_GRAPHQL_DEPLOYMENTS_PAGE(
@@ -768,9 +778,6 @@ public enum FeatureName {
   STO_STEP_PALETTE_COVERITY("Enable Coverity step for STO", HarnessTeam.STO),
   STO_STEP_PALETTE_FOSSA("Enable Fossa step for STO", HarnessTeam.STO),
   STO_STEP_PALETTE_GIT_LEAKS("Enable Gitleaks step for STO", HarnessTeam.STO),
-  STO_STEP_PALETTE_Q1_2023(
-      "Enable following steps for STO: AWSECR, AWSSecurityHub, Brakeman, CustomIngest, OWASP, Nikto, Nmap, Prowler",
-      HarnessTeam.STO),
   STO_STEP_PALETTE_SEMGREP("Enable Semgrep step for STO", HarnessTeam.STO),
   STO_STEP_PALETTE_SYSDIG("Enable Sysdig step for STO", HarnessTeam.STO),
   SUPERVISED_TS_THRESHOLD,
@@ -817,6 +824,7 @@ public enum FeatureName {
   WF_VAR_MULTI_SELECT_ALLOWED_VALUES,
   WHITELIST_GRAPHQL,
   WHITELIST_PUBLIC_API,
+  SPG_TRIPLE_TIMEOUT_FOR_ZIP_YAML_UPSERT("This makes timeout for upsert yaml entities zip file to be 90 seconds", SPG),
   WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP),
   WINRM_COPY_CONFIG_OPTIMIZE,
   WINRM_KERBEROS_CACHE_UNIQUE_FILE,

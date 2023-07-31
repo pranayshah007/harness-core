@@ -149,8 +149,17 @@ public class OrchestrationAdjacencyListGenerator {
   private GraphGeneratorSession createSession(List<NodeExecution> nodeExecutions) {
     Map<String, NodeExecution> nodeExIdMap = obtainNodeExecutionMap(nodeExecutions);
     Map<String, List<String>> parentIdMap = obtainParentIdMap(nodeExecutions);
+    Map<String, String> oldRetriedNodeToLatestRetriedNodeExecutionMap =
+        createOldRetriedNodeToLatestRetriedNodeExecutionMap(nodeExecutions);
+    return new GraphGeneratorSession(nodeExIdMap, parentIdMap, oldRetriedNodeToLatestRetriedNodeExecutionMap);
+  }
 
-    return new GraphGeneratorSession(nodeExIdMap, parentIdMap);
+  private Map<String, String> createOldRetriedNodeToLatestRetriedNodeExecutionMap(List<NodeExecution> nodeExecutions) {
+    Map<String, String> nodeExIdMap = new HashMap<>();
+    for (NodeExecution nodeExecution : nodeExecutions) {
+      nodeExecution.getRetryIds().forEach(o -> nodeExIdMap.put(o, nodeExecution.getUuid()));
+    }
+    return nodeExIdMap;
   }
 
   private Map<String, NodeExecution> obtainNodeExecutionMap(List<NodeExecution> nodeExecutions) {
@@ -214,10 +223,13 @@ public class OrchestrationAdjacencyListGenerator {
   private class GraphGeneratorSession {
     private final Map<String, NodeExecution> nodeExIdMap;
     private final Map<String, List<String>> parentIdMap;
+    private final Map<String, String> oldRetriedNodeToLatestRetriedNodeExecutionMap;
 
-    GraphGeneratorSession(Map<String, NodeExecution> nodeExIdMap, Map<String, List<String>> parentIdMap) {
+    GraphGeneratorSession(Map<String, NodeExecution> nodeExIdMap, Map<String, List<String>> parentIdMap,
+        Map<String, String> oldRetriedNodeToLatestRetriedNodeExecutionMap) {
       this.nodeExIdMap = nodeExIdMap;
       this.parentIdMap = parentIdMap;
+      this.oldRetriedNodeToLatestRetriedNodeExecutionMap = oldRetriedNodeToLatestRetriedNodeExecutionMap;
     }
 
     private OrchestrationAdjacencyListInternal generateListStartingFrom(
@@ -273,6 +285,9 @@ public class OrchestrationAdjacencyListGenerator {
         }
 
         String nextNodeId = nodeExecution.getNextId();
+        if (EmptyPredicate.isNotEmpty(nextNodeId)) {
+          nextNodeId = oldRetriedNodeToLatestRetriedNodeExecutionMap.getOrDefault(nextNodeId, nextNodeId);
+        }
         String parentNodeId = nodeExecution.getParentId();
         if (EmptyPredicate.isNotEmpty(nextNodeId)) {
           if (chainMap.containsKey(currentNodeId)) {

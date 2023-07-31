@@ -9,8 +9,11 @@ package io.harness.delegate.task.cf.artifact;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
@@ -19,6 +22,7 @@ import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 
 import com.google.inject.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class TasArtifactoryRegistrySettingsProvider extends AbstractTasRegistrySettingsProvider {

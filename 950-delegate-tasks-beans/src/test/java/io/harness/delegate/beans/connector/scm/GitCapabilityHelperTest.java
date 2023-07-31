@@ -36,12 +36,8 @@ public class GitCapabilityHelperTest extends CategoryTest {
                                     .url("URL")
                                     .branchName("master")
                                     .build();
-    GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-                                                        .isGithubAppAuthentication(true)
-                                                        .branch("master")
-                                                        .connectorName("terraform")
-                                                        .gitConfigDTO(gitConfigDTO)
-                                                        .build();
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder().branch("master").connectorName("terraform").gitConfigDTO(gitConfigDTO).build();
     List<ExecutionCapability> executionCapabilityList =
         GitCapabilityHelper.fetchRequiredExecutionCapabilities(gitStoreDelegateConfig, Collections.emptyList());
 
@@ -61,7 +57,6 @@ public class GitCapabilityHelperTest extends CategoryTest {
                                     .build();
     GitStoreDelegateConfig gitStoreDelegateConfig =
         GitStoreDelegateConfig.builder()
-            .isGithubAppAuthentication(true)
             .optimizedFilesFetch(true)
             .apiAuthEncryptedDataDetails(List.of(EncryptedDataDetail.builder().build()))
             .branch("master")

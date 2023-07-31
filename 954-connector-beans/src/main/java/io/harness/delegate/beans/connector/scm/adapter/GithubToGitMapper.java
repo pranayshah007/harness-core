@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.connector.scm.adapter;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.delegate.beans.connector.scm.github.GithubConnectorConstants.GITHUB_APP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -21,7 +22,9 @@ import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
+import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
 
 import lombok.experimental.UtilityClass;
@@ -55,7 +58,8 @@ public class GithubToGitMapper {
         final GithubAppDTO githubAppDTO = (GithubAppDTO) credentials.getHttpCredentialsSpec();
         username = GithubAppDTO.username;
         usernameRef = null;
-        passwordRef = githubAppDTO.getPrivateKeyRef();
+        // dummy secret ref as there is not null check for password ref
+        passwordRef = SecretRefHelper.createSecretRef(GITHUB_APP, Scope.ACCOUNT, GITHUB_APP.toCharArray());
       } else {
         final GithubOauthDTO githubOauthDTO = (GithubOauthDTO) credentials.getHttpCredentialsSpec();
         username = GithubOauthDTO.userName;

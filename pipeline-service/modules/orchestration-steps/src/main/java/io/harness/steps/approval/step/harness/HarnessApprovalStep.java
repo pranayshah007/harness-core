@@ -94,10 +94,15 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     HarnessApprovalInstance approvalInstance = HarnessApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    final List<String> userGroups = approvalInstance.getApprovers().getUserGroups();
+    final boolean isAnyValidUserGroupPresent = userGroups.stream().anyMatch(EmptyPredicate::isNotEmpty);
+    if (!isAnyValidUserGroupPresent) {
+      throw new InvalidRequestException("All the provided user groups are empty");
+    }
 
     List<UserGroupDTO> validatedUserGroups = approvalNotificationHandler.getUserGroups(approvalInstance);
     if (EmptyPredicate.isEmpty(validatedUserGroups)) {
-      throw new InvalidRequestException("At least 1 valid user group is required");
+      throw new InvalidRequestException(String.format("At least 1 valid user group is required in %s", userGroups));
     }
     approvalInstance.setValidatedUserGroups(validatedUserGroups);
     approvalInstance.setValidatedApprovalUserGroups(
@@ -254,7 +259,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
   @Override
   public void handleAbort(
       Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    approvalInstanceService.expireByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    approvalInstanceService.abortByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     closeLogStream(ambiance);
   }
 

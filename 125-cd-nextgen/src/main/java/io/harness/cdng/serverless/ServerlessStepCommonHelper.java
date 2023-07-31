@@ -126,9 +126,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_PIPELINE,
-        HarnessModuleComponent.CDS_SERVERLESS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class ServerlessStepCommonHelper extends ServerlessStepUtils {

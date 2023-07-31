@@ -92,6 +92,7 @@ import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.TaskType;
 
@@ -115,9 +116,9 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   public static final int DEFAULT_CURRENT_RUNNING_INSTANCE_COUNT = 2;
-
   @Mock private EngineExpressionService engineExpressionService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private ElastigroupEntityHelper elastigroupEntityHelper;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private StepHelper stepHelper;
@@ -138,6 +139,8 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
     Reflect.on(cdExpressionResolver).set("engineExpressionService", engineExpressionService);
     Reflect.on(elastigroupStepCommonHelper).set("cdExpressionResolver", cdExpressionResolver);
+    Reflect.on(cdExpressionResolver).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
   }
 
   @Test

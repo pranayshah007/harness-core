@@ -71,8 +71,9 @@ public class GoogleFunctionsGenOneRollbackStep extends CdTaskExecutable<GoogleFu
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<GoogleFunctionCommandResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<GoogleFunctionCommandResponse> responseDataSupplier)
+      throws Exception {
     StepResponse stepResponse = null;
     try {
       GoogleFunctionGenOneRollbackResponse googleFunctionGenOneRollbackResponse =

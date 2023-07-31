@@ -157,6 +157,8 @@ public class PollingResponseHandler {
 
     if (pollingDocument.getFailedAttempts() > 0) {
       pollingService.updateFailedAttempts(accountId, pollDocId, 0);
+      pollingService.updateTriggerPollingStatus(
+          pollingDocument.getAccountId(), pollingDocument.getSignatures(), true, null, Collections.emptyList());
     }
 
     switch (pollingDocument.getPollingType()) {

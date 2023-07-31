@@ -67,6 +67,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.polling.artifact.ArtifactCollectionUtilsNg;
 import io.harness.polling.bean.ArtifactPolledResponse;
 import io.harness.polling.bean.GitHubPollingInfo;
 import io.harness.polling.bean.GitPollingInfo;
@@ -180,6 +181,9 @@ public class PollingResponseHandlerTest extends CategoryTest {
 
     verify(pollingService).get(ACCOUNT_ID, POLLING_DOC_ID);
     verify(pollingService).updateFailedAttempts(ACCOUNT_ID, POLLING_DOC_ID, 1);
+    verify(pollingService)
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), false,
+            delegateResponse.getErrorMessage(), Collections.emptyList());
   }
 
   @Test
@@ -198,6 +202,9 @@ public class PollingResponseHandlerTest extends CategoryTest {
     verify(pollingService, times(100)).get(ACCOUNT_ID, POLLING_DOC_ID);
     verify(pollingService, times(100)).updateFailedAttempts(eq(ACCOUNT_ID), eq(POLLING_DOC_ID), anyInt());
     verify(pollingPerpetualTaskService, times(0)).resetPerpetualTask(any());
+    verify(pollingService, times(100))
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), false,
+            delegateResponse.getErrorMessage(), Collections.emptyList());
     verify(pollingPerpetualTaskService).deletePerpetualTask(PERPETUAL_TASK_ID, ACCOUNT_ID);
   }
 
@@ -373,6 +380,8 @@ public class PollingResponseHandlerTest extends CategoryTest {
     verify(persistentLocker, times(1))
         .waitToAcquireLock(POLLING_DOC_ID_2, Duration.ofMinutes(1), Duration.ofSeconds(10));
     assertPublishedItem(DOCKER_HUB, 1, 1, PollingType.ARTIFACT);
+    verify(pollingService, times(2))
+        .updateTriggerPollingStatus(ACCOUNT_ID, List.of(SIGNATURE_1), true, null, List.of("1.1"));
   }
 
   @Test
@@ -426,6 +435,8 @@ public class PollingResponseHandlerTest extends CategoryTest {
     verify(persistentLocker, times(1))
         .waitToAcquireLock(POLLING_DOC_ID_2, Duration.ofMinutes(1), Duration.ofSeconds(10));
     verify(polledItemPublisher, times(0)).publishPolledItems(any()); // No publishing happens.
+    verify(pollingService, times(1))
+        .updateTriggerPollingStatus(ACCOUNT_ID, List.of(SIGNATURE_1), true, null, List.of("1.1"));
   }
 
   @Test
@@ -490,13 +501,28 @@ public class PollingResponseHandlerTest extends CategoryTest {
     when(pollingService.get(ACCOUNT_ID, POLLING_DOC_ID)).thenReturn(pollingDocument);
     pollingResponseHandler.handlePollingResponse(PERPETUAL_TASK_ID, ACCOUNT_ID, delegateResponse);
     PolledResponse polledResponse = null;
+    List<String> polledKeys = null;
     if (pollingType.equals(PollingType.MANIFEST)) {
       polledResponse = validateFirstManifestCollectionOnManager();
+      polledKeys =
+          ((ManifestPollingDelegateResponse) delegateResponse.getPollingResponseInfc()).getUnpublishedManifests();
     } else if (pollingType.equals(PollingType.ARTIFACT)) {
       polledResponse = validateFirstArtifactCollectionOnManager();
+      polledKeys = ((ArtifactPollingDelegateResponse) delegateResponse.getPollingResponseInfc())
+                       .getUnpublishedArtifacts()
+                       .stream()
+                       .map(ArtifactCollectionUtilsNg::getArtifactKey)
+                       .collect(Collectors.toList());
     } else if (pollingType.equals(PollingType.WEBHOOK_POLLING)) {
       polledResponse = validateFirstGitPollingOnManager();
+      polledKeys = ((GitPollingDelegateResponse) delegateResponse.getPollingResponseInfc())
+                       .getUnpublishedEvents()
+                       .stream()
+                       .map(GitPollingWebhookData::getDeliveryId)
+                       .collect(Collectors.toList());
     }
+    verify(pollingService, times(1))
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), true, null, polledKeys);
 
     PollingDocument savedPollingDocument = getPollingDocumentFromType(type, polledResponse);
     PollingDelegateResponse newDelegateResponse = getPollingDelegateResponse(type, pollingType, false, 1001, 1005, -1);
@@ -507,14 +533,29 @@ public class PollingResponseHandlerTest extends CategoryTest {
     verify(pollingService, times(2)).get(ACCOUNT_ID, POLLING_DOC_ID);
 
     PolledResponse newPolledResponse = null;
+    List<String> newPolledKeys = null;
     if (pollingType.equals(PollingType.MANIFEST)) {
       newPolledResponse = assertAndGetManifestPolledResponse(2, 1006);
+      newPolledKeys =
+          ((ManifestPollingDelegateResponse) newDelegateResponse.getPollingResponseInfc()).getUnpublishedManifests();
     } else if (pollingType.equals(PollingType.ARTIFACT)) {
       newPolledResponse = assertAndGetArtifactPolledResponse(2, 1006);
+      newPolledKeys = ((ArtifactPollingDelegateResponse) newDelegateResponse.getPollingResponseInfc())
+                          .getUnpublishedArtifacts()
+                          .stream()
+                          .map(ArtifactCollectionUtilsNg::getArtifactKey)
+                          .collect(Collectors.toList());
     } else if (pollingType.equals(PollingType.WEBHOOK_POLLING)) {
       newPolledResponse = assertAndGetGitPolledResponse(2, 1006);
+      newPolledKeys = ((GitPollingDelegateResponse) newDelegateResponse.getPollingResponseInfc())
+                          .getUnpublishedEvents()
+                          .stream()
+                          .map(GitPollingWebhookData::getDeliveryId)
+                          .collect(Collectors.toList());
     }
 
+    verify(pollingService, times(1))
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), true, null, newPolledKeys);
     if (ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)
         || pollingResponseHandler.shouldTriggerForAllArtifactsOrManifests(pollingDocument)) {
       assertPublishedItem(type, 1, 5, pollingType);
@@ -529,7 +570,6 @@ public class PollingResponseHandlerTest extends CategoryTest {
     when(pollingService.get(ACCOUNT_ID, POLLING_DOC_ID)).thenReturn(savedPollingDocument1);
     pollingResponseHandler.handlePollingResponse(PERPETUAL_TASK_ID, ACCOUNT_ID, newDelegateResponse1);
     verify(pollingService, times(3)).get(ACCOUNT_ID, POLLING_DOC_ID);
-
     if (pollingType.equals(PollingType.MANIFEST)) {
       assertAndGetManifestPolledResponse(3, 1009);
     } else if (pollingType.equals(PollingType.ARTIFACT)) {
@@ -537,12 +577,24 @@ public class PollingResponseHandlerTest extends CategoryTest {
     } else if (pollingType.equals(PollingType.WEBHOOK_POLLING)) {
       assertAndGetGitPolledResponse(3, 1009);
     }
+    verify(pollingService, times(1))
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), true, null,
+            List.of("1006", "1007", "1008", "1009", "1010", "1011"));
     if (ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)
         || pollingResponseHandler.shouldTriggerForAllArtifactsOrManifests(pollingDocument)) {
       assertPublishedItem(type, 1, 11, pollingType);
     } else {
       assertPublishedItem(type, 6, 2, pollingType);
     }
+
+    PollingDelegateResponse newDelegateResponse2 = getPollingDelegateResponse(type, pollingType, true, 10, 1000, -1);
+    savedPollingDocument1.setFailedAttempts(1);
+    // Delegate rebalanced, previous polling failed. Response with unpublished keys [10-1000], toBeDeletedKeys = []
+    // But all keys are already stored in the polling document
+    pollingResponseHandler.handlePollingResponse(PERPETUAL_TASK_ID, ACCOUNT_ID, newDelegateResponse2);
+    verify(pollingService, times(1)).updateFailedAttempts(ACCOUNT_ID, pollingDocument.getUuid(), 0);
+    verify(pollingService, times(1))
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), true, null, Collections.emptyList());
   }
 
   private ArtifactPolledResponse assertAndGetArtifactPolledResponse(int nofOfTimes, int expectedSize) {

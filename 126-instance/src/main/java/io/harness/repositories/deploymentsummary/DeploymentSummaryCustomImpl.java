@@ -7,19 +7,28 @@
 
 package io.harness.repositories.deploymentsummary;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.entities.DeploymentSummary;
 import io.harness.entities.DeploymentSummary.DeploymentSummaryKeys;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -29,6 +38,7 @@ import org.springframework.data.mongodb.core.query.Query;
 @Singleton
 @OwnedBy(HarnessTeam.DX)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 public class DeploymentSummaryCustomImpl implements DeploymentSummaryCustom {
   private final MongoTemplate mongoTemplate;
 
@@ -50,6 +60,22 @@ public class DeploymentSummaryCustomImpl implements DeploymentSummaryCustom {
     Query query = getQuery(criteria);
     query.limit(1);
     return getDeploymentSummary(query);
+  }
+
+  @Override
+  public boolean delete(String accountId, String org, String projectId) {
+    Criteria criteria = new Criteria();
+    if (isNotEmpty(accountId)) {
+      criteria.and(DeploymentSummaryKeys.accountIdentifier).is(accountId);
+      if (isNotEmpty(org)) {
+        criteria.and(DeploymentSummaryKeys.orgIdentifier).is(org);
+        if (isNotEmpty(projectId)) {
+          criteria.and(DeploymentSummaryKeys.projectIdentifier).is(projectId);
+        }
+      }
+      return deleteInternal(criteria);
+    }
+    return false;
   }
 
   @NotNull
@@ -90,5 +116,23 @@ public class DeploymentSummaryCustomImpl implements DeploymentSummaryCustom {
     criteria.and(DeploymentSummaryKeys.infrastructureMappingId).is(infrastructureMappingDTO.getId());
 
     return criteria;
+  }
+
+  private boolean deleteInternal(Criteria criteria) {
+    try {
+      Failsafe.with(getDeleteRetryPolicy())
+          .get(() -> mongoTemplate.remove(new Query(criteria), DeploymentSummary.class));
+      return true;
+    } catch (Exception e) {
+      log.warn(format("Error while deleting DeploymentSummary for Criteria [%s] : %s", criteria.toString(),
+                   ExceptionUtils.getMessage(e)),
+          e);
+      return false;
+    }
+  }
+
+  private RetryPolicy<Object> getDeleteRetryPolicy() {
+    return PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting DeploymentSummary; attempt: {}",
+        "[Failed]: Failed DeploymentSummary; attempt: {}");
   }
 }

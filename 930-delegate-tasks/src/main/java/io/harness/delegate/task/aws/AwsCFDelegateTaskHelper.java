@@ -15,13 +15,14 @@ import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.GitHubAppAuthenticationHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.ExceptionUtils;
@@ -49,6 +50,8 @@ public class AwsCFDelegateTaskHelper {
   @Inject private AWSCloudformationClient awsApiHelperService;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
   @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject private GitHubAppAuthenticationHelper gitHubAppAuthenticationHelper;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   /*
    * Retrieve the parameters from a cloudformation template. The template can be stored in a git repository,
@@ -60,7 +63,8 @@ public class AwsCFDelegateTaskHelper {
       String templateValue = "";
       if (awsTaskParams.getGitStoreDelegateConfig() != null) {
         GitStoreDelegateConfig gitStoreDelegateConfig = awsTaskParams.getGitStoreDelegateConfig();
-        GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+        GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+            gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
         gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
         SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
             gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());

@@ -58,6 +58,7 @@ import io.harness.delegate.k8s.beans.K8sHandlerConfig;
 import io.harness.delegate.k8s.beans.K8sRollingHandlerConfig;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.istio.IstioTaskHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.KubernetesYamlException;
@@ -114,6 +115,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
   @Mock private KubernetesContainerService kubernetesContainerService;
   @Mock private K8sTaskHelper k8sTaskHelper;
   @Mock private K8sTaskHelperBase k8sTaskHelperBase;
+  @Mock private IstioTaskHelper istioTaskHelper;
   @Mock private K8sRollingBaseHandler k8sRollingBaseHandler;
   @Mock private ExecutionLogCallback executionLogCallback;
   @Mock private K8sReleaseHandler releaseHandler;
@@ -165,8 +167,8 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
 
     k8sRollingDeployTaskHandler.init(rollingDeployTaskParams, delegateTaskParams, executionLogCallback);
     verify(k8sTaskHelperBase, times(0)).dryRunManifests(any(), any(), any(), any());
-    verify(k8sTaskHelperBase, times(0)).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
-    verify(k8sTaskHelperBase, times(0)).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
+    verify(istioTaskHelper, times(0)).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
+    verify(istioTaskHelper, times(0)).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).readManifestAndOverrideLocalSecrets(any(), any(), anyBoolean());
     verify(k8sTaskHelper, times(1)).renderTemplate(any(), any(), any(), any(), any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).setNamespaceToKubernetesResourcesIfRequired(any(), any());
@@ -190,8 +192,8 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
 
     k8sRollingDeployTaskHandler.init(rollingDeployTaskParams, delegateTaskParams, executionLogCallback);
     verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any());
-    verify(k8sTaskHelperBase, times(0)).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
-    verify(k8sTaskHelperBase, times(0)).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
+    verify(istioTaskHelper, times(0)).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
+    verify(istioTaskHelper, times(0)).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).setNamespaceToKubernetesResourcesIfRequired(any(), any());
     verify(k8sTaskHelperBase, times(1)).readManifestAndOverrideLocalSecrets(any(), any(), anyBoolean());
     verify(k8sTaskHelper, times(1)).renderTemplate(any(), any(), any(), any(), any(), any(), any(), any());

@@ -15,6 +15,7 @@ import io.harness.cvng.beans.AppDynamicsDataCollectionInfo.AppMetricInfoDTO;
 import io.harness.cvng.beans.AppdynamicsValidationResponse;
 import io.harness.cvng.beans.AwsPrometheusDataCollectionInfo;
 import io.harness.cvng.beans.AzureLogsDataCollectionInfo;
+import io.harness.cvng.beans.AzureMetricsDataCollectionInfo;
 import io.harness.cvng.beans.CVDataCollectionInfo;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.CloudWatchMetricDataCollectionInfo;
@@ -242,5 +243,7 @@ public class CvNextGenBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureLogsDataCollectionInfo.class, 9152);
     kryo.register(AzureMetricsSampleDataRequest.class, 9153);
     kryo.register(AzureServiceInstanceFieldDataRequest.class, 9154);
+    kryo.register(AzureMetricsDataCollectionInfo.class, 9155);
+    kryo.register(AzureMetricsDataCollectionInfo.MetricCollectionInfo.class, 9156);
   }
 }

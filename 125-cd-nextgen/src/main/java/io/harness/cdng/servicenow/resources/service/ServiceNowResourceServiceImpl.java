@@ -292,7 +292,6 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
         .accountId(baseNGAccess.getAccountIdentifier())
         .taskType(NGTaskType.SERVICENOW_TASK_NG.name())
         .taskParameters(taskNGParameters)
-        .taskSelectors(taskNGParameters.getDelegateSelectors())
         .executionTimeout(TIMEOUT)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .build();

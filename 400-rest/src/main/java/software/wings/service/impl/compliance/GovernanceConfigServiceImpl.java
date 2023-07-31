@@ -432,7 +432,7 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
           if (isNotEmpty(freezeConfig.getAppSelections()) && isActive(freezeConfig)) {
             freezeConfig.getAppSelections().forEach(appSelection -> {
               if (appSelection.getServiceSelection() == null
-                  || appSelection.getServiceSelection().getFilterType() == ServiceFilterType.ALL) {
+                  || appSelection.getServiceSelection().getFilterType() != null) {
                 Map<String, Set<String>> appEnvMap = getAppEnvMapForAppSelection(accountId, appSelection);
                 if (isNotEmpty(appEnvMap)) {
                   appEnvMap.forEach((app, envSet) -> appEnvs.merge(app, envSet, (prevEnvSet, newEnvSet) -> {

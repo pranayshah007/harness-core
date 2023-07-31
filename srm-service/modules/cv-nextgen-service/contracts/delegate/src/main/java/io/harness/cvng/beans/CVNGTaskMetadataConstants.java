@@ -20,4 +20,5 @@ public final class CVNGTaskMetadataConstants {
   public static final String VERIFICATION_TASK_ID = "verificationTaskId";
   public static final String HEALTH_SOURCE_ID = "healthSourceId";
   public static final String PERPETUAL_TASK_ID = "perpetualTaskId";
+  public static final String TASK_TYPE = "taskType";
 }

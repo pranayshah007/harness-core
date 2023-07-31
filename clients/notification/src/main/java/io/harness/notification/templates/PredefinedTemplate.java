@@ -131,7 +131,9 @@ public enum PredefinedTemplate {
   HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_MSTEAMS(
       "notification_templates/approval/msteams/plain_text_action_execution.txt",
       "harness_approval_action_execution_msteams"),
-  SLACK_CCM_BUDGET_GROUP_ALERT("templates/slack_ccm_budget_group_alert.txt", "slack_ccm_budget_group_alert");
+  SLACK_CCM_BUDGET_GROUP_ALERT("templates/slack_ccm_budget_group_alert.txt", "slack_ccm_budget_group_alert"),
+  IDP_PLUGIN_REQUESTS_NOTIFICATION_SLACK(
+      "notification_templates/slack/plugin_requests.txt", "idp_plugin_requests_notification_slack");
 
   private String path;
   private String identifier;

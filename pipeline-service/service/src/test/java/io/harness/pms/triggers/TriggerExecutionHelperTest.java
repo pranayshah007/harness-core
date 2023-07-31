@@ -311,13 +311,6 @@ public class TriggerExecutionHelperTest extends CategoryTest {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
-  public void testBranchExpr() {
-    assertThat(triggerExecutionHelper.isBranchExpr("<+trigger.branch>")).isEqualTo(true);
-  }
-
-  @Test
-  @Owner(developers = HARSH)
-  @Category(UnitTests.class)
   public void testFetchInputSetYAML() throws Exception {
     NGTriggerEntity ngTriggerEntityGitSync = NGTriggerEntity.builder()
                                                  .accountId("ACCOUNT_ID")

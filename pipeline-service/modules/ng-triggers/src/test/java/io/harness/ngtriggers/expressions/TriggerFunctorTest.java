@@ -140,8 +140,17 @@ public class TriggerFunctorTest extends CategoryTest {
     assertThat(expressionEvaluator.renderExpression("<+trigger.gitUser>")).isEqualTo("user");
     assertThat(expressionEvaluator.renderExpression("<+trigger.prTitle>")).isEqualTo("This is Title");
 
+    // keys inside header expression are case insensitive for eg: <+trigger.header['Host']> and
+    // <+trigger.header['host']> both will work
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header>"))
+        .isEqualTo(
+            "{\"X-GitHub-Delivery\":\"c4186fb6-1d22-11ee-8736-3f7c21bf83f1\",\"Accept\":\"*/*\",\"X-GitHub-Hook-ID\":\"402904149\",\"User-Agent\":\"GitHub-Hookshot/703fc34,GitHub-Hookshot/703fc35\",\"Host\":\"localhost:1010\",\"X-GitHub-Hook-Installation-Target-ID\":\"587948287\",\"Accept-Encoding\":\"gzip,deflate,br\",\"X-GitHub-Event\":\"push\",\"X-Hub-Signature\":\"sha1=3e2d63c23863baa66f030c789537a6275744b3c7\",\"X-Hub-Signature-256\":\"sha256=3213c8dee847243acbdb71096223f6737d98c9d72ca7ae2b24cacc0f468fa0cb\",\"X-GitHub-Hook-Installation-Target-Type\":\"repository\",\"content-type\":\"application/json\"}");
     assertThat(expressionEvaluator.renderExpression("<+trigger.header['Host']>")).isEqualTo("localhost:1010");
     assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-GitHub-Delivery']>"))
+        .isEqualTo("c4186fb6-1d22-11ee-8736-3f7c21bf83f1");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-Github-Delivery']>"))
+        .isEqualTo("c4186fb6-1d22-11ee-8736-3f7c21bf83f1");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-github-delivery']>"))
         .isEqualTo("c4186fb6-1d22-11ee-8736-3f7c21bf83f1");
     assertThat(expressionEvaluator.renderExpression("<+trigger.header['Accept']>")).isEqualTo("*/*");
     assertThat(expressionEvaluator.renderExpression("<+trigger.header['X-GitHub-Hook-ID']>")).isEqualTo("402904149");

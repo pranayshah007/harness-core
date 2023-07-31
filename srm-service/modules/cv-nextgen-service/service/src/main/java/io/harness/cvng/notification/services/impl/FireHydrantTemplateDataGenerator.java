@@ -45,7 +45,7 @@ public class FireHydrantTemplateDataGenerator
     String baseUrl = NotificationRuleTemplateDataGenerator.getBaseUrl(
         this.getPortalUrl(), this.getVanityUrl(projectParams.getAccountIdentifier()));
     templateDataMap.put(SLO_PERFORMANCE,
-        NotificationRuleCommonUtils.getSloPerformanceDetailsForReport(
+        NotificationRuleCommonUtils.getSloPerformanceSectionForReport(
             msHealthReport.getAssociatedSLOsDetails(), clock.instant(), baseUrl, SLO_PERFORMANCE_SECTION));
 
     return templateDataMap;

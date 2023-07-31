@@ -48,7 +48,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
 import io.harness.exception.ngexception.NGPipelineNotFoundException;
-import io.harness.expression.common.ExpressionConstants;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.NgTriggerAutoLogContext;
@@ -1241,12 +1240,6 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
 
     return TriggerDetails.builder().ngTriggerConfigV2(config).ngTriggerEntity(entity).build();
-  }
-
-  @VisibleForTesting
-  public boolean isBranchExpr(String pipelineBranch) {
-    return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
-        && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
   }
 
   public Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId) {

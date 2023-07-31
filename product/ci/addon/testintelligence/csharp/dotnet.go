@@ -53,6 +53,10 @@ func (b *dotnetRunner) AutoDetectTests(ctx context.Context, testGlobs []string) 
 	return GetCsharpTests(testGlobs)
 }
 
+func (b *dotnetRunner) ReadPackages(files []types.File) []types.File {
+	return files
+}
+
 func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	// Hard coding the logger for now, as this is the only one for now that does not have compatibility issue with our agent
 	installLoggerCmd := "dotnet add package JUnitTestLogger --version 1.1.0"

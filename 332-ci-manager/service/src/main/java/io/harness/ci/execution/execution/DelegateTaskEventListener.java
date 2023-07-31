@@ -14,6 +14,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.observer.Informant;
 import io.harness.observer.Informant5;
+import io.harness.repositories.CIExecutionRepository;
 import io.harness.repositories.CITaskDetailsRepository;
 import io.harness.serializer.KryoSerializer;
 
@@ -32,6 +33,7 @@ public class DelegateTaskEventListener implements MessageListener {
   private static final String OBSERVER_CLASS_NAME_KEY = "observer_class_name";
   private static final String OBSERVER_CLASS_NAME_VALUE = "software.wings.service.impl.CIDelegateTaskObserver";
   @Inject CITaskDetailsRepository ciTaskDetailsRepository;
+  @Inject CIExecutionRepository ciExecutionRepository;
   @Inject
   public DelegateTaskEventListener(KryoSerializer kryoSerializer) {
     this.kryoSerializer = kryoSerializer;
@@ -64,6 +66,10 @@ public class DelegateTaskEventListener implements MessageListener {
               accountId, taskId, delegateId, stageId, taskType));
 
           if (Strings.isNotBlank(stageId) && DLITE_CI_VM_INITIALIZE_TASK.toString().equals(taskType)) {
+            if (ciExecutionRepository.findByStageExecutionId(stageId) == null) {
+              log.info("Skipping creation of ciTaskDetails for unknown stageId: {}", stageId);
+              return true;
+            }
             CITaskDetails ciTaskDetails = CITaskDetails.builder()
                                               .stageExecutionId(stageId)
                                               .delegateId(delegateId)

@@ -150,7 +150,7 @@ ciExecutionServiceConfig:
     bucketName: null
   queueServiceClientConfig:
     httpClientConfig:
-      baseUrl: http://localhost:9091/
+      baseUrl: http://localhost:9544/
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
     queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
@@ -179,10 +179,11 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.21
-  liteEngineImage: harness/ci-lite-engine:1.16.21
+  addonImage: harness/ci-addon:1.16.22
+  liteEngineImage: harness/ci-lite-engine:1.16.22
   isLocal: false
   remoteDebugTimeout: 3600
+  tmateEndpoint: ${TMATE_ENDPOINT:-"ssh.harness.io"}
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"

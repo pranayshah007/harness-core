@@ -12,6 +12,7 @@ import io.harness.ng.core.activityhistory.NGActivityStatus;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckSummaryDTO;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;
+import io.harness.ng.core.activityhistory.dto.NGEntityListDTO;
 
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -28,4 +29,6 @@ public interface NGActivityService {
 
   ConnectivityCheckSummaryDTO getConnectivityCheckSummary(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, long start, long end);
+
+  NGEntityListDTO listReferredByEntityTypes(EntityType referredEntityType, Set<NGActivityType> ngActivityTypes);
 }

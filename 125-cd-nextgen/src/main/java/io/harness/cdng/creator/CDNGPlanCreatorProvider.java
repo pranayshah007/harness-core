@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator;
+
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsTaskDefinition;
 import static io.harness.cdng.manifest.ManifestType.ServerlessAwsLambda;
@@ -1083,9 +1084,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Bamboo Build")
             .setType(StepSpecTypeConstants.BAMBOO_BUILD)
-            .setFeatureRestrictionName(FeatureRestrictionName.BAMBOO_BUILD.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory(BUILD_STEP).addFolderPaths("Builds").build())
-            .setFeatureFlag(FeatureName.BAMBOO_BUILD.name())
             .build();
 
     StepInfo azureCreateARMResources =
@@ -1446,6 +1445,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                  .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
                                                  .setStepMetaData(StepMetaData.newBuilder()
                                                                       .addCategory("SERVERLESS_AWS_LAMBDA_ROLLBACK_V2")
+                                                                      .addCategory(PLUGIN)
                                                                       .setFolderPath("Serverless Lambda")
                                                                       .build())
                                                  .setFeatureFlag(FeatureName.CDS_SERVERLESS_V2.name())

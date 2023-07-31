@@ -8,6 +8,7 @@
 package software.wings.service.impl.yaml.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_TRIPLE_TIMEOUT_FOR_ZIP_YAML_UPSERT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
@@ -204,6 +205,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1184,11 +1186,19 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
                           unauthorizedFiles);
                     }
                   });
-          return future.get(30, TimeUnit.SECONDS);
+          int durationInSecondsToWait = 30;
+          if (featureFlagService.isEnabled(SPG_TRIPLE_TIMEOUT_FOR_ZIP_YAML_UPSERT, accountId)) {
+            durationInSecondsToWait = 90;
+          }
+          return future.get(durationInSecondsToWait, TimeUnit.SECONDS);
         }
       }
       return null;
     } catch (Exception ex) {
+      if (ex instanceof TimeoutException) {
+        log.warn(format("Upload zip file process for account %s timed out while waiting for completion", accountId));
+        throw new WingsException("Timed out waiting for process to finish, try again in few minutes");
+      }
       log.warn(format("Unable to process uploaded zip file for account %s, error: %s", accountId, ex));
       throw new InvalidArgumentsException("Unable to open zip file or some error in content of zip file", USER, ex);
     }

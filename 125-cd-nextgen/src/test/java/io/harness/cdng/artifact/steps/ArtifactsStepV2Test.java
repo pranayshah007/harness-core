@@ -63,6 +63,7 @@ import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.common.beans.StepDelegateInfo;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
@@ -175,6 +176,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
 
   @Mock private SecretManagerClientService ngSecretService;
   @Mock ExceptionManager exceptionManager;
+  @Mock private StageExecutionInfoService stageExecutionInfoService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock ServiceEntityService serviceEntityService;
   private final EmptyStepParameters stepParameters = new EmptyStepParameters();
@@ -203,6 +205,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     Reflect.on(stepHelper).set("secretManagerClientService", secretManagerClientService);
     Reflect.on(stepHelper).set("cdExpressionResolver", expressionResolver);
     Reflect.on(stepHelper).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
+    Reflect.on(stepHelper).set("stageExecutionInfoService", stageExecutionInfoService);
     Reflect.on(step).set("artifactStepHelper", stepHelper);
     doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
 

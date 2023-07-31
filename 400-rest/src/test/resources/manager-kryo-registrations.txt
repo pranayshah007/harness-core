@@ -1393,6 +1393,8 @@
 9152:io.harness.cvng.beans.AzureLogsDataCollectionInfo
 9153:io.harness.cvng.beans.azure.AzureMetricsSampleDataRequest
 9154:io.harness.cvng.beans.azure.AzureServiceInstanceFieldDataRequest
+9155:io.harness.cvng.beans.AzureMetricsDataCollectionInfo
+9156:io.harness.cvng.beans.AzureMetricsDataCollectionInfo.MetricCollectionInfo
 9501:io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
@@ -3109,6 +3111,7 @@
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
 9300130:io.harness.beans.RepoFilterDelegateTaskParams
+9300131:io.harness.beans.BranchFilterDelegateTaskParams
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig

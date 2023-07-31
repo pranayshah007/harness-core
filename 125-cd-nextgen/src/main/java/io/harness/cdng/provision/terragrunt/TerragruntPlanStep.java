@@ -198,7 +198,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<TerragruntPlanTaskResponse> responseSupplier)
       throws Exception {
     log.info("Handling Task result with Security Context for the Terragrunt Plan Step");

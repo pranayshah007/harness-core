@@ -87,7 +87,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScriptTaskNGResponse> {
@@ -187,8 +188,9 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier)
+      throws Exception {
     try {
       FetchInstanceScriptTaskNGResponse response;
       try {

@@ -20,13 +20,10 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.PLAN_
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.STAGE_STEP_ID;
 
-import io.harness.cvng.activity.entities.Activity;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail.SRMAnalysisStepExecutionDetailsKeys;
-import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.change.MSHealthReport;
@@ -64,7 +61,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import javax.annotation.Nullable;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
   @Inject HPersistence hPersistence;
 
@@ -81,13 +80,18 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
   @Override
   public String createSRMAnalysisStepExecution(Ambiance ambiance, String monitoredServiceIdentifier,
       ServiceEnvironmentParams serviceEnvironmentParams, Duration duration) {
-    Object pmsExecutionSummary = NGRestUtils.getResponse(pipelineServiceClient.getExecutionDetailV2(
-        ambiance.getPlanExecutionId(), serviceEnvironmentParams.getAccountIdentifier(),
-        serviceEnvironmentParams.getOrgIdentifier(), serviceEnvironmentParams.getProjectIdentifier()));
-    JsonNode rootNode = JsonUtils.asTree(pmsExecutionSummary);
+    String pipelineName = ambiance.getMetadata().getPipelineIdentifier();
+    try {
+      Object pmsExecutionSummary = NGRestUtils.getResponse(pipelineServiceClient.getExecutionDetailV2(
+          ambiance.getPlanExecutionId(), serviceEnvironmentParams.getAccountIdentifier(),
+          serviceEnvironmentParams.getOrgIdentifier(), serviceEnvironmentParams.getProjectIdentifier()));
+      JsonNode rootNode = JsonUtils.asTree(pmsExecutionSummary);
 
-    // Fetch the value of the "name" field
-    String pipelineName = rootNode.get("pipelineExecutionSummary").get("name").asText();
+      // Fetch the value of the "name" field
+      pipelineName = rootNode.get("pipelineExecutionSummary").get("name").asText();
+    } catch (Exception exception) {
+      log.error("Failed to fetch the pipeline name", exception);
+    }
     Instant instant = clock.instant();
     SRMAnalysisStepExecutionDetail executionDetails =
         SRMAnalysisStepExecutionDetail.builder()
@@ -141,7 +145,11 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
             .set(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime, clock.millis());
     hPersistence.update(stepExecutionDetail, updateOperations);
     stepExecutionDetail = getSRMAnalysisStepExecutionDetail(executionDetailId);
-    handleReportNotification(stepExecutionDetail);
+    try {
+      handleReportNotification(stepExecutionDetail);
+    } catch (Exception exception) {
+      log.error("Sending deployment analysis report failed", exception);
+    }
     return SRMAnalysisStepDetailDTO.getDTOFromEntity(stepExecutionDetail);
   }
 
@@ -151,7 +159,11 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
         hPersistence.createUpdateOperations(SRMAnalysisStepExecutionDetail.class)
             .set(SRMAnalysisStepExecutionDetailsKeys.analysisStatus, SRMAnalysisStatus.COMPLETED);
     hPersistence.update(stepExecutionDetail, updateOperations);
-    handleReportNotification(stepExecutionDetail);
+    try {
+      handleReportNotification(stepExecutionDetail);
+    } catch (Exception exception) {
+      log.error("Sending deployment analysis report failed", exception);
+    }
   }
 
   private SRMAnalysisStepExecutionDetail verifyAndGetSRMAnalysisStepExecutionDetail(String executionDetailId) {
@@ -167,17 +179,9 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
 
   @Override
   public SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String activityId) {
-    Activity activity = activityService.get(activityId);
-    Preconditions.checkArgument(!activity.equals(null), String.format("Activity Id %s is not present.", activityId));
-    Preconditions.checkArgument(activity.getType().equals(ActivityType.SRM_STEP_ANALYSIS),
-        String.format("Activity is not of the type SRM_STEP_ANALYSIS, the type is %s", activity.getType()));
-    SRMStepAnalysisActivity stepAnalysisActivity = (SRMStepAnalysisActivity) activity;
-
-    SRMAnalysisStepExecutionDetail stepExecutionDetail =
-        getSRMAnalysisStepExecutionDetail(stepAnalysisActivity.getExecutionNotificationDetailsId());
-    Preconditions.checkArgument(!stepExecutionDetail.equals(null),
-        String.format(
-            "Step Execution Details %s is not present.", stepAnalysisActivity.getExecutionNotificationDetailsId()));
+    SRMAnalysisStepExecutionDetail stepExecutionDetail = getSRMAnalysisStepExecutionDetail(activityId);
+    Preconditions.checkArgument(
+        !stepExecutionDetail.equals(null), String.format("Step Execution Details %s is not present.", activityId));
     return SRMAnalysisStepDetailDTO.getDTOFromEntity(stepExecutionDetail);
   }
 

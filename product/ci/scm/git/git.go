@@ -401,7 +401,7 @@ func ListBranches(ctx context.Context, request *pb.ListBranchesRequest, log *zap
 		return nil, err
 	}
 
-	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 	if err != nil {
 		log.Errorw("ListBranches failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		if response == nil {
@@ -425,6 +425,7 @@ func ListBranches(ctx context.Context, request *pb.ListBranchesRequest, log *zap
 		Branches: branches,
 		Pagination: &pb.PageResponse{
 			Next: int32(response.Page.Next),
+			NextUrl: response.Page.NextURL,
 		},
 	}
 	return out, nil
@@ -440,7 +441,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		return nil, err
 	}
 
-	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 	if err != nil {
 		// this is an error from the git provider, e.g. authentication.
 		log.Errorw("ListBranchesWithDefault failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -469,6 +470,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 			Branches: branches,
 			Pagination: &pb.PageResponse{
 				Next: int32(response.Page.Next),
+				NextUrl: response.Page.NextURL,
 			},
 		}
 		return out, nil
@@ -497,6 +499,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		DefaultBranch: userRepoResponse.GetRepo().GetBranch(),
 		Pagination: &pb.PageResponse{
 			Next: int32(response.Page.Next),
+			NextUrl: response.Page.NextURL,
 		},
 	}
 	log.Infow("ListBranchesWithDefault success", "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start))
@@ -643,6 +646,7 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 			Repos:  convertRepoList(repoList),
 			Pagination: &pb.PageResponse{
 				Next: int32(response.Page.Next),
+				NextUrl: response.Page.NextURL,
 			},
 		}
 		return out, nil

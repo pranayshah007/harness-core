@@ -51,7 +51,7 @@ public class FileBasedSshScriptExecutorHelper {
   public static CommandExecutionStatus scpOneFile(String remoteFilePath,
       AbstractScriptExecutor.FileProvider fileProvider, SshSessionConfig config, LogCallback logCallback,
       boolean shouldSaveExecutionLogs) {
-    if (config.isUseSshClient()) {
+    if (config.isUseSshClient() || config.isVaultSSH()) {
       if (!shouldSaveExecutionLogs) {
         logCallback = new NoopExecutionCallback();
       }

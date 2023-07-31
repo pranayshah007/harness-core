@@ -9,6 +9,7 @@ package io.harness.pms.expressions.functors;
 
 import static io.harness.rule.OwnerRule.HINGER;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
@@ -76,7 +77,7 @@ public class ServiceVariableOverridesFunctorTest extends CategoryTest {
                             .addAllLevels(getStepWithinTheStepGroup("stepRuntimeId", "stageRuntimeId", "stageSetupId"))
                             .build();
     when(engineExpressionService.renderExpression(
-             any(), eq("<+pipeline.stages.stage1.stepGroup1.variables.var1>"), any()))
+             any(), eq("<+pipeline.stages.stage1.execution.stepGroup1.variables.var1>"), any()))
         .thenReturn("fromStepGroup");
 
     ServiceVariableOverridesFunctor functor = new ServiceVariableOverridesFunctor(ambiance, engineExpressionService);
@@ -84,9 +85,26 @@ public class ServiceVariableOverridesFunctorTest extends CategoryTest {
 
     // get value from step group
     verify(engineExpressionService, atLeastOnce())
-        .renderExpression(any(), eq("<+pipeline.stages.stage1.stepGroup1.variables.var1>"), any());
+        .renderExpression(any(), eq("<+pipeline.stages.stage1.execution.stepGroup1.variables.var1>"), any());
 
     // not from service variable
+    verify(engineExpressionService, never()).renderExpression(any(), eq("<+serviceVariables.var1>"), any());
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetServiceVariableValueWhenNotInExecutionContext() {
+    // rendering inside stage context but outside execution context
+    // functor will return null to return original expression with mode RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .addAllLevels(getNormalStageLevelsWithoutExecutionContext("stageRuntimeId", "stageSetupId"))
+                            .build();
+
+    ServiceVariableOverridesFunctor functor = new ServiceVariableOverridesFunctor(ambiance, engineExpressionService);
+    Object value = functor.get("var1");
+
+    assertThat(value).isNull();
     verify(engineExpressionService, never()).renderExpression(any(), eq("<+serviceVariables.var1>"), any());
   }
 
@@ -112,6 +130,42 @@ public class ServiceVariableOverridesFunctorTest extends CategoryTest {
                       .setGroup("stage")
                       .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("stage1").build())
                       .build());
+    levelList.add(Level.newBuilder()
+                      .setIdentifier("execution")
+                      .setRuntimeId(UUIDGenerator.generateUuid())
+                      .setSetupId(UUIDGenerator.generateUuid())
+                      .setGroup("EXECUTION")
+                      .setStepType(StepType.newBuilder()
+                                       .setStepCategory(StepCategory.STEP)
+                                       .setType("NG_SECTION_WITH_ROLLBACK_INFO")
+                                       .build())
+                      .build());
+    return levelList;
+  }
+
+  private List<Level> getNormalStageLevelsWithoutExecutionContext(String stageRuntimeId, String stageSetupId) {
+    List<Level> levelList = new LinkedList<>();
+    levelList.add(
+        Level.newBuilder()
+            .setIdentifier("pipeline")
+            .setRuntimeId(UUIDGenerator.generateUuid())
+            .setSetupId(UUIDGenerator.generateUuid())
+            .setStepType(StepType.newBuilder().setStepCategory(StepCategory.PIPELINE).setType("pipeline").build())
+            .build());
+    levelList.add(Level.newBuilder()
+                      .setIdentifier("stages")
+                      .setRuntimeId(UUIDGenerator.generateUuid())
+                      .setSetupId(UUIDGenerator.generateUuid())
+                      .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGES).setType("stages").build())
+                      .build());
+    levelList.add(Level.newBuilder()
+                      .setIdentifier("stage1")
+                      .setRuntimeId(stageRuntimeId)
+                      .setSetupId(stageSetupId)
+                      .setGroup("stage")
+                      .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).setType("stage1").build())
+                      .build());
+
     return levelList;
   }
 

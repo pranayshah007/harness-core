@@ -19,6 +19,7 @@ import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.pubsub.message.BigQueryUpdateMessage;
 import io.harness.beans.FeatureName;
+import io.harness.ccm.commons.helper.ModuleLicenseHelper;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.BusinessMappingHistory;
@@ -55,6 +56,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private static final String COST_CATEGORY_FORMAT = "STRUCT('%s' as costCategoryName, %s as costBucketName)";
 
   private final Gson gson = new Gson();
+  private final ModuleLicenseHelper moduleLicenseHelper;
   private final BigQueryHelper bigQueryHelper;
   private final BigQueryHelperService bigQueryHelperService;
   private final BusinessMappingHistoryService businessMappingHistoryService;
@@ -63,10 +65,11 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private final FeatureFlagService featureFlagService;
   private final LabelFlattenedService labelFlattenedService;
 
-  public BigQueryUpdateMessageReceiver(BigQueryHelper bigQueryHelper, BigQueryHelperService bigQueryHelperService,
-      BusinessMappingHistoryService businessMappingHistoryService, ViewsQueryBuilder viewsQueryBuilder,
-      Set<String> accountsInCluster, FeatureFlagService featureFlagService,
+  public BigQueryUpdateMessageReceiver(ModuleLicenseHelper moduleLicenseHelper, BigQueryHelper bigQueryHelper,
+      BigQueryHelperService bigQueryHelperService, BusinessMappingHistoryService businessMappingHistoryService,
+      ViewsQueryBuilder viewsQueryBuilder, Set<String> accountsInCluster, FeatureFlagService featureFlagService,
       LabelFlattenedService labelFlattenedService) {
+    this.moduleLicenseHelper = moduleLicenseHelper;
     this.bigQueryHelper = bigQueryHelper;
     this.bigQueryHelperService = bigQueryHelperService;
     this.businessMappingHistoryService = businessMappingHistoryService;
@@ -117,6 +120,10 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
     }
     if (!accountsInCluster.contains(message.getAccountId())) {
       log.info("Account doesn't belong to current cluster, skipping message");
+      return true;
+    }
+    if (!moduleLicenseHelper.isEnterpriseEditionModuleLicense(message.getAccountId())) {
+      log.info("License edition is not Enterprise for account: {}", message.getAccountId());
       return true;
     }
     if (!featureFlagService.isEnabled(FeatureName.CCM_COST_CATEGORIES_DASHBOARD, message.getAccountId())) {
@@ -173,9 +180,10 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
 
     List<String> sqlCaseStatements = new ArrayList<>();
     for (BusinessMappingHistory businessMappingHistory : businessMappingHistories) {
-      String sqlCaseStatement = String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
-          viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
-              null, BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, viewLabelsFlattened));
+      String sqlCaseStatement =
+          String.format(COST_CATEGORY_FORMAT, handleSingleQuotesInName(businessMappingHistory.getName()),
+              viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
+                  null, BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, viewLabelsFlattened));
       sqlCaseStatements.add(sqlCaseStatement);
     }
     String costCategoriesStatement = "[" + String.join(", ", sqlCaseStatements) + "]";
@@ -195,7 +203,7 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
     for (BusinessMappingHistory businessMappingHistory : businessMappingHistories) {
       try {
         costCategoriesStatement = "["
-            + String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
+            + String.format(COST_CATEGORY_FORMAT, handleSingleQuotesInName(businessMappingHistory.getName()),
                 viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
                     null, BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, viewLabelsFlattened))
             + "]";
@@ -242,6 +250,10 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
       return yearMonth.atEndOfMonth().atTime(23, 59, 59).atZone(ZoneId.of("UTC")).toInstant();
     }
     return yearMonth.atDay(1).atTime(0, 0, 0).atZone(ZoneId.of("UTC")).toInstant();
+  }
+
+  private static String handleSingleQuotesInName(String string) {
+    return string.replaceAll("'", "\\\\'");
   }
 
   private enum DayOfMonth { FIRST, LAST }

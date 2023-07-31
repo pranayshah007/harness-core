@@ -133,6 +133,15 @@ public class UserServiceHelper {
     }
   }
 
+  public Boolean deleteUserMetadata(String userId) {
+    Boolean deletedFromNG = NGRestUtils.getResponse(userMembershipClient.deleteUserMetadata(userId));
+    if (!Boolean.TRUE.equals(deletedFromNG)) {
+      log.error("User MetaData could not be removed from NG");
+      return false;
+    }
+    return true;
+  }
+
   public void removeUserProvisioningFromGenerationInAccount(
       String accountId, User user, UpdateOperations<User> updateOp, Generation generation) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)

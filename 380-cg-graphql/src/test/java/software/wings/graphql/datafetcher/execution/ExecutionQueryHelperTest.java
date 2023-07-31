@@ -120,9 +120,8 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.deployedCloudProviders);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.duration);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.endTs);
-    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.deployedEnvironments + ".uuid");
     Mockito.verify(query, Mockito.times(2)).field(WorkflowExecutionKeys.workflowId);
-    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.deployedServices);
+    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.serviceIds);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.startTs);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.status);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.deploymentTriggerId);
@@ -174,9 +173,7 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.deployedCloudProviders);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.duration);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.endTs);
-    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.deployedEnvironments + ".uuid");
     Mockito.verify(query, Mockito.times(2)).field(WorkflowExecutionKeys.workflowId);
-    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.deployedServices);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.startTs);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.status);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.deploymentTriggerId);

@@ -61,25 +61,22 @@ public class GitCapabilityHelper extends ConnectorCapabilityBaseHelper {
 
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
       GitStoreDelegateConfig gitStoreConfig, List<EncryptedDataDetail> encryptionDetails) {
-    GitConfigDTO gitConfig = ScmConnectorMapper.toGitConfigDTO(gitStoreConfig.getGitConfigDTO());
     SSHKeySpecDTO sshKeySpecDTO = gitStoreConfig.getSshKeySpecDTO();
     List<ExecutionCapability> capabilityList = new ArrayList<>();
 
     GitConnectionNGCapabilityBuilder gitConnectionNGCapability = GitConnectionNGCapability.builder()
                                                                      .encryptedDataDetails(encryptionDetails)
-                                                                     .gitConfig(gitConfig)
+                                                                     .gitConfig(gitStoreConfig.getGitConfigDTO())
                                                                      .sshKeySpecDTO(sshKeySpecDTO);
 
-    if (gitStoreConfig.isGithubAppAuthentication()) {
-      gitConnectionNGCapability.gitConfig(gitStoreConfig.getGitConfigDTO());
-      if (gitStoreConfig.isOptimizedFilesFetch()) {
-        gitConnectionNGCapability.optimizedFilesFetch(true);
-        List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>(encryptionDetails);
-        encryptedDataDetails.addAll(gitStoreConfig.getApiAuthEncryptedDataDetails());
-        gitConnectionNGCapability.encryptedDataDetails(encryptedDataDetails);
-      }
+    if (gitStoreConfig.isOptimizedFilesFetch()) {
+      gitConnectionNGCapability.optimizedFilesFetch(true);
+      List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>(encryptionDetails);
+      encryptedDataDetails.addAll(gitStoreConfig.getApiAuthEncryptedDataDetails());
+      gitConnectionNGCapability.encryptedDataDetails(encryptedDataDetails);
     }
 
+    GitConfigDTO gitConfig = ScmConnectorMapper.toGitConfigDTO(gitStoreConfig.getGitConfigDTO());
     capabilityList.add(gitConnectionNGCapability.build());
     populateDelegateSelectorCapability(capabilityList, gitConfig.getDelegateSelectors());
     return capabilityList;

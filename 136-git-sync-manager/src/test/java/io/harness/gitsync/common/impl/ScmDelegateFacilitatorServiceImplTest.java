@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
@@ -266,9 +267,27 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
                         .getListBranchesWithDefaultResponse(listBranchesWithDefaultResponse.toByteArray())
                         .build());
     listBranchesWithDefaultResponse = scmDelegateFacilitatorService.listBranches(accountIdentifier, orgIdentifier,
-        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build());
+        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build(),
+        BranchFilterParamsDTO.builder().build());
     assertThat(listBranchesWithDefaultResponse.getBranchesCount()).isEqualTo(1);
     assertThat(listBranchesWithDefaultResponse.getDefaultBranch()).isEqualTo(defaultBranch);
+    assertThat(listBranchesWithDefaultResponse.getBranchesList().get(0)).isEqualTo(branch);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testListBranchesWithBranchFilters() {
+    ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
+        ListBranchesWithDefaultResponse.newBuilder().addAllBranches(Arrays.asList(branch)).build();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ScmGitRefTaskResponseData.builder()
+                        .getListBranchesWithDefaultResponse(listBranchesWithDefaultResponse.toByteArray())
+                        .build());
+    listBranchesWithDefaultResponse = scmDelegateFacilitatorService.listBranches(accountIdentifier, orgIdentifier,
+        projectIdentifier, (ScmConnector) connectorInfo.getConnectorConfig(), PageRequestDTO.builder().build(),
+        BranchFilterParamsDTO.builder().branchName(branch).build());
+    assertThat(listBranchesWithDefaultResponse.getBranchesCount()).isEqualTo(1);
     assertThat(listBranchesWithDefaultResponse.getBranchesList().get(0)).isEqualTo(branch);
   }
 

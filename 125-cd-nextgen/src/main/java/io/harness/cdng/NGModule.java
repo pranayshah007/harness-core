@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.STAGE_EXEC_INFO;
@@ -90,6 +91,7 @@ import io.harness.cdng.plugininfoproviders.GitClonePluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessAwsLambdaDeployV2PluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessAwsLambdaPackageV2PluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.ServerlessPrepareRollbackPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.ServerlessRollbackV2PluginInfoProvider;
 import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetailsServiceImpl;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
@@ -247,6 +249,7 @@ public class NGModule extends AbstractModule {
     pluginInfoProviderMultibinder.addBinding().to(AwsCdkBootstrapPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsCdkSynthPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsCdkDiffPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(ServerlessRollbackV2PluginInfoProvider.class);
 
     Multibinder<ManifestGroupingStrategy> groupingStrategyMultiBinder =
         Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});

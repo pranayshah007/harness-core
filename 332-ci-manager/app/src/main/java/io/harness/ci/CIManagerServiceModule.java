@@ -6,7 +6,7 @@
  */
 
 package io.harness.app;
-import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
+
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
@@ -42,7 +42,6 @@ import io.harness.ci.execution.queue.CIInitTaskMessageProcessor;
 import io.harness.ci.execution.queue.CIInitTaskMessageProcessorImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
-import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
 import io.harness.ci.plugin.CiPluginStepInfoProvider;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
@@ -271,7 +270,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(BuildNumberService.class).to(BuildNumberServiceImpl.class);
     bind(CIYamlSchemaService.class).to(CIYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
-    bind(CILicenseService.class).to(CILicenseServiceImpl.class).in(Singleton.class);
+    bind(CILicenseService.class).to(this.configurationOverride.getLicenseClass()).in(Singleton.class);
     bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
     bind(CICacheManagementService.class).to(CICacheManagementServiceImpl.class);
     bind(LicenseUsageInterface.class).to(CILicenseUsageImpl.class);
@@ -416,7 +415,8 @@ public class CIManagerServiceModule extends AbstractModule {
 
   private void registerEventListeners() {
     final RedisConfig redisConfig = ciManagerConfiguration.getEventsFrameworkConfiguration().getRedisConfig();
-    String authorizationServiceHeader = MANAGER.getServiceId();
+    String orchestrationEvent = this.configurationOverride.getOrchestrationEvent();
+    String serviceId = this.configurationOverride.getServiceHeader().getServiceId();
 
     if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
       bind(Consumer.class)
@@ -428,15 +428,12 @@ public class CIManagerServiceModule extends AbstractModule {
       RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(Consumer.class)
           .annotatedWith(Names.named(OBSERVER_EVENT_CHANNEL))
-          .toInstance(RedisConsumer.of(OBSERVER_EVENT_CHANNEL, authorizationServiceHeader, redissonClient,
-              DEFAULT_MAX_PROCESSING_TIME, DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
+          .toInstance(RedisConsumer.of(OBSERVER_EVENT_CHANNEL, serviceId, redissonClient, DEFAULT_MAX_PROCESSING_TIME,
+              DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
 
       bind(MessageListener.class)
           .annotatedWith(Names.named(DELEGATE_ENTITY + OBSERVER_EVENT_CHANNEL))
           .to(DelegateTaskEventListener.class);
-
-      String orchestrationEvent = this.configurationOverride.getOrchestrationEvent();
-      String serviceId = this.configurationOverride.getServiceHeader().getServiceId();
 
       bind(Producer.class)
           .annotatedWith(Names.named(orchestrationEvent))

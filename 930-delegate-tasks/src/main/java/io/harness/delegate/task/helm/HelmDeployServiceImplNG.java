@@ -51,6 +51,7 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
@@ -168,6 +169,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   @Inject private ExecutionConfigOverrideFromFileOnDelegate delegateLocalConfigService;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
   private ILogStreamingTaskClient logStreamingTaskClient;
   private ILogStreamingTaskClient taskProgressStreamingTaskClient;
   private String taskId;
@@ -344,8 +346,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           serviceHookDTO.getWorkingDirectory(), logCallback);
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WrapUp);
       List<K8sPod> newPodList =
-          helmTaskHelperBase.markNewPods(k8sTaskHelperBase.getHelmPodList(commandRequest.getTimeoutInMillis(),
-                                             kubernetesConfig, commandRequest.getReleaseName(), logCallback),
+          k8sTaskHelperBase.tagNewPods(k8sTaskHelperBase.getHelmPodList(commandRequest.getTimeoutInMillis(),
+                                           kubernetesConfig, commandRequest.getReleaseName(), logCallback),
               existingPodList);
       commandResponse.setPreviousK8sPodList(existingPodList);
       commandResponse.setK8sPodList(newPodList);
@@ -626,6 +628,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
     try {
+      List<K8sPod> existingPodList = k8sTaskHelperBase.getHelmPodList(
+          commandRequest.getTimeoutInMillis(), kubernetesConfig, commandRequest.getReleaseName(), logCallback);
+
       logCallback = markDoneAndStartNew(commandRequest, logCallback, Rollback);
       HelmInstallCmdResponseNG commandResponse = HelmCommandResponseMapper.getHelmInstCmdRespNG(
           helmClient.rollback(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true));
@@ -664,6 +669,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       commandResponse.setHelmChartInfo(helmChartInfo);
 
       logCallback.saveExecutionLog("\nDone", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      List<K8sPod> newPodList =
+          k8sTaskHelperBase.tagNewPods(k8sTaskHelperBase.getHelmPodList(commandRequest.getTimeoutInMillis(),
+                                           kubernetesConfig, commandRequest.getReleaseName(), logCallback),
+              existingPodList);
+      commandResponse.setPreviousK8sPodList(existingPodList);
+      commandResponse.setK8sPodList(newPodList);
       return commandResponse;
     } catch (UncheckedTimeoutException e) {
       log.error(TIMED_OUT_IN_STEADY_STATE, ExceptionMessageSanitizer.sanitizeException(e));
@@ -885,7 +896,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         scmFetchFilesHelper.downloadFilesUsingScm(
             manifestFilesDirectory, gitStoreDelegateConfig, commandRequest.getLogCallback());
       } else {
-        GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+        GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+            gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
         gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
         ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
             gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());

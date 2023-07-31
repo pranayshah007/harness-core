@@ -13,6 +13,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.migration.serviceenvmigrationv2.ServiceEnvironmentV2MigrationService;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.AccountSummaryResponseDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationProjectWrapperRequestDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationProjectWrapperResponseDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationRequestDto;
@@ -29,6 +30,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -52,6 +54,25 @@ import lombok.extern.slf4j.Slf4j;
 public class ServiceEnvironmentV2MigrationResource {
   private final ServiceEnvironmentV2MigrationService serviceEnvironmentV2MigrationService;
   @Inject private OrgAndProjectValidationHelper orgAndProjectValidationHelper;
+
+  @GET
+  @Path("/summary")
+  @ApiOperation(value = "Get summary for an account", nickname = "getSummary")
+  @Operation(operationId = "getSummary", summary = "get summary for an account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns summary for an account")
+      })
+  @Hidden
+  public ResponseDTO<AccountSummaryResponseDto>
+  summary(@NotNull @QueryParam("accountIdentifier") String accountId,
+      @QueryParam("getInfrastructuresYaml") boolean getInfrastructuresYaml,
+      @QueryParam("getServiceConfigsYaml") boolean getServiceConfigsYaml) {
+    AccountSummaryResponseDto response = serviceEnvironmentV2MigrationService.getAccountSummary(
+        accountId, getInfrastructuresYaml, getServiceConfigsYaml);
+    return ResponseDTO.newResponse(response);
+  }
 
   @POST
   @Path("/pipeline")

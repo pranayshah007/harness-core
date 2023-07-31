@@ -16,7 +16,6 @@ import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.CIShellType;
-import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -39,6 +38,7 @@ import java.util.regex.Pattern;
 
 public class SerializerUtils {
   private static Pattern pattern = Pattern.compile("\\$\\{ngSecretManager\\.obtain[^\\}]*\\}");
+  private static final String boldYellowColor = "\u001b[33;1m";
 
   public static List<String> getEntrypoint(ParameterField<CIShellType> parametrizedShellType) {
     List<String> entrypoint;
@@ -59,8 +59,8 @@ public class SerializerUtils {
     return entrypoint;
   }
 
-  public static String getDebugCommand(
-      String accountId, int timeoutSeconds, ParameterField<CIShellType> parametrizedShellType, String tmatePath) {
+  public static String getDebugCommand(String accountId, int timeoutSeconds,
+      ParameterField<CIShellType> parametrizedShellType, String tmatePath, String tmateEndpoint) {
     CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
     if (shellType == CIShellType.PYTHON) {
       return String.format("import atexit %n"
@@ -89,7 +89,7 @@ public class SerializerUtils {
               + "def exit_func():%n"
               + "    if (hooks.exit_code is not None and hooks.exit_code != 0) or hooks.exception is not None: %n"
               + "        with open(\'tmate.conf\', \'w+\') as f: %n"
-              + "           f.write(\"set -g tmate-server-host ssh.harness.io\\n \") %n"
+              + "           f.write(\"set -g tmate-server-host " + tmateEndpoint + "\\n \") %n"
               + "           f.write(\"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\\n\") %n"
               + "           f.write(\"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\\n\") %n"
               + "           f.write(\"set -g tmate-server-port 22\\n\") %n"
@@ -103,7 +103,7 @@ public class SerializerUtils {
     } else if (shellType == CIShellType.BASH || shellType == CIShellType.SH) {
       return String.format("remote_debug() %n  { %n  if [ "
               + " \"$?\" -ne \"0\" ]; then %n"
-              + " %n echo \"set -g tmate-server-host ssh.harness.io\"  >> tmate.conf;"
+              + " %n echo \"set -g tmate-server-host " + tmateEndpoint + "\"  >> tmate.conf;"
               + " %n echo \"set -g tmate-server-port 22\" >>  tmate.conf ;"
               + " %n echo \"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\"  >>  tmate.conf ;"
               + " %n echo \"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" >>  tmate.conf ;"
@@ -113,7 +113,7 @@ public class SerializerUtils {
           accountId);
     } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
       return String.format("function remote_debug () { %n "
-              + "     \"set tmate-server-host ssh.harness.io\" | Out-File tmate.conf -Append %n "
+              + "     \"set tmate-server-host " + tmateEndpoint + "\" | Out-File tmate.conf -Append %n "
               + "     \"set tmate-server-port 22\" | Out-File tmate.conf -Append %n "
               + "     \"set tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\" | Out-File tmate.conf -Append %n "
               + "     \"set tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" | Out-File tmate.conf -Append %n "
@@ -130,12 +130,13 @@ public class SerializerUtils {
       return String.format("");
     }
   }
-  public static String getK8sDebugCommand(String accountId, int timeoutSeconds, RunStepInfo runStepInfo) {
-    return getDebugCommand(accountId, timeoutSeconds, runStepInfo.getShell(), "/addon/bin/tmate");
+  public static String getK8sDebugCommand(
+      String accountId, int timeoutSeconds, RunStepInfo runStepInfo, String tmateEndpoint) {
+    return getDebugCommand(accountId, timeoutSeconds, runStepInfo.getShell(), "/addon/bin/tmate", tmateEndpoint);
   }
 
   public static String getVmDebugCommand(String accountId, int timeoutSeconds, RunStepInfo runStepInfo,
-      StageInfraDetails stageInfraDetails, String tmatePath) {
+      StageInfraDetails stageInfraDetails, String tmatePath, String tmateEndpoint) {
     if (isEmpty(tmatePath)) {
       if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
         VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
@@ -148,13 +149,18 @@ public class SerializerUtils {
 
       tmatePath = "/addon/tmate";
     }
-    return getDebugCommand(accountId, timeoutSeconds, runStepInfo.getShell(), tmatePath);
+    return getDebugCommand(accountId, timeoutSeconds, runStepInfo.getShell(), tmatePath, tmateEndpoint);
   }
-  public static String getEarlyExitCommand(ParameterField<CIShellType> parametrizedShellType) {
+  public static String getEarlyExitCommand(ParameterField<CIShellType> parametrizedShellType, boolean enableDebug) {
     String cmd;
     CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
     if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
-      cmd = "set -xe; ";
+      cmd = "set ";
+      if (enableDebug) {
+        cmd = cmd + "-xe; \n";
+      } else {
+        cmd = cmd + "-e; \n";
+      }
     } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
       cmd = "$ErrorActionPreference = 'Stop' \n";
     } else if (shellType == CIShellType.PYTHON) {
@@ -163,6 +169,45 @@ public class SerializerUtils {
       throw new CIStageExecutionException(format("Invalid shell type: %s", shellType));
     }
     return cmd;
+  }
+
+  public static String prependPrintCommand(String command, ParameterField<CIShellType> parametrizedShellType) {
+    CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
+    String lines[] = command.split("\n");
+    StringBuilder printCommand;
+    switch (shellType) {
+      case BASH:
+      case SH:
+        printCommand = new StringBuilder(format("echo \"%sExecuting the following command(s):\"\n", boldYellowColor));
+        for (String line : lines) {
+          printCommand.append("echo \"" + boldYellowColor + line + "\"\n");
+        }
+        printCommand.append("echo \n");
+        printCommand.append(command);
+        break;
+      case POWERSHELL:
+      case PWSH:
+        printCommand =
+            new StringBuilder(format("Write-Host \"%sExecuting the following command(s):\"\n", boldYellowColor));
+        for (String line : lines) {
+          printCommand.append("Write-Host \"" + boldYellowColor + line + "\"\n");
+        }
+        printCommand.append("Write-Host \n");
+        printCommand.append(command);
+        break;
+      case PYTHON:
+        printCommand = new StringBuilder(format("print('''%sExecuting the following command(s):\n", boldYellowColor));
+        for (String line : lines) {
+          printCommand.append(boldYellowColor + line + "\n");
+        }
+        printCommand.append("''')\n\n");
+        printCommand.append(command);
+        break;
+      default:
+        throw new CIStageExecutionException(format("Invalid shell type: %s", shellType));
+    }
+
+    return printCommand.toString();
   }
 
   public static String convertJsonNodeToString(String key, JsonNode jsonNode) {
@@ -226,8 +271,7 @@ public class SerializerUtils {
     return true;
   }
 
-  public static String getSafeGitDirectoryCmd(
-      CIShellType shellType, String accountId, CIFeatureFlagService featureFlagService) {
+  public static String getSafeGitDirectoryCmd(CIShellType shellType) {
     // This adds the safe directory to the end of .gitconfig file
 
     String safeDirScript;
@@ -235,8 +279,7 @@ public class SerializerUtils {
       safeDirScript = "set +x\n"
           + "if [ -x \"$(command -v git)\" ]; then\n"
           + "  git config --global --add safe.directory '*' || true \n"
-          + "fi\n"
-          + "set -x\n";
+          + "fi\n";
     } else if (shellType == CIShellType.PYTHON) {
       safeDirScript = "import subprocess\n"
           + "try:\n"

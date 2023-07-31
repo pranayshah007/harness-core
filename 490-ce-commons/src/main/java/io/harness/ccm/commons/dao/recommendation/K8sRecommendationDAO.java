@@ -492,6 +492,18 @@ public class K8sRecommendationDAO {
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void updateServicenowDetailsInTimescale(@NonNull String entityUuid, @Nullable String servicenowConnectorRef,
+      @Nullable String servicenowTicketType, @Nullable String servicenowIssueKey, @Nullable String servicenowStatus) {
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.SERVICENOWCONNECTORREF, servicenowConnectorRef)
+        .set(CE_RECOMMENDATIONS.SERVICENOWTICKETTYPE, servicenowTicketType)
+        .set(CE_RECOMMENDATIONS.SERVICENOWISSUEKEY, servicenowIssueKey)
+        .set(CE_RECOMMENDATIONS.SERVICENOWSTATUS, servicenowStatus)
+        .where(CE_RECOMMENDATIONS.ID.eq(entityUuid))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
   public RecommendationState getRecommendationState(@NonNull String uuid) {
     return dslContext.select(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE)
         .from(CE_RECOMMENDATIONS)

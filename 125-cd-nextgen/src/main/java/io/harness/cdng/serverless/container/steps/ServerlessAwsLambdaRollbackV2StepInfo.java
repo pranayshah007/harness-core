@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.serverless.container.steps;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaRollbackV2StepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -23,16 +25,19 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.data.annotation.TypeAlias;
 
 @CodePulse(
@@ -46,7 +51,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("serverlessAwsLambdaRollbackV2StepInfo")
 @RecasterAlias("io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo")
 public class ServerlessAwsLambdaRollbackV2StepInfo
-    extends ServerlessAwsLambdaRollbackV2BaseStepInfo implements CDAbstractStepInfo, Visitable {
+    extends ServerlessAwsLambdaV2BaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -54,10 +59,17 @@ public class ServerlessAwsLambdaRollbackV2StepInfo
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
+  @JsonIgnore String serverlessAwsLambdaRollbackFnq;
+
   @Builder(builderMethodName = "infoBuilder")
-  public ServerlessAwsLambdaRollbackV2StepInfo(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String serverlessAwsLambdaRollbackFnq) {
-    super(delegateSelectors, serverlessAwsLambdaRollbackFnq);
+  public ServerlessAwsLambdaRollbackV2StepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
+      ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+      ParameterField<String> serverlessVersion, String serverlessAwsLambdaRollbackFnq) {
+    super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
+        serverlessVersion);
+    this.serverlessAwsLambdaRollbackFnq = serverlessAwsLambdaRollbackFnq;
   }
 
   @Override
@@ -67,12 +79,15 @@ public class ServerlessAwsLambdaRollbackV2StepInfo
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.ASYNC;
   }
 
   @Override
   public SpecParameters getSpecParameters() {
     return ServerlessAwsLambdaRollbackV2StepParameters.infoBuilder()
+        .serverlessAwsLambdaRollbackFnq(serverlessAwsLambdaRollbackFnq)
+        .image(getImage())
+        .envVariables(getEnvVariables())
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }

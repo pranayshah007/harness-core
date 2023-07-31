@@ -21,10 +21,8 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.jira.JiraActionNG;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -60,17 +58,6 @@ public class JiraTaskNGParameters implements TaskParameters, ExecutionCapability
   // For new jira server versions old metadata endpoint is deprecated
   boolean newMetadata;
   List<String> delegateSelectors;
-
-  public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-    if (jiraConnectorDTO != null && jiraConnectorDTO.getDelegateSelectors() != null) {
-      combinedDelegateSelectors.addAll(jiraConnectorDTO.getDelegateSelectors());
-    }
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-    return combinedDelegateSelectors;
-  }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

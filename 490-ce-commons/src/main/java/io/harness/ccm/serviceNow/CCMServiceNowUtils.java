@@ -55,6 +55,7 @@ public class CCMServiceNowUtils {
   private static final long TIME_OUT = 120;
   private static final String INVALID_SERVICE_NOW_CREDENTIALS = "Invalid ServiceNow credentials";
   private static final String NOT_FOUND = "404 Not found";
+  private static final String SERVICENOW_TICKET_STATE_KEY = "state";
   private final Retry retry = buildRetryAndRegisterListeners();
 
   public ServiceNowTicketNG createTicket(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
@@ -64,6 +65,61 @@ public class CCMServiceNowUtils {
     } else {
       return createTicketUsingServiceNowTemplate(serviceNowTaskNGParameters);
     }
+  }
+
+  public ServiceNowTicketNG getTicket(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
+    ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
+
+    final Call<JsonNode> request =
+        serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, true),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase(),
+            "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all");
+    Response<JsonNode> response = null;
+
+    try {
+      response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();
+      if (isUnauthorizedError(response)) {
+        log.warn("Failed to get serviceNow ticket using cached auth token; trying with fresh token");
+        Call<JsonNode> requestWithoutCache =
+            serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO, false),
+                serviceNowTaskNGParameters.getTicketType().toLowerCase(),
+                "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all");
+        response = Retry.decorateCallable(retry, () -> requestWithoutCache.clone().execute()).call();
+      }
+      handleResponse(response, "Failed to get serviceNow ticket");
+      JsonNode responseObj = response.body().get("result");
+      if (responseObj.isArray()) {
+        Map<String, ServiceNowFieldValueNG> fieldValues = new HashMap<>();
+        for (JsonNode fieldsObj : responseObj) {
+          fieldsObj.fields().forEachRemaining(fieldObj
+              -> fieldValues.put(fieldObj.getKey(),
+                  ServiceNowFieldValueNG.builder()
+                      .value(fieldObj.getValue().get("value").textValue())
+                      .displayValue(fieldObj.getValue().get("display_value").textValue())
+                      .build()));
+        }
+        return ServiceNowTicketNG.builder()
+            .number(serviceNowTaskNGParameters.getTicketNumber())
+            .fields(fieldValues)
+            .url(ServiceNowUtils.prepareTicketUrlFromTicketNumber(serviceNowConnectorDTO.getServiceNowUrl(),
+                serviceNowTaskNGParameters.getTicketNumber(), serviceNowTaskNGParameters.getTicketType()))
+            .build();
+      } else {
+        throw new ServiceNowException("Failed to fetch ticket for ticket type "
+                + serviceNowTaskNGParameters.getTicketType() + " response: " + response,
+            SERVICENOW_ERROR, USER);
+      }
+    } catch (Exception e) {
+      log.error("Failed to get serviceNow ticket ");
+      throw new ServiceNowException(
+          String.format("Error occurred while fetching serviceNow ticket: %s", ExceptionUtils.getMessage(e)),
+          SERVICENOW_ERROR, USER, e);
+    }
+  }
+
+  public String getStatus(ServiceNowTicketNG serviceNowTicketNG) {
+    return serviceNowTicketNG.getFields().get(SERVICENOW_TICKET_STATE_KEY).getDisplayValue();
   }
 
   private ServiceNowTicketNG createTicketWithoutTemplate(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
@@ -251,5 +307,9 @@ public class CCMServiceNowUtils {
             StreamResetException.class, SocketTimeoutException.class});
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
+  }
+
+  private boolean isUnauthorizedError(Response<?> response) {
+    return 401 == response.code();
   }
 }

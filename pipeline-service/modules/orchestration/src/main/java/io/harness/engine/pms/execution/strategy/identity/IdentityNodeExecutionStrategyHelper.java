@@ -14,6 +14,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
@@ -47,6 +48,7 @@ import org.springframework.data.util.CloseableIterator;
 public class IdentityNodeExecutionStrategyHelper {
   @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
   @Inject private NodeExecutionService nodeExecutionService;
+  @Inject private PlanService planService;
 
   public NodeExecution createNodeExecution(
       @NotNull Ambiance ambiance, @NotNull IdentityPlanNode node, String notifyId, String parentId, String previousId) {
@@ -123,15 +125,15 @@ public class IdentityNodeExecutionStrategyHelper {
   // method.
   NodeExecutionBuilder cloneNodeExecutionForRetries(NodeExecution originalNodeExecution, Ambiance ambiance) {
     String uuid = UUIDGenerator.generateUuid();
+    Node node = planService.fetchNode(originalNodeExecution.getNodeId());
     Ambiance finalAmbiance = AmbianceUtils.cloneForFinish(ambiance)
                                  .toBuilder()
-                                 .addLevels(PmsLevelUtils.buildLevelFromNode(uuid, originalNodeExecution.getNode()))
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(uuid, node))
                                  .build();
 
     String parentId = AmbianceUtils.obtainParentRuntimeId(finalAmbiance);
     String notifyId = parentId == null ? null : AmbianceUtils.obtainCurrentRuntimeId(finalAmbiance);
 
-    Node node = originalNodeExecution.getNode();
     return NodeExecution.builder()
         .uuid(uuid)
         .planNode(node)

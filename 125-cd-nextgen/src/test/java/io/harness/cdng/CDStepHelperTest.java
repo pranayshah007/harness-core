@@ -1221,7 +1221,6 @@ public class CDStepHelperTest extends CategoryTest {
         cdStepHelper.getGitStoreDelegateConfig(githubStore, connectorDTO, paths, ambiance, "type", "menifest", false);
 
     assertThat(gitStoreDelegateConfig.isOptimizedFilesFetch()).isFalse();
-    assertThat(gitStoreDelegateConfig.isGithubAppAuthentication()).isTrue();
     assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(ScmConnector.class);
   }
 
@@ -1268,7 +1267,35 @@ public class CDStepHelperTest extends CategoryTest {
         cdStepHelper.getGitStoreDelegateConfig(githubStore, connectorDTO, paths, ambiance, "type", "menifest", true);
 
     assertThat(gitStoreDelegateConfig.isOptimizedFilesFetch()).isTrue();
-    assertThat(gitStoreDelegateConfig.isGithubAppAuthentication()).isTrue();
     assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(ScmConnector.class);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetScmConnector() {
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .authentication(
+                GithubAuthenticationDTO.builder()
+                    .authType(GitAuthType.HTTP)
+                    .credentials(GithubHttpCredentialsDTO.builder()
+                                     .type(GithubHttpAuthenticationType.GITHUB_APP)
+                                     .httpCredentialsSpec(GithubAppDTO.builder()
+                                                              .installationId("id")
+                                                              .applicationId("app")
+                                                              .privateKeyRef(SecretRefData.builder().build())
+                                                              .build())
+                                     .build())
+                    .build())
+            .build();
+
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(githubConnectorDTO, "accountId");
+
+    assertThat(scmConnector).isInstanceOf(GithubConnectorDTO.class);
   }
 }

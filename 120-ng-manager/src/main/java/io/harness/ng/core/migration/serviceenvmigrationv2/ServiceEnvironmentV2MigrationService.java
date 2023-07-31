@@ -17,6 +17,7 @@ import static io.harness.rbac.CDNGRbacPermissions.SERVICE_VIEW_PERMISSION;
 
 import static java.lang.String.format;
 
+import io.harness.ModuleType;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -45,10 +46,14 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.ng.core.dto.ProjectDTO;
+import io.harness.ng.core.dto.ProjectFilterDTO;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.AccountSummaryResponseDto;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.PipelineDetailsDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.RuntimeEntity;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageMigrationFailureResponse;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationProjectWrapperRequestDto;
@@ -62,6 +67,8 @@ import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.services.OrganizationService;
+import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
@@ -80,10 +87,12 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -92,13 +101,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.jetbrains.annotations.Nullable;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
@@ -122,6 +135,11 @@ public class ServiceEnvironmentV2MigrationService {
   @Inject private PipelineServiceClient pipelineServiceClient;
   @Inject private EntityRefreshService entityRefreshService;
   @Inject private TemplateResourceClient templateResourceClient;
+
+  @Inject private OrganizationService organizationService;
+
+  @Inject private ProjectService projectService;
+
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final Integer PIPELINE_SIZE = 25;
 
@@ -1082,5 +1100,200 @@ public class ServiceEnvironmentV2MigrationService {
     if (deploymentStageConfig.getInfrastructure() == null) {
       throw new InvalidRequestException("infra of type v1 doesn't exist in stage yaml");
     }
+  }
+
+  public AccountSummaryResponseDto getAccountSummary(
+      String accountId, boolean getInfrastructuresYaml, boolean getServiceConfigsYaml) {
+    try {
+      Set<String> orgIds = organizationService.getPermittedOrganizations(accountId, null);
+      List<ProjectDTO> projects = projectService.listPermittedProjects(accountId,
+          ProjectFilterDTO.builder().hasModule(true).moduleType(ModuleType.CD).orgIdentifiers(orgIds).build());
+
+      List<PipelineDetailsDto> pipelinesDetails = new ArrayList<>();
+      List<ServiceEntity> serviceEntities = new ArrayList<>();
+      List<String> infrastructures = new ArrayList<>();
+      List<String> serviceConfigs = new ArrayList<>();
+
+      int currentPage = 0;
+      int currentSize = 0;
+      for (ProjectDTO project : projects) {
+        do {
+          List<PMSPipelineSummaryResponseDTO> pipelines =
+              NGRestUtils
+                  .getResponse(pipelineServiceClient.listPipelines(accountId, project.getOrgIdentifier(),
+                      project.getIdentifier(), currentPage, PIPELINE_SIZE, null, null, null, null,
+                      PipelineFilterPropertiesDto.builder().build()))
+                  .getContent();
+          pipelines.forEach(pipeline -> {
+            PMSPipelineResponseDTO existingPipeline =
+                NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(pipeline.getIdentifier(),
+                    accountId, project.getOrgIdentifier(), project.getIdentifier(), null, null, null));
+
+            YamlField pipelineYamlField = getYamlField(existingPipeline.getYamlPipeline(), "pipeline");
+            List<YamlNode> stagesNodes =
+                getStageNodes(pipelineYamlField, accountId, project.getOrgIdentifier(), project.getIdentifier());
+
+            List<YamlNode> stageNodes =
+                stagesNodes.stream()
+                    .filter(yamlNode -> yamlNode.getField("stage") != null)
+                    .map(yamlNode -> getStage(accountId, project, yamlNode))
+                    .filter(Objects::nonNull)
+                    .filter(yamlNode -> yamlNode.getField("type").getNode().asText().equals("Deployment"))
+                    .collect(Collectors.toList());
+
+            List<YamlNode> parallelStagesNodes =
+                stagesNodes.stream()
+                    .filter(this::checkParallelStagesExistence)
+                    .flatMap(yamlNode -> yamlNode.getField("parallel").getNode().asArray().stream())
+                    .map(yamlNode -> getStage(accountId, project, yamlNode))
+                    .filter(Objects::nonNull)
+                    .filter(yamlNode -> yamlNode.getField("type").getNode().asText().equals("Deployment"))
+                    .collect(Collectors.toList());
+            stageNodes.addAll(parallelStagesNodes);
+
+            if (isNotEmpty(stageNodes)) {
+              pipelinesDetails.add(PipelineDetailsDto.builder()
+                                       .orgIdentifier(project.getOrgIdentifier())
+                                       .projectIdentifier(project.getIdentifier())
+                                       .pipelineIdentifier(pipeline.getIdentifier())
+                                       .build());
+            }
+
+            if (getInfrastructuresYaml) {
+              infrastructures.addAll(getInfrastructures(stageNodes));
+            }
+            if (getServiceConfigsYaml) {
+              serviceConfigs.addAll(getServiceConfigs(stageNodes));
+            }
+          });
+          currentPage++;
+          if (isEmpty(pipelines)) {
+            break;
+          }
+          currentSize = pipelines.size();
+        } while (currentSize == PIPELINE_SIZE);
+        List<ServiceEntity> serviceEntitiesV1 = serviceEntityService
+                                                    .getAllNonDeletedServices(accountId, project.getOrgIdentifier(),
+                                                        project.getIdentifier(), new ArrayList<>())
+                                                    .stream()
+                                                    .filter(this::isServiceV1)
+                                                    .collect(Collectors.toList());
+        serviceEntities.addAll(serviceEntitiesV1);
+      }
+
+      return AccountSummaryResponseDto.builder()
+          .pipelinesDetails(pipelinesDetails)
+          .deploymentPipelines(pipelinesDetails.size())
+          .v1Services(serviceEntities.size())
+          .infrastructures(infrastructures)
+          .serviceDefinitions(serviceConfigs)
+          .build();
+    } catch (Exception e) {
+      log.error(e.getMessage());
+      return AccountSummaryResponseDto.builder()
+          .errorSummary(String.format("%s: %s", e.getMessage(), e.getCause().getMessage()))
+          .build();
+    }
+  }
+
+  @Nullable
+  private YamlNode getStage(String accountId, ProjectDTO project, YamlNode yamlNode) {
+    if (yamlNode.getField("stage").getNode().getField("template") != null) {
+      return getStageFromTemplate(
+          accountId, project.getOrgIdentifier(), project.getIdentifier(), yamlNode.getField("stage").getNode());
+    } else {
+      return yamlNode.getField("stage").getNode();
+    }
+  }
+
+  private List<YamlNode> getStageNodes(YamlField pipelineYamlField, String accoutnId, String orgId, String projectId) {
+    if (pipelineYamlField.getNode().getField("template") != null) {
+      return getStageFromTemplate(accoutnId, orgId, projectId, pipelineYamlField.getNode())
+          .getField("stages")
+          .getNode()
+          .asArray();
+    } else {
+      return pipelineYamlField.getNode().getField("stages").getNode().asArray();
+    }
+  }
+
+  private List<String> getInfrastructures(List<YamlNode> stagesNodes) {
+    YAMLMapper yamlMapper = new YAMLMapper();
+
+    return stagesNodes.stream()
+        .map(yamlNode -> getStageYamlField(yamlNode, "infrastructure"))
+        .filter(Objects::nonNull)
+        .map(yamlField -> getYaml(yamlMapper, yamlField))
+        .collect(Collectors.toList());
+  }
+
+  @Nullable
+  private YamlNode getStageFromTemplate(String accountId, String orgId, String projectId, YamlNode yamlNode) {
+    String templateRef = yamlNode.getField("template").getNode().getField("templateRef").getNode().asText();
+    String templateVersion = yamlNode.getField("template").getNode().getField("versionLabel").getNode().asText();
+    String requestOrgIdentifier = null;
+    String requestProjectIdentifier = null;
+    if (templateRef.startsWith("org.")) {
+      requestOrgIdentifier = orgId;
+      templateRef = templateRef.replace("org.", "");
+    } else if (templateRef.startsWith("account.")) {
+      templateRef = templateRef.replace("account.", "");
+    } else {
+      requestProjectIdentifier = projectId;
+      requestOrgIdentifier = orgId;
+    }
+    try {
+      return getYamlField(NGRestUtils
+                              .getResponse(templateResourceClient.get(templateRef, accountId, requestOrgIdentifier,
+                                  requestProjectIdentifier, templateVersion, false))
+                              .getYaml(),
+          "template")
+          .getNode()
+          .getField("spec")
+          .getNode();
+
+    } catch (Exception e) {
+      log.error(e.getMessage());
+    }
+    return null;
+  }
+
+  @Nullable
+  private YamlField getStageYamlField(YamlNode yamlNode, String yamlField) {
+    if (yamlNode.getField("spec") != null) {
+      return yamlNode.getField("spec").getNode().getField(yamlField);
+    }
+    return null;
+  }
+
+  private List<String> getServiceConfigs(List<YamlNode> stagesNodes) {
+    YAMLMapper yamlMapper = new YAMLMapper();
+
+    return stagesNodes.stream()
+        .map(yamlNode -> getStageYamlField(yamlNode, "serviceConfig"))
+        .filter(Objects::nonNull)
+        .map(yamlField -> getYaml(yamlMapper, yamlField))
+        .collect(Collectors.toList());
+  }
+
+  private String getYaml(YAMLMapper yamlMapper, YamlField yamlField) {
+    if (yamlField != null) {
+      try {
+        return yamlMapper.writeValueAsString(yamlField.getNode().getCurrJsonNode());
+      } catch (JsonProcessingException e) {
+        log.error(e.getMessage());
+        return null;
+      }
+    }
+    return null;
+  }
+
+  boolean isServiceV1(ServiceEntity serviceEntity) {
+    try {
+      return getYamlField(serviceEntity.getYaml(), "service").fromYamlPath("serviceDefinition") == null;
+    } catch (IOException e) {
+      log.error(e.getMessage());
+    }
+    return true;
   }
 }

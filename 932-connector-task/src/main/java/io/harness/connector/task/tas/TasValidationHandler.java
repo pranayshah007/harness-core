@@ -9,8 +9,11 @@ package io.harness.connector.task.tas;
 
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.ConnectorValidationHandler;
@@ -32,6 +35,8 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class TasValidationHandler implements ConnectorValidationHandler {

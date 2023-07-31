@@ -185,3 +185,24 @@ proxyAllowList:
         - /user/aggregate
         - /aggregate/acl/usergroups
         - /token/validate
+
+shouldConfigureWithNotification: ${SHOULD_CONFIGURE_WITH_NOTIFICATION:-false}
+
+notificationClient:
+  messageBroker:
+    type: MONGO
+    uri: mongodb://localhost:27017/notification
+    connectTimeout: 30000
+    serverSelectionTimeout: 90000
+    socketTimeout: 360000
+    maxConnectionIdleTime: 600000
+    connectionsPerHost: 300
+  httpClient:
+    baseUrl: http://localhost:9005/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  secrets:
+    notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+notificationConfigs:
+  pluginRequestsNotificationSlack: https://hooks.slack.com/services/dummy/dummy/dummy

@@ -121,8 +121,9 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<GitOpsFetchAppTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<GitOpsFetchAppTaskResponse> responseDataSupplier)
+      throws Exception {
     log.info("Started handling delegate task result");
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     try {

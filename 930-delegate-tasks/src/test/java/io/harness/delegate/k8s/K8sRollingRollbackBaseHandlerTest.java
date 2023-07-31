@@ -67,6 +67,7 @@ import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.RolloutUndoCommand;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -78,6 +79,7 @@ import io.harness.k8s.releasehistory.K8sLegacyRelease.KubernetesResourceIdRevisi
 import io.harness.k8s.releasehistory.K8sRelease;
 import io.harness.k8s.releasehistory.K8sReleaseHistory;
 import io.harness.k8s.releasehistory.ReleaseHistory;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -133,6 +135,23 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
   public void testRollbackForDC() throws Exception {
     rollbackUtil(deploymentConfig(),
         "oc --kubeconfig=config-path rollout undo DeploymentConfig/test-dc --namespace=default --to-revision=1");
+  }
+  private K8sPod podWithName(String name) {
+    return K8sPod.builder().name(name).build();
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetExistingPods() throws Exception {
+    K8sRollingRollbackHandlerConfig k8sRollingRollbackHandlerConfig = new K8sRollingRollbackHandlerConfig();
+    KubernetesConfig kubernetesConfig = KubernetesConfig.builder().namespace("default").build();
+    k8sRollingRollbackHandlerConfig.setKubernetesConfig(kubernetesConfig);
+
+    k8sRollingRollbackBaseHandler.getExistingPods(3000, k8sRollingRollbackHandlerConfig, "releaseName", logCallback);
+
+    verify(k8sTaskHelperBase, times(1)).getPodDetails(kubernetesConfig, "default", "releaseName", 180000000L);
+    verify(logCallback, times(1)).saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
   }
 
   @Test

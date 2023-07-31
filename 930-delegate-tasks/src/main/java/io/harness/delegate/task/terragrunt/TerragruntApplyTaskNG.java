@@ -118,6 +118,7 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
       CommandUnitsProgress commandUnitsProgress, LogCallback applyLogCallback, String baseDir)
       throws IOException, InterruptedException {
     try (PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
+      taskService.mapGitConfig(applyTaskParameters);
       taskService.decryptTaskParameters(applyTaskParameters);
 
       LogCallback fetchFilesLogCallback =

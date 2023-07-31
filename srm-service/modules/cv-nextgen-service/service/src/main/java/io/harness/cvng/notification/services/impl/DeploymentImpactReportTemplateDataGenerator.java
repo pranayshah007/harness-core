@@ -61,7 +61,7 @@ public class DeploymentImpactReportTemplateDataGenerator extends MonitoredServic
         NotificationRuleCommonUtils.getServiceHealthMessageForReport(msHealthReport.getCurrentHealthScore()));
 
     templateDataMap.put(SLO_PERFORMANCE,
-        NotificationRuleCommonUtils.getSloPerformanceDetailsForReport(msHealthReport.getAssociatedSLOsDetails(),
+        NotificationRuleCommonUtils.getSloPerformanceSectionForReport(msHealthReport.getAssociatedSLOsDetails(),
             clock.instant(), baseUrl, SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT));
 
     return templateDataMap;

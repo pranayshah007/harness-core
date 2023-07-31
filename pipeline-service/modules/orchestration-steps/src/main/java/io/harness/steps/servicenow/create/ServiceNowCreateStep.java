@@ -16,6 +16,7 @@ import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -75,7 +76,7 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
             .fields(ServiceNowStepUtils.processServiceNowFieldsInSpec(specParameters.getFields()));
     return serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
         specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(),
-        "ServiceNow Task: Create Ticket");
+        "ServiceNow Task: Create Ticket", TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
   }
 
   @Override

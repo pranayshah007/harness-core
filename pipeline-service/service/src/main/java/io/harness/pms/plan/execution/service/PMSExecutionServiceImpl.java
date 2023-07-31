@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
@@ -446,20 +447,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
       // InputSet yaml used during execution
       String yaml = executionSummaryEntity.getInputSetYaml();
-      if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
-        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
-            yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
-      }
+      yaml = resolveExpressionsInYaml(yaml, resolveExpressions, planExecutionId, resolveExpressionsType);
 
-      if (!resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
-        if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
-          yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
-              yaml, planExecutionId, ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS);
-        } else if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS)) {
-          yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
-              yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
-        }
-      }
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
       return InputSetYamlWithTemplateDTO
           .builder()
@@ -695,5 +684,39 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, mergedRuntimeInputYaml, false);
     }
     return mergeInputSetIntoPipelineForGivenStages(pipelineTemplate, mergedRuntimeInputYaml, false, stageIdentifiers);
+  }
+
+  @Override
+  public String mergeRuntimeInputIntoPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String planExecutionId, boolean resolveExpressions, ResolveInputYamlType resolveExpressionsType) {
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+        getPipelineExecutionSummaryEntity(accountId, orgIdentifier, projectIdentifier, planExecutionId);
+    String pipelineTemplate = pipelineExecutionSummaryEntity.getPipelineTemplate();
+    String inputSetYaml = pipelineExecutionSummaryEntity.getInputSetYaml();
+    inputSetYaml = resolveExpressionsInYaml(inputSetYaml, resolveExpressions, planExecutionId, resolveExpressionsType);
+    if (EmptyPredicate.isEmpty(pipelineTemplate)) {
+      return "";
+    }
+
+    return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, inputSetYaml, false);
+  }
+
+  private String resolveExpressionsInYaml(
+      String yaml, boolean resolveExpressions, String planExecutionId, ResolveInputYamlType resolveExpressionsType) {
+    if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
+      yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+          yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
+    }
+
+    if (!resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
+      if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
+        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+            yaml, planExecutionId, ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS);
+      } else if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS)) {
+        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+            yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
+      }
+    }
+    return yaml;
   }
 }

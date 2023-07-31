@@ -15,6 +15,7 @@ import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.graphql.dto.recommendation.CCMServiceNowCreateDTO;
 import io.harness.ccm.serviceNow.CCMServiceNowHelper;
+import io.harness.ccm.serviceNow.CCMServiceNowUtils;
 import io.harness.ccm.views.dao.RuleExecutionDAO;
 import io.harness.servicenow.ServiceNowTicketNG;
 
@@ -31,6 +32,7 @@ public class RecommendationServiceNowService {
   @Inject private RuleExecutionDAO ruleExecutionDAO;
   @Inject private AzureRecommendationDAO azureRecommendationDAO;
   @Inject private CCMServiceNowHelper serviceNowHelper;
+  @Inject private CCMServiceNowUtils serviceNowUtils;
 
   public CCMServiceNowDetails createServiceNowTicketForRecommendation(
       String accountId, CCMServiceNowCreateDTO serviceNowCreateDTO) {
@@ -57,6 +59,8 @@ public class RecommendationServiceNowService {
       azureRecommendationDAO.updateServicenowDetailsInAzureRecommendation(
           accountId, recommendationId, serviceNowDetails);
     }
+    k8sRecommendationDAO.updateServicenowDetailsInTimescale(recommendationId, serviceNowConnectorRef,
+        serviceNowCreateDTO.getTicketType(), serviceNowTicket.getNumber(), serviceNowUtils.getStatus(serviceNowTicket));
     return serviceNowDetails;
   }
 }
