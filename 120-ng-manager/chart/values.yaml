@@ -2,6 +2,25 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  secrets:
+    app:
+      external:
+        ## if FALSE, Generate all secrets within K8s Namespace
+        ## If TRUE, use one of the followings kids to inject
+        enabled: false 
+        kind:
+          # use ExternalSecrets Operator
+          externalSecrets: false 
+          # Use CSI Driver volume mount
+          csiSecretDriver: false          
+    database:
+      external:
+        enabled: false
+        kind:
+          externalSecrets: false
+          csiSecretDriver: false 
+
+  useExternalSecrets: false
   loadbalancerURL: ""
   database:
     postgres:
