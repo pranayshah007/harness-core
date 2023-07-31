@@ -95,6 +95,27 @@ public class CustomObjectTest extends CategoryTest {
     Mockito.verify(customObjectFactory, Mockito.times(4)).create(any());
   }
 
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testListCustomObjectSetNode() {
+    ListCustomObject listCustomObject = new ListCustomObject(new ArrayList<>());
+    String value = "value";
+    listCustomObject.setNode("level1_primitive", value);
+    Assertions.assertThat(listCustomObject.getObject().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testMapCustomObjectSetNode() {
+    Map<String, Object> map = createRandomMap("level0");
+    MapCustomObject mapCustomObject = new MapCustomObject(map);
+    String value = "value";
+    mapCustomObject.setNode("level1_primitive", value);
+    Assertions.assertThat(mapCustomObject.getObject().get("level1_primitive")).isEqualTo(value);
+  }
+
   private Map<String, Object> createRandomMap(String level) {
     Map<String, Object> randomMap = new HashMap<>();
     randomMap.put(level + "_primitive", "value");

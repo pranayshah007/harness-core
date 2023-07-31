@@ -7,12 +7,11 @@
 
 package io.harness.k8s.model.customObjects;
 
+import lombok.AllArgsConstructor;
+
+@AllArgsConstructor
 public class PrimitiveCustomObject implements CustomObject {
   private Object value;
-
-  public PrimitiveCustomObject(Object object) {
-    this.value = object;
-  }
 
   @Override
   public CustomObject getNode(String fieldName) {
