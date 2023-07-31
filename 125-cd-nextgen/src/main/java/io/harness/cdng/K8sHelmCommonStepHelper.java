@@ -166,7 +166,7 @@ public class K8sHelmCommonStepHelper {
         .collect(Collectors.toList());
   }
 
-  protected TaskChainResponse prepareGitFetchValuesTaskChainResponse(Ambiance ambiance,
+  public TaskChainResponse prepareGitFetchValuesTaskChainResponse(Ambiance ambiance,
       StepElementParameters stepElementParameters, ValuesManifestOutcome valuesManifestOutcome,
       List<ValuesManifestOutcome> aggregatedValuesManifests, K8sStepPassThroughData k8sStepPassThroughData,
       StoreConfig storeConfig) {
