@@ -646,6 +646,8 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
             responseData, k8sStepExecutor, ambiance, stepElementParameters, k8sStepPassThroughData, k8sManifest);
       }
     } catch (Exception e) {
+      log.error("Failed to fetch values yaml. {}", org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace(e));
+      log.error("Failed to fetch values yaml. Error: ", e);
       return TaskChainResponse.builder()
           .chainEnd(true)
           .passThroughData(
