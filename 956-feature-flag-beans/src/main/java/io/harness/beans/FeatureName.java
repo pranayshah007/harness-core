@@ -806,6 +806,7 @@ public enum FeatureName {
       "FF for customers on updated delegate to use GetFileV2 call which is more performance efficient",
       HarnessTeam.PIPELINE),
   USE_IMMUTABLE_DELEGATE("Use immutable delegate on download delegate from UI", HarnessTeam.DEL),
+  EXPRESSION_EVAL_IN_TASK_SUBMIT("Do Expression and secret evaluation while submitting task", HarnessTeam.DEL),
   USE_K8S_API_FOR_STEADY_STATE_CHECK(
       "Used to enable API based steady state check for K8s deployments, instead of using the kubectl binary present in delegate.",
       HarnessTeam.CDP),
