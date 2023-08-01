@@ -91,7 +91,6 @@ public class NotificationRuleCommonUtils {
       String SLOPerformanceSectionTemplate) {
     StringBuilder sb = new StringBuilder();
 
-    sb.append(getSLOSummaryForReport(associatedSLOsDetails));
     associatedSLOsDetails.forEach(sloDetails -> {
       ResourceParams resourceParams =
           ScopedInformation.getResourceParamsFromScopedIdentifier(sloDetails.getScopedMonitoredServiceIdentifier());
