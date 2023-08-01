@@ -37,7 +37,8 @@ import java.util.Optional;
  */
 @OwnedBy(PIPELINE)
 public interface TaskExecutable<T extends StepParameters, R extends ResponseData>
-    extends Step<T>, Abortable<T, TaskExecutableResponse>, Failable<T>, Progressable<T> {
+    extends Step<T>, Abortable<T, TaskExecutableResponse>, Failable<T>, Expirable<T, TaskExecutableResponse>,
+            Progressable<T> {
   default Optional<TaskRequest> obtainTaskOptional(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage) {
     return Optional.ofNullable(obtainTask(ambiance, stepParameters, inputPackage));
   }
@@ -53,5 +54,10 @@ public interface TaskExecutable<T extends StepParameters, R extends ResponseData
   @Override
   default void handleFailureInterrupt(Ambiance ambiance, T stepParameters, Map<String, String> metadata) {
     // NOOP : By default this is noop as task failure is handled by the PMS but you are free to override it
+  }
+
+  @Override
+  default void handleExpire(Ambiance ambiance, T stepParameters, TaskExecutableResponse executableResponse) {
+    // NOOP : By default this is noop as task expire is handled by the PMS but you are free to override it
   }
 }
