@@ -100,7 +100,7 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
                               .startTime(start)
                               .endTime(end)
                               .build();
-    logClusterService.scheduleL1ClusteringTasks(input);
+    logClusterService.scheduleL1ClusteringTasks(input, true);
 
     List<LearningEngineTask> tasks =
         hPersistence.createQuery(LearningEngineTask.class, excludeAuthority)
