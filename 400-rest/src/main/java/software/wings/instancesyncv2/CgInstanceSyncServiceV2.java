@@ -312,8 +312,6 @@ public class CgInstanceSyncServiceV2 {
       InstanceSyncByPerpetualTaskHandler instanceSyncHandler =
           (InstanceSyncByPerpetualTaskHandler) instanceHandler.get();
 
-      instanceSyncHandler.cleanupInvalidV1PerpetualTask(taskDetails.getAccountId());
-
       try (AcquiredLock lock = persistentLocker.tryToAcquireLock(
                InfrastructureMapping.class, infraMapping.getUuid(), Duration.ofSeconds(180))) {
         if (lock == null) {
