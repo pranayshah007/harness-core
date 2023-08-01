@@ -47,7 +47,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = false)
 @TypeAlias("OrchestrationEventLog")
 public class OrchestrationEventLog implements PersistentEntity {
-  public static final Duration TTL = ofDays(5);
+  public static final Duration TTL = ofDays(2);
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

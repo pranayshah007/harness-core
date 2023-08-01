@@ -40,6 +40,9 @@ import io.harness.steps.barriers.service.BarrierService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -160,9 +163,9 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     // Delete the pipeline metadata to delete run-sequence, etc.
     pipelineMetadataService.deletePipelineMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
 
-    // Deletes all related preflight data
-    preflightService.deleteAllPreflightEntityForGivenPipeline(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    // Updating all related preflight data TTL
+    preflightService.updateTTL(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(5)).toInstant()));
   }
 
   // Delete all execution related details using all planExecution for given pipelineIdentifier.
@@ -192,16 +195,17 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
 
   // Internal method which deletes all execution metadata for given planExecutions
   private void deletePipelineExecutionsDetailsInternal(Set<String> planExecutionsToDelete) {
-    // Deletes the barrierInstances
-    barrierService.deleteAllForGivenPlanExecutionId(planExecutionsToDelete);
+    Date ttlExpiryDate = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(5)).toInstant());
+    // update ttl for the barrierInstances
+    barrierService.updateTTL(planExecutionsToDelete, ttlExpiryDate);
     // Delete sweepingOutput
-    pmsSweepingOutputService.deleteAllSweepingOutputInstances(planExecutionsToDelete);
+    pmsSweepingOutputService.updateTTL(planExecutionsToDelete, ttlExpiryDate);
     // Delete outcome instances
-    pmsOutcomeService.deleteAllOutcomesInstances(planExecutionsToDelete);
+    pmsOutcomeService.updateTTL(planExecutionsToDelete, ttlExpiryDate);
     // Delete all interrupts
-    interruptService.deleteAllInterrupts(planExecutionsToDelete);
+    interruptService.updateTTL(planExecutionsToDelete, ttlExpiryDate);
     // Delete all graph metadata
-    graphGenerationService.deleteAllGraphMetadataForGivenExecutionIds(planExecutionsToDelete);
+    graphGenerationService.updateTTLAndDeleteRelatedEntities(planExecutionsToDelete, ttlExpiryDate);
     // Delete nodeExecutions and its metadata
     for (String planExecutionToDelete : planExecutionsToDelete) {
       nodeExecutionService.deleteAllNodeExecutionAndMetadata(planExecutionToDelete);

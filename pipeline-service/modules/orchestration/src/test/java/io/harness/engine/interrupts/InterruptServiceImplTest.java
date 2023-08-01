@@ -44,12 +44,15 @@ import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.internal.util.collections.Sets;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InterruptServiceImplTest extends OrchestrationTestBase {
@@ -128,23 +131,22 @@ public class InterruptServiceImplTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testDeleteAllInterrupts() {
+  public void testUpdateTTLInterrupts() {
     String planExecutionId = generateUuid();
-    saveInterruptList(planExecutionId, false);
-    String planExecutionId2 = generateUuid();
-    saveInterruptList(planExecutionId2, false);
+    Interrupt abortAllInterrupt =
+        Interrupt.builder().planExecutionId(planExecutionId).type(InterruptType.ABORT_ALL).build();
+    Interrupt interrupt = interruptService.save(abortAllInterrupt);
 
     List<Interrupt> interruptsForExecution1 = interruptService.fetchAllInterrupts(planExecutionId);
     assertThat(interruptsForExecution1).isNotEmpty();
-    assertThat(interruptsForExecution1).hasSize(3);
+    assertThat(interruptsForExecution1).hasSize(1);
 
-    List<Interrupt> interruptsForExecution2 = interruptService.fetchAllInterrupts(planExecutionId2);
-    assertThat(interruptsForExecution2).isNotEmpty();
-    assertThat(interruptsForExecution2).hasSize(3);
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    interruptService.updateTTL(Sets.newSet(planExecutionId), ttlExpiry);
 
-    interruptService.deleteAllInterrupts(Set.of(planExecutionId));
     interruptsForExecution1 = interruptService.fetchAllInterrupts(planExecutionId);
-    assertThat(interruptsForExecution1).isEmpty();
+    assertThat(interruptsForExecution1).isNotEmpty();
+    assertThat(interruptsForExecution1.get(0).getValidUntil()).isEqualTo(ttlExpiry);
   }
 
   @Test

@@ -39,6 +39,7 @@ import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -242,13 +243,21 @@ public class InterruptServiceImpl implements InterruptService {
   }
 
   @Override
-  public void deleteAllInterrupts(Set<String> planExecutionIds) {
+  public void updateTTL(Set<String> planExecutionIds, Date ttlDate) {
     Criteria criteria = where(InterruptKeys.planExecutionId).in(planExecutionIds);
     Query query = new Query(criteria);
+    Update ops = new Update();
+    ops.set(InterruptKeys.validUntil, ttlDate);
     RetryPolicy<Object> retryPolicy =
-        PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting Interrupt entity; attempt: {}",
-            "[Failed]: Failed deleting Interrupt entity; attempt: {}");
-    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, Interrupt.class));
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed updating TTL Interrupt entity; attempt: {}",
+            "[Failed]: Failed updating TTL Interrupt entity; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> {
+      UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, Interrupt.class);
+      if (!updateResult.wasAcknowledged()) {
+        log.warn("No Interrupts could be marked as updated TTL for given planExecutionIds - " + planExecutionIds);
+      }
+      return true;
+    });
   }
 
   private void updatePlanStatus(String planExecutionId, String excludingNodeExecutionId) {

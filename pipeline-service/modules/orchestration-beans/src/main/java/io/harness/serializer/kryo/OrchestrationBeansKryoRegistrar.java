@@ -10,7 +10,6 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.stepDetail.StepDetailInstance;
 import io.harness.data.OutcomeInstance;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
@@ -51,7 +50,6 @@ public class OrchestrationBeansKryoRegistrar implements KryoRegistrar {
     // Add new classes here
     kryo.register(Interrupt.class, 87601);
     kryo.register(State.class, 87602);
-    kryo.register(StepDetailInstance.class, 87603);
 
     kryo.register(PmsSdkInstance.class, 88408);
     kryo.register(ConsumerConfig.class, ConsumerConfigKryoSerializer.getInstance(), 2627);

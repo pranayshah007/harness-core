@@ -41,7 +41,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineValidationEvent implements UuidAware, CreatedAtAware {
-  public static final Long KEEP_EVENT_IN_DB_DAYS = 14L;
+  public static final Long KEEP_EVENT_IN_DB_DAYS = 2L;
 
   @Id @dev.morphia.annotations.Id String uuid;
 

@@ -52,8 +52,11 @@ import io.harness.service.GraphGenerationService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -262,7 +265,8 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
     assertThat(graphForExecution2).isNotNull();
     assertThat(graphForExecution3).isNotNull();
 
-    graphGenerationServiceImpl.deleteAllGraphMetadataForGivenExecutionIds(Set.of(planExecutionId1, planExecutionId2));
+    graphGenerationServiceImpl.updateTTLAndDeleteRelatedEntities(Set.of(planExecutionId1, planExecutionId2),
+        Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant()));
 
     graphForExecution1 =
         mongoStore.get(OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId1, null);
@@ -270,7 +274,7 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
         mongoStore.get(OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId2, null);
     graphForExecution3 =
         mongoStore.get(OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId3, null);
-    verify(orchestrationEventLogRepository, times(1)).deleteAllOrchestrationLogEvents(any());
+    verify(orchestrationEventLogRepository, times(1)).updateTTL(any(), any());
 
     assertThat(graphForExecution1).isNull();
     assertThat(graphForExecution2).isNull();

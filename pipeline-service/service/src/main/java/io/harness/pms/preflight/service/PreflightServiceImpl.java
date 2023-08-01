@@ -45,11 +45,11 @@ import io.harness.repositories.preflight.PreFlightRepository;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.sql.Date;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -146,8 +146,25 @@ public class PreflightServiceImpl implements PreflightService {
       update.set(
           PreFlightEntityKeys.validUntil, Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(5)).toInstant()));
     } else if (status == PreFlightStatus.FAILURE) {
-      update.set(PreFlightEntityKeys.validUntil, Date.from(OffsetDateTime.now().plus(Duration.ofDays(14)).toInstant()));
+      update.set(PreFlightEntityKeys.validUntil, Date.from(OffsetDateTime.now().plus(Duration.ofDays(2)).toInstant()));
     }
+    preFlightRepository.update(criteria, update);
+  }
+
+  @Override
+  public void updateTTL(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, Date ttlDate) {
+    // Uses - accountId_orgId_projectId_pipelineId_idx
+    Criteria criteria = Criteria.where(PreFlightEntityKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(PreFlightEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(PreFlightEntityKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(PreFlightEntityKeys.pipelineIdentifier)
+                            .is(pipelineIdentifier);
+    Update update = new Update();
+    update.set(PreFlightEntityKeys.validUntil, ttlDate);
     preFlightRepository.update(criteria, update);
   }
 

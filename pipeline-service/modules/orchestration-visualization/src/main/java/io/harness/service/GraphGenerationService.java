@@ -14,6 +14,7 @@ import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -40,9 +41,9 @@ public interface GraphGenerationService {
   boolean updateGraphWithWaitLock(String planExecutionId);
 
   /**
-   * Delete all GraphMetadata for given planExecutionIds
-   * It will delete all related OrchestrationEventLog, cacheEntities
+   * Updates TTL all GraphMetadata for given planExecutionIds
+   * It will update TTL for all related OrchestrationEventLog, and delete cacheEntities
    * @param planExecutionIds
    */
-  void deleteAllGraphMetadataForGivenExecutionIds(Set<String> planExecutionIds);
+  void updateTTLAndDeleteRelatedEntities(Set<String> planExecutionIds, Date ttlDate);
 }

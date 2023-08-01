@@ -176,12 +176,12 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
     // Verify pipeline metadata delete
     verify(ngTriggerService, times(1)).deleteAllForPipeline(any(), any(), any(), any());
     verify(pipelineMetadataService, times(1)).deletePipelineMetadata(any(), any(), any(), any());
-    verify(preflightService, times(1)).deleteAllPreflightEntityForGivenPipeline(any(), any(), any(), any());
+    verify(preflightService, times(1)).updateTTL(any(), any(), any(), any(), any());
 
     // Execution ids call only once as empty list
     verify(pmsExecutionSummaryService, times(1)).fetchPlanExecutionIdsFromAnalytics(any(), any(), any(), any());
     // Verify execution delete calls
-    verify(barrierService, times(0)).deleteAllForGivenPlanExecutionId(any());
+    verify(barrierService, times(0)).updateTTL(any(), any());
   }
 
   @Test
@@ -225,20 +225,20 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
     // Verify pipeline metadata delete as its called only once
     verify(ngTriggerService, times(1)).deleteAllForPipeline(any(), any(), any(), any());
     verify(pipelineMetadataService, times(1)).deletePipelineMetadata(any(), any(), any(), any());
-    verify(preflightService, times(1)).deleteAllPreflightEntityForGivenPipeline(any(), any(), any(), any());
+    verify(preflightService, times(1)).updateTTL(any(), any(), any(), any(), any());
 
     // Execution ids call only once as empty list
     verify(pmsExecutionSummaryService, times(1)).fetchPlanExecutionIdsFromAnalytics(any(), any(), any(), any());
     // Verify execution delete calls
-    verify(barrierService, times(2)).deleteAllForGivenPlanExecutionId(any());
+    verify(barrierService, times(2)).updateTTL(any(), any());
     // Verify Delete sweepingOutput
-    verify(pmsSweepingOutputService, times(2)).deleteAllSweepingOutputInstances(any());
+    verify(pmsSweepingOutputService, times(2)).updateTTL(any(), any());
     // Verify Delete outcome instances
-    verify(pmsOutcomeService, times(2)).deleteAllOutcomesInstances(any());
+    verify(pmsOutcomeService, times(2)).updateTTL(any(), any());
     // Verify Delete all interrupts
-    verify(interruptService, times(2)).deleteAllInterrupts(any());
+    verify(interruptService, times(2)).updateTTL(any(), any());
     // Verify graph metadata delete
-    verify(graphGenerationService, times(2)).deleteAllGraphMetadataForGivenExecutionIds(any());
+    verify(graphGenerationService, times(2)).updateTTLAndDeleteRelatedEntities(any(), any());
     // Verify nodeExecutions and its metadata delete
     verify(nodeExecutionService, times(100)).deleteAllNodeExecutionAndMetadata(any());
     // Verify planExecutions and its metadata delete
@@ -286,20 +286,20 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
     // Verify pipeline metadata delete as its called only once
     verify(ngTriggerService, times(1)).deleteAllForPipeline(any(), any(), any(), any());
     verify(pipelineMetadataService, times(1)).deletePipelineMetadata(any(), any(), any(), any());
-    verify(preflightService, times(1)).deleteAllPreflightEntityForGivenPipeline(any(), any(), any(), any());
+    verify(preflightService, times(1)).updateTTL(any(), any(), any(), any(), any());
 
     // Execution ids call only once as empty list
     verify(pmsExecutionSummaryService, times(1)).fetchPlanExecutionIdsFromAnalytics(any(), any(), any(), any());
     // Verify execution delete calls
-    verify(barrierService, times(1)).deleteAllForGivenPlanExecutionId(any());
+    verify(barrierService, times(1)).updateTTL(any(), any());
     // Verify Delete sweepingOutput
-    verify(pmsSweepingOutputService, times(1)).deleteAllSweepingOutputInstances(any());
+    verify(pmsSweepingOutputService, times(1)).updateTTL(any(), any());
     // Verify Delete outcome instances
-    verify(pmsOutcomeService, times(1)).deleteAllOutcomesInstances(any());
+    verify(pmsOutcomeService, times(1)).updateTTL(any(), any());
     // Verify Delete all interrupts
-    verify(interruptService, times(1)).deleteAllInterrupts(any());
+    verify(interruptService, times(1)).updateTTL(any(), any());
     // Verify graph metadata delete
-    verify(graphGenerationService, times(1)).deleteAllGraphMetadataForGivenExecutionIds(any());
+    verify(graphGenerationService, times(1)).updateTTLAndDeleteRelatedEntities(any(), any());
     // Verify nodeExecutions and its metadata delete
     verify(nodeExecutionService, times(40)).deleteAllNodeExecutionAndMetadata(any());
     // Verify planExecutions and its metadata delete

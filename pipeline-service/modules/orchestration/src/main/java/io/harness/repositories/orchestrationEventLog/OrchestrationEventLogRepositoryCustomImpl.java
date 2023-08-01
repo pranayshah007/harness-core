@@ -17,18 +17,23 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.UpdateResult;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 public class OrchestrationEventLogRepositoryCustomImpl implements OrchestrationEventLogRepositoryCustom {
   private final MongoTemplate mongoTemplate;
@@ -62,5 +67,28 @@ public class OrchestrationEventLogRepositoryCustomImpl implements OrchestrationE
         PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting OrchestrationEventLog; attempt: {}",
             "[Failed]: Failed deleting OrchestrationEventLog; attempt: {}");
     Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, OrchestrationEventLog.class));
+  }
+
+  @Override
+  public void updateTTL(Set<String> planExecutionIds, Date ttlDate) {
+    if (EmptyPredicate.isEmpty(planExecutionIds)) {
+      return;
+    }
+    // Uses - planExecutionId_createdAt idx
+    Criteria criteria = where(OrchestrationEventLogKeys.planExecutionId).in(planExecutionIds);
+    Query query = new Query(criteria);
+    Update ops = new Update();
+    ops.set(OrchestrationEventLogKeys.validUntil, ttlDate);
+    RetryPolicy<Object> retryPolicy =
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed updating TTL OrchestrationEventLog; attempt: {}",
+            "[Failed]: Failed updating TTL OrchestrationEventLog; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> {
+      UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, OrchestrationEventLog.class);
+      if (!updateResult.wasAcknowledged()) {
+        log.warn(
+            "No OrchestrationEventLog could be marked as updated TTL for given planExecutionIds - " + planExecutionIds);
+      }
+      return true;
+    });
   }
 }

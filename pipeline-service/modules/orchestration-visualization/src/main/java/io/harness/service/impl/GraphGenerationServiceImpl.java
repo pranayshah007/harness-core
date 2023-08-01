@@ -53,6 +53,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -268,9 +269,9 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   @Override
-  public void deleteAllGraphMetadataForGivenExecutionIds(Set<String> planExecutionIds) {
+  public void updateTTLAndDeleteRelatedEntities(Set<String> planExecutionIds, Date ttlDate) {
     // Delete all related orchestration logs
-    orchestrationEventLogRepository.deleteAllOrchestrationLogEvents(planExecutionIds);
+    orchestrationEventLogRepository.updateTTL(planExecutionIds, ttlDate);
     // Delete related cache entities
     List<OrchestrationGraph> cacheEntities = new LinkedList<>();
     for (String planExecutionId : planExecutionIds) {

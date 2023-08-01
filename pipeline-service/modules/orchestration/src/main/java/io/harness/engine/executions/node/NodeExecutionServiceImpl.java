@@ -69,6 +69,7 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -703,6 +704,11 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       mongoTemplate.remove(query, NodeExecution.class);
       return true;
     });
+  }
+
+  @Override
+  public void updateTTLAndDeleteNestedEntities(String planExecutionId, Date ttlExpiryDate) {
+
   }
 
   /**

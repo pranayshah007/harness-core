@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.OrchestrationEventLog;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -28,4 +29,11 @@ public interface OrchestrationEventLogRepositoryCustom {
    * @param planExecutionIds
    */
   void deleteAllOrchestrationLogEvents(Set<String> planExecutionIds);
+
+  /**
+   * Updates all OrchestrationLogEvents for given planExecutionId
+   * Uses - planExecutionId_createdAt
+   * @param planExecutionIds
+   */
+  void updateTTL(Set<String> planExecutionIds, Date ttlDate);
 }

@@ -25,7 +25,10 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -68,7 +71,7 @@ public class OrchestrationEventLogRepositoryCustomImplTest extends Orchestration
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testDeleteAllOrchestrationLogEvents() {
+  public void testUpdateTTLOrchestrationLogEvents() {
     on(orchestrationRepository).set("mongoTemplate", mongoTemplate);
     OrchestrationEventLog log1 = OrchestrationEventLog.builder()
                                      .id(UUIDGenerator.generateUuid())
@@ -77,7 +80,7 @@ public class OrchestrationEventLogRepositoryCustomImplTest extends Orchestration
                                      .build();
     OrchestrationEventLog log2 = OrchestrationEventLog.builder()
                                      .id(UUIDGenerator.generateUuid())
-                                     .planExecutionId("EXECUTION_2")
+                                     .planExecutionId(planExecutionID)
                                      .createdAt(System.currentTimeMillis())
                                      .build();
     OrchestrationEventLog log3 = OrchestrationEventLog.builder()
@@ -90,11 +93,13 @@ public class OrchestrationEventLogRepositoryCustomImplTest extends Orchestration
     eventLogs.add(log2);
     eventLogs.add(log3);
     mongoTemplate.insertAll(eventLogs);
-    orchestrationRepository.deleteAllOrchestrationLogEvents(Set.of(planExecutionID));
+    Date ttlExpiryDate = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    orchestrationRepository.updateTTL(Set.of(planExecutionID), ttlExpiryDate);
 
-    Criteria criteria = where(OrchestrationEventLogKeys.planExecutionId).in("EXECUTION_2");
+    Criteria criteria = where(OrchestrationEventLogKeys.planExecutionId).in(planExecutionID);
     Query query = new Query(criteria);
     List<OrchestrationEventLog> orchestrationEventLogs = mongoTemplate.find(query, OrchestrationEventLog.class);
-    assertThat(orchestrationEventLogs.size()).isEqualTo(1);
+    assertThat(orchestrationEventLogs.size()).isEqualTo(3);
+    assertThat(orchestrationEventLogs.get(0).getValidUntil()).isEqualTo(ttlExpiryDate);
   }
 }

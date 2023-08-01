@@ -18,13 +18,26 @@ import io.harness.pms.preflight.entity.PreFlightEntity;
 import io.harness.pms.preflight.inputset.PipelineInputResponse;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PreflightService {
   void updateStatus(String id, PreFlightStatus status, PreFlightEntityErrorInfo errorInfo);
+
+  /**
+   * Updates all preflight entity for given pipeline
+   * Uses - accountId_orgId_projectId_pipelineId_idx
+   * @param accountId
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param pipelineIdentifier
+   */
+  void updateTTL(@NotNull String accountId, @NotNull String orgIdentifier, @NotNull String projectIdentifier,
+      @NotNull String pipelineIdentifier, Date ttlDate);
 
   List<ConnectorCheckResponse> updateConnectorCheckResponses(String accountId, String orgId, String projectId,
       String preflightEntityId, Map<String, Object> fqnToObjectMapMergedYaml, List<EntityDetail> connectorUsages);
