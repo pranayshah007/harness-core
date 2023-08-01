@@ -10,16 +10,18 @@ package io.harness.ssca.services;
 import io.harness.ssca.beans.AllowList;
 import io.harness.ssca.beans.DenyList;
 import io.harness.ssca.beans.RuleDTO;
-import io.harness.ssca.utils.Scope;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
+import org.json.JSONObject;
 
 @Slf4j
 public class RuleEngineServiceImpl implements RuleEngineService {
@@ -32,9 +34,10 @@ public class RuleEngineServiceImpl implements RuleEngineService {
 
     ObjectMapper objectMapper =
         new ObjectMapper(new YAMLFactory()).configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    String body;
+    String data;
     try {
-      body = response.body().string();
+      JSONObject jsonObject = new JSONObject(response.body().string());
+      data = jsonObject.getString("data");
     } catch (IOException e) {
       log.error(String.format("Failed to read allow list"));
       throw new RuntimeException("Failed Deserialization.");
@@ -44,14 +47,14 @@ public class RuleEngineServiceImpl implements RuleEngineService {
     DenyList denyList;
 
     try {
-      allowList = objectMapper.readValue(body.getBytes(StandardCharsets.UTF_8), AllowList.class);
+      allowList = objectMapper.readValue(data.getBytes(StandardCharsets.UTF_8), AllowList.class);
     } catch (IOException e) {
       log.error(String.format("Failed to read allow list"));
       throw new RuntimeException("Failed Deserialization.");
     }
 
     try {
-      denyList = objectMapper.readValue(body.getBytes(StandardCharsets.UTF_8), DenyList.class);
+      denyList = objectMapper.readValue(data.getBytes(StandardCharsets.UTF_8), DenyList.class);
     } catch (IOException e) {
       log.error(String.format("Failed to read deny list, Exception: %s", e));
       throw new RuntimeException("Failed Deserialization.");
@@ -61,7 +64,15 @@ public class RuleEngineServiceImpl implements RuleEngineService {
   }
 
   private String getFilePath(String accountId, String orgIdentifier, String projectIdentifier, String policyFileId) {
-    String[] splitFileId = policyFileId.split(":");
+    String encodedQueryFileId = null;
+    try {
+      encodedQueryFileId = URLEncoder.encode(policyFileId, StandardCharsets.UTF_8.toString());
+    } catch (UnsupportedEncodingException e) {
+      log.error("Error while encoding Policy File Id");
+      throw new RuntimeException();
+    }
+
+    /*String[] splitFileId = policyFileId.split(":");
     String actualFileName;
     Scope scope;
     if (splitFileId.length == 1) {
@@ -84,7 +95,9 @@ public class RuleEngineServiceImpl implements RuleEngineService {
       return String.format(
           "file-store/files%s/download?routingId=%s&accountIdentifier=%s&orgIdentifier=%s&projectIdentifier=%s",
           actualFileName, accountId, accountId, orgIdentifier, projectIdentifier);
-    }
-    return null;
+    }*/
+    return String.format(
+        "file-store/files/%s/content?routingId=%s&accountIdentifier=%s&orgIdentifier=%s&projectIdentifier=%s",
+        encodedQueryFileId, accountId, accountId, orgIdentifier, projectIdentifier);
   }
 }
