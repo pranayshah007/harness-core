@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.pms.execution.strategy.plannode;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
@@ -342,6 +343,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
                                                   .build();
         waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
       } else {
+        // TODO: This should never happen any more this is here just for backward compatibility, should be removed after
+        // a month when this makes to prod
         log.info("Ending Execution");
         orchestrationEngine.endNodeExecution(AmbianceUtils.cloneForFinish(ambiance));
       }

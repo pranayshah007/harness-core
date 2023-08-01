@@ -6,6 +6,7 @@
  */
 
 package io.harness.serializer.kryo;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -25,6 +26,7 @@ import io.harness.engine.interrupts.callback.FailureInterruptCallback;
 import io.harness.engine.interrupts.handlers.AbortAllInterruptCallback;
 import io.harness.engine.interrupts.handlers.AllInterruptCallback;
 import io.harness.engine.interrupts.handlers.UserMarkedFailAllInterruptCallback;
+import io.harness.engine.pms.execution.strategy.plan.PlanExecutionFinishCallback;
 import io.harness.engine.pms.execution.strategy.plan.PlanExecutionResumeCallback;
 import io.harness.engine.pms.resume.EngineResumeAllCallback;
 import io.harness.engine.pms.resume.EngineResumeCallback;
@@ -58,5 +60,6 @@ public class OrchestrationKryoRegistrar implements KryoRegistrar {
     kryo.register(InterruptProcessingFailedException.class, 87019);
     kryo.register(ExpiryInterruptCallback.class, 87020);
     kryo.register(AllInterruptCallback.class, 87021);
+    kryo.register(PlanExecutionFinishCallback.class, 87022);
   }
 }

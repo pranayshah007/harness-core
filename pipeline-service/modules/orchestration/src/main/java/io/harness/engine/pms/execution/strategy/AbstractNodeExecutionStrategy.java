@@ -7,7 +7,6 @@
 
 package io.harness.engine.pms.execution.strategy;
 
-import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.pms.execution.SdkResponseProcessorFactory;
 import io.harness.event.handlers.SdkResponseProcessor;
 import io.harness.execution.NodeExecution;
@@ -29,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends PmsNodeExecutionMetadata>
     implements NodeExecutionStrategy<P, NodeExecution, M> {
-  @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private SdkResponseProcessorFactory sdkResponseProcessorFactory;
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
   @Override
@@ -41,7 +39,7 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
   public NodeExecution runNode(@NonNull Ambiance ambiance, @NonNull P node, M metadata, InitiateMode initiateMode) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       String parentId = AmbianceUtils.obtainParentRuntimeId(ambiance);
-      String notifyId = parentId == null ? null : AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+      String notifyId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
       if (initiateMode == InitiateMode.CREATE) {
         return createNodeExecution(ambiance, node, metadata, notifyId, parentId, null);
       }
@@ -71,7 +69,7 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
   NodeExecution createAndRunNodeExecution(
       Ambiance ambiance, P node, M metadata, String notifyId, String parentId, String previousId) {
     NodeExecution savedExecution = createNodeExecution(ambiance, node, metadata, notifyId, parentId, previousId);
-    executorService.submit(() -> orchestrationEngine.startNodeExecution(savedExecution.getAmbiance()));
+    executorService.submit(() -> startExecution(savedExecution.getAmbiance()));
     return savedExecution;
   }
 

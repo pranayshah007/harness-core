@@ -17,7 +17,6 @@ import io.harness.PlanExecutionSettingResponse;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.GovernanceService;
-import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
@@ -26,6 +25,8 @@ import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.engine.observers.OrchestrationStartObserver;
 import io.harness.engine.observers.beans.OrchestrationStartInfo;
 import io.harness.engine.pms.execution.strategy.NodeExecutionStrategy;
+import io.harness.engine.pms.execution.strategy.identity.IdentityNodeExecutionStrategy;
+import io.harness.engine.pms.execution.strategy.plannode.PlanNodeExecutionStrategy;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
@@ -36,8 +37,10 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.observer.Subject;
 import io.harness.opaclient.model.OpaConstants;
+import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
+import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.InitiateMode;
@@ -62,7 +65,8 @@ import lombok.extern.slf4j.Slf4j;
 public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanExecution, PlanExecutionMetadata> {
   public static final String ENFORCEMENT_CALLBACK_ID = "enforcement-%s";
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
-  @Inject private OrchestrationEngine orchestrationEngine;
+  @Inject private PlanNodeExecutionStrategy planNodeExecutionStrategy;
+  @Inject private IdentityNodeExecutionStrategy identityNodeExecutionStrategy;
   @Inject private PlanExecutionService planExecutionService;
   @Inject private PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private OrchestrationEventEmitter eventEmitter;
@@ -133,12 +137,27 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
   }
 
   public boolean startPlanExecution(Plan plan, Ambiance ambiance) {
-    Node planNode = planService.fetchNode(plan.getUuid(), plan.getStartingNodeId());
+    Node planNode = planService.fetchNode(plan.getStartingNodeId());
     if (planNode == null) {
       throw new InvalidRequestException("Starting node for plan cannot be null");
     }
-    Ambiance cloned = AmbianceUtils.cloneForChild(ambiance, PmsLevelUtils.buildLevelFromNode(generateUuid(), planNode));
-    executorService.submit(() -> orchestrationEngine.runNode(cloned, planNode, null));
+    String runtimeId = generateUuid();
+    PlanExecutionFinishCallback planExecutionFinishCallback =
+        PlanExecutionFinishCallback.builder().ambiance(ambiance).build();
+    waitNotifyEngine.waitForAllOn(publisherName, planExecutionFinishCallback, runtimeId);
+    Ambiance cloned = AmbianceUtils.cloneForChild(ambiance, PmsLevelUtils.buildLevelFromNode(runtimeId, planNode));
+    switch (planNode.getNodeType()) {
+      case PLAN_NODE:
+        executorService.submit(() -> planNodeExecutionStrategy.runNode(cloned, (PlanNode) planNode, null));
+        break;
+      case IDENTITY_PLAN_NODE:
+        executorService.submit(() -> identityNodeExecutionStrategy.runNode(cloned, (IdentityPlanNode) planNode, null));
+        break;
+      default:
+        throw new IllegalStateException(
+            "Node type should be PLAN_NODE or IDENTITY_PLAN_NODE, Found: " + planNode.getNodeType().toString());
+    }
+
     return true;
   }
 
