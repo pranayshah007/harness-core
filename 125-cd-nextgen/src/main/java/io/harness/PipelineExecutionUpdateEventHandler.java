@@ -47,7 +47,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject protected OutcomeService outcomeService;
   @Inject(optional = true) PmsExecutionGrpcClient pmsClient;
 
-  public static final String token = "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";
+  public static final String token = "ddd";
   OkHttpClient client = new OkHttpClient();
 
   @Override
