@@ -169,6 +169,7 @@ public class DelegateServiceGrpcClient {
     final SubmitTaskResponse submitTaskResponse =
         submitTaskInternalV2(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
     final String taskId = submitTaskResponse.getTaskId().getId();
+    log.info("LOG_TASK_ID_DEBUG: Task ID for type: {} is {}", taskRequest.getTaskType(), taskId);
     return delegateSyncService.waitForTask(taskId,
         Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
         Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
