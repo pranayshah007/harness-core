@@ -186,18 +186,19 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public void populateFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, @NotNull String filterIdentifier) {
+  public void populateFilterUsingIdentifier(List<Criteria> criteriaList, Criteria criteria, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier) {
     FilterDTO pipelineFilterDTO = filterService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
     if (pipelineFilterDTO == null) {
       throw new InvalidRequestException("Could not find a pipeline filter with the identifier ");
     } else {
-      populateFilter(criteria, (PipelineFilterPropertiesDto) pipelineFilterDTO.getFilterProperties());
+      populateFilter(criteriaList, criteria, (PipelineFilterPropertiesDto) pipelineFilterDTO.getFilterProperties());
     }
   }
 
-  public static void populateFilter(Criteria criteria, @NotNull PipelineFilterPropertiesDto pipelineFilter) {
+  public static void populateFilter(
+      List<Criteria> criteriaList, Criteria criteria, @NotNull PipelineFilterPropertiesDto pipelineFilter) {
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getName())) {
       criteria.and(PipelineEntityKeys.name).is(pipelineFilter.getName());
     }
@@ -205,7 +206,7 @@ public class PMSPipelineServiceHelper {
       criteria.and(PipelineEntityKeys.description).is(pipelineFilter.getDescription());
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
-      addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
+      addPipelineTagsCriteria(criteriaList, pipelineFilter.getPipelineTags());
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineIdentifiers())) {
       criteria.and(PipelineEntityKeys.identifier).in(pipelineFilter.getPipelineIdentifiers());
@@ -219,7 +220,7 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public static void addPipelineTagsCriteria(Criteria criteria, List<NGTag> pipelineTags) {
+  public static void addPipelineTagsCriteria(List<Criteria> criteriaList, List<NGTag> pipelineTags) {
     List<NGTag> ngTagsList = new ArrayList<>();
     List<String> tags = new ArrayList<>();
     pipelineTags.forEach(o -> {
@@ -231,15 +232,17 @@ public class PMSPipelineServiceHelper {
         ngTagsList.add(o);
       }
     });
-    if (tags.size() > 0) {
-      Criteria tagsCriteria = new Criteria();
+    Criteria tagsCriteria = new Criteria();
+    if (tags.size() > 0 && ngTagsList.size() > 0) {
+      tagsCriteria.orOperator(where(PlanExecutionSummaryKeys.tagsKey).in(tags),
+          where(PlanExecutionSummaryKeys.tagsValue).in(tags), where(PlanExecutionSummaryKeys.tags).in(ngTagsList));
+    } else if (tags.size() > 0) {
       tagsCriteria.orOperator(
           where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
-      criteria.andOperator(tagsCriteria);
+    } else if (ngTagsList.size() > 0) {
+      tagsCriteria = where(PlanExecutionSummaryKeys.tags).in(ngTagsList);
     }
-    if (ngTagsList.size() > 0) {
-      criteria.and(PlanExecutionSummaryKeys.tags).in(ngTagsList);
-    }
+    criteriaList.add(tagsCriteria);
   }
 
   public void resolveTemplatesAndValidatePipelineEntity(PipelineEntity pipelineEntity, boolean loadFromCache) {
@@ -436,13 +439,13 @@ public class PMSPipelineServiceHelper {
     }
 
     criteria.and(PipelineEntityKeys.deleted).is(deleted);
-
+    List<Criteria> criteriaList = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties != null) {
       throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
     } else if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties == null) {
-      populateFilterUsingIdentifier(criteria, accountId, orgId, projectId, filterIdentifier);
+      populateFilterUsingIdentifier(criteriaList, criteria, accountId, orgId, projectId, filterIdentifier);
     } else if (EmptyPredicate.isEmpty(filterIdentifier) && filterProperties != null) {
-      PMSPipelineServiceHelper.populateFilter(criteria, filterProperties);
+      populateFilter(criteriaList, criteria, filterProperties);
     }
 
     Criteria moduleCriteria = new Criteria();
@@ -478,7 +481,9 @@ public class PMSPipelineServiceHelper {
               .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
 
-    criteria.andOperator(moduleCriteria, searchCriteria);
+    criteriaList.add(moduleCriteria);
+    criteriaList.add(searchCriteria);
+    criteria.andOperator(criteriaList.toArray(new Criteria[criteriaList.size()]));
 
     return criteria;
   }
