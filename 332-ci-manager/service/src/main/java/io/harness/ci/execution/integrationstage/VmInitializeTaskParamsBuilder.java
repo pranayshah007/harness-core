@@ -521,6 +521,7 @@ public class VmInitializeTaskParamsBuilder {
         executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(key));
     if (!optionalSweepingOutput.isFound()) {
       executionSweepingOutputResolver.consume(ambiance, key, value, StepOutcomeGroup.STAGE.name());
+      log.info("successfully saved stageInfraDetails sweeping output");
     }
   }
 
