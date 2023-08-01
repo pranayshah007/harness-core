@@ -6,6 +6,9 @@
  */
 
 package io.harness.pms.plan.execution;
+
+import static io.harness.plancreator.pipelinerollback.PipelineRollbackStageHelper.PIPELINE_ROLLBACK_STAGE_NAME;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -24,6 +27,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -32,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.PIPELINE)
+
 @Singleton
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -42,7 +48,7 @@ public class RollbackModeYamlTransformer {
   String transformProcessedYaml(String processedYaml, ExecutionMode executionMode, String originalPlanExecutionId) {
     switch (executionMode) {
       case PIPELINE_ROLLBACK:
-        return transformProcessedYamlForPipelineRollbackMode(processedYaml);
+        return transformProcessedYamlForPipelineRollbackMode(processedYaml, originalPlanExecutionId);
       case POST_EXECUTION_ROLLBACK:
         return transformProcessedYamlForPostExecutionRollbackMode(processedYaml);
       default:
@@ -72,8 +78,13 @@ public class RollbackModeYamlTransformer {
    *   - stage:
    *       identifier: s1
    */
-  String transformProcessedYamlForPipelineRollbackMode(String processedYaml) {
-    return filterProcessedYaml(processedYaml);
+  String transformProcessedYamlForPipelineRollbackMode(String processedYaml, String originalPlanExecutionId) {
+    List<String> executedStages = nodeExecutionService.getStageDetailFromPlanExecutionId(originalPlanExecutionId)
+                                      .stream()
+                                      .filter(info -> !info.getName().equals(PIPELINE_ROLLBACK_STAGE_NAME))
+                                      .map(info -> info.getIdentifier())
+                                      .collect(Collectors.toList());
+    return filterProcessedYamlWithRequiredStageIdentifiers(processedYaml, executedStages);
   }
 
   /**
@@ -120,5 +131,50 @@ public class RollbackModeYamlTransformer {
     }
     pipelineInnerNode.set(YAMLFieldNameConstants.STAGES, reversedStages);
     return YamlUtils.writeYamlString(pipelineNode);
+  }
+
+  String filterProcessedYamlWithRequiredStageIdentifiers(String processedYaml, List<String> requiredStageIds) {
+    JsonNode pipelineNode;
+    try {
+      pipelineNode = YamlUtils.readTree(processedYaml).getNode().getCurrJsonNode();
+    } catch (IOException e) {
+      throw new UnexpectedException("Unable to transform processed YAML while executing in Rollback Mode");
+    }
+    ObjectNode pipelineInnerNode = (ObjectNode) pipelineNode.get(YAMLFieldNameConstants.PIPELINE);
+    ArrayNode stagesList = (ArrayNode) pipelineInnerNode.get(YAMLFieldNameConstants.STAGES);
+    ArrayNode reversedStages = stagesList.deepCopy().removeAll();
+    int numStages = stagesList.size();
+    for (int i = numStages - 1; i >= 0; i--) {
+      JsonNode currentNode = stagesList.get(i);
+      if (currentNode.get(YAMLFieldNameConstants.PARALLEL) == null) {
+        handleSerialStage(currentNode, requiredStageIds, reversedStages);
+      } else {
+        handleParallelStages(currentNode, requiredStageIds, reversedStages);
+      }
+    }
+    pipelineInnerNode.set(YAMLFieldNameConstants.STAGES, reversedStages);
+    return YamlUtils.writeYamlString(pipelineNode);
+  }
+
+  void handleSerialStage(JsonNode currentNode, List<String> executedStages, ArrayNode reversedStages) {
+    String stageId = currentNode.get(YAMLFieldNameConstants.STAGE).get(YAMLFieldNameConstants.IDENTIFIER).asText();
+    if (executedStages.contains(stageId)) {
+      reversedStages.add(currentNode);
+    }
+  }
+
+  void handleParallelStages(JsonNode currentNode, List<String> executedStages, ArrayNode reversedStages) {
+    ArrayNode parallelStages = (ArrayNode) currentNode.get(YAMLFieldNameConstants.PARALLEL);
+    int numParallelStages = parallelStages.size();
+    for (int i = 0; i < numParallelStages; i++) {
+      JsonNode currParallelStage = parallelStages.get(i);
+      String stageId =
+          currParallelStage.get(YAMLFieldNameConstants.STAGE).get(YAMLFieldNameConstants.IDENTIFIER).asText();
+      if (executedStages.contains(stageId)) {
+        // adding currentNode because we need to add the parallel block fully
+        reversedStages.add(currentNode);
+        break;
+      }
+    }
   }
 }

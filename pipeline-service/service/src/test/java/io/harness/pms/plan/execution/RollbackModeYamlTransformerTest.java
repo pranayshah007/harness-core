@@ -10,6 +10,7 @@ package io.harness.pms.plan.execution;
 import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
 import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBACK;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -19,9 +20,16 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.retry.RetryStageInfo;
+import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -82,8 +90,6 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
     String expected = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
-        + "        identifier: s2\n"
-        + "    - stage:\n"
         + "        identifier: s1\n";
     assertThat(transformedYaml).isEqualTo(expected);
   }
@@ -114,11 +120,6 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
     String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
     String expected = "pipeline:\n"
         + "  stages:\n"
-        + "    - parallel:\n"
-        + "        - stage:\n"
-        + "            identifier: s4\n"
-        + "        - stage:\n"
-        + "            identifier: s5\n"
         + "    - stage:\n"
         + "        identifier: s3\n"
         + "    - parallel:\n"
@@ -152,5 +153,46 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
         + "        - stage:\n"
         + "            identifier: s2\n";
     assertThat(transformedYaml).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testHandleSerialAndParallelStage() throws IOException {
+    String original = "pipeline:\n"
+        + "  stages:\n"
+        + "  - parallel:\n"
+        + "    - stage:\n"
+        + "        identifier: \"s1\"\n"
+        + "    - stage:\n"
+        + "        identifier: \"s2\"\n"
+        + "  - stage:\n"
+        + "        identifier: s3\n";
+    YamlField yamlField = YamlUtils.readTree(original);
+    JsonNode pipelineNode;
+    try {
+      pipelineNode = YamlUtils.readTree(original).getNode().getCurrJsonNode();
+    } catch (IOException e) {
+      throw new UnexpectedException("Unable to transform processed YAML while executing in Rollback Mode");
+    }
+    ArrayNode stagesList =
+        (ArrayNode) pipelineNode.get(YAMLFieldNameConstants.PIPELINE).get(YAMLFieldNameConstants.STAGES);
+
+    // Handle Parallel Stage
+    ArrayNode reversedStages = stagesList.deepCopy().removeAll();
+    rollbackModeYamlTransformer.handleParallelStages(
+        yamlField.fromYamlPath("pipeline").fromYamlPath("stages").getNode().asArray().get(0).getCurrJsonNode(),
+        Collections.singletonList("s1"), reversedStages);
+    assertThat(reversedStages.size()).isEqualTo(1);
+    assertThat(reversedStages.get(0))
+        .isEqualTo(pipelineNode.get(YAMLFieldNameConstants.PIPELINE).get(YAMLFieldNameConstants.STAGES).get(0));
+
+    // Handle Serial Stage
+    rollbackModeYamlTransformer.handleSerialStage(
+        yamlField.fromYamlPath("pipeline").fromYamlPath("stages").getNode().asArray().get(1).getCurrJsonNode(),
+        Collections.singletonList("s3"), reversedStages);
+    assertThat(reversedStages.size()).isEqualTo(2);
+    assertThat(reversedStages.get(1))
+        .isEqualTo(pipelineNode.get(YAMLFieldNameConstants.PIPELINE).get(YAMLFieldNameConstants.STAGES).get(1));
   }
 }
