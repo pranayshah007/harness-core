@@ -45,8 +45,6 @@ ARG DELEGATEVERSION
 
 RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/kubectl/v1.24.3/kubectl https://app.harness.io/public/shared/tools/kubectl/release/v1.24.3/bin/linux/$TARGETARCH/kubectl \
-  && mkdir -m 777 -p client-tools/helm/v2.13.1 \
-  && curl -s -L -o client-tools/helm/v2.13.1/helm https://app.harness.io/public/shared/tools/helm/release/v2.13.1/bin/linux/$TARGETARCH/helm \
   && mkdir -m 777 -p client-tools/helm/v3.12.0 \
   && curl -s -L -o client-tools/helm/v3.12.0/helm https://app.harness.io/public/shared/tools/helm/release/v3.12.0/bin/linux/$TARGETARCH/helm \
   && mkdir -m 777 -p client-tools/go-template/v0.4.3 \
