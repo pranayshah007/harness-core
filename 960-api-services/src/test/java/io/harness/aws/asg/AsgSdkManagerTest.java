@@ -8,6 +8,7 @@
 package io.harness.aws.asg;
 
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -26,6 +27,8 @@ import static software.amazon.awssdk.services.elasticloadbalancingv2.model.Targe
 import static software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetHealthStateEnum.UNHEALTHY;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.category.element.UnitTests;
@@ -48,6 +51,7 @@ import com.amazonaws.services.autoscaling.model.RefreshPreferences;
 import com.amazonaws.services.autoscaling.model.ScalingPolicy;
 import com.amazonaws.services.autoscaling.model.StartInstanceRefreshRequest;
 import com.amazonaws.services.autoscaling.model.StartInstanceRefreshResult;
+import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupResult;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateResult;
@@ -85,6 +89,7 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupT
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetHealth;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetHealthDescription;
 
+@OwnedBy(HarnessTeam.CDP)
 public class AsgSdkManagerTest extends CategoryTest {
   private static final String INSTANCE_STATUS_IN_SERVICE = "InService";
   private static final int STEADY_STATE_INTERVAL_IN_SECONDS = 20;
@@ -650,5 +655,14 @@ public class AsgSdkManagerTest extends CategoryTest {
 
     // Assert
     assertTrue(result);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testDownSizeToZero() {
+    UpdateAutoScalingGroupResult updateAutoScalingGroupResult = mock(UpdateAutoScalingGroupResult.class);
+    doReturn(updateAutoScalingGroupResult).when(amazonAutoScalingClient).updateAutoScalingGroup(any());
+    asgSdkManager.downSizeToZero("abc");
   }
 }
