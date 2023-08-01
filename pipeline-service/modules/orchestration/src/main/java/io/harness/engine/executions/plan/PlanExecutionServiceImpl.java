@@ -160,6 +160,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     }
     return planExecution;
   }
+
   @Override
   public PlanExecution getPlanExecutionMetadata(String planExecutionId) {
     PlanExecution planExecution = planExecutionRepository.getPlanExecutionWithProjections(planExecutionId,
@@ -345,7 +346,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
       // at end if any execution metadata is left, delete those as well
       updateTTLForPlanExecutionMetadataInternal(batchPlanExecutions, ttlDate);
     }
-    deletePlanExecutionsInternal(planExecutionIds);
+    updateTTLForPlanExecutionsInternal(planExecutionIds, ttlDate);
   }
 
   /*
@@ -371,13 +372,17 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
         PlanExecutionDeleteObserver::onPlanExecutionsExpiryUpdate, batchPlanExecutions, ttlDate);
   }
 
-  private void deletePlanExecutionsInternal(Set<String> planExecutionIds) {
+  private void updateTTLForPlanExecutionsInternal(Set<String> planExecutionIds, Date ttlDate) {
     if (EmptyPredicate.isEmpty(planExecutionIds)) {
       return;
     }
+    Criteria planExecutionIdCriteria = Criteria.where(PlanExecutionKeys.uuid).in(planExecutionIds);
+    Query query = new Query(planExecutionIdCriteria);
+    Update ops = new Update();
+    ops.set(PlanExecutionKeys.validUntil, ttlDate);
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
       // Uses - id index
-      planExecutionRepository.deleteAllByUuidIn(planExecutionIds);
+      planExecutionRepository.multiUpdatePlanExecution(query, ops);
       return true;
     });
   }

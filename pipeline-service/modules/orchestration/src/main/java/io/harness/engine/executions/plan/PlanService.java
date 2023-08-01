@@ -55,5 +55,5 @@ public interface PlanService {
    * Uses - id index
    * @param planIds
    */
-  void updateTTL(Set<String> planIds, Date ttlDate);
+  void updateTTLForPlans(Set<String> planIds, Date ttlDate);
 }

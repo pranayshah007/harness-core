@@ -682,6 +682,9 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     deleteNodeExecutionsInternal(nodeExecutionsIdsToDelete);
   }
 
+  @Override
+  public void updateTTLAndDeleteNestedEntities(String planExecutionId, Date ttlExpiryDate) {}
+
   /**
    * Deletes all nodeExecutions metadata
    *
@@ -704,11 +707,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       mongoTemplate.remove(query, NodeExecution.class);
       return true;
     });
-  }
-
-  @Override
-  public void updateTTLAndDeleteNestedEntities(String planExecutionId, Date ttlExpiryDate) {
-
   }
 
   /**

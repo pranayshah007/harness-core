@@ -118,7 +118,7 @@ public class PlanServiceImpl implements PlanService {
   }
 
   @Override
-  public void updateTTL(Set<String> planIds, Date ttlDate) {
+  public void updateTTLForPlans(Set<String> planIds, Date ttlDate) {
     if (EmptyPredicate.isEmpty(planIds)) {
       return;
     }

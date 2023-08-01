@@ -431,6 +431,6 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
         planExecutionIds, Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant()));
 
     verify(planExecutionDeleteObserverSubject, times(2)).fireInform(any(), any(), any());
-    verify(planExecutionRepositoryMock, times(1)).deleteAllByUuidIn(any());
+    verify(planExecutionRepositoryMock, times(1)).multiUpdatePlanExecution(any(), any());
   }
 }

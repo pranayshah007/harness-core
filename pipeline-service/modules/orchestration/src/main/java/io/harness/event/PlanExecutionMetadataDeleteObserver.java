@@ -38,7 +38,7 @@ public class PlanExecutionMetadataDeleteObserver implements PlanExecutionDeleteO
     }
 
     // update ttl for all plans
-    planService.updateTTL(planIds, ttlDate);
+    planService.updateTTLForPlans(planIds, ttlDate);
     // Updates TTL for all planExecutionMetadata for given planExecutionIds
     planExecutionMetadataService.updateTTL(planExecutionIds, ttlDate);
   }
