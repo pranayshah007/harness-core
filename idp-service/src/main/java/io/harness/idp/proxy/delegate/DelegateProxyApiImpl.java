@@ -41,7 +41,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(IDP)
-@NextGenManagerAuth
+//@NextGenManagerAuth
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class DelegateProxyApiImpl implements DelegateProxyApi {
@@ -52,7 +52,7 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
   private final DelegateProxyRequestForwarder delegateProxyRequestForwarder;
   private final DelegateSelectorsCache delegateSelectorsCache;
 
-  @IdpServiceAuthIfHasApiKey
+  //  @IdpServiceAuthIfHasApiKey
   @Override
   @POST
   public Response forwardProxy(@Context UriInfo info, @Context javax.ws.rs.core.HttpHeaders headers,
@@ -71,6 +71,7 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
       log.info("Parsed request body url: {}", backstageProxyRequest.getUrl());
       log.info("Parsed request body method: {}", backstageProxyRequest.getMethod());
       StringBuilder headerString = new StringBuilder();
+      log.info("Parsed request: {}", backstageProxyRequest);
       backstageProxyRequest.getHeaders().forEach((key, value) -> {
         if (!key.equals(AUTHORIZATION)) {
           headerString.append(String.format(HEADER_STRING_PATTERN, key, value));
