@@ -59,6 +59,12 @@ public abstract class Credit implements PersistentEntity, NGAccountAccess {
                  .field(CreditsKeys.creditStatus)
                  .ascSortField(CreditsKeys.creditsSendToSegmentIteration)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("creditStatus_creditExpiryCheckIteration_expiryTime")
+                 .field(CreditsKeys.creditStatus)
+                 .ascSortField(CreditsKeys.creditExpiryCheckIteration)
+                 .ascSortField(CreditsKeys.expiryTime)
+                 .build())
         .build();
   }
 }
