@@ -72,8 +72,6 @@ platform-bazel-cache-dev.json
 
 **/vendor
 
-test-util.bzl
-
 .tool-versions
 .build-cleaner-index
 product/ci/scm/.idea
