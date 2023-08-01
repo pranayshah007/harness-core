@@ -9,6 +9,13 @@
 // https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 export BUILD_PURPOSE=RELEASE
+touch bazel-credentials.bzl
+touch test-util.bzl
+echo "JFROG_USERNAME=\"foo\"" >> bazel-credentials.bzl
+echo "JFROG_PASSWORD=\"bar\"" >> bazel-credentials.bzl
+echo "DISTRIBUTE_TESTING_WORKER=0" >> test-util.bzl
+echo "DISTRIBUTE_TESTING_WORKERS=1" >> test-util.bzl
+echo "OPTIMIZED_PACKAGE_TESTS=0" >> test-util.bzl
 
 apt-get update -y
 apt install curl -y
