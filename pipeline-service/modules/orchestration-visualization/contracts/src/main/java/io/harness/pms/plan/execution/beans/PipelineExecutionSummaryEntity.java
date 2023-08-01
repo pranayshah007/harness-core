@@ -100,7 +100,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ChangeDataCapture(table = "runtime_inputs_info", dataStore = "pms-harness", fields = {}, handler = "RuntimeInputsInfo")
 @ChangeDataCapture(table = "stage_execution", dataStore = "pms-harness", fields = {}, handler = "ApprovalStage")
 public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware {
-  public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;
 
   @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;

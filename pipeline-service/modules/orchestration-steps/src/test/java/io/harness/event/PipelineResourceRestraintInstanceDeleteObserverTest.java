@@ -20,7 +20,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.Date;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,8 +45,9 @@ public class PipelineResourceRestraintInstanceDeleteObserverTest extends Categor
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testOnPlanExecutionsDelete() {
-    pipelineResourceRestraintInstanceDeleteObserver.onPlanExecutionsDelete(Collections.emptyList());
+    pipelineResourceRestraintInstanceDeleteObserver.onPlanExecutionsExpiryUpdate(
+        Collections.emptyList(), Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant()));
 
-    verify(resourceRestraintInstanceService, times(1)).deleteInstancesForGivenReleaseType(any(), any());
+    verify(resourceRestraintInstanceService, times(1)).updateTTLForGivenReleaseType(any(), any(), any());
   }
 }

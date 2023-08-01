@@ -21,7 +21,10 @@ import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.rule.Owner;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.Date;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,7 +47,8 @@ public class PlanExecutionMetadataDeleteObserverTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testOnPlanExecutionsDelete() {
-    planExecutionMetadataDeleteObserver.onPlanExecutionsDelete(Collections.emptyList());
+    planExecutionMetadataDeleteObserver.onPlanExecutionsExpiryUpdate(
+        Collections.emptyList(), Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant()));
 
     verify(planService, times(1)).deletePlansForGivenIds(any());
     verify(planExecutionMetadataService, times(1)).deleteMetadataForGivenPlanExecutionIds(any());

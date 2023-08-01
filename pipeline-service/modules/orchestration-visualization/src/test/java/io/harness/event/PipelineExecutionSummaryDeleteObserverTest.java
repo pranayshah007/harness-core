@@ -20,7 +20,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.rule.Owner;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.Date;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,8 +45,9 @@ public class PipelineExecutionSummaryDeleteObserverTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testOnPlanExecutionsDelete() {
-    pipelineExecutionSummaryDeleteObserver.onPlanExecutionsDelete(Collections.emptyList());
+    pipelineExecutionSummaryDeleteObserver.onPlanExecutionsExpiryUpdate(
+        Collections.emptyList(), Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant()));
 
-    verify(pmsExecutionSummaryService, times(1)).deleteAllSummaryForGivenPlanExecutionIds(any());
+    verify(pmsExecutionSummaryService, times(1)).updateTTLAndDeleteChildEntities(any(), any());
   }
 }

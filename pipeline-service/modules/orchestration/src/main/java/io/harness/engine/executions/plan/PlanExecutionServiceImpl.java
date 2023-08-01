@@ -47,6 +47,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -323,7 +324,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds) {
+  public void updateTTLAndDeleteChildEntities(Set<String> planExecutionIds, Date ttlDate) {
     // Uses idx index
     Query query = query(where(PlanExecutionKeys.uuid).in(planExecutionIds));
     for (String fieldName : PlanExecutionProjectionConstants.fieldsForPlanExecutionDelete) {
@@ -335,24 +336,24 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
         PlanExecution next = iterator.next();
         batchPlanExecutions.add(next);
         if (batchPlanExecutions.size() >= PersistenceModule.MAX_BATCH_SIZE) {
-          deletePlanExecutionMetadataInternal(batchPlanExecutions);
+          updateTTLForPlanExecutionMetadataInternal(batchPlanExecutions, ttlDate);
           batchPlanExecutions.clear();
         }
       }
     }
     if (EmptyPredicate.isNotEmpty(batchPlanExecutions)) {
       // at end if any execution metadata is left, delete those as well
-      deletePlanExecutionMetadataInternal(batchPlanExecutions);
+      updateTTLForPlanExecutionMetadataInternal(batchPlanExecutions, ttlDate);
     }
     deletePlanExecutionsInternal(planExecutionIds);
   }
 
   /*
-  This functions calculates the status of the based on status of all node execution status excluding current node. If
-  the status comes out to be a terminal status, we are setting it to Running as currently is running. eg -> we have
-  matrix in which few stages have failed. But currently as the  pipeline is running (may be a CI stage), then it should
-  be marked to Running
-   */
+    This functions calculates the status of the based on status of all node execution status excluding current node. If
+    the status comes out to be a terminal status, we are setting it to Running as currently is running. eg -> we have
+    matrix in which few stages have failed. But currently as the  pipeline is running (may be a CI stage), then it
+    should be marked to Running
+     */
   @Override
   public void calculateAndUpdateRunningStatus(String planNodeId, String nodeExecutionId) {
     Status updateStatusTo = RUNNING;
@@ -364,10 +365,10 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     updateStatus(planNodeId, updateStatusTo);
   }
 
-  private void deletePlanExecutionMetadataInternal(List<PlanExecution> batchPlanExecutions) {
+  private void updateTTLForPlanExecutionMetadataInternal(List<PlanExecution> batchPlanExecutions, Date ttlDate) {
     // Delete planExecutionMetadata example - PlanExecutionMetadata, PipelineExecutionSummaryEntity
     planExecutionDeleteObserverSubject.fireInform(
-        PlanExecutionDeleteObserver::onPlanExecutionsDelete, batchPlanExecutions);
+        PlanExecutionDeleteObserver::onPlanExecutionsExpiryUpdate, batchPlanExecutions, ttlDate);
   }
 
   private void deletePlanExecutionsInternal(Set<String> planExecutionIds) {

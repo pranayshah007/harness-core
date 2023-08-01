@@ -15,6 +15,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -81,10 +82,10 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
   PlanExecution findNextExecutionToRunInAccount(String accountId);
 
   /**
-   * Deletes the planExecution and its related metadata
+   * Updates TTL all planExecution and its related metadata
    * @param planExecutionIds Ids of to be deleted planExecutions
    */
-  void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds);
+  void updateTTLAndDeleteChildEntities(Set<String> planExecutionIds, Date ttlDate);
 
   void calculateAndUpdateRunningStatus(String planNodeId, String nodeId);
 }

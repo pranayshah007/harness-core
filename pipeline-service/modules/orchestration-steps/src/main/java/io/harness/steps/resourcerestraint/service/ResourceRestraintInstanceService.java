@@ -16,6 +16,7 @@ import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -29,6 +30,13 @@ public interface ResourceRestraintInstanceService {
    * @param releaseEntityIds
    */
   void deleteInstancesForGivenReleaseType(Set<String> releaseEntityIds, HoldingScope holdingScope);
+
+  /**
+   * Update TTL for all resource restraint instance for ids of given release type
+   * Uses - releaseEntityType_releaseEntityId_idx
+   * @param releaseEntityIds
+   */
+  void updateTTLForGivenReleaseType(Set<String> releaseEntityIds, HoldingScope holdingScope, Date ttlDate);
 
   ResourceRestraintInstance activateBlockedInstance(String uuid, String resourceUnit);
 

@@ -11,13 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecution;
 
+import java.util.Date;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PlanExecutionDeleteObserver {
   /**
-   * Observer method to do operation on nodeExecutions delete
+   * Observer method to do operation on nodeExecutions ttl update
    * @param planExecutionIds
    */
-  void onPlanExecutionsDelete(List<PlanExecution> planExecutionIds);
+  void onPlanExecutionsExpiryUpdate(List<PlanExecution> planExecutionIds, Date ttlDate);
 }

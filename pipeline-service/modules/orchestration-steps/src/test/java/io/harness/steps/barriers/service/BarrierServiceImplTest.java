@@ -45,6 +45,9 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -137,7 +140,6 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-
   public void shouldFindByIdentifier() {
     String identifier = generateUuid();
     String planExecutionId = generateUuid();
@@ -159,8 +161,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-
-  public void testDeleteBarrierInstancesForNonExistentPlanExecution() {
+  public void testUpdateTTLBarrierInstancesForGivenPlanExecution() {
     String identifier = generateUuid();
     String planExecutionId = generateUuid();
 
@@ -177,78 +178,18 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     assertThat(barrierExecutionInstance).isNotNull();
     assertThat(barrierExecutionInstance).isEqualTo(bar);
 
-    String toBeDeletedPlanExecution = "PLAN_EXECUTION_TO_BE_DELETED";
-    barrierService.deleteAllForGivenPlanExecutionId(Sets.newSet(toBeDeletedPlanExecution));
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    barrierService.updateTTL(Sets.newSet(planExecutionId), ttlExpiry);
 
     barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(identifier, planExecutionId);
 
     assertThat(barrierExecutionInstance).isNotNull();
-    assertThat(barrierExecutionInstance).isEqualTo(bar);
-  }
-
-  @Test
-  @Owner(developers = ARCHIT)
-  @Category(UnitTests.class)
-
-  public void testDeleteBarrierInstancesForPartialPlanExecutionIdsDelete() {
-    String identifier1 = generateUuid();
-    String planExecutionId1 = generateUuid();
-
-    // bar 1
-    BarrierExecutionInstance bar = BarrierExecutionInstance.builder()
-                                       .uuid(generateUuid())
-                                       .identifier(identifier1)
-                                       .planExecutionId(planExecutionId1)
-                                       .build();
-    barrierNodeRepository.save(bar);
-
-    BarrierExecutionInstance barrierExecutionInstance =
-        barrierService.findByIdentifierAndPlanExecutionId(identifier1, planExecutionId1);
-
-    assertThat(barrierExecutionInstance).isNotNull();
-    assertThat(barrierExecutionInstance).isEqualTo(bar);
-
-    // bar2
-    String identifier2 = generateUuid();
-    String planExecutionId2 = generateUuid();
-    bar = BarrierExecutionInstance.builder()
-              .uuid(generateUuid())
-              .identifier(identifier2)
-              .planExecutionId(planExecutionId2)
-              .build();
-    barrierNodeRepository.save(bar);
-
-    barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(identifier2, planExecutionId2);
-
-    assertThat(barrierExecutionInstance).isNotNull();
-    assertThat(barrierExecutionInstance).isEqualTo(bar);
-
-    // bar 3
-    String identifier3 = generateUuid();
-    String planExecutionId3 = generateUuid();
-    bar = BarrierExecutionInstance.builder()
-              .uuid(generateUuid())
-              .identifier(identifier3)
-              .planExecutionId(planExecutionId3)
-              .build();
-    barrierNodeRepository.save(bar);
-
-    barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(identifier3, planExecutionId3);
-    assertThat(barrierExecutionInstance).isNotNull();
-
-    barrierService.deleteAllForGivenPlanExecutionId(Sets.newSet(planExecutionId2, planExecutionId3));
-
-    barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(identifier1, planExecutionId1);
-    assertThat(barrierExecutionInstance).isNotNull();
-
-    barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(identifier2, planExecutionId2);
-    assertThat(barrierExecutionInstance).isNull();
+    assertThat(barrierExecutionInstance.getValidUntil()).isEqualTo(ttlExpiry);
   }
 
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-
   public void shouldUpdateState() {
     String uuid = generateUuid();
     String planExecutionId = generateUuid();

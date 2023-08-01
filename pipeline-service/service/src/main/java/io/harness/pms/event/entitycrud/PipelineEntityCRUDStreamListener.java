@@ -56,7 +56,6 @@ import org.springframework.data.util.CloseableIterator;
 public class PipelineEntityCRUDStreamListener implements MessageListener {
   // Max batch size of planExecutionIds to delete related metadata, so that delete records are in limited range
   private static final int MAX_DELETION_BATCH_PROCESSING = 50;
-
   private final NGTriggerService ngTriggerService;
   private final PipelineMetadataService pipelineMetadataService;
   private final PmsExecutionSummaryService pmsExecutionSummaryService;
@@ -211,7 +210,7 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
       nodeExecutionService.deleteAllNodeExecutionAndMetadata(planExecutionToDelete);
     }
     // Delete all planExecutions and its metadata
-    planExecutionService.deleteAllPlanExecutionAndMetadata(planExecutionsToDelete);
+    planExecutionService.updateTTLAndDeleteChildEntities(planExecutionsToDelete, ttlExpiryDate);
     planExpansionService.deleteAllExpansions(planExecutionsToDelete);
   }
 

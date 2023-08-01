@@ -48,7 +48,9 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.mongodb.client.result.UpdateResult;
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -86,6 +88,26 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
       Query query = query(where(ResourceRestraintInstanceKeys.releaseEntityType).is(holdingScope.name()))
                         .addCriteria(where(ResourceRestraintInstanceKeys.releaseEntityId).in(releaseEntityIds));
       mongoTemplate.remove(query, ResourceRestraintInstance.class);
+      return true;
+    });
+  }
+
+  @Override
+  public void updateTTLForGivenReleaseType(Set<String> releaseEntityIds, HoldingScope holdingScope, Date ttlDate) {
+    if (EmptyPredicate.isEmpty(releaseEntityIds)) {
+      return;
+    }
+    // Uses - releaseEntityType_releaseEntityId_idx
+    Query query = query(where(ResourceRestraintInstanceKeys.releaseEntityType).is(holdingScope.name()))
+                      .addCriteria(where(ResourceRestraintInstanceKeys.releaseEntityId).in(releaseEntityIds));
+    Update ops = new Update();
+    ops.set(ResourceRestraintInstanceKeys.validUntil, ttlDate);
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, ResourceRestraintInstance.class);
+      if (!updateResult.wasAcknowledged()) {
+        log.warn("No ResourceRestraintInstance could be marked as updated TTL for given releaseEntityIds - "
+            + releaseEntityIds);
+      }
       return true;
     });
   }

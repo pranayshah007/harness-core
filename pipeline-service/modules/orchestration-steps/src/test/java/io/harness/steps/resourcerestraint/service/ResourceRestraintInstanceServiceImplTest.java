@@ -54,7 +54,10 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
 import java.lang.reflect.Field;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -96,7 +99,7 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void shouldTestDeleteInstancesForGivenReleaseType() {
+  public void shouldTestUpdateTTLForGivenReleaseType() {
     String releaseEntityId1 = generateUuid();
     savePipelineActiveInstance(releaseEntityId1, "keyA");
     savePipelineActiveInstance(releaseEntityId1, "keyA");
@@ -106,9 +109,6 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
     savePipelineActiveInstance(releaseEntityId2, "keyA");
     savePipelineActiveInstance(releaseEntityId2, "keyC");
 
-    String releaseEntityId3 = generateUuid();
-    savePipelineActiveInstance(releaseEntityId3, "keyA");
-
     List<ResourceRestraintInstance> allActiveAndBlockedByReleaseEntityId1 =
         resourceRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId1);
     assertThat(allActiveAndBlockedByReleaseEntityId1.size()).isEqualTo(3);
@@ -116,17 +116,17 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
         resourceRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId2);
     assertThat(allActiveAndBlockedByReleaseEntityId2.size()).isEqualTo(2);
 
-    resourceRestraintInstanceService.deleteInstancesForGivenReleaseType(
-        Set.of(releaseEntityId1, releaseEntityId2), HoldingScope.PIPELINE);
+    Date ttlExpiryDate = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    resourceRestraintInstanceService.updateTTLForGivenReleaseType(
+        Set.of(releaseEntityId1, releaseEntityId2), HoldingScope.PIPELINE, ttlExpiryDate);
     allActiveAndBlockedByReleaseEntityId1 =
         resourceRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId1);
-    assertThat(allActiveAndBlockedByReleaseEntityId1.size()).isZero();
+    assertThat(allActiveAndBlockedByReleaseEntityId1.size()).isEqualTo(3);
+    assertThat(allActiveAndBlockedByReleaseEntityId1.get(0).getValidUntil()).isEqualTo(ttlExpiryDate);
     allActiveAndBlockedByReleaseEntityId2 =
         resourceRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId2);
-    assertThat(allActiveAndBlockedByReleaseEntityId2.size()).isZero();
-    List<ResourceRestraintInstance> allActiveAndBlockedByReleaseEntityId3 =
-        resourceRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId3);
-    assertThat(allActiveAndBlockedByReleaseEntityId3.size()).isEqualTo(1);
+    assertThat(allActiveAndBlockedByReleaseEntityId2.size()).isEqualTo(2);
+    assertThat(allActiveAndBlockedByReleaseEntityId2.get(0).getValidUntil()).isEqualTo(ttlExpiryDate);
   }
 
   @Test

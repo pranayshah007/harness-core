@@ -67,9 +67,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -410,17 +412,24 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   }
 
   @Override
-  public void deleteAllForGivenPlanExecutionId(Set<String> planExecutionIds) {
+  public void updateTTL(Set<String> planExecutionIds, Date ttlDate) {
     // Uses - planExecutionId_barrierState_stagesIdentifier_idx
     Criteria planExecutionIdCriteria =
         Criteria.where(BarrierExecutionInstanceKeys.planExecutionId).in(planExecutionIds);
     Query query = new Query(planExecutionIdCriteria);
+    Update ops = new Update();
+    ops.set(BarrierExecutionInstanceKeys.validUntil, ttlDate);
 
     RetryPolicy<Object> retryPolicy =
-        getRetryPolicy("[Retrying]: Failed deleting BarrierExecutionInstance; attempt: {}",
-            "[Failed]: Failed deleting BarrierExecutionInstance; attempt: {}");
-
-    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, BarrierExecutionInstance.class));
+        getRetryPolicy("[Retrying]: Failed updating TTL BarrierExecutionInstance; attempt: {}",
+            "[Failed]: Failed updating TTL BarrierExecutionInstance; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> {
+      UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, BarrierExecutionInstance.class);
+      if (!updateResult.wasAcknowledged()) {
+        log.warn("No BarrierInstances could be marked as updated TTL for given planExecutionIds - " + planExecutionIds);
+      }
+      return true;
+    });
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

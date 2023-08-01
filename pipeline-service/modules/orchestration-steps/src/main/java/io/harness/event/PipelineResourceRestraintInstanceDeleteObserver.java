@@ -16,6 +16,7 @@ import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceServi
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,9 +27,9 @@ public class PipelineResourceRestraintInstanceDeleteObserver implements PlanExec
   @Inject private ResourceRestraintInstanceService resourceRestraintInstanceService;
 
   @Override
-  public void onPlanExecutionsDelete(List<PlanExecution> planExecutionList) {
+  public void onPlanExecutionsExpiryUpdate(List<PlanExecution> planExecutionList, Date ttlDate) {
     Set<String> planExecutionIds = planExecutionList.stream().map(PlanExecution::getUuid).collect(Collectors.toSet());
     // Delete all resource restraint instances with pipeline scope and deleted planExecutionIds
-    resourceRestraintInstanceService.deleteInstancesForGivenReleaseType(planExecutionIds, HoldingScope.PIPELINE);
+    resourceRestraintInstanceService.updateTTLForGivenReleaseType(planExecutionIds, HoldingScope.PIPELINE, ttlDate);
   }
 }

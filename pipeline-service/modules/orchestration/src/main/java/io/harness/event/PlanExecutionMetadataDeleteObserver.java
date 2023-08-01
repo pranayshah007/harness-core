@@ -16,6 +16,7 @@ import io.harness.engine.observers.PlanExecutionDeleteObserver;
 import io.harness.execution.PlanExecution;
 
 import com.google.inject.Inject;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,7 +28,7 @@ public class PlanExecutionMetadataDeleteObserver implements PlanExecutionDeleteO
   @Inject PlanService planService;
 
   @Override
-  public void onPlanExecutionsDelete(List<PlanExecution> planExecutionList) {
+  public void onPlanExecutionsExpiryUpdate(List<PlanExecution> planExecutionList, Date ttlDate) {
     Set<String> planIds = new HashSet<>();
     Set<String> planExecutionIds = new HashSet<>();
 

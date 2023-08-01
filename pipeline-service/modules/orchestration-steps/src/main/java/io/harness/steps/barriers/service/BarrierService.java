@@ -15,6 +15,7 @@ import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,9 +38,9 @@ public interface BarrierService {
   Map<String, List<BarrierPositionInfo.BarrierPosition>> getBarrierPositionInfoList(String yaml);
 
   /**
-   * Deletes barrierInstances for given planExecutionIds
+   * Updates all barrierInstances entity for given planExecutionId
    * Uses - planExecutionId_barrierState_stagesIdentifier_idx
    * @param planExecutionIds
    */
-  void deleteAllForGivenPlanExecutionId(Set<String> planExecutionIds);
+  void updateTTL(Set<String> planExecutionIds, Date ttlDate);
 }

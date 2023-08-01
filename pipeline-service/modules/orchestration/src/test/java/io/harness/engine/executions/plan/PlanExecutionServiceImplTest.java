@@ -58,7 +58,10 @@ import io.harness.rule.Owner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -424,9 +427,10 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     }
     doReturn(iterator).when(planExecutionRepositoryMock).fetchPlanExecutionsFromAnalytics(query);
 
-    planExecutionService.deleteAllPlanExecutionAndMetadata(planExecutionIds);
+    planExecutionService.updateTTLAndDeleteChildEntities(
+        planExecutionIds, Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant()));
 
-    verify(planExecutionDeleteObserverSubject, times(2)).fireInform(any(), any());
+    verify(planExecutionDeleteObserverSubject, times(2)).fireInform(any(), any(), any());
     verify(planExecutionRepositoryMock, times(1)).deleteAllByUuidIn(any());
   }
 }

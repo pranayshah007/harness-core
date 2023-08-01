@@ -15,6 +15,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 
 import com.google.inject.Inject;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,10 +26,10 @@ public class PipelineExecutionSummaryDeleteObserver implements PlanExecutionDele
   @Inject PmsExecutionSummaryService pmsExecutionSummaryService;
 
   @Override
-  public void onPlanExecutionsDelete(List<PlanExecution> planExecutionList) {
+  public void onPlanExecutionsExpiryUpdate(List<PlanExecution> planExecutionList, Date ttlDate) {
     Set<String> planExecutionIds = planExecutionList.stream().map(PlanExecution::getUuid).collect(Collectors.toSet());
 
-    // Delete all summary for given planExecutionIds
-    pmsExecutionSummaryService.deleteAllSummaryForGivenPlanExecutionIds(planExecutionIds);
+    // update TTL for all summary for given planExecutionIds
+    pmsExecutionSummaryService.updateTTLAndDeleteChildEntities(planExecutionIds, ttlDate);
   }
 }
