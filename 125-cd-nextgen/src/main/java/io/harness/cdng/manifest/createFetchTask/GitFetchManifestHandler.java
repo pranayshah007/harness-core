@@ -9,6 +9,7 @@ package io.harness.cdng.manifest.createFetchTask;
 
 import static java.util.Collections.emptyMap;
 
+import io.harness.cdng.K8sHelmCommonStepHelper;
 import io.harness.cdng.k8s.K8sStepExecutor;
 import io.harness.cdng.k8s.K8sStepPassThroughData;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
@@ -22,22 +23,21 @@ import io.harness.tasks.ResponseData;
 
 import java.util.List;
 
-public class GitFetchManifestHandler extends ManifestHandler {
+public class GitFetchManifestHandler extends K8sHelmCommonStepHelper implements ManifestHandler {
   @Override
   public TaskChainResponse prepareFetchResponseForStoreType(Ambiance ambiance, K8sStepExecutor k8sStepExecutor,
       List<ManifestOutcome> manifestOutcomes, StepElementParameters stepElementParameters,
       K8sStepPassThroughData k8sStepPassThroughData) {
-    List<ValuesManifestOutcome> aggregatedValuesManifests =
-        k8sHelmCommonStepHelper.getAggregatedValuesManifests(manifestOutcomes);
+    List<ValuesManifestOutcome> aggregatedValuesManifests = getAggregatedValuesManifests(manifestOutcomes);
     ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
-    StoreConfig storeConfig = k8sHelmCommonStepHelper.extractStoreConfigFromManifestOutcome(k8sManifestOutcome);
+    StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(k8sManifestOutcome);
     k8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
-    K8sStepPassThroughData deepCopyOfK8sPassThroughData =
-        k8sStepPassThroughData.toBuilder().customFetchContent(emptyMap()).zippedManifestFileId("").build();
+    //    K8sStepPassThroughData deepCopyOfK8sPassThroughData =
+    //        k8sStepPassThroughData.toBuilder().customFetchContent(emptyMap()).zippedManifestFileId("").build();
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier(k8sManifestOutcome.getIdentifier()).store(storeConfig).build();
-    return k8sHelmCommonStepHelper.prepareGitFetchValuesTaskChainResponse(ambiance, stepElementParameters,
-        valuesManifestOutcome, aggregatedValuesManifests, deepCopyOfK8sPassThroughData, storeConfig);
+    return prepareGitFetchValuesTaskChainResponse(ambiance, stepElementParameters, valuesManifestOutcome,
+        aggregatedValuesManifests, k8sStepPassThroughData, storeConfig);
   }
 
   @Override

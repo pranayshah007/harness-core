@@ -9,6 +9,7 @@ package io.harness.cdng.manifest.createFetchTask;
 
 import static io.harness.cdng.K8sHelmCommonStepHelper.getAggregatedValuesManifests;
 
+import io.harness.cdng.K8sHelmCommonStepHelper;
 import io.harness.cdng.k8s.K8sStepExecutor;
 import io.harness.cdng.k8s.K8sStepPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -30,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class LocalManifestHandler extends ManifestHandler {
+public class LocalManifestHandler extends K8sHelmCommonStepHelper implements ManifestHandler {
   @Override
   public TaskChainResponse prepareFetchResponseForStoreType(Ambiance ambiance, K8sStepExecutor k8sStepExecutor,
       List<ManifestOutcome> kustomizePatchesManifests, StepElementParameters stepElementParameters,
@@ -39,12 +40,12 @@ public class LocalManifestHandler extends ManifestHandler {
     List<ManifestFiles> manifestFiles = new ArrayList<>();
     List<ValuesManifestOutcome> aggregatedValuesManifests = getAggregatedValuesManifests(kustomizePatchesManifests);
     if (ManifestStoreType.HARNESS.equals(k8sStepPassThroughData.getManifestOutcome().getStore().getKind())
-        || k8sHelmCommonStepHelper.isAnyLocalStore(aggregatedValuesManifests)) {
+        || isAnyLocalStore(aggregatedValuesManifests)) {
       k8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
       LogCallback logCallback = cdStepHelper.getLogCallback(
           K8sCommandUnitConstants.FetchFiles, ambiance, k8sStepPassThroughData.getShouldOpenFetchFilesStream());
-      localStoreFileMapContents.putAll(k8sHelmCommonStepHelper.fetchFilesFromLocalStore(ambiance,
-          k8sStepPassThroughData.getManifestOutcome(), kustomizePatchesManifests, manifestFiles, logCallback));
+      localStoreFileMapContents.putAll(fetchFilesFromLocalStore(ambiance, k8sStepPassThroughData.getManifestOutcome(),
+          kustomizePatchesManifests, manifestFiles, logCallback));
     }
     K8sStepPassThroughData updatedK8sStepPassThroughData = k8sStepPassThroughData.toBuilder()
                                                                .localStoreFileMapContents(localStoreFileMapContents)

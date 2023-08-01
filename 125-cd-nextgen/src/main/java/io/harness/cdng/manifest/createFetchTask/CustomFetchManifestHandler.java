@@ -7,6 +7,7 @@
 
 package io.harness.cdng.manifest.createFetchTask;
 
+import io.harness.cdng.K8sHelmCommonStepHelper;
 import io.harness.cdng.k8s.K8sStepExecutor;
 import io.harness.cdng.k8s.K8sStepPassThroughData;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
@@ -18,7 +19,7 @@ import io.harness.tasks.ResponseData;
 
 import java.util.List;
 
-public class CustomFetchManifestHandler extends ManifestHandler {
+public class CustomFetchManifestHandler extends K8sHelmCommonStepHelper implements ManifestHandler {
   @Override
   public TaskChainResponse prepareFetchResponseForStoreType(Ambiance ambiance, K8sStepExecutor k8sStepExecutor,
       List<ManifestOutcome> kustomizePatchesManifests, StepElementParameters stepElementParameters,
