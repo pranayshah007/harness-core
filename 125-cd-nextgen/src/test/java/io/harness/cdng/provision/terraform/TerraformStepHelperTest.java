@@ -236,7 +236,7 @@ public class TerraformStepHelperTest extends CategoryTest {
         .updateParentEntityIdAndVersion(anyString(), anyString(), any(FileBucket.class));
     doReturn(mockFileServiceResponse).when(mockFileService).deleteFile(anyString(), any(FileBucket.class));
     doReturn(Response.success(null)).when(mockFileServiceResponse).execute();
-    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any());
+    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
   }
 
   @Test
@@ -767,7 +767,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any());
+        .getScmConnector(any(), any(), any());
     TerraformVarFileConfig inlineFileConfig =
         TerraformInlineVarFileConfig.builder().varFileContent("var-content").build();
     TerraformVarFileConfig remoteFileConfig =
@@ -827,7 +827,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any());
+        .getScmConnector(any(), any(), any());
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
@@ -3229,7 +3229,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                          .commitId("commit")
                                          .build();
 
-    doReturn(GithubConnectorDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any());
+    doReturn(GithubConnectorDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
     TerraformVarFileConfig inlineFileConfig =
         TerraformInlineVarFileConfig.builder().varFileContent("var-content").build();
     TerraformVarFileConfig remoteFileConfig =

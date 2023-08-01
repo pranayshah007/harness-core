@@ -337,7 +337,7 @@ public class TerraformStepHelper {
       paths.addAll(getParameterFieldValue(gitStoreConfig.getPaths()));
     }
     ScmConnector scmConnector = cdStepHelper.getScmConnector(
-        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier());
+        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
     List<EncryptedDataDetail> encryptedDataDetails =
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()

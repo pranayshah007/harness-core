@@ -665,17 +665,19 @@ public class CloudformationStepHelper {
     SSHKeySpecDTO sshKeySpecDTO =
         gitConfigAuthenticationInfoHelper.getSSHKey(gitConfigDTO, AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-    List<EncryptedDataDetail> encryptedDataDetails =
-        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
+
     String repoName = gitStoreConfig.getRepoName() != null ? gitStoreConfig.getRepoName().getValue() : null;
     if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
       String repoUrl = cdStepHelper.getGitRepoUrl(gitConfigDTO, repoName);
       gitConfigDTO.setUrl(repoUrl);
       gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
     }
-
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(
+        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
+    List<EncryptedDataDetail> encryptedDataDetails =
+        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     return GitStoreDelegateConfig.builder()
-        .gitConfigDTO(gitConfigDTO)
+        .gitConfigDTO(scmConnector)
         .sshKeySpecDTO(sshKeySpecDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .fetchType(gitStoreConfig.getGitFetchType())
