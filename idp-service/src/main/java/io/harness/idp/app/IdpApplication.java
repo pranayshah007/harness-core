@@ -30,6 +30,7 @@ import io.harness.idp.envvariable.jobs.BackstageEnvVariablesSyncJob;
 import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
 import io.harness.idp.migration.IdpMigrationProvider;
+import io.harness.idp.namespace.Handler;
 import io.harness.idp.namespace.jobs.DefaultAccountIdToNamespaceMappingForPrEnv;
 import io.harness.idp.pipeline.filter.IdpFilterCreationResponseMerger;
 import io.harness.idp.pipeline.provider.IdpModuleInfoProvider;
@@ -37,6 +38,8 @@ import io.harness.idp.pipeline.provider.IdpPipelineServiceInfoProvider;
 import io.harness.idp.pipeline.registrar.IdpStepRegistrar;
 import io.harness.idp.user.jobs.UserSyncJob;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.metrics.HarnessMetricRegistry;
+import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
@@ -116,6 +119,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 @OwnedBy(IDP)
 public class IdpApplication extends Application<IdpConfiguration> {
   private final MetricRegistry metricRegistry = new MetricRegistry();
+  private HarnessMetricRegistry harnessMetricRegistry;
 
   /**
    * The entry point of application.
@@ -170,6 +174,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
     modules.add(new NotificationClientModule(configuration.getNotificationClientConfiguration()));
+    modules.add(new MetricRegistryModule(metricRegistry));
 
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);
@@ -181,9 +186,12 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerPmsSdkEvents(injector);
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
+    registerIterators(injector);
     registerHealthCheck(environment, injector);
     registerNotificationTemplates(configuration, injector);
     environment.jersey().register(RequestLoggingFilter.class);
+
+    harnessMetricRegistry = injector.getInstance(HarnessMetricRegistry.class);
     //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
@@ -283,6 +291,10 @@ public class IdpApplication extends Application<IdpConfiguration> {
   private void registerMigrations(Injector injector) {
     NGMigrationConfiguration config = getMigrationSdkConfiguration();
     NGMigrationSdkInitHelper.initialize(injector, config);
+  }
+
+  private void registerIterators(Injector injector) {
+    injector.getInstance(Handler.class).registerIterators();
   }
 
   private NGMigrationConfiguration getMigrationSdkConfiguration() {
