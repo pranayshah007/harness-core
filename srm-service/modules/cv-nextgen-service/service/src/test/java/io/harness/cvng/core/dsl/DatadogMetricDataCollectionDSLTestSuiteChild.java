@@ -16,7 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.DatadogMetricsDataCollectionInfo;
 import io.harness.cvng.beans.TimeSeriesMetricType;
@@ -54,7 +53,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class DatadogMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class DatadogMetricDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   private static final String BASE_URL = "https://app.datadoghq.com/api/";
 
   BuilderFactory builderFactory;

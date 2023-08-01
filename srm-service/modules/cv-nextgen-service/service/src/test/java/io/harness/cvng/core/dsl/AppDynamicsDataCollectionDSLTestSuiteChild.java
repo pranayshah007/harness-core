@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo.AppMetricInfoDTO;
 import io.harness.cvng.beans.CVMonitoringCategory;
@@ -61,7 +60,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class AppDynamicsDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class AppDynamicsDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   @Inject private MetricPackService metricPackService;
   @Inject private AppDynamicsDataCollectionInfoMapper appDynamicsDataCollectionInfoMapper;
   private String accountId;

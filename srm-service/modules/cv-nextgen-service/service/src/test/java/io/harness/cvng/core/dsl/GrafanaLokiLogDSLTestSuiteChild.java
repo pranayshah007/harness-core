@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.cvng.HoverflyTestBase;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.GrafanaLokiLogDataCollectionInfo;
 import io.harness.cvng.beans.grafanaloki.GrafanaLokiLogSampleDataRequest;
@@ -38,7 +37,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class GrafanaLokiLogDSLTest extends HoverflyTestBase {
+public class GrafanaLokiLogDSLTestSuiteChild extends DSLHoverflyTestSuiteChildBase {
   private static final int THREADS = 10;
   private static final String LOKI_BASE_URL = "http://127.0.0.1:3100";
   DataCollectionDSLService dataCollectionDSLService;

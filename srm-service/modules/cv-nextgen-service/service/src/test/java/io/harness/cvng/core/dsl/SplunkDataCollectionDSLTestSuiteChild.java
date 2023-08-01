@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.cvng.HoverflyTestBase;
 import io.harness.cvng.beans.SplunkDataCollectionInfo;
 import io.harness.cvng.beans.splunk.SplunkSavedSearchRequest;
 import io.harness.cvng.core.entities.SplunkCVConfig;
@@ -48,7 +47,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class SplunkDataCollectionDSLTest extends HoverflyTestBase {
+public class SplunkDataCollectionDSLTestSuiteChild extends DSLHoverflyTestSuiteChildBase {
   private DataCollectionDSLService dataCollectionDSLService;
   private String code;
 

@@ -16,7 +16,6 @@ import static org.assertj.core.data.Offset.offset;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SignalFXMetricDataCollectionInfo;
@@ -62,7 +61,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class SignalFXMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class SignalFXMetricDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   private static final int THREADS = 10;
   private static final long FROM_EPOCH_TIME = 1681699563000L;
   private static final long TO_EPOCH_TIME = 1681702563000L;

@@ -19,7 +19,6 @@ import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.DataSourceType;
@@ -68,7 +67,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class DatadogMetricDataCollectionDSLV2Test extends HoverflyCVNextGenTestBase {
+public class DatadogMetricDataCollectionDSLV2TestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   private static final String BASE_URL = "https://api.datadoghq.com/api/";
   BuilderFactory builderFactory;
   @Inject private MetricPackService metricPackService;

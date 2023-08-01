@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SplunkMetricDataCollectionInfo;
 import io.harness.cvng.beans.splunk.SplunkMetricSampleDataCollectionRequest;
@@ -54,7 +53,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class SplunkMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class SplunkMetricDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   BuilderFactory builderFactory;
   @Inject private MetricPackService metricPackService;
   @Inject private SplunkMetricDataCollectionInfoMapper dataCollectionInfoMapper;

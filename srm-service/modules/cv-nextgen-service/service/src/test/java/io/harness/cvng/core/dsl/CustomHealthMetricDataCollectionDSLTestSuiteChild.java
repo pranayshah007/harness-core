@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.CustomHealthDataCollectionInfo;
 import io.harness.cvng.beans.DataSourceType;
@@ -51,7 +50,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class CustomHealthMetricDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   @Inject private MetricPackService metricPackService;
   @Inject private CustomHealthMetricDataCollectionInfoMapper dataCollectionInfoMapper;
 

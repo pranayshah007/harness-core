@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng;
+package io.harness.cvng.core.dsl;
 
 import io.harness.rule.CvNextGenRule;
 import io.harness.rule.LifecycleRule;
@@ -14,7 +14,7 @@ import org.junit.Rule;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-public class HoverflyCVNextGenTestBase extends HoverflyTestBase {
+public class DSLHoverflyCVNextGenTestSuiteChildBase extends DSLHoverflyTestSuiteChildBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
   @Rule public CvNextGenRule cvNextGenRule = new CvNextGenRule(lifecycleRule.getClosingFactory(), false);

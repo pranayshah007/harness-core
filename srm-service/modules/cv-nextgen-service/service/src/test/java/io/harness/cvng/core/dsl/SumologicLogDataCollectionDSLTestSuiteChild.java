@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.cvng.HoverflyTestBase;
 import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
@@ -40,7 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class SumologicLogDataCollectionDSLTest extends HoverflyTestBase {
+public class SumologicLogDataCollectionDSLTestSuiteChild extends DSLHoverflyTestSuiteChildBase {
   private static final String SECRET_REF_DATA = "Dummy_Secret_Ref";
   private static final int THREADS = 10;
   private static final int LOG_RECORDS_COUNT = 50;

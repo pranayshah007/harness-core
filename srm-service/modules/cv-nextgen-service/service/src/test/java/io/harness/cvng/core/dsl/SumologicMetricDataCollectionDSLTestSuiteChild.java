@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SumologicMetricDataCollectionInfo;
@@ -61,7 +60,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class SumologicMetricDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   private static final int THREADS = 10;
   private static final long FROM_EPOCH_TIME = 1668431100000L;
   private static final long TO_EPOCH_TIME = 1668431400000L;

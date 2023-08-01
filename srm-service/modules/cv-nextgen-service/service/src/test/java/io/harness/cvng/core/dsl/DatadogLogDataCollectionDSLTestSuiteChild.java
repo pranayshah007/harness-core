@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
-import io.harness.cvng.HoverflyTestBase;
 import io.harness.cvng.beans.DatadogLogDataCollectionInfo;
 import io.harness.cvng.beans.datadog.DatadogLogDefinition;
 import io.harness.cvng.core.entities.DatadogLogCVConfig;
@@ -37,7 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class DatadogLogDataCollectionDSLTest extends HoverflyTestBase {
+public class DatadogLogDataCollectionDSLTestSuiteChild extends DSLHoverflyTestSuiteChildBase {
   private DataCollectionDSLService dataCollectionDSLService;
   private String code;
   private ExecutorService executorService;

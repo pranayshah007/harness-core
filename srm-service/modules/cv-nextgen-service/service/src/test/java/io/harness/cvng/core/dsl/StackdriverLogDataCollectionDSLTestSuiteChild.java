@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.stackdriver.StackdriverLogSampleDataRequest;
 import io.harness.datacollection.DataCollectionDSLService;
@@ -38,7 +37,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class StackdriverLogDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class StackdriverLogDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   private DataCollectionDSLService dataCollectionDSLService;
 
   @Before
@@ -54,7 +53,7 @@ public class StackdriverLogDataCollectionDSLTest extends HoverflyCVNextGenTestBa
     String filePath = "splunk/splunk-response.json";
     Instant now = Instant.now();
     // HOVERFLY_RULE.simulate(SimulationSource.file(Paths.get(getResourceFilePath("hoverfly/" + filePath))));
-    HOVERFLY_RULE.capture(filePath);
+    DSLSuiteTest.HOVERFLY_RULE.capture(filePath);
     StackdriverLogSampleDataRequest dataCollectionRequest =
         StackdriverLogSampleDataRequest.builder()
             .type(DataCollectionRequestType.STACKDRIVER_LOG_SAMPLE_DATA)

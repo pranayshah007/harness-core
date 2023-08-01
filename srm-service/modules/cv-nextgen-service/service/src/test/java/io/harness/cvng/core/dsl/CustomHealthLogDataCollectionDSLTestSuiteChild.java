@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.ANJAN;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.CustomHealthLogDataCollectionInfo;
 import io.harness.cvng.beans.customhealth.TimestampInfo;
 import io.harness.cvng.beans.customhealthlog.CustomHealthLogInfo;
@@ -40,7 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class CustomHealthLogDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class CustomHealthLogDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   private DataCollectionDSLService dataCollectionDSLService;
   private String code;
 

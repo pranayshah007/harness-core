@@ -16,7 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MetricResponseMappingDTO;
 import io.harness.cvng.beans.NewRelicDataCollectionInfo;
@@ -51,7 +50,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class NewRelicDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class NewRelicDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   @Inject private MetricPackService metricPackService;
   private String accountId;
   private String orgIdentifier;

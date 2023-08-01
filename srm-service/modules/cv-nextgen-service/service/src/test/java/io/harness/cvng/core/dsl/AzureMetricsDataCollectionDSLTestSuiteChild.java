@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.AzureMetricsDataCollectionInfo;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
@@ -63,7 +62,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class AzureMetricsDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class AzureMetricsDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   private static final int THREADS = 10;
   private final String metricName = "node_cpu_usage_millicores";
   private final String metricNamespace = "microsoft.containerservice/managedclusters";

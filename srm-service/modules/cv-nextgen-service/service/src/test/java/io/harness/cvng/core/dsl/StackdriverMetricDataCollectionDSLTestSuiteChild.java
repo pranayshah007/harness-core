@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.DataSourceType;
@@ -62,7 +61,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class StackdriverMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class StackdriverMetricDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   BuilderFactory builderFactory;
   @Inject private MetricPackService metricPackService;
   @Inject private StackdriverDataCollectionInfoMapper dataCollectionInfoMapper;

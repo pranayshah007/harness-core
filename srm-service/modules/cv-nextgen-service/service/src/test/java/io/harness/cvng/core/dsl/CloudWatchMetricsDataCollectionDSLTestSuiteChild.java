@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.HoverflyCVNextGenTestBase;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.CloudWatchMetricDataCollectionInfo;
 import io.harness.cvng.beans.DataSourceType;
@@ -46,7 +45,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class CloudWatchMetricsDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
+public class CloudWatchMetricsDataCollectionDSLTestSuiteChild extends DSLHoverflyCVNextGenTestSuiteChildBase {
   @Inject private MetricPackService metricPackService;
   private String accountId;
   private String orgIdentifier;

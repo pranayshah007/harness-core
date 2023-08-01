@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.KAMAL;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
-import io.harness.cvng.HoverflyTestBase;
 import io.harness.rule.Owner;
 
 import io.specto.hoverfly.junit.core.SslConfigurer;
@@ -28,12 +27,12 @@ import org.junit.experimental.categories.Category;
  * Sample test to use Hoverfly with OkHttpClient.
  */
 @Slf4j
-public class HoverflyExampleTest extends HoverflyTestBase {
+public class HoverflyExampleTestSuiteChild extends DSLHoverflyTestSuiteChildBase {
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testQAAPI() throws IOException {
-    SslConfigurer sslConfigurer = HOVERFLY_RULE.getSslConfigurer();
+    SslConfigurer sslConfigurer = DSLSuiteTest.HOVERFLY_RULE.getSslConfigurer();
     OkHttpClient client =
         new OkHttpClient()
             .newBuilder()
@@ -48,7 +47,7 @@ public class HoverflyExampleTest extends HoverflyTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testProdAPI() throws IOException {
-    SslConfigurer sslConfigurer = HOVERFLY_RULE.getSslConfigurer();
+    SslConfigurer sslConfigurer = DSLSuiteTest.HOVERFLY_RULE.getSslConfigurer();
     OkHttpClient client =
         new OkHttpClient()
             .newBuilder()

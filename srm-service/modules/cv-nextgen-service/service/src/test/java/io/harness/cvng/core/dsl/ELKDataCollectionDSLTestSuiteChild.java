@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.cvng.HoverflyTestBase;
 import io.harness.cvng.beans.ELKDataCollectionInfo;
 import io.harness.cvng.beans.elk.ELKIndexCollectionRequest;
 import io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest;
@@ -43,7 +42,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class ELKDataCollectionDSLTest extends HoverflyTestBase {
+public class ELKDataCollectionDSLTestSuiteChild extends DSLHoverflyTestSuiteChildBase {
   private DataCollectionDSLService dataCollectionDSLService;
   private String code;
   private ExecutorService executorService;

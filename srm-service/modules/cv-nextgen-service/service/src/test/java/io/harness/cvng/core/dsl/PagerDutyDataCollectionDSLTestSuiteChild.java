@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.cvng.HoverflyTestBase;
 import io.harness.cvng.beans.pagerduty.PagerDutyServiceDetail;
 import io.harness.cvng.beans.pagerduty.PagerDutyServicesRequest;
 import io.harness.datacollection.DataCollectionDSLService;
@@ -35,7 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class PagerDutyDataCollectionDSLTest extends HoverflyTestBase {
+public class PagerDutyDataCollectionDSLTestSuiteChild extends DSLHoverflyTestSuiteChildBase {
   private DataCollectionDSLService dataCollectionDSLService;
   private String code;
   private ExecutorService executorService;

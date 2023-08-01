@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.cvng.HoverflyTestBase;
 import io.harness.cvng.beans.AzureLogsDataCollectionInfo;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.azure.AzureLogsSampleDataRequest;
@@ -44,7 +43,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class AzureLogsDataCollectionDSLTest extends HoverflyTestBase {
+public class AzureLogsDataCollectionDSLTestSuiteChild extends DSLHoverflyTestSuiteChildBase {
   private static final int THREADS = 3;
   private final String query = "let FindString = \"\";\n"
       + "ContainerLog \n"
