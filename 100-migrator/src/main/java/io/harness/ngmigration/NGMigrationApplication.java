@@ -44,7 +44,7 @@ import io.harness.delegate.beans.StartupMode;
 import io.harness.delegate.event.handler.DelegateProfileEventHandler;
 import io.harness.event.EventsModule;
 import io.harness.event.usagemetrics.EventsModuleHelper;
-import io.harness.eventframework.dms.DmsObserverEventProducer;
+import io.harness.eventframework.DmsObserverEventProducer;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
 import io.harness.exception.violation.ConstraintViolationExceptionMapper;
 import io.harness.ff.FeatureFlagConfig;

@@ -14,6 +14,7 @@ import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
 import static io.harness.beans.FeatureName.DELEGATE_TASK_LOAD_DISTRIBUTION;
+import static io.harness.beans.FeatureName.EXPRESSION_EVAL_IN_TASK_SUBMIT;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.beans.FeatureName.QUEUE_DELEGATE_TASK;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -694,8 +695,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
         task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
 
-        // If we are using DMS then do expression and secret evaluation while task processing.
-        if (featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, task.getAccountId())) {
+        // If FF is enabled, do evaluations and store delegateTaskPackage in database.
+        if (featureFlagService.isEnabled(EXPRESSION_EVAL_IN_TASK_SUBMIT, task.getAccountId())) {
           DelegateTaskPackage delegateTaskPackage = resolvePreAssignmentExpressionsV2(task, SecretManagerMode.APPLY);
           task.setDelegateTaskPackage(delegateTaskPackage);
         }
@@ -1151,10 +1152,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private DelegateTaskPackage buildDelegateTaskPackage(DelegateTask delegateTask) {
-    // If DMS is not used, do secret and expression evaluation and return delegateTaskPackage
-    if (featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, delegateTask.getAccountId())) {
+    // If delegateTaskPackage is present in database that means we did exp evaluation in submit task.
+    // Reuse delegateTaskPackage instead of doing evaluations again.
+    if (delegateTask.getDelegateTaskPackage() == null) {
       return resolvePreAssignmentExpressions(delegateTask, SecretManagerMode.APPLY);
     }
+    log.info("Using Existing delegateTaskPackage for taskId {}", delegateTask.getUuid());
     List<ExecutionCapability> executionCapabilityList = emptyList();
     if (isNotEmpty(delegateTask.getExecutionCapabilities())) {
       executionCapabilityList = delegateTask.getExecutionCapabilities()

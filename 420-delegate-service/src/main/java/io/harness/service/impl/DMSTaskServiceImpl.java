@@ -31,6 +31,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.utils.DelegateLogContextHelper;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.dms.configuration.DelegateServiceConfiguration;
+import io.harness.eventframework.DmsObserverEventProducer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.DelayLogContext;
@@ -38,6 +39,7 @@ import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.network.SafeHttpCall;
 import io.harness.persistence.HPersistence;
+import io.harness.reflection.ReflectionUtils;
 import io.harness.service.intfc.DMSAssignDelegateService;
 import io.harness.service.intfc.DMSTaskService;
 import io.harness.service.intfc.DelegateCache;
@@ -45,6 +47,7 @@ import io.harness.service.intfc.DelegateCache;
 import software.wings.TaskTypeToRequestResponseMapper;
 import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
+import software.wings.service.impl.CIDelegateTaskObserver;
 import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.utils.Utils;
 
@@ -85,7 +88,7 @@ public class DMSTaskServiceImpl implements DMSTaskService {
   @Inject private Clock clock;
   @Inject private DelegateServiceConfiguration mainConfiguration;
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
-  //  @Inject private DmsObserverEventProducer dmsObserverEventProducer;
+  @Inject private DmsObserverEventProducer dmsObserverEventProducer;
 
   private static final String ASYNC = "async";
   private static final String SYNC = "sync";
@@ -296,12 +299,10 @@ public class DMSTaskServiceImpl implements DMSTaskService {
         Map<String, String> eventData = new HashMap<>();
         String taskType = task.getData().getTaskType();
 
-        //        dmsObserverEventProducer.sendEvent(
-        //            ReflectionUtils.getMethod(CIDelegateTaskObserver.class, "onTaskAssigned", String.class,
-        //            String.class,
-        //                String.class, String.class, String.class),
-        //            DMSTaskServiceClassicImpl.class, delegateTask.getAccountId(), taskId, delegateId,
-        //            delegateTask.getStageId(), taskType);
+        dmsObserverEventProducer.sendEvent(ReflectionUtils.getMethod(CIDelegateTaskObserver.class, "onTaskAssigned",
+                                               String.class, String.class, String.class, String.class, String.class),
+            DMSTaskServiceImpl.class, delegateTask.getAccountId(), taskId, delegateId, delegateTask.getStageId(),
+            taskType);
       }
 
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);

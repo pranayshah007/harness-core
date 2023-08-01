@@ -160,7 +160,7 @@ public class MorphiaModule extends AbstractModule {
     morphia.map(classesCopy);
 
     morphiaConverters.forEach(
-        converter -> { morphia.getMapper().getConverters().addConverter(injector.getInstance(converter)); });
+        converter -> morphia.getMapper().getConverters().addConverter(injector.getInstance(converter)));
     return morphia;
   }
 

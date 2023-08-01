@@ -403,6 +403,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicBoolean sentFirstHeartbeat = new AtomicBoolean(false);
   private final Set<String> supportedTaskTypes = new HashSet<>();
 
+  private static Boolean useDms = false;
+
   private Client client;
   private Socket socket;
   private String migrateTo;
@@ -906,6 +908,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.info("New Task event received: " + message);
       try {
         DelegateTaskEvent delegateTaskEvent = JsonUtils.asObject(message, DelegateTaskEvent.class);
+        useDms = delegateTaskEvent.isUseDms();
         try (TaskLogContext ignore = new TaskLogContext(delegateTaskEvent.getDelegateTaskId(), OVERRIDE_ERROR)) {
           if (!(delegateTaskEvent instanceof DelegateTaskAbortEvent)) {
             dispatchDelegateTaskAsync(delegateTaskEvent);
@@ -2109,8 +2112,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
 
-        Call<DelegateTaskPackage> acquireCall =
-            delegateAgentDMSClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
+        Call<DelegateTaskPackage> acquireCall = useDms
+            ? delegateAgentDMSClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId)
+            : delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId);
 
         DelegateTaskPackage delegateTaskPackage = ManagerCallHelper.executeAcquireCallWithRetry(acquireCall,
             String.format("Failed acquiring delegate task %s by delegate %s", delegateTaskId, delegateId),

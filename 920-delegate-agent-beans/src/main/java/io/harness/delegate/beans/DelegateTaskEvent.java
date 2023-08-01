@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.google.common.base.MoreObjects;
+import lombok.Data;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "eventType", include = As.PROPERTY)
 @JsonTypeName("DelegateTaskEvent")
@@ -19,99 +19,20 @@ import com.google.common.base.MoreObjects;
   @JsonSubTypes.Type(name = "DelegateTaskEvent", value = DelegateTaskEvent.class)
   , @JsonSubTypes.Type(name = "DelegateTaskAbortEvent", value = DelegateTaskAbortEvent.class)
 })
+@Data
 public class DelegateTaskEvent {
   private String accountId;
   private String delegateTaskId;
   private boolean sync;
   private String taskType;
-
-  /**
-   * Getter for property 'accountId'.
-   *
-   * @return Value for property 'accountId'.
-   */
-  public String getAccountId() {
-    return accountId;
-  }
-
-  /**
-   * Setter for property 'accountId'.
-   *
-   * @param accountId Value to set for property 'accountId'.
-   */
-  public void setAccountId(String accountId) {
-    this.accountId = accountId;
-  }
-
-  /**
-   * Getter for property 'delegateTaskId'.
-   *
-   * @return Value for property 'delegateTaskId'.
-   */
-  public String getDelegateTaskId() {
-    return delegateTaskId;
-  }
-
-  /**
-   * Setter for property 'delegateTaskId'.
-   *
-   * @param delegateTaskId Value to set for property 'delegateTaskId'.
-   */
-  public void setDelegateTaskId(String delegateTaskId) {
-    this.delegateTaskId = delegateTaskId;
-  }
-
-  /**
-   * Getter for property 'sync'.
-   *
-   * @return Value for property 'sync'.
-   */
-  public boolean isSync() {
-    return sync;
-  }
-
-  /**
-   * Setter for property 'sync'.
-   *
-   * @param sync Value to set for property 'sync'.
-   */
-  public void setSync(boolean sync) {
-    this.sync = sync;
-  }
-
-  /**
-   * Getter for property 'taskType'.
-   *
-   * @return Value for property 'taskType'.
-   */
-  public String getTaskType() {
-    return taskType;
-  }
-
-  /**
-   * Setter for property 'accountId'.
-   *
-   * @param accountId Value to set for property 'accountId'.
-   */
-  public void setTaskType(String taskType) {
-    this.taskType = taskType;
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("delegateTaskId", delegateTaskId)
-        .add("sync", sync)
-        .add("accountId", accountId)
-        .add("taskType", taskType)
-        .toString();
-  }
+  private boolean useDms;
 
   public static final class DelegateTaskEventBuilder {
     private String accountId;
     private String delegateTaskId;
     private boolean sync;
     private String taskType;
+    private boolean useDms;
 
     private DelegateTaskEventBuilder() {}
 
@@ -139,12 +60,18 @@ public class DelegateTaskEvent {
       return this;
     }
 
+    public DelegateTaskEventBuilder withDms(Boolean useDms) {
+      this.useDms = useDms;
+      return this;
+    }
+
     public DelegateTaskEventBuilder but() {
       return aDelegateTaskEvent()
           .withAccountId(accountId)
           .withDelegateTaskId(delegateTaskId)
           .withSync(sync)
-          .withTaskType(taskType);
+          .withTaskType(taskType)
+          .withDms(useDms);
     }
 
     public DelegateTaskEvent build() {
@@ -153,6 +80,7 @@ public class DelegateTaskEvent {
       delegateTaskEvent.setDelegateTaskId(delegateTaskId);
       delegateTaskEvent.setSync(sync);
       delegateTaskEvent.setTaskType(taskType);
+      delegateTaskEvent.setUseDms(useDms);
       return delegateTaskEvent;
     }
   }

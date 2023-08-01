@@ -7,6 +7,8 @@
 
 package io.harness.stream;
 
+import static io.harness.beans.FeatureName.QUEUE_DELEGATE_TASK;
+import static io.harness.beans.FeatureName.USE_DMS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.DelegateTaskEvent.DelegateTaskEventBuilder.aDelegateTaskEvent;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -16,6 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.beans.DelegateHeartbeatResponseStreaming;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.task.DelegateLogContext;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.serializer.JsonUtils;
@@ -41,8 +44,11 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
   @Inject private DelegateService delegateService;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
 
+  @Inject private FeatureFlagService featureFlagService;
+
   @Override
   public BroadcastAction filter(String broadcasterId, AtmosphereResource r, Object originalMessage, Object message) {
+    Boolean useDms;
     AtmosphereRequest req = r.getRequest();
     String delegateId = req.getParameter("delegateId");
 
@@ -70,12 +76,15 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
 
         log.info("Broadcasting task {} to account: {} delegate: {} by {}", broadcast.getTaskId(),
             broadcast.getAccountId(), delegateId, broadcasterId);
-        return new BroadcastAction(JsonUtils.asJson(aDelegateTaskEvent()
-                                                        .withDelegateTaskId(broadcast.getTaskId())
-                                                        .withSync(!broadcast.isAsync())
-                                                        .withAccountId(broadcast.getAccountId())
-                                                        .withTaskType(broadcast.getTaskType())
-                                                        .build()));
+
+        return new BroadcastAction(
+            JsonUtils.asJson(aDelegateTaskEvent()
+                                 .withDelegateTaskId(broadcast.getTaskId())
+                                 .withSync(!broadcast.isAsync())
+                                 .withAccountId(broadcast.getAccountId())
+                                 .withTaskType(broadcast.getTaskType())
+                                 .withDms(featureFlagService.isEnabled(USE_DMS, broadcast.getAccountId()))
+                                 .build()));
       }
     }
 

@@ -8,6 +8,7 @@
 package io.harness.module;
 
 import io.harness.dms.configuration.DelegateServiceConfiguration;
+import io.harness.eventframework.EventsFrameworkModule;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
 import io.harness.service.impl.AccountDataProviderImpl;
@@ -53,8 +54,6 @@ public class DmsModule extends AbstractModule {
                         .logStreamingServiceBaseUrl(config.getLogStreamingServiceConfig().getBaseUrl())
                         .build());
     bind(DMSDataStoreService.class).to(DMSMongoDataStoreServiceImpl.class);
-    //    install(new EventsFrameworkModule(config.getEventsFrameworkConfiguration(),
-    //            configuration.isEventsFrameworkAvailableInOnPrem(),
-    //            StartupMode.DELEGATE_SERVICE.equals(startupMode)));
+    install(new EventsFrameworkModule(config.getEventsFrameworkConfiguration()));
   }
 }
