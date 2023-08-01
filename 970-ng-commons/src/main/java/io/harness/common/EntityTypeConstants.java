@@ -6,6 +6,7 @@
  */
 
 package io.harness.common;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.CodePulse;
@@ -257,4 +258,5 @@ public interface EntityTypeConstants {
   String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
   String AWS_CDK_SYNTH = "AwsCdkSynth";
   String AWS_CDK_DIFF = "AwsCdkDiff";
+  String AWS_CDK_DEPLOY = "AwsCdkDeploy";
 }

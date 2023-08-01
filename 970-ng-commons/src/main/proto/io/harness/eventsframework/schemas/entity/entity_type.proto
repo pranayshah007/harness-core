@@ -236,4 +236,5 @@ enum EntityTypeProtoEnum {
   AWS_CDK_BOOTSTRAP = 223;
   AWS_CDK_SYNTH = 224;
   AWS_CDK_DIFF = 225;
+  AWS_CDK_DEPLOY = 226;
 }

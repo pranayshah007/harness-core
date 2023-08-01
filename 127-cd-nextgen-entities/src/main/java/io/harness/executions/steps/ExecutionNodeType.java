@@ -6,6 +6,7 @@
  */
 
 package io.harness.executions.steps;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -166,7 +167,8 @@ public enum ExecutionNodeType {
   SERVERLESS_AWS_LAMBDA_PACKAGE_V2("SERVERLESS_AWS_LAMBDA_DEPLOY_V2", YamlTypes.SERVERLESS_AWS_LAMBDA_PACKAGE_V2),
   AWS_CDK_BOOTSTRAP("AWS_CDK_BOOTSTRAP", YamlTypes.AWS_CDK_BOOTSTRAP),
   AWS_CDK_SYNTH("AWS_CDK_SYNTH", YamlTypes.AWS_CDK_SYNTH),
-  AWS_CDK_DIFF("AWS_CDK_DIFF", YamlTypes.AWS_CDK_DIFF);
+  AWS_CDK_DIFF("AWS_CDK_DIFF", YamlTypes.AWS_CDK_DIFF),
+  AWS_CDK_DEPLOY("AWS_CDK_DEPLOY", YamlTypes.AWS_CDK_DEPLOY);
 
   private final String name;
   private final String yamlType;

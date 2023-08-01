@@ -1121,3 +1121,6 @@ io.harness.cdng.artifact.GcrArtifactSummary
 io.harness.cdng.provision.awscdk.AwsCdkDiffStepInfo
 io.harness.cdng.provision.awscdk.AwsCdkDiffStepNode
 io.harness.cdng.provision.awscdk.AwsCdkDiffStepParameters
+io.harness.cdng.provision.awscdk.AwsCdkDeployStepInfo
+io.harness.cdng.provision.awscdk.AwsCdkDeployStepNode
+io.harness.cdng.provision.awscdk.AwsCdkDeployStepParameters
