@@ -27,6 +27,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Set;
@@ -100,14 +101,16 @@ public class PlanServiceImplTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testDeletePlansForGivenIds() {
+  public void testUpdateTTLPlansForGivenIds() {
     Plan plan = buildAndSavePlan();
     Plan fetchPlan = planService.fetchPlan(plan.getUuid());
     assertThat(fetchPlan).isNotNull();
     assertThat(fetchPlan.getUuid()).isEqualTo(plan.getUuid());
 
-    planService.deletePlansForGivenIds(Set.of(plan.getUuid()));
-    assertThatThrownBy(() -> planService.fetchPlan(plan.getUuid())).isInstanceOf(InvalidRequestException.class);
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    planService.updateTTL(Set.of(plan.getUuid()), ttlExpiry);
+    Plan newPlanResult = planService.fetchPlan(plan.getUuid());
+    assertThat(newPlanResult.getValidUntil()).isEqualTo(ttlExpiry);
   }
 
   private Plan buildAndSavePlan() {

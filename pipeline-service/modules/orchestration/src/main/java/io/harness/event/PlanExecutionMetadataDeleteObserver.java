@@ -37,9 +37,9 @@ public class PlanExecutionMetadataDeleteObserver implements PlanExecutionDeleteO
       planIds.add(planExecution.getPlanId());
     }
 
-    // Delete all plans
-    planService.deletePlansForGivenIds(planIds);
-    // Delete all planExecutionMetadata for given planExecutionIds
-    planExecutionMetadataService.deleteMetadataForGivenPlanExecutionIds(planExecutionIds);
+    // update ttl for all plans
+    planService.updateTTL(planIds, ttlDate);
+    // Updates TTL for all planExecutionMetadata for given planExecutionIds
+    planExecutionMetadataService.updateTTL(planExecutionIds, ttlDate);
   }
 }

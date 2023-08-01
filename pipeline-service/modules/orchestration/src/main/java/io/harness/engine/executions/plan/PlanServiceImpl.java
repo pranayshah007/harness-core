@@ -17,22 +17,32 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.plan.Node;
 import io.harness.plan.NodeEntity;
 import io.harness.plan.Plan;
+import io.harness.plan.Plan.PlanKeys;
 import io.harness.plan.PlanNode;
 import io.harness.repositories.NodeEntityRepository;
 import io.harness.repositories.PlanRepository;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
+@Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanServiceImpl implements PlanService {
+  @Inject MongoTemplate mongoTemplate;
   @Inject private PlanRepository planRepository;
   @Inject private NodeEntityRepository nodeEntityRepository;
   @Inject private TransactionHelper transactionHelper;
@@ -108,12 +118,21 @@ public class PlanServiceImpl implements PlanService {
   }
 
   @Override
-  public void deletePlansForGivenIds(Set<String> planIds) {
+  public void updateTTL(Set<String> planIds, Date ttlDate) {
     if (EmptyPredicate.isEmpty(planIds)) {
       return;
     }
+
+    Criteria criteria = Criteria.where(PlanKeys.uuid).in(planIds);
+    Query query = new Query(criteria);
+    Update ops = new Update();
+    ops.set(PlanKeys.validUntil, ttlDate);
+
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
-      planRepository.deleteAllByUuidIn(planIds);
+      UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, Plan.class);
+      if (!updateResult.wasAcknowledged()) {
+        log.warn("No Plans could be marked as updated TTL for given planIds - " + planIds);
+      }
       return true;
     });
   }

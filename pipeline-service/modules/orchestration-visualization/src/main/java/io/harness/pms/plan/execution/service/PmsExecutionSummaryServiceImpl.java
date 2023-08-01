@@ -310,7 +310,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Query query = new Query(planExecutionIdCriteria);
     Update ops = new Update();
     ops.set(PlanExecutionSummaryKeys.validUntil, ttlDate);
-    pmsExecutionSummaryRepository.update(query, ops);
+    pmsExecutionSummaryRepository.multiUpdate(query, ops);
   }
 
   /**

@@ -23,6 +23,9 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -64,15 +67,16 @@ public class PlanExecutionMetadataServiceImplTest extends OrchestrationTestBase 
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testDeleteMetadataForGivenPlanExecutionIds() {
+  public void testUpdateTTLForGivenPlanExecutionIds() {
     String planExecutionId = generateUuid();
     PlanExecutionMetadata planExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(planExecutionId).build();
     planExecutionMetadataRepository.save(planExecutionMetadata);
 
-    planExecutionMetadataService.deleteMetadataForGivenPlanExecutionIds(Sets.newHashSet(planExecutionId));
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    planExecutionMetadataService.updateTTL(Sets.newHashSet(planExecutionId), ttlExpiry);
     Optional<PlanExecutionMetadata> optionalPlanExecutionMetadata =
         planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
-    assertThat(optionalPlanExecutionMetadata).isEmpty();
+    assertThat(optionalPlanExecutionMetadata.get().getValidUntil()).isEqualTo(ttlExpiry);
   }
 }

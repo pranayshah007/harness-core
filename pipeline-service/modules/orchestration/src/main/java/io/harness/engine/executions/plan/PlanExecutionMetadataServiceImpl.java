@@ -7,8 +7,6 @@
 
 package io.harness.engine.executions.plan;
 
-import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
-
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
@@ -23,9 +21,10 @@ import io.harness.repositories.PlanExecutionMetadataRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
-import net.jodah.failsafe.Failsafe;
+
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -50,15 +49,15 @@ public class PlanExecutionMetadataServiceImpl implements PlanExecutionMetadataSe
   }
 
   @Override
-  public void deleteMetadataForGivenPlanExecutionIds(Set<String> planExecutionIds) {
+  public void updateTTL(Set<String> planExecutionIds, Date ttlDate) {
     if (EmptyPredicate.isEmpty(planExecutionIds)) {
       return;
     }
-    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
-      // Uses - id index
-      planExecutionMetadataRepository.deleteAllByPlanExecutionIdIn(planExecutionIds);
-      return true;
-    });
+
+    Criteria criteria = where(PlanExecutionMetadataKeys.planExecutionId).in(planExecutionIds);
+    Update update = new Update();
+    update.set(PlanExecutionMetadataKeys.validUntil, ttlDate);
+    planExecutionMetadataRepository.multiUpdatePlanExecution(criteria, update);
   }
 
   public String getNotesForExecution(String planExecutionId) {
@@ -79,7 +78,7 @@ public class PlanExecutionMetadataServiceImpl implements PlanExecutionMetadataSe
     update.set(PlanExecutionMetadataKeys.notes, notes);
 
     Optional<PlanExecutionMetadata> planExecutionMetadata =
-        Optional.ofNullable(planExecutionMetadataRepository.updateExecutionNotes(criteria, update));
+        Optional.ofNullable(planExecutionMetadataRepository.updatePlanExecution(criteria, update));
     if (!planExecutionMetadata.isPresent()) {
       throw new InvalidRequestException(format("Execution with id [%s] is not present or deleted", planExecutionId));
     }

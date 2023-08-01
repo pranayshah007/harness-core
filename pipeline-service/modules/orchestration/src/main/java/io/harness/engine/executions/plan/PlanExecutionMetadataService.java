@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.RetryStagesMetadata;
 
+import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 
@@ -21,11 +22,11 @@ public interface PlanExecutionMetadataService {
   PlanExecutionMetadata save(PlanExecutionMetadata planExecutionMetadata);
 
   /**
-   * Delete all PlanExecutionMetadata for given planExecutionIds
-   * Uses - planExecutionId_idx index
+   * Updates TTL for all PlanExecutionMetadata for given planExecutionIds
+   * Uses - planExecutionId_idx
    * @param planExecutionIds
    */
-  void deleteMetadataForGivenPlanExecutionIds(Set<String> planExecutionIds);
+  void updateTTL(Set<String> planExecutionIds, Date ttlDate);
 
   String getNotesForExecution(String planExecutionId);
 

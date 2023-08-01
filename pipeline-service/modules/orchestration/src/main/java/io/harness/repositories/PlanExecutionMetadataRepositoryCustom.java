@@ -17,6 +17,7 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PlanExecutionMetadataRepositoryCustom {
-  PlanExecutionMetadata updateExecutionNotes(Criteria criteria, Update update);
+  PlanExecutionMetadata updatePlanExecution(Criteria criteria, Update update);
+  void multiUpdatePlanExecution(Criteria criteria, Update update);
   PlanExecutionMetadata getWithFieldsIncluded(String planExecutionId, Set<String> fieldsToInclude);
 }

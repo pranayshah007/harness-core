@@ -50,7 +50,7 @@ public class PlanExecutionMetadataDeleteObserverTest extends CategoryTest {
     planExecutionMetadataDeleteObserver.onPlanExecutionsExpiryUpdate(
         Collections.emptyList(), Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant()));
 
-    verify(planService, times(1)).deletePlansForGivenIds(any());
-    verify(planExecutionMetadataService, times(1)).deleteMetadataForGivenPlanExecutionIds(any());
+    verify(planService, times(1)).updateTTL(any(), any());
+    verify(planExecutionMetadataService, times(1)).updateTTL(any(), any());
   }
 }
