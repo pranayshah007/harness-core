@@ -831,6 +831,33 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     assertThat(repositoryResponseDTOList.size()).isEqualTo(0);
   }
 
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testValidateRepo() {
+    ScmConnector scmConnector = GithubConnectorDTO.builder()
+                                    .connectionType(GitConnectionType.REPO)
+                                    .apiAccess(GithubApiAccessDTO.builder().build())
+                                    .url("https://github.com/senjucanon2/test-repo")
+                                    .build();
+    Scope scope = Scope.builder()
+                      .accountIdentifier(accountIdentifier)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(projectIdentifier)
+                      .build();
+
+    doReturn(scmConnector)
+        .when(gitSyncConnectorHelper)
+        .getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
+    doNothing().when(gitRepoAllowlistHelper).validateRepo(scope, scmConnector, repoName);
+
+    scmFacilitatorService.validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
+
+    verify(gitSyncConnectorHelper, times(1))
+        .getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
+    verify(gitRepoAllowlistHelper, times(1)).validateRepo(scope, scmConnector, repoName);
+  }
+
   private Scope getDefaultScope() {
     return Scope.builder()
         .accountIdentifier(accountIdentifier)
