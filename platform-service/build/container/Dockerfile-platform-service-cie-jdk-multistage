@@ -19,7 +19,7 @@ RUN chmod +x \
     /app/build/build_dist.sh \
     /app/scripts/bazel/generate_credentials.sh \
     && /app/scripts/bazel/generate_credentials.sh \
-    && /app/build/feature_build.sh platform-service $GCP_KEY \
+    && /app/build/feature_build.sh $GCP_KEY platform-service \
     && /app/build/build_jar.sh \
     && /app/build/build_dist.sh
 
