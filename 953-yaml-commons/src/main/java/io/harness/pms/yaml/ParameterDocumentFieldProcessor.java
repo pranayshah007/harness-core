@@ -136,9 +136,8 @@ public class ParameterDocumentFieldProcessor {
           }
         } else if (fieldClass.equals(Boolean.class)) {
           if (finalValue.getClass().equals(String.class)) {
-            finalValue = BooleanUtils.toBooleanObject((String) finalValue) == null
-                ? finalValue
-                : BooleanUtils.toBooleanObject((String) finalValue);
+            Object booleanValue = BooleanUtils.toBooleanObject((String) finalValue);
+            finalValue = booleanValue == null ? finalValue : booleanValue;
           }
         }
       }
