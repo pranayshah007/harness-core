@@ -441,7 +441,10 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		return nil, err
 	}
 
-	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
+	branchesContent, response, err := client.Git.ListBranchesV2(ctx, request.GetSlug(), scm.BranchListOptions{
+		SearchTerm:      getBranchFilterParams(request),
+		PageListOptions: scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())},
+	})
 	if err != nil {
 		// this is an error from the git provider, e.g. authentication.
 		log.Errorw("ListBranchesWithDefault failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -624,7 +627,10 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 		if isGithubApp {
 			repoList, response, err = client.Repositories.(*github.RepositoryService).ListByInstallation(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 		} else {
-			repoList, response, err = client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
+			repoList, response, err = client.Repositories.ListV2(ctx, scm.RepoListOptions{
+				RepoSearchTerm: getRepoFilterParams(request),
+				ListOptions: scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())},
+			})
 		}
 		if err != nil {
 			log.Errorw("GetUserRepos failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -814,5 +820,27 @@ func isGithubApp(p *pb.Provider) (out bool) {
 		return true
 	} else {
 		return false
+	}
+}
+
+func getRepoFilterParams(request *pb.GetUserReposRequest) (out scm.RepoSearchTerm){
+	if nil == request.GetRepoFilterParams() {
+		return scm.RepoSearchTerm{
+			RepoName: "",
+			User:     "",
+		}
+	} else {
+		return scm.RepoSearchTerm{
+			RepoName: request.GetRepoFilterParams().GetRepoName(),
+			User:     request.GetRepoFilterParams().GetUserName(),
+		}
+	}
+}
+
+func getBranchFilterParams(request *pb.ListBranchesWithDefaultRequest) (string){
+	if nil == request.GetBranchFilterParams() {
+		return ""
+	} else {
+		return request.GetBranchFilterParams().GetBranchName()
 	}
 }
