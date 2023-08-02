@@ -143,7 +143,7 @@ public class TerraformTaskNGParameters
           ((RemoteTerraformBackendConfigFileInfo) backendConfigFileInfo).getFilestoreFetchFilesConfig();
       capabilities.addAll(getCapabilities(maskingEvaluator, gitFetchFilesConfig, fileStoreFetchConfig));
     }
-    if (encryptionConfig != null) {
+    if (encryptionConfig != null && !isEncryptDecryptPlanForHarnessSMOnManager()) {
       capabilities.addAll(
           EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilityForSecretManager(encryptionConfig, null));
     }
