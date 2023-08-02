@@ -382,6 +382,7 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .scriptType(scriptType)
         .workingDirectory(shellScriptHelperService.getWorkingDirectory(
             workingDirectory, scriptType, shellScriptStepParameters.onDelegate.getValue()))
+        .includeInfraSelectors(shellScriptStepParameters.includeInfraSelectors.getValue())
         .build();
   }
 
@@ -407,6 +408,7 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
         .scriptType(scriptType)
         .workingDirectory(shellScriptHelperService.getWorkingDirectory(
             workingDirectory, scriptType, shellScriptStepParameters.onDelegate.getValue()))
+        .includeInfraSelectors(shellScriptStepParameters.includeInfraSelectors.getValue())
         .build();
   }
 

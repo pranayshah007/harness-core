@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Value
 @Builder
@@ -47,11 +48,13 @@ public class ShellScriptTaskParametersNG
   SSHKeySpecDTO sshKeySpecDTO;
   List<EncryptedDataDetail> encryptionDetails;
   String host;
+  Boolean includeInfraSelectors;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
-    if (script.contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH) && k8sInfraDelegateConfig != null) {
+    if ((script.contains(K8sConstants.HARNESS_KUBE_CONFIG_PATH) || BooleanUtils.isTrue(includeInfraSelectors))
+        && k8sInfraDelegateConfig != null) {
       if (k8sInfraDelegateConfig instanceof DirectK8sInfraDelegateConfig) {
         capabilities.addAll(K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
             ((DirectK8sInfraDelegateConfig) k8sInfraDelegateConfig).getKubernetesClusterConfigDTO(), maskingEvaluator,
