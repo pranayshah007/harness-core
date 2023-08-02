@@ -10,7 +10,7 @@ package io.harness.batch.processing.tasklet;
 import io.harness.aws.AwsClientImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.config.BatchMainConfig;
-import io.harness.batch.processing.tasklet.util.ClickHouseConstants;
+import io.harness.ccm.clickHouse.ClickHouseConstants;
 import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.configuration.DeployMode;

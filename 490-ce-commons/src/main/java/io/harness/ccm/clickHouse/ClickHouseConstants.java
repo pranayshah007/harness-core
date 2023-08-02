@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.batch.processing.tasklet.util;
+package io.harness.ccm.clickHouse;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
