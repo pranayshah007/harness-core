@@ -7,6 +7,9 @@
 
 package io.harness.ccm.views.helper;
 
+import io.harness.NGCommonEntityConstants;
+import io.harness.beans.EmbeddedUser;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +37,10 @@ public final class ExecutionEnforcementDetails {
   @Schema(description = "isEnabled") Boolean isEnabled;
   @Schema(description = "executionTimezone") String executionTimezone;
   @Schema(description = "cloudProvider") RuleCloudProviderType cloudProvider;
+  @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
+  @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
+  @Schema(description = "created by") private EmbeddedUser createdBy;
+  @Schema(description = "updated by") private EmbeddedUser lastUpdatedBy;
 
   public ExecutionEnforcementDetails toDTO() {
     return ExecutionEnforcementDetails.builder()

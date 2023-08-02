@@ -179,6 +179,10 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
       executionEnforcementDetails.setIsDryRun(itr.getIsDryRun());
       executionEnforcementDetails.setExecutionTimezone(itr.getExecutionTimezone());
       executionEnforcementDetails.setCloudProvider(itr.getCloudProvider());
+      executionEnforcementDetails.setCreatedAt(itr.getCreatedAt());
+      executionEnforcementDetails.setCreatedBy(itr.getCreatedBy());
+      executionEnforcementDetails.setLastUpdatedAt(itr.getLastUpdatedAt());
+      executionEnforcementDetails.setLastUpdatedBy(itr.getLastUpdatedBy());
       log.info("executionEnforcementDetails: {}", executionEnforcementDetails);
       enforcementIds.put(itr.getUuid(), executionEnforcementDetails);
       executionDetailList.add(enforcementIds);
