@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.PRAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -66,7 +67,7 @@ public class ServiceGuardLogClusterStateExecutorTest extends CategoryTest {
 
     FieldUtils.writeField(serviceGuardLogClusterStateExecutor, "logClusterService", logClusterService, true);
 
-    when(logClusterService.scheduleL1ClusteringTasks(any())).thenReturn(Arrays.asList(generateUuid()));
+    when(logClusterService.scheduleL1ClusteringTasks(any(), anyBoolean())).thenReturn(Arrays.asList(generateUuid()));
   }
 
   @Test
@@ -85,7 +86,7 @@ public class ServiceGuardLogClusterStateExecutorTest extends CategoryTest {
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
   public void testExecute_noTasksCreated() {
-    when(logClusterService.scheduleL1ClusteringTasks(any())).thenReturn(null);
+    when(logClusterService.scheduleL1ClusteringTasks(any(), anyBoolean())).thenReturn(null);
     serviceGuardLogClusterState =
         (ServiceGuardLogClusterState) serviceGuardLogClusterStateExecutor.execute(serviceGuardLogClusterState);
 
