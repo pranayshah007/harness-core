@@ -9,11 +9,13 @@ package io.harness.plancreator.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
@@ -111,5 +113,16 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
     assertThat(planForParentNode.getFacilitatorObtainments()).hasSize(1);
     assertThat(planForParentNode.getFacilitatorObtainments().get(0).getType().getType()).isEqualTo("CHILD");
     assertThat(planForParentNode.isSkipExpressionChain()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetAdviserObtainmentFromMetaData() {
+    List<AdviserObtainment> adviserObtainmentList =
+        stepGroupPMSPlanCreator.getAdviserObtainmentFromMetaData(kryoSerializer, stepGroupYamlField, false);
+    assertThat(adviserObtainmentList).hasSize(2);
+    assertThat(adviserObtainmentList.get(0).getType().toString()).isEqualTo("type: \"RETRY_STEPGROUP\"\n");
+    assertThat(adviserObtainmentList.get(1).getType().toString()).isEqualTo("type: \"NEXT_STEP\"\n");
   }
 }

@@ -37,6 +37,16 @@ pipeline:
                           headers: []
                           outputVariables: []
                         timeout: 10s
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: RetryStepGroup
+                          spec:
+                            retryCount: 2
+                            retryIntervals:
+                              - 5s
               - parallel:
                   - step:
                       type: Http
