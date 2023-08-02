@@ -16,6 +16,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
+import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
+import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.HashMap;
