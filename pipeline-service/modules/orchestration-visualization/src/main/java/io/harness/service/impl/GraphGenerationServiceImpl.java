@@ -166,6 +166,10 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     for (OrchestrationEventLog orchestrationEventLog : unprocessedEventLogs) {
       String nodeExecutionId = orchestrationEventLog.getNodeExecutionId();
       OrchestrationEventType orchestrationEventType = orchestrationEventLog.getOrchestrationEventType();
+      // lastUpdatedAt is updated initially as this was not getting updating in case we have multiple event log of same
+      // nodeExecution Id. If you check the default case in the below switch case, we continue if a particular node
+      // execution is already processed without updating the lastUpdatedAt. For more details, you can refer CDS-75792
+      lastUpdatedAt = orchestrationEventLog.getCreatedAt();
       switch (orchestrationEventType) {
         case PLAN_EXECUTION_STATUS_UPDATE:
           orchestrationGraph = planExecutionStatusUpdateEventHandler.handleEvent(planExecutionId, orchestrationGraph);
@@ -196,7 +200,6 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           orchestrationGraph =
               graphStatusUpdateHelper.handleEventV2(planExecutionId, nodeExecution, orchestrationGraph);
       }
-      lastUpdatedAt = orchestrationEventLog.getCreatedAt();
     }
 
     cachePartialOrchestrationGraph(orchestrationGraph.withLastUpdatedAt(lastUpdatedAt), lastUpdatedAt);
