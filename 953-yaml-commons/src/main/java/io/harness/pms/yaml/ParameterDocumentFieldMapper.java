@@ -108,8 +108,8 @@ public class ParameterDocumentFieldMapper {
         }
       }
 
-      if (cls.getSimpleName().equals("Boolean")
-          && parameterFieldValueWrapper.getValue().getClass().getSimpleName().equals("String")) {
+      if ("Boolean".equals(cls.getSimpleName())
+          && "String".equals(parameterFieldValueWrapper.getValue().getClass().getSimpleName())) {
         throw new ParameterFieldCastException(String.format(
             "The field should be of type [%s] but got: [%s] with value [%s]", cls.getSimpleName(),
             parameterFieldValueWrapper.getValue().getClass().getSimpleName(), parameterFieldValueWrapper.getValue()));
