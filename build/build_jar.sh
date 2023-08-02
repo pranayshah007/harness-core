@@ -5,7 +5,6 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 set -ex
-echo "SERVICE_NAME is: $SERVICE_NAME"
 
 if [ "${PLATFORM}" == "jenkins" ]; then
   bazelrc=--bazelrc=bazelrc.remote
