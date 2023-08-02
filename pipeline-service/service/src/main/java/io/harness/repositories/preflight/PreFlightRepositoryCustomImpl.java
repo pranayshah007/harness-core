@@ -57,10 +57,11 @@ public class PreFlightRepositoryCustomImpl implements PreFlightRepositoryCustom 
   }
 
   @Override
-  public void deleteAllPreflightForGivenParams(Query query) {
-    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed deleting PreflightEntity; attempt: {}",
-        "[Failed]: Failed deleting PreflightEntity; attempt: {}");
-    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, PreFlightEntity.class));
+  public void multiUpdate(Criteria criteria, Update update) {
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed updating PreflightEntity; attempt: {}",
+        "[Failed]: Failed updating PreflightEntity; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.updateMulti(query, update, PreFlightEntity.class));
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

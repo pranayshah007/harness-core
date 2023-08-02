@@ -24,7 +24,6 @@ import com.google.inject.Singleton;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
-
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 

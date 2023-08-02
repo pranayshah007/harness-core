@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PreflightService {
@@ -51,15 +50,4 @@ public interface PreflightService {
   String startPreflightCheck(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier, String inputSetPipelineYaml)
       throws IOException;
-
-  /**
-   * Deletes all preflight entity for given pipeline
-   * Uses - accountId_orgId_projectId_pipelineId_idx
-   * @param accountId
-   * @param orgIdentifier
-   * @param projectIdentifier
-   * @param pipelineIdentifier
-   */
-  void deleteAllPreflightEntityForGivenPipeline(@NotNull String accountId, @NotNull String orgIdentifier,
-      @NotNull String projectIdentifier, @NotNull String pipelineIdentifier);
 }
