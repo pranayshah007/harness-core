@@ -10,12 +10,15 @@ package io.harness.cvng.analysis.services.impl;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVConstants;
@@ -25,13 +28,14 @@ import io.harness.cvng.analysis.entities.ClusteredLog;
 import io.harness.cvng.analysis.entities.ClusteredLog.ClusteredLogKeys;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
+import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.entities.LogClusterLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
-import io.harness.cvng.analysis.services.api.LogClusterService;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.LogRecord;
 import io.harness.cvng.core.services.api.CVConfigService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
@@ -63,20 +67,23 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
   @Mock LearningEngineTaskService fakeLearningEngineTaskService;
   @Inject LearningEngineTaskService learningEngineTaskService;
   @Inject HPersistence hPersistence;
-  @Inject LogClusterService logClusterService;
+  @Inject LogClusterServiceImpl logClusterService;
   @Inject CVConfigService cvConfigService;
   @Inject VerificationTaskService verificationTaskService;
   @Inject VerificationJobInstanceService verificationJobInstanceService;
+  @Mock FeatureFlagService featureFlagService;
   private String verificationJobIdentifier;
   private Instant now;
   private String projectIdentifier;
   private String orgIdentifier;
   private BuilderFactory builderFactory;
+  private String accountId;
 
   @Before
-  public void setup() {
+  public void setup() throws IllegalAccessException {
     now = Instant.parse("2020-07-27T10:44:11.000Z");
     builderFactory = BuilderFactory.builder().clock(Clock.fixed(now, ZoneOffset.UTC)).build();
+    accountId = builderFactory.getContext().getAccountId();
     CVConfig cvConfig = createCVConfig();
     cvConfigService.save(cvConfig);
     verificationJobIdentifier = generateUuid();
@@ -86,6 +93,10 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
     cvConfigId = cvConfig.getUuid();
     projectIdentifier = generateUuid();
     orgIdentifier = generateUuid();
+    when(featureFlagService.isFeatureFlagEnabled(
+             accountId, FeatureName.CV_USE_SEPARATE_LE_TASK_TYPE_FOR_LOG_CLUSTERING.name()))
+        .thenReturn(false);
+    FieldUtils.writeField(logClusterService, "featureFlagService", featureFlagService, true);
   }
 
   @Test
@@ -96,6 +107,7 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
     Instant end = start.plus(5, ChronoUnit.MINUTES);
     createLogDataRecords(5, start, end);
     AnalysisInput input = AnalysisInput.builder()
+                              .accountId(accountId)
                               .verificationTaskId(serviceGuardVerificationTaskId)
                               .startTime(start)
                               .endTime(end)
@@ -118,6 +130,7 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
     List<ClusteredLog> logRecords = createClusteredLogRecords(serviceGuardVerificationTaskId, 5, start, end);
     hPersistence.save(logRecords);
     AnalysisInput input = AnalysisInput.builder()
+                              .accountId(accountId)
                               .verificationTaskId(serviceGuardVerificationTaskId)
                               .startTime(start)
                               .endTime(end)
@@ -137,13 +150,16 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
   public void testScheduleDeploymentL2ClusteringTask_emptyClusteredLogs() {
     Instant start = Instant.now().minus(10, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MINUTES);
     Instant end = start.plus(5, ChronoUnit.MINUTES);
-    String accountId = generateUuid();
     VerificationJobInstance verificationJobInstance = newVerificationJobInstanceDTO();
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
     String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
         accountId, cvConfigId, verificationJobInstanceId, APP_DYNAMICS);
-    AnalysisInput input =
-        AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(start).endTime(end).build();
+    AnalysisInput input = AnalysisInput.builder()
+                              .accountId(accountId)
+                              .verificationTaskId(verificationTaskId)
+                              .startTime(start)
+                              .endTime(end)
+                              .build();
     logClusterService.scheduleDeploymentL2ClusteringTask(input);
     List<LearningEngineTask> tasks = hPersistence.createQuery(LearningEngineTask.class, excludeAuthority)
                                          .filter(LearningEngineTaskKeys.verificationTaskId, verificationTaskId)
@@ -157,7 +173,6 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
   public void testScheduleDeploymentL2ClusteringTask_validClustedLogsCanary() {
     Instant start = now.truncatedTo(ChronoUnit.MINUTES);
     Instant end = start.plus(15, ChronoUnit.MINUTES);
-    String accountId = generateUuid();
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()
             .resolvedJob(builderFactory.canaryVerificationJobBuilder().build())
@@ -170,8 +185,12 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
 
     List<ClusteredLog> logRecords = createClusteredLogRecords(verificationTaskId, 5, start, end);
     hPersistence.save(logRecords);
-    AnalysisInput input =
-        AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(start).endTime(end).build();
+    AnalysisInput input = AnalysisInput.builder()
+                              .accountId(accountId)
+                              .verificationTaskId(verificationTaskId)
+                              .startTime(start)
+                              .endTime(end)
+                              .build();
     logClusterService.scheduleDeploymentL2ClusteringTask(input);
     List<LearningEngineTask> tasks = hPersistence.createQuery(LearningEngineTask.class, excludeAuthority)
                                          .filter(LearningEngineTaskKeys.verificationTaskId, verificationTaskId)
@@ -190,7 +209,6 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
   public void testScheduleDeploymentL2ClusteringTask_validClustedLogsTest() {
     Instant start = now.truncatedTo(ChronoUnit.MINUTES);
     Instant end = start.plus(15, ChronoUnit.MINUTES);
-    String accountId = generateUuid();
     VerificationJob verificationJob = builderFactory.testVerificationJobBuilder().build();
     VerificationJobInstance verificationJobInstance = newVerificationJobInstanceDTO();
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
@@ -202,8 +220,12 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
 
     List<ClusteredLog> logRecords = createClusteredLogRecords(verificationTaskId, 5, start, end);
     hPersistence.save(logRecords);
-    AnalysisInput input =
-        AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(start).endTime(end).build();
+    AnalysisInput input = AnalysisInput.builder()
+                              .accountId(accountId)
+                              .verificationTaskId(verificationTaskId)
+                              .startTime(start)
+                              .endTime(end)
+                              .build();
     logClusterService.scheduleDeploymentL2ClusteringTask(input);
     List<LearningEngineTask> tasks = hPersistence.createQuery(LearningEngineTask.class, excludeAuthority)
                                          .filter(LearningEngineTaskKeys.verificationTaskId, verificationTaskId)
@@ -220,6 +242,7 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
     Instant start = Instant.now().minus(10, ChronoUnit.MINUTES).truncatedTo(ChronoUnit.MINUTES);
     Instant end = start.plus(5, ChronoUnit.MINUTES);
     AnalysisInput input = AnalysisInput.builder()
+                              .accountId(accountId)
                               .verificationTaskId(serviceGuardVerificationTaskId)
                               .startTime(start)
                               .endTime(end)
@@ -285,7 +308,7 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
     List<LogClusterDTO> clusterDTOList = buildLogClusterDtos(5, start, end);
     LearningEngineTask taskToSave = TimeSeriesLearningEngineTask.builder().build();
     taskToSave.setUuid(generateUuid());
-    taskToSave.setAccountId(generateUuid());
+    taskToSave.setAccountId(accountId);
     taskToSave.setVerificationTaskId(serviceGuardVerificationTaskId);
     taskToSave.setAnalysisStartTime(Instant.parse("2020-07-27T10:45:00.000Z"));
     taskToSave.setAnalysisEndTime(Instant.parse("2020-07-27T10:50:00.000Z"));
@@ -332,6 +355,58 @@ public class LogClusterServiceImplTest extends CvNextGenTestBase {
 
     assertThat(logClusters).isNotNull();
     assertThat(logClusters.size()).isEqualTo(40);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testCreateLogClusterLearningEngineTask_notDeploymentTask_FFIsDisabled() {
+    when(featureFlagService.isFeatureFlagEnabled(
+             accountId, FeatureName.CV_USE_SEPARATE_LE_TASK_TYPE_FOR_LOG_CLUSTERING.name()))
+        .thenReturn(false);
+    LogClusterLearningEngineTask logClusterLearningEngineTask = logClusterService.createLogClusterLearningEngineTask(
+        accountId, "verificationTaskId", Instant.now(), Instant.now(), LogClusterLevel.L2, "testDataUrl", false);
+    assertThat(logClusterLearningEngineTask.getType()).isEqualTo(LearningEngineTaskType.LOG_CLUSTER);
+    assertThat(logClusterLearningEngineTask.getAnalysisType()).isEqualTo(LearningEngineTaskType.LOG_CLUSTER);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testCreateLogClusterLearningEngineTask_notDeploymentTask_FFIsEnabled() {
+    when(featureFlagService.isFeatureFlagEnabled(
+             accountId, FeatureName.CV_USE_SEPARATE_LE_TASK_TYPE_FOR_LOG_CLUSTERING.name()))
+        .thenReturn(true);
+    LogClusterLearningEngineTask logClusterLearningEngineTask = logClusterService.createLogClusterLearningEngineTask(
+        accountId, "verificationTaskId", Instant.now(), Instant.now(), LogClusterLevel.L2, "testDataUrl", false);
+    assertThat(logClusterLearningEngineTask.getType()).isEqualTo(LearningEngineTaskType.LOG_CLUSTER);
+    assertThat(logClusterLearningEngineTask.getAnalysisType()).isEqualTo(LearningEngineTaskType.LOG_CLUSTER);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testCreateLogClusterLearningEngineTask_isDeploymentTask_FFIsEnabled() {
+    when(featureFlagService.isFeatureFlagEnabled(
+             accountId, FeatureName.CV_USE_SEPARATE_LE_TASK_TYPE_FOR_LOG_CLUSTERING.name()))
+        .thenReturn(true);
+    LogClusterLearningEngineTask logClusterLearningEngineTask = logClusterService.createLogClusterLearningEngineTask(
+        accountId, "verificationTaskId", Instant.now(), Instant.now(), LogClusterLevel.L2, "testDataUrl", true);
+    assertThat(logClusterLearningEngineTask.getType()).isEqualTo(LearningEngineTaskType.CV_LOG_CLUSTER);
+    assertThat(logClusterLearningEngineTask.getAnalysisType()).isEqualTo(LearningEngineTaskType.CV_LOG_CLUSTER);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testCreateLogClusterLearningEngineTask_isDeploymentTask_FFIsDisabled() {
+    when(featureFlagService.isFeatureFlagEnabled(
+             accountId, FeatureName.CV_USE_SEPARATE_LE_TASK_TYPE_FOR_LOG_CLUSTERING.name()))
+        .thenReturn(false);
+    LogClusterLearningEngineTask logClusterLearningEngineTask = logClusterService.createLogClusterLearningEngineTask(
+        accountId, "verificationTaskId", Instant.now(), Instant.now(), LogClusterLevel.L2, "testDataUrl", true);
+    assertThat(logClusterLearningEngineTask.getType()).isEqualTo(LearningEngineTaskType.LOG_CLUSTER);
+    assertThat(logClusterLearningEngineTask.getAnalysisType()).isEqualTo(LearningEngineTaskType.LOG_CLUSTER);
   }
 
   private List<LogClusterDTO> buildLogClusterDtos(int numHosts, Instant startTime, Instant endTime) {

@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import io.harness.beans.FeatureName;
 import io.harness.cvng.analysis.beans.LogClusterDTO;
 import io.harness.cvng.analysis.beans.LogClusterLevel;
 import io.harness.cvng.analysis.entities.ClusteredLog;
@@ -27,6 +28,7 @@ import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.LogClusterService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.LogRecord;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.LogRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -37,6 +39,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Progress
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.persistence.HPersistence;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import java.net.URISyntaxException;
@@ -60,6 +63,7 @@ public class LogClusterServiceImpl implements LogClusterService {
   @Inject private LogRecordService logRecordService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public List<String> scheduleL1ClusteringTasks(AnalysisInput input, boolean isTaskForDeployment) {
@@ -104,8 +108,8 @@ public class LogClusterServiceImpl implements LogClusterService {
   private Optional<LogClusterLearningEngineTask> buildServiceGuardClusterTasksForLogL2Clustering(AnalysisInput input) {
     String testDataUrl = buildTestDataUrlForLogClustering(
         input.getVerificationTaskId(), LogClusterLevel.L2, input.getStartTime(), input.getEndTime());
-    return Optional.of(createLogClusterLearningEngineTask(input.getVerificationTaskId(), input.getStartTime(),
-        input.getEndTime(), LogClusterLevel.L2, testDataUrl, false));
+    return Optional.of(createLogClusterLearningEngineTask(input.getAccountId(), input.getVerificationTaskId(),
+        input.getStartTime(), input.getEndTime(), LogClusterLevel.L2, testDataUrl, false));
   }
 
   private Optional<LogClusterLearningEngineTask> buildDeploymentClusterTasksForLogL2Clustering(AnalysisInput input) {
@@ -126,8 +130,8 @@ public class LogClusterServiceImpl implements LogClusterService {
       testDataUrl = buildTestDataUrlForLogClustering(baselineVerificationTaskId.orElse(null),
           input.getVerificationTaskId(), verificationJobInstance.getStartTime(), input.getEndTime());
     }
-    return Optional.of(createLogClusterLearningEngineTask(input.getVerificationTaskId(), input.getStartTime(),
-        input.getEndTime(), LogClusterLevel.L2, testDataUrl, true));
+    return Optional.of(createLogClusterLearningEngineTask(input.getAccountId(), input.getVerificationTaskId(),
+        input.getStartTime(), input.getEndTime(), LogClusterLevel.L2, testDataUrl, true));
   }
 
   private List<LogRecord> getLogRecordsForMinute(String cvConfigId, Instant timestamp) {
@@ -140,13 +144,16 @@ public class LogClusterServiceImpl implements LogClusterService {
     if (logRecords != null) {
       String testDataUrl = buildTestDataUrlForLogClustering(
           verificationTaskId, clusterLevel, timestamp, timestamp.plus(Duration.ofMinutes(1)));
-      return createLogClusterLearningEngineTask(verificationTaskId, timestamp, timestamp.plus(1, ChronoUnit.MINUTES),
-          clusterLevel, testDataUrl, isTaskForDeployment);
+      return createLogClusterLearningEngineTask(logRecords.get(0).getAccountId(), verificationTaskId, timestamp,
+          timestamp.plus(1, ChronoUnit.MINUTES), clusterLevel, testDataUrl, isTaskForDeployment);
     }
     return null;
   }
-  private LogClusterLearningEngineTask createLogClusterLearningEngineTask(String verificationTaskId, Instant startTime,
-      Instant endTime, LogClusterLevel clusterLevel, @Nullable String testDataUrl, boolean isTaskForDeployment) {
+
+  @VisibleForTesting
+  LogClusterLearningEngineTask createLogClusterLearningEngineTask(String accountId, String verificationTaskId,
+      Instant startTime, Instant endTime, LogClusterLevel clusterLevel, @Nullable String testDataUrl,
+      boolean isTaskForDeployment) {
     String taskId = generateUuid();
     LogClusterLearningEngineTask task =
         LogClusterLearningEngineTask.builder().clusterLevel(clusterLevel).testDataUrl(testDataUrl).build();
@@ -155,18 +162,22 @@ public class LogClusterServiceImpl implements LogClusterService {
     task.setAnalysisEndTime(endTime);
     task.setAnalysisEndEpochMinute(instantToEpochMinute(endTime));
     task.setUuid(taskId);
-    task.setAnalysisType(LearningEngineTaskType.LOG_CLUSTER);
     task.setFailureUrl(learningEngineTaskService.createFailureUrl(taskId));
     task.setAnalysisSaveUrl(buildClusterSaveUrl(verificationTaskId, startTime, taskId, clusterLevel));
-    if (isTaskForDeployment) {
-      // TODO: Once LE with CV_LOG_CLUSTER is deployed, change the task type from LOG_CLUSTER to CV_LOG_CLUSTER
-      task.setAnalysisType(LearningEngineTaskType.LOG_CLUSTER);
-      task.setType(LearningEngineTaskType.LOG_CLUSTER);
-    } else {
-      task.setAnalysisType(LearningEngineTaskType.LOG_CLUSTER);
-      task.setType(LearningEngineTaskType.LOG_CLUSTER);
-    }
+    LearningEngineTaskType learningEngineTaskType = getLearningEngineTaskType(accountId, isTaskForDeployment);
+    task.setAnalysisType(learningEngineTaskType);
+    task.setType(learningEngineTaskType);
     return task;
+  }
+
+  private LearningEngineTaskType getLearningEngineTaskType(String accountId, boolean isTaskForDeployment) {
+    if (isTaskForDeployment
+        && featureFlagService.isFeatureFlagEnabled(
+            accountId, FeatureName.CV_USE_SEPARATE_LE_TASK_TYPE_FOR_LOG_CLUSTERING.name())) {
+      return LearningEngineTaskType.CV_LOG_CLUSTER;
+    } else {
+      return LearningEngineTaskType.LOG_CLUSTER;
+    }
   }
 
   private String buildTestDataUrlForLogClustering(
