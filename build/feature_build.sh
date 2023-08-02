@@ -7,6 +7,8 @@
 set -ex
 export GCP_KEY="$1"
 export SERVICE_NAME="$2"
+echo "GCP_KEY is: $GCP_KEY"
+echo "SERVICE_NAME is: $SERVICE_NAME"
 # GCP_KEY, HARNESS_WILD_CERT, KEYSTORE_PASS, JDK, VERSION, PURPOSE, BUILD are externally provided
 # to this script through environment variables.
 
