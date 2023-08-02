@@ -31,6 +31,8 @@ import io.harness.rule.OwnerRule;
 
 import com.google.inject.Inject;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -55,7 +57,6 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
     builderFactory = BuilderFactory.getDefault();
     metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
-    // FieldUtils.writeField(licenseUsageInterface, "monitoredServiceService", monitoredServiceService, true);
   }
 
   @Test
@@ -102,7 +103,8 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
     Page<ActiveServiceMonitoredDTO> result = licenseUsageInterface.listLicenseUsage(
         builderFactory.getContext().getAccountId(), ModuleType.SRM, 10l, usageRequestParams);
     assertThat(result.getTotalElements()).isEqualTo(2);
-    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = result.toList();
+    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = new ArrayList<>(result.toList());
+    activeServiceMonitoredDTOList.sort(Comparator.comparing(ActiveServiceMonitoredDTO::getIdentifier));
     assertThat(activeServiceMonitoredDTOList.get(0).getIdentifier()).isEqualTo("service1");
     assertThat(activeServiceMonitoredDTOList.get(0).getMonitoredServiceCount()).isEqualTo(1);
     assertThat(activeServiceMonitoredDTOList.get(1).getIdentifier()).isEqualTo("service2");
@@ -134,7 +136,8 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
     Page<ActiveServiceMonitoredDTO> result = licenseUsageInterface.listLicenseUsage(
         builderFactory.getContext().getAccountId(), ModuleType.SRM, 10l, usageRequestParams);
     assertThat(result.getTotalElements()).isEqualTo(1);
-    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = result.toList();
+    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = new ArrayList<>(result.toList());
+    activeServiceMonitoredDTOList.sort(Comparator.comparing(ActiveServiceMonitoredDTO::getIdentifier));
     assertThat(activeServiceMonitoredDTOList.get(0).getIdentifier()).isEqualTo("service2");
     assertThat(activeServiceMonitoredDTOList.get(0).getMonitoredServiceCount()).isEqualTo(2);
   }
@@ -171,7 +174,8 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
     Page<ActiveServiceMonitoredDTO> result = licenseUsageInterface.listLicenseUsage(
         builderFactory.getContext().getAccountId(), ModuleType.SRM, 10l, usageRequestParams);
     assertThat(result.getTotalElements()).isEqualTo(1);
-    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = result.toList();
+    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = new ArrayList<>(result.toList());
+    activeServiceMonitoredDTOList.sort(Comparator.comparing(ActiveServiceMonitoredDTO::getIdentifier));
     assertThat(activeServiceMonitoredDTOList.get(0).getIdentifier()).isEqualTo("service2");
     assertThat(activeServiceMonitoredDTOList.get(0).getMonitoredServiceCount()).isEqualTo(1);
   }
@@ -208,7 +212,8 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
     Page<ActiveServiceMonitoredDTO> result = licenseUsageInterface.listLicenseUsage(
         builderFactory.getContext().getAccountId(), ModuleType.SRM, 10l, usageRequestParams);
     assertThat(result.getTotalElements()).isEqualTo(1);
-    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = result.toList();
+    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = new ArrayList<>(result.toList());
+    activeServiceMonitoredDTOList.sort(Comparator.comparing(ActiveServiceMonitoredDTO::getIdentifier));
     assertThat(activeServiceMonitoredDTOList.get(0).getIdentifier()).isEqualTo("service2");
     assertThat(activeServiceMonitoredDTOList.get(0).getMonitoredServiceCount()).isEqualTo(1);
   }
