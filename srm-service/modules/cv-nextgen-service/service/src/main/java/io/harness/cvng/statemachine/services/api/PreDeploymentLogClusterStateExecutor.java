@@ -22,7 +22,7 @@ public class PreDeploymentLogClusterStateExecutor extends LogClusterStateExecuto
   protected List<String> scheduleAnalysis(AnalysisInput analysisInput, LogClusterState analysisState) {
     Preconditions.checkState(analysisState.getClusterLevel() == LogClusterLevel.L1,
         "PreDeployment Log cluster state only does L1 clustering");
-    return logClusterService.scheduleL1ClusteringTasks(analysisInput);
+    return logClusterService.scheduleL1ClusteringTasks(analysisInput, true);
   }
 
   @Override
