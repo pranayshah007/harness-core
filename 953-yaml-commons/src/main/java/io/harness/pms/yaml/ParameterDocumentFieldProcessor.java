@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.yaml;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +23,7 @@ import io.harness.pms.yaml.validation.RuntimeValidatorResponse;
 
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ClassUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
@@ -134,7 +136,7 @@ public class ParameterDocumentFieldProcessor {
           }
         } else if (fieldClass.equals(Boolean.class)) {
           if (finalValue.getClass().equals(String.class)) {
-            finalValue = Boolean.valueOf((String) finalValue);
+            finalValue = BooleanUtils.toBoolean((String) finalValue, "true", "false");
           }
         }
       }
