@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.accesscontrol.commons.outbox;
+package io.harness.accesscontrol.common.outbox;
 
 import static io.harness.accesscontrol.roles.events.RoleCreateEvent.ROLE_CREATE_EVENT;
 import static io.harness.accesscontrol.roles.events.RoleDeleteEvent.ROLE_DELETE_EVENT;

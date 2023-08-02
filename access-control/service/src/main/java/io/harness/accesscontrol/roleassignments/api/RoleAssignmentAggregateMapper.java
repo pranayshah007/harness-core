@@ -8,7 +8,7 @@
 package io.harness.accesscontrol.roleassignments.api;
 
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
-import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromParams;
+import static io.harness.accesscontrol.scopes.core.ScopeMapper.fromParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.principals.PrincipalDTOV2;
@@ -21,7 +21,7 @@ import io.harness.accesscontrol.scopes.ScopeResponseDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
+import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;

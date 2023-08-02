@@ -13,7 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
+import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.aggregator.consumers.AccessControlChangeConsumer;
 import io.harness.aggregator.models.UserGroupUpdateEventData;
 import io.harness.annotations.dev.OwnedBy;

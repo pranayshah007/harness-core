@@ -13,9 +13,9 @@ import static io.harness.accesscontrol.AccessControlPermissions.VIEW_PROJECT_PER
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ACCOUNT;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ORGANIZATION;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.PROJECT;
+import static io.harness.accesscontrol.scopes.core.HarnessScopeLevel.ACCOUNT;
+import static io.harness.accesscontrol.scopes.core.HarnessScopeLevel.ORGANIZATION;
+import static io.harness.accesscontrol.scopes.core.HarnessScopeLevel.PROJECT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.principals.PrincipalType;
@@ -97,7 +97,8 @@ public class AccessControlApplicationRule implements MethodRule, InjectorRuleMix
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
     modules.add(new AccessControlPersistenceTestModule());
-    modules.add(AccessControlCoreModule.getInstance());
+    modules.add(AccessControlCoreModule.getInstance("", null, false,
+            null, false, null, "", null, ""));
 
     modules.add(new AbstractModule() {
       @Override

@@ -16,7 +16,7 @@ import io.harness.accesscontrol.roles.Role;
 import io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
+import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Inject;

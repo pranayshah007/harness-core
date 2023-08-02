@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.accesscontrol.resourcegroups.api.ResourceGroupDTO;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
+import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;

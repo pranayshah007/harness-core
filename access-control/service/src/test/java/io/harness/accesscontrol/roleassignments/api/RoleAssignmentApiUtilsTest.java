@@ -7,7 +7,7 @@
 
 package io.harness.accesscontrol.roleassignments.api;
 
-import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromParams;
+import static io.harness.accesscontrol.scopes.core.ScopeMapper.fromParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.MEENAKSHI;

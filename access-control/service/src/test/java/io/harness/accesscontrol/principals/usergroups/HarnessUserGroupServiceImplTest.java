@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.scopes.core.Scope;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
+import io.harness.accesscontrol.scopes.core.HarnessScopeLevel;
 import io.harness.aggregator.consumers.AccessControlChangeConsumer;
 import io.harness.aggregator.consumers.UserGroupChangeConsumer;
 import io.harness.aggregator.models.UserGroupUpdateEventData;

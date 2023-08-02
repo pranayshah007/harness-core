@@ -5,15 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.accesscontrol.commons.outbox;
+package io.harness.accesscontrol.common.outbox;
 
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentCreateEvent.ROLE_ASSIGNMENT_CREATE_EVENT;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentDeleteEvent.ROLE_ASSIGNMENT_DELETE_EVENT;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentUpdateEvent.ROLE_ASSIGNMENT_UPDATE_EVENT;
-import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromDTO;
-import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toDTO;
-import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toParams;
-import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toParentScopeParams;
+import static io.harness.accesscontrol.scopes.core.ScopeMapper.fromDTO;
+import static io.harness.accesscontrol.scopes.core.ScopeMapper.toDTO;
+import static io.harness.accesscontrol.scopes.core.ScopeMapper.toParams;
+import static io.harness.accesscontrol.scopes.core.ScopeMapper.toParentScopeParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;

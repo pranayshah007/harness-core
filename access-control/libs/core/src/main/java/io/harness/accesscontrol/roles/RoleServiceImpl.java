@@ -10,7 +10,9 @@ package io.harness.accesscontrol.roles;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_CUSTOM;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_MANAGED;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 
+import com.google.inject.name.Named;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.permissions.Permission;
 import io.harness.accesscontrol.permissions.PermissionFilter;
@@ -28,6 +30,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.outbox.api.OutboxService;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.common.collect.Sets;
@@ -55,6 +58,8 @@ public class RoleServiceImpl implements RoleService {
   private final ScopeService scopeService;
   private final RoleAssignmentService roleAssignmentService;
   private final TransactionTemplate transactionTemplate;
+  private final TransactionTemplate outboxTransactionTemplate;
+  private final OutboxService outboxService;
   private static final RetryPolicy<Object> removeRoleTransactionPolicy = PersistenceUtils.getRetryPolicy(
       "[Retrying]: Failed to remove role assignments for the role and remove the role; attempt: {}",
       "[Failed]: Failed to remove role assignments for the role and remove the role; attempt: {}");
@@ -68,12 +73,15 @@ public class RoleServiceImpl implements RoleService {
 
   @Inject
   public RoleServiceImpl(RoleDao roleDao, PermissionService permissionService, ScopeService scopeService,
-      RoleAssignmentService roleAssignmentService, TransactionTemplate transactionTemplate) {
+                         RoleAssignmentService roleAssignmentService, TransactionTemplate transactionTemplate,
+                         @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate outboxTransactionTemplate, OutboxService outboxService) {
     this.roleDao = roleDao;
     this.permissionService = permissionService;
     this.scopeService = scopeService;
     this.roleAssignmentService = roleAssignmentService;
     this.transactionTemplate = transactionTemplate;
+    this.outboxTransactionTemplate = outboxTransactionTemplate;
+    this.outboxService = outboxService;
   }
 
   @Override

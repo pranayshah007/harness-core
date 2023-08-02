@@ -15,7 +15,7 @@ import io.harness.accesscontrol.ResourceInfo;
 import io.harness.accesscontrol.acl.ResourceAttributeProvider;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
+import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.environment.remote.EnvironmentResourceClient;
 import io.harness.remote.client.NGRestUtils;

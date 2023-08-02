@@ -7,9 +7,9 @@
 
 package io.harness.accesscontrol.scopes.harness.events;
 
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ACCOUNT;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ORGANIZATION;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.PROJECT;
+import static io.harness.accesscontrol.scopes.core.HarnessScopeLevel.ACCOUNT;
+import static io.harness.accesscontrol.scopes.core.HarnessScopeLevel.ORGANIZATION;
+import static io.harness.accesscontrol.scopes.core.HarnessScopeLevel.PROJECT;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 
 import static org.apache.commons.lang3.StringUtils.stripToNull;
@@ -18,7 +18,7 @@ import io.harness.accesscontrol.commons.events.EventHandler;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeService;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
+import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.consumer.Message;

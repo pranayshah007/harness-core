@@ -27,7 +27,7 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.ScopeFilterType;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
+import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.utils.CryptoUtils;
 
