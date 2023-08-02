@@ -18,6 +18,7 @@ import io.harness.ccm.views.helper.EnforcementCountRequest;
 import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
 import io.harness.ccm.views.helper.ExecutionEnforcementDetails;
+import io.harness.ccm.views.helper.LinkedEnforcements;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleSetService;
@@ -118,26 +119,26 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
     return enforcementCount;
   }
 
-  public Map<String, List<String>> getRuleCount(String accountId, List<String> ruleIds) {
-    Map<String, List<String>> rulesIds = new HashMap<>();
+  public Map<String, List<LinkedEnforcements>> getRuleCount(String accountId, List<String> ruleIds) {
+    Map<String, List<LinkedEnforcements>> rulesIds = new HashMap<>();
     List<RuleEnforcement> ruleEnforcements = ruleEnforcementDAO.ruleEnforcement(accountId, ruleIds);
     for (RuleEnforcement it : ruleEnforcements) {
       for (String itr : it.getRuleIds()) {
         rulesIds.computeIfAbsent(itr, k -> new ArrayList<>());
-        rulesIds.get(itr).add(it.getUuid());
+        rulesIds.get(itr).add(LinkedEnforcements.builder().uuid(it.getUuid()).name(it.getName()).build());
       }
     }
     log.info("{}", rulesIds);
     return rulesIds;
   }
 
-  public Map<String, List<String>> getRuleSetCount(String accountId, List<String> ruleSetIds) {
-    Map<String, List<String>> ruleSetId = new HashMap<>();
+  public Map<String, List<LinkedEnforcements>> getRuleSetCount(String accountId, List<String> ruleSetIds) {
+    Map<String, List<LinkedEnforcements>> ruleSetId = new HashMap<>();
     List<RuleEnforcement> ruleEnforcements = ruleEnforcementDAO.ruleSetEnforcement(accountId, ruleSetIds);
     for (RuleEnforcement it : ruleEnforcements) {
       for (String itr : it.getRuleSetIDs()) {
         ruleSetId.computeIfAbsent(itr, k -> new ArrayList<>());
-        ruleSetId.get(itr).add(it.getUuid());
+        ruleSetId.get(itr).add(LinkedEnforcements.builder().uuid(it.getUuid()).name(it.getName()).build());
       }
     }
     return ruleSetId;
