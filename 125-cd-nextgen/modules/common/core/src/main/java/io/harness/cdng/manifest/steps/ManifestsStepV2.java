@@ -115,6 +115,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -299,6 +300,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     List<ManifestConfigWrapper> manifests;
     Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMapV1 = new HashMap<>();
     Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
+    Map<String, String> manifestFileLocation = new HashMap<>();
     List<ManifestConfigWrapper> svcManifests = new ArrayList<>();
     String primaryManifestId = StringUtils.EMPTY;
 
@@ -333,7 +335,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
       }
       finalSvcManifestsMapV1.replace(SERVICE,
           filterServiceManifest(finalSvcManifestsMapV1.get(SERVICE), primaryManifestId, isMultipleManifestEnabled));
-      manifests = aggregateManifestsFromAllLocations(finalSvcManifestsMapV1);
+      manifests = aggregateManifestsFromAllLocations(finalSvcManifestsMapV1, manifestFileLocation);
     }
 
     List<ManifestAttributes> manifestAttributes = manifests.stream()
@@ -366,7 +368,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
     SvcEnvV2ManifestValidator.validateManifestList(
         ngManifestsMetadataSweepingOutput.getServiceDefinitionType(), manifestAttributes);
-    validateConnectors(ambiance, manifestAttributes);
+    validateConnectors(ambiance, manifestAttributes, manifestFileLocation);
 
     checkForAccessOrThrow(ambiance, manifestAttributes);
 
@@ -413,18 +415,29 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
         || finalSvcManifestsMap.values().stream().noneMatch(EmptyPredicate::isNotEmpty);
   }
 
+  private void createManifestList(List<ManifestConfigWrapper> manifests,
+      List<ManifestConfigWrapper> finalSvcManifestsList, Map<String, String> manifestFileLocation, String location) {
+    for (ManifestConfigWrapper manifestConfigWrapper : finalSvcManifestsList) {
+      manifests.add(manifestConfigWrapper);
+      manifestFileLocation.put(manifestConfigWrapper.getManifest().getIdentifier(), location);
+    }
+  }
+
   @NotNull
   private List<ManifestConfigWrapper> aggregateManifestsFromAllLocations(
-      @NonNull Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
+      @NonNull Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap,
+      Map<String, String> manifestFileLocation) {
     List<ManifestConfigWrapper> manifests = new ArrayList<>();
     if (isNotEmpty(finalSvcManifestsMap.get(SERVICE))) {
-      manifests.addAll(finalSvcManifestsMap.get(SERVICE));
+      createManifestList(manifests, finalSvcManifestsMap.get(SERVICE), manifestFileLocation, SERVICE);
     }
     if (isNotEmpty(finalSvcManifestsMap.get(ENVIRONMENT_GLOBAL_OVERRIDES))) {
-      manifests.addAll(finalSvcManifestsMap.get(ENVIRONMENT_GLOBAL_OVERRIDES));
+      createManifestList(manifests, finalSvcManifestsMap.get(ENVIRONMENT_GLOBAL_OVERRIDES), manifestFileLocation,
+          ENVIRONMENT_GLOBAL_OVERRIDES);
     }
     if (isNotEmpty(finalSvcManifestsMap.get(SERVICE_OVERRIDES))) {
-      manifests.addAll(finalSvcManifestsMap.get(SERVICE_OVERRIDES));
+      createManifestList(
+          manifests, finalSvcManifestsMap.get(SERVICE_OVERRIDES), manifestFileLocation, SERVICE_OVERRIDES);
     }
 
     overrideHelmRepoConnectorIfHelmChartExists(finalSvcManifestsMap, manifests);
@@ -521,7 +534,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
                                      : NgManifestsMetadataSweepingOutput.builder().build();
   }
 
-  private void validateConnectors(Ambiance ambiance, List<ManifestAttributes> manifestAttributes) {
+  private void validateConnectors(
+      Ambiance ambiance, List<ManifestAttributes> manifestAttributes, Map<String, String> manifestFileLocation) {
     // In some cases (eg. in k8s manifests) we're skipping auto evaluation, in this case we can skip connector
     // validation for now. It will be done when all expression will be resolved
     final List<ManifestAttributes> manifestsToConsider =
@@ -535,20 +549,31 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
             .filter(m -> ParameterField.isNull(m.getStoreConfig().getConnectorReference()))
             .collect(Collectors.toList());
     if (EmptyPredicate.isNotEmpty(missingConnectorManifests)) {
-      throw new InvalidRequestException("Connector ref field not present in manifests with identifiers "
-          + missingConnectorManifests.stream().map(ManifestAttributes::getIdentifier).collect(Collectors.joining(",")));
+      List<String> identifiersList =
+          missingConnectorManifests.stream().map(ManifestAttributes::getIdentifier).collect(Collectors.toList());
+      List<String> fileLocationList = new ArrayList<>();
+      for (String identifier : identifiersList) {
+        fileLocationList.add(manifestFileLocation.get(identifier));
+      }
+      throw new InvalidRequestException(
+          String.format("Connector ref field not present in manifests with identifiers [%s] in [%s]",
+              String.join(",", identifiersList), String.join(",", fileLocationList)));
     }
 
-    final Set<String> connectorIdentifierRefs = manifestsToConsider.stream()
-                                                    .map(ManifestAttributes::getStoreConfig)
-                                                    .map(StoreConfig::getConnectorReference)
-                                                    .map(ParameterField::getValue)
-                                                    .collect(Collectors.toSet());
+    Map<String, Set<String>> connectorIdentifierRefs =
+        manifestsToConsider.stream().collect(Collectors.toMap(manifestConfig
+            -> manifestConfig.getStoreConfig().getConnectorReference().getValue(),
+            manifestConfig
+            -> new HashSet<>(Collections.singletonList(manifestConfig.getIdentifier())),
+            (existingSet, newSet) -> {
+              existingSet.addAll(newSet);
+              return existingSet;
+            }));
 
     final Set<String> connectorsNotFound = new HashSet<>();
     final Set<String> connectorsNotValid = new HashSet<>();
     final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    for (String connectorIdentifierRef : connectorIdentifierRefs) {
+    for (String connectorIdentifierRef : connectorIdentifierRefs.keySet()) {
       IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(connectorIdentifierRef,
           ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
       Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
@@ -562,14 +587,24 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
       }
     }
     if (isNotEmpty(connectorsNotFound)) {
-      throw new InvalidRequestException(
-          String.format("Connectors with identifier(s) [%s] not found", String.join(",", connectorsNotFound)));
+      List<String> fileLocationList = new ArrayList<>();
+      for (String connectorIdentifier : connectorsNotFound) {
+        fileLocationList.add("[" + connectorIdentifierRefs.get(connectorIdentifier).stream().map(manifestFileLocation::get)
+            .collect(Collectors.joining(",")) + "]");
+      }
+      throw new InvalidRequestException(String.format("Connectors with identifier(s) [%s] not found in [%s]",
+          String.join(",", connectorsNotFound), String.join(",", fileLocationList)));
     }
 
     if (isNotEmpty(connectorsNotValid)) {
+      List<String> fileLocationList = new ArrayList<>();
+      for (String connectorIdentifier : connectorsNotFound) {
+        fileLocationList.add("[" + connectorIdentifierRefs.get(connectorIdentifier).stream().map(manifestFileLocation::get)
+            .collect(Collectors.joining(",")) + "]");
+      }
       throw new InvalidRequestException(
-          format("Connectors with identifiers [%s] is(are) invalid. Please fix the connector YAMLs.",
-              String.join(",", connectorsNotValid)));
+          format("Connectors with identifiers [%s] in [%s] is(are) invalid. Please fix the connector YAMLs.",
+              String.join(",", connectorsNotValid), String.join(",", fileLocationList)));
     }
   }
 
