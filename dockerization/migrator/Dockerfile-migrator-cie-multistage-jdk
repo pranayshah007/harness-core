@@ -9,6 +9,8 @@ FROM us.gcr.io/platform-205701/cie-agent-harness-core-jdk11:latest as builder
 
 RUN mkdir -p /app
 COPY . /app
+ARG GCP_KEY
+ENV SERVICE_NAME="migrator"
 WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
@@ -18,7 +20,7 @@ RUN chmod +x \
  /app/build/build_dist.sh  \
  /app/scripts/bazel/generate_credentials.sh \
  && /app/scripts/bazel/generate_credentials.sh \
- && /app/build/feature_build.sh migrator $GCP_KEY \
+ && /app/build/feature_build.sh $GCP_KEY \
  && /app/build/build_dist.sh
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
