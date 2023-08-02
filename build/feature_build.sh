@@ -39,7 +39,7 @@ yum install zlib-devel -y
 chmod +x scripts/bazel/UpdateVersionInfoyaml.sh
 chmod +x build/build_jar.sh
 
-#build/build_jar.sh
+build/build_jar.sh
 
 echo "INFO: list the jars built"
 find . -name "*.jar"
