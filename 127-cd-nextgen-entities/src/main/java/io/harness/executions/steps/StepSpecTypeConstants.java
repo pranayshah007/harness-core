@@ -6,6 +6,7 @@
  */
 
 package io.harness.executions.steps;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.CodePulse;
@@ -145,4 +146,5 @@ public interface StepSpecTypeConstants {
   String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
   String AWS_CDK_SYNTH = "AwsCdkSynth";
   String AWS_CDK_DIFF = "AwsCdkDiff";
+  String AWS_CDK_DEPLOY = "AwsCdkDeploy";
 }

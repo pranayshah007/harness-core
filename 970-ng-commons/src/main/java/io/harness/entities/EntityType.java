@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -635,7 +636,10 @@ public enum EntityType {
   AWS_CDK_SYNTH(
       ModuleType.CD, EntityTypeConstants.AWS_CDK_SYNTH, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_SYNTH),
   @JsonProperty(EntityTypeConstants.AWS_CDK_DIFF)
-  AWS_CDK_DIFF(ModuleType.CD, EntityTypeConstants.AWS_CDK_DIFF, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DIFF);
+  AWS_CDK_DIFF(ModuleType.CD, EntityTypeConstants.AWS_CDK_DIFF, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DIFF),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_DEPLOY)
+  AWS_CDK_DEPLOY(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DEPLOY);
 
   private final ModuleType moduleType;
   String yamlName;

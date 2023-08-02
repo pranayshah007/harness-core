@@ -34,6 +34,7 @@ import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.AckRequest;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
+import io.harness.logging.AutoLogContext;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -102,8 +103,10 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Status status = event.getStatus();
     ciRatelimitHandlerExecutor.submit(() -> { updateDailyBuildCount(level, status, serviceName, accountId); });
     executorService.submit(() -> {
-      sendGitStatus(level, ambiance, status, event, accountId);
-      sendCleanupRequest(level, ambiance, status, accountId);
+      try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+        sendGitStatus(level, ambiance, status, event, accountId);
+        sendCleanupRequest(level, ambiance, status, accountId);
+      }
     });
   }
 

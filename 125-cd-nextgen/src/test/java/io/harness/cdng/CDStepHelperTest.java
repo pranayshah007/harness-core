@@ -1294,7 +1294,7 @@ public class CDStepHelperTest extends CategoryTest {
 
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
 
-    ScmConnector scmConnector = cdStepHelper.getScmConnector(githubConnectorDTO, "accountId");
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(githubConnectorDTO, "accountId", null);
 
     assertThat(scmConnector).isInstanceOf(GithubConnectorDTO.class);
   }

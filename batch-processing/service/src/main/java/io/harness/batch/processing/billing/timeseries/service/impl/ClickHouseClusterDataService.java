@@ -7,14 +7,14 @@
 
 package io.harness.batch.processing.billing.timeseries.service.impl;
 
-import static io.harness.batch.processing.tasklet.util.ClickHouseConstants.GET_CLUSTER_DATA_ENTRIES;
+import static io.harness.ccm.clickHouse.ClickHouseConstants.GET_CLUSTER_DATA_ENTRIES;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.avro.ClusterBillingData;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.entities.ClusterDataDetails;
-import io.harness.batch.processing.tasklet.util.ClickHouseConstants;
+import io.harness.ccm.clickHouse.ClickHouseConstants;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;

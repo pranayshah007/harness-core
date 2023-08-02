@@ -12,6 +12,7 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.aws.asg.AsgBlueGreenPrepareRollbackCommandTaskHandler.VERSION_DELIMITER;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -22,8 +23,11 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.AsgConfigurationManifestHandler;
@@ -31,6 +35,7 @@ import io.harness.aws.asg.manifest.AsgLaunchTemplateManifestHandler;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
+import io.harness.aws.asg.manifest.request.AsgInstanceCapacity;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
@@ -60,12 +65,14 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
@@ -108,18 +115,18 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
 
-      asgSdkManager.info("Starting Blue Green Deployment");
-
-      AutoScalingGroupContainer stageAutoScalingGroupContainer =
-          executeBGDeploy(asgSdkManager, asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList,
-              isFirstDeployment, awsInternalConfig, region, useAlreadyRunningInstances);
-
       String asgNameWithoutSuffix = asgName.substring(0, asgName.length() - 3);
       String asgNameSuffix = asgName.substring(asgName.length() - 1);
       String prodAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 1;
       if (asgNameSuffix.equalsIgnoreCase(String.valueOf(1))) {
         prodAsgName = asgNameWithoutSuffix + VERSION_DELIMITER + 2;
       }
+
+      asgSdkManager.info("Starting Blue Green Deployment");
+
+      AutoScalingGroupContainer stageAutoScalingGroupContainer =
+          executeBGDeploy(asgSdkManager, asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList,
+              isFirstDeployment, awsInternalConfig, region, useAlreadyRunningInstances, prodAsgName);
 
       AutoScalingGroupContainer prodAutoScalingGroupContainer = null;
       if (!isFirstDeployment) {
@@ -150,7 +157,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
   private AutoScalingGroupContainer executeBGDeploy(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, String asgName, String amiImageId,
       List<String> targetGroupArnList, boolean isFirstDeployment, AwsInternalConfig awsInternalConfig, String region,
-      boolean useAlreadyRunningInstances) {
+      boolean useAlreadyRunningInstances, String prodAsgName) {
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
@@ -168,7 +175,8 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     Map<String, Object> asgLaunchTemplateOverrideProperties =
         Collections.singletonMap(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
 
-    Map<String, Object> asgConfigurationOverrideProperties = Collections.singletonMap(
+    Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>();
+    asgConfigurationOverrideProperties.put(
         AsgConfigurationManifestHandler.OverrideProperties.targetGroupARNs, targetGroupArnList);
 
     // Chain factory code to handle each manifest one by one in a chain
@@ -189,6 +197,8 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
                     .awsInternalConfig(awsInternalConfig)
                     .region(region)
                     .useAlreadyRunningInstances(useAlreadyRunningInstances)
+                    .alreadyRunningInstanceCapacity(getRunningInstanceCapacity(
+                        asgSdkManager, useAlreadyRunningInstances, isFirstDeployment, prodAsgName))
                     .build())
             .addHandler(
                 AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())
@@ -204,5 +214,20 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     asgSdkManager.info("Set tag %s=%s for asg %s", AsgSdkManager.BG_VERSION, bgTagValue, asgName);
 
     return asgTaskHelper.mapToAutoScalingGroupContainer(autoScalingGroup);
+  }
+
+  AsgInstanceCapacity getRunningInstanceCapacity(
+      AsgSdkManager asgSdkManager, boolean useAlreadyRunningInstances, boolean isFirstDeployment, String prodAsgName) {
+    if (useAlreadyRunningInstances && !isFirstDeployment && isNotEmpty(prodAsgName)) {
+      AutoScalingGroup prodAutoScalingGroup = asgSdkManager.getASG(prodAsgName);
+      if (prodAutoScalingGroup != null) {
+        return AsgInstanceCapacity.builder()
+            .minCapacity(prodAutoScalingGroup.getMinSize())
+            .desiredCapacity(prodAutoScalingGroup.getDesiredCapacity())
+            .maxCapacity(prodAutoScalingGroup.getMaxSize())
+            .build();
+      }
+    }
+    return AsgInstanceCapacity.builder().build();
   }
 }

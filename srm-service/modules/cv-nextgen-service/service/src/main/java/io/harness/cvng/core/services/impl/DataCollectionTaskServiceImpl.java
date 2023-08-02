@@ -251,6 +251,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       }
       if (dataCollectionTask.shouldQueueAnalysis()) {
         orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                               .accountId(dataCollectionTask.getAccountId())
                                                .verificationTaskId(dataCollectionTask.getVerificationTaskId())
                                                .startTime(dataCollectionTask.getStartTime())
                                                .endTime(dataCollectionTask.getEndTime())

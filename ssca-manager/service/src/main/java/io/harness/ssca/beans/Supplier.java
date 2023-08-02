@@ -11,8 +11,10 @@ import io.harness.ssca.enforcement.executors.mongo.MongoOperators;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMEntityKeys;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import org.bson.Document;
@@ -35,11 +37,10 @@ public class Supplier {
           new Document(NormalizedSBOMEntityKeys.packageOriginatorName.toLowerCase(), new Document(regexPattern));
       return new Document(MongoOperators.MONGO_AND, Arrays.asList(filter, nameFilter));
     } else {
-      Map<String, Object> regexPattern = new HashMap<>();
-      regexPattern.put(MongoOperators.MONGO_REGEX, supplier);
-      regexPattern.put(MongoOperators.MONGO_REGEX_OPTIONS, 'i');
-      Document filter =
-          new Document(NormalizedSBOMEntityKeys.packageOriginatorName.toLowerCase(), new Document(regexPattern));
+      Pattern regex = Pattern.compile(supplier, Pattern.CASE_INSENSITIVE);
+      Document filter = new Document(NormalizedSBOMEntityKeys.packageOriginatorName.toLowerCase(),
+          new Document(
+              MongoOperators.MONGO_NOT, new Document(MongoOperators.MONGO_IN, Collections.singletonList(regex))));
       return new Document(MongoOperators.MONGO_AND, Arrays.asList(filter, nameFilter));
     }
   }

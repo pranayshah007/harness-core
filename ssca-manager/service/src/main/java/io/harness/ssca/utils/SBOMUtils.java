@@ -14,6 +14,7 @@ import io.harness.ssca.beans.SpdxDTO;
 import io.harness.ssca.normalize.SbomFormat;
 
 import com.google.gson.Gson;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.bouncycastle.util.Strings;
@@ -90,5 +91,20 @@ public class SBOMUtils {
     } else {
       throw new InvalidArgumentsException(String.format("Invalid format: %s", sbomDTO.getType()));
     }
+  }
+
+  public static List<String> processExpression(String expression) {
+    expression = expression.replaceAll("[(]", "( ");
+    expression = expression.replaceAll("[)]", " )");
+
+    String[] tokens = expression.split(" ");
+    List<String> licenses = new ArrayList<>();
+    for (String token : tokens) {
+      if (!token.equals("(") && !token.equals(")") && !token.equals("AND") && !token.equals("OR")
+          && !token.equals("WITH")) {
+        licenses.add(token);
+      }
+    }
+    return licenses;
   }
 }

@@ -30,6 +30,7 @@ connectors {"name": "nextTokenLookupIteration", "background": true} {"nextTokenL
 connectors {"name": "nextTokenRenewIteration", "background": true} {"nextTokenRenewIteration": 1}
 connectors {"name": "type_nextTokenLookupIteration", "background": true} {"type": 1, "nextTokenLookupIteration": 1}
 connectors {"name": "type_nextTokenRenewIteration", "background": true} {"type": 1, "nextTokenRenewIteration": 1}
+credits {"name": "creditStatus_creditExpiryCheckIteration_expiryTime", "background": true} {"creditStatus": 1, "creditExpiryCheckIteration": 1, "expiryTime": 1}
 credits {"name": "creditStatus_creditsSendToSegmentIteration", "background": true} {"creditStatus": 1, "creditsSendToSegmentIteration": 1}
 delayQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 delayQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
@@ -117,7 +118,7 @@ invites {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"
 ipAllowlist {"name": "accountId_allowedSourceType_index", "background": true} {"accountIdentifier": 1, "allowedSourceType": 1}
 ipAllowlist {"name": "accountId_identifier_unique_index", "unique": true} {"accountIdentifier": 1, "identifier": 1}
 mockRoleAssignments {"name": "uniqueMockRoleAssignment", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "roleAssignment.roleIdentifier": 1, "roleAssignment.resourceGroupIdentifier": 1, "roleAssignment.resourceGroupIdentifier.identifier": 1, "roleAssignment.resourceGroupIdentifier.type": 1}
-moduleLicenses {"name": "accountIdentifier_moduleLicense_query_index", "background": true} {"accountIdentifier": 1}
+moduleLicenses {"name": "moduleType_status_nextIterations", "background": true} {"moduleType": 1, "status": 1, "nextIterations": 1}
 moduleVersionInfo {"name": "moduleName_1", "unique": true} {"moduleName": 1}
 ngApiKeys {"name": "list_keys_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "parentIdentifier": 1}
 ngApiKeys {"name": "unique_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "parentIdentifier": 1, "apiKeyType": 1}

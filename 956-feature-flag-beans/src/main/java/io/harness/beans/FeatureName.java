@@ -6,6 +6,7 @@
  */
 
 package io.harness.beans;
+
 import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
@@ -322,6 +323,8 @@ public enum FeatureName {
       "Displays the control node and test node reg filter option in Verify step", HarnessTeam.CV),
   CV_UI_DISPLAY_SHOULD_USE_NODES_FROM_CD_CHECKBOX(
       "Displays the should use nodes from CD checkbox in Verify step", HarnessTeam.CV),
+  CV_USE_SEPARATE_LE_TASK_TYPE_FOR_LOG_CLUSTERING(
+      "When enabled, CV log clustering task type will be CV_LOG_CLUSTER, else it will be LOG_CLUSTER", HarnessTeam.CV),
   CV_DEMO,
   CV_FAIL_ON_EMPTY_NODES,
   CV_HOST_SAMPLING,
@@ -710,8 +713,6 @@ public enum FeatureName {
       HarnessTeam.SPG),
   SPG_SETTINGS_INFINITY_SCROLL_FIX("Fixes infinte scroll used with infinite scroll.", HarnessTeam.SPG),
   SPG_SIDENAV_COLLAPSE("FF for enabling collapse and expand of side nav", HarnessTeam.SPG),
-  SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE(
-      "To silent ignore org.modelmapper.MappingException inside state machine executor", HarnessTeam.SPG),
   SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG(
       "Will fire the artifact and manifest triggers for all the versions in the polling response instead of the latest only",
       HarnessTeam.SPG),
@@ -849,7 +850,9 @@ public enum FeatureName {
   CDS_GITHUB_PACKAGES("Used for SSH/WinRm copy and download Github packages artifacts", HarnessTeam.CDP),
   CDS_HELM_SEND_TASK_PROGRESS_NG(
       "For Helm tasks we will be sending task progress event via log streaming client which will be received and handled by handleProgress handler in the ng-manager step class",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  CDS_QUEUE_SERVICE_FOR_TRIGGERS(
+      "When this flag is enabled, triggers will be processed using queue service instead of mongo iterators", PIPELINE);
   // keep-sorted end
 
   @Deprecated

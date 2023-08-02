@@ -12,10 +12,6 @@ import static io.harness.k8s.model.HarnessLabelValues.colorBlue;
 import static io.harness.k8s.model.HarnessLabelValues.colorGreen;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.perpetualtask.PerpetualTaskState.TASK_ASSIGNED;
-import static io.harness.perpetualtask.PerpetualTaskState.TASK_INVALID;
-import static io.harness.perpetualtask.PerpetualTaskType.CONTAINER_INSTANCE_SYNC;
-import static io.harness.perpetualtask.PerpetualTaskType.PDC_INSTANCE_SYNC;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
@@ -90,7 +86,6 @@ import io.harness.k8s.model.K8sContainer;
 import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskService;
-import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -2487,30 +2482,6 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
         createContainerSyncResponseWith("release-name", "default", "controller", "instance-1", "instance-2");
 
     assertSavedAndDeletedInstances(emptyList(), syncResponse, asList("instance-1", "instance-2"), emptyList());
-  }
-
-  @Test
-  @Owner(developers = NAMAN_TALAYCHA)
-  @Category(UnitTests.class)
-  public void testCleanupInvalidV1PerpetualTask() {
-    List<PerpetualTaskRecord> perpetualTaskRecordList = List.of(PerpetualTaskRecord.builder()
-                                                                    .uuid("perpetualTaskId1")
-                                                                    .perpetualTaskType(CONTAINER_INSTANCE_SYNC)
-                                                                    .state(TASK_INVALID)
-                                                                    .build(),
-        PerpetualTaskRecord.builder()
-            .uuid("perpetualTaskId2")
-            .perpetualTaskType(CONTAINER_INSTANCE_SYNC)
-            .state(TASK_ASSIGNED)
-            .build(),
-        PerpetualTaskRecord.builder()
-            .uuid("perpetualTaskId3")
-            .perpetualTaskType(PDC_INSTANCE_SYNC)
-            .state(TASK_INVALID)
-            .build());
-    doReturn(perpetualTaskRecordList).when(perpetualTaskService).listAllTasksForAccount("accountId");
-    containerInstanceHandler.cleanupInvalidV1PerpetualTask("accountId");
-    verify(perpetualTaskService, times(1)).deleteTask(any(), any());
   }
 
   @Test

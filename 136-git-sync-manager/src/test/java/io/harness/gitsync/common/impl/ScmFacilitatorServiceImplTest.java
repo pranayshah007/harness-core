@@ -181,7 +181,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
     List<GitRepositoryResponseDTO> repositoryResponseDTOList =
         scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
-            pageRequest, RepoFilterParameters.builder().build(), false);
+            pageRequest, RepoFilterParameters.builder().build());
     assertThat(repositoryResponseDTOList.size()).isEqualTo(2);
     assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("repo1");
     assertThat(repositoryResponseDTOList.get(1).getName()).isEqualTo("repo2");
@@ -229,7 +229,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
     List<GitRepositoryResponseDTO> repositoryResponseDTOList =
         scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
-            pageRequest, RepoFilterParameters.builder().build(), false);
+            pageRequest, RepoFilterParameters.builder().build());
     assertThat(repositoryResponseDTOList.size()).isEqualTo(3);
     assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("harness/repo1");
     assertThat(repositoryResponseDTOList.get(1).getName()).isEqualTo("harness/repo2");
@@ -769,8 +769,9 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     repoAllowlist.add("test-repo");
     doReturn(repoAllowlist).when(gitXSettingsHelper).getGitRepoAllowlist(any(), any(), any());
 
-    List<GitRepositoryResponseDTO> repositoryResponseDTOList = scmFacilitatorService.listReposByRefConnector(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, null, true);
+    List<GitRepositoryResponseDTO> repositoryResponseDTOList =
+        scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
+            pageRequest, RepoFilterParameters.builder().applyGitXRepoAllowListFilter(true).build());
     assertThat(repositoryResponseDTOList.size()).isEqualTo(1);
     assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("test-repo");
   }
@@ -799,8 +800,9 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     GetUserReposResponse getUserReposResponse =
         GetUserReposResponse.newBuilder().setStatus(200).addAllRepos(repositories).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
-    List<GitRepositoryResponseDTO> repositoryResponseDTOList = scmFacilitatorService.listReposByRefConnector(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, null, true);
+    List<GitRepositoryResponseDTO> repositoryResponseDTOList =
+        scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
+            pageRequest, RepoFilterParameters.builder().applyGitXRepoAllowListFilter(true).build());
     assertThat(repositoryResponseDTOList.size()).isEqualTo(0);
   }
 
@@ -823,8 +825,9 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
 
     GetUserReposResponse getUserReposResponse = GetUserReposResponse.newBuilder().setStatus(200).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
-    List<GitRepositoryResponseDTO> repositoryResponseDTOList = scmFacilitatorService.listReposByRefConnector(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, null, true);
+    List<GitRepositoryResponseDTO> repositoryResponseDTOList =
+        scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
+            pageRequest, RepoFilterParameters.builder().applyGitXRepoAllowListFilter(true).build());
     assertThat(repositoryResponseDTOList.size()).isEqualTo(0);
   }
 

@@ -64,6 +64,12 @@ spec:
             - secretRef:
                 name: smtp-secret
             {{- end }}
+            {{- if .Values.global.secrets.app.external.enabled }}
+            {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
+            - secretRef:
+                name: migrator-external-secret
+            {{- end }}
+            {{- end }}
           env:
             {{- include "migrator.mongoEnv" . | nindent 12 }}
             {{- include "harnesscommon.dbconnection.timescaleEnv" . | nindent 12 }}
