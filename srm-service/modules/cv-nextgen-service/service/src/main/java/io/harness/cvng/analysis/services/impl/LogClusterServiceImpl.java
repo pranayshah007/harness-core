@@ -99,7 +99,7 @@ public class LogClusterServiceImpl implements LogClusterService {
     Instant timestamp = input.getStartTime().truncatedTo(ChronoUnit.SECONDS);
     while (timestamp.isBefore(input.getEndTime().truncatedTo(ChronoUnit.SECONDS))) {
       clusterTasks.add(createLogClusterTaskForMinute(
-          input.getVerificationTaskId(), timestamp, LogClusterLevel.L1, isTaskForDeployment));
+          input.getAccountId(), input.getVerificationTaskId(), timestamp, LogClusterLevel.L1, isTaskForDeployment));
       timestamp = timestamp.plus(1, ChronoUnit.MINUTES);
     }
     return clusterTasks;
@@ -138,13 +138,13 @@ public class LogClusterServiceImpl implements LogClusterService {
     return logRecordService.getLogRecords(cvConfigId, timestamp, timestamp.plus(Duration.ofMinutes(1)));
   }
 
-  private LogClusterLearningEngineTask createLogClusterTaskForMinute(
-      String verificationTaskId, Instant timestamp, LogClusterLevel clusterLevel, boolean isTaskForDeployment) {
+  private LogClusterLearningEngineTask createLogClusterTaskForMinute(String accountId, String verificationTaskId,
+      Instant timestamp, LogClusterLevel clusterLevel, boolean isTaskForDeployment) {
     List<LogRecord> logRecords = getLogRecordsForMinute(verificationTaskId, timestamp);
     if (logRecords != null) {
       String testDataUrl = buildTestDataUrlForLogClustering(
           verificationTaskId, clusterLevel, timestamp, timestamp.plus(Duration.ofMinutes(1)));
-      return createLogClusterLearningEngineTask(logRecords.get(0).getAccountId(), verificationTaskId, timestamp,
+      return createLogClusterLearningEngineTask(accountId, verificationTaskId, timestamp,
           timestamp.plus(1, ChronoUnit.MINUTES), clusterLevel, testDataUrl, isTaskForDeployment);
     }
     return null;
