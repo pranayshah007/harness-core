@@ -40,7 +40,10 @@ import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -290,7 +293,7 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testDeleteNodeExecutionInfoForGivenIds() {
+  public void testUpdateTTLForNodeExecutionInfoForGivenIds() {
     on(pmsGraphStepDetailsService).set("nodeExecutionsInfoRepository", nodeExecutionsInfoRepository);
     String nodeExecutionId = generateUuid();
     NodeExecutionsInfo nodeExecutionsInfo = NodeExecutionsInfo.builder()
@@ -304,8 +307,10 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
         nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
     assertThat(byNodeExecutionId).isPresent();
 
-    pmsGraphStepDetailsService.deleteNodeExecutionInfoForGivenIds(Set.of(nodeExecutionId));
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    pmsGraphStepDetailsService.updateTTLForNodesForGivenIds(Set.of(nodeExecutionId), ttlExpiry);
     byNodeExecutionId = nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
-    assertThat(byNodeExecutionId).isNotPresent();
+    assertThat(byNodeExecutionId).isPresent();
+    assertThat(byNodeExecutionId.get().getValidUntil()).isEqualTo(ttlExpiry);
   }
 }

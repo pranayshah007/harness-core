@@ -21,6 +21,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @OwnedBy(PIPELINE)
@@ -31,5 +32,10 @@ public class ExecutionInputRepositoryCustomImpl implements ExecutionInputReposit
     Query query = new Query();
     query.addCriteria(Criteria.where(ExecutionInputInstanceKeys.nodeExecutionId).in(nodeExecutionIds));
     return mongoTemplate.find(query, ExecutionInputInstance.class);
+  }
+
+  @Override
+  public void multiUpdate(Query query, Update update) {
+    mongoTemplate.updateMulti(query, update, ExecutionInputInstance.class);
   }
 }

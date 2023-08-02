@@ -19,17 +19,20 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.plan.NodeEntity;
 import io.harness.plan.Plan;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.repositories.NodeEntityRepository;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,6 +40,7 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanServiceImplTest extends OrchestrationTestBase {
   @Inject PlanService planService;
+  @Inject NodeEntityRepository nodeEntityRepository;
 
   private static final String DUMMY_NODE_1_ID = generateUuid();
   private static final String DUMMY_NODE_2_ID = generateUuid();
@@ -86,16 +90,18 @@ public class PlanServiceImplTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testDeleteNodesForGivenIds() {
+  public void testUpdateTTLForNodesForGivenIds() {
     Plan plan = buildAndSavePlan();
     PlanNode fetchNode = planService.fetchNode(plan.getUuid(), DUMMY_NODE_1_ID);
     assertThat(fetchNode.getUuid()).isNotNull();
     assertThat(fetchNode.getUuid()).isEqualTo(DUMMY_NODE_1_ID);
     assertThat(fetchNode.getName()).isEqualTo("Dummy Node 1");
 
-    planService.deleteNodesForGivenIds(Set.of(DUMMY_NODE_1_ID, DUMMY_NODE_2_ID, DUMMY_NODE_3_ID));
-    assertThatThrownBy(() -> planService.fetchNode(plan.getUuid(), DUMMY_NODE_1_ID))
-        .isInstanceOf(InvalidRequestException.class);
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    planService.updateTTLForNodesForGivenIds(Set.of(DUMMY_NODE_1_ID, DUMMY_NODE_2_ID, DUMMY_NODE_3_ID), ttlExpiry);
+    Optional<NodeEntity> optionalNodeEntity = nodeEntityRepository.findById(DUMMY_NODE_1_ID);
+    assertThat(optionalNodeEntity).isPresent();
+    assertThat(optionalNodeEntity.get().getValidUntil()).isEqualTo(ttlExpiry);
   }
 
   @Test

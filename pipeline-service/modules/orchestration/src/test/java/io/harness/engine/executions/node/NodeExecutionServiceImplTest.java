@@ -56,8 +56,11 @@ import io.harness.utils.AmbianceTestUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -717,7 +720,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testDeleteAllNodeExecutionAndMetadata() {
+  public void testUpdateTTLForAllNodeExecutionAndMetadata() {
     MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
     Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
     Reflect.on(nodeExecutionService).set("nodeDeleteObserverSubject", nodeDeleteObserverSubject);
@@ -734,11 +737,13 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     doReturn(iterator)
         .when(nodeExecutionService)
         .fetchNodeExecutionsFromAnalytics("EXECUTION_1", NodeProjectionUtils.fieldsForNodeExecutionDelete);
-    nodeExecutionService.deleteAllNodeExecutionAndMetadata("EXECUTION_1");
-    verify(nodeDeleteObserverSubject, times(2)).fireInform(any(), any());
-
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    nodeExecutionService.updateTTLAndDeleteNestedEntities("EXECUTION_1", ttlExpiry);
+    verify(nodeDeleteObserverSubject, times(2)).fireInform(any(), any(), any());
+    Update ops = new Update();
+    ops.set(NodeExecutionKeys.validUntil, ttlExpiry);
     verify(mongoTemplateMock, times(1))
-        .remove(query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds)), NodeExecution.class);
+        .updateMulti(query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds)), ops, NodeExecution.class);
   }
 
   @Test

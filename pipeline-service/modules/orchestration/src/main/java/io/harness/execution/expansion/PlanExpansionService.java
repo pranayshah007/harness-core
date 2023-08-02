@@ -11,6 +11,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,5 +47,9 @@ public interface PlanExpansionService {
    */
   void updateStatus(Ambiance ambiance, Status status);
 
-  void deleteAllExpansions(Set<String> planExecutionIds);
+  /**
+   * Updates TTL all PlanExpansion records for given planExecutionIds
+   * @param planExecutionIds Ids of to be deleted planExecutions
+   */
+  void updateTTL(Set<String> planExecutionIds, Date ttlDate);
 }

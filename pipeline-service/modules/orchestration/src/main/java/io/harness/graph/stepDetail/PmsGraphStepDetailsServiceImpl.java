@@ -28,6 +28,8 @@ import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.client.result.UpdateResult;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -154,12 +156,22 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
   }
 
   @Override
-  public void deleteNodeExecutionInfoForGivenIds(Set<String> nodeExecutionIds) {
+  public void updateTTLForNodesForGivenIds(Set<String> nodeExecutionIds, Date ttlDate) {
     if (EmptyPredicate.isEmpty(nodeExecutionIds)) {
       return;
     }
+
+    Criteria criteria = Criteria.where(NodeExecutionsInfoKeys.nodeExecutionId).in(nodeExecutionIds);
+    Query query = new Query(criteria);
+    Update ops = new Update();
+    ops.set(NodeExecutionsInfoKeys.validUntil, ttlDate);
+
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
-      nodeExecutionsInfoRepository.deleteAllByNodeExecutionIdIn(nodeExecutionIds);
+      UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecutionsInfo.class);
+      if (!updateResult.wasAcknowledged()) {
+        log.warn(
+            "No nodeExecutionInfo could be marked as updated TTL for given nodeExecutionIds - " + nodeExecutionIds);
+      }
       return true;
     });
   }

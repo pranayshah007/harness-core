@@ -10,10 +10,13 @@ package io.harness.wait;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 
 import dev.morphia.annotations.Entity;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -30,8 +33,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("waitStepInstance")
 @OwnedBy(HarnessTeam.PIPELINE)
 public class WaitStepInstance {
+  public static final long TTL_DAYS = 70;
   @Id @dev.morphia.annotations.Id String waitStepInstanceId;
   @FdUniqueIndex String nodeExecutionId;
   Long createdAt;
   int duration;
+
+  @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusDays(TTL_DAYS).toInstant());
 }

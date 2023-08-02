@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.ExecutionInputInstance;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -27,9 +28,9 @@ public interface ExecutionInputService {
   List<ExecutionInputInstance> getExecutionInputInstances(Set<String> nodeExecutionIds);
 
   /**
-   * Delete all ExecutionInputInstance for given nodeExecutionIds
-   * Uses - nodeExecutionId_1 index
+   * Updates TTL for all ExecutionInputInstance for given nodeExecutionIds
+   * Uses- unique nodeExecution idx
    * @param nodeExecutionIds
    */
-  void deleteExecutionInputInstanceForGivenNodeExecutionIds(Set<String> nodeExecutionIds);
+  void updateTTLForNodesForGivenIds(Set<String> nodeExecutionIds, Date ttlDate);
 }

@@ -44,11 +44,13 @@ public interface PlanService {
   List<Node> saveIdentityNodesForMatrix(List<Node> identityNodes, String planId);
 
   /**
-   * Delete all nodeEntity for given uuids
+   * Updates TTL for all nodeEntity for given uuids
    * Uses - id index
+   *
    * @param nodeEntityIds
+   * @param ttlDate
    */
-  void deleteNodesForGivenIds(Set<String> nodeEntityIds);
+  void updateTTLForNodesForGivenIds(Set<String> nodeEntityIds, Date ttlDate);
 
   /**
    * Updates TTL for all Plans for given uuids

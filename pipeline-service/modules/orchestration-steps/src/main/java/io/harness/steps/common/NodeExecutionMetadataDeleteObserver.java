@@ -29,6 +29,7 @@ import io.harness.waiter.persistence.SpringPersistenceWrapper;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -48,7 +49,7 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
   @Inject private ApprovalInstanceService approvalInstanceService;
 
   @Override
-  public void onNodesDelete(List<NodeExecution> nodeExecutionsToDelete) {
+  public void onNodesTTLUpdate(List<NodeExecution> nodeExecutionsToDelete, Date ttlExpiryDate) {
     if (EmptyPredicate.isEmpty(nodeExecutionsToDelete)) {
       return;
     }
@@ -91,23 +92,24 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
       }
     }
     // Delete the waitInstances for correlationsIds in nodeExecutionIds
-    springPersistenceWrapper.deleteWaitInstancesAndMetadata(correlationIds);
+    springPersistenceWrapper.updateTTLAndRemoveForWaitInstancesAndMetadata(correlationIds, ttlExpiryDate);
     // Delete the timeoutInstanceIds
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
       timeoutEngine.deleteTimeouts(new ArrayList<>(timeoutInstanceIds));
       return true;
     });
-    // Delete resource restraint instances
-    resourceRestraintInstanceService.deleteInstancesForGivenReleaseType(stageNodeExecutionIds, HoldingScope.STAGE);
-    // Delete nodes entity
-    planService.deleteNodesForGivenIds(nodeEntityIds);
-    // Delete NodeExecutionsInfo
-    pmsGraphStepDetailsService.deleteNodeExecutionInfoForGivenIds(nodeExecutionIds);
+    // updates ttl for resource restraint instances
+    resourceRestraintInstanceService.updateTTLForGivenReleaseType(
+        stageNodeExecutionIds, HoldingScope.STAGE, ttlExpiryDate);
+    // updates TTL nodes entity
+    planService.updateTTLForNodesForGivenIds(nodeEntityIds, ttlExpiryDate);
+    // updates TTL NodeExecutionsInfo
+    pmsGraphStepDetailsService.updateTTLForNodesForGivenIds(nodeExecutionIds, ttlExpiryDate);
     // Delete WaiStepInstance for given waiStep nodeExecutionIds
     waitStepService.deleteWaitStepInstancesForGivenNodeExecutionIds(waitStepNodeExecutionIds);
-    // Delete ExecutionInputInstance for given nodeExecutionIds
-    executionInputService.deleteExecutionInputInstanceForGivenNodeExecutionIds(executionInputNodeExecutionIds);
-    // Delete the approval instances
+    // updates TTL ExecutionInputInstance for given nodeExecutionIds
+    executionInputService.updateTTLForNodesForGivenIds(executionInputNodeExecutionIds, ttlExpiryDate);
+    // updates TTL the approval instances
     approvalInstanceService.deleteByNodeExecutionIds(approvalNodeExecutionIds);
   }
 }

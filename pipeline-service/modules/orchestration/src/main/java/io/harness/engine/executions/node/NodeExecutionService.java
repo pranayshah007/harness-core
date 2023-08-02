@@ -320,12 +320,6 @@ public interface NodeExecutionService {
   boolean markRetried(String nodeExecutionId);
 
   /**
-   * Deletes the nodeExecutions and its related metadata
-   * @param planExecutionId Id of to be deleted planExecution
-   */
-  void deleteAllNodeExecutionAndMetadata(String planExecutionId);
-
-  /**
    * Updates TTL the nodeExecutions and its related metadata
    * @param planExecutionId Id of to be deleted planExecution
    */

@@ -240,7 +240,7 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
     // Verify graph metadata delete
     verify(graphGenerationService, times(2)).updateTTLAndDeleteRelatedEntities(any(), any());
     // Verify nodeExecutions and its metadata delete
-    verify(nodeExecutionService, times(100)).deleteAllNodeExecutionAndMetadata(any());
+    verify(nodeExecutionService, times(100)).updateTTLAndDeleteNestedEntities(any(), any());
     // Verify planExecutions and its metadata delete
     verify(planExecutionService, times(2)).updateTTLAndDeleteChildEntities(any(), any());
   }
@@ -301,7 +301,7 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
     // Verify graph metadata delete
     verify(graphGenerationService, times(1)).updateTTLAndDeleteRelatedEntities(any(), any());
     // Verify nodeExecutions and its metadata delete
-    verify(nodeExecutionService, times(40)).deleteAllNodeExecutionAndMetadata(any());
+    verify(nodeExecutionService, times(40)).updateTTLAndDeleteNestedEntities(any(), any());
     // Verify planExecutions and its metadata delete
     verify(planExecutionService, times(1)).updateTTLAndDeleteChildEntities(any(), any());
   }

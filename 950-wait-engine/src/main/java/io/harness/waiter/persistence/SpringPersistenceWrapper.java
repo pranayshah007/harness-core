@@ -43,7 +43,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,20 +91,20 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
   }
 
   /**
-   * Deletes all wait instances and notifyResponses for given correlation id and its related timeoutInstances
+   * Updates TTL for all wait instances and notifyResponses for given correlation id and its related timeoutInstances
    * in a batch operation
    * @param correlationIds
    */
-  public void deleteWaitInstancesAndMetadata(List<String> correlationIds) {
+  public void updateTTLAndRemoveForWaitInstancesAndMetadata(List<String> correlationIds, Date ttlExpiryDate) {
     List<List<String>> partition = Lists.partition(correlationIds, MAX_BATCH_SIZE);
     for (List<String> batchCorrelationIds : partition) {
-      deleteWaitInstancesAndMetadataInternal(batchCorrelationIds);
+      updateTTLAndRemoveForWaitInstancesAndMetadataInternal(batchCorrelationIds, ttlExpiryDate);
     }
   }
 
-  private void deleteWaitInstancesAndMetadataInternal(List<String> correlationIds) {
+  private void updateTTLAndRemoveForWaitInstancesAndMetadataInternal(List<String> correlationIds, Date ttlExpiryDate) {
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
-      deleteNotifyResponses(correlationIds);
+      updateTTLForNotifyResponses(correlationIds, ttlExpiryDate);
       Query query = query(where(WaitInstanceKeys.correlationIds).in(correlationIds));
       query.fields().include(WaitInstanceKeys.timeoutInstanceId);
       // Uses - correlationIds_1 idx
@@ -112,6 +114,21 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
       timeoutEngine.deleteTimeouts(timeoutInstanceIdsToDelete);
       return null;
     });
+  }
+
+  private void updateTTLForNotifyResponses(List<String> responseIds, Date ttlExpiryDate) {
+    if (isEmpty(responseIds)) {
+      return;
+    }
+    log.info("Updating TTL {} not needed responses", responseIds.size());
+    Update update = new Update();
+    update.set(NotifyResponseKeys.validUntil, ttlExpiryDate);
+    // Uses - id index
+    UpdateResult updateResult =
+        mongoTemplate.updateMulti(query(where(NotifyResponseKeys.uuid).in(responseIds)), update, NotifyResponse.class);
+    if (!updateResult.wasAcknowledged()) {
+      log.warn("Not Able to update ttl for  Notify Responses");
+    }
   }
 
   @Override

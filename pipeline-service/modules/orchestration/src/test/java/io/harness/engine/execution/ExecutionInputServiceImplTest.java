@@ -50,7 +50,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -248,17 +251,18 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
-  public void testDeleteExecutionInputInstance() {
+  public void testUpdateTTLExecutionInputInstance() {
     on(inputService).set("executionInputRepository", executionInputRepository);
 
     String nodeExecutionId = generateUuid();
     ExecutionInputInstance executionInputInstance =
         ExecutionInputInstance.builder().inputInstanceId(generateUuid()).nodeExecutionId(nodeExecutionId).build();
     inputService.save(executionInputInstance);
-    inputService.deleteExecutionInputInstanceForGivenNodeExecutionIds(Sets.newHashSet(nodeExecutionId));
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    inputService.updateTTLForNodesForGivenIds(Sets.newHashSet(nodeExecutionId), ttlExpiry);
 
     ExecutionInputInstance expectedInputInstance = inputService.getExecutionInputInstance(nodeExecutionId);
-    assertThat(expectedInputInstance).isNull();
+    assertThat(expectedInputInstance.getValidUntil()).isEqualTo(ttlExpiry);
   }
 
   @Test

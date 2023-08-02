@@ -15,6 +15,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,9 +40,10 @@ public interface PmsGraphStepDetailsService {
   ConcurrentChildInstance fetchConcurrentChildInstance(String nodeExecutionId);
 
   /**
-   * Delete all nodeExecutionInfo for given nodeExecutionIds
+   * Updates TTL for all nodeExecutionInfo for given nodeExecutionIds
    * Uses - nodeExecutionId_unique_idx index
    * @param nodeExecutionIds
+   * @param ttlDate
    */
-  void deleteNodeExecutionInfoForGivenIds(Set<String> nodeExecutionIds);
+  void updateTTLForNodesForGivenIds(Set<String> nodeExecutionIds, Date ttlDate);
 }

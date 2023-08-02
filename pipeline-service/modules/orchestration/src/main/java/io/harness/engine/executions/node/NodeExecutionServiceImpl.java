@@ -659,7 +659,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public void deleteAllNodeExecutionAndMetadata(String planExecutionId) {
+  public void updateTTLAndDeleteNestedEntities(String planExecutionId, Date ttlExpiryDate) {
     // Fetches all nodeExecutions from analytics for given planExecutionId
     List<NodeExecution> batchNodeExecutionList = new LinkedList<>();
     Set<String> nodeExecutionsIdsToDelete = new HashSet<>();
@@ -670,41 +670,42 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         nodeExecutionsIdsToDelete.add(next.getUuid());
         batchNodeExecutionList.add(next);
         if (batchNodeExecutionList.size() >= MAX_BATCH_SIZE) {
-          deleteNodeExecutionsMetadataInternal(batchNodeExecutionList);
+          updateTTLForNodeExecutionsMetadataInternal(batchNodeExecutionList, ttlExpiryDate);
           batchNodeExecutionList.clear();
         }
       }
     }
     if (EmptyPredicate.isNotEmpty(batchNodeExecutionList)) {
-      deleteNodeExecutionsMetadataInternal(batchNodeExecutionList);
+      updateTTLForNodeExecutionsMetadataInternal(batchNodeExecutionList, ttlExpiryDate);
     }
     // At end delete all nodeExecutions
-    deleteNodeExecutionsInternal(nodeExecutionsIdsToDelete);
+    updatesTTLForNodeExecutionsInternal(nodeExecutionsIdsToDelete, ttlExpiryDate);
   }
 
-  @Override
-  public void updateTTLAndDeleteNestedEntities(String planExecutionId, Date ttlExpiryDate) {}
-
   /**
-   * Deletes all nodeExecutions metadata
+   * Updates TTL for all nodeExecutions metadata
    *
    * @param nodeExecutionsToDelete
    */
-  private void deleteNodeExecutionsMetadataInternal(List<NodeExecution> nodeExecutionsToDelete) {
+  private void updateTTLForNodeExecutionsMetadataInternal(
+      List<NodeExecution> nodeExecutionsToDelete, Date ttlExpiryDate) {
     // Delete nodeExecutionMetadata example - WaitInstances, resourceRestraintInstances, timeoutInstanceIds, etc
-    nodeDeleteObserverSubject.fireInform(NodeExecutionDeleteObserver::onNodesDelete, nodeExecutionsToDelete);
+    nodeDeleteObserverSubject.fireInform(
+        NodeExecutionDeleteObserver::onNodesTTLUpdate, nodeExecutionsToDelete, ttlExpiryDate);
   }
 
   /**
-   * Deletes all nodeExecutions for given ids
+   * Updates TTL For all nodeExecutions for given ids
    * This method assumes the nodeExecutions will be in batch thus caller needs to handle it
    * @param batchNodeExecutionIds
    */
-  private void deleteNodeExecutionsInternal(Set<String> batchNodeExecutionIds) {
+  private void updatesTTLForNodeExecutionsInternal(Set<String> batchNodeExecutionIds, Date ttlExpiryDate) {
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
       // Uses - id index
       Query query = query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds));
-      mongoTemplate.remove(query, NodeExecution.class);
+      Update ops = new Update();
+      ops.set(NodeExecutionKeys.validUntil, ttlExpiryDate);
+      mongoTemplate.updateMulti(query, ops, NodeExecution.class);
       return true;
     });
   }

@@ -31,11 +31,13 @@ import io.harness.waiter.WaitInstance;
 import io.harness.waiter.WaitInstance.WaitInstanceKeys;
 
 import com.google.inject.Inject;
-import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,6 +48,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
@@ -58,7 +61,7 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
 
-  public void testDeleteWaitInstancesWithinBatchSize() {
+  public void testUpdateTTLWaitInstancesWithinBatchSize() {
     Reflect.on(persistenceWrapper).set("timeoutEngine", timeoutEngine);
     Reflect.on(persistenceWrapper).set("mongoTemplate", mongoTemplateMock);
     String correlationId = generateUuid();
@@ -71,16 +74,21 @@ public class SpringPersistenceWrapperTest extends WaitEngineTestBase {
     query.fields().include(WaitInstanceKeys.timeoutInstanceId);
 
     Mockito.doReturn(Collections.emptyList()).when(mongoTemplateMock).findAllAndRemove(query, WaitInstance.class);
-    DeleteResult acknowledged = DeleteResult.acknowledged(0);
+    Update update = new Update();
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    update.set(NotifyResponseKeys.validUntil, ttlExpiry);
+    UpdateResult acknowledged = UpdateResult.acknowledged(1, null, null);
     Mockito.doReturn(acknowledged)
         .when(mongoTemplateMock)
-        .remove(query(where(NotifyResponseKeys.uuid).in(new ArrayList<>(correlationIds))), NotifyResponse.class);
+        .updateMulti(
+            query(where(NotifyResponseKeys.uuid).in(new ArrayList<>(correlationIds))), update, NotifyResponse.class);
 
-    persistenceWrapper.deleteWaitInstancesAndMetadata(correlationIds);
+    persistenceWrapper.updateTTLAndRemoveForWaitInstancesAndMetadata(correlationIds, ttlExpiry);
     Mockito.verify(timeoutEngine, Mockito.times(1)).deleteTimeouts(Collections.emptyList());
     Mockito.verify(mongoTemplateMock, Mockito.times(1)).findAllAndRemove(query, WaitInstance.class);
     Mockito.verify(mongoTemplateMock, Mockito.times(1))
-        .remove(query(where(NotifyResponseKeys.uuid).in(new ArrayList<>(correlationIds))), NotifyResponse.class);
+        .updateMulti(
+            query(where(NotifyResponseKeys.uuid).in(new ArrayList<>(correlationIds))), update, NotifyResponse.class);
   }
 
   @Test

@@ -26,8 +26,10 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
+import io.harness.execution.ExecutionInputInstance.ExecutionInputInstanceKeys;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.plan.Plan;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
@@ -44,6 +46,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.serializer.utils.NGRuntimeInputUtils;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -56,6 +59,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
@@ -247,12 +253,17 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
   }
 
   @Override
-  public void deleteExecutionInputInstanceForGivenNodeExecutionIds(Set<String> nodeExecutionIds) {
+  public void updateTTLForNodesForGivenIds(Set<String> nodeExecutionIds, Date ttlDate) {
     if (isEmpty(nodeExecutionIds)) {
       return;
     }
+    // using unique nodeExecution idx
+    Criteria criteria = Criteria.where(ExecutionInputInstanceKeys.nodeExecutionId).in(nodeExecutionIds);
+    Query query = new Query(criteria);
+    Update ops = new Update();
+    ops.set(Plan.PlanKeys.validUntil, ttlDate);
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
-      executionInputRepository.deleteAllByNodeExecutionIdIn(nodeExecutionIds);
+      executionInputRepository.multiUpdate(query, ops);
       return true;
     });
   }

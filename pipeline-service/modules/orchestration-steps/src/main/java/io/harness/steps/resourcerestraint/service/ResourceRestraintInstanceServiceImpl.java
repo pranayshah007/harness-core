@@ -79,20 +79,6 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
   }
 
   @Override
-  public void deleteInstancesForGivenReleaseType(Set<String> releaseEntityIds, HoldingScope holdingScope) {
-    if (EmptyPredicate.isEmpty(releaseEntityIds)) {
-      return;
-    }
-    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
-      // Uses - releaseEntityType_releaseEntityId_idx
-      Query query = query(where(ResourceRestraintInstanceKeys.releaseEntityType).is(holdingScope.name()))
-                        .addCriteria(where(ResourceRestraintInstanceKeys.releaseEntityId).in(releaseEntityIds));
-      mongoTemplate.remove(query, ResourceRestraintInstance.class);
-      return true;
-    });
-  }
-
-  @Override
   public void updateTTLForGivenReleaseType(Set<String> releaseEntityIds, HoldingScope holdingScope, Date ttlDate) {
     if (EmptyPredicate.isEmpty(releaseEntityIds)) {
       return;

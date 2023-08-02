@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution;
 
+import java.util.Date;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -19,5 +20,5 @@ public interface NodeExecutionDeleteObserver {
    * Observer method to do operation on nodeExecutions delete
    * @param nodeExecutionList
    */
-  void onNodesDelete(List<NodeExecution> nodeExecutionList);
+  void onNodesTTLUpdate(List<NodeExecution> nodeExecutionList, Date ttlExpiryDate);
 }

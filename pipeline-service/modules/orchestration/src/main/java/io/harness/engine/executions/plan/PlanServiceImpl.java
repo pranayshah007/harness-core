@@ -16,6 +16,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plan.Node;
 import io.harness.plan.NodeEntity;
+import io.harness.plan.NodeEntity.NodeEntityKeys;
 import io.harness.plan.Plan;
 import io.harness.plan.Plan.PlanKeys;
 import io.harness.plan.PlanNode;
@@ -106,13 +107,21 @@ public class PlanServiceImpl implements PlanService {
         .map(NodeEntity::getNode)
         .collect(Collectors.toList());
   }
+
   @Override
-  public void deleteNodesForGivenIds(Set<String> nodeEntityIds) {
+  public void updateTTLForNodesForGivenIds(Set<String> nodeEntityIds, Date ttlDate) {
     if (EmptyPredicate.isEmpty(nodeEntityIds)) {
       return;
     }
+    Criteria criteria = Criteria.where(NodeEntityKeys.uuid).in(nodeEntityIds);
+    Query query = new Query(criteria);
+    Update ops = new Update();
+    ops.set(PlanKeys.validUntil, ttlDate);
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
-      nodeEntityRepository.deleteAllByUuidIn(nodeEntityIds);
+      UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeEntity.class);
+      if (!updateResult.wasAcknowledged()) {
+        log.warn("NodeEntity could be marked as updated TTL for given planIds - " + nodeEntityIds);
+      }
       return true;
     });
   }

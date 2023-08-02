@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.plan.execution.beans;
-import static java.time.Duration.ofDays;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
@@ -51,7 +50,6 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import dev.morphia.annotations.Entity;
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.HashMap;

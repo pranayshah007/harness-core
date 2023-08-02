@@ -15,9 +15,14 @@ import io.harness.execution.ExecutionInputInstance;
 
 import java.util.Collection;
 import java.util.List;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
 @HarnessRepo
 public interface ExecutionInputRepositoryCustom {
   List<ExecutionInputInstance> findByNodeExecutionIds(Collection<String> nodeExecutionIds);
+
+  // updates multiple records and doesnt return any record
+  void multiUpdate(Query query, Update update);
 }

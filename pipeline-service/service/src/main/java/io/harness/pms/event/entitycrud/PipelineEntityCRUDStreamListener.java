@@ -207,11 +207,11 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     graphGenerationService.updateTTLAndDeleteRelatedEntities(planExecutionsToDelete, ttlExpiryDate);
     // Delete nodeExecutions and its metadata
     for (String planExecutionToDelete : planExecutionsToDelete) {
-      nodeExecutionService.deleteAllNodeExecutionAndMetadata(planExecutionToDelete);
+      nodeExecutionService.updateTTLAndDeleteNestedEntities(planExecutionToDelete, ttlExpiryDate);
     }
     // Delete all planExecutions and its metadata
     planExecutionService.updateTTLAndDeleteChildEntities(planExecutionsToDelete, ttlExpiryDate);
-    planExpansionService.deleteAllExpansions(planExecutionsToDelete);
+    planExpansionService.updateTTL(planExecutionsToDelete, ttlExpiryDate);
   }
 
   private boolean checkIfAnyRequiredFieldIsNotEmpty(EntityChangeDTO entityChangeDTO) {
