@@ -189,6 +189,26 @@ function copy_verification_service_jars(){
 
 }
 
+function copy_platform_service_jars(){
+
+  cp ${HOME}/.bazel-dirs/bin/platform-service/service/module_deploy.jar platform-service-capsule.jar
+  cp ../../platform-service/config/config.yml .
+  cp ../../platform-service/config/keystore.jks .
+  cp ../../platform-service/config/key.pem .
+  cp ../../platform-service/config/cert.pem .
+  cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+  cp ../../platform-service/build/container/Dockerfile-platform-service-cie-jdk ./Dockerfile-cie-jdk
+  cp -r ../../platform-service/build/container/scripts/ .
+  cp ../../platform-service/config/jfr/default.jfc .
+  cp ../../platform-service/config/jfr/profile.jfc .
+
+  java -jar platform-service-capsule.jar scan-classpath-metadata
+
+  cd ../..
+
+}
+
 
 #prepare_to_copy_jars
 if [ "${SERVICE_NAME}" == "manager" ]; then
@@ -201,4 +221,7 @@ elif [ "${SERVICE_NAME}" == "idp-service" ]; then
     copy_change_data_capture_jars
 elif [ "${SERVICE_NAME}" == "verification-service" ]; then
     copy_verification_service_jars
+elif [ "${SERVICE_NAME}" == "platform-service" ]; then
+    copy_platform_service_jars
 fi
+}
