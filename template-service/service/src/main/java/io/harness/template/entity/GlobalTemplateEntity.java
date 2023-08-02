@@ -103,7 +103,7 @@ public class GlobalTemplateEntity
   @Setter @NonFinal String branch;
   @Setter @NonFinal String yamlGitConfigRef;
   @Wither @Setter @NonFinal String filePath;
-  @Setter @NonFinal String readMe;
+  @Wither @Setter @NonFinal String readMe;
   @Setter @NonFinal String rootFolder;
   @Wither @NonFinal Boolean isEntityInvalid;
 
@@ -113,6 +113,7 @@ public class GlobalTemplateEntity
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
   @Wither @Setter @NonFinal String fallBackBranch;
+  @Wither @Setter @NonFinal String owner;
 
   // icon support for templates
   @Wither @Setter @NonFinal String icon;

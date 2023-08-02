@@ -2058,14 +2058,14 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                                         .templateEntityType(TemplateEntityType.SECRET_MANAGER_TEMPLATE)
                                         .yaml(yaml)
                                         .build();
-    doThrow(new DuplicateKeyException("msg")).when(ngTemplateService).saveTemplate(any(), any());
+    doThrow(new DuplicateKeyException("msg")).when(ngTemplateService).saveTemplate(any(TemplateEntity.class), any());
 
     assertThatThrownBy(() -> ngTemplateService.create(templateEntity, true, "", false))
         .isInstanceOf(DuplicateFieldException.class)
         .hasMessage(
             "Template [template-movetogit1] of versionLabel [version1] under Project[projId], Organization [orgId] already exists");
 
-    doThrow(new ScmException(REVOKED_TOKEN)).when(ngTemplateService).saveTemplate(any(), any());
+    doThrow(new ScmException(REVOKED_TOKEN)).when(ngTemplateService).saveTemplate(any(TemplateEntity.class), any());
 
     assertThatThrownBy(() -> ngTemplateService.create(templateEntity, true, "", false))
         .isInstanceOf(ScmException.class);
@@ -2258,6 +2258,15 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     templateService.listTemplateReferences(
         100, 25, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "identifier", "version", "", false);
     mockStatic.close();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testFilePathFetch() {
+    String filePath = ".harness/cd/v1/pipeline/TestPipeinetGlobal_v2.yaml";
+    filePath = templateService.fetchReadMeFilePath(filePath);
+    assertThat(filePath).isEqualTo(".harness/cd/v1/pipeline/ReadMe");
   }
 
   @Test

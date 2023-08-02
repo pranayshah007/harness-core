@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.services;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -32,7 +33,7 @@ import io.harness.template.resources.beans.TemplateMoveConfigResponse;
 import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 import io.harness.template.resources.beans.UpdateGitDetailsParams;
 
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -133,12 +134,7 @@ public interface NGTemplateService {
       String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams);
   GovernanceMetadata validateGovernanceRules(TemplateEntity templateEntity);
   void populateSetupUsageAsync(TemplateEntity templateEntity);
-  GlobalTemplateEntity getGitContent(String accountId, String orgIdentifier, String projectIdentifier, String filePath,
-      String repoName, String branch, String fallBackBranch, String connectorRef, boolean loadFromCache);
-  List<TemplateWrapperResponseDTO> createGlobalTemplate(String accountId, String orgId, String projectId,
-      String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments,
-      boolean isNewTemplate, String connectorRef);
-  List<TemplateWrapperResponseDTO> updateGlobalTemplate(String accountId, String orgId, String projectId,
-      String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments,
-      String connectorRef);
+  List<TemplateWrapperResponseDTO> createUpdateGlobalTemplate(String accountId, String orgId, String projectId,
+      boolean setDefaultTemplate, String comments, boolean isNewTemplate, String connectorRef, String webhookEvent)
+      throws IOException;
 }

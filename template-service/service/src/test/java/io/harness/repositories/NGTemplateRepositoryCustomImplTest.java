@@ -174,7 +174,7 @@ public class NGTemplateRepositoryCustomImplTest extends CategoryTest {
     TemplateEntity templateToSaveWithStoreTypeWithExtraFields =
         templateToSave.withStoreType(StoreType.INLINE).withVersion(0L);
     doReturn(templateToSaveWithStoreTypeWithExtraFields).when(mongoTemplate).save(templateToSaveWithStoreType);
-    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(), any())).thenReturn(true);
+    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(TemplateEntity.class), any())).thenReturn(true);
     TemplateEntity savedTemplateEntity = ngTemplateRepositoryCustom.save(templateToSave, templateComment);
     assertThat(savedTemplateEntity).isEqualTo(templateToSaveWithStoreTypeWithExtraFields);
     // to check if the supplier is actually called
@@ -281,7 +281,7 @@ public class NGTemplateRepositoryCustomImplTest extends CategoryTest {
 
     setupGitContext(branchInfo);
 
-    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(), any())).thenReturn(false);
+    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(TemplateEntity.class), any())).thenReturn(false);
     assertThatThrownBy(() -> ngTemplateRepositoryCustom.save(templateToSave, ""))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
@@ -385,7 +385,7 @@ public class NGTemplateRepositoryCustomImplTest extends CategoryTest {
                                    .filePath(filePath)
                                    .build();
     setupGitContext(branchInfo);
-    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(), any())).thenReturn(false);
+    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(TemplateEntity.class), any())).thenReturn(false);
     assertThatThrownBy(()
                            -> ngTemplateRepositoryCustom.updateTemplateYaml(templateEntity, templateEntity,
                                ChangeType.UPDATE_V2, "", TemplateUpdateEventType.OTHERS_EVENT, false))
@@ -661,7 +661,7 @@ public class NGTemplateRepositoryCustomImplTest extends CategoryTest {
                                         .build();
 
     doReturn(templateToUpdate).when(mongoTemplate).save(any());
-    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(), any())).thenReturn(true);
+    when(templateGitXService.isNewGitXEnabledAndIsRemoteEntity(any(TemplateEntity.class), any())).thenReturn(true);
     TemplateEntity updatedEntity = ngTemplateRepositoryCustom.updateTemplateYaml(templateToUpdate, templateEntity,
         ChangeType.MODIFY, "", TemplateUpdateEventType.TEMPLATE_STABLE_TRUE_WITH_YAML_CHANGE_EVENT, true);
     assertThat(updatedEntity.getYaml()).isEqualTo(newYaml);

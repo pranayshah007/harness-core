@@ -6,6 +6,7 @@
  */
 
 package io.harness.repositories;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
@@ -515,7 +516,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
           TemplateEntityKeys.projectIdentifier, TemplateEntityKeys.identifier, TemplateEntityKeys.versionLabel);
     }
     List<GlobalTemplateEntity> templateEntities = gitAwarePersistence.find(
-        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, GlobalTemplateEntity.class);
+        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, GlobalTemplateEntity.class, false);
     return PageableExecutionUtils.getPage(templateEntities, pageable,
         ()
             -> gitAwarePersistence.count(

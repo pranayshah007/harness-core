@@ -120,9 +120,11 @@ public class TemplateEntityGitSyncHandlerTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testSave() throws IOException {
-    doReturn(entity.withVersion(0L)).when(templateService).create(any(), anyBoolean(), anyString(), anyBoolean());
+    doReturn(entity.withVersion(0L))
+        .when(templateService)
+        .create(any(TemplateEntity.class), anyBoolean(), anyString(), anyBoolean());
     NGTemplateConfig templateConfig = templateEntityGitSyncHandler.save(ACCOUNT_ID, yaml);
-    verify(templateService, times(1)).create(any(), anyBoolean(), anyString(), anyBoolean());
+    verify(templateService, times(1)).create(any(TemplateEntity.class), anyBoolean(), anyString(), anyBoolean());
     assertThat(templateConfig).isEqualTo(YamlPipelineUtils.read(yaml, NGTemplateConfig.class));
   }
 
@@ -132,9 +134,9 @@ public class TemplateEntityGitSyncHandlerTest extends CategoryTest {
   public void testUpdate() throws IOException {
     doReturn(entity.withVersion(1L))
         .when(templateService)
-        .updateTemplateEntity(any(), any(), anyBoolean(), anyString());
+        .updateTemplateEntity(any(TemplateEntity.class), any(), anyBoolean(), anyString());
     NGTemplateConfig templateConfig = templateEntityGitSyncHandler.update(ACCOUNT_ID, yaml, ChangeType.NONE);
-    verify(templateService, times(1)).updateTemplateEntity(any(), any(), anyBoolean(), anyString());
+    verify(templateService, times(1)).updateTemplateEntity(any(TemplateEntity.class), any(), anyBoolean(), anyString());
     assertThat(templateConfig).isEqualTo(YamlPipelineUtils.read(yaml, NGTemplateConfig.class));
   }
 
