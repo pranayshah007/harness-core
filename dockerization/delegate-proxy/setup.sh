@@ -88,7 +88,7 @@ for kubectlVersion in v1.13.2 v1.19.2; do
 
 done
 
-for goversion in v0.4.3; do
+for goversion in v0.4.4; do
   echo "Adding goversion $goversion"
   GOTEMPLATE_LINUX_DIR="${IMAGES_DIR}/go-template/linux/$goversion/"
   GOTEMPLATE_MAC_DIR="${IMAGES_DIR}/go-template/darwin/$goversion/"
@@ -265,7 +265,7 @@ function setupClientUtils() {
       cp images/kustomize/${platform}/$kustomizeversion/kustomize ${STORAGE_DIR_LOCATION}/harness-download/harness-kustomize/release/$kustomizeversion/bin/${platform}/amd64/
     done
 
-    for gotemplateversion in v0.4.3; do
+    for gotemplateversion in v0.4.4; do
       mkdir -p ${STORAGE_DIR_LOCATION}/harness-download/snapshot-go-template/release/$gotemplateversion/bin/${platform}/amd64/
       cp images/go-template/${platform}/$gotemplateversion/go-template ${STORAGE_DIR_LOCATION}/harness-download/snapshot-go-template/release/$gotemplateversion/bin/${platform}/amd64/
     done
