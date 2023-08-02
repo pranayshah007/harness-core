@@ -55,7 +55,7 @@ public class SupplierQueryBuilder implements QueryBuilder {
     List<Document> filters = new ArrayList<>();
     for (Supplier supplier : suppliers) {
       filters.add(new Document(NormalizedSBOMEntityKeys.packageOriginatorName.toLowerCase(),
-          new Document(MongoOperators.MONGO_NOT, new Document(MongoOperators.MONGO_REGEX, supplier.getSupplier()))));
+          new Document(MongoOperators.MONGO_REGEX, supplier.getSupplier())));
     }
     if (filters.isEmpty()) {
       return null;
@@ -63,11 +63,11 @@ public class SupplierQueryBuilder implements QueryBuilder {
 
     Document ignorePackagesFilter = new Document(
         NormalizedSBOMEntityKeys.packageName.toLowerCase(), new Document(MongoOperators.MONGO_NOT_IN, ignorePackages));
-    Document licenseFilter = new Document(MongoOperators.MONGO_NOR, filters);
+    Document supplierFilter = new Document(MongoOperators.MONGO_NOR, filters);
     Document orchestrationIdFilter =
         new Document(NormalizedSBOMEntityKeys.orchestrationId.toLowerCase(), orchestrationId);
 
     return new Document(
-        MongoOperators.MONGO_AND, Arrays.asList(ignorePackagesFilter, licenseFilter, orchestrationIdFilter));
+        MongoOperators.MONGO_AND, Arrays.asList(ignorePackagesFilter, supplierFilter, orchestrationIdFilter));
   }
 }

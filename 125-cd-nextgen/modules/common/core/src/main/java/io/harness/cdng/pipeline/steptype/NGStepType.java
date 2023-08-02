@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.pipeline.steptype;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK;
@@ -342,7 +343,10 @@ public enum NGStepType {
       "Infrastructure Provisioners/AWS CDK Synth", StepSpecTypeConstants.AWS_CDK_SYNTH),
   @JsonProperty(StepSpecTypeConstants.AWS_CDK_DIFF)
   AWS_CDK_DIFF("AWS CDK Diff", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/AWS CDK Diff", StepSpecTypeConstants.AWS_CDK_DIFF);
+      "Infrastructure Provisioners/AWS CDK Diff", StepSpecTypeConstants.AWS_CDK_DIFF),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_DEPLOY)
+  AWS_CDK_DEPLOY("AWS CDK Deploy", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Deploy", StepSpecTypeConstants.AWS_CDK_DEPLOY);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

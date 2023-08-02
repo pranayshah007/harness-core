@@ -14,8 +14,9 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.MONIT
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.MS_HEALTH_REPORT;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.NO_METRIC_ASSIGNED_TO_MONITORED_SERVICE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_HEALTH_SUMMARY;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE_SECTION;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE_SECTION_FOR_FIREHYDRANT_SLACK;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE_SLACK;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_SUMMARY;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.TOTAL_CE_COUNT;
 
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
@@ -44,9 +45,11 @@ public class FireHydrantTemplateDataGenerator
 
     String baseUrl = NotificationRuleTemplateDataGenerator.getBaseUrl(
         this.getPortalUrl(), this.getVanityUrl(projectParams.getAccountIdentifier()));
-    templateDataMap.put(SLO_PERFORMANCE,
-        NotificationRuleCommonUtils.getSloPerformanceSectionForReport(
-            msHealthReport.getAssociatedSLOsDetails(), clock.instant(), baseUrl, SLO_PERFORMANCE_SECTION));
+    templateDataMap.put(
+        SLO_SUMMARY, NotificationRuleCommonUtils.getSLOSummaryForReport(msHealthReport.getAssociatedSLOsDetails()));
+    templateDataMap.put(SLO_PERFORMANCE_SLACK,
+        NotificationRuleCommonUtils.getSloPerformanceSectionForReport(msHealthReport.getAssociatedSLOsDetails(),
+            clock.instant(), baseUrl, SLO_PERFORMANCE_SECTION_FOR_FIREHYDRANT_SLACK));
 
     return templateDataMap;
   }

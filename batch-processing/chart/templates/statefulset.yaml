@@ -63,6 +63,12 @@ spec:
             - secretRef:
                 name: smtp-secret
             {{- end }}
+            {{- if .Values.global.secrets.app.external.enabled }}
+            {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
+            - secretRef:
+                name: batch-processing-external-secret
+            {{- end }}
+            {{- end }}
           env:
             {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
             - name: MONGO_URI

@@ -11,7 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/dchest/authcookie"
@@ -218,7 +218,17 @@ func RequiredQueryParams(params ...string) func(handler http.Handler) http.Handl
 func ValidatePrefixRequest() func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			containRunSequence := strings.Contains(r.URL.String(), "runSequence")
+			containRunSequence, err := regexp.MatchString("runSequence:[\\d+]", r.URL.String())
+			if err != nil {
+				WriteInternalError(w, err)
+				logger.FromRequest(r).
+					WithField("url", r.URL.String()).
+					WithField("time", time.Now().Format(time.RFC3339)).
+					WithError(err).
+					Errorln("middleware validate: cannot match execution in prefix")
+				return
+			}
+
 			if containRunSequence {
 				logger.WithContext(context.Background(), logger.FromRequest(r))
 				logger.FromRequest(r).
@@ -229,7 +239,7 @@ func ValidatePrefixRequest() func(handler http.Handler) http.Handler {
 				return
 			}
 
-			err := errors.New(fmt.Sprintf("operation not permitted for prefix: %s", r.URL.String()))
+			err = errors.New(fmt.Sprintf("operation not permitted for prefix: %s", r.URL.String()))
 			WriteBadRequest(w, err)
 			logger.FromRequest(r).
 				WithField("url", r.URL.String()).

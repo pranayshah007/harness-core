@@ -391,14 +391,16 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
           where(PlanExecutionSummaryKeys.name)
               .regex(pipelineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
-
+    List<Criteria> combinedAndCriteriaList = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
-      PMSPipelineServiceHelper.addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
+      PMSPipelineServiceHelper.addPipelineTagsCriteria(combinedAndCriteriaList, pipelineFilter.getPipelineTags());
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineLabels())) {
-      addPipelineLabelsCriteria(criteria, pipelineFilter.getPipelineLabels());
+      addPipelineLabelsCriteria(combinedAndCriteriaList, pipelineFilter.getPipelineLabels());
     }
-
+    if (combinedAndCriteriaList.size() > 0) {
+      criteria.andOperator(combinedAndCriteriaList.toArray(new Criteria[combinedAndCriteriaList.size()]));
+    }
     if (pipelineFilter.getModuleProperties() != null) {
       if (operatorOnModules.name().equals(ModuleInfoOperators.Operators.OR)) {
         ModuleInfoFilterUtils.processNodeOROperator(
@@ -420,7 +422,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     populatePipelineFilterParametrisedOperatorOnModules(criteria, pipelineFilter, ModuleInfoOperators.OR, criteriaList);
   }
 
-  private void addPipelineLabelsCriteria(Criteria criteria, List<NGLabel> pipelineLabels) {
+  private void addPipelineLabelsCriteria(List<Criteria> criteriaList, List<NGLabel> pipelineLabels) {
     List<String> labelKeys = new ArrayList<>();
     List<String> labelValues = new ArrayList<>();
     pipelineLabels.forEach(o -> {
@@ -430,7 +432,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     Criteria labelsCriteria = new Criteria();
     labelsCriteria.orOperator(where(PlanExecutionSummaryKeys.labelsKey).in(labelKeys),
         where(PlanExecutionSummaryKeys.labelsValue).in(labelValues));
-    criteria.andOperator(labelsCriteria);
+    criteriaList.add(labelsCriteria);
   }
 
   @Override

@@ -77,6 +77,7 @@ public class AzureVmRecommendationService {
                     .build())
         .showTerminated(azureRecommendation.getTargetVmDetails().getName().equals("Shutdown"))
         .jiraDetails(azureRecommendation.getJiraDetails())
+        .serviceNowDetails(azureRecommendation.getServiceNowDetails())
         .build();
   }
 }

@@ -188,8 +188,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @Override
   public List<GitRepositoryResponseDTO> listReposByRefConnector(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorRef, PageRequest pageRequest, RepoFilterParameters repoFilterParameters,
-      boolean applyGitXRepoAllowListFilter) {
+      String projectIdentifier, String connectorRef, PageRequest pageRequest,
+      RepoFilterParameters repoFilterParameters) {
     ScmConnector scmConnector =
         gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
     RepoFilterParamsDTO repoFilterParams = buildRepoFilterParamsDTO(repoFilterParameters);
@@ -203,7 +203,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           scmConnector.getUrl(), response.getStatus(), response.getError(),
           ErrorMetadata.builder().connectorRef(connectorRef).build());
     }
-    if (applyGitXRepoAllowListFilter) {
+    if (repoFilterParameters.isApplyGitXRepoAllowListFilter()) {
       response = filterResponseBasedOnGitXRepoAllowList(accountIdentifier, orgIdentifier, projectIdentifier, response);
     }
 

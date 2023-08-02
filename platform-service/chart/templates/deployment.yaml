@@ -69,6 +69,12 @@ spec:
         - secretRef:
             name: smtp-secret
         {{- end }}
+        {{- if .Values.global.secrets.app.external.enabled }}
+        {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
+        - secretRef:
+            name: platform-service-external-secret
+        {{- end }}
+        {{- end }}
         readinessProbe:
           httpGet:
             path: /api/health

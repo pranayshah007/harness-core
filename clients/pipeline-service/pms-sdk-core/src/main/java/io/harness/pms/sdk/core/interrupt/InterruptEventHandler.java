@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.sdk.core.interrupt;
+
 import static io.harness.govern.Switch.noop;
 
 import io.harness.annotations.dev.CodePulse;
@@ -22,6 +23,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.registries.StepRegistry;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.pms.sdk.core.steps.executables.Abortable;
+import io.harness.pms.sdk.core.steps.executables.Expirable;
 import io.harness.pms.sdk.core.steps.executables.Failable;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
@@ -68,9 +70,12 @@ public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
     switch (interruptType) {
       case ABORT:
       case USER_MARKED_FAIL_ALL:
-      case MARK_EXPIRED:
         handleAbort(event);
         log.info("Handled ABORT InterruptEvent Successfully");
+        break;
+      case MARK_EXPIRED:
+        handleExpire(event);
+        log.info("Handled MARK_EXPIRED InterruptEvent Successfully");
         break;
       case CUSTOM_FAILURE:
         handleFailure(event);
@@ -113,6 +118,23 @@ public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
       log.error("Handling abort at sdk failed with interrupt event - {} ", event.getInterruptUuid(), ex);
       // Even if error send feedback
       pmsInterruptService.handleAbort(event.getNotifyId());
+    }
+  }
+
+  public void handleExpire(InterruptEvent event) {
+    try {
+      StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
+      Step<?> step = stepRegistry.obtain(stepType);
+      if (step instanceof Expirable) {
+        StepParameters stepParameters =
+            RecastOrchestrationUtils.fromJson(event.getStepParameters().toStringUtf8(), StepParameters.class);
+        ((Expirable) step).handleExpire(event.getAmbiance(), stepParameters, extractExecutableResponses(event));
+      }
+    } catch (Exception ex) {
+      log.error("Handling expire at sdk failed with interrupt event - {} ", event.getInterruptUuid(), ex);
+    } finally {
+      // Even if error always send feedback
+      pmsInterruptService.handleExpire(event.getNotifyId());
     }
   }
 

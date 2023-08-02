@@ -19,13 +19,17 @@ import io.harness.category.element.UnitTests;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.configmanager.resource.AppConfigApiImpl;
+import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.AppConfigRequest;
 import io.harness.spec.server.idp.v1.model.AppConfigResponse;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
@@ -44,6 +48,8 @@ public class AppConfigApiImplTest extends CategoryTest {
 
   @Mock ConfigManagerService configManagerService;
 
+  @Mock ConfigEnvVariablesService configEnvVariablesService;
+
   @InjectMocks AppConfigApiImpl appConfigApiImpl;
 
   @Before
@@ -57,6 +63,15 @@ public class AppConfigApiImplTest extends CategoryTest {
 
   static final Boolean TEST_IS_ENABLED_FLAG = false;
 
+  private static final String TEST_ENV_NAME = "test-env-name";
+  private static final String TEST_ID = "test-id";
+  private static final String TEST_CONFIG = String.format("test-config ${%s}", TEST_ENV_NAME);
+  private static final String TEST_SECRET_IDENTIFIER = "test-secret-id";
+  private static final String TEST_CONFIG_NAME = "test-config-name";
+  static final long TEST_UPDATED_TIME = 1681756035;
+  static final long TEST_LAST_CREATED_AT_TIME = 1681756035;
+  static final long TEST_ENABLED_DISABLED_AT = 1681756035;
+
   static final String ERROR_MESSAGE_SAVE_OR_UPDATE = "Error : failed to save or update app config";
 
   static final String ERROR_MESSAGE_TOGGLE_PLUGIN = "Error : failed to save or update app config";
@@ -66,7 +81,8 @@ public class AppConfigApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSaveOrUpdatePluginAppConfig() throws Exception {
     AppConfigRequest appConfigRequest = new AppConfigRequest();
-    AppConfig appConfig = new AppConfig();
+    BackstageEnvSecretVariable backstageEnvSecretVariable = getTestBackstageEnvSecretVariable();
+    AppConfig appConfig = getTestAppConfig(backstageEnvSecretVariable);
     appConfigRequest.setAppConfig(appConfig);
     when(configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_TYPE))
         .thenReturn(appConfig);
@@ -80,7 +96,8 @@ public class AppConfigApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSaveOrUpdatePluginAppConfigError() throws Exception {
     AppConfigRequest appConfigRequest = new AppConfigRequest();
-    AppConfig appConfig = new AppConfig();
+    BackstageEnvSecretVariable backstageEnvSecretVariable = getTestBackstageEnvSecretVariable();
+    AppConfig appConfig = getTestAppConfig(backstageEnvSecretVariable);
     appConfigRequest.setAppConfig(appConfig);
     when(configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_TYPE))
         .thenThrow(new InvalidRequestException(ERROR_MESSAGE_SAVE_OR_UPDATE));
@@ -119,5 +136,29 @@ public class AppConfigApiImplTest extends CategoryTest {
         appConfigApiImpl.togglePluginForAccount(TEST_PLUGIN_ID, TEST_IS_ENABLED_FLAG, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
     assertEquals(ERROR_MESSAGE_TOGGLE_PLUGIN, ((ResponseMessage) response.getEntity()).getMessage());
+  }
+
+  private BackstageEnvSecretVariable getTestBackstageEnvSecretVariable() {
+    BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();
+    backstageEnvSecretVariable.setEnvName(TEST_ENV_NAME);
+    backstageEnvSecretVariable.setCreated(TEST_LAST_CREATED_AT_TIME);
+    backstageEnvSecretVariable.setHarnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
+    backstageEnvSecretVariable.setType(BackstageEnvVariable.TypeEnum.SECRET);
+    backstageEnvSecretVariable.setIdentifier(TEST_ID);
+    backstageEnvSecretVariable.setUpdated(TEST_UPDATED_TIME);
+    return backstageEnvSecretVariable;
+  }
+
+  private AppConfig getTestAppConfig(BackstageEnvSecretVariable backstageEnvSecretVariable) {
+    AppConfig appConfig = new AppConfig();
+    appConfig.setConfigId(TEST_PLUGIN_ID);
+    appConfig.setConfigs(TEST_CONFIG);
+    appConfig.setConfigName(TEST_CONFIG_NAME);
+    appConfig.setCreated(TEST_LAST_CREATED_AT_TIME);
+    appConfig.setEnabled(true);
+    appConfig.setEnabledDisabledAt(TEST_ENABLED_DISABLED_AT);
+    appConfig.setUpdated(TEST_UPDATED_TIME);
+    appConfig.setEnvVariables(Arrays.asList(backstageEnvSecretVariable));
+    return appConfig;
   }
 }

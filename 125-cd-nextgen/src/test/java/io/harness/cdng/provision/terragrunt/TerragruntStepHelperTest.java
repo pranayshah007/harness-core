@@ -245,7 +245,7 @@ public class TerragruntStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any());
+        .getScmConnector(any(), any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)
@@ -307,7 +307,7 @@ public class TerragruntStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any());
+        .getScmConnector(any(), any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)
@@ -353,7 +353,7 @@ public class TerragruntStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any());
+        .getScmConnector(any(), any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)
@@ -488,7 +488,7 @@ public class TerragruntStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any());
+        .getScmConnector(any(), any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)
@@ -706,7 +706,7 @@ public class TerragruntStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any());
+        .getScmConnector(any(), any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)
@@ -855,7 +855,7 @@ public class TerragruntStepHelperTest extends CategoryTest {
             .connectorRef(ParameterField.createValueField(gitStoreConfigFiles.getConnectoref().getValue()))
             .build();
 
-    doReturn(GithubConnectorDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any());
+    doReturn(GithubConnectorDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
         .when(gitConfigAuthenticationInfoHelper)

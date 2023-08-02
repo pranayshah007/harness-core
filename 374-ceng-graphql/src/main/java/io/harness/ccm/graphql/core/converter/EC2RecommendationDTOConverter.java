@@ -67,6 +67,7 @@ public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDT
                 .map(recommendationDetail -> instanceConverter.convertFromEntity(recommendationDetail))
                 .orElse(null))
         .jiraDetails(recommendation.getJiraDetails())
+        .serviceNowDetails(recommendation.getServiceNowDetails())
         .build();
   }
 

@@ -84,7 +84,8 @@ public class DelegateAgentResourceV2 {
               .loggingToken(delegateTaskPackage.getLogStreamingToken())
               .logStreamingAbstractions(delegateTaskPackage.getLogStreamingAbstractions())
               .build();
-      String taskType = delegateTaskPackage.getTaskDataV2().getTaskType();
+      String taskType =
+          delegateTaskPackage.getTaskDataV2() != null ? delegateTaskPackage.getTaskDataV2().getTaskType() : "";
       if (isEmpty(taskType)) {
         taskType = delegateTaskPackage.getData().getTaskType();
       }

@@ -236,7 +236,7 @@ public class TerraformStepHelperTest extends CategoryTest {
         .updateParentEntityIdAndVersion(anyString(), anyString(), any(FileBucket.class));
     doReturn(mockFileServiceResponse).when(mockFileService).deleteFile(anyString(), any(FileBucket.class));
     doReturn(Response.success(null)).when(mockFileServiceResponse).execute();
-    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any());
+    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
   }
 
   @Test
@@ -767,7 +767,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any());
+        .getScmConnector(any(), any(), any());
     TerraformVarFileConfig inlineFileConfig =
         TerraformInlineVarFileConfig.builder().varFileContent("var-content").build();
     TerraformVarFileConfig remoteFileConfig =
@@ -827,7 +827,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                  .branchName("master")
                  .build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any());
+        .getScmConnector(any(), any(), any());
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
     doReturn(connectorInfo).when(cdStepHelper).getConnector(anyString(), any());
     doReturn(SSHKeySpecDTO.builder().build())
@@ -1191,11 +1191,24 @@ public class TerraformStepHelperTest extends CategoryTest {
     ArgumentCaptor<TerraformConfig> captor = ArgumentCaptor.forClass(TerraformConfig.class);
     GitStoreConfigDTO configFiles = GithubStoreDTO.builder().branch("master").connectorRef("terraform").build();
     ArtifactoryStorageConfigDTO artifactoryStoreConfig = ArtifactoryStorageConfigDTO.builder().build();
+
+    GitStoreConfigDTO configFiles1 = GithubStoreDTO.builder()
+                                         .branch("master")
+                                         .repoName("terraform")
+                                         .folderPath("test-path")
+                                         .connectorRef("terraform")
+                                         .gitFetchType(FetchType.COMMIT)
+                                         .commitId("commit")
+                                         .build();
+    TerraformBackendConfigFileConfig remoteBackendConfig =
+        TerraformRemoteBackendConfigFileConfig.builder().gitStoreConfigDTO(configFiles1).build();
+
     TerraformConfig terraformConfig = TerraformConfig.builder()
                                           .backendConfig("back-content")
                                           .workspace("w1")
                                           .fileStoreConfig(artifactoryStoreConfig)
                                           .configFiles(configFiles)
+                                          .backendConfigFileConfig(remoteBackendConfig)
                                           .build();
     helper.saveTerraformConfig(terraformConfig, ambiance);
     then(terraformConfigDAL).should(times(1)).saveTerraformConfig(captor.capture());
@@ -1207,6 +1220,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(config.getConfigFiles().toGitStoreConfig().getBranch().getValue()).isEqualTo("master");
     assertThat(config.getFileStoreConfig()).isEqualTo(artifactoryStoreConfig);
     assertThat(config.getPipelineExecutionId()).isEqualTo("original_exec_id");
+    assertThat(config.getBackendConfigFileConfig()).isSameAs(remoteBackendConfig);
   }
 
   @Test
@@ -3229,7 +3243,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                          .commitId("commit")
                                          .build();
 
-    doReturn(GithubConnectorDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any());
+    doReturn(GithubConnectorDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
     TerraformVarFileConfig inlineFileConfig =
         TerraformInlineVarFileConfig.builder().varFileContent("var-content").build();
     TerraformVarFileConfig remoteFileConfig =

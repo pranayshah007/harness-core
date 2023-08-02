@@ -110,6 +110,12 @@ spec:
         envFrom:
         - configMapRef:
             name: ng-manager
+          {{- if .Values.global.secrets.app.external.enabled }}
+          {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
+        - secretRef:
+            name: ng-manager-external-secret
+          {{- end }}
+          {{- end }}
         {{- toYaml .Values.probes | nindent 8}}
       affinity:
         podAntiAffinity:
