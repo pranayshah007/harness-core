@@ -390,7 +390,6 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
         pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(
             planExecutionId, Sets.newHashSet(PlanExecutionSummaryKeys.accountId, PlanExecutionSummaryKeys.validUntil));
 
-    assertThat(pipelineExecutionSummaryWithProjections).isNull();
     assertThat(pipelineExecutionSummaryWithProjections.getValidUntil()).isEqualTo(ttlDate);
   }
 

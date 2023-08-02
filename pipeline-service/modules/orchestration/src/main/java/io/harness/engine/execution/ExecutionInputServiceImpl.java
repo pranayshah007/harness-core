@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.execution;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.NAME;
@@ -29,7 +30,6 @@ import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.ExecutionInputInstance.ExecutionInputInstanceKeys;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.common.ExpressionMode;
-import io.harness.plan.Plan;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
@@ -261,7 +261,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
     Criteria criteria = Criteria.where(ExecutionInputInstanceKeys.nodeExecutionId).in(nodeExecutionIds);
     Query query = new Query(criteria);
     Update ops = new Update();
-    ops.set(Plan.PlanKeys.validUntil, ttlDate);
+    ops.set(ExecutionInputInstanceKeys.validUntil, ttlDate);
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
       executionInputRepository.multiUpdate(query, ops);
       return true;
