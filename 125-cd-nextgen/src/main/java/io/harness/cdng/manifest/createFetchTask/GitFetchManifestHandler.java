@@ -7,21 +7,33 @@
 
 package io.harness.cdng.manifest.createFetchTask;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static java.util.Collections.emptyMap;
 
 import io.harness.cdng.K8sHelmCommonStepHelper;
+import io.harness.cdng.k8s.K8sGitFetchInfo;
+import io.harness.cdng.k8s.K8sGitInfo;
 import io.harness.cdng.k8s.K8sStepExecutor;
 import io.harness.cdng.k8s.K8sStepPassThroughData;
+import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
+import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.delegate.task.git.GitFetchResponse;
+import io.harness.delegate.task.git.TaskStatus;
+import io.harness.git.model.FetchFilesResult;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.tasks.ResponseData;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GitFetchManifestHandler extends K8sHelmCommonStepHelper implements ManifestHandler {
   @Override
@@ -32,8 +44,6 @@ public class GitFetchManifestHandler extends K8sHelmCommonStepHelper implements 
     ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
     StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(k8sManifestOutcome);
     k8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
-    //    K8sStepPassThroughData deepCopyOfK8sPassThroughData =
-    //        k8sStepPassThroughData.toBuilder().customFetchContent(emptyMap()).zippedManifestFileId("").build();
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier(k8sManifestOutcome.getIdentifier()).store(storeConfig).build();
     return prepareGitFetchValuesTaskChainResponse(ambiance, stepElementParameters, valuesManifestOutcome,
@@ -44,6 +54,39 @@ public class GitFetchManifestHandler extends K8sHelmCommonStepHelper implements 
   public TaskChainResponse handleFetchResponseForStoreType(ResponseData responseData, K8sStepExecutor k8sStepExecutor,
       Ambiance ambiance, StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
       ManifestOutcome k8sManifest) {
+    GitFetchResponse gitFetchResponse = (GitFetchResponse) responseData;
+    if (gitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
+      GitFetchResponsePassThroughData gitFetchResponsePassThroughData =
+          GitFetchResponsePassThroughData.builder()
+              .errorMsg(gitFetchResponse.getErrorMessage())
+              .unitProgressData(gitFetchResponse.getUnitProgressData())
+              .build();
+      return TaskChainResponse.builder().chainEnd(true).passThroughData(gitFetchResponsePassThroughData).build();
+    }
     return null;
+  }
+
+  @Override
+  public K8sStepPassThroughData updatePassThroughData(ResponseData responseData, K8sStepExecutor k8sStepExecutor,
+      Ambiance ambiance, StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
+      ManifestOutcome k8sManifest) {
+    GitFetchResponse gitFetchResponse = (GitFetchResponse) responseData;
+    Map<String, FetchFilesResult> gitValuesFetchResponse = gitFetchResponse.getFilesFromMultipleRepo();
+    k8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
+
+    K8sGitFetchInfo k8sGitFetchInfo = K8sGitFetchInfo.builder().build();
+    if (isNotEmpty(gitFetchResponse.getFetchedCommitIdsMap())) {
+      Map<String, K8sGitInfo> variables = new HashMap<>();
+      Map<String, String> gitFetchFilesConfigMap = gitFetchResponse.getFetchedCommitIdsMap();
+      gitFetchFilesConfigMap.forEach(
+          (String key, String value) -> variables.put(key, K8sGitInfo.builder().commitId(value).build()));
+      k8sGitFetchInfo.putAll(variables);
+    }
+    K8sStepPassThroughData updatedK8sStepPassThroughData = k8sStepPassThroughData.toBuilder()
+                                                               .gitValuesMapContent(gitValuesFetchResponse)
+                                                               .k8sGitFetchInfo(k8sGitFetchInfo)
+                                                               .build();
+    updatedK8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
+    return updatedK8sStepPassThroughData;
   }
 }

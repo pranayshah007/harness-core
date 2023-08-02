@@ -34,34 +34,39 @@ import java.util.Map;
 public class LocalManifestHandler extends K8sHelmCommonStepHelper implements ManifestHandler {
   @Override
   public TaskChainResponse prepareFetchResponseForStoreType(Ambiance ambiance, K8sStepExecutor k8sStepExecutor,
-      List<ManifestOutcome> kustomizePatchesManifests, StepElementParameters stepElementParameters,
+      List<ManifestOutcome> manifestOutcomes, StepElementParameters stepElementParameters,
       K8sStepPassThroughData k8sStepPassThroughData) {
     Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
-    List<ManifestFiles> manifestFiles = new ArrayList<>();
-    List<ValuesManifestOutcome> aggregatedValuesManifests = getAggregatedValuesManifests(kustomizePatchesManifests);
+    List<ManifestFiles> manifestFiles = k8sStepPassThroughData.getManifestFiles();
+    List<ValuesManifestOutcome> aggregatedValuesManifests = getAggregatedValuesManifests(manifestOutcomes);
     if (ManifestStoreType.HARNESS.equals(k8sStepPassThroughData.getManifestOutcome().getStore().getKind())
         || isAnyLocalStore(aggregatedValuesManifests)) {
       k8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
       LogCallback logCallback = cdStepHelper.getLogCallback(
           K8sCommandUnitConstants.FetchFiles, ambiance, k8sStepPassThroughData.getShouldOpenFetchFilesStream());
-      localStoreFileMapContents.putAll(fetchFilesFromLocalStore(ambiance, k8sStepPassThroughData.getManifestOutcome(),
-          kustomizePatchesManifests, manifestFiles, logCallback));
+      localStoreFileMapContents.putAll(fetchFilesFromLocalStore(
+          ambiance, k8sStepPassThroughData.getManifestOutcome(), manifestOutcomes, manifestFiles, logCallback));
     }
     K8sStepPassThroughData updatedK8sStepPassThroughData = k8sStepPassThroughData.toBuilder()
                                                                .localStoreFileMapContents(localStoreFileMapContents)
                                                                .manifestFiles(manifestFiles)
                                                                .build();
-    //        return new TaskChainResponse(updatedK8sStepPassThroughData,)
-    //  final TaskRequest taskRequest = new TaskRequest();
     return TaskChainResponse.builder()
         .chainEnd(false)
         .taskRequest(null)
-        .passThroughData(k8sStepPassThroughData)
+        .passThroughData(updatedK8sStepPassThroughData)
         .build();
   }
 
   @Override
   public TaskChainResponse handleFetchResponseForStoreType(ResponseData responseData, K8sStepExecutor k8sStepExecutor,
+      Ambiance ambiance, StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
+      ManifestOutcome k8sManifest) {
+    return null;
+  }
+
+  @Override
+  public K8sStepPassThroughData updatePassThroughData(ResponseData responseData, K8sStepExecutor k8sStepExecutor,
       Ambiance ambiance, StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
       ManifestOutcome k8sManifest) {
     return null;

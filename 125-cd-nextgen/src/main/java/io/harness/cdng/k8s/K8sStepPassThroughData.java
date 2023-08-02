@@ -18,9 +18,11 @@ import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
+import io.harness.delegate.task.gitcommon.GitFetchFilesResult;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
+import io.harness.git.model.FetchFilesResult;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
@@ -57,6 +59,9 @@ public class K8sStepPassThroughData implements PassThroughData {
   @Setter @NonFinal boolean shouldCloseFetchFilesStream;
   @Setter @NonFinal Boolean shouldOpenFetchFilesStream;
   Set<String> manifestStoreTypeVisited;
+
+  Map<String, FetchFilesResult> gitValuesMapContent;
+  K8sGitFetchInfo k8sGitFetchInfo;
 
   public List<ValuesManifestOutcome> getValuesManifestOutcomes() {
     if (isEmpty(manifestOutcomeList)) {
