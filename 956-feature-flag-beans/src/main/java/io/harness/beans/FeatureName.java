@@ -6,6 +6,7 @@
  */
 
 package io.harness.beans;
+
 import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
@@ -849,7 +850,10 @@ public enum FeatureName {
   CDS_GITHUB_PACKAGES("Used for SSH/WinRm copy and download Github packages artifacts", HarnessTeam.CDP),
   CDS_HELM_SEND_TASK_PROGRESS_NG(
       "For Helm tasks we will be sending task progress event via log streaming client which will be received and handled by handleProgress handler in the ng-manager step class",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  PIE_EVALUATE_EXPRESSION_TO_NULL(
+      "Used to evaluate expressions to absolute null value instead of null string in case of unresolved expression",
+      PIPELINE);
   // keep-sorted end
 
   @Deprecated

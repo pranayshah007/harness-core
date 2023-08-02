@@ -6,6 +6,7 @@
  */
 
 package io.harness.expression;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
@@ -72,6 +73,7 @@ public class EngineExpressionEvaluator {
   public static final String PIE_EXPRESSION_CONCATENATION = "PIE_EXPRESSION_CONCATENATION";
   public static final String PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT =
       "PIE_EXPRESSION_DISABLE_COMPLEX_JSON_SUPPORT";
+  public static final String PIE_EVALUATE_EXPRESSION_TO_NULL = "PIE_EVALUATE_EXPRESSION_TO_NULL";
 
   private static final int MAX_DEPTH = 15;
 
@@ -772,6 +774,10 @@ public class EngineExpressionEvaluator {
           if (isAnyCollection(value)) {
             return JsonUtils.asJson(value);
           }
+        }
+
+        if (ctx.isFeatureFlagEnabled(PIE_EVALUATE_EXPRESSION_TO_NULL) && value == null) {
+          return null;
         }
         return String.valueOf(value);
       } catch (UnresolvedExpressionsException ex) {
