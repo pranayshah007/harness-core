@@ -578,7 +578,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
       return true;
     })
         .when(k8sTaskHelper)
-        .restore(any(), any(), any(), any(), any());
+        .restore(any(), any(), any(), any(), eq(k8sCanaryDeployTaskHandler.getK8sRequestHandlerContext()), any());
     doReturn(true).when(handler).prepareForCanary(any(), any(), any());
     doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     doReturn(true).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
@@ -589,7 +589,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
 
     verify(handler, times(0)).init(eq(k8sCanaryDeployTaskParameters), eq(k8sDelegateTaskParams), any());
     verify(handler, times(1)).prepareForCanary(any(), any(), any());
-    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
+    verify(k8sTaskHelper, times(1))
+        .restore(any(), any(), any(), any(), eq(k8sCanaryDeployTaskHandler.getK8sRequestHandlerContext()), any());
     verify(k8sTaskHelperBase, times(1)).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     verify(k8sTaskHelperBase, times(1)).doStatusCheck(any(), any(), any(), any());
     verify(k8sCanaryBaseHandler, times(1)).wrapUp(any(), any(), any());
@@ -613,11 +614,14 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                                                       .kubernetesResources(null)
                                                                       .k8sTaskType(K8sTaskType.CANARY_DEPLOY)
                                                                       .build();
-    doReturn(false).when(k8sTaskHelper).restore(any(), any(), any(), any(), any());
+    doReturn(false)
+        .when(k8sTaskHelper)
+        .restore(any(), any(), any(), any(), eq(k8sCanaryDeployTaskHandler.getK8sRequestHandlerContext()), any());
 
     K8sTaskExecutionResponse response =
         handler.executeTaskInternal(k8sCanaryDeployTaskParameters, k8sDelegateTaskParams);
-    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
+    verify(k8sTaskHelper, times(1))
+        .restore(any(), any(), any(), any(), eq(k8sCanaryDeployTaskHandler.getK8sRequestHandlerContext()), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
   }
 
