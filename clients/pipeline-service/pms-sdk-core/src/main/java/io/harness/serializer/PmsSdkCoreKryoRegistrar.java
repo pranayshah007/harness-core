@@ -42,6 +42,21 @@ import io.harness.steps.fork.ForkStepParameters;
 import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.steps.section.chain.SectionChainPassThroughData;
 import io.harness.steps.section.chain.SectionChainStepParameters;
+import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
+import io.harness.yaml.core.failurestrategy.NGFailureActionType;
+import io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig;
+import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.manualintervention.OnTimeoutConfig;
+import io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -86,5 +101,20 @@ public class PmsSdkCoreKryoRegistrar implements KryoRegistrar {
     kryo.register(AsyncProgressData.class, 878020);
     kryo.register(OnFailPipelineRollbackParameters.class, 878021);
     kryo.register(NextStageAdviserParameters.class, 878022);
+    kryo.register(FailureStrategyActionConfig.class, 878023);
+    kryo.register(ManualInterventionFailureActionConfig.class, 878024);
+    kryo.register(ManualFailureSpecConfig.class, 878025);
+    kryo.register(OnTimeoutConfig.class, 878026);
+    kryo.register(MarkAsSuccessFailureActionConfig.class, 878027);
+    kryo.register(NGFailureActionType.class, 878028);
+    kryo.register(MarkAsFailFailureActionConfig.class, 878029);
+    kryo.register(AbortFailureActionConfig.class, 878030);
+    kryo.register(IgnoreFailureActionConfig.class, 878031);
+    kryo.register(RetryFailureActionConfig.class, 878032);
+    kryo.register(StageRollbackFailureActionConfig.class, 878033);
+    kryo.register(StepGroupFailureActionConfig.class, 878034);
+    kryo.register(PipelineRollbackFailureActionConfig.class, 878035);
+    kryo.register(ProceedWithDefaultValuesFailureActionConfig.class, 878036);
+    kryo.register(RetrySGFailureActionConfig.class, 878037);
   }
 }
