@@ -262,7 +262,7 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
     inputService.updateTTLForNodesForGivenIds(Sets.newHashSet(nodeExecutionId), ttlExpiry);
 
     ExecutionInputInstance expectedInputInstance = inputService.getExecutionInputInstance(nodeExecutionId);
-    assertThat(expectedInputInstance.getValidUntil()).isEqualTo(ttlExpiry);
+    assertThat(expectedInputInstance.getExpireAt()).isEqualTo(ttlExpiry);
   }
 
   @Test

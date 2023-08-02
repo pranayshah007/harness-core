@@ -261,7 +261,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
     Criteria criteria = Criteria.where(ExecutionInputInstanceKeys.nodeExecutionId).in(nodeExecutionIds);
     Query query = new Query(criteria);
     Update ops = new Update();
-    ops.set(ExecutionInputInstanceKeys.validUntil, ttlDate);
+    ops.set(ExecutionInputInstanceKeys.expireAt, ttlDate);
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
       executionInputRepository.multiUpdate(query, ops);
       return true;
