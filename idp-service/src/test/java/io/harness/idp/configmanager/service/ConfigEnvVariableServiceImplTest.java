@@ -29,6 +29,7 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,7 +55,7 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
   private static final String TEST_ENV_NAME = "test-env-name";
   private static final String TEST_PLUGIN_NAME = "test-plugin-name";
   private static final String TEST_ID = "test-id";
-  private static final String TEST_CONFIG = "test-config";
+  private static final String TEST_CONFIG = String.format("test-config ${%s}", TEST_ENV_NAME);
   private static final String TEST_SECRET_IDENTIFIER = "test-secret-id";
   private static final String TEST_CONFIG_NAME = "test-config-name";
   private static final String TEST_CONFIG_ID = "test-config-id";
@@ -219,6 +220,36 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
     List<String> rsultList = configEnvVariablesServiceImpl.getEnvVariablesFromEntities(
         Collections.singletonList(getTestPluginConfigEnvVariablesEntity()));
     assertEquals(rsultList.get(0), TEST_ENV_NAME);
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testValidateConfigEnvVariables() {
+    // valid case if env variable present in config is configured as well
+    BackstageEnvSecretVariable backstageEnvSecretVariable = getTestBackstageEnvSecretVariable();
+    AppConfig appConfig = getTestAppConfig(backstageEnvSecretVariable);
+    configEnvVariablesServiceImpl.validateConfigEnvVariables(appConfig);
+
+    // invalid case if env variable present in config is not configured.
+    backstageEnvSecretVariable.setEnvName("Not-configured-env-name");
+    appConfig = getTestAppConfig(backstageEnvSecretVariable);
+    Exception exception = null;
+    try {
+      configEnvVariablesServiceImpl.validateConfigEnvVariables(appConfig);
+    } catch (UnsupportedOperationException e) {
+      exception = e;
+    }
+    assertNotNull(exception);
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testGetAllEnvVariableNamesFromBackstageEnvSecretVariable() {
+    Set<String> envVariableName = configEnvVariablesServiceImpl.getAllEnvVariableNamesFromBackstageEnvSecretVariable(
+        Collections.singletonList(getTestBackstageEnvSecretVariable()));
+    assertEquals(envVariableName.iterator().next(), TEST_ENV_NAME);
   }
 
   private BackstageEnvSecretVariable getTestBackstageEnvSecretVariable() {

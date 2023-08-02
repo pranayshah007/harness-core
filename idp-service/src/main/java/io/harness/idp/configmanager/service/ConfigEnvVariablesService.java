@@ -25,4 +25,5 @@ public interface ConfigEnvVariablesService {
 
   void deleteConfigEnvVariables(String accountIdentifier, String appConfig);
   List<String> getAllEnvVariablesForAccountIdentifierAndPluginId(String accountIdentifier, String pluginId);
+  void validateConfigEnvVariables(AppConfig appConfig);
 }
