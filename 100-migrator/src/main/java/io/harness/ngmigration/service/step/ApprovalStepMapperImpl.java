@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.step;
+
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import io.harness.annotations.dev.CodePulse;
@@ -218,7 +219,11 @@ public class ApprovalStepMapperImpl extends StepMapper {
     baseSetup(state, harnessApprovalStepNode, context.getInputDTO().getIdentifierCaseFormat());
 
     HarnessApprovalStepInfoBuilder harnessApprovalStepInfoBuilder =
-        HarnessApprovalStepInfo.builder().includePipelineExecutionHistory(ParameterField.createValueField(true));
+        HarnessApprovalStepInfo.builder()
+            .includePipelineExecutionHistory(ParameterField.createValueField(true))
+            .isAutoRejectEnabled(ParameterField.createValueField(false))
+            .approvalMessage(ParameterField.createValueField(
+                "Please review the following information and approve the pipeline progression"));
 
     harnessApprovalStepInfoBuilder.approvers(Approvers.builder()
                                                  .disallowPipelineExecutor(ParameterField.createValueField(false))
@@ -236,6 +241,8 @@ public class ApprovalStepMapperImpl extends StepMapper {
                          .defaultValue(ParameterField.createValueField(pair.getValue()))
                          .build())
               .collect(Collectors.toList()));
+    } else {
+      harnessApprovalStepInfoBuilder.approverInputs(new ArrayList<>());
     }
 
     harnessApprovalStepNode.setHarnessApprovalStepInfo(harnessApprovalStepInfoBuilder.build());
