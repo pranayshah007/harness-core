@@ -258,12 +258,14 @@ public class ApprovalStepMapperImpl extends StepMapper {
     CriteriaSpecWrapper approval = getRuntimeJexl();
 
     if (StringUtils.isNoneBlank(approvalParams.getApprovalField(), approvalParams.getApprovalValue())) {
-      approval = getKeyValueCriteria(approvalParams.getApprovalField(), approvalParams.getApprovalValue());
+      approval = getKeyValueCriteria(
+          StringUtils.capitalize(approvalParams.getApprovalField()), approvalParams.getApprovalValue());
     }
 
     CriteriaSpecWrapper rejection = null;
     if (StringUtils.isNoneBlank(approvalParams.getRejectionField(), approvalParams.getRejectionValue())) {
-      rejection = getKeyValueCriteria(approvalParams.getRejectionField(), approvalParams.getRejectionValue());
+      rejection = getKeyValueCriteria(
+          StringUtils.capitalize(approvalParams.getRejectionField()), approvalParams.getRejectionValue());
     }
 
     JiraApprovalStepInfoBuilder stepInfoBuilder =
