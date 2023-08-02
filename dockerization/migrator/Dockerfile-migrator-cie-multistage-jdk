@@ -35,7 +35,7 @@ COPY --chown=65534:65534--from=builder \
   /app/dist/100-migrator/ protocol.info \
   /app/dist/100-migrator/default.jfc \
   /app/dist/100-migrator/profile.jfc \
-  /app/dist/100-migrator/scripts /opt/harness \
+  /app/dist/100-migrator/container/scripts /opt/harness \
   /app/dockerization/base-images/apm/*.sh \
   /opt/harness/
 
