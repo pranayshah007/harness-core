@@ -21,7 +21,6 @@ import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
@@ -103,8 +102,7 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
         GitStoreDelegateConfig gitStoreDelegateConfig =
             (GitStoreDelegateConfig) getManifestDelegateConfig().getStoreDelegateConfig();
         capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-            ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),
-            gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+            gitStoreDelegateConfig, gitStoreDelegateConfig.getEncryptedDataDetails()));
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
       }
