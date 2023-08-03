@@ -8,6 +8,8 @@
 # --global.imagePullSecrets Global Docker registry secret names as an array
 # --global.storageClass Global StorageClass for Persistent Volume(s)
 global:
+  kubeVersion: ""
+  loadbalancerURL: ""
   ha: true
   stackDriverLoggingEnabled: false
   database:
@@ -46,6 +48,17 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis:6379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
+      extraArgs: ""
+
   ingress:
     # -- create ingress objects
     enabled: false
@@ -72,7 +85,7 @@ global:
       gateways:
       hosts:
   imagePullSecrets: []
-
+  
 # --mongoHosts List of mongo hosts
 mongoHosts: []
 
@@ -134,13 +147,14 @@ config:
   ACCESS_CONTROL_PREFERENCE_ENABLED: true
   NOTIFICATION_SLACK_WEBHOOK_URL: ""
   NOTIFICATION_ENVIRONMENT: ONPREM
-  ENABLE_ACCESS_CONTROL: false
+  ENABLE_ACCESS_CONTROL: true
   ACCESS_CONTROL_SERVICE_BASE_URL:
   ENABLE_AUDIT: true
   AUDIT_CLIENT_BASE_URL:
   DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
   GOOGLE_APPLICATION_CREDENTIALS: /opt/harness/monitoring/stackdriver.json
-  MEMORY: 512
+java:
+  memory: 512m
 secrets:
   IDENTITY_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
   MONGODB_USER: admin
@@ -169,7 +183,7 @@ image:
   registry: docker.io
   repository: harness/accesscontrol-service-signed
   pullPolicy: IfNotPresent
-  tag: "78900"
+  tag: "79300"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
@@ -314,8 +328,8 @@ autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  targetCPU: ""
+  targetMemory: ""
 
 ## Configure extra options for liveness probe
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
