@@ -63,7 +63,7 @@ modify_service_name() {
 # Call the function and pass the service name as an argument
 modified_service_name=$(modify_service_name "$SERVICE_NAME")
 
-bazel build --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json $PLATFORM_SERVICE_MODULE ${BAZEL_ARGUMENTS}
+bazel build --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json ${BAZEL_ARGUMENTS}
 
 if [ "${SERVICE_NAME}" == "pipeline-service" ]; then
   module=pipeline-service
