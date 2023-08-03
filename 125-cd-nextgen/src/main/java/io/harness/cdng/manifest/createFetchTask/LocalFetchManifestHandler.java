@@ -7,13 +7,13 @@
 
 package io.harness.cdng.manifest.createFetchTask;
 
-import static io.harness.cdng.K8sHelmCommonStepHelper.getAggregatedValuesManifests;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.K8sHelmCommonStepHelper;
 import io.harness.cdng.k8s.K8sStepExecutor;
 import io.harness.cdng.k8s.K8sStepPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
-import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
@@ -22,16 +22,15 @@ import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.LogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.tasks.ResponseData;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 
-public class LocalManifestHandler extends K8sHelmCommonStepHelper implements ManifestHandler {
+public class LocalFetchManifestHandler extends K8sHelmCommonStepHelper implements ManifestHandler {
   @Override
   public TaskChainResponse prepareFetchResponseForStoreType(Ambiance ambiance, K8sStepExecutor k8sStepExecutor,
       List<ManifestOutcome> manifestOutcomes, StepElementParameters stepElementParameters,
@@ -59,9 +58,9 @@ public class LocalManifestHandler extends K8sHelmCommonStepHelper implements Man
   }
 
   @Override
-  public TaskChainResponse handleFetchResponseForStoreType(ResponseData responseData, K8sStepExecutor k8sStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
-      ManifestOutcome k8sManifest) {
+  public TaskChainResponse handleFailedFetchResponseForStoreType(ResponseData responseData,
+      K8sStepExecutor k8sStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      K8sStepPassThroughData k8sStepPassThroughData, ManifestOutcome k8sManifest) {
     return null;
   }
 
