@@ -6,6 +6,7 @@
  */
 
 package io.harness.serializer;
+
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.CodePulse;
@@ -75,6 +76,7 @@ import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.cdng.k8s.K8sScaleStepNode;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepNode;
+import io.harness.cdng.provision.awscdk.AwsCdkDeployStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkDiffStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkSynthStepNode;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepNode;
@@ -1352,6 +1354,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(AwsCdkDiffStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.AWS_CDK_DEPLOY)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AwsCdkDeployStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))

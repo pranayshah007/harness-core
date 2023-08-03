@@ -6,6 +6,7 @@
  */
 
 package io.harness.common;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.CodePulse;
@@ -259,4 +260,5 @@ public class EntityYamlRootNames {
   public static final String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
   public static final String AWS_CDK_SYNTH = "AwsCdkSynth";
   public static final String AWS_CDK_DIFF = "AwsCdkDiff";
+  public static final String AWS_CDK_DEPLOY = "AwsCdkDeploy";
 }
