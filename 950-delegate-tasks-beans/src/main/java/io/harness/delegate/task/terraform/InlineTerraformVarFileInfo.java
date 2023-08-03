@@ -9,6 +9,7 @@ package io.harness.delegate.task.terraform;
 
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.Expression;
@@ -20,6 +21,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.task.terraform.InlineTerraformVarFileInfo")
 public class InlineTerraformVarFileInfo implements TerraformVarFileInfo, NestedAnnotationResolver {
   @Expression(ALLOW_SECRETS) String varFileContent;
 }

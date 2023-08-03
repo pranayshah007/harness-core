@@ -7,12 +7,15 @@
 
 package io.harness.freeze.beans;
 
+import io.harness.annotation.RecasterAlias;
+
 import javax.annotation.Nullable;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import lombok.Data;
 
 @Data
+@RecasterAlias("io.harness.freeze.beans.RecurrenceSpec")
 public class RecurrenceSpec {
   String until;
   @Nullable @Min(2) @Max(11) Integer value;
