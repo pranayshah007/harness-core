@@ -27,7 +27,7 @@ FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534--from=builder \
-  /app/dist/100-migrator/migrator-capsule.jar \
+  /app/dist//migrator-capsule.jar \
   /app/dist/100-migrator/newrelic.yml \
   /app/dist/100-migrator/keystore.jks \
   /app/dist/100-migrator/config.yml \
@@ -35,7 +35,7 @@ COPY --chown=65534:65534--from=builder \
   /app/dist/100-migrator/ protocol.info \
   /app/dist/100-migrator/default.jfc \
   /app/dist/100-migrator/profile.jfc \
-  /app/dist/100-migrator/scripts /opt/harness \
+  /app/dist/migrator/scripts /opt/harness \
   /app/dockerization/base-images/apm/*.sh \
   /opt/harness/
 
