@@ -1,6 +1,6 @@
-# bootstrap
+# networking
 
-![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
+![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -8,20 +8,12 @@ A Helm chart for Kubernetes
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://./database | database | 0.8.x |
-| file://./networking | networking | 0.8.x |
-| file://./rbac | rbac | 0.8.x |
-| file://./secrets | harness-secrets | 0.8.x |
+| https://harness.github.io/helm-common | harness-common | 1.x.x |
 
 ## Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| global.database.minio.installed | bool | `true` |  |
-| global.database.mongo.installed | bool | `true` |  |
-| global.database.postgresql.installed | bool | `true` |  |
-| global.database.redis.installed | bool | `true` |  |
-| global.database.timescaledb.installed | bool | `true` |  |
 | global.ingress.className | string | `"harness"` |  |
 | global.ingress.defaultbackend.create | bool | `false` | Create will deploy a default backend into your cluster |
 | global.ingress.defaultbackend.image.digest | string | `""` |  |

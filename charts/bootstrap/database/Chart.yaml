@@ -15,7 +15,7 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.3.0
+version: 0.8.0
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
@@ -33,11 +33,11 @@ dependencies:
     condition: global.database.mongo.installed
     repository: https://charts.bitnami.com/bitnami
   - name: timescaledb
-    version: 0.2.x
+    version: 0.8.x
     condition: global.database.timescaledb.installed
     repository: "file://./timescaledb"
   - name: redis
-    version: 0.2.x
+    version: 0.8.x
     condition: global.database.redis.installed
     repository: "file://./redis"
   - name: postgresql

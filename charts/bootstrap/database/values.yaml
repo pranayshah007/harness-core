@@ -17,6 +17,8 @@ minio:
   fullnameOverride: "minio"
   mode: standalone
   defaultBuckets: "logs"
+  image:
+    tag: 2023.5.18-debian-11-r2
   persistence:
     size: 200Gi
   auth:
@@ -28,7 +30,7 @@ mongodb:
   image:
     registry: docker.io
     repository: harness/mongo
-    tag: 4.4.19
+    tag: 4.4.22
   replicaCount: 3
   arbiter:
     enabled: true
@@ -51,7 +53,7 @@ postgresql:
   image:
     registry: docker.io
     repository: bitnami/postgresql
-    tag: 14.7.0-debian-11-r26
+    tag: 14.8.0-debian-11-r17
     digest: ""
   fullnameOverride: "postgres"
   auth:
