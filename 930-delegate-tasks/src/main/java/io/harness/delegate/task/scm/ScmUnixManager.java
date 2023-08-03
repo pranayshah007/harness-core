@@ -31,7 +31,7 @@ public abstract class ScmUnixManager implements AutoCloseable {
   abstract void shutdownEventLoopGroup();
 
   private final String PATH_TO_SCM_BUILD =
-      Paths.get(InstallUtils.getPath(SCM, ScmVersion.DEFAULT)).getParent().toString();
+      "/private/var/tmp/_bazel_adithyaviswanathan/329c7ac70f3f4ef57d2c6c9bce8ff4e3/execroot/harness_monorepo/bazel-out/darwin_arm64-fastbuild/bin/product/ci/scm/scm_";
 
   protected String socketAddress;
   protected ProcessExecutor processBuilder;
