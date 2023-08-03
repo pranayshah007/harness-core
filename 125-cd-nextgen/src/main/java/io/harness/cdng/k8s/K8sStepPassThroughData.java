@@ -11,14 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotation.RecasterAlias;
-import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
-import io.harness.delegate.task.gitcommon.GitFetchFilesResult;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
@@ -38,7 +39,7 @@ import lombok.Value;
 import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
 
-@OwnedBy(CDP)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Value
 @Builder(toBuilder = true)
 @TypeAlias("k8sStepPassThroughData")

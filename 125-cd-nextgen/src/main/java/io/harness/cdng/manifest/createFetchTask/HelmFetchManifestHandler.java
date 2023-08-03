@@ -39,6 +39,7 @@ public class HelmFetchManifestHandler extends K8sHelmCommonStepHelper implements
       List<ManifestOutcome> manifestOutcomes, StepElementParameters stepElementParameters,
       K8sStepPassThroughData k8sStepPassThroughData) {
     List<ValuesManifestOutcome> aggregatedValuesManifests = getAggregatedValuesManifests(manifestOutcomes);
+    k8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
     return prepareHelmFetchValuesTaskChainResponse(
         ambiance, stepElementParameters, aggregatedValuesManifests, k8sStepPassThroughData);
   }
@@ -61,7 +62,6 @@ public class HelmFetchManifestHandler extends K8sHelmCommonStepHelper implements
       Ambiance ambiance, StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
       ManifestOutcome k8sManifest) {
     HelmValuesFetchResponse helmValuesFetchResponse = (HelmValuesFetchResponse) responseData;
-    k8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
     String k8sManifestIdentifier = k8sManifest.getIdentifier();
     String valuesFileContent = helmValuesFetchResponse.getValuesFileContent();
     Map<String, HelmFetchFileResult> helmValuesFetchFilesResultMap =

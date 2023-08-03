@@ -61,7 +61,6 @@ public class CustomFetchManifestHandler extends K8sHelmCommonStepHelper implemen
             .customFetchContent(customManifestValuesFetchResponse.getValuesFilesContentMap())
             .zippedManifestFileId(customManifestValuesFetchResponse.getZippedManifestFileId())
             .build();
-    updatedK8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
     return updatedK8sStepPassThroughData;
   }
 }

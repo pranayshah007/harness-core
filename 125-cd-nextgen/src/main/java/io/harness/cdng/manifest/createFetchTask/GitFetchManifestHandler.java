@@ -81,7 +81,6 @@ public class GitFetchManifestHandler extends K8sHelmCommonStepHelper implements 
                                                                .gitValuesMapContent(gitValuesFetchResponse)
                                                                .k8sGitFetchInfo(k8sGitFetchInfo)
                                                                .build();
-    updatedK8sStepPassThroughData.updateOpenFetchFilesStreamStatus();
     return updatedK8sStepPassThroughData;
   }
 }
