@@ -2166,7 +2166,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testGetS3DelegateRequestWithTagAsRegexGeneric() {
+  public void testGetArtifactoryDelegateRequestWithTagAsRegexGeneric() {
     ArtifactoryRegistryArtifactConfig artifactConfig =
         ArtifactoryRegistryArtifactConfig.builder()
             .repository(ParameterField.createValueField("TEST_REPO"))
@@ -2189,12 +2189,12 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getArtifactDirectory()).isEqualTo(artifactConfig.getArtifactDirectory().getValue());
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
-    assertThat(delegateRequest.getArtifactPathFilter()).isEqualTo("*");
+    assertThat(delegateRequest.getArtifactPathFilter()).isEqualTo(".*?");
   }
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testGetS3DelegateRequestWithTagRegexGeneric() {
+  public void testGetArtifactoryDelegateRequestWithTagRegexGeneric() {
     ArtifactoryRegistryArtifactConfig artifactConfig =
         ArtifactoryRegistryArtifactConfig.builder()
             .repository(ParameterField.createValueField("TEST_REPO"))
