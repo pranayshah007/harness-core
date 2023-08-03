@@ -322,7 +322,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
         return Optional.empty();
       }
       svcManifests = filterServiceManifest(svcManifests, primaryManifestId, isMultipleManifestEnabled);
-      manifests = aggregateManifestsFromAllLocationsV2(svcManifests, manifestsFromOverride, logCallback);
+      manifests =
+          aggregateManifestsFromAllLocationsV2(svcManifests, manifestsFromOverride, logCallback, manifestFileLocation);
 
     } else {
       finalSvcManifestsMapV1 = ngManifestsMetadataSweepingOutput.getFinalSvcManifestsMap();
@@ -391,17 +392,19 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
   // Used for override v2 design
   private List<ManifestConfigWrapper> aggregateManifestsFromAllLocationsV2(List<ManifestConfigWrapper> svcManifests,
-      Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride, NGLogCallback logCallback) {
+      Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride, NGLogCallback logCallback,
+      Map<String, String> manifestFileLocation) {
     List<ManifestConfigWrapper> manifests = new ArrayList<>();
     if (isNotEmpty(svcManifests)) {
       logCallback.saveExecutionLog("Adding manifest from service", LogLevel.INFO);
-      manifests.addAll(svcManifests);
+      createManifestList(manifests, svcManifests, manifestFileLocation, SERVICE);
     }
     if (isNotEmpty(manifestsFromOverride)) {
       for (ServiceOverridesType overridesType : OVERRIDE_IN_REVERSE_PRIORITY) {
         if (manifestsFromOverride.containsKey(overridesType) && isNotEmpty(manifestsFromOverride.get(overridesType))) {
           logCallback.saveExecutionLog("Adding manifest from override type " + overridesType.toString(), LogLevel.INFO);
-          manifests.addAll(manifestsFromOverride.get(overridesType));
+          createManifestList(
+              manifests, manifestsFromOverride.get(overridesType), manifestFileLocation, overridesType.toString());
         }
       }
     }
@@ -415,9 +418,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
         || finalSvcManifestsMap.values().stream().noneMatch(EmptyPredicate::isNotEmpty);
   }
 
-  private void createManifestList(List<ManifestConfigWrapper> manifests,
-      List<ManifestConfigWrapper> finalSvcManifestsList, Map<String, String> manifestFileLocation, String location) {
-    for (ManifestConfigWrapper manifestConfigWrapper : finalSvcManifestsList) {
+  private void createManifestList(List<ManifestConfigWrapper> manifests, List<ManifestConfigWrapper> finalManifestsList,
+      Map<String, String> manifestFileLocation, String location) {
+    for (ManifestConfigWrapper manifestConfigWrapper : finalManifestsList) {
       manifests.add(manifestConfigWrapper);
       manifestFileLocation.put(manifestConfigWrapper.getManifest().getIdentifier(), location);
     }
