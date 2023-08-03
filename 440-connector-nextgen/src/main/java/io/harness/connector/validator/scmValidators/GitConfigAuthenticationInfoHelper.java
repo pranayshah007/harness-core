@@ -77,6 +77,9 @@ public class GitConfigAuthenticationInfoHelper {
   }
 
   public List<EncryptedDataDetail> getGithubAppEncryptedDataDetail(ScmConnector scmConnector, NGAccess ngAccess) {
+    if (scmConnector instanceof GitConfigDTO) {
+      return Collections.emptyList();
+    }
     GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
     if (getResponse(accountClient.isFeatureFlagEnabled(
             FeatureName.CDS_GITHUB_APP_AUTHENTICATION.name(), ngAccess.getAccountIdentifier()))) {

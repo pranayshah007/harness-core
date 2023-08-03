@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.visitor;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -239,4 +240,5 @@ public interface YamlTypes {
   String AWS_CDK_BOOTSTRAP = StepSpecTypeConstants.AWS_CDK_BOOTSTRAP;
   String AWS_CDK_SYNTH = StepSpecTypeConstants.AWS_CDK_SYNTH;
   String AWS_CDK_DIFF = StepSpecTypeConstants.AWS_CDK_DIFF;
+  String AWS_CDK_DEPLOY = StepSpecTypeConstants.AWS_CDK_DEPLOY;
 }

@@ -150,8 +150,6 @@ public enum FeatureName {
   CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
       "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
   CDS_MULTI_SERVICE_PROPAGATION("FF for enabling multi service propagation for CD", HarnessTeam.CDP),
-  CDS_NEXUS_GROUPID_ARTIFACTID_DROPDOWN(
-      "FF to enable dropdowns for groupId and artifactId in Nexus Artifact Source", HarnessTeam.CDC),
   CDS_NG_TRIGGER_EXECUTION_REFACTOR(
       "Refactor trigger execution to use same logic used in manual execution", HarnessTeam.SPG),
   CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-region artifact triggers", HarnessTeam.CDC),
@@ -323,6 +321,8 @@ public enum FeatureName {
       "Displays the control node and test node reg filter option in Verify step", HarnessTeam.CV),
   CV_UI_DISPLAY_SHOULD_USE_NODES_FROM_CD_CHECKBOX(
       "Displays the should use nodes from CD checkbox in Verify step", HarnessTeam.CV),
+  CV_USE_SEPARATE_LE_TASK_TYPE_FOR_LOG_CLUSTERING(
+      "When enabled, CV log clustering task type will be CV_LOG_CLUSTER, else it will be LOG_CLUSTER", HarnessTeam.CV),
   CV_DEMO,
   CV_FAIL_ON_EMPTY_NODES,
   CV_HOST_SAMPLING,
@@ -711,8 +711,6 @@ public enum FeatureName {
       HarnessTeam.SPG),
   SPG_SETTINGS_INFINITY_SCROLL_FIX("Fixes infinte scroll used with infinite scroll.", HarnessTeam.SPG),
   SPG_SIDENAV_COLLAPSE("FF for enabling collapse and expand of side nav", HarnessTeam.SPG),
-  SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE(
-      "To silent ignore org.modelmapper.MappingException inside state machine executor", HarnessTeam.SPG),
   SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG(
       "Will fire the artifact and manifest triggers for all the versions in the polling response instead of the latest only",
       HarnessTeam.SPG),
@@ -853,7 +851,9 @@ public enum FeatureName {
       HarnessTeam.CDP),
   PIE_EVALUATE_EXPRESSION_TO_NULL(
       "Used to evaluate expressions to absolute null value instead of null string in case of unresolved expression",
-      PIPELINE);
+      PIPELINE),
+  CDS_QUEUE_SERVICE_FOR_TRIGGERS(
+      "When this flag is enabled, triggers will be processed using queue service instead of mongo iterators", PIPELINE);
   // keep-sorted end
 
   @Deprecated

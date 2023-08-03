@@ -1,0 +1,85 @@
+subject: Deployment Impact Analysis Report for the pipeline "${ANALYSIS_PIPELINE_NAME}"
+body: "<html>
+  <div style=\" margin: 15px; padding-top: 7px; font-size: small; display: flex; justify-content: center; \">
+    <div style=\" width: 600px; border-top-width: 8px; border-top-style: solid; border-top-color: #0278D5; padding-bottom: 7px; border-bottom-width: 8px; border-bottom-style: solid; border-bottom-color: #0278D5; \">
+      <div style=\"font-size: 15px;\">
+        <p style=\"margin-bottom: 15px;\">
+          </a> ${HEADER_MESSAGE} 
+        </p>
+
+        <p>
+          <div>
+            <div style=\"color: #0B0B0D;\"><b>Monitored Service</b>: ${MONITORED_SERVICE_NAME}</div>
+          </div>
+          <div>
+            <div style=\"color: #0B0B0D;\"><b>Account Name</b>: ${ACCOUNT_NAME}</div>
+          </div>
+          <div>
+            <div style=\"color: #0B0B0D;\"><b>Organization Name</b>: ${ORG_NAME}</div>
+          </div>
+          <div>
+            <div style=\"color: #0B0B0D;\"><b>Project Name</b>: ${PROJECT_NAME}</div>
+          </div>
+        </p>
+        <p>
+        <div>
+          <div style=\"color: #0B0B0D;\"><b>Configured Analysis Duration</b>: ${ANALYSIS_DURATION}</div>
+        </div>
+        <div>
+          <div style=\"color: #0B0B0D;\"><b>Started</b>: ${ANALYSIS_STARTED_AT}</div>
+        </div>
+        <div>
+          <div style=\"color: #0B0B0D;\"><b>Ended</b>: ${ANALYSIS_ENDED_AT}</div>
+        </div>
+        </p>
+        <hr style=\"border-top: 1px solid #b0b1c3;\" />
+        <div>
+          <a href=\"${URL}\" target=\"_blank\" style=\"text-decoration: none; color: #1a89bf;\">
+            <b>Change events</b>
+            </a>(${TOTAL_CE_COUNT})
+       </div>
+        <div>
+          <div style=\"color: #0B0B0D;\">Deployments (${DEPLOYMENT})</div>
+        </div>
+        <div>
+          <div style=\"color: #0B0B0D;\">Infra events (${INFRASTRUCTURE})</div>
+        </div>
+        <div>
+          <div style=\"color: #0B0B0D;\">Alerts (${ALERTS})</div>
+        </div>
+        <div>
+          <div style=\"color: #0B0B0D;\">Feature flag (${FEATURE_FLAG})</div>
+        </div>
+        <div>
+          <div style=\"color: #0B0B0D;\">Chaos events (${CHAOS_EXPERIMENT})</div>
+        </div>
+
+      </div>
+      <hr style=\"border-top: 1px solid #b0b1c3;\" />
+      <div>
+          <a href=\"${URL}\" target=\"_blank\" style=\"text-decoration: none; color: #1a89bf;\">
+            <b>Service Health</b></a>
+       </div>
+       <div>
+          <div style=\"color: #0B0B0D;\">${SERVICE_HEALTH_SUMMARY}</div>
+        </div>
+      <hr style=\"border-top: 1px solid #b0b1c3;\" />
+      <div>
+          <a href=\"${SLO_URL}\" target=\"_blank\" style=\"text-decoration: none; color: #1a89bf;\">
+            <b>SLO Performance</b></a>
+       </div>
+       <div>
+          <div style=\"color: #0B0B0D;\">${SLO_SUMMARY}</div>
+        </div>
+       <p>
+          <p> ${SLO_PERFORMANCE_EMAIL} </p>
+        </p>
+      <hr style=\"border-top: 1px solid #b0b1c3;\" />
+      <div>
+        <a href=\"${URL}\" target=\"_blank\" style=\" display: inline-block; text-decoration: none; color: #0b0b0d; padding: 10px; border-radius: 4px; border: 1px solid #bababa; \">
+          <b>Metrics and Logs</b>
+        </a>
+      </div>
+    </div>
+  </div>
+</html>"

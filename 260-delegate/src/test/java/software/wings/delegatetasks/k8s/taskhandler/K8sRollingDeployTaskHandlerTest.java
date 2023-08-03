@@ -67,6 +67,7 @@ import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -711,13 +712,16 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     doAnswer(invocation -> {
       Object[] args = invocation.getArguments();
       K8sHandlerConfig k8sRollingHandlerConfig = (K8sHandlerConfig) args[3];
+      K8sRequestHandlerContext requestHandlerContext = (K8sRequestHandlerContext) args[4];
       k8sRollingHandlerConfig.setKubernetesConfig(KubernetesConfig.builder().build());
       k8sRollingHandlerConfig.setClient(Kubectl.client("", ""));
       k8sRollingHandlerConfig.setResources(inheritedKubernetesResources);
+      requestHandlerContext.setResources(inheritedKubernetesResources);
+
       return true;
     })
         .when(k8sTaskHelper)
-        .restore(any(), any(), any(), any(), any());
+        .restore(any(), any(), any(), any(), eq(k8sRollingDeployTaskHandler.getK8sRequestHandlerContext()), any());
     handler.executeTaskInternal(K8sRollingDeployTaskParameters.builder()
                                     .releaseName("releaseName")
                                     .isInCanaryWorkflow(false)
@@ -730,7 +734,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
 
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(handler, times(0)).init(any(), any(), any());
-    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
+    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any(), any());
     verify(releaseHandler).getReleaseHistory(any(), any());
     verify(k8sTaskHelperBase, times(1))
         .applyManifests(any(Kubectl.class), captor.capture(), any(K8sDelegateTaskParams.class),

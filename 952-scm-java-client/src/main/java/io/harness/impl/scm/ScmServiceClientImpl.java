@@ -39,7 +39,6 @@ import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.constants.Constants;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ConnectException;
 import io.harness.exception.ExceptionUtils;
@@ -1299,23 +1298,14 @@ public class ScmServiceClientImpl implements ScmServiceClient {
                                                   .setFetchAllRepos(pageRequest.isFetchAll())
                                                   .build();
     if (repoFilterParamsDTO != null) {
-      if (isNotEmpty(repoFilterParamsDTO.getRepoName())) {
-        if (scmConnector instanceof GithubConnectorDTO) {
-          getUserReposRequest =
-              GetUserReposRequest.newBuilder(getUserReposRequest)
-                  .setRepoFilterParams(RepoFilterParams.newBuilder()
-                                           .setRepoName(repoFilterParamsDTO.getRepoName())
-                                           .setUserName(scmGitProviderHelper.getRepoOwner(scmConnector))
-                                           .build())
-                  .build();
-        } else {
-          getUserReposRequest =
-              GetUserReposRequest.newBuilder(getUserReposRequest)
-                  .setRepoFilterParams(
-                      RepoFilterParams.newBuilder().setRepoName(repoFilterParamsDTO.getRepoName()).build())
-                  .build();
-        }
-      }
+      getUserReposRequest =
+          GetUserReposRequest.newBuilder(getUserReposRequest)
+              .setRepoFilterParams(
+                  RepoFilterParams.newBuilder()
+                      .setRepoName(isEmpty(repoFilterParamsDTO.getRepoName()) ? "" : repoFilterParamsDTO.getRepoName())
+                      .setUserName(scmGitProviderHelper.getRepoOwner(scmConnector))
+                      .build())
+              .build();
     }
     return getUserReposRequest;
   }
@@ -1330,13 +1320,14 @@ public class ScmServiceClientImpl implements ScmServiceClient {
                                                                         .setPagination(pageRequest)
                                                                         .build();
     if (branchFilterParamsDTO != null) {
-      if (isNotEmpty(branchFilterParamsDTO.getBranchName())) {
-        listBranchesWithDefaultRequest =
-            ListBranchesWithDefaultRequest.newBuilder(listBranchesWithDefaultRequest)
-                .setBranchFilterParams(
-                    BranchFilterParams.newBuilder().setBranchName(branchFilterParamsDTO.getBranchName()).build())
-                .build();
-      }
+      listBranchesWithDefaultRequest =
+          ListBranchesWithDefaultRequest.newBuilder(listBranchesWithDefaultRequest)
+              .setBranchFilterParams(
+                  BranchFilterParams.newBuilder()
+                      .setBranchName(
+                          isEmpty(branchFilterParamsDTO.getBranchName()) ? "" : branchFilterParamsDTO.getBranchName())
+                      .build())
+              .build();
     }
     return listBranchesWithDefaultRequest;
   }

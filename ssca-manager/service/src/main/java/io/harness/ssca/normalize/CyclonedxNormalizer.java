@@ -108,7 +108,15 @@ public class CyclonedxNormalizer implements Normalizer<CyclonedxDTO> {
     List<String> result = new ArrayList<>();
     if (Objects.nonNull(licenses) && licenses.size() > 0) {
       for (CyclonedxDTO.Component.License license : licenses) {
-        result.add(license.getLicense().getName());
+        if (license.getLicense() != null) {
+          if (license.getLicense().getName() != null) {
+            result.add(license.getLicense().getName());
+          } else if (license.getLicense().getId() != null) {
+            result.add(license.getLicense().getId());
+          }
+        } else if (license.getExpression() != null) {
+          result.addAll(SBOMUtils.processExpression(license.getExpression()));
+        }
       }
     } else {
       result.add("");

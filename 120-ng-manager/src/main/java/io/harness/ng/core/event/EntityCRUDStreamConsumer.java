@@ -27,6 +27,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GITOPS
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_COMMIT;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_PROCESS_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_TO_HARNESS_PROGRESS;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.INSTANCE_DEPLOYMENT_INFO;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.INVITE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.LICENSE_MODULES;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.POLLING_DOCUMENT;
@@ -120,6 +121,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(CD_ACCOUNT_EXECUTION_METADATA + ENTITY_CRUD) MessageListener accountExecutionMetadataCRUDStreamListener,
       @Named(DEPLOYMENT_ACCOUNTS + ENTITY_CRUD) MessageListener deploymentAccountsCRUDStreamListener,
       @Named(DEPLOYMENT_SUMMARY_NG + ENTITY_CRUD) MessageListener deploymentSummaryNGCRUDStreamListener,
+      @Named(INSTANCE_DEPLOYMENT_INFO + ENTITY_CRUD) MessageListener instanceDeploymentInfoCRUDStreamListener,
       QueueController queueController) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
@@ -159,6 +161,7 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(accountExecutionMetadataCRUDStreamListener);
     messageListenersList.add(deploymentAccountsCRUDStreamListener);
     messageListenersList.add(deploymentSummaryNGCRUDStreamListener);
+    messageListenersList.add(instanceDeploymentInfoCRUDStreamListener);
     processorMap = new HashMap<>();
     processorMap.put(SETUP_USAGE_ENTITY, setupUsageChangeEventMessageProcessor);
   }

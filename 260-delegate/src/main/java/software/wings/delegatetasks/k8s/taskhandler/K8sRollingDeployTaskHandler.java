@@ -128,7 +128,7 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
     if (k8sRollingDeployTaskParameters.isInheritManifests()) {
       success = k8sTaskHelper.restore(k8sRollingDeployTaskParameters.getKubernetesResources(),
           k8sRollingDeployTaskParameters.getK8sClusterConfig(), k8sDelegateTaskParams, k8sRollingHandlerConfig,
-          k8sTaskHelper.getExecutionLogCallback(k8sRollingDeployTaskParameters, Init));
+          k8sRequestHandlerContext, k8sTaskHelper.getExecutionLogCallback(k8sRollingDeployTaskParameters, Init));
       if (!success) {
         return getFailureResponse();
       }
@@ -484,5 +484,10 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
     }
 
     return true;
+  }
+
+  @VisibleForTesting
+  K8sRequestHandlerContext getK8sRequestHandlerContext() {
+    return k8sRequestHandlerContext;
   }
 }

@@ -106,6 +106,8 @@ public interface NgUserService {
 
   boolean removeUserWithCriteria(String userId, UserMembershipUpdateSource source, Criteria criteria);
 
+  boolean deleteUserMetadata(String userId);
+
   boolean isUserPasswordSet(String accountIdentifier, String email);
 
   List<String> listUserAccountIds(String userId);

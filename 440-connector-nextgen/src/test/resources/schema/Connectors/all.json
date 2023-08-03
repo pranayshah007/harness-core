@@ -6970,6 +6970,9 @@
                 "type": "string"
               }
             },
+            "enableCache": {
+              "type": "boolean"
+            },
             "k8sAuthEndpoint": {
               "type": "string"
             },

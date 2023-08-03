@@ -25,4 +25,11 @@ public class AccountSummaryResponseDto {
   List<String> infrastructures;
   List<String> serviceDefinitions;
   String errorSummary;
+  int orgs;
+  int projects;
+  int v2Services;
+  int projectWithServiceV1;
+  int pipelinesWithServiceV2;
+  int pipelinesWithGitXEnabled;
+  int pipelinesWithGitXDisabled;
 }

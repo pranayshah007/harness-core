@@ -167,6 +167,12 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
     closeLogStream(ambiance, stepParameters);
   }
 
+  @Override
+  public void handleExpire(
+      Ambiance ambiance, StepElementParameters stepParameters, TaskExecutableResponse executableResponse) {
+    closeLogStream(ambiance, stepParameters);
+  }
+
   private void closeLogStream(Ambiance ambiance, StepElementParameters stepParameters) {
     try {
       Thread.sleep(500, 0);

@@ -3283,6 +3283,7 @@ public class UserServiceImpl implements UserService {
 
       if (updatedActiveAccounts.isEmpty() && updatedPendingAccounts.isEmpty()) {
         deleteUser(user);
+        userServiceHelper.deleteUserMetadata(userId);
         return;
       }
 

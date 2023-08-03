@@ -24,7 +24,7 @@ public class ServiceGuardLogClusterStateExecutor extends LogClusterStateExecutor
   protected List<String> scheduleAnalysis(AnalysisInput analysisInput, LogClusterState analysisState) {
     switch (analysisState.getClusterLevel()) {
       case L1:
-        return logClusterService.scheduleL1ClusteringTasks(analysisInput);
+        return logClusterService.scheduleL1ClusteringTasks(analysisInput, false);
       case L2:
         return logClusterService.scheduleServiceGuardL2ClusteringTask(analysisInput)
             .map(Collections::singletonList)

@@ -25,8 +25,9 @@ public class DelegateTaskMetricContextBuilder {
   private static Map<Class<?>, DelegateTaskMetricContextBuilder.ObjectContextBuilder<?>> OBJECT_CONTEXT_BUILDER_MAP =
       new HashMap<>();
   static {
-    addToObjContextMap(
-        Delegate.class, delegate -> new DelegateMetricContext(delegate.getAccountId(), delegate.getVersion()));
+    addToObjContextMap(Delegate.class,
+        delegate
+        -> new DelegateMetricContext(delegate.getAccountId(), delegate.getVersion(), delegate.getDelegateType()));
   }
 
   private static <T> void addToObjContextMap(

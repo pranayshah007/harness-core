@@ -113,7 +113,7 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
     if (k8sCanaryDeployTaskParameters.isInheritManifests()) {
       success = k8sTaskHelper.restore(k8sCanaryDeployTaskParameters.getKubernetesResources(),
           k8sCanaryDeployTaskParameters.getK8sClusterConfig(), k8sDelegateTaskParams, canaryHandlerConfig,
-          k8sTaskHelper.getExecutionLogCallback(k8sCanaryDeployTaskParameters, Init));
+          k8sRequestHandlerContext, k8sTaskHelper.getExecutionLogCallback(k8sCanaryDeployTaskParameters, Init));
       if (!success) {
         return getFailureResponse();
       }

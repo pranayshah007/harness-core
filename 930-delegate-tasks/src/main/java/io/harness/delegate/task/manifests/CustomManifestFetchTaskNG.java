@@ -45,6 +45,7 @@ import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResp
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ShellExecutionException;
+import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -116,9 +117,12 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
         logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
         logCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(defaultSourceWorkingDirectory));
 
-        if (!isManifestsFilesSizeAllowed(logCallback, defaultSourceWorkingDirectory)) {
+        Path pathToManifestFiles =
+            Paths.get(defaultSourceWorkingDirectory, customManifestSource.getFilePaths().get(0)).normalize();
+        if (!isManifestsFilesSizeAllowed(logCallback, pathToManifestFiles.toString())) {
           throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress),
-              new InvalidRequestException("Custom Manifest File size exceeds allowed max size of 25Mb"));
+              new InvalidRequestException(
+                  format(KubernetesExceptionMessages.CUSTOM_REMOTE_MANIFEST_SIZE_LIMIT, pathToManifestFiles)));
         }
 
       } catch (ShellScriptException e) {

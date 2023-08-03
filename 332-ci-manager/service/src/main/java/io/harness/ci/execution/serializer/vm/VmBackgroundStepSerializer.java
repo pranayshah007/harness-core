@@ -90,11 +90,9 @@ public class VmBackgroundStepSerializer {
         ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 
     if (!isEmpty(command)) {
-      String earlyExitCommand = SerializerUtils.getEarlyExitCommand(backgroundStepInfo.getShell(), false);
+      String earlyExitCommand = SerializerUtils.getEarlyExitCommand(backgroundStepInfo.getShell());
       command = earlyExitCommand + command;
     }
-
-    command = SerializerUtils.prependPrintCommand(command, backgroundStepInfo.getShell());
 
     ConnectorDetails connectorDetails = null;
     if (!StringUtils.isEmpty(image) && !StringUtils.isEmpty(connectorIdentifier)) {

@@ -267,11 +267,11 @@ public class DeleteAccountHelper {
       if (deleteAccountFromAccountsCollection) {
         deleteAccountFromAccountsCollection(accountId);
       }
-      return true;
     } else {
-      log.info("Not all entities are deleted for account {}", accountId);
-      return false;
+      log.info("Entities Remaining For Deletion for accountID: " + accountId
+          + "are: " + entitiesRemainingForDeletion.toString());
     }
+    return true;
   }
 
   public void deleteAccountFromAccountsCollection(String accountId) {

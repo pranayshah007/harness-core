@@ -301,4 +301,8 @@ public interface AccountService {
 
   Account updateCrossGenerationAccessEnabled(
       String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen);
+
+  boolean getPublicAccessEnabled(String accountId);
+
+  void setPublicAccessEnabled(String accountId, boolean publicAccessEnabled);
 }

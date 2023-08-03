@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.cloudformation;
 
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,8 +44,14 @@ import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConne
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
@@ -52,6 +59,7 @@ import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.FetchFilesResult;
@@ -144,6 +152,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
     Reflect.on(cloudformationStepHelper).set("cdExpressionResolver", cdExpressionResolver);
     Reflect.on(cdExpressionResolver).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
     doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
+    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
   }
 
   @Test
@@ -1140,5 +1149,65 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
         .putAllSetupAbstractions(setupAbstractions)
         .setStageExecutionId("stageExecutionId")
         .build();
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testStartChainLinkWithGitForGithubApp() {
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .authentication(
+                GithubAuthenticationDTO.builder()
+                    .authType(GitAuthType.HTTP)
+                    .credentials(GithubHttpCredentialsDTO.builder()
+                                     .type(GithubHttpAuthenticationType.GITHUB_APP)
+                                     .httpCredentialsSpec(GithubAppDTO.builder()
+                                                              .installationId("id")
+                                                              .applicationId("app")
+                                                              .privateKeyRef(SecretRefData.builder().build())
+                                                              .build())
+                                     .build())
+                    .build())
+            .build();
+    StepElementParameters stepElementParameters = createStepParametersWithGit(true);
+    ConnectorInfoDTO awsConnectorDTO =
+        ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build();
+    ConnectorInfoDTO gitConnectorInfoDTO =
+        ConnectorInfoDTO.builder()
+            .connectorConfig(GitConfigDTO.builder().gitConnectionType(GitConnectionType.REPO).build())
+            .build();
+    doReturn(awsConnectorDTO).doReturn(gitConnectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+
+    doReturn(githubConnectorDTO).when(cdStepHelper).getScmConnector(any(), any(), any());
+    doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
+    List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
+    doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+    MockedStatic mockedStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    TaskChainResponse response =
+        cloudformationStepHelper.startChainLink(cloudformationStepExecutor, getAmbiance(), stepElementParameters);
+
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    mockedStatic.close();
+    assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
+    GitFetchRequest gitFetchRequest = (GitFetchRequest) taskDataArgumentCaptor.getValue().getParameters()[0];
+    assertThat(gitFetchRequest).isExactlyInstanceOf(GitFetchRequest.class);
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().size()).isEqualTo(4);
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().get(0).getIdentifier()).isEqualTo("test-identifier");
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().get(1).getIdentifier()).isEqualTo("test-identifier2");
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().get(2).getIdentifier()).isEqualTo("templateFile");
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().get(3).getIdentifier()).isEqualTo("tagsFile");
+    assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.GIT_FETCH_NEXT_GEN_TASK.name());
+    assertThat(response.getTaskRequest()).isNotNull();
+    assertThat(response.getPassThroughData()).isNotNull();
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().get(0).getGitStoreDelegateConfig().getGitConfigDTO())
+        .isInstanceOf(GithubConnectorDTO.class);
   }
 }

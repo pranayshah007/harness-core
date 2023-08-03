@@ -132,7 +132,7 @@ public class K8sBlueGreenDeployTaskHandler extends K8sTaskHandler {
     if (k8sBlueGreenDeployTaskParameters.isInheritManifests()) {
       success = k8sTaskHelper.restore(k8sBlueGreenDeployTaskParameters.getKubernetesResources(),
           k8sBlueGreenDeployTaskParameters.getK8sClusterConfig(), k8sDelegateTaskParams, k8sBlueGreenHandlerConfig,
-          k8sTaskHelper.getExecutionLogCallback(k8sBlueGreenDeployTaskParameters, Init));
+          k8sRequestHandlerContext, k8sTaskHelper.getExecutionLogCallback(k8sBlueGreenDeployTaskParameters, Init));
       if (!success) {
         return getFailureResponse(null);
       }

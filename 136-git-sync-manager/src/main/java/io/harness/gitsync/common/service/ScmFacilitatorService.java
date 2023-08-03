@@ -49,8 +49,8 @@ public interface ScmFacilitatorService {
       String connectorIdentifierRef, String repoURL, PageRequest pageRequest, String searchTerm);
 
   List<GitRepositoryResponseDTO> listReposByRefConnector(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorRef, PageRequest pageRequest, RepoFilterParameters repoFilterParameters,
-      boolean applyGitXRepoAllowListFilter);
+      String projectIdentifier, String connectorRef, PageRequest pageRequest,
+      RepoFilterParameters repoFilterParameters);
 
   GitListRepositoryResponse listReposV2(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String connectorRef, PageRequest pageRequest, RepoFilterParameters repoFilterParameters);

@@ -44,4 +44,5 @@ public class VaultConfigUpdateDTO extends SecretManagerConfigUpdateDTO {
   private String serviceAccountTokenPath;
   private String k8sAuthEndpoint;
   private boolean renewAppRoleToken;
+  private boolean enableCache;
 }
