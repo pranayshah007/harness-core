@@ -57,6 +57,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
         connectorProcessorFactory.getConnectorProcessor(connectorInfoDTO.getConnectorType());
     Map<String, BackstageEnvVariable> connectorEnvSecrets =
         connectorProcessor.getConnectorAndSecretsInfo(accountIdentifier, connectorInfoDTO);
+    connectorProcessor.createOrUpdateIntegrationConfig(accountIdentifier, connectorInfoDTO);
     backstageEnvVariableService.createOrUpdate(new ArrayList<>(connectorEnvSecrets.values()), accountIdentifier);
   }
 
