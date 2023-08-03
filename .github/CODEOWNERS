@@ -105,3 +105,6 @@ WORKSPACE pranay.shah@harness.io jyoti.raval@harness.io shaun.murphy@harness.io
 /970-ng-commons/src/main/java/io/harness/utils/yaml/YamlPipelineUtils.java archit.singla@harness.io sahil.hindwani@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
 /953-yaml-commons/src/main/java/io/harness/yaml/utils/JsonPipelineUtils.java archit.singla@harness.io sahil.hindwani@harness.io ankit.tiwari@harness.io mohit.garg@harness.io
 /979-recaster/ prashant.pal@harness.io
+
+**/charts/* jonathan.charette@harness.io
+**/chart/* jonathan.charette@harness.io 
