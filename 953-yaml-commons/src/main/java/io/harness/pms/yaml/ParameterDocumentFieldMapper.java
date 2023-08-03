@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.CastedField;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.ParameterFieldCastException;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterDocumentField.ParameterDocumentFieldKeys;
 import io.harness.utils.RecastReflectionUtils;
@@ -102,9 +101,8 @@ public class ParameterDocumentFieldMapper {
           }
         }
       }
-      throw new ParameterFieldCastException(
-          String.format("The field should be of type [%s] but got: [%s] with value [%s]", cls.getSimpleName(),
-              parameterFieldValueWrapper.getValue().getClass().getSimpleName(), parameterFieldValueWrapper.getValue()));
+      log.error(String.format("The field should be of type [%s] but got: [%s] with value [%s]", cls.getSimpleName(),
+          parameterFieldValueWrapper.getValue().getClass().getSimpleName(), parameterFieldValueWrapper.getValue()));
     }
   }
 
