@@ -850,7 +850,9 @@ public enum FeatureName {
       "For Helm tasks we will be sending task progress event via log streaming client which will be received and handled by handleProgress handler in the ng-manager step class",
       HarnessTeam.CDP),
   CDS_QUEUE_SERVICE_FOR_TRIGGERS(
-      "When this flag is enabled, triggers will be processed using queue service instead of mongo iterators", PIPELINE);
+      "When this flag is enabled, triggers will be processed using queue service instead of mongo iterators", PIPELINE),
+  CDS_SUPPORT_SERVICE_INPUTS_AS_EXECUTION_INPUTS(
+      "Service Inputs will be marked as execution inputs if service is an expression", HarnessTeam.CDC);
   // keep-sorted end
 
   @Deprecated
