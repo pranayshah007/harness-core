@@ -29,8 +29,5 @@ public interface InstanceSyncByPerpetualTaskHandler {
 
   void processInstanceSyncResponseFromPerpetualTask(
       InfrastructureMapping infrastructureMapping, DelegateResponseData response);
-
-  default void cleanupInvalidV1PerpetualTask(String accountId) {}
-
   Status getStatus(InfrastructureMapping infrastructureMapping, DelegateResponseData response);
 }
