@@ -1286,28 +1286,32 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
   }
 
-  private GetUserReposRequest buildGetUserReposRequest(
+  @VisibleForTesting
+  GetUserReposRequest buildGetUserReposRequest(
       ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO) {
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    GetUserReposRequest getUserReposRequest = GetUserReposRequest.newBuilder()
-                                                  .setPagination(PageRequest.newBuilder()
-                                                                     .setPage(pageRequest.getPageIndex() + 1)
-                                                                     .setSize(pageRequest.getPageSize())
-                                                                     .build())
-                                                  .setProvider(gitProvider)
-                                                  .setFetchAllRepos(pageRequest.isFetchAll())
-                                                  .build();
+    return GetUserReposRequest.newBuilder()
+        .setPagination(
+            PageRequest.newBuilder().setPage(pageRequest.getPageIndex() + 1).setSize(pageRequest.getPageSize()).build())
+        .setProvider(gitProvider)
+        .setFetchAllRepos(pageRequest.isFetchAll())
+        .setRepoFilterParams(buildRepoFilterParams(repoFilterParamsDTO, scmConnector))
+        .build();
+  }
+
+  private RepoFilterParams buildRepoFilterParams(RepoFilterParamsDTO repoFilterParamsDTO, ScmConnector scmConnector) {
+    return RepoFilterParams.newBuilder()
+        .setRepoName(getRepoNameFilterParam(repoFilterParamsDTO))
+        .setUserName(scmGitProviderHelper.getRepoOwner(scmConnector))
+        .build();
+  }
+
+  private String getRepoNameFilterParam(RepoFilterParamsDTO repoFilterParamsDTO) {
     if (repoFilterParamsDTO != null) {
-      getUserReposRequest =
-          GetUserReposRequest.newBuilder(getUserReposRequest)
-              .setRepoFilterParams(
-                  RepoFilterParams.newBuilder()
-                      .setRepoName(isEmpty(repoFilterParamsDTO.getRepoName()) ? "" : repoFilterParamsDTO.getRepoName())
-                      .setUserName(scmGitProviderHelper.getRepoOwner(scmConnector))
-                      .build())
-              .build();
+      return isEmpty(repoFilterParamsDTO.getRepoName()) ? "" : repoFilterParamsDTO.getRepoName();
+    } else {
+      return "";
     }
-    return getUserReposRequest;
   }
 
   private ListBranchesWithDefaultRequest buildListBranchesWithDefaultRequest(

@@ -83,6 +83,7 @@ import io.harness.product.ci.scm.proto.GetAuthenticatedUserResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
+import io.harness.product.ci.scm.proto.GetUserReposRequest;
 import io.harness.product.ci.scm.proto.GithubProvider;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultRequest;
@@ -626,6 +627,18 @@ public class ScmServiceClientImplTest extends CategoryTest {
                               .url("https://app.harness.io/ng/account/_OKE5H2PQKOUfzFFDuD4FA/code/default/CODE/gitness")
                               .build();
     assertThat(helper.getSlug(harnessConnectorDTO)).isEqualTo("_OKE5H2PQKOUfzFFDuD4FA/default/CODE/gitness/+");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testBuildGetUserReposRequest() {
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(gitProvider);
+    when(scmGitProviderHelper.getRepoOwner(any())).thenReturn("user");
+    GetUserReposRequest getUserReposRequest =
+        scmServiceClient.buildGetUserReposRequest(scmConnector, PageRequestDTO.builder().pageSize(5).build(), null);
+    assertThat(getUserReposRequest).isNotNull();
+    assertThat(getUserReposRequest.getRepoFilterParams().getUserName()).isNotEmpty();
   }
 
   private GitFileDetails getGitFileDetailsDefault() {
