@@ -2531,14 +2531,20 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateRegisterResponse register(final DelegateParams delegateParams, final boolean isConnectedUsingMtls) {
-    delegateMetricsService.recordDelegateMetrics(
-        Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
+    delegateMetricsService.recordDelegateMetrics(Delegate.builder()
+                                                     .accountId(delegateParams.getAccountId())
+                                                     .version(delegateParams.getVersion())
+                                                     .delegateType(delegateParams.getDelegateType())
+                                                     .build(),
         DELEGATE_REGISTRATION);
     // TODO: remove broadcasts from the flow of this function. Because it's called only in the first registration,
     // which is before the open of websocket connection.
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
-      delegateMetricsService.recordDelegateMetrics(
-          Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
+      delegateMetricsService.recordDelegateMetrics(Delegate.builder()
+                                                       .accountId(delegateParams.getAccountId())
+                                                       .version(delegateParams.getVersion())
+                                                       .delegateType(delegateParams.getDelegateType())
+                                                       .build(),
           DELEGATE_DESTROYED);
       broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true).broadcast(SELF_DESTRUCT);
       log.warn("Sending self destruct command from register delegate parameters because the account is deleted.");
