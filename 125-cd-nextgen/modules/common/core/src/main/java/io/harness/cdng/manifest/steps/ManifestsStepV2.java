@@ -588,23 +588,38 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     }
     if (isNotEmpty(connectorsNotFound)) {
       List<String> fileLocationList = new ArrayList<>();
+      List<String> manifestIdentifierList = new ArrayList<>();
       for (String connectorIdentifier : connectorsNotFound) {
-        fileLocationList.add("[" + connectorIdentifierRefs.get(connectorIdentifier).stream().map(manifestFileLocation::get)
-            .collect(Collectors.joining(",")) + "]");
+        manifestIdentifierList.add("[" + String.join(",", connectorIdentifierRefs.get(connectorIdentifier)) + "]");
+        fileLocationList.add("["
+            + connectorIdentifierRefs.get(connectorIdentifier)
+                  .stream()
+                  .map(manifestFileLocation::get)
+                  .collect(Collectors.joining(","))
+            + "]");
       }
-      throw new InvalidRequestException(String.format("Connectors with identifier(s) [%s] not found in [%s]",
-          String.join(",", connectorsNotFound), String.join(",", fileLocationList)));
+      throw new InvalidRequestException(
+          String.format("Connectors with identifier(s) [%s] not found in manifest with identifier [%s] in [%s]",
+              String.join(",", connectorsNotFound), String.join(",", manifestIdentifierList),
+              String.join(",", fileLocationList)));
     }
 
     if (isNotEmpty(connectorsNotValid)) {
       List<String> fileLocationList = new ArrayList<>();
+      List<String> manifestIdentifierList = new ArrayList<>();
       for (String connectorIdentifier : connectorsNotFound) {
-        fileLocationList.add("[" + connectorIdentifierRefs.get(connectorIdentifier).stream().map(manifestFileLocation::get)
-            .collect(Collectors.joining(",")) + "]");
+        manifestIdentifierList.add("[" + String.join(",", connectorIdentifierRefs.get(connectorIdentifier)) + "]");
+        fileLocationList.add("["
+            + connectorIdentifierRefs.get(connectorIdentifier)
+                  .stream()
+                  .map(manifestFileLocation::get)
+                  .collect(Collectors.joining(","))
+            + "]");
       }
-      throw new InvalidRequestException(
-          format("Connectors with identifiers [%s] in [%s] is(are) invalid. Please fix the connector YAMLs.",
-              String.join(",", connectorsNotValid), String.join(",", fileLocationList)));
+      throw new InvalidRequestException(format(
+          "Connectors with identifiers [%s] in manifest with identifier [%s] in [%s] is(are) invalid. Please fix the connector YAMLs.",
+          String.join(",", connectorsNotValid), String.join(",", manifestIdentifierList),
+          String.join(",", fileLocationList)));
     }
   }
 
