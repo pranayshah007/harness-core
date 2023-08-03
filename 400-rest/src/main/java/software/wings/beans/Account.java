@@ -146,6 +146,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private boolean smpAccount;
   @Getter @Setter private Integer sessionTimeOutInMinutes = DEFAULT_SESSION_TIMEOUT_IN_MINUTES;
+  @Getter @Setter private boolean publicAccessEnabled;
 
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.
@@ -614,6 +615,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private ServiceAccountConfig serviceAccountConfig;
     private boolean globalDelegateAccount;
     private int trustLevel = AccountTrustLevel.UNINITIALIZED;
+    private boolean publicAccessEnabled;
 
     private Builder() {}
 
@@ -798,6 +800,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
     public Builder withTrustLevel(int trustLevel) {
       this.trustLevel = trustLevel;
+      return this;
+    }
+
+    public Builder withPublicAccessEnabled(boolean publicAccessEnabled) {
+      this.publicAccessEnabled = publicAccessEnabled;
       return this;
     }
 
