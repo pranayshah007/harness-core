@@ -2,6 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  kubeVersion: ""
   loadbalancerURL: ""
   ingress:
     enabled: false
@@ -21,7 +22,19 @@ global:
       gateways: []
       hosts: []
   imagePullSecrets: []
-
+  database:
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis-sentinel-harness-announce-0:26379
+        - redis-sentinel-harness-announce-1:26379
+        - redis-sentinel-harness-announce-2:26379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
+      extraArgs: ""
 s3:
   ### Default values are configured to work with Minio, override if you are using own s3 buckets
   endpoint: ""
@@ -29,7 +42,8 @@ s3:
   region: "us-east-1"
   accessKeyId: ""
   secretAccessKey: ""
-
+redis:
+  disableWatcher: false
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
@@ -39,7 +53,7 @@ image:
   repository: harness/log-service-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "release-18"
+  tag: "release-91-ubi"
   digest: ""
   imagePullSecrets: []
 
@@ -76,7 +90,6 @@ securityContext:
 
 resources:
   limits:
-    cpu: 1
     memory: 3072Mi
   requests:
     cpu: 1
@@ -93,3 +106,23 @@ tolerations: []
 affinity: {}
 
 additionalConfigs: {}
+
+# extraVolumes:
+# - name: volume-test
+#   configMap:
+#     name: test-config
+#     readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: test-volume-mount
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:
