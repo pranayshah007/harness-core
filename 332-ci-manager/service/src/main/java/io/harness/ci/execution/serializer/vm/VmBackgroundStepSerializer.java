@@ -43,6 +43,7 @@ public class VmBackgroundStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject CIFeatureFlagService featureFlagService;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmBackgroundStep serialize(BackgroundStepInfo backgroundStepInfo, Ambiance ambiance, String identifier,
       List<CIRegistry> registries, String delegateId) {
@@ -86,6 +87,8 @@ public class VmBackgroundStepSerializer {
       }
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
         ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 

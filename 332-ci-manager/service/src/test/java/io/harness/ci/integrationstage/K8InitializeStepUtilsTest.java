@@ -19,6 +19,7 @@ import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
+import static org.mockito.ArgumentMatchers.any;
 
 import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -56,12 +57,22 @@ import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.reflect.Whitebox;
 
 public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   private static Integer PORT_STARTING_RANGE = 20002;
+  private static Map<String, String> mockEnvVars = new HashMap<>() {
+    {
+      put("DRONE_COMMIT_BRANCH", "master");
+      put("DRONE_BUILD_NUMBER", "20");
+    }
+  };
 
   @Inject private K8InitializeStepUtils k8InitializeStepUtils;
+  //  @Mock BuildEnvironmentUtils buildEnvironmentUtils;
 
   @Test
   @Owner(developers = SHUBHAM)
@@ -78,6 +89,8 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
             .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
             .build();
     Ambiance ambiance = Ambiance.newBuilder().build();
+    Mockito.mockStatic(BuildEnvironmentUtils.class);
+    PowerMockito.when(BuildEnvironmentUtils.getBuildEnvironmentVariables(any())).thenReturn(mockEnvVars);
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
         initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
@@ -112,6 +125,8 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
             .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
             .build();
     Ambiance ambiance = Ambiance.newBuilder().build();
+    Mockito.mockStatic(BuildEnvironmentUtils.class);
+    PowerMockito.when(BuildEnvironmentUtils.getBuildEnvironmentVariables(any())).thenReturn(mockEnvVars);
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
         initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
 
@@ -295,6 +310,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
 
   @Test
   @Owner(developers = SHUBHAM)
+  @PrepareForTest({BuildEnvironmentUtils.class})
   @Category(UnitTests.class)
   public void createWinStepContainerDefinitions() {
     List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigList();
@@ -308,6 +324,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
             .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
             .build();
     Ambiance ambiance = Ambiance.newBuilder().build();
+
+    Mockito.mockStatic(BuildEnvironmentUtils.class);
+    PowerMockito.when(BuildEnvironmentUtils.getBuildEnvironmentVariables(any())).thenReturn(mockEnvVars);
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
         initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Windows, ambiance, 0);
 

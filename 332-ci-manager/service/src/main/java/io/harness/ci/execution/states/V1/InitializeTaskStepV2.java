@@ -249,6 +249,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       sdkGraphVisualizationDataService.publishStepDetailInformation(
           ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     }
+    log.info("Submitted initialise step request for taskid {}", taskId);
 
     return responseBuilder.build();
   }

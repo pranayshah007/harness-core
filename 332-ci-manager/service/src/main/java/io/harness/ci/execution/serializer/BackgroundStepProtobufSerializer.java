@@ -9,6 +9,7 @@ package io.harness.ci.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_MACHINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Collections.emptyList;
@@ -43,9 +44,11 @@ import java.util.function.Supplier;
 public class BackgroundStepProtobufSerializer implements ProtobufStepSerializer<BackgroundStepInfo> {
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private SerializerUtils serializerUtils;
 
   public UnitStep serializeStepWithStepParameters(BackgroundStepInfo backgroundStepInfo, Integer port,
-      String callbackId, String logKey, String identifier, String accountId, String stepName, Ambiance ambiance) {
+      String callbackId, String logKey, String identifier, String accountId, String stepName, Ambiance ambiance,
+      String podName) {
     if (callbackId == null) {
       throw new CIStageExecutionException("CallbackId can not be null");
     }
@@ -68,6 +71,9 @@ public class BackgroundStepProtobufSerializer implements ProtobufStepSerializer<
     if (!isEmpty(envVars)) {
       runStepBuilder.putAllEnvironment(envVars);
     }
+    envVars.put(DRONE_STAGE_MACHINE, podName);
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
 
     UnitTestReport reports = backgroundStepInfo.getReports().getValue();
     if (reports != null) {

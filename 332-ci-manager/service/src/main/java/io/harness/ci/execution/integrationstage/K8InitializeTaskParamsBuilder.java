@@ -14,6 +14,8 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParam
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
 import static io.harness.beans.sweepingoutputs.PodCleanupDetails.CLEANUP_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STEP_NAME;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STEP_NUMBER;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.POD_MAX_WAIT_UNTIL_READY_SECS;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PORT_STARTING_RANGE;
@@ -258,8 +260,8 @@ public class K8InitializeTaskParamsBuilder {
         codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase, initializeStepInfo.isSkipGitClone());
     SecretEnvVars secretEnvVars = getSecretEnvVars(ambiance);
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, gitConnector);
-    Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(
-        k8PodDetails, gitEnvVars, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
+    Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(k8PodDetails, gitEnvVars,
+        runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance, initializeStepInfo, os);
 
     Caching caching = initializeStepInfo.getStageElementConfig().getCaching();
     if (caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false)) {
@@ -377,6 +379,9 @@ public class K8InitializeTaskParamsBuilder {
 
     Map<String, String> envVarsWithSecretRef = k8InitializeTaskUtils.removeEnvVarsWithSecretRef(envVars);
     envVars.putAll(commonEnvVars); //  commonEnvVars needs to be put in end because they overrides webhook parameters
+    envVars.put(DRONE_STEP_NAME, containerDefinitionInfo.getStepName());
+    envVars.put(DRONE_STEP_NUMBER, containerDefinitionInfo.getName().split("-")[1]); // to parse step no
+
     if (containerDefinitionInfo.getContainerType() == CIContainerType.SERVICE) {
       envVars.put(HARNESS_SERVICE_LOG_KEY_VARIABLE,
           format("%s/serviceId:%s", logPrefix, containerDefinitionInfo.getStepIdentifier()));

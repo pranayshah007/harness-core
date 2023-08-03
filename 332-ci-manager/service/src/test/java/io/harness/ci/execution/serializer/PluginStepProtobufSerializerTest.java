@@ -24,7 +24,9 @@ import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
+import io.harness.ci.serializer.SerializerUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.rule.Owner;
@@ -56,6 +58,7 @@ public class PluginStepProtobufSerializerTest {
   private static final Long TIMEOUT = 700000L;
 
   @Mock Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+  @Mock private SerializerUtils serializerUtils;
 
   @InjectMocks private PluginStepProtobufSerializer pluginStepProtobufSerializer;
 
@@ -81,7 +84,8 @@ public class PluginStepProtobufSerializerTest {
 
     UnitStep unitStep = pluginStepProtobufSerializer.serializeStepWithStepParameters(pluginStepInfo, PORT, CALLBACK,
         LOG_KEY, GIT_CLONE_STEP_ID, ParameterField.createValueField(Timeout.builder().timeoutInMillis(TIMEOUT).build()),
-        ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build());
+        ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build(), "podname",
+        Ambiance.newBuilder().build());
     assertThat(unitStep.getPlugin().getEnvironmentMap().get(PLUGIN_DEPTH)).isEqualTo("50");
   }
 
@@ -99,7 +103,8 @@ public class PluginStepProtobufSerializerTest {
 
     UnitStep unitStep = pluginStepProtobufSerializer.serializeStepWithStepParameters(pluginStepInfo, PORT, CALLBACK,
         LOG_KEY, GIT_CLONE_STEP_ID, ParameterField.createValueField(Timeout.builder().timeoutInMillis(TIMEOUT).build()),
-        ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build());
+        ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build(), "podname",
+        Ambiance.newBuilder().build());
     assertThat(unitStep.getPlugin().getEnvironmentMap().get(PLUGIN_DEPTH)).isEqualTo("4");
   }
   @Test
@@ -116,7 +121,8 @@ public class PluginStepProtobufSerializerTest {
 
     UnitStep unitStep = pluginStepProtobufSerializer.serializeStepWithStepParameters(pluginStepInfo, PORT, CALLBACK,
         LOG_KEY, GIT_CLONE_STEP_ID, ParameterField.createValueField(Timeout.builder().timeoutInMillis(TIMEOUT).build()),
-        ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build());
+        ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build(), "podname",
+        Ambiance.newBuilder().build());
     assertThat(unitStep.getPlugin().getEnvironmentMap().get(PLUGIN_DEPTH)).isEqualTo(null);
   }
 
@@ -130,14 +136,16 @@ public class PluginStepProtobufSerializerTest {
         ()
             -> pluginStepProtobufSerializer.serializeStepWithStepParameters(pluginStepInfo, PORT, null, LOG_KEY,
                 GIT_CLONE_STEP_ID, ParameterField.createValueField(Timeout.builder().timeoutInMillis(TIMEOUT).build()),
-                ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build()))
+                ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build(), "podname",
+                Ambiance.newBuilder().build()))
         .isInstanceOf(CIStageExecutionException.class);
 
     assertThatThrownBy(
         ()
             -> pluginStepProtobufSerializer.serializeStepWithStepParameters(pluginStepInfo, null, "abc", LOG_KEY,
                 GIT_CLONE_STEP_ID, ParameterField.createValueField(Timeout.builder().timeoutInMillis(TIMEOUT).build()),
-                ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build()))
+                ACCOUNT_ID, CLONE_CODEBASE_STEP, ManualExecutionSource.builder().branch("main").build(), "podname",
+                Ambiance.newBuilder().build()))
         .isInstanceOf(CIStageExecutionException.class);
   }
 }
