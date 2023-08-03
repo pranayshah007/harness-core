@@ -13,8 +13,6 @@ import static io.harness.subscription.constant.SubscriptionTestConstant.INVALID_
 import static io.harness.subscription.constant.SubscriptionTestConstant.INVALID_EMAIL_CUSTOMER_DTO;
 import static io.harness.subscription.constant.SubscriptionTestConstant.MAX_LENGTH_EXCEEDED_CUSTOMER_DTO;
 
-import static org.junit.Assert.fail;
-
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidArgumentsException;
@@ -28,11 +26,7 @@ public class CustomerValidatorTest extends CategoryTest {
   @Owner(developers = TOMMY)
   @Category(UnitTests.class)
   public void testValidateCustomer() {
-    try {
-      CustomerValidator.validateCustomer(DEFAULT_CUSTOMER_DTO);
-    } catch (IllegalArgumentException ex) {
-      fail("Address did not pass validation.");
-    }
+    CustomerValidator.validateCustomer(DEFAULT_CUSTOMER_DTO);
   }
 
   @Test(expected = InvalidArgumentsException.class)

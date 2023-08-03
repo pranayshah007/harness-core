@@ -12,6 +12,7 @@ import io.harness.subscription.dto.AddressDto;
 import io.harness.subscription.dto.CustomerDTO;
 
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 
 public class CustomerValidator {
   private static final String ADDRESS_REGEX = "^[a-zA-Z0-9 \\-.,'&#/()@!]+$";
@@ -38,12 +39,12 @@ public class CustomerValidator {
       throw new InvalidArgumentsException("AddressDto cannot be null");
     }
 
-    if (!isEmpty(customerName)) {
+    if (!StringUtils.isEmpty(customerName)) {
       validateLengthAndThrowIfInvalid(customerName, MAX_CUSTOMER_NAME_LENGTH);
     }
 
     validateLengthAndThrowIfInvalid(address.getLine1(), MAX_ADDRESS_LINE_LENGTH);
-    if (!isEmpty(address.getLine2())) {
+    if (!StringUtils.isEmpty(address.getLine2())) {
       validateLengthAndThrowIfInvalid(address.getLine2(), MAX_ADDRESS_LINE_LENGTH);
     }
     validateLengthAndThrowIfInvalid(address.getCity(), MAX_CITY_LENGTH);
@@ -62,7 +63,7 @@ public class CustomerValidator {
     if (input != null && input.length() > maxLength) {
       throw new InvalidArgumentsException("Customer detail length exceeds maximum allowed length");
     }
-    if (isEmpty(input) || !patternMatches(ADDRESS_REGEX, input)) {
+    if (StringUtils.isEmpty(input) || !patternMatches(ADDRESS_REGEX, input)) {
       throw new InvalidArgumentsException("Invalid customer details");
     }
   }
@@ -74,9 +75,5 @@ public class CustomerValidator {
   private static boolean patternMatches(String regex, String input) {
     Pattern pattern = Pattern.compile(regex);
     return pattern.matcher(input).matches();
-  }
-
-  private static boolean isEmpty(String str) {
-    return str == null || str.trim().isEmpty();
   }
 }
