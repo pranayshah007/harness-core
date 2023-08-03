@@ -53,6 +53,7 @@ import io.harness.subscription.params.SubscriptionItemRequest;
 import io.harness.subscription.params.SubscriptionRequest;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
+import io.harness.subscription.utils.CustomerValidator;
 import io.harness.subscription.utils.NGFeatureFlagHelperService;
 import io.harness.telemetry.Destination;
 import io.harness.telemetry.TelemetryReporter;
@@ -527,6 +528,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       throw new InvalidRequestException(errorMessage);
     }
 
+    CustomerValidator.validateCustomer(customerDTO);
+
     CustomerDetailDTO customerDetailDTO =
         stripeHelper.createCustomer(CustomerParams.builder()
                                         .accountIdentifier(accountIdentifier)
@@ -550,6 +553,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       log.error(errorMessage);
       throw new InvalidRequestException(errorMessage);
     }
+
+    CustomerValidator.validateCustomer(customerDTO);
 
     CustomerParamsBuilder builder = CustomerParams.builder();
     builder.customerId(stripeCustomer.getCustomerId());
@@ -624,6 +629,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     if (stripeCustomer == null) {
       AccountDTO account = accountService.getAccount(accountIdentifier);
+      CustomerValidator.validateEmail(billingEmail);
       customerId = createStripeCustomer(accountIdentifier,
           CustomerDTO.builder().companyName(account.getCompanyName()).billingEmail(billingEmail).build())
                        .getCustomerId();

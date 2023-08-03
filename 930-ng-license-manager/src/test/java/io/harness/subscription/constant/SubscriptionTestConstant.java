@@ -45,8 +45,9 @@ public class SubscriptionTestConstant {
   public static final String CUSTOMER_ID = "TEST_CUSTOMER_ID";
   public static final String COMPANY_ID = "TEST_COMPANY_ID";
   public static final String SUBSCRIPTION_ID = "SUBSCRIPTION_ID";
-  public static final String COMPANY_NAME = "TEST_COMPANY_NAME";
+  public static final String COMPANY_NAME = "Test Company Name";
   public static final String BILLING_EMAIL = "test@testing.xyz";
+  public static final String INVALID_BILLING_EMAIL = "test@testing@xyz";
   public static final String YEARLY_PAYMENT_FREQUENCY = "Yearly";
   public static final String MONTHLY_PAYMENT_FREQUENCY = "Monthly";
   public static final String ENTERPRISE_EDITION = "ENTERPRISE";
@@ -103,8 +104,41 @@ public class SubscriptionTestConstant {
                                                  .country("US")
                                                  .build();
 
+  public static AddressDto INVALID_CHARACTERS_ADDRESS = AddressDto.builder()
+                                                            .city("San Francisco")
+                                                            .state("CA")
+                                                            .postalCode("94108")
+                                                            .line1("Robert'); DROP TABLE Students;--")
+                                                            .country("US")
+                                                            .build();
+
+  public static AddressDto MAX_LENGTH_EXCEEDED_ADDRESS =
+      AddressDto.builder()
+          .city("San Francisco")
+          .state("CA")
+          .postalCode("94108")
+          .line1("55 Stockton St55 Stockton St55 Stockton St55 Stockton St")
+          .country("US")
+          .build();
+
   public static CustomerDTO DEFAULT_CUSTOMER_DTO =
       CustomerDTO.builder().address(DEFAULT_ADDRESS).companyName(COMPANY_NAME).billingEmail(BILLING_EMAIL).build();
+  public static CustomerDTO INVALID_EMAIL_CUSTOMER_DTO = CustomerDTO.builder()
+                                                             .address(DEFAULT_ADDRESS)
+                                                             .companyName(COMPANY_NAME)
+                                                             .billingEmail(INVALID_BILLING_EMAIL)
+                                                             .build();
+  public static CustomerDTO INVALID_CHARACTERS_CUSTOMER_DTO = CustomerDTO.builder()
+                                                                  .address(INVALID_CHARACTERS_ADDRESS)
+                                                                  .companyName(COMPANY_NAME)
+                                                                  .billingEmail(BILLING_EMAIL)
+                                                                  .build();
+  public static CustomerDTO MAX_LENGTH_EXCEEDED_CUSTOMER_DTO = CustomerDTO.builder()
+                                                                   .address(MAX_LENGTH_EXCEEDED_ADDRESS)
+                                                                   .companyName(COMPANY_NAME)
+                                                                   .billingEmail(BILLING_EMAIL)
+                                                                   .build();
+
   public static StripeCustomer DEFAULT_STRIPE_CUSTOMER = StripeCustomer.builder()
                                                              .id(COMPANY_ID)
                                                              .accountIdentifier(DEFAULT_ACCOUNT_ID)
