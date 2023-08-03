@@ -143,6 +143,9 @@ public abstract class DelegateHeartbeatService<T extends Object> {
       finish(failureResponse, params);
       return failureResponse;
     } catch (MongoTimeoutException e) {
+      // TODO: return failure response
+      // For websocket mode, do not send self-destruct
+      // For polling mode, do not send instance status DELETED
       return null;
     }
   }
