@@ -280,7 +280,7 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
           e.getResponseBody(), e.getCode());
       log.error(errStr);
       return StepResponse.builder()
-          .status(Status.ERRORED)
+          .status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder().setErrorMessage(errStr).build())
           .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
                                                           .setUnitName(INFRASTRUCTURE_COMMAND_UNIT)
@@ -293,7 +293,7 @@ public class FlagConfigurationStep extends PipelineSyncExecutable {
     } catch (Exception e) {
       log.error(format("error updating flag because %s", e.getMessage()));
       return StepResponse.builder()
-          .status(Status.ERRORED)
+          .status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder().setErrorMessage(e.getMessage()).build())
           .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
                                                           .setUnitName(INFRASTRUCTURE_COMMAND_UNIT)
