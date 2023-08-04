@@ -65,14 +65,14 @@ public class EcrImagePullSecretHelper {
     return new ArrayList<>();
   }
 
-  ArtifactTaskExecutionResponse executeSyncTask(
-      EcrArtifactDelegateRequest ecrRequest, ArtifactTaskType taskType, BaseNGAccess ngAccess, String ifFailedMessage) {
-    DelegateResponseData responseData = getResponseData(ngAccess, ecrRequest, taskType);
+  ArtifactTaskExecutionResponse executeSyncTask(EcrArtifactDelegateRequest ecrRequest, ArtifactTaskType taskType,
+      BaseNGAccess ngAccess, String ifFailedMessage, String planExecutionId) {
+    DelegateResponseData responseData = getResponseData(ngAccess, ecrRequest, taskType, planExecutionId);
     return getTaskExecutionResponse(responseData, ifFailedMessage);
   }
 
-  private DelegateResponseData getResponseData(
-      BaseNGAccess ngAccess, EcrArtifactDelegateRequest ecrRequest, ArtifactTaskType artifactTaskType) {
+  private DelegateResponseData getResponseData(BaseNGAccess ngAccess, EcrArtifactDelegateRequest ecrRequest,
+      ArtifactTaskType artifactTaskType, String planExecutionId) {
     ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
                                                         .accountId(ngAccess.getAccountIdentifier())
                                                         .artifactTaskType(artifactTaskType)
@@ -89,7 +89,7 @@ public class EcrImagePullSecretHelper {
             .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
             .build();
     try {
-      return delegateGrpcClientWrapper.executeSyncTaskV2(taskRequest);
+      return delegateGrpcClientWrapper.executeSyncTaskV2(taskRequest, planExecutionId);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }

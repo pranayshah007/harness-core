@@ -405,15 +405,17 @@ public class ImagePullSecretUtils {
         ecrArtifactOutcome.getImagePath(), ecrArtifactOutcome.getTag(), null, null, ecrArtifactOutcome.getRegion(),
         connectorRef, connectorDTO, encryptionDetails, ArtifactSourceType.ECR);
     log.info("GET_IMAGE_URL: Executing sync task");
-    ArtifactTaskExecutionResponse artifactTaskExecutionResponseForImageUrl = ecrImagePullSecretHelper.executeSyncTask(
-        ecrRequest, ArtifactTaskType.GET_IMAGE_URL, baseNGAccess, "Ecr Get image URL failure due to error");
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponseForImageUrl =
+        ecrImagePullSecretHelper.executeSyncTask(ecrRequest, ArtifactTaskType.GET_IMAGE_URL, baseNGAccess,
+            "Ecr Get image URL failure due to error", ambiance.getPlanExecutionId());
     log.info("GET_IMAGE_URL: Finished execution sync task");
     String imageUrl =
         ((EcrArtifactDelegateResponse) artifactTaskExecutionResponseForImageUrl.getArtifactDelegateResponses().get(0))
             .getImageUrl();
     log.info("GET_AUTH_TOKEN: Executing sync task");
-    ArtifactTaskExecutionResponse artifactTaskExecutionResponseForAuthToken = ecrImagePullSecretHelper.executeSyncTask(
-        ecrRequest, ArtifactTaskType.GET_AUTH_TOKEN, baseNGAccess, "Ecr Get Auth-token failure due to error");
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponseForAuthToken =
+        ecrImagePullSecretHelper.executeSyncTask(ecrRequest, ArtifactTaskType.GET_AUTH_TOKEN, baseNGAccess,
+            "Ecr Get Auth-token failure due to error", ambiance.getPlanExecutionId());
     String authToken =
         ((EcrArtifactDelegateResponse) artifactTaskExecutionResponseForAuthToken.getArtifactDelegateResponses().get(0))
             .getAuthToken();
