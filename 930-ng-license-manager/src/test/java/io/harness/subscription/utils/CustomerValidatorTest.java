@@ -25,28 +25,28 @@ public class CustomerValidatorTest extends CategoryTest {
   @Test
   @Owner(developers = TOMMY)
   @Category(UnitTests.class)
-  public void testValidateCustomer() {
+  public void shouldNotThrowExceptionForValidCustomer() {
     CustomerValidator.validateCustomer(DEFAULT_CUSTOMER_DTO);
   }
 
   @Test(expected = InvalidArgumentsException.class)
   @Owner(developers = TOMMY)
   @Category(UnitTests.class)
-  public void testValidateCustomerInvalidEmail() {
+  public void shouldThrowExceptionForInvalidEmail() {
     CustomerValidator.validateCustomer(INVALID_EMAIL_CUSTOMER_DTO);
   }
 
   @Test(expected = InvalidArgumentsException.class)
   @Owner(developers = TOMMY)
   @Category(UnitTests.class)
-  public void testValidateCustomerInvalidCharacters() {
+  public void shouldThrowExceptionForInvalidCharacters() {
     CustomerValidator.validateCustomer(INVALID_CHARACTERS_CUSTOMER_DTO);
   }
 
   @Test(expected = InvalidArgumentsException.class)
   @Owner(developers = TOMMY)
   @Category(UnitTests.class)
-  public void testValidateCustomerMaxLengthExceeded() {
+  public void shouldThrowExceptionForMaxLengthExceeded() {
     CustomerValidator.validateCustomer(MAX_LENGTH_EXCEEDED_CUSTOMER_DTO);
   }
 }

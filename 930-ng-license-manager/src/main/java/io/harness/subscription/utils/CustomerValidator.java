@@ -12,8 +12,13 @@ import io.harness.subscription.dto.AddressDto;
 import io.harness.subscription.dto.CustomerDTO;
 
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * Utility class for validating customer data including addresses and email.
+ */
+@Slf4j
 public class CustomerValidator {
   private static final String ADDRESS_REGEX = "^[a-zA-Z0-9 \\-.,'&#/()@!]+$";
   private static final String EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$";
@@ -25,9 +30,17 @@ public class CustomerValidator {
   private static final int MAX_COUNTRY_LENGTH = 50;
   private static final int MAX_EMAIL_LENGTH = 254;
 
+  /**
+   * Validates a CustomerDTO instance.
+   *
+   * @param customer The CustomerDTO instance to validate.
+   * @throws InvalidArgumentsException If validation fails.
+   */
   public static void validateCustomer(CustomerDTO customer) {
     if (customer == null) {
-      throw new InvalidArgumentsException("CustomerDTO cannot be null");
+      String errorMessage = "Customer is found null and cannot be validated.";
+      log.error(errorMessage);
+      throw new InvalidArgumentsException(errorMessage);
     }
 
     validateAddress(customer.getAddress(), customer.getCompanyName());
@@ -36,35 +49,49 @@ public class CustomerValidator {
 
   private static void validateAddress(AddressDto address, String customerName) {
     if (address == null) {
-      throw new InvalidArgumentsException("AddressDto cannot be null");
+      String errorMessage = "Address is found null and cannot be validated.";
+      log.error(errorMessage);
+      throw new InvalidArgumentsException(errorMessage);
     }
 
     if (!StringUtils.isEmpty(customerName)) {
-      validateLengthAndThrowIfInvalid(customerName, MAX_CUSTOMER_NAME_LENGTH);
+      validateInput(customerName, MAX_CUSTOMER_NAME_LENGTH);
     }
 
-    validateLengthAndThrowIfInvalid(address.getLine1(), MAX_ADDRESS_LINE_LENGTH);
+    validateInput(address.getLine1(), MAX_ADDRESS_LINE_LENGTH);
     if (!StringUtils.isEmpty(address.getLine2())) {
-      validateLengthAndThrowIfInvalid(address.getLine2(), MAX_ADDRESS_LINE_LENGTH);
+      validateInput(address.getLine2(), MAX_ADDRESS_LINE_LENGTH);
     }
-    validateLengthAndThrowIfInvalid(address.getCity(), MAX_CITY_LENGTH);
-    validateLengthAndThrowIfInvalid(address.getState(), MAX_STATE_LENGTH);
-    validateLengthAndThrowIfInvalid(address.getPostalCode(), MAX_POSTAL_CODE_LENGTH);
-    validateLengthAndThrowIfInvalid(address.getCountry(), MAX_COUNTRY_LENGTH);
+    validateInput(address.getCity(), MAX_CITY_LENGTH);
+    validateInput(address.getState(), MAX_STATE_LENGTH);
+    validateInput(address.getPostalCode(), MAX_POSTAL_CODE_LENGTH);
+    validateInput(address.getCountry(), MAX_COUNTRY_LENGTH);
   }
 
+  /**
+   * Validates an email address.
+   *
+   * @param email The email address to validate.
+   * @throws InvalidArgumentsException If the email address is invalid.
+   */
   public static void validateEmail(String email) {
     if (!isValidEmail(email)) {
-      throw new InvalidArgumentsException("Invalid email address");
+      String errorMessage = "Invalid email address";
+      log.error(errorMessage);
+      throw new InvalidArgumentsException(errorMessage);
     }
   }
 
-  private static void validateLengthAndThrowIfInvalid(String input, int maxLength) {
+  private static void validateInput(String input, int maxLength) {
     if (input != null && input.length() > maxLength) {
-      throw new InvalidArgumentsException("Customer detail length exceeds maximum allowed length");
+      String errorMessage = "Customer detail length exceeds maximum allowed length";
+      log.error(errorMessage);
+      throw new InvalidArgumentsException(errorMessage);
     }
     if (StringUtils.isEmpty(input) || !patternMatches(ADDRESS_REGEX, input)) {
-      throw new InvalidArgumentsException("Invalid customer details");
+      String errorMessage = "Invalid customer details";
+      log.error(errorMessage);
+      throw new InvalidArgumentsException(errorMessage);
     }
   }
 

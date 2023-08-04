@@ -40,29 +40,30 @@ import java.util.Optional;
 import org.joda.time.DateTime;
 
 public class SubscriptionTestConstant {
-  public static final String DEFAULT_ACCOUNT_ID = "TEST_ACCOUNT_ID";
-  public static final String TRIAL_ACCOUNT_ID = "TRIAL_ACCOUNT_ID";
-  public static final String CUSTOMER_ID = "TEST_CUSTOMER_ID";
-  public static final String COMPANY_ID = "TEST_COMPANY_ID";
-  public static final String SUBSCRIPTION_ID = "SUBSCRIPTION_ID";
-  public static final String COMPANY_NAME = "Test Company Name";
   public static final String BILLING_EMAIL = "test@testing.xyz";
-  public static final String INVALID_BILLING_EMAIL = "test@testing@xyz";
-  public static final String YEARLY_PAYMENT_FREQUENCY = "Yearly";
-  public static final String MONTHLY_PAYMENT_FREQUENCY = "Monthly";
-  public static final String ENTERPRISE_EDITION = "ENTERPRISE";
-  public static final String TEAM_EDITION = "TEAM";
-  public static final String MAU_TYPE = "MAU";
   public static final String CF_MODULE_TYPE = "CF";
-  public static final String DEVELOPERS_TYPE = "DEVELOPERS";
-  public static final String DEFAULT_MAU_PRICE_ID = "DEFAULT_MAU_PRICE_ID";
+  public static final String COMPANY_ID = "TEST_COMPANY_ID";
+  public static final String COMPANY_NAME = "Test Company Name";
+  public static final String CUSTOMER_ID = "TEST_CUSTOMER_ID";
+  public static final String DEFAULT_ACCOUNT_ID = "TEST_ACCOUNT_ID";
   public static final String DEFAULT_DEVELOPER_PRICE_ID = "DEFAULT_DEVELOPER_PRICE_ID";
-
-  public static final String MAX_KEY = "max";
+  public static final String DEFAULT_MAU_PRICE_ID = "DEFAULT_MAU_PRICE_ID";
+  public static final String DEVELOPERS_TYPE = "DEVELOPERS";
+  public static final String ENTERPRISE_EDITION = "ENTERPRISE";
+  public static final String INVALID_BILLING_EMAIL = "test@testing@xyz";
+  public static final String MAU_TYPE = "MAU";
   public static final String MAX_DEVELOPERS_VALUE = "50";
-  public static final Long DEFAULT_MAU_QUANTITY = 300000L;
+  public static final String MAX_KEY = "max";
+  public static final String MONTHLY_PAYMENT_FREQUENCY = "Monthly";
+  public static final String SUBSCRIPTION_ID = "SUBSCRIPTION_ID";
+  public static final String TEAM_EDITION = "TEAM";
+  public static final String TRIAL_ACCOUNT_ID = "TRIAL_ACCOUNT_ID";
+  public static final String YEARLY_PAYMENT_FREQUENCY = "Yearly";
+
   public static final Long DEFAULT_DEVELOPER_QUANTITY = 50L;
+  public static final Long DEFAULT_MAU_QUANTITY = 300000L;
   public static final Long OVER_MAX_DEVELOPERS_QUANTITY = 51L;
+
   public static final int DEFAULT_MAX_USERS = 10;
 
   public static final AccountDTO DEFAULT_ACCOUNT = AccountDTO.builder().isProductLed(true).build();
