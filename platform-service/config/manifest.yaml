@@ -1,2 +1,2 @@
-OCKER_FILE_PATH: /harness/harness-core/platform-service/build/container/Dockerfile-platform-service-multistage
+DOCKER_FILE_PATH: /harness/harness-core/platform-service/build/container/Dockerfile-platform-service-multistage
 CONTEXT_PATH: /harness/harness-core
