@@ -3034,6 +3034,9 @@ public class UserServiceImpl implements UserService {
       updateOperations.set(UserKeys.externalUserId, user.getExternalUserId());
     }
 
+    if (isNotEmpty(user.getEmail())) {
+      updateOperations.set(UserKeys.email, user.getEmail());
+    }
     return updateUser(user.getUuid(), updateOperations);
   }
 

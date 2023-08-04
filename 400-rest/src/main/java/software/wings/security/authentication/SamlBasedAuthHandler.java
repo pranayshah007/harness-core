@@ -35,7 +35,6 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.account.AuthenticationMechanism;
-import io.harness.persistence.HPersistence;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.annotation.EncryptableSetting;
@@ -110,7 +109,6 @@ public class SamlBasedAuthHandler implements AuthHandler {
   @Inject private SecretManager secretManager;
   @Inject private EncryptionService encryptionService;
   @Inject private FeatureFlagService featureFlagService;
-  @Inject private HPersistence hPersistence;
 
   private static final String USER_ID_ATTR = "uid";
   static final String AZURE_GET_MEMBER_OBJECTS_URL_FORMAT =
@@ -155,9 +153,12 @@ public class SamlBasedAuthHandler implements AuthHandler {
           userByUserId.setAccounts(Stream.concat(user.getAccounts().stream(), userByUserId.getAccounts().stream())
                                        .distinct()
                                        .collect(Collectors.toList()));
-          hPersistence.delete(user);
-          hPersistence.save(userByUserId);
-          user = userByUserId;
+          String externalId = userByUserId.getExternalUserId();
+          userByUserId.setExternalUserId(null);
+          userService.update(userByUserId);
+          userService.forceDelete(accountId, userByUserId.getUuid());
+          user.setExternalUserId(externalId);
+          userService.update(user);
           log.info(
               "SAMLFeature: final user with externalUserId for accountId {} saved in db {}", accountId, userByUserId);
         }
@@ -170,7 +171,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
           }
           log.info("SAMLFeature: email fetched from response string is {} in accountId {}", email, accountId);
           userByUserId.setEmail(email.trim().toLowerCase());
-          hPersistence.save(userByUserId);
+          userService.update(userByUserId);
           user = userByUserId;
           log.info(
               "SAMLFeature: final user with externalUserId for accountId {} saved in db {}", accountId, userByUserId);
