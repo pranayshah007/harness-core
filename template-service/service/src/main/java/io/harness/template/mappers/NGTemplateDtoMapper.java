@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.mappers;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -552,5 +553,48 @@ public class NGTemplateDtoMapper {
     } else {
       return BOOLEAN_TRUE_VALUE.equalsIgnoreCase(loadFromCache);
     }
+  }
+
+  public TemplateResponseDTO writeTemplateResponseDto(GlobalTemplateEntity globalTemplateEntity) {
+    return TemplateResponseDTO.builder()
+        .accountId(globalTemplateEntity.getAccountId())
+        .orgIdentifier(globalTemplateEntity.getOrgIdentifier())
+        .projectIdentifier(globalTemplateEntity.getProjectIdentifier())
+        .yaml(globalTemplateEntity.getYaml())
+        .identifier(globalTemplateEntity.getIdentifier())
+        .description(globalTemplateEntity.getDescription())
+        .name(globalTemplateEntity.getName())
+        .isStableTemplate(globalTemplateEntity.isStableTemplate())
+        .childType(globalTemplateEntity.getChildType())
+        .templateEntityType(globalTemplateEntity.getTemplateEntityType())
+        .templateScope(globalTemplateEntity.getTemplateScope())
+        .versionLabel(globalTemplateEntity.getVersionLabel())
+        .tags(TagMapper.convertToMap(globalTemplateEntity.getTags()))
+        .version(globalTemplateEntity.getVersion())
+        .icon(globalTemplateEntity.getIcon())
+        .gitDetails(getEntityGitDetails(globalTemplateEntity))
+        .lastUpdatedAt(globalTemplateEntity.getLastUpdatedAt())
+        .entityValidityDetails(globalTemplateEntity.isEntityInvalid()
+                ? EntityValidityDetails.builder().valid(false).invalidYaml(globalTemplateEntity.getYaml()).build()
+                : EntityValidityDetails.builder().valid(true).build())
+        .storeType(globalTemplateEntity.getStoreType())
+        .connectorRef(globalTemplateEntity.getConnectorRef())
+        .cacheResponseMetadata(getCacheResponse(globalTemplateEntity))
+        .build();
+  }
+
+  public EntityGitDetails getEntityGitDetails(GlobalTemplateEntity globalTemplateEntity) {
+    return globalTemplateEntity.getStoreType() == null
+        ? EntityGitDetailsMapper.mapEntityGitDetails(globalTemplateEntity)
+        : globalTemplateEntity.getStoreType() == StoreType.REMOTE
+        ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
+        : EntityGitDetails.builder().build();
+  }
+
+  public CacheResponseMetadataDTO getCacheResponse(GlobalTemplateEntity templateEntity) {
+    if (templateEntity.getStoreType() == StoreType.REMOTE) {
+      return getCacheResponse();
+    }
+    return null;
   }
 }

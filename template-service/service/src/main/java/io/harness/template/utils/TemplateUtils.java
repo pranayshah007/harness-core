@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.utils;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -212,5 +213,10 @@ public class TemplateUtils {
     }
     GlobalContextManager.upsertGlobalContextRecord(
         ThreadOperationContextHelper.getOrInitThreadOperationContext().withUserFlow(userFlow));
+  }
+
+  public Scope buildScope(GlobalTemplateEntity globalTemplateEntity) {
+    return Scope.of(globalTemplateEntity.getAccountIdentifier(), globalTemplateEntity.getOrgIdentifier(),
+        globalTemplateEntity.getProjectIdentifier());
   }
 }

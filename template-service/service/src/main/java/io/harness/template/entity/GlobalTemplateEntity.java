@@ -236,4 +236,6 @@ public class GlobalTemplateEntity
   public void setData(String yaml) {
     this.yaml = yaml;
   }
+
 }
+

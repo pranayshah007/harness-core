@@ -7,8 +7,7 @@
 
 package io.harness.template.events;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.encryption.Scope;
@@ -20,12 +19,13 @@ import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
 import io.harness.template.entity.GlobalTemplateEntity;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 @OwnedBy(CDC)
 @Getter
@@ -77,4 +77,5 @@ public class GlobalTemplateCreateEvent implements Event {
   public String getEventType() {
     return TemplateOutboxEvents.TEMPLATE_VERSION_CREATED;
   }
+
 }

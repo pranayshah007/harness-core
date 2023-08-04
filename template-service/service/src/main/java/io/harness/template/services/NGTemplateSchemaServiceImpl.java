@@ -354,4 +354,56 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
     }
     return getTemplateSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope, templateChildType, entityType);
   }
+
+  public void validateYamlSchemaInternal(GlobalTemplateEntity globalTemplateEntity) {
+    String accountIdentifier = globalTemplateEntity.getAccountIdentifier();
+    String projectIdentifier = globalTemplateEntity.getProjectIdentifier();
+    String orgIdentifier = globalTemplateEntity.getOrgIdentifier();
+    String templateYaml = globalTemplateEntity.getYaml();
+    long start = System.currentTimeMillis();
+    if (TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+            FeatureName.DISABLE_TEMPLATE_SCHEMA_VALIDATION, accountIdentifier, accountClient)) {
+      return;
+    }
+    try {
+      Scope scope = globalTemplateEntity.getTemplateScope() != null ? globalTemplateEntity.getTemplateScope()
+          : projectIdentifier != null                               ? Scope.PROJECT
+          : orgIdentifier != null                                   ? Scope.ORG
+                                                                    : Scope.ACCOUNT;
+
+      JsonNode schema;
+      // Use Static schema if ff is enabled.
+      if (TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+              FeatureName.PIE_STATIC_YAML_SCHEMA, accountIdentifier, accountClient)) {
+        schema = getStaticYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier,
+            globalTemplateEntity.getChildType(), globalTemplateEntity.getTemplateEntityType(), scope, "v0");
+      } else {
+        // Use traditional way of generating schema if ff is off
+        schema = getTemplateSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope,
+            globalTemplateEntity.getChildType(), globalTemplateEntity.getTemplateEntityType());
+      }
+      String schemaString = JsonPipelineUtils.writeJsonString(schema);
+      if (globalTemplateEntity.getTemplateEntityType().equals(TemplateEntityType.PIPELINE_TEMPLATE)) {
+        String pathToJsonNode = TEMPLATE_NODE + "/" + SPEC_NODE + "/" + STAGES_NODE;
+        yamlSchemaValidator.validate(templateYaml, schemaString,
+            TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+                FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, accountIdentifier, accountClient),
+            allowedParallelStages, pathToJsonNode);
+      } else {
+        yamlSchemaValidator.validate(
+            templateYaml, schemaString, true, allowedParallelStages, PIPELINE_NODE + "/" + STAGES_NODE);
+      }
+    } catch (io.harness.yaml.validator.InvalidYamlException e) {
+      log.info("[TEMPLATE_SCHEMA] Schema validation took total time {}ms", System.currentTimeMillis() - start);
+      throw e;
+    } catch (Exception ex) {
+      log.error(ex.getMessage(), ex);
+      YamlSchemaErrorWrapperDTO errorWrapperDTO =
+          YamlSchemaErrorWrapperDTO.builder()
+              .schemaErrors(Collections.singletonList(
+                  YamlSchemaErrorDTO.builder().message(ex.getMessage()).fqn("$.pipeline").build()))
+              .build();
+      throw new io.harness.yaml.validator.InvalidYamlException(ex.getMessage(), ex, errorWrapperDTO, templateYaml);
+    }
+  }
 }
