@@ -2738,7 +2738,7 @@ components:
             $ref: '#/components/schemas/ScorecardGraphSummaryInfoResponse'
   securitySchemes:
     x-api-key:
-      name: API Key
+      name: x-api-key
       type: apiKey
       in: header
 tags:
