@@ -95,7 +95,8 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
               .build());
     }
     addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, config.getUuid(), config.getName(), config.getIdentifier(),
-        responseMap, new HashMap<>(), getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false));
+        responseMap, new HashMap<>(),
+        getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false, false));
 
     return responseMap;
   }
@@ -104,7 +105,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
       String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap,
       HashMap<Object, Object> objectObjectHashMap, List<AdviserObtainment> adviserObtainmentFromMetaData) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, uuid, name, identifier, responseMap,
-        new HashMap<>(), getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false));
+        new HashMap<>(), getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false, false));
   }
 
   @Override
@@ -134,7 +135,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(
-            kryoSerializer, ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
+            kryoSerializer, ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField()), true))
         .skipExpressionChain(false)
         .build();
   }
@@ -149,10 +150,12 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
     return Collections.singletonMap(STEP_GROUP, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
-  protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(
-      KryoSerializer kryoSerializer, YamlField currentField, boolean checkForStrategy) {
-    List<AdviserObtainment> adviserObtainments =
-        new ArrayList<>(getAdviserObtainmentForFailureStrategy(kryoSerializer, currentField));
+  protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(KryoSerializer kryoSerializer,
+      YamlField currentField, boolean checkForStrategy, boolean addAdvisorObtainmentForFailureStrategy) {
+    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    if (addAdvisorObtainmentForFailureStrategy) {
+      adviserObtainments = getAdviserObtainmentForFailureStrategy(kryoSerializer, currentField);
+    }
     if (checkForStrategy) {
       return adviserObtainments;
     }

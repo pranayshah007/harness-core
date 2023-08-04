@@ -118,11 +118,21 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
   @Test
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
-  public void testGetAdviserObtainmentFromMetaData() {
+  public void testGetAdviserObtainmentFromMetaDataWithFailureStrategy() {
     List<AdviserObtainment> adviserObtainmentList =
-        stepGroupPMSPlanCreator.getAdviserObtainmentFromMetaData(kryoSerializer, stepGroupYamlField, false);
+        stepGroupPMSPlanCreator.getAdviserObtainmentFromMetaData(kryoSerializer, stepGroupYamlField, false, true);
     assertThat(adviserObtainmentList).hasSize(2);
     assertThat(adviserObtainmentList.get(0).getType().toString()).isEqualTo("type: \"RETRY_STEPGROUP\"\n");
     assertThat(adviserObtainmentList.get(1).getType().toString()).isEqualTo("type: \"NEXT_STEP\"\n");
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetAdviserObtainmentFromMetaDataWithoutFailureStrategy() {
+    List<AdviserObtainment> adviserObtainmentList =
+        stepGroupPMSPlanCreator.getAdviserObtainmentFromMetaData(kryoSerializer, stepGroupYamlField, false, false);
+    assertThat(adviserObtainmentList).hasSize(1);
+    assertThat(adviserObtainmentList.get(0).getType().toString()).isEqualTo("type: \"NEXT_STEP\"\n");
   }
 }
