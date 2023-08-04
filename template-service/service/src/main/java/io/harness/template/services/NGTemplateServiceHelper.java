@@ -506,9 +506,16 @@ public class NGTemplateServiceHelper {
   public Optional<TemplateEntity> getStableTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, boolean deleted, boolean getMetadataOnly, boolean loadFromCache,
       boolean loadFromFallbackBranch) {
-    return templateRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-        accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly, loadFromCache,
-        loadFromFallbackBranch);
+    if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
+      return templateRepository
+          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
+              accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted);
+    } else {
+      return templateRepository
+          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(accountId,
+              orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly, loadFromCache,
+              loadFromFallbackBranch);
+    }
   }
 
   public Optional<GlobalTemplateEntity> getStableTemplate(String accountId, String orgIdentifier,
