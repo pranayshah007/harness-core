@@ -287,14 +287,7 @@ function copy_ci_manager_jars() {
     cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
     cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
     cp -r ../../332-ci-manager/build/container/scripts/ .
-
-    cp ../../ci-manager-protocol.info .
-    echo ${JDK} > jdk.txt
-    echo ${VERSION} > version.txt
-    if [ ! -z ${PURPOSE} ]
-    then
-        echo ${PURPOSE} > purpose.txt
-    fi
+    copy_common_files
     cd ../..
 
 }
