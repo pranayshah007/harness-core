@@ -56,6 +56,7 @@ public class AwsEcrApiHelperServiceDelegate extends AwsEcrApiHelperServiceDelega
       tracker.trackECRCall("List Repositories");
       return closeableAmazonECRClient.getClient().describeRepositories(describeRepositoriesRequest);
     } catch (AmazonServiceException amazonServiceException) {
+      log.error("Exception amazonServiceException while doing listRepositories", amazonServiceException);
       ErrorHandlingGlobalContextData globalContextData =
           GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
       if (globalContextData != null && globalContextData.isSupportedErrorFramework()) {
@@ -69,6 +70,7 @@ public class AwsEcrApiHelperServiceDelegate extends AwsEcrApiHelperServiceDelega
       }
       handleAmazonServiceException(amazonServiceException);
     } catch (AmazonClientException amazonClientException) {
+      log.error("Exception amazonClientException while doing listRepositories", amazonClientException);
       ErrorHandlingGlobalContextData globalContextData =
           GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
       if (globalContextData != null && globalContextData.isSupportedErrorFramework()) {
@@ -113,7 +115,7 @@ public class AwsEcrApiHelperServiceDelegate extends AwsEcrApiHelperServiceDelega
           .get(0)
           .getAuthorizationToken();
     } catch (Exception e) {
-      log.error("Exception getAmazonEcrAuthToken", e);
+      log.error("LOG_TASK_ID_DEBUG: Exception in getAmazonEcrAuthToken", e);
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
     }
   }

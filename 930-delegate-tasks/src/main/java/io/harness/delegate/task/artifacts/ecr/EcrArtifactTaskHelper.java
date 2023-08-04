@@ -114,6 +114,7 @@ public class EcrArtifactTaskHelper {
               .build();
       }
     } catch (AmazonServiceException ex) {
+      log.error("LOG_TASK_ID_DEBUG: Exception AmazonServiceException", ex);
       if (GlobalContextManager.get(MdcGlobalContextData.MDC_ID) != null) {
         ((MdcGlobalContextData) GlobalContextManager.get(MdcGlobalContextData.MDC_ID))
             .getMap()

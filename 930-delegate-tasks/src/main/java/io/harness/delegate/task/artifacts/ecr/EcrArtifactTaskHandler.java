@@ -127,10 +127,13 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
   }
 
   public ArtifactTaskExecutionResponse getEcrImageUrl(EcrArtifactDelegateRequest attributesRequest) {
+    log.info("LOG_TASK_ID_DEBUG: Processing task: GET_IMAGE_URL");
+
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
     String ecrImageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(awsInternalConfig,
         attributesRequest.getRegistryId(), attributesRequest.getRegion(), attributesRequest.getImagePath());
 
+    log.info("LOG_TASK_ID_DEBUG: Finished task: GET_IMAGE_URL");
     return getSuccessTaskExecutionResponse(Collections.singletonList(EcrArtifactDelegateResponse.builder()
                                                                          .registryId(attributesRequest.getRegistryId())
                                                                          .imageUrl(ecrImageUrl)
@@ -138,6 +141,7 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
   }
 
   public ArtifactTaskExecutionResponse getAmazonEcrAuthToken(EcrArtifactDelegateRequest attributesRequest) {
+    log.info("LOG_TASK_ID_DEBUG: Processing task: GET_AUTH_TOKEN");
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(attributesRequest);
     String ecrImageUrl = awsEcrApiHelperServiceDelegate.getEcrImageUrl(awsInternalConfig,
         attributesRequest.getRegistryId(), attributesRequest.getRegion(), attributesRequest.getImagePath());
@@ -149,6 +153,7 @@ public class EcrArtifactTaskHandler extends DelegateArtifactTaskHandler<EcrArtif
                                             .registryId(attributesRequest.getRegistryId())
                                             .authToken(authToken)
                                             .build());
+    log.info("LOG_TASK_ID_DEBUG: Finished Processing task: GET_AUTH_TOKEN");
     return getSuccessTaskExecutionResponse(ecrArtifactDelegateResponseList);
   }
 
