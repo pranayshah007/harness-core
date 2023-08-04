@@ -109,7 +109,7 @@ public class SubscriptionTestConstant {
                                                             .city("San Francisco")
                                                             .state("CA")
                                                             .postalCode("94108")
-                                                            .line1("Robert'); DROP TABLE Students;--")
+                                                            .line1("Robert'); Students;--")
                                                             .country("US")
                                                             .build();
 
