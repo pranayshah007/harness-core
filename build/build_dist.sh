@@ -249,7 +249,7 @@ elif [ "${SERVICE_NAME}" == "change-data-capture" ]; then
     copy_change_data_capture_jars
 elif [ "${SERVICE_NAME}" == "idp-service" ]; then
     copy_change_data_capture_jars
-elif [ "${SERVICE_NAME}" == "verification-service" ]; then
+elif [ "${SERVICE_NAME}" == "verification-svc" ]; then
     copy_verification_service_jars
 elif [ "${SERVICE_NAME}" == "event-server" ]; then
     copy_event_server_jars
