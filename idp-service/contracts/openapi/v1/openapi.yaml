@@ -818,6 +818,8 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       description: API for getting all the datasources present in account.
       x-internal: true
+      security:
+        - x-api-key: []
   '/v1/datasource/{datasourceidentifier}/datapoints':
     parameters:
       - schema:
@@ -838,7 +840,8 @@ paths:
         id: orw5a36dm08gu
       description: Get DataPoints Present in DataSources
       x-internal: true
-      security: []
+      security:
+        - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
   /v1/scorecards/summary:
@@ -852,7 +855,8 @@ paths:
       operationId: get-all-scorecards-info-for-entity
       x-stoplight:
         id: zgumgtels2ddz
-      security: []
+      security:
+        - x-api-key: []
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/EntityIdentifier'
@@ -868,7 +872,8 @@ paths:
       operationId: get-scorecards-score-for-an-entity
       x-stoplight:
         id: j25m9fkszjjzw
-      security: []
+      security:
+        - x-api-key: []
       x-internal: true
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
@@ -893,6 +898,8 @@ paths:
           in: query
           name: scorecardidentifier
           description: 'Identifier for scorecard '
+      security:
+        - x-api-key: []
 components:
   schemas:
     BackstageEnvVariable:
@@ -2729,7 +2736,11 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ScorecardGraphSummaryInfoResponse'
-  securitySchemes: {}
+  securitySchemes:
+    x-api-key:
+      name: API Key
+      type: apiKey
+      in: header
 tags:
   - name: AccountInfo
   - name: AllowList
