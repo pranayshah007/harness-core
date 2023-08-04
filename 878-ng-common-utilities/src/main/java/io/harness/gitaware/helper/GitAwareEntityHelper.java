@@ -409,7 +409,7 @@ public class GitAwareEntityHelper {
     if (isNullOrDefault(filePath)) {
       throw new InvalidRequestException("No file path provided.");
     }
-    validateReamMeFilePathHasCorrectExtension(filePath);
+    validateReadMeFilePathHasCorrectExtension(filePath);
     String connectorRef = gitContextRequestParams.getConnectorRef();
     boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
     EntityType entityType = gitContextRequestParams.getEntityType();
@@ -428,7 +428,7 @@ public class GitAwareEntityHelper {
   }
 
   @VisibleForTesting
-  void validateReamMeFilePathHasCorrectExtension(String filePath) {
+  void validateReadMeFilePathHasCorrectExtension(String filePath) {
     if (!filePath.endsWith(".md")) {
       throw NestedExceptionUtils.hintWithExplanationException(FILE_PATH_INVALID_HINT,
           READ_ME_FILE_PATH_INVALID_EXTENSION_EXPLANATION,
