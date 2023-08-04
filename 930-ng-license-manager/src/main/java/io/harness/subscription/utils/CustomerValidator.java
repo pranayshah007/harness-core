@@ -76,7 +76,7 @@ public class CustomerValidator {
    */
   public static void validateEmail(String email) {
     if (!isValidEmail(email)) {
-      String errorMessage = "Invalid email address";
+      String errorMessage = String.format("Provided Email %s is not valid. Provide a valid email and try again.", email);
       log.error(errorMessage);
       throw new InvalidArgumentsException(errorMessage);
     }
@@ -89,7 +89,7 @@ public class CustomerValidator {
       throw new InvalidArgumentsException(errorMessage);
     }
     if (StringUtils.isEmpty(input) || !patternMatches(ADDRESS_REGEX, input)) {
-      String errorMessage = "Invalid customer details";
+      String errorMessage = String.format("Invalid customer input: %s", input);
       log.error(errorMessage);
       throw new InvalidArgumentsException(errorMessage);
     }
