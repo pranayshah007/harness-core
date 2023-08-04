@@ -222,6 +222,23 @@ function copy_batch_processing_jars(){
 
 }
 
+function copy_srm_service_jars() {
+
+    cp ${HOME}/.bazel-dirs/bin/srm-service/modules/cv-nextgen-service/service/module_deploy.jar cv-nextgen-capsule.jar
+    cp ../../srm-service/config/keystore.jks .
+    cp ../../srm-service/config/cv-nextgen-config.yml .
+    cp ../../srm-service/modules/cv-nextgen-service/service/src/main/resources/redisson-jcache.yaml .
+    cp ../../srm-service/modules/cv-nextgen-service/service/src/main/resources/enterprise-redisson-jcache.yaml .
+    cp ../../srm-service/build/container/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
+    cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+    cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+    cp -R ../../srm-service/build/container/scripts/ .
+
+#    cp ../../srm-service/build/container/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
+
+
+}
+
 
 #prepare_to_copy_jars
 if [ "${SERVICE_NAME}" == "manager" ]; then
@@ -238,4 +255,6 @@ elif [ "${SERVICE_NAME}" == "event-server" ]; then
     copy_event_server_jars
 elif [ "${SERVICE_NAME}" == "batch-processing" ]; then
     copy_batch_processing_jars
+elif [ "${SERVICE_NAME}" == "srm-service" ]; then
+    copy_srm_service_jars
 fi
