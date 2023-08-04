@@ -248,6 +248,7 @@ public enum FeatureName {
   CF_ROLLBACK_CUSTOM_STACK_NAME(
       "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP),
   CG_GIT_POLLING("Poll git based on account config for git sync in CG.", HarnessTeam.SPG),
+  CG_SPG_JIRA_APPROVAL_POLLING_ASYNC("Enable jira approval polling to async", HarnessTeam.SPG),
   CG_K8S_MANIFEST_COMMIT_VAR(
       "Enables users to pass commit id as sweeping output and use later in subsequent steps. PM Rohan",
       HarnessTeam.CDP),
