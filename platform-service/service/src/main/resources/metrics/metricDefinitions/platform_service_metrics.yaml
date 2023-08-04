@@ -1,6 +1,6 @@
-name: CurrentGen Manager Service Metrics
-identifier: cgManagerServiceMetrics
-metricGroup: cgManagerServiceMetricsGroup
+name: Platform Service Metrics
+identifier: PlatformServiceMetrics
+metricGroup: PlatformServiceMetricsGroup
 metrics:
   - metricName: io_dropwizard_jetty_MutableServletContextHandler_4xx_responses_count
     metricDefinition: Total number of 4xx error responses
@@ -114,7 +114,7 @@ metrics:
     metricDefinition: Jetty - P95 Response Time
     type: LastValue
     unit: count
-  - metricName: org_eclipse_jetty_server_HttpConnectionFactory_9090_connections_count
+  - metricName: org_eclipse_jetty_server_HttpConnectionFactory_9005_connections_count
     metricDefinition: Jetty - Connection Count
     type: LastValue
     unit: count

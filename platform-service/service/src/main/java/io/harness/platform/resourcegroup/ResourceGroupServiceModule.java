@@ -30,7 +30,6 @@ import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetr
 import io.harness.govern.ProviderModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
-import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -112,7 +111,6 @@ public class ResourceGroupServiceModule extends AbstractModule {
         return appConfig.getResoureGroupServiceConfig().getMongoConfig();
       }
     });
-    install(new MetricsModule());
     install(new AbstractMongoModule() {
       @Override
       public UserProvider userProvider() {
@@ -145,10 +143,6 @@ public class ResourceGroupServiceModule extends AbstractModule {
         this.appConfig.getResoureGroupServiceConfig().isEnableAudit()));
     install(AccessControlClientModule.getInstance(
         this.appConfig.getAccessControlClientConfig(), RESOUCE_GROUP_SERVICE.getServiceId()));
-
-    if (appConfig.getResoureGroupServiceConfig().isExportMetricsToStackDriver()) {
-      install(new MetricsModule());
-    }
 
     install(EnforcementClientModule.getInstance(appConfig.getNgManagerServiceConfig(),
         appConfig.getPlatformSecrets().getNgManagerServiceSecret(), RESOUCE_GROUP_SERVICE.getServiceId(),
