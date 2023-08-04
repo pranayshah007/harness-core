@@ -2743,18 +2743,34 @@ components:
       in: header
 tags:
   - name: AccountInfo
+    description: Account Information
   - name: AllowList
+    description: Backstage Allow List
   - name: AppConfig
+    description: Backstage App Configurations
   - name: AuthInfo
+    description: Auth Information
   - name: BackstageEnvVariable
+    description: Backstage Environment Variable
   - name: BackstagePermissions
+    description: Backstage Permissions
   - name: ConnectorInfo
+    description: Connector Information
   - name: DataSource
+    description: DataSource Information
   - name: LayoutProxy
+    description: Layout Proxy
   - name: MergedPluginsConfig
+    description: Merged Plugins Configurations
   - name: Namespace
+    description: Backstage Namespace
   - name: OnboardingResource
+    description: Onboarding
   - name: PluginInfo
+    description: Plugin Information
   - name: Provision
+    description: Provision
   - name: Scorecards
+    description: Scorecards Information
   - name: StatusInfo
+    description: Status Information
