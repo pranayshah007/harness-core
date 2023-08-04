@@ -13,19 +13,19 @@
 #     -t <tag> \
 #     .
 # Python Application runtime base image
-FROM us.gcr.io/platform-205701/ubi/ubi-base:8.8
+FROM us.gcr.io/platform-205701/harness/ubi8:8.8
 
 USER root
 
 RUN microdnf install yum
 
-ENV PYTHON_VERSION=3.8 \
+ENV PYTHON_VERSION=3.9 \
     PATH=$HOME/.local/bin/:$PATH \
     PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=UTF-8 \
     LC_ALL=en_US.UTF-8 \
     LANG=en_US.UTF-8 \
-    CNB_STACK_ID=com.redhat.stacks.ubi8-python-38 \
+    CNB_STACK_ID=com.redhat.stacks.ubi8-python-39 \
     CNB_USER_ID=1001 \
     CNB_GROUP_ID=0 \
     PIP_NO_CACHE_DIR=off
@@ -75,10 +75,10 @@ RUN INSTALL_PKGS="autoconf \
   rpm -V $INSTALL_PKGS && \
   yum -y clean all --enablerepo='*'
 
-RUN INSTALL_PKGS="python38 python38-devel python38-setuptools python38-pip nss_wrapper \
+RUN INSTALL_PKGS="python39 python39-devel python39-setuptools python39-pip nss_wrapper \
         httpd httpd-devel mod_ssl mod_auth_gssapi mod_ldap \
         mod_session atlas-devel gcc-gfortran libffi-devel libtool-ltdl enchant" && \
-    yum -y module enable python38:3.8 httpd:2.4 && \
+    yum -y module enable python39:3.9 httpd:2.4 && \
     yum -y --setopt=tsflags=nodocs install $INSTALL_PKGS && \
     rpm -V $INSTALL_PKGS && \
     # Remove redhat-logos-httpd (httpd dependency) to keep image size smaller.

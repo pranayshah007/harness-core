@@ -13,7 +13,7 @@
 #     -t <tag> \
 #     .
 # Python Application runtime base image
-FROM us.gcr.io/platform-205701/ubi/ubi-base:8.8
+FROM us.gcr.io/platform-205701/harness/ubi8:8.8
 
 USER root
 
