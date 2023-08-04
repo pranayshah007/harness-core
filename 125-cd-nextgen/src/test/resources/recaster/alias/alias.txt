@@ -1177,3 +1177,6 @@ io.harness.delegate.beans.logstreaming.CommandUnitsProgress
 io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo
 io.harness.connector.ConnectorInfoDTO
 io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs
+io.harness.cdng.provision.awscdk.AwsCdkDestroyStepInfo
+io.harness.cdng.provision.awscdk.AwsCdkDestroyStepNode
+io.harness.cdng.provision.awscdk.AwsCdkDestroyStepParameters

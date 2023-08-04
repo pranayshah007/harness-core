@@ -17,7 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.cdng.provision.awscdk.AwsCdkDiffStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkDestroyStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ImageDetails;
@@ -38,25 +38,25 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AwsCdkDiffPluginInfoProvider implements CDPluginInfoProvider {
+public class AwsCdkDestroyPluginInfoProvider implements CDPluginInfoProvider {
   @Override
   public PluginCreationResponseWrapper getPluginInfo(
       PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
     CdAbstractStepNode cdAbstractStepNode = getCdAbstractStepNode(request, stepJsonNode);
-    AwsCdkDiffStepInfo awsCdkDiffStepInfo = (AwsCdkDiffStepInfo) cdAbstractStepNode.getStepSpecType();
+    AwsCdkDestroyStepInfo awsCdkDestroyStepInfo = (AwsCdkDestroyStepInfo) cdAbstractStepNode.getStepSpecType();
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
-        awsCdkDiffStepInfo.getResources(), awsCdkDiffStepInfo.getRunAsUser(), usedPorts);
+        awsCdkDestroyStepInfo.getResources(), awsCdkDestroyStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
-    if (ParameterField.isNotNull(awsCdkDiffStepInfo.getConnectorRef())
-        || isNotEmpty(awsCdkDiffStepInfo.getConnectorRef().getValue())) {
-      imageDetails = PluginInfoProviderHelper.getImageDetails(
-          awsCdkDiffStepInfo.getConnectorRef(), awsCdkDiffStepInfo.getImage(), awsCdkDiffStepInfo.getImagePullPolicy());
+    if (ParameterField.isNotNull(awsCdkDestroyStepInfo.getConnectorRef())
+        || isNotEmpty(awsCdkDestroyStepInfo.getConnectorRef().getValue())) {
+      imageDetails = PluginInfoProviderHelper.getImageDetails(awsCdkDestroyStepInfo.getConnectorRef(),
+          awsCdkDestroyStepInfo.getImage(), awsCdkDestroyStepInfo.getImagePullPolicy());
     }
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
-    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(awsCdkDiffStepInfo));
+    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(awsCdkDestroyStepInfo));
     PluginCreationResponse response =
         PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
@@ -81,21 +81,21 @@ public class AwsCdkDiffPluginInfoProvider implements CDPluginInfoProvider {
 
   @Override
   public boolean isSupported(String stepType) {
-    return stepType.equals(StepSpecTypeConstants.AWS_CDK_DIFF);
+    return stepType.equals(StepSpecTypeConstants.AWS_CDK_DESTROY);
   }
 
-  private Map<String, String> getEnvironmentVariables(AwsCdkDiffStepInfo awsCdkDiffStepInfo) {
-    ParameterField<Map<String, String>> envVariables = awsCdkDiffStepInfo.getEnvVariables();
+  private Map<String, String> getEnvironmentVariables(AwsCdkDestroyStepInfo awsCdkDestroyStepInfo) {
+    ParameterField<Map<String, String>> envVariables = awsCdkDestroyStepInfo.getEnvVariables();
 
     HashMap<String, String> environmentVariablesMap = new HashMap<>();
 
-    environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, getParameterFieldValue(awsCdkDiffStepInfo.getAppPath()));
-    List<String> commandOptions = getParameterFieldValue(awsCdkDiffStepInfo.getCommandOptions());
-    List<String> stackNames = getParameterFieldValue(awsCdkDiffStepInfo.getStackNames());
+    environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, getParameterFieldValue(awsCdkDestroyStepInfo.getAppPath()));
+    List<String> commandOptions = getParameterFieldValue(awsCdkDestroyStepInfo.getCommandOptions());
+    List<String> stackNames = getParameterFieldValue(awsCdkDestroyStepInfo.getStackNames());
     if (isNotEmpty(commandOptions)) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_COMMAND_OPTIONS, String.join(" ", commandOptions));
     }
-    if (isNotEmpty(getParameterFieldValue(awsCdkDiffStepInfo.getStackNames()))) {
+    if (isNotEmpty(getParameterFieldValue(awsCdkDestroyStepInfo.getStackNames()))) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_STACK_NAMES, String.join(" ", stackNames));
     }
 

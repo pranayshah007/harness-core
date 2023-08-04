@@ -147,7 +147,11 @@ public class AwsCdkDeployStepTest extends CategoryTest {
         StepStatusTaskResponseData.builder()
             .stepStatus(StepStatus.builder()
                             .stepExecutionStatus(StepExecutionStatus.SUCCESS)
-                            .output(StepMapOutput.builder().output("test", "dGVzdHZhbHVlZQ--").build())
+                            .output(StepMapOutput.builder()
+                                        .output("GIT_COMMIT_ID", "dGVzdHZhbHVlZQ--")
+                                        .output("CDK_OUTPUT", "dGVzdHZhbHVlZQ--")
+                                        .output("test", "notEncodedValue")
+                                        .build())
                             .build())
             .build();
     Map<String, ResponseData> responseDataMap = new HashMap<>();
@@ -160,11 +164,11 @@ public class AwsCdkDeployStepTest extends CategoryTest {
     awsCdkDeployStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
 
     verify(containerStepExecutionResponseHelper).handleAsyncResponseInternal(any(), captor.capture(), any());
-    assertThat(
-        ((StepMapOutput) ((StepStatusTaskResponseData) captor.getValue().get("test")).getStepStatus().getOutput())
-            .getMap()
-            .get("test"))
-        .isEqualTo("testvaluee");
+    StepMapOutput stepMapOutput =
+        (StepMapOutput) ((StepStatusTaskResponseData) captor.getValue().get("test")).getStepStatus().getOutput();
+    assertThat(stepMapOutput.getMap().get("GIT_COMMIT_ID")).isEqualTo("testvaluee");
+    assertThat(stepMapOutput.getMap().get("CDK_OUTPUT")).isEqualTo("testvaluee");
+    assertThat(stepMapOutput.getMap().get("test")).isEqualTo("notEncodedValue");
   }
 
   private Ambiance getAmbiance() {

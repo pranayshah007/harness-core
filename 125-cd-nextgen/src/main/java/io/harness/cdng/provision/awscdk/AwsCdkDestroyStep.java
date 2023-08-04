@@ -32,13 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AwsCdkDiffStep extends AbstractContainerStepV2<StepElementParameters> {
+public class AwsCdkDestroyStep extends AbstractContainerStepV2<StepElementParameters> {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
 
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.AWS_CDK_DIFF.getYamlType())
+                                               .setType(ExecutionNodeType.AWS_CDK_DESTROY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
@@ -55,7 +55,8 @@ public class AwsCdkDiffStep extends AbstractContainerStepV2<StepElementParameter
   @Override
   public UnitStep getSerialisedStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, long timeout, String parkedTaskId) {
-    AwsCdkDiffStepParameters awsCdkDiffStepParameters = (AwsCdkDiffStepParameters) stepElementParameters.getSpec();
+    AwsCdkDestroyStepParameters awsCdkDestroyStepParameters =
+        (AwsCdkDestroyStepParameters) stepElementParameters.getSpec();
 
     Map<String, String> envVarMap = new HashMap<>();
 
@@ -63,8 +64,9 @@ public class AwsCdkDiffStep extends AbstractContainerStepV2<StepElementParameter
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
         stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
-        awsCdkDiffStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
+        awsCdkDestroyStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
+
   @Override
   public StepResponse.StepOutcome getAnyOutComeForStep(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {

@@ -27,9 +27,11 @@ import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -37,8 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class AwsCdkDeployStep extends AbstractContainerStepV2<StepElementParameters> {
+  private static List<String> OUTPUT_KEYS = Arrays.asList("GIT_COMMIT_ID", "CDK_OUTPUT");
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
-
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
@@ -79,10 +81,15 @@ public class AwsCdkDeployStep extends AbstractContainerStepV2<StepElementParamet
     if (stepStatusTaskResponseData != null
         && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
       StepMapOutput stepOutput = (StepMapOutput) stepStatusTaskResponseData.getStepStatus().getOutput();
-      Map<String, String> decodedOutput = new HashMap<>();
-      stepOutput.getMap().forEach(
-          (key, value) -> decodedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "=")))));
-      stepOutput.setMap(decodedOutput);
+      Map<String, String> processedOutput = new HashMap<>();
+      stepOutput.getMap().forEach((key, value) -> {
+        if (OUTPUT_KEYS.contains(key)) {
+          processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+        } else {
+          processedOutput.put(key, value);
+        }
+      });
+      stepOutput.setMap(processedOutput);
     }
     return super.handleAsyncResponse(ambiance, stepParameters, responseDataMap);
   }
