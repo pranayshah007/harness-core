@@ -237,7 +237,6 @@ public class SamlBasedAuthHandler implements AuthHandler {
           processNGSamlGroupSyncForNotSignedInSamlSettings(
               samlSettingsList, toSyncSamlSetting, user.getEmail(), account.getUuid());
         }
-
         return new AuthenticationResponse(user);
       }
     } catch (URISyntaxException e) {
