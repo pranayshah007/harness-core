@@ -803,6 +803,103 @@ paths:
       x-internal: true
       tags:
         - MergedPluginsConfig
+  /v1/datasources:
+    get:
+      summary: Get Datasources Present In Account
+      tags:
+        - DataSource
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourcesResponse'
+      operationId: get-all-datasources-for-account
+      x-stoplight:
+        id: dt6m118au8pyz
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: API for getting all the datasources present in account.
+      x-internal: true
+      security:
+        - x-api-key: []
+  '/v1/datasource/{datasourceidentifier}/datapoints':
+    parameters:
+      - schema:
+          type: string
+        name: datasourceidentifier
+        in: path
+        required: true
+        description: Identifier for datasource
+    get:
+      summary: Get DataPoints present in DataSources for an account
+      tags:
+        - DataSource
+      responses:
+        '200':
+          $ref: '#/components/responses/DatapointResponse'
+      operationId: get-datapoints-for-dataource
+      x-stoplight:
+        id: orw5a36dm08gu
+      description: Get DataPoints Present in DataSources
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  /v1/scorecards/summary:
+    get:
+      summary: Get Score Summary for Scorecards
+      tags:
+        - Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardSummaryInfoResponse'
+      operationId: get-all-scorecards-info-for-entity
+      x-stoplight:
+        id: zgumgtels2ddz
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/EntityIdentifier'
+      x-internal: true
+    parameters: []
+  /v1/scorecards/score:
+    get:
+      summary: Get Scores for Scorecards
+      tags: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardScoreResponse'
+      operationId: get-scorecards-score-for-an-entity
+      x-stoplight:
+        id: j25m9fkszjjzw
+      security:
+        - x-api-key: []
+      x-internal: true
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/EntityIdentifier'
+  /v1/scorecards/graph:
+    get:
+      summary: Get Data for check status for graph
+      tags:
+        - Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardGraphSummaryResponse'
+      operationId: get-scorecards-graphs-score-summary
+      x-stoplight:
+        id: ojpv9z9ny07z1
+      x-internal: true
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/EntityIdentifier'
+        - schema:
+            type: string
+          in: query
+          name: scorecardidentifier
+          description: 'Identifier for scorecard '
+      security:
+        - x-api-key: []
 components:
   schemas:
     BackstageEnvVariable:
@@ -1872,6 +1969,248 @@ components:
       properties:
         resolved_env_variables:
           type: string
+    DataSource:
+      title: DataSource
+      x-stoplight:
+        id: qci2w20e6k6sl
+      type: object
+      description: Contains Details for Single Data source
+      properties:
+        identifier:
+          type: string
+          x-stoplight:
+            id: e5w1rm1ptewgz
+        name:
+          type: string
+          x-stoplight:
+            id: 2jk5vhf060cfk
+        Description:
+          type: string
+          x-stoplight:
+            id: h7gdpwatpnesq
+      required:
+        - identifier
+        - name
+      x-internal: true
+    DataSourcesResponse:
+      title: DataSourcesResponse
+      x-stoplight:
+        id: 1vm3roiuh1o4f
+      type: object
+      description: Response for list of data sources
+      properties:
+        data_sources:
+          type: array
+          x-stoplight:
+            id: m7o3e5bvhpn2c
+          items:
+            $ref: '#/components/schemas/DataSource'
+      required:
+        - data_sources
+      x-internal: true
+    DataPoint:
+      title: DataPoint
+      x-stoplight:
+        id: 9l4qp14s5io4u
+      type: object
+      description: Conatins detail for single data point
+      x-internal: true
+      properties:
+        type:
+          type: string
+          x-stoplight:
+            id: ofg05lwggquy2
+        name:
+          type: string
+          x-stoplight:
+            id: ve98q06mmurkb
+        description:
+          type: string
+          x-stoplight:
+            id: ewh1b3xzzlx6f
+      required:
+        - type
+        - name
+        - description
+    DataPointsResponse:
+      title: DataPointResponse
+      x-stoplight:
+        id: 5s83r4tox86xi
+      type: object
+      description: Resposne for List of Data Points
+      properties:
+        data_points:
+          type: array
+          x-stoplight:
+            id: zpdnqr73zxkfz
+          items:
+            $ref: '#/components/schemas/DataPoint'
+      required:
+        - data_points
+      x-internal: true
+    CheckStatus:
+      title: CheckStatus
+      x-stoplight:
+        id: 18eayv757g01h
+      type: object
+      description: Info for single check status
+      x-internal: true
+      properties:
+        reason:
+          type: string
+          x-stoplight:
+            id: oxsrssk5xzbx4
+        name:
+          type: string
+          x-stoplight:
+            id: 0higect437b7y
+        status:
+          type: string
+          x-stoplight:
+            id: t4cx60v8z473f
+      required:
+        - name
+        - status
+    ScorecardSummaryInfo:
+      title: ScorecardSummaryInfo
+      x-stoplight:
+        id: nwh2722zs7ukb
+      type: object
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: 5koeqtrb89jfj
+        scorecard_identifier:
+          type: string
+          x-stoplight:
+            id: 53ivq8elegfjm
+        timestamp:
+          type: number
+          x-stoplight:
+            id: 311qh9fpw5rtm
+        entity_identifier:
+          type: string
+          x-stoplight:
+            id: mdv9jzz4aqycp
+        score:
+          type: number
+          x-stoplight:
+            id: 9npys8osxbazz
+        checks_statuses:
+          type: array
+          x-stoplight:
+            id: bzc05w0ugyh1y
+          items:
+            $ref: '#/components/schemas/CheckStatus'
+      required:
+        - name
+        - scorecard_identifier
+        - timestamp
+        - entity_identifier
+        - score
+        - checks_statuses
+      description: Scorecard score calculation summary info
+      x-internal: true
+    ScorecardSummaryResponse:
+      title: ScorecardSummaryResponse
+      x-stoplight:
+        id: srk3s6iqvrn8w
+      type: object
+      description: 'Response for getting list for summary of score '
+      properties:
+        scorecards_summary:
+          type: array
+          x-stoplight:
+            id: qln2kx973gisd
+          items:
+            $ref: '#/components/schemas/ScorecardSummaryInfo'
+      required:
+        - scorecards_summary
+      x-internal: true
+    ScorecardScore:
+      title: ScorecardScore
+      x-stoplight:
+        id: ob3v8vehgnaao
+      type: object
+      properties:
+        scorecard_identifier:
+          type: string
+          x-stoplight:
+            id: vnjnkycaaw5u8
+        entity_identifier:
+          type: string
+          x-stoplight:
+            id: hrf7nakx799im
+        score:
+          type: number
+          x-stoplight:
+            id: p013ggbb57xeq
+      required:
+        - scorecard_identifier
+        - entity_identifier
+        - score
+      x-internal: true
+      description: Score infor for single score card
+    ScorecardScoreResponse:
+      title: ScorecardScoreResponse
+      x-stoplight:
+        id: 6ne731knjd7s8
+      type: object
+      properties:
+        scorecard_scores:
+          type: array
+          x-stoplight:
+            id: 4nevb47dua4ax
+          items:
+            $ref: '#/components/schemas/ScorecardScore'
+      required:
+        - scorecard_scores
+      x-internal: true
+      description: Response for getting only scores for scorecards
+    ScorecardGraphSummaryInfo:
+      title: ScorecardGraphSummaryInfo
+      x-stoplight:
+        id: fsi5z4q56xjd6
+      type: object
+      description: Scorecard graph summary
+      x-internal: true
+      properties:
+        scorecard_identifier:
+          type: string
+          x-stoplight:
+            id: 66a5b7mj2q72d
+        scorecard_name:
+          type: string
+          x-stoplight:
+            id: rosfecduec0zf
+        timestamp:
+          type: number
+          x-stoplight:
+            id: qi6ly6xcnsjim
+        score:
+          type: number
+          x-stoplight:
+            id: ppu4g369fk3no
+      required:
+        - scorecard_identifier
+        - scorecard_name
+        - timestamp
+        - score
+    ScorecardGraphSummaryInfoResponse:
+      title: ScorecardGraphSummaryInfoResponse
+      x-stoplight:
+        id: 5nbb50rg25b0a
+      type: object
+      x-internal: true
+      properties:
+        scorecard_graph_summary:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScorecardGraphSummaryInfo'
+      required:
+        - scorecard_graph_summary
+      description: Response for scorecard graph summary
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1991,6 +2330,13 @@ components:
       schema:
         type: string
       description: Namespace from where the request is being made
+    EntityIdentifier:
+      name: entityidentifier
+      in: query
+      required: true
+      schema:
+        type: string
+      description: 'Identifier for entity to get the scores for score card '
   requestBodies:
     BackstageEnvVariableRequest:
       content:
@@ -2350,6 +2696,44 @@ components:
           schema:
             type: string
           examples: {}
+    DataSourcesResponse:
+      description: Response containing list of data sources present in account
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourcesResponse'
+        application/xml:
+          schema:
+            type: object
+            properties:
+              datasources:
+                type: string
+                x-stoplight:
+                  id: xcewu90y6tz2k
+    ScorecardSummaryInfoResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardSummaryResponse'
+    DatapointResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataPointsResponse'
+    ScorecardScoreResponse:
+      description: Response for scorecards score
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardScoreResponse'
+    ScorecardGraphSummaryResponse:
+      description: Response for scorecard's score summary for graph
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardGraphSummaryInfoResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2370,6 +2754,8 @@ tags:
     description: Backstage Permissions
   - name: ConnectorInfo
     description: Connector Information
+  - name: DataSource
+    description: DataSource Information
   - name: LayoutProxy
     description: Layout Proxy
   - name: MergedPluginsConfig
@@ -2382,5 +2768,7 @@ tags:
     description: Plugin Information
   - name: Provision
     description: Provision
+  - name: Scorecards
+    description: Scorecards Information
   - name: StatusInfo
     description: Status Information
