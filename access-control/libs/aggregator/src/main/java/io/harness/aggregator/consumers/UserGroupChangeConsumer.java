@@ -116,10 +116,10 @@ public class UserGroupChangeConsumer implements AccessControlChangeConsumer<User
     long aclProcessingTime = System.currentTimeMillis() - startTime;
     try (DelayLogContext ignore = new DelayLogContext(aclProcessingTime, OVERRIDE_ERROR)) {
       log.info(
-          "UserGroupChangeConsumer.consumeUpdateEvent: Number of ACLs created: {} for {} at scope {} Time taken: {}",
+          "UserGroupChangeConsumer.consumeUpdateEvent: Number of ACLs created: {} for identifier: {}, scope: {} Time taken: {}",
           numberOfACLsCreated, userGroup.getIdentifier(), userGroup.getScopeIdentifier(), aclProcessingTime);
       log.info(
-          "UserGroupChangeConsumer.consumeUpdateEvent: Number of ACLs deleted: {} for {} at scope {} Time taken: {}",
+          "UserGroupChangeConsumer.consumeUpdateEvent: Number of ACLs deleted: {} for identifier: {}, scope: {} Time taken: {}",
           numberOfACLsDeleted, userGroup.getIdentifier(), userGroup.getScopeIdentifier(), aclProcessingTime);
     }
     return true;
