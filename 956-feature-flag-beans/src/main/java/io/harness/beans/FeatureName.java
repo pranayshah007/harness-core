@@ -851,6 +851,8 @@ public enum FeatureName {
       HarnessTeam.CDP),
   CDS_QUEUE_SERVICE_FOR_TRIGGERS(
       "When this flag is enabled, triggers will be processed using queue service instead of mongo iterators", PIPELINE),
+  CDS_MERGED_RUN_AND_RETRY_PIPELINE_COMPONENT(
+      "When enabled RunPipelineForm component will be used for Retry From (Failed) Stage", HarnessTeam.CDP),
   CDS_SUPPORT_SERVICE_INPUTS_AS_EXECUTION_INPUTS(
       "Service Inputs will be marked as execution inputs if service is an expression", HarnessTeam.CDC);
   // keep-sorted end
