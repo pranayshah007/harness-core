@@ -862,7 +862,7 @@ paths:
         - $ref: '#/components/parameters/EntityIdentifier'
       x-internal: true
     parameters: []
-  /v1/scorecards/score:
+  /v1/scorecard/score:
     get:
       summary: Get Scores for Scorecards
       tags: []
@@ -879,7 +879,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/EntityIdentifier'
     post:
-      summary: ''
+      summary: Re-Calibrate score for scorecard
       operationId: calculate-score-for-score-cards
       responses:
         '200':
@@ -897,7 +897,7 @@ paths:
         - schema:
             type: string
           in: query
-          name: scorecardidentifier
+          name: scorecard_identifier
           description: 'Identifier for score card '
           required: true
       description: This for recalibrating the score for scorecard of entity
@@ -919,7 +919,7 @@ paths:
         - schema:
             type: string
           in: query
-          name: scorecardidentifier
+          name: scorecard_identifier
           description: 'Identifier for scorecard '
       security:
         - x-api-key: []
@@ -2360,7 +2360,7 @@ components:
         type: string
       description: Namespace from where the request is being made
     EntityIdentifier:
-      name: entityidentifier
+      name: entity_identifier
       in: query
       required: true
       schema:
