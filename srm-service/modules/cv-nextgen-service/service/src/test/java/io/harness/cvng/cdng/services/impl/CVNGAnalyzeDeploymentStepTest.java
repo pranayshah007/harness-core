@@ -8,6 +8,7 @@
 package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -167,6 +168,7 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
     FieldUtils.writeField(deploymentStep, "clock", builderFactory.getClock(), true);
     FieldUtils.writeField(deploymentStep, "verifyStepCvConfigServiceMap", verifyStepCvConfigServiceMap, true);
     FieldUtils.writeField(deploymentStep, "monitoredServiceService", monitoredServiceService, true);
+    FieldUtils.writeField(srmAnalysisStepService, "clock", builderFactory.getClock(), true);
     FieldUtils.writeField(srmAnalysisStepService, "pipelineServiceClient", pipelineServiceClient, true);
     FieldUtils.writeField(deploymentStep, "srmAnalysisStepService", srmAnalysisStepService, true);
     FieldUtils.writeField(deploymentStep, "activityService", activityService, true);
@@ -257,6 +259,41 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testExecuteDefault_createEntity() {
+    Ambiance ambiance = getAmbiance();
+    monitoredServiceDTO.setEnabled(true);
+    metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+    StepElementParameters stepElementParameters = getDefaultStepElementParameters();
+    Duration analysisDuration = CVNGAnalyzeDeploymentStep.getDurationFromString(duration);
+    StepResponse stepResponse =
+        deploymentStep.executeSyncAfterRbac(ambiance, stepElementParameters, stepInputPackage, null);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    CVNGAnalyzeDeploymentStep.AnalyzeDeploymentStepOutcome stepOutcome =
+        (CVNGAnalyzeDeploymentStep.AnalyzeDeploymentStepOutcome) new ArrayList<>(stepResponse.getStepOutcomes())
+            .get(0)
+            .getOutcome();
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(stepOutcome.getExecutionDetailsId());
+    assertThat(stepExecutionDetail.getServiceIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(stepExecutionDetail.getEnvIdentifier()).isEqualTo(envIdentifier);
+    assertThat(stepExecutionDetail.getAnalysisStartTime())
+        .isEqualTo(builderFactory.getClock().instant().toEpochMilli());
+    assertThat(stepExecutionDetail.getAnalysisDuration()).isEqualTo(analysisDuration);
+    assertThat(stepExecutionDetail.getPlanExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
+    assertThat(stepExecutionDetail.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceDTO.getIdentifier());
+    assertThat(stepExecutionDetail.getArtifactTag()).isEqualTo("tag");
+    assertThat(stepExecutionDetail.getArtifactType()).isEqualTo(ArtifactSourceType.GCR.getDisplayName());
+    assertThat(stepExecutionDetail.getStepName()).isEqualTo(stepElementParameters.getName());
+    assertThat(stepExecutionDetail.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
+    assertThat(stepExecutionDetail.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceDTO.getIdentifier());
+    assertThat(stepExecutionDetail.getPipelineName()).isEqualTo("Mocked Pipeline");
+  }
+
+  @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testExecuteConfigured_whenHealthSourcesAreEmpty() {
@@ -335,6 +372,41 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
     assertThat(stepExecutionDetail.getPipelineName()).isEqualTo("Mocked Pipeline");
   }
 
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testExecuteConfigured_createEntity() {
+    createConfiguredMonitoredService();
+    Ambiance ambiance = getAmbiance();
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getProjectParams(), configuredMonitoredServiceRef, true);
+    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+    StepElementParameters stepElementParameters = getConfiguredStepElementParameters();
+    Duration analysisDuration = CVNGAnalyzeDeploymentStep.getDurationFromString(duration);
+    StepResponse stepResponse =
+        deploymentStep.executeSyncAfterRbac(ambiance, stepElementParameters, stepInputPackage, null);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    CVNGAnalyzeDeploymentStep.AnalyzeDeploymentStepOutcome stepOutcome =
+        (CVNGAnalyzeDeploymentStep.AnalyzeDeploymentStepOutcome) new ArrayList<>(stepResponse.getStepOutcomes())
+            .get(0)
+            .getOutcome();
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(stepOutcome.getExecutionDetailsId());
+    assertThat(stepExecutionDetail.getServiceIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(stepExecutionDetail.getEnvIdentifier()).isEqualTo(envIdentifier);
+    assertThat(stepExecutionDetail.getAnalysisStartTime())
+        .isEqualTo(builderFactory.getClock().instant().toEpochMilli());
+    assertThat(stepExecutionDetail.getAnalysisDuration()).isEqualTo(analysisDuration);
+    assertThat(stepExecutionDetail.getPlanExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
+    assertThat(stepExecutionDetail.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceDTO.getIdentifier());
+    assertThat(stepExecutionDetail.getArtifactTag()).isEqualTo("tag");
+    assertThat(stepExecutionDetail.getArtifactType()).isEqualTo(ArtifactSourceType.GCR.getDisplayName());
+    assertThat(stepExecutionDetail.getStepName()).isEqualTo(stepElementParameters.getName());
+    assertThat(stepExecutionDetail.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
+    assertThat(stepExecutionDetail.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceDTO.getIdentifier());
+    assertThat(stepExecutionDetail.getPipelineName()).isEqualTo("Mocked Pipeline");
+  }
+
   private Ambiance getAmbiance() {
     return getAmbiance("srm_analysis");
   }
@@ -362,6 +434,7 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
 
   private StepElementParameters getDefaultStepElementParameters() {
     return StepElementParameters.builder()
+        .name("Mocked step name")
         .spec(CVNGDeploymentImpactStepParameter.builder()
                   .serviceIdentifier(ParameterField.createValueField(serviceIdentifier))
                   .envIdentifier(ParameterField.createValueField(envIdentifier))
@@ -376,6 +449,7 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
 
   private StepElementParameters getConfiguredStepElementParameters() {
     return StepElementParameters.builder()
+        .name("Mocked step name")
         .spec(CVNGDeploymentImpactStepParameter.builder()
                   .serviceIdentifier(ParameterField.createValueField(serviceIdentifier))
                   .envIdentifier(ParameterField.createValueField(envIdentifier))

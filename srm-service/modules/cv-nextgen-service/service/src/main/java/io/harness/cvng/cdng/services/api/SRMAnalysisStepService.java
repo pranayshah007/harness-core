@@ -7,6 +7,7 @@
 
 package io.harness.cvng.cdng.services.api;
 
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -14,10 +15,12 @@ import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
 import java.time.Duration;
+import java.util.Optional;
 
 public interface SRMAnalysisStepService {
-  String createSRMAnalysisStepExecution(Ambiance ambiance, String monitoredServiceIdentifier,
-      ServiceEnvironmentParams serviceEnvironmentParams, Duration duration);
+  String createSRMAnalysisStepExecution(Ambiance ambiance, String monitoredServiceIdentifier, String stepName,
+      ServiceEnvironmentParams serviceEnvironmentParams, Duration duration,
+      Optional<ArtifactsOutcome> optionalArtifactsOutcome);
 
   SRMAnalysisStepExecutionDetail getSRMAnalysisStepExecutionDetail(String analysisStepExecutionDetailId);
 

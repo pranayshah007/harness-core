@@ -52,6 +52,7 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,6 +82,7 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
   private ServiceEnvironmentParams serviceEnvironmentParams;
 
   private String analysisExecutionDetailsId;
+  private String stepName;
 
   private String activityId;
   @Before
@@ -89,6 +91,7 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     msHealthReportService = spy(msHealthReportService);
     builderFactory = BuilderFactory.getDefault();
     clock = FIXED_TIME_FOR_TESTS;
+    stepName = "Mocked step name";
     Call<ResponseDTO<Object>> pipelineSummaryCall = mock(Call.class);
     doReturn(pipelineSummaryCall).when(pipelineServiceClient).getExecutionDetailV2(any(), any(), any(), any());
     ObjectMapper objectMapper = new ObjectMapper();
@@ -104,8 +107,8 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
                                    .environmentIdentifier("env1")
                                    .build();
     analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
-        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier,
-        serviceEnvironmentParams, Duration.ofDays(1));
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, stepName,
+        serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
     SRMStepAnalysisActivity stepAnalysisActivity = builderFactory.getSRMStepAnalysisActivityBuilder()
                                                        .executionNotificationDetailsId(analysisExecutionDetailsId)
                                                        .build();
