@@ -8,7 +8,6 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.beans.FeatureName.DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST;
 import static io.harness.beans.FeatureName.REDUCE_DELEGATE_MEMORY_SIZE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -1462,9 +1461,7 @@ public class DelegateServiceImpl implements DelegateService {
             .put("delegateGrpcServicePort", String.valueOf(delegateGrpcConfig.getPort()))
             .put("kubernetesAccountLabel", getAccountIdentifier(templateParameters.getAccountId()))
             .put("runAsRoot", String.valueOf(templateParameters.isRunAsRoot()))
-            .put("dynamicHandlingOfRequestEnabled",
-                String.valueOf(featureFlagService.isEnabled(
-                    DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
+            .put("dynamicHandlingOfRequestEnabled", String.valueOf(false));
 
     final boolean isOnPrem = DeployMode.isOnPrem(mainConfiguration.getDeployMode().name());
     params.put("isOnPrem", String.valueOf(isOnPrem));
