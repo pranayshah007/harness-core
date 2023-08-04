@@ -878,6 +878,29 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/EntityIdentifier'
+    post:
+      summary: ''
+      operationId: calculate-score-for-score-cards
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardScoreResponse'
+      x-stoplight:
+        id: egx4u7eduxvq0
+      x-internal: true
+      tags:
+        - Scorecards
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/EntityIdentifier'
+        - schema:
+            type: string
+          in: query
+          name: scorecardidentifier
+          description: 'Identifier for score card '
+          required: true
+      description: This for recalibrating the score for scorecard of entity
   /v1/scorecards/graph:
     get:
       summary: Get Data for check status for graph
@@ -2133,6 +2156,8 @@ components:
       x-stoplight:
         id: ob3v8vehgnaao
       type: object
+      x-internal: true
+      description: Score infor for single score card
       properties:
         scorecard_identifier:
           type: string
@@ -2146,12 +2171,16 @@ components:
           type: number
           x-stoplight:
             id: p013ggbb57xeq
+        checks_statuses:
+          type: array
+          x-stoplight:
+            id: gone4w3wpr0gj
+          items:
+            $ref: '#/components/schemas/CheckStatus'
       required:
         - scorecard_identifier
         - entity_identifier
         - score
-      x-internal: true
-      description: Score infor for single score card
     ScorecardScoreResponse:
       title: ScorecardScoreResponse
       x-stoplight:
