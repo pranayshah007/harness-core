@@ -372,31 +372,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           globalTemplateEntity.getVersionLabel()));
     }
 
-    //    if (!isRemoteTemplateAndGitEntity(globalTemplateEntity)) {
-    //      if (null != globalTemplateEntity.getOrgIdentifier() && null != globalTemplateEntity.getProjectIdentifier())
-    //      {
-    //        throw new InvalidRequestException(format(
-    //                "Remote template entity cannot be created for template type [%s] on git simplification enabled for
-    //                Project [%s] in Organisation [%s] in Account [%s]", globalTemplateEntity.getTemplateEntityType(),
-    //                globalTemplateEntity.getProjectIdentifier(), globalTemplateEntity.getOrgIdentifier(),
-    //                globalTemplateEntity.getAccountIdentifier()));
-    //      } else if (null != globalTemplateEntity.getOrgIdentifier()) {
-    //        throw new InvalidRequestException(format(
-    //                "Remote template entity cannot be created for template type [%s] on git simplification enabled in
-    //                Organisation [%s] in Account [%s]", globalTemplateEntity.getTemplateEntityType(),
-    //                globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getAccountIdentifier()));
-    //      } else {
-    //        throw new InvalidRequestException(format(
-    //                "Remote template entity cannot be created for template type [%s] on git simplification enabled in
-    //                Account [%s]", globalTemplateEntity.getTemplateEntityType(),
-    //                globalTemplateEntity.getAccountIdentifier()));
-    //      }
-    //    }
-
     checkForChildTypesInTemplates(globalTemplateEntity, "create");
 
     // apply templates to template yaml for validation and populating module info
-    // applyTemplatesToYamlAndValidateSchema(globalTemplateEntity);
+    applyTemplatesToYamlAndValidateSchema(globalTemplateEntity);
 
     // List<EntityDetailProtoDTO> referredEntities =
     // templateReferenceHelper.calculateTemplateReferences(globalTemplateEntity);
@@ -445,13 +424,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       }
 
       GitAwareContextHelper.setIsDefaultBranchInGitEntityInfo();
-      //      if (doPublishSetupUsages(template)) {
-      //        templateReferenceHelper.publishTemplateReferences(
-      //                SetupUsageParams.builder().templateEntity(globalTemplateEntity).build(), referredEntities);
-      //      }
-      //
-      //      templateServiceHelper.sendTemplatesSaveTelemetryEvent(template, CREATING_TEMPLATE);
-
       return template;
 
     } catch (DuplicateKeyException ex) {
