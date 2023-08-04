@@ -20,7 +20,7 @@ RUN chmod +x \
     /app/build/build_dist.sh \
     /app/scripts/bazel/generate_credentials.sh \
     && /app/scripts/bazel/generate_credentials.sh \
-    && /app/build/feature_build.sh $GCP_KEY \
+    && /app/build/feature_build.sh $GCP_KEY
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
