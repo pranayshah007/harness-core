@@ -66,6 +66,9 @@ public interface NGTemplateService {
       String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache,
       boolean loadFromFallbackBranch);
 
+  Optional<GlobalTemplateEntity> getGlobalTemplateByIdentifier(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted);
+
   Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted);
 

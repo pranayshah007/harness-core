@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.services;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.Scope.ACCOUNT;
@@ -489,19 +490,32 @@ public class NGTemplateServiceHelper {
     }
   }
 
+  public Optional<GlobalTemplateEntity> getGlobalTemplate(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean getMetadataOnly) {
+    if (EmptyPredicate.isEmpty(versionLabel)) {
+      return getStableTemplate(
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted, getMetadataOnly);
+
+    } else {
+      return getGlobalTemplateWithVersionLabel(
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, getMetadataOnly);
+    }
+  }
+
   public Optional<TemplateEntity> getStableTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, boolean deleted, boolean getMetadataOnly, boolean loadFromCache,
       boolean loadFromFallbackBranch) {
-    if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
-      return templateRepository
-          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
-              accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted);
-    } else {
-      return templateRepository
-          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(accountId,
-              orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly, loadFromCache,
-              loadFromFallbackBranch);
-    }
+    return templateRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly, loadFromCache,
+        loadFromFallbackBranch);
+  }
+
+  public Optional<GlobalTemplateEntity> getStableTemplate(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, boolean deleted, boolean getMetadataOnly) {
+    return templateRepository
+        .findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly);
   }
 
   public Optional<TemplateEntity> getTemplateWithVersionLabel(String accountId, String orgIdentifier,
@@ -517,6 +531,14 @@ public class NGTemplateServiceHelper {
               orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly,
               loadFromCache, loadFromFallbackBranch);
     }
+  }
+
+  public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean getMetadataOnly) {
+    return templateRepository
+        .findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly);
   }
 
   public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(String accountId, String orgIdentifier,

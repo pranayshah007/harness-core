@@ -850,6 +850,25 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
+  public Optional<GlobalTemplateEntity> getGlobalTemplateByIdentifier(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+    enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
+    try {
+      return templateServiceHelper.getGlobalTemplate(
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
+
+    } catch (ExplanationException | HintException | ScmException e) {
+      String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
+      log.error(errorMessage, e);
+      throw e;
+    } catch (Exception e) {
+      String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
+      log.error(errorMessage, e);
+      throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, e.getMessage()));
+    }
+  }
+
+  @Override
   public Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
     return templateServiceHelper.getMetadataOrThrowExceptionIfInvalid(

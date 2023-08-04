@@ -9,12 +9,14 @@ package io.harness.template.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.template.resources.NGTemplateResource.INCLUDE_ALL_TEMPLATES_ACCESSIBLE;
+import static io.harness.template.resources.NGTemplateResource.TEMPLATE_PARAM_MESSAGE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
+import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -22,6 +24,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateListType;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.resources.beans.NGTemplateConstants;
@@ -47,8 +50,11 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.springframework.data.domain.Page;
@@ -161,4 +167,31 @@ public interface NGGlobalTemplateResource {
       @Parameter(description = "This contains details of Template filters based on Template Types and Template Names ")
       @Body TemplateFilterPropertiesDTO filterProperties,
       @QueryParam("getDistinctFromBranches") Boolean getDistinctFromBranches);
+
+  @GET
+  @Path("{templateIdentifier}")
+  @ApiOperation(value = "Gets Template", nickname = "getTemplate")
+  @Operation(operationId = "getTemplate", summary = "Get Template",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the saved Template")
+      })
+  ResponseDTO<TemplateResponseDTO>
+  get(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "templateIdentifier") @ResourceIdentifier String templateIdentifier,
+      @Parameter(description = "Version Label") @QueryParam(
+          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
+      @Parameter(description = "Specifies whether Template is deleted or not") @QueryParam(
+          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info")
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @QueryParam("loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch);
 }

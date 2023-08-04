@@ -201,14 +201,24 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
 
   @Override
   public Optional<GlobalTemplateEntity>
+  findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
+      boolean notDeleted, boolean getMetadataOnly) {
+    Criteria criteria =
+        buildCriteriaForGlobalTemplateFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
+    return getGlobalTemplateEntity(criteria, getMetadataOnly);
+  }
+
+  @Override
+  public Optional<GlobalTemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForGlobalTemplate(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
       boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
     Criteria criteria =
         buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
             accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
-    return getGlobalTemplateEntity(
-        criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
+    return getGlobalTemplateEntity(criteria, getMetadataOnly);
   }
 
   @Override
@@ -231,6 +241,17 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
             accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
     return getTemplateEntity(
         criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
+  }
+
+  @Override
+  public Optional<GlobalTemplateEntity>
+  findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
+      boolean getMetadataOnly) {
+    Criteria criteria =
+        buildCriteriaForGlobalTemplateFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
+    return getGlobalTemplateEntity(criteria, getMetadataOnly);
   }
 
   @Override
@@ -273,6 +294,24 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   private Criteria
+  buildCriteriaForGlobalTemplateFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
+      boolean notDeleted) {
+    return Criteria.where(GlobalTemplateEntityKeys.deleted)
+        .is(!notDeleted)
+        .and(GlobalTemplateEntityKeys.versionLabel)
+        .is(versionLabel)
+        .and(GlobalTemplateEntityKeys.identifier)
+        .is(templateIdentifier)
+        .and(GlobalTemplateEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(GlobalTemplateEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(GlobalTemplateEntityKeys.accountId)
+        .is(accountId);
+  }
+
+  private Criteria
   buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted) {
     return Criteria.where(TemplateEntityKeys.deleted)
@@ -286,6 +325,23 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         .and(TemplateEntityKeys.orgIdentifier)
         .is(orgIdentifier)
         .and(TemplateEntityKeys.accountId)
+        .is(accountId);
+  }
+
+  private Criteria
+  buildCriteriaForGlobalTemplateFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted) {
+    return Criteria.where(GlobalTemplateEntityKeys.deleted)
+        .is(!notDeleted)
+        .and(GlobalTemplateEntityKeys.isStableTemplate)
+        .is(true)
+        .and(GlobalTemplateEntityKeys.identifier)
+        .is(templateIdentifier)
+        .and(GlobalTemplateEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(GlobalTemplateEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(GlobalTemplateEntityKeys.accountId)
         .is(accountId);
   }
 
@@ -331,9 +387,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     return Optional.of(savedEntity);
   }
 
-  private Optional<GlobalTemplateEntity> getGlobalTemplateEntity(Criteria criteria, String accountId,
-      String orgIdentifier, String projectIdentifier, boolean getMetadataOnly, boolean loadFromCache,
-      boolean loadFromFallbackBranch) {
+  private Optional<GlobalTemplateEntity> getGlobalTemplateEntity(Criteria criteria, boolean getMetadataOnly) {
     Query query = new Query(criteria);
     GlobalTemplateEntity savedEntity = mongoTemplate.findOne(query, GlobalTemplateEntity.class);
     if (savedEntity == null) {

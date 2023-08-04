@@ -40,6 +40,11 @@ public interface NGTemplateRepositoryCustom {
       boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
 
   Optional<GlobalTemplateEntity>
+  findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
+      boolean notDeleted, boolean getMetadataOnly);
+
+  Optional<GlobalTemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForGlobalTemplate(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
       boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
@@ -51,6 +56,10 @@ public interface NGTemplateRepositoryCustom {
   Optional<TemplateEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
       boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
+  Optional<GlobalTemplateEntity>
+  findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
+      boolean getMetadataOnly);
 
   Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForOldGitSync(
