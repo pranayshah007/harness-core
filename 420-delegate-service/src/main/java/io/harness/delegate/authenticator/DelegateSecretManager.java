@@ -28,6 +28,13 @@ public abstract class DelegateSecretManager {
     return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getValue()) : delegateToken.getValue();
   }
 
+  public String getBase64EncodedTokenValue(DelegateToken delegateToken) {
+    if (featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, delegateToken.getAccountId())) {
+      return decrypt(delegateToken);
+    }
+    return delegateToken.getValue();
+  }
+
   public String encrypt(String accountId, String tokenValue, String tokenName) {
     String name = String.format("%s_%s", tokenName, UUID.randomUUID());
     SecretText secretText = SecretText.builder()
