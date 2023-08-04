@@ -69,7 +69,7 @@ function copy_change_data_capture_jars(){
 
 	cp ${BAZEL_BIN}/110-change-data-capture/module_deploy.jar change-data-capture.jar
 	cp ../../110-change-data-capture/config.yml .
-	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-cie-jdk-multistage Dockerfile-cie-jdk
+#	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-cie-jdk-multistage Dockerfile-cie-jdk
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/change-data-capture/scripts/ .
@@ -184,7 +184,7 @@ function copy_event_server_jars(){
 	cp ../../350-event-server/key.pem .
 	cp ../../350-event-server/cert.pem .
 	cp ../../350-event-server/event-service-config.yml .
-	cp ../../dockerization/event-server/Dockerfile-event-server-cie-jdk Dockerfile-cie-jdk
+#	cp ../../dockerization/event-server/Dockerfile-event-server-cie-jdk Dockerfile-cie-jdk
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/event-server/scripts/ .
@@ -199,7 +199,7 @@ function copy_verification_service_jars(){
   cp ${HOME}/.bazel-dirs/bin/270-verification/module_deploy.jar verification-capsule.jar
   cp ../../270-verification/keystore.jks .
   cp ../../270-verification/verification-config.yml .
-  cp ../../dockerization/verification/Dockerfile-verification-cie-jdk ./Dockerfile-cie-jdk
+#  cp ../../dockerization/verification/Dockerfile-verification-cie-jdk ./Dockerfile-cie-jdk
   cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -R ../../dockerization/verification/scripts/ .
@@ -212,7 +212,7 @@ function copy_batch_processing_jars(){
 
   cp ${HOME}/.bazel-dirs/bin/batch-processing/service/module_deploy.jar batch-processing-capsule.jar
   cp ../../batch-processing/service/batch-processing-config.yml .
-  cp ../../batch-processing/build/container/Dockerfile-batch-processing-cie-jdk-multistage ./Dockerfile-batch-processing-cie-jdk-multistage
+#  cp ../../batch-processing/build/container/Dockerfile-batch-processing-cie-jdk-multistage ./Dockerfile-batch-processing-cie-jdk-multistage
   cp -r ../../batch-processing/build/container/scripts/ .
   cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
@@ -229,13 +229,96 @@ function copy_srm_service_jars() {
     cp ../../srm-service/config/cv-nextgen-config.yml .
     cp ../../srm-service/modules/cv-nextgen-service/service/src/main/resources/redisson-jcache.yaml .
     cp ../../srm-service/modules/cv-nextgen-service/service/src/main/resources/enterprise-redisson-jcache.yaml .
-    cp ../../srm-service/build/container/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
     cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
     cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
     cp -R ../../srm-service/build/container/scripts/ .
+    copy_common_files
+    cd ../..
 
-#    cp ../../srm-service/build/container/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
+}
 
+function copy_sto_manager_jars() {
+
+    cp ${HOME}/.bazel-dirs/bin/315-sto-manager/app/module_deploy.jar sto-manager-capsule.jar
+    cp ../../332-ci-manager/config/ci-manager-config.yml .
+    cp ../../keystore.jks .
+    cp ../../315-sto-manager/config/key.pem .
+    cp ../../315-sto-manager/config/cert.pem .
+    cp ../../315-sto-manager/app/src/main/resources/redisson-jcache.yaml .
+    cp ../../315-sto-manager/app/src/main/resources/enterprise-redisson-jcache.yaml .
+    cp ../../315-sto-manager/app/src/main/resources/jfr/default.jfc .
+    cp ../../315-sto-manager/app/src/main/resources/jfr/profile.jfc .
+    cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+    cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+    cp -r ../../315-sto-manager/build/container/scripts/ .
+    # Use CI manager replace config logic as is
+    cp ../../332-ci-manager/build/container/scripts/replace_configs.sh ./scripts/replace_configs.sh
+    copy_common_files
+    cd ../..
+
+}
+
+function copy_access_control_jars() {
+
+    cp ${HOME}/.bazel-dirs/bin/access-control/service/module_deploy.jar accesscontrol-service-capsule.jar
+    cp ../../access-control/config/config.yml .
+    cp ../../access-control/config/keystore.jks .
+    cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+    cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+    cp -r ../../access-control/build/container/scripts/ .
+    cp ../../access-control/config/jfr/default.jfc .
+    cp ../../access-control/config/jfr/profile.jfc .
+    copy_common_files
+    cd ../..
+
+}
+
+function copy_ci_manager_jars() {
+
+    cp ${HOME}/.bazel-dirs/bin/332-ci-manager/app/module_deploy.jar ci-manager-capsule.jar
+    cp ../../332-ci-manager/config/ci-manager-config.yml .
+    cp ../../keystore.jks .
+    cp ../../332-ci-manager/config/key.pem .
+    cp ../../332-ci-manager/config/cert.pem .
+    cp ../../332-ci-manager/service/src/main/resources/redisson-jcache.yaml .
+    cp ../../332-ci-manager/service/src/main/resources/enterprise-redisson-jcache.yaml .
+    cp ../../332-ci-manager/service/src/main/resources/jfr/default.jfc .
+    cp ../../332-ci-manager/service/src/main/resources/jfr/profile.jfc .
+    cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+    cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+    cp -r ../../332-ci-manager/build/container/scripts/ .
+
+    cp ../../ci-manager-protocol.info .
+    echo ${JDK} > jdk.txt
+    echo ${VERSION} > version.txt
+    if [ ! -z ${PURPOSE} ]
+    then
+        echo ${PURPOSE} > purpose.txt
+    fi
+    cd ../..
+
+}
+
+function copy_ng_manager_jars() {
+
+    cp ${BAZEL_BIN}/120-ng-manager/module_deploy.jar ng-manager-capsule.jar
+    cp ../../120-ng-manager/config.yml .
+    cp ../../keystore.jks .
+    cp ../../120-ng-manager/key.pem .
+    cp ../../120-ng-manager/cert.pem .
+    cp ../../120-ng-manager/src/main/resources/redisson-jcache.yaml .
+    cp ../../120-ng-manager/src/main/resources/enterprise-redisson-jcache.yaml .
+    cp ../../120-ng-manager/src/main/resources/jfr/default.jfc .
+    cp ../../120-ng-manager/src/main/resources/jfr/profile.jfc .
+    cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+    cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+    cp -r ../../dockerization/ng-manager/scripts/ .
+
+    for file in scripts/*.sh; do
+        chmod 755 "$file"
+    done
+    copy_common_files
+    cd ../..
 
 }
 
@@ -257,4 +340,12 @@ elif [ "${SERVICE_NAME}" == "batch-processing" ]; then
     copy_batch_processing_jars
 elif [ "${SERVICE_NAME}" == "srm-service" ]; then
     copy_srm_service_jars
+elif [ "${SERVICE_NAME}" == "sto-manager" ]; then
+    copy_sto_manager_jars
+elif [ "${SERVICE_NAME}" == "access-control" ]; then
+    copy_access_control_jars
+elif [ "${SERVICE_NAME}" == "ci-manager" ]; then
+    copy_ci_manager_jars
+elif [ "${SERVICE_NAME}" == "ng-manager" ]; then
+    copy_ng_manager_jars
 fi
