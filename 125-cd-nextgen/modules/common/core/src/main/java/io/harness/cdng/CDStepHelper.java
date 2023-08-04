@@ -776,6 +776,10 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_HPA_AND_PDB_NG);
   }
 
+  public boolean shouldDisableFabric8(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_DISABLE_FABRIC8_NG);
+  }
+
   public boolean isSkipUnchangedManifest(String accountId, boolean value) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG) && value;
   }
