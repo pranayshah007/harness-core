@@ -11,8 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.licensing.Edition;
-import io.harness.licensing.services.LicenseService;
 import io.harness.ng.core.api.AggregateProjectService;
 import io.harness.ng.core.dto.ProjectAggregateDTO;
 import io.harness.ng.core.dto.ProjectFilterDTO;
@@ -52,17 +50,14 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
   private final OrganizationService organizationService;
   private final NgUserService ngUserService;
   private final ExecutorService executorService;
-  private final LicenseService licenseService;
 
   @Inject
   public AggregateProjectServiceImpl(ProjectService projectService, OrganizationService organizationService,
-      NgUserService ngUserService, @Named("aggregate-projects") ExecutorService executorService,
-      LicenseService licenseService) {
+      NgUserService ngUserService, @Named("aggregate-projects") ExecutorService executorService) {
     this.projectService = projectService;
     this.organizationService = organizationService;
     this.ngUserService = ngUserService;
     this.executorService = executorService;
-    this.licenseService = licenseService;
   }
 
   @Override
@@ -72,8 +67,7 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
       throw new NotFoundException(
           String.format("Project with orgIdentifier [%s] and identifier [%s] not found", orgIdentifier, identifier));
     }
-    Edition edition = licenseService.calculateAccountEdition(accountIdentifier);
-    return buildAggregateDTO(projectOptional.get(), edition);
+    return buildAggregateDTO(projectOptional.get());
   }
 
   @Override
@@ -84,8 +78,7 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
     List<Project> projectList = permittedProjects.getContent();
 
     List<Callable<ProjectAggregateDTO>> tasks = new ArrayList<>();
-    Edition edition = licenseService.calculateAccountEdition(accountIdentifier);
-    projectList.forEach(project -> tasks.add(() -> buildAggregateDTO(project, edition)));
+    projectList.forEach(project -> tasks.add(() -> buildAggregateDTO(project)));
 
     List<Future<ProjectAggregateDTO>> futures;
     try {
@@ -118,7 +111,7 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
     return new PageImpl<>(aggregates, permittedProjects.getPageable(), permittedProjects.getTotalElements());
   }
 
-  private ProjectAggregateDTO buildAggregateDTO(Project project, Edition edition) {
+  private ProjectAggregateDTO buildAggregateDTO(Project project) {
     Optional<Organization> organizationOptional =
         organizationService.get(project.getAccountIdentifier(), project.getOrgIdentifier());
     Scope projectScope = Scope.builder()
@@ -128,7 +121,7 @@ public class AggregateProjectServiceImpl implements AggregateProjectService {
                              .build();
 
     List<UserMetadataDTO> collaborators = ngUserService.listUsers(projectScope);
-    List<UserMetadataDTO> projectAdmins = ngUserService.listUsersHavingRole(edition, projectScope, PROJECT_ADMIN_ROLE);
+    List<UserMetadataDTO> projectAdmins = ngUserService.listUsersHavingRole(projectScope, PROJECT_ADMIN_ROLE);
     collaborators.removeAll(projectAdmins);
 
     return ProjectAggregateDTO.builder()

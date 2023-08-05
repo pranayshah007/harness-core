@@ -399,18 +399,6 @@ public class NgUserServiceImpl implements NgUserService {
     if (Edition.COMMUNITY.equals(licenseService.calculateAccountEdition(scope.getAccountIdentifier()))) {
       return listUsers(scope);
     }
-    return getUserMetadataDTOS(scope, roleIdentifier);
-  }
-
-  @Override
-  public List<UserMetadataDTO> listUsersHavingRole(Edition edition, Scope scope, String roleIdentifier) {
-    if (Edition.COMMUNITY.equals(edition)) {
-      return listUsers(scope);
-    }
-    return getUserMetadataDTOS(scope, roleIdentifier);
-  }
-
-  private List<UserMetadataDTO> getUserMetadataDTOS(Scope scope, String roleIdentifier) {
     PageResponse<RoleAssignmentResponseDTO> roleAssignmentPage =
         getResponse(accessControlAdminClient.getFilteredRoleAssignments(scope.getAccountIdentifier(),
             scope.getOrgIdentifier(), scope.getProjectIdentifier(), 0, DEFAULT_PAGE_SIZE,

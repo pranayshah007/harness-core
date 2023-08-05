@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.licensing.Edition;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.common.beans.UserSource;
@@ -64,8 +63,6 @@ public interface NgUserService {
       String accountId, String searchQuery, Integer count, Integer startIndex);
 
   List<UserMetadataDTO> listUsersHavingRole(Scope scope, String roleIdentifier);
-
-  List<UserMetadataDTO> listUsersHavingRole(Edition edition, Scope scope, String roleIdentifier);
 
   Optional<UserMembership> getUserMembership(String userId, Scope scope);
 

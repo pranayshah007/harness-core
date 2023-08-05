@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.licensing.services.LicenseService;
 import io.harness.ng.core.dto.ProjectAggregateDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
@@ -51,18 +50,16 @@ public class AggregateProjectServiceImplTest extends CategoryTest {
   private OrganizationService organizationService;
   private NgUserService ngUserService;
   private AggregateProjectServiceImpl aggregateProjectService;
-  private LicenseService licenseService;
 
   @Before
   public void setup() {
     projectService = mock(ProjectService.class);
     organizationService = mock(OrganizationService.class);
     ngUserService = mock(NgUserService.class);
-    licenseService = mock(LicenseService.class);
 
     ExecutorService executorService = Executors.newFixedThreadPool(1);
-    aggregateProjectService = spy(new AggregateProjectServiceImpl(
-        projectService, organizationService, ngUserService, executorService, licenseService));
+    aggregateProjectService =
+        spy(new AggregateProjectServiceImpl(projectService, organizationService, ngUserService, executorService));
   }
 
   private Project getProject(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
