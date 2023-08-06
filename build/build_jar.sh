@@ -76,7 +76,7 @@ if [ "${SERVICE_NAME}" == "pipeline-service" ]; then
   rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
 fi
 
-if [ "${SERVICE_NAME}" == "ci-manager" ]; then
+if [ "${PLATFORM}" == "jenkins" ] && [ "${SERVICE_NAME}" == "ci-manager" ]; then
   module=332-ci-manager
   moduleName=ci-manager
 
