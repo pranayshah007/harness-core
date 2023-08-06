@@ -636,8 +636,8 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
                 cvConfig, metricIdentifier, testDataTimeRange.getStartTime(), testDataTimeRange.getEndTime());
             deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
             metricsAnalysis.setAnalysisResult(analysisResult);
-            metricsAnalysis.setTestDataNodes(getFilteredAnalysedTestDataNodes(
-                transactionMetricHostData, deploymentTimeSeriesAnalysisFilter, metricsAnalysis.getThresholds()));
+            metricsAnalysis.setTestDataNodes(getFilteredAnalysedTestDataNodes(transactionMetricHostData,
+                deploymentTimeSeriesAnalysisFilter, metricsAnalysis.getThresholds(), metricsAnalysis.getMetricType()));
             populateTimestampsForNormalisedData(metricsAnalysis, controlDataTimeRange, testDataTimeRange);
             populateRawMetricDataInMetricAnalysis(appliedDeploymentAnalysisType,
                 controlNodesRawData.getOrDefault(metricIdentifier, Collections.emptyMap()),

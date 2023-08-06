@@ -76,11 +76,15 @@ public class VerifyStepMetricsAnalysisUtils {
     return !deploymentTimeSeriesAnalysisFilter.isAnomalousMetricsOnly() || AnalysisResult.UNHEALTHY == analysisResult;
   }
 
-  private static AnalysisReason getAnalysisReason(HostData hostData, Map<String, MetricThreshold> metricThresholdMap) {
+  private static AnalysisReason getAnalysisReason(
+      HostData hostData, Map<String, MetricThreshold> metricThresholdMap, MetricType metricType) {
     switch (hostData.getRisk()) {
       case NO_DATA:
         return AnalysisReason.NO_TEST_DATA;
       case NO_ANALYSIS:
+        if (metricType == MetricType.PERFORMANCE_THROUGHPUT) {
+          return AnalysisReason.NO_ANALYSIS_FOR_THROUGHPUT;
+        }
         return AnalysisReason.NO_CONTROL_DATA;
       case HEALTHY:
       case OBSERVE:
@@ -179,7 +183,7 @@ public class VerifyStepMetricsAnalysisUtils {
   }
 
   private static AnalysedDeploymentTestDataNode getAnalysedTestDataNodeFromHostData(
-      HostData hostData, Map<String, MetricThreshold> metricThresholdMap) {
+      HostData hostData, Map<String, MetricThreshold> metricThresholdMap, MetricType metricType) {
     AnalysisResult analysisResult = AnalysisResult.fromRisk(hostData.getRisk());
     ControlDataType controlDataType = null;
     if (analysisResult != AnalysisResult.NO_ANALYSIS) {
@@ -191,7 +195,7 @@ public class VerifyStepMetricsAnalysisUtils {
     return AnalysedDeploymentTestDataNode.builder()
         .nodeIdentifier(hostData.getHostName().orElse(null))
         .analysisResult(analysisResult)
-        .analysisReason(getAnalysisReason(hostData, metricThresholdMap))
+        .analysisReason(getAnalysisReason(hostData, metricThresholdMap, metricType))
         .controlDataType(controlDataType)
         .controlNodeIdentifier(hostData.getNearestControlHost())
         .normalisedControlData(getMetricValuesFromRawValues(hostData.getControlData()))
@@ -209,7 +213,8 @@ public class VerifyStepMetricsAnalysisUtils {
 
   public static List<AnalysedDeploymentTestDataNode> getFilteredAnalysedTestDataNodes(
       TransactionMetricHostData transactionMetricHostData,
-      DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter, List<MetricThreshold> thresholds) {
+      DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter, List<MetricThreshold> thresholds,
+      MetricType metricType) {
     Set<String> requestedTestNodes =
         new HashSet<>(CollectionUtils.emptyIfNull(deploymentTimeSeriesAnalysisFilter.getHostNames()));
     Map<String, MetricThreshold> metricThresholdMap =
@@ -232,7 +237,7 @@ public class VerifyStepMetricsAnalysisUtils {
             return true;
           }
         })
-        .map(hostData -> getAnalysedTestDataNodeFromHostData(hostData, metricThresholdMap))
+        .map(hostData -> getAnalysedTestDataNodeFromHostData(hostData, metricThresholdMap, metricType))
         .collect(Collectors.toList());
   }
 
