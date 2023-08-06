@@ -26,7 +26,7 @@ fi
 if [[ "" != "$SERVER_PORT" ]]; then
   export SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
 else
-  yq -i '.server.applicationConnectors[0].port=15001' $CONFIG_FILE
+  yq -i '.server.applicationConnectors[0].port=8188' $CONFIG_FILE
 fi
 
 if [[ "" != "$LOGGERS" ]]; then
@@ -72,4 +72,12 @@ fi
 
 if [[ "" != "$MONGO_TRANSACTIONS_ALLOWED" ]]; then
   export MONGO_TRANSACTIONS_ALLOWED; yq -i '.mongo.transactionsEnabled=env(MONGO_TRANSACTIONS_ALLOWED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
+  export NG_MANAGER_SERVICE_SECRET; yq -i '.ngManagerServiceSecret=env(NG_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
+  export NG_MANAGER_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_BASE_URL)' $CONFIG_FILE
 fi

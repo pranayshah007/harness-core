@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
@@ -27,7 +26,10 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileData;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -76,6 +78,8 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(CDP)
 public class K8sCanaryRequestHandler extends K8sRequestHandler {
@@ -128,6 +132,11 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
 
     prepareForCanary(k8sCanaryDeployRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress));
+
+    List<K8sPod> existingPodList = k8sTaskHelperBase.getPodDetails(k8sCanaryHandlerConfig.getKubernetesConfig(),
+        k8sCanaryHandlerConfig.getKubernetesConfig().getNamespace(), k8sCanaryDeployRequest.getReleaseName(),
+        timeoutInMillis);
+
     // Apply Command Flag
     Map<String, String> k8sCommandFlag = k8sCanaryDeployRequest.getK8sCommandFlags();
     String commandFlags = K8sCommandFlagsUtils.getK8sCommandFlags(K8sCliCommandType.Apply.name(), k8sCommandFlag);
@@ -198,6 +207,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     return K8sDeployResponse.builder()
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .k8sNGTaskResponse(K8sCanaryDeployResponse.builder()
+                               .previousK8sPodList(existingPodList)
                                .canaryWorkload(canaryObjectsNames)
                                .k8sPodList(allPods)
                                .releaseNumber(k8sCanaryHandlerConfig.getCurrentRelease().getReleaseNumber())

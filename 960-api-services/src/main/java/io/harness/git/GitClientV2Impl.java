@@ -6,7 +6,6 @@
  */
 
 package io.harness.git;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -38,7 +37,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.eclipse.jgit.transport.RemoteRefUpdate.Status.OK;
 import static org.eclipse.jgit.transport.RemoteRefUpdate.Status.UP_TO_DATE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.GeneralException;
@@ -150,6 +152,8 @@ import org.eclipse.jgit.transport.http.apache.HttpClientConnectionFactory;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.util.SystemReader;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_GITOPS})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -283,15 +287,16 @@ public class GitClientV2Impl implements GitClientV2 {
       ListRemoteRequest listRemoteRequest = buildListRemoteRequestFromGitBaseRequest(request);
       ListRemoteResult listRemoteResult = listRemote(listRemoteRequest);
       Map<String, String> refs = listRemoteResult.getRemoteList();
+      String branchToClone;
       if (refs.containsKey(REFS_HEADS + request.getBranch())) {
-        cloneCommand.setBranch(isEmpty(request.getBranch()) ? null : request.getBranch());
+        branchToClone = isEmpty(request.getBranch()) ? null : REFS_HEADS + request.getBranch();
         cloneCommand.setNoCheckout(noCheckout);
       } else {
-        String branchToClone = refs.get("HEAD");
-        cloneCommand.setBranch(branchToClone);
-        cloneCommand.setBranchesToClone(Collections.singleton(branchToClone));
+        branchToClone = refs.get("HEAD");
         cloneCommand.setNoCheckout(true);
       }
+      cloneCommand.setBranch(branchToClone);
+      cloneCommand.setBranchesToClone(Collections.singleton(branchToClone));
     }
     try (Git git = cloneCommand.call()) {
     } catch (GitAPIException ex) {
@@ -636,14 +641,19 @@ public class GitClientV2Impl implements GitClientV2 {
     CommitResult commitResult = revert(revertRequest);
 
     PushRequest pushRequest = PushRequest.mapFromRevertAndPushRequest(request);
-    RevertAndPushResult revertAndPushResult =
-        RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push(pushRequest)).build();
-    return revertAndPushResult;
+    return RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push(pushRequest)).build();
   }
 
   protected CommitResult revert(RevertRequest request) {
+    String localCommitId = request.getCommitId();
+
+    // Setting this null so the ensureRepoLocallyClonedAndUpdated method checkouts the branch instead of a commit which
+    // causes issues while reverting
+    request.setCommitId(null);
     ensureRepoLocallyClonedAndUpdated(request);
 
+    // setting the commitId back
+    request.setCommitId(localCommitId);
     try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig())) {
       ObjectId commitId = git.getRepository().resolve(request.getCommitId());
       if (commitId == null) {
@@ -655,7 +665,7 @@ public class GitClientV2Impl implements GitClientV2 {
       return CommitResult.builder()
           .commitId(revertCommit.getName())
           .commitTime(revertCommit.getCommitTime())
-          .commitMessage("Harness revert of commit: " + commitToRevert.getId())
+          .commitMessage("Harness revert of " + commitToRevert.getId())
           .build();
     } catch (IOException | GitAPIException ex) {
       log.error(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + EXCEPTION_STRING, ex);
@@ -942,7 +952,6 @@ public class GitClientV2Impl implements GitClientV2 {
                                              .setForce(forcePush)
                                              .setRefSpecs(new RefSpec(pushRequest.getBranch()))
                                              .call();
-
       RemoteRefUpdate remoteRefUpdate = pushResults.iterator().next().getRemoteUpdates().iterator().next();
       PushResultGit.RefUpdate refUpdate =
           PushResultGit.RefUpdate.builder()

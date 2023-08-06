@@ -13,7 +13,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
 import static io.harness.rule.OwnerRule.ADWAIT;
-import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
@@ -55,6 +54,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -849,13 +849,6 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> ngTriggerServiceImpl.addEventToQueue(triggerWebhookEvent))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Webhook event could not be received");
-  }
-
-  @Test
-  @Owner(developers = HARSH)
-  @Category(UnitTests.class)
-  public void testIsBranchExpr() {
-    assertThat(ngTriggerServiceImpl.isBranchExpr("<+trigger.branch>")).isEqualTo(true);
   }
 
   @Test
@@ -1984,5 +1977,48 @@ public class NGTriggerServiceImplTest extends CategoryTest {
         .isEqualTo(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(1).getPollingConfig().getSignature());
     assertThat(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(1).getPollingConfig().getPollingDocId())
         .isEqualTo("id1");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerPollingStatusSuccess() {
+    PollingTriggerStatusUpdateDTO statusUpdate = PollingTriggerStatusUpdateDTO.builder()
+                                                     .signatures(Collections.singletonList("sig"))
+                                                     .success(true)
+                                                     .errorMessage("")
+                                                     .lastCollectedVersions(Collections.singletonList("1.0"))
+                                                     .lastCollectedTime(123L)
+                                                     .build();
+    when(ngTriggerRepository.updateManyTriggerPollingSubscriptionStatusBySignatures("account",
+             statusUpdate.getSignatures(), statusUpdate.isSuccess(), statusUpdate.getErrorMessage(),
+             statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime()))
+        .thenReturn(true);
+    boolean result = ngTriggerServiceImpl.updateTriggerPollingStatus("account", statusUpdate);
+    assertThat(result).isTrue();
+    verify(ngTriggerRepository, times(1))
+        .updateManyTriggerPollingSubscriptionStatusBySignatures("account", statusUpdate.getSignatures(),
+            statusUpdate.isSuccess(), statusUpdate.getErrorMessage(), statusUpdate.getLastCollectedVersions(),
+            statusUpdate.getLastCollectedTime());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerPollingStatusFailureEmptySignatures() {
+    PollingTriggerStatusUpdateDTO statusUpdate = PollingTriggerStatusUpdateDTO.builder()
+                                                     .signatures(Collections.emptyList())
+                                                     .success(true)
+                                                     .errorMessage("")
+                                                     .lastCollectedVersions(Collections.singletonList("1.0"))
+                                                     .lastCollectedTime(123L)
+                                                     .build();
+    when(ngTriggerRepository.updateManyTriggerPollingSubscriptionStatusBySignatures("account",
+             statusUpdate.getSignatures(), statusUpdate.isSuccess(), statusUpdate.getErrorMessage(),
+             statusUpdate.getLastCollectedVersions(), statusUpdate.getLastCollectedTime()))
+        .thenReturn(true);
+    assertThatThrownBy(() -> ngTriggerServiceImpl.updateTriggerPollingStatus("account", statusUpdate))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty signatures list provided for trigger polling status update");
   }
 }

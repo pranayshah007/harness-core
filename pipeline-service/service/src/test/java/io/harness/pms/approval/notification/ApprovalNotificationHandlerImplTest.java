@@ -494,8 +494,7 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
               .setNodeUUID("aBcDeFgH")
               .setName("Node name")
               .setNodeGroup("STAGE")
-              .setEdgeLayoutList(
-                  EdgeLayoutList.newBuilder().addNextIds("nextId").addCurrentNodeChildren("child").build())
+              .setEdgeLayoutList(EdgeLayoutList.newBuilder().addNextIds("nextId").build())
               .build();
       GraphLayoutNodeDTO graphLayoutNodeDTO1 = GraphLayoutDtoMapper.toDto(graphLayoutNode1);
       HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
@@ -782,6 +781,187 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
       assertThat(notificationChannels.get(8).getTemplateId())
           .isEqualTo(PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_MSTEAMS.getIdentifier());
       assertThat(notificationChannels.get(8).getTeam()).isEqualTo(Team.PIPELINE);
+      verify(pmsExecutionService, times(1))
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+    }
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testSendNotificationForApprovalActionWithParallelStages() throws Exception {
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      String url =
+          "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
+      TriggeredBy triggeredBy = TriggeredBy.newBuilder().setIdentifier(userId).setUuid(userUuid).build();
+      ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().setTriggeredBy(triggeredBy).build();
+      ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setTriggerInfo(triggerInfo).build();
+      Ambiance ambiance = Ambiance.newBuilder()
+                              .putSetupAbstractions("accountId", accountId)
+                              .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                              .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                              .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                              .setMetadata(executionMetadata)
+                              .build();
+      HarnessApprovalInstance approvalInstance =
+          HarnessApprovalInstance.builder()
+              .approvers(
+                  ApproversDTO.builder()
+                      .userGroups(new ArrayList<>(Arrays.asList("proj_faulty", "proj_right", "org.org_faulty",
+                          "org.org_right", "account.acc_faulty", "account.acc_right", "proj_faulty", "proj_right")))
+                      .build())
+              .approvalActivities(Collections.singletonList(HarnessApprovalActivity.builder()
+                                                                .user(EmbeddedUser.builder().email("email").build())
+                                                                .approvedAt(20000000)
+                                                                .action(HarnessApprovalAction.APPROVE)
+                                                                .build())
+
+                      )
+              .build();
+      approvalInstance.setAmbiance(ambiance);
+      approvalInstance.setCreatedAt(System.currentTimeMillis());
+      approvalInstance.setDeadline(2L * System.currentTimeMillis());
+      approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
+      approvalInstance.setStatus(ApprovalStatus.APPROVED);
+      approvalInstance.setIncludePipelineExecutionHistory(true);
+
+      GraphLayoutNode graphLayoutNode1 =
+          GraphLayoutNode.newBuilder()
+              .setNodeIdentifier("parallelnodeIdentifier_1parallel")
+              .setNodeType("parallel")
+              .setNodeUUID("nodeIdentifier_1")
+              .setName("")
+              .setNodeGroup("STAGE")
+              .setEdgeLayoutList(EdgeLayoutList.newBuilder()
+                                     .addNextIds("stage_approval1")
+                                     .addAllCurrentNodeChildren(List.of("stageBuild-1", "stageBuild-2"))
+                                     .build())
+              .build();
+
+      GraphLayoutNode graphLayoutNode2 = GraphLayoutNode.newBuilder()
+                                             .setNodeIdentifier("stageBuild-1")
+                                             .setNodeType("Custom")
+                                             .setNodeUUID("stageBuild-1")
+                                             .setName("stageBuild-1")
+                                             .setNodeGroup("STAGE")
+                                             .build();
+
+      GraphLayoutNode graphLayoutNode3 = GraphLayoutNode.newBuilder()
+                                             .setNodeIdentifier("stageBuild-2")
+                                             .setNodeType("Custom")
+                                             .setNodeUUID("stageBuild-2")
+                                             .setName("stageBuild-2")
+                                             .setNodeGroup("STAGE")
+                                             .build();
+
+      GraphLayoutNode graphLayoutNode4 =
+          GraphLayoutNode.newBuilder()
+              .setNodeIdentifier("stage_approval1")
+              .setNodeType("Approval")
+              .setNodeUUID("stage_approval1")
+              .setName("Approval stage name")
+              .setNodeGroup("STAGE")
+              .setEdgeLayoutList(EdgeLayoutList.newBuilder().addNextIds("stageDeploy-1").build())
+              .build();
+
+      GraphLayoutNode graphLayoutNode5 =
+          GraphLayoutNode.newBuilder()
+              .setNodeIdentifier("stageDeploy-1")
+              .setNodeType("Custom")
+              .setNodeUUID("stageDeploy-1")
+              .setName("stageDeploy-1")
+              .setNodeGroup("STAGE")
+              .setEdgeLayoutList(EdgeLayoutList.newBuilder().addNextIds("stageDeploy-2").build())
+              .build();
+
+      GraphLayoutNode graphLayoutNode6 = GraphLayoutNode.newBuilder()
+                                             .setNodeIdentifier("stageDeploy-2")
+                                             .setNodeType("Custom")
+                                             .setNodeUUID("stageDeploy-2")
+                                             .setName("stageDeploy-2")
+                                             .setNodeGroup("STAGE")
+                                             .build();
+
+      GraphLayoutNodeDTO graphLayoutNodeDTO1 = GraphLayoutDtoMapper.toDto(graphLayoutNode1);
+      graphLayoutNodeDTO1.setStatus(ExecutionStatus.NOTSTARTED);
+      GraphLayoutNodeDTO graphLayoutNodeDTO2 = GraphLayoutDtoMapper.toDto(graphLayoutNode2);
+      graphLayoutNodeDTO2.setStatus(ExecutionStatus.SUCCESS);
+      GraphLayoutNodeDTO graphLayoutNodeDTO3 = GraphLayoutDtoMapper.toDto(graphLayoutNode3);
+      graphLayoutNodeDTO3.setStatus(ExecutionStatus.SUCCESS);
+      GraphLayoutNodeDTO graphLayoutNodeDTO4 = GraphLayoutDtoMapper.toDto(graphLayoutNode4);
+      graphLayoutNodeDTO4.setStatus(ExecutionStatus.APPROVAL_WAITING);
+      GraphLayoutNodeDTO graphLayoutNodeDTO5 = GraphLayoutDtoMapper.toDto(graphLayoutNode5);
+      graphLayoutNodeDTO5.setStatus(ExecutionStatus.NOTSTARTED);
+      GraphLayoutNodeDTO graphLayoutNodeDTO6 = GraphLayoutDtoMapper.toDto(graphLayoutNode6);
+      graphLayoutNodeDTO6.setStatus(ExecutionStatus.NOTSTARTED);
+
+      HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
+      layoutNodeDTOMap.put(startingNodeId, graphLayoutNodeDTO1);
+      layoutNodeDTOMap.put("stageBuild-1", graphLayoutNodeDTO2);
+      layoutNodeDTOMap.put("stageBuild-2", graphLayoutNodeDTO3);
+      layoutNodeDTOMap.put("stage_approval1", graphLayoutNodeDTO4);
+      layoutNodeDTOMap.put("stageDeploy-1", graphLayoutNodeDTO5);
+      layoutNodeDTOMap.put("stageDeploy-2", graphLayoutNodeDTO6);
+
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                          .accountId(accountId)
+                                                                          .orgIdentifier(orgIdentifier)
+                                                                          .projectIdentifier(projectIdentifier)
+                                                                          .pipelineIdentifier(pipelineIdentifier)
+                                                                          .name(pipelineName)
+                                                                          .layoutNodeMap(layoutNodeDTOMap)
+                                                                          .startingNodeId(startingNodeId)
+                                                                          .build();
+      doReturn(pipelineExecutionSummaryEntity)
+          .when(pmsExecutionService)
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+      List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
+      notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
+      List<UserGroupDTO> userGroupDTOS =
+          new ArrayList<>(Arrays.asList(UserGroupDTO.builder()
+                                            .identifier("proj_right")
+                                            .accountIdentifier(accountId)
+                                            .orgIdentifier(orgIdentifier)
+                                            .projectIdentifier(projectIdentifier)
+                                            .notificationConfigs(notificationSettingConfigDTOS)
+                                            .build()));
+
+      Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+      when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+      ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+      Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+      when(responseDTOCall.execute()).thenReturn(response);
+
+      approvalInstance.setValidatedUserGroups(userGroupDTOS);
+
+      doReturn(url).when(notificationHelper).generateUrl(ambiance);
+      when(logStreamingStepClientFactory.getLogStreamingStepClient(ambiance))
+          .thenReturn(Mockito.mock(ILogStreamingStepClient.class));
+
+      approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
+      ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
+          ArgumentCaptor.forClass(NotificationChannel.class);
+      verify(notificationClient, times(1)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+      List<NotificationChannel> notificationChannels = notificationChannelArgumentCaptor.getAllValues();
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineName))
+          .isEqualTo(pipelineName);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.orgName)).isEqualTo(orgName);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.projectName))
+          .isEqualTo(projectName);
+
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.finishedStages))
+          .isEqualTo("stageBuild-1, stageBuild-2");
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.runningStages))
+          .isEqualTo("Approval stage name");
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.upcomingStages))
+          .isEqualTo("stageDeploy-1, stageDeploy-2");
+
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.status))
+          .isEqualTo(ApprovalStatus.APPROVED.toString().toLowerCase(Locale.ROOT));
+
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.triggeredBy)).isEqualTo(userId);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineExecutionLink))
+          .isEqualTo(url);
       verify(pmsExecutionService, times(1))
           .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
     }

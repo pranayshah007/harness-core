@@ -89,6 +89,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/client:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/containerdeployment:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/exception:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/istio:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/k8sbase:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/k8sngtask:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/manifest:module",

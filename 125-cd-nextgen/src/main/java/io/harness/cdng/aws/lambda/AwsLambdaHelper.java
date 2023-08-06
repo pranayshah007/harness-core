@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.aws.lambda;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -15,6 +14,9 @@ import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -22,7 +24,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaHarnessStoreFilesResult;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaPrepareRollbackOutcome;
 import io.harness.cdng.aws.lambda.beans.AwsLambdaStepOutcome;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
@@ -58,7 +60,6 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -75,7 +76,6 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -110,9 +110,10 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class AwsLambdaHelper extends CDStepHelper {
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private AwsLambdaEntityHelper awsLambdaEntityHelper;
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
@@ -315,7 +316,7 @@ public class AwsLambdaHelper extends CDStepHelper {
 
       for (GitFile gitFile : gitFetchFilesResult.getFiles()) {
         String manifestContent = gitFile.getFileContent();
-        manifestContent = engineExpressionService.renderExpression(ambiance, manifestContent);
+        manifestContent = cdExpressionResolver.renderExpression(ambiance, manifestContent);
         manifestContentList.add(manifestContent);
       }
 
@@ -383,8 +384,7 @@ public class AwsLambdaHelper extends CDStepHelper {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
     // Update expressions in ManifestsOutcome
-    ExpressionEvaluatorUtils.updateExpressions(
-        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
 
     // Validate ManifestsOutcome
     validateManifestsOutcome(ambiance, manifestsOutcome);
@@ -437,7 +437,7 @@ public class AwsLambdaHelper extends CDStepHelper {
       List<String> manifestContentList = new ArrayList<>();
 
       for (String fileContent : harnessStoreFilesResult.getFilesContent()) {
-        fileContent = engineExpressionService.renderExpression(ambiance, fileContent);
+        fileContent = cdExpressionResolver.renderExpression(ambiance, fileContent);
         manifestContentList.add(fileContent);
       }
 

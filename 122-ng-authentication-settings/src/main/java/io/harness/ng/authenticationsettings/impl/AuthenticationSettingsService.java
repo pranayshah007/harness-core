@@ -68,4 +68,6 @@ public interface AuthenticationSettingsService {
   // updates authenticationEnabled value for a SAML setting {samlSSOId} in account
   void updateAuthenticationForSAMLSetting(
       @NotNull String accountId, @NotNull String samlSSOId, @NotNull Boolean enable);
+
+  boolean setPublicAccess(String accountIdentifier, Boolean publicAccessEnabled);
 }

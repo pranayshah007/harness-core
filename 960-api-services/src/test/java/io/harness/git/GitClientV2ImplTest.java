@@ -579,7 +579,7 @@ public class GitClientV2ImplTest extends CategoryTest {
     String command = new StringBuilder(128)
                          .append("mkdir -p " + repoPath + ";")
                          .append("cd " + repoPath + ";")
-                         .append("git init " + (bare ? "--bare" : "") + ";")
+                         .append("git init -b master " + (bare ? "--bare" : "") + ";")
                          .append("git config user.email 'someone@someplace.com';")
                          .append("git config user.name 'someone';")
                          .append("git config gc.auto '0';")

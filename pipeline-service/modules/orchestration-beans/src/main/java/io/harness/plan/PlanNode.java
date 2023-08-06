@@ -6,10 +6,12 @@
  */
 
 package io.harness.plan;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdvisorObtainmentList;
@@ -21,6 +23,7 @@ import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.OrchestrationMap;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.pms.expression.ExpressionModeMapper;
 import io.harness.timeout.contracts.TimeoutObtainment;
 
 import java.util.HashMap;
@@ -35,6 +38,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Value
 @Builder(toBuilder = true)
 @FieldNameConstants(innerTypeName = "PlanNodeKeys")

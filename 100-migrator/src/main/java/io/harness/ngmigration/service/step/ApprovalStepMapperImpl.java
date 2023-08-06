@@ -9,8 +9,11 @@ package io.harness.ngmigration.service.step;
 
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.StepOutput;
@@ -76,6 +79,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class ApprovalStepMapperImpl extends StepMapper {
   @Override
@@ -215,7 +219,11 @@ public class ApprovalStepMapperImpl extends StepMapper {
     baseSetup(state, harnessApprovalStepNode, context.getInputDTO().getIdentifierCaseFormat());
 
     HarnessApprovalStepInfoBuilder harnessApprovalStepInfoBuilder =
-        HarnessApprovalStepInfo.builder().includePipelineExecutionHistory(ParameterField.createValueField(true));
+        HarnessApprovalStepInfo.builder()
+            .includePipelineExecutionHistory(ParameterField.createValueField(true))
+            .isAutoRejectEnabled(ParameterField.createValueField(false))
+            .approvalMessage(ParameterField.createValueField(
+                "Please review the following information and approve the pipeline progression"));
 
     harnessApprovalStepInfoBuilder.approvers(Approvers.builder()
                                                  .disallowPipelineExecutor(ParameterField.createValueField(false))
@@ -233,6 +241,8 @@ public class ApprovalStepMapperImpl extends StepMapper {
                          .defaultValue(ParameterField.createValueField(pair.getValue()))
                          .build())
               .collect(Collectors.toList()));
+    } else {
+      harnessApprovalStepInfoBuilder.approverInputs(new ArrayList<>());
     }
 
     harnessApprovalStepNode.setHarnessApprovalStepInfo(harnessApprovalStepInfoBuilder.build());
@@ -248,12 +258,14 @@ public class ApprovalStepMapperImpl extends StepMapper {
     CriteriaSpecWrapper approval = getRuntimeJexl();
 
     if (StringUtils.isNoneBlank(approvalParams.getApprovalField(), approvalParams.getApprovalValue())) {
-      approval = getKeyValueCriteria(approvalParams.getApprovalField(), approvalParams.getApprovalValue());
+      approval = getKeyValueCriteria(
+          StringUtils.capitalize(approvalParams.getApprovalField()), approvalParams.getApprovalValue());
     }
 
     CriteriaSpecWrapper rejection = null;
     if (StringUtils.isNoneBlank(approvalParams.getRejectionField(), approvalParams.getRejectionValue())) {
-      rejection = getKeyValueCriteria(approvalParams.getRejectionField(), approvalParams.getRejectionValue());
+      rejection = getKeyValueCriteria(
+          StringUtils.capitalize(approvalParams.getRejectionField()), approvalParams.getRejectionValue());
     }
 
     JiraApprovalStepInfoBuilder stepInfoBuilder =

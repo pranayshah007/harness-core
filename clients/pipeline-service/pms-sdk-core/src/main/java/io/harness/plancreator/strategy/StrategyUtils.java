@@ -6,7 +6,6 @@
  */
 
 package io.harness.plancreator.strategy;
-
 import static io.harness.plancreator.strategy.StrategyConstants.CURRENT_GLOBAL_ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
@@ -24,6 +23,9 @@ import static io.harness.strategy.StrategyValidationUtils.STRATEGY_IDENTIFIER_PO
 
 import io.harness.advisers.nextstep.NextStageAdviserParameters;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.jackson.JsonNodeUtils;
@@ -46,6 +48,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
@@ -69,9 +72,12 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 public class StrategyUtils {
   @Inject IterationVariables iterationVariables;
+  @Inject InputSetValidatorFactory inputSetValidatorFactory;
+
   public boolean isWrappedUnderStrategy(YamlField yamlField) {
     YamlField strategyField = yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
     return strategyField != null;
@@ -280,14 +286,14 @@ public class StrategyUtils {
   public void replaceExpressions(
       Object jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
     EngineExpressionEvaluator evaluator = new StrategyExpressionEvaluator(
-        combinations, currentIteration, totalIteration, itemValue, Collections.emptyMap());
+        combinations, currentIteration, totalIteration, itemValue, Collections.emptyMap(), inputSetValidatorFactory);
     evaluator.resolve(jsonString, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 
   public JsonNode replaceExpressions(
       JsonNode jsonNode, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
-    EngineExpressionEvaluator evaluator =
-        new StrategyExpressionEvaluator(combinations, currentIteration, totalIteration, itemValue);
+    EngineExpressionEvaluator evaluator = new StrategyExpressionEvaluator(
+        combinations, currentIteration, totalIteration, itemValue, inputSetValidatorFactory);
     return (JsonNode) evaluator.resolve(jsonNode, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 

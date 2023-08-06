@@ -317,7 +317,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     kubernetesResources.addAll(ManifestHelper.processYaml(DEPLOYMENT_YAML));
     Reflect.on(handler).set("k8sApplyHandlerConfig", k8sApplyHandlerConfig);
 
-    doReturn(true).when(k8sTaskHelper).restore(any(), any(), any(), any(), any());
+    doReturn(true).when(k8sTaskHelper).restore(any(), any(), any(), any(), eq(null), any());
     doReturn(true).when(mockedK8sApplyBaseHandler).prepare(any(), anyBoolean(), any());
     doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), eq(null));
     doReturn(true)
@@ -338,7 +338,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     verify(handler, times(0))
         .init(any(K8sApplyTaskParameters.class), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
     verify(k8sTaskHelper, times(0)).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
-    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
+    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), eq(null), any());
     verify(mockedK8sApplyBaseHandler, times(1)).prepare(any(), anyBoolean(), any());
     verify(k8sTaskHelperBase, times(1)).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     verify(mockedK8sApplyBaseHandler, times(1)).steadyStateCheck(anyBoolean(), any(), any(), anyLong(), any(), any());
@@ -360,7 +360,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     kubernetesResources.addAll(ManifestHelper.processYaml(DEPLOYMENT_YAML));
     Reflect.on(handler).set("k8sApplyHandlerConfig", k8sApplyHandlerConfig);
 
-    doReturn(false).when(k8sTaskHelper).restore(any(), any(), any(), any(), any());
+    doReturn(false).when(k8sTaskHelper).restore(any(), any(), any(), any(), eq(null), any());
 
     final K8sTaskExecutionResponse response =
         handler.executeTaskInternal(K8sApplyTaskParameters.builder()
@@ -370,7 +370,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
                                         .build(),
             K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
 
-    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
+    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), eq(null), any());
 
     assertThat(response.getCommandExecutionStatus()).isEqualTo(FAILURE);
   }

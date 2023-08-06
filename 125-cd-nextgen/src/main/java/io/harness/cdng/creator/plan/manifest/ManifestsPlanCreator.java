@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.creator.plan.manifest;
-
 import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.manifest.ManifestsListConfigWrapper;
 import io.harness.cdng.manifest.steps.ManifestStepParameters;
@@ -62,6 +64,7 @@ import lombok.Data;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDC)
 public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfigWrapper> {
   @Inject KryoSerializer kryoSerializer;

@@ -89,13 +89,6 @@ public class DelegateGroup implements PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("byAccount")
-                 .unique(true)
-                 .field(DelegateGroupKeys.accountId)
-                 .field(DelegateGroupKeys.name)
-                 .field(DelegateGroupKeys.ng)
-                 .build())
-        .add(CompoundMongoIndex.builder()
                  .field(DelegateGroupKeys.accountId)
                  .field(DelegateGroupKeys.ng)
                  .field(DelegateGroupKeys.owner)

@@ -6,17 +6,23 @@
  */
 
 package io.harness.platform;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.platform.audit.AuditServiceConfiguration;
 import io.harness.platform.notification.NotificationServiceConfiguration;
+import io.harness.redis.RedisConfig;
+import io.harness.redis.RedisReadMode;
+import io.harness.redis.RedisSSLConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroup.ResourceGroupServiceConfig;
@@ -59,6 +65,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Getter
 @Slf4j
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -72,7 +79,20 @@ public class PlatformConfiguration extends Configuration {
   public static final String FILTER_RESOURCE_PACKAGE = "io.harness.filter";
   public static final String RESOURCEGROUP_PACKAGE = "io.harness.resourcegroup";
   public static final String ENFORCEMENT_PACKAGE = "io.harness.enforcement.client.resources";
-
+  RedisSSLConfig redisSSLConfig =
+      RedisSSLConfig.builder().CATrustStorePassword("").CATrustStorePath("").enabled(false).build();
+  RedisConfig redisConfig = RedisConfig.builder()
+                                .redisUrl("dummyRedisUrl")
+                                .masterName("test")
+                                .sentinel(false)
+                                .sentinelUrls(Collections.singletonList(""))
+                                .envNamespace("")
+                                .readMode(RedisReadMode.MASTER)
+                                .nettyThreads(16)
+                                .userName("")
+                                .password("")
+                                .sslConfig(redisSSLConfig)
+                                .build();
   @Setter
   @JsonProperty("notificationServiceConfig")
   @ConfigSecret
@@ -102,6 +122,10 @@ public class PlatformConfiguration extends Configuration {
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
+  @JsonProperty("eventsFramework")
+  @ConfigSecret
+  private EventsFrameworkConfiguration eventsFrameworkConfiguration =
+      EventsFrameworkConfiguration.builder().redisConfig(redisConfig).build();
 
   public static final Collection<Class<?>> ALL_HARNESS_RESOURCES = getAllResources();
   public static final Collection<Class<?>> NOTIFICATION_SERVICE_RESOURCES = getNotificationServiceResourceClasses();

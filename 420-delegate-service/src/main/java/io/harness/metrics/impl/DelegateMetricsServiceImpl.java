@@ -74,6 +74,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASKS_PAUSED = "perpetual_tasks_paused_num";
   public static final String PERPETUAL_TASKS_NON_ASSIGNABLE = "perpetual_tasks_non_assignable_num";
   public static final String PERPETUAL_TASKS_INVALID = "perpetual_invalid_tasks";
+  public static final String PERPETUAL_ASSIGNMENT_DELAY = "perpetual_tasks_assignment_delay";
 
   private final MetricService metricService;
   private final DelegateTaskMetricContextBuilder metricContextBuilder;

@@ -6,12 +6,14 @@
  */
 
 package io.harness.template.helpers;
-
 import static io.harness.template.resources.beans.NGTemplateConstants.SPEC;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pms.yaml.YamlField;
@@ -35,6 +37,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j

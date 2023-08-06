@@ -108,11 +108,10 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   private static final String LAST_PUBLISHED_EXPRESSION = "<+lastPublished.tag>";
   private static final String TAG = "tag";
   private static final String CONNECTOR_REF = "connectorRef";
-  private static final ParameterField LAST_PUBLISHED_EXPRESSION_REGEX =
-      ParameterField.createValueFieldWithInputSetValidator(
-          LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, TAG), true);
+  private static final ParameterField LAST_PUBLISHED_EXPRESSION_REGEX = ParameterField.createExpressionField(
+      true, LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, TAG), true);
   private static final ParameterField LAST_PUBLISHED_EXPRESSION_PARAMETER =
-      ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION);
+      ParameterField.createExpressionField(true, LAST_PUBLISHED_EXPRESSION, null, true);
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock DelegateMetricsService delegateMetricsService;
   @Mock SecretManagerClientService ngSecretService;
@@ -189,6 +188,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(jenkinsArtifactDelegateRequest.getJobName()).isEqualTo(jenkinsArtifactConfig.getJobName().getValue());
     assertThat(jenkinsArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isEqualTo("build");
+    assertThat(jenkinsArtifactDelegateRequest.getBuildRegex()).isNull();
   }
 
   @Test
@@ -712,11 +712,10 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetDockerDelegateRequestTagAsRegex() {
-    DockerHubArtifactConfig dockerHubArtifactConfig =
-        DockerHubArtifactConfig.builder()
-            .imagePath(ParameterField.createValueField("IMAGE"))
-            .tag(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
-            .build();
+    DockerHubArtifactConfig dockerHubArtifactConfig = DockerHubArtifactConfig.builder()
+                                                          .imagePath(ParameterField.createValueField("IMAGE"))
+                                                          .tag(LAST_PUBLISHED_EXPRESSION_PARAMETER)
+                                                          .build();
     DockerConnectorDTO connectorDTO = DockerConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -760,12 +759,10 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetDockerDelegateRequestTagAsInputValidator() {
-    DockerHubArtifactConfig dockerHubArtifactConfig =
-        DockerHubArtifactConfig.builder()
-            .imagePath(ParameterField.createValueField("IMAGE"))
-            .tag(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
-            .build();
+    DockerHubArtifactConfig dockerHubArtifactConfig = DockerHubArtifactConfig.builder()
+                                                          .imagePath(ParameterField.createValueField("IMAGE"))
+                                                          .tag(LAST_PUBLISHED_EXPRESSION_REGEX)
+                                                          .build();
     DockerConnectorDTO connectorDTO = DockerConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -777,7 +774,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(dockerDelegateRequest.getImagePath()).isEqualTo(dockerHubArtifactConfig.getImagePath().getValue());
     assertThat(dockerDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.DOCKER_REGISTRY);
     assertThat(dockerDelegateRequest.getTagsList()).isNull();
-    assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo("stable*");
+    assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo(TAG);
     assertThat(dockerDelegateRequest.getShouldFetchDockerV2DigestSHA256()).isEqualTo(false);
   }
 
@@ -787,7 +784,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   public void testGetGitHubDelegateRequestTagAsRegex() {
     GithubPackagesArtifactConfig githubPackagesArtifactConfig =
         GithubPackagesArtifactConfig.builder()
-            .version(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .version(LAST_PUBLISHED_EXPRESSION_PARAMETER)
             .packageName(ParameterField.createValueField("PACKAGE"))
             .packageType(ParameterField.createValueField("type"))
             .org(ParameterField.createValueField("org"))
@@ -871,8 +868,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   public void testGetGitHubDelegateRequestTagAsInputValidator() {
     GithubPackagesArtifactConfig githubPackagesArtifactConfig =
         GithubPackagesArtifactConfig.builder()
-            .version(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
+            .version(LAST_PUBLISHED_EXPRESSION_REGEX)
             .packageName(ParameterField.createValueField("PACKAGE"))
             .packageType(ParameterField.createValueField("type"))
             .org(ParameterField.createValueField("org"))
@@ -890,7 +886,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(githubPackagesArtifactDelegateRequest.getPackageName()).isNotNull();
     assertThat(githubPackagesArtifactDelegateRequest.getPackageType()).isEqualTo("type");
     assertThat(githubPackagesArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
-    assertThat(githubPackagesArtifactDelegateRequest.getVersionRegex()).isEqualTo("stable*");
+    assertThat(githubPackagesArtifactDelegateRequest.getVersionRegex()).isEqualTo(TAG);
     assertThat(githubPackagesArtifactDelegateRequest.getVersion()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
 
@@ -903,7 +899,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
                                                     .packageType(ParameterField.createValueField("type"))
                                                     .project(ParameterField.createValueField("project"))
                                                     .feed(ParameterField.createValueField("feed"))
-                                                    .version(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+                                                    .version(LAST_PUBLISHED_EXPRESSION_PARAMETER)
                                                     .versionRegex(ParameterField.createValueField(""))
                                                     .build();
     AzureArtifactsConnectorDTO connectorDTO = AzureArtifactsConnectorDTO.builder().build();
@@ -954,16 +950,14 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetAzureDelegateRequestTagAsInputValidator() {
-    AzureArtifactsConfig azureArtifactsConfig =
-        AzureArtifactsConfig.builder()
-            .packageName(ParameterField.createValueField("PACKAGE"))
-            .packageType(ParameterField.createValueField("type"))
-            .project(ParameterField.createValueField("project"))
-            .feed(ParameterField.createValueField("feed"))
-            .version(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
-            .versionRegex(ParameterField.createValueField(""))
-            .build();
+    AzureArtifactsConfig azureArtifactsConfig = AzureArtifactsConfig.builder()
+                                                    .packageName(ParameterField.createValueField("PACKAGE"))
+                                                    .packageType(ParameterField.createValueField("type"))
+                                                    .project(ParameterField.createValueField("project"))
+                                                    .feed(ParameterField.createValueField("feed"))
+                                                    .version(LAST_PUBLISHED_EXPRESSION_REGEX)
+                                                    .versionRegex(ParameterField.createValueField(""))
+                                                    .build();
     AzureArtifactsConnectorDTO connectorDTO = AzureArtifactsConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -977,7 +971,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(azureArtifactsDelegateRequest.getPackageName()).isNotNull();
     assertThat(azureArtifactsDelegateRequest.getPackageType()).isEqualTo("type");
     assertThat(azureArtifactsDelegateRequest.getConnectorRef()).isEqualTo("");
-    assertThat(azureArtifactsDelegateRequest.getVersionRegex()).isEqualTo("stable*");
+    assertThat(azureArtifactsDelegateRequest.getVersionRegex()).isEqualTo(TAG);
     assertThat(azureArtifactsDelegateRequest.getVersion()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
 
@@ -987,7 +981,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   public void testGetAMIDelegateRequestTagAsRegex() {
     AMIArtifactConfig amiArtifactConfig =
         AMIArtifactConfig.builder()
-            .version(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .version(LAST_PUBLISHED_EXPRESSION_PARAMETER)
             .region(ParameterField.createValueField("IMAGE"))
             .filters(ParameterField.createValueField(
                 Collections.singletonList(AMIFilter.builder().name("test").value("test").build())))
@@ -1040,8 +1034,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   public void testGetAMIDelegateRequestTagAsInputValidator() {
     AMIArtifactConfig amiArtifactConfig =
         AMIArtifactConfig.builder()
-            .version(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
+            .version(LAST_PUBLISHED_EXPRESSION_REGEX)
             .region(ParameterField.createValueField("IMAGE"))
             .filters(ParameterField.createValueField(
                 Collections.singletonList(AMIFilter.builder().name("test").value("test").build())))
@@ -1058,7 +1051,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(amiArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
     assertThat(amiArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.AMI);
     assertThat(amiArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
-    assertThat(amiArtifactDelegateRequest.getVersionRegex()).isEqualTo("stable*");
+    assertThat(amiArtifactDelegateRequest.getVersionRegex()).isEqualTo(TAG);
     assertThat(amiArtifactDelegateRequest.getVersion()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
 
@@ -1069,7 +1062,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     JenkinsArtifactConfig jenkinsArtifactConfig = JenkinsArtifactConfig.builder()
                                                       .artifactPath(ParameterField.createValueField("ARTIFACT"))
                                                       .jobName(ParameterField.createValueField("JOB"))
-                                                      .build(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+                                                      .build(LAST_PUBLISHED_EXPRESSION_PARAMETER)
                                                       .build();
     JenkinsConnectorDTO connectorDTO = JenkinsConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1085,6 +1078,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(jenkinsArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.JENKINS);
     assertThat(jenkinsArtifactDelegateRequest.getJobName()).isEqualTo(jenkinsArtifactConfig.getJobName().getValue());
     assertThat(jenkinsArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(jenkinsArtifactDelegateRequest.getBuildRegex()).isEqualTo("");
     assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isEqualTo("");
   }
 
@@ -1117,13 +1111,11 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetJenkinsDelegateRequestTagAsInputValidator() {
-    JenkinsArtifactConfig jenkinsArtifactConfig =
-        JenkinsArtifactConfig.builder()
-            .artifactPath(ParameterField.createValueField("ARTIFACT"))
-            .jobName(ParameterField.createValueField("JOB"))
-            .build(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
-            .build();
+    JenkinsArtifactConfig jenkinsArtifactConfig = JenkinsArtifactConfig.builder()
+                                                      .artifactPath(ParameterField.createValueField("ARTIFACT"))
+                                                      .jobName(ParameterField.createValueField("JOB"))
+                                                      .build(LAST_PUBLISHED_EXPRESSION_REGEX)
+                                                      .build();
     JenkinsConnectorDTO connectorDTO = JenkinsConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -1137,7 +1129,8 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
         .isEqualTo(Arrays.asList(jenkinsArtifactConfig.getArtifactPath().getValue()));
     assertThat(jenkinsArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.JENKINS);
     assertThat(jenkinsArtifactDelegateRequest.getJobName()).isEqualTo(jenkinsArtifactConfig.getJobName().getValue());
-    assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isEqualTo("stable*");
+    assertThat(jenkinsArtifactDelegateRequest.getBuildNumber()).isEqualTo(TAG);
+    assertThat(jenkinsArtifactDelegateRequest.getBuildRegex()).isEqualTo(TAG);
   }
 
   @Test
@@ -1148,7 +1141,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
         BambooArtifactConfig.builder()
             .artifactPaths(ParameterField.createValueField(Collections.singletonList("ARTIFACT")))
             .planKey(ParameterField.createValueField("PLAN"))
-            .build(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .build(LAST_PUBLISHED_EXPRESSION_PARAMETER)
             .build();
     BambooConnectorDTO connectorDTO = BambooConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1165,6 +1158,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(bambooArtifactDelegateRequest.getPlanKey()).isEqualTo(bambooArtifactConfig.getPlanKey().getValue());
     assertThat(bambooArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(bambooArtifactDelegateRequest.getBuildNumber()).isEqualTo(".*?");
+    assertThat(bambooArtifactDelegateRequest.getBuildRegex()).isEqualTo(".*?");
   }
 
   @Test
@@ -1192,6 +1186,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(bambooArtifactDelegateRequest.getPlanKey()).isEqualTo(bambooArtifactConfig.getPlanKey().getValue());
     assertThat(bambooArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(bambooArtifactDelegateRequest.getBuildNumber()).isEqualTo(TAG);
+    assertThat(bambooArtifactDelegateRequest.getBuildRegex()).isEqualTo(TAG);
   }
 
   @Test
@@ -1219,6 +1214,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(bambooArtifactDelegateRequest.getPlanKey()).isEqualTo(bambooArtifactConfig.getPlanKey().getValue());
     assertThat(bambooArtifactDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(bambooArtifactDelegateRequest.getBuildNumber()).isEqualTo(TAG);
+    assertThat(bambooArtifactDelegateRequest.getBuildRegex()).isNull();
   }
 
   @Test
@@ -1229,7 +1225,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
         CustomArtifactConfig.builder()
             .identifier("test")
             .primaryArtifact(true)
-            .version(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .version(LAST_PUBLISHED_EXPRESSION_PARAMETER)
             .versionRegex(ParameterField.createValueField(""))
             .scripts(CustomArtifactScripts.builder()
                          .fetchAllArtifacts(
@@ -1302,8 +1298,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
         CustomArtifactConfig.builder()
             .identifier("test")
             .primaryArtifact(true)
-            .version(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
+            .version(LAST_PUBLISHED_EXPRESSION_REGEX)
             .scripts(CustomArtifactScripts.builder()
                          .fetchAllArtifacts(
                              FetchAllArtifacts.builder()
@@ -1327,7 +1322,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(customArtifactDelegateRequest.getArtifactsArrayPath()).isEqualTo("results");
     assertThat(customArtifactDelegateRequest.getVersionPath()).isEqualTo("version");
     assertThat(customArtifactDelegateRequest.getScript()).isEqualTo("echo test");
-    assertThat(customArtifactDelegateRequest.getVersionRegex()).isEqualTo("stable*");
+    assertThat(customArtifactDelegateRequest.getVersionRegex()).isEqualTo(TAG);
     assertThat(customArtifactDelegateRequest.getVersion()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
 
@@ -1337,7 +1332,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   public void testGetGCRDelegateRequestTagAsRegex() {
     GcrArtifactConfig gcrArtifactConfig = GcrArtifactConfig.builder()
                                               .imagePath(ParameterField.createValueField("IMAGE"))
-                                              .tag(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+                                              .tag(LAST_PUBLISHED_EXPRESSION_PARAMETER)
                                               .registryHostname(ParameterField.createValueField("host"))
                                               .build();
     GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
@@ -1380,13 +1375,11 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetGCRDelegateRequestTagAsInputValidator() {
-    GcrArtifactConfig gcrArtifactConfig =
-        GcrArtifactConfig.builder()
-            .imagePath(ParameterField.createValueField("IMAGE"))
-            .tag(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
-            .registryHostname(ParameterField.createValueField("host"))
-            .build();
+    GcrArtifactConfig gcrArtifactConfig = GcrArtifactConfig.builder()
+                                              .imagePath(ParameterField.createValueField("IMAGE"))
+                                              .tag(LAST_PUBLISHED_EXPRESSION_REGEX)
+                                              .registryHostname(ParameterField.createValueField("host"))
+                                              .build();
     GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -1397,7 +1390,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(gcrDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
     assertThat(gcrDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.GCR);
     assertThat(gcrDelegateRequest.getConnectorRef()).isEqualTo("");
-    assertThat(gcrDelegateRequest.getTagRegex()).isEqualTo("stable*");
+    assertThat(gcrDelegateRequest.getTagRegex()).isEqualTo(TAG);
     assertThat(gcrDelegateRequest.getTag()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
 
@@ -1405,14 +1398,13 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetGARDelegateRequestRegexTagAsRegex() {
-    GoogleArtifactRegistryConfig garArtifactInfo =
-        GoogleArtifactRegistryConfig.builder()
-            .region(ParameterField.createValueField("region"))
-            .version(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
-            .repositoryName(ParameterField.createValueField("repo"))
-            .pkg(ParameterField.createValueField("pkg"))
-            .project(ParameterField.createValueField("project"))
-            .build();
+    GoogleArtifactRegistryConfig garArtifactInfo = GoogleArtifactRegistryConfig.builder()
+                                                       .region(ParameterField.createValueField("region"))
+                                                       .version(LAST_PUBLISHED_EXPRESSION_PARAMETER)
+                                                       .repositoryName(ParameterField.createValueField("repo"))
+                                                       .pkg(ParameterField.createValueField("pkg"))
+                                                       .project(ParameterField.createValueField("project"))
+                                                       .build();
     GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -1454,15 +1446,13 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetGARDelegateRequestRegexTagAsInputValidator() {
-    GoogleArtifactRegistryConfig garArtifactInfo =
-        GoogleArtifactRegistryConfig.builder()
-            .region(ParameterField.createValueField("region"))
-            .version(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
-            .repositoryName(ParameterField.createValueField("repo"))
-            .pkg(ParameterField.createValueField("pkg"))
-            .project(ParameterField.createValueField("project"))
-            .build();
+    GoogleArtifactRegistryConfig garArtifactInfo = GoogleArtifactRegistryConfig.builder()
+                                                       .region(ParameterField.createValueField("region"))
+                                                       .version(LAST_PUBLISHED_EXPRESSION_REGEX)
+                                                       .repositoryName(ParameterField.createValueField("repo"))
+                                                       .pkg(ParameterField.createValueField("pkg"))
+                                                       .project(ParameterField.createValueField("project"))
+                                                       .build();
     GcpConnectorDTO connectorDTO = GcpConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -1472,7 +1462,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(amiArtifactDelegateRequest.getGcpConnectorDTO()).isEqualTo(connectorDTO);
     assertThat(amiArtifactDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
     assertThat(amiArtifactDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.GOOGLE_ARTIFACT_REGISTRY);
-    assertThat(amiArtifactDelegateRequest.getVersionRegex()).isEqualTo("stable*");
+    assertThat(amiArtifactDelegateRequest.getVersionRegex()).isEqualTo(TAG);
     assertThat(amiArtifactDelegateRequest.getVersion()).isEmpty();
   }
 
@@ -1482,7 +1472,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   public void testGetECRDelegateRequestTagAsRegex() {
     EcrArtifactConfig ecrArtifactConfig = EcrArtifactConfig.builder()
                                               .region(ParameterField.createValueField("region"))
-                                              .tag(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+                                              .tag(LAST_PUBLISHED_EXPRESSION_PARAMETER)
                                               .imagePath(ParameterField.createValueField("image"))
                                               .build();
     AwsConnectorDTO connectorDTO = AwsConnectorDTO.builder().build();
@@ -1524,13 +1514,11 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetECRDelegateRequestTagAsInputValidator() {
-    EcrArtifactConfig ecrArtifactConfig =
-        EcrArtifactConfig.builder()
-            .region(ParameterField.createValueField("region"))
-            .tag(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
-            .imagePath(ParameterField.createValueField("image"))
-            .build();
+    EcrArtifactConfig ecrArtifactConfig = EcrArtifactConfig.builder()
+                                              .region(ParameterField.createValueField("region"))
+                                              .tag(LAST_PUBLISHED_EXPRESSION_REGEX)
+                                              .imagePath(ParameterField.createValueField("image"))
+                                              .build();
     AwsConnectorDTO connectorDTO = AwsConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -1540,7 +1528,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getAwsConnectorDTO()).isEqualTo(connectorDTO);
     assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ECR);
-    assertThat(delegateRequest.getTagRegex()).isEqualTo("stable*");
+    assertThat(delegateRequest.getTagRegex()).isEqualTo(TAG);
     assertThat(delegateRequest.getTag()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
 
@@ -1559,7 +1547,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .repository(ParameterField.createValueField("TEST_REPO"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
             .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
-            .tag(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .tag(LAST_PUBLISHED_EXPRESSION_PARAMETER)
             .build();
     NexusConnectorDTO connectorDTO = NexusConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1633,8 +1621,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .repository(ParameterField.createValueField("TEST_REPO"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
             .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
-            .tag(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
+            .tag(LAST_PUBLISHED_EXPRESSION_REGEX)
             .build();
     NexusConnectorDTO connectorDTO = NexusConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1652,7 +1639,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getArtifactPath()).isEqualTo(nexusRegistryDockerConfig.getArtifactPath().getValue());
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.NEXUS3_REGISTRY);
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
-    assertThat(delegateRequest.getTagRegex()).isEqualTo("stable*");
+    assertThat(delegateRequest.getTagRegex()).isEqualTo(TAG);
     assertThat(delegateRequest.getTag()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
 
@@ -1668,7 +1655,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .repository(ParameterField.createValueField("TEST_REPO"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.npm.name()))
             .nexusRegistryConfigSpec(nexusRegistryNpmConfig)
-            .tag(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .tag(LAST_PUBLISHED_EXPRESSION_PARAMETER)
             .build();
     NexusConnectorDTO connectorDTO = NexusConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1730,8 +1717,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .repository(ParameterField.createValueField("TEST_REPO"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.npm.name()))
             .nexusRegistryConfigSpec(nexusRegistryNpmConfig)
-            .tag(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
+            .tag(LAST_PUBLISHED_EXPRESSION_REGEX)
             .build();
     NexusConnectorDTO connectorDTO = NexusConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1746,7 +1732,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.NEXUS2_REGISTRY);
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
-    assertThat(delegateRequest.getTagRegex()).isEqualTo("stable*");
+    assertThat(delegateRequest.getTagRegex()).isEqualTo(TAG);
     assertThat(delegateRequest.getTag()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
 
@@ -1760,7 +1746,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
             .repositoryUrl(ParameterField.createValueField("harness-repo.jfrog.io"))
             .artifactPath(ParameterField.createValueField("IMAGE"))
-            .tag(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .tag(LAST_PUBLISHED_EXPRESSION_PARAMETER)
             .build();
     ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1822,8 +1808,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
             .repositoryUrl(ParameterField.createValueField("harness-repo.jfrog.io"))
             .artifactPath(ParameterField.createValueField("IMAGE"))
-            .tag(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
+            .tag(LAST_PUBLISHED_EXPRESSION_REGEX)
             .build();
     ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1840,7 +1825,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
-    assertThat(delegateRequest.getTagRegex()).isEqualTo("stable*");
+    assertThat(delegateRequest.getTagRegex()).isEqualTo(TAG);
     assertThat(delegateRequest.getTag()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
 
@@ -1853,7 +1838,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .subscriptionId(ParameterField.createValueField("123456-6543-3456-654321"))
             .registry(ParameterField.createValueField("AZURE_CR"))
             .repository(ParameterField.createValueField("library/testapp"))
-            .tag(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .tag(LAST_PUBLISHED_EXPRESSION_PARAMETER)
             .build();
     AzureConnectorDTO connectorDTO = AzureConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1909,8 +1894,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .subscriptionId(ParameterField.createValueField("123456-6543-3456-654321"))
             .registry(ParameterField.createValueField("AZURE_CR"))
             .repository(ParameterField.createValueField("library/testapp"))
-            .tag(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
+            .tag(LAST_PUBLISHED_EXPRESSION_REGEX)
             .build();
     AzureConnectorDTO connectorDTO = AzureConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
@@ -1925,7 +1909,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(acrDelegateRequest.getSubscription()).isEqualTo(acrArtifactConfig.getSubscriptionId().getValue());
     assertThat(acrDelegateRequest.getRegistry()).isEqualTo(acrArtifactConfig.getRegistry().getValue());
     assertThat(acrDelegateRequest.getRepository()).isEqualTo(acrArtifactConfig.getRepository().getValue());
-    assertThat(acrDelegateRequest.getTagRegex()).isEqualTo("stable*");
+    assertThat(acrDelegateRequest.getTagRegex()).isEqualTo(TAG);
     assertThat(acrDelegateRequest.getTag()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
   }
 
@@ -2163,12 +2147,11 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testGetS3DelegateRequestWithTagAsRegex() {
-    AmazonS3ArtifactConfig amazonS3ArtifactConfig =
-        AmazonS3ArtifactConfig.builder()
-            .filePath(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
-            .filePathRegex(ParameterField.createValueField(""))
-            .bucketName(ParameterField.createValueField("test"))
-            .build();
+    AmazonS3ArtifactConfig amazonS3ArtifactConfig = AmazonS3ArtifactConfig.builder()
+                                                        .filePath(LAST_PUBLISHED_EXPRESSION_PARAMETER)
+                                                        .filePathRegex(ParameterField.createValueField(""))
+                                                        .bucketName(ParameterField.createValueField("test"))
+                                                        .build();
     AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder().build();
     List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
 
@@ -2188,7 +2171,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
         ArtifactoryRegistryArtifactConfig.builder()
             .repository(ParameterField.createValueField("TEST_REPO"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
-            .artifactPath(ParameterField.createValueField(LAST_PUBLISHED_EXPRESSION))
+            .artifactPath(LAST_PUBLISHED_EXPRESSION_PARAMETER)
             .artifactDirectory(ParameterField.createValueField("IMAGE"))
             .build();
     ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
@@ -2202,7 +2185,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
     assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.generic.name());
     assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
-    assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
+    assertThat(delegateRequest.getArtifactPath()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
     assertThat(delegateRequest.getArtifactDirectory()).isEqualTo(artifactConfig.getArtifactDirectory().getValue());
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
@@ -2216,8 +2199,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
         ArtifactoryRegistryArtifactConfig.builder()
             .repository(ParameterField.createValueField("TEST_REPO"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
-            .artifactPath(ParameterField.createValueFieldWithInputSetValidator(
-                LAST_PUBLISHED_EXPRESSION, new InputSetValidator(InputSetValidatorType.REGEX, "stable*"), true))
+            .artifactPath(LAST_PUBLISHED_EXPRESSION_REGEX)
             .artifactDirectory(ParameterField.createValueField("IMAGE"))
             .build();
     ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
@@ -2231,10 +2213,10 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getRepositoryName()).isEqualTo(artifactConfig.getRepository().getValue());
     assertThat(delegateRequest.getRepositoryFormat()).isEqualTo(RepositoryFormat.generic.name());
     assertThat(delegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
-    assertThat(delegateRequest.getArtifactPath()).isEqualTo(artifactConfig.getArtifactPath().getValue());
+    assertThat(delegateRequest.getArtifactPath()).isEqualTo(LAST_PUBLISHED_EXPRESSION);
     assertThat(delegateRequest.getArtifactDirectory()).isEqualTo(artifactConfig.getArtifactDirectory().getValue());
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
-    assertThat(delegateRequest.getArtifactPathFilter()).isEqualTo("stable*");
+    assertThat(delegateRequest.getArtifactPathFilter()).isEqualTo(TAG);
   }
 }

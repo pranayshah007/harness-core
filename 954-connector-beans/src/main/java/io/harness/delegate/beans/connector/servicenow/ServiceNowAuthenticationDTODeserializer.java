@@ -6,10 +6,12 @@
  */
 
 package io.harness.delegate.beans.connector.servicenow;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -19,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import java.io.IOException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 public class ServiceNowAuthenticationDTODeserializer extends StdDeserializer<ServiceNowAuthenticationDTO> {
   public ServiceNowAuthenticationDTODeserializer() {

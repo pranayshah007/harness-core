@@ -316,6 +316,60 @@ func installAgents(ctx context.Context, path, language, framework, frameworkVers
 	return installDir, nil
 }
 
+func getCommitInfo(ctx context.Context, stepID string, log *zap.SugaredLogger) (commitId string, err error) {
+	repo, err := external.GetRepo()
+	if err != nil {
+		return commitId, err
+	}
+	branch, err := external.GetSourceBranch()
+	if err != nil {
+		return commitId, err
+	}
+	client, err := grpcclient.NewTiProxyClient(consts.LiteEnginePort, log)
+	if err != nil {
+		return commitId, err
+	}
+	defer client.CloseConn()
+	req := &pb.GetLastSuccCommitInfoRequest{
+		StepId: stepID,
+		Repo:   repo,
+		Branch: branch,
+	}
+	resp, err := client.Client().GetLastSuccCommitInfo(ctx, req)
+	if err != nil {
+		return commitId, err
+	}
+	var commitInfo types.CommitInfoResp
+	err = json.Unmarshal([]byte(resp.CommitInfo), &commitInfo)
+	if err != nil {
+		log.Errorw("could not unmarshal commit info response response on addon", zap.Error(err))
+		return commitId, err
+	}
+	return commitInfo.LastSuccessfulCommitId, nil
+}
+
+func getChangedFilesPushTrigger(ctx context.Context, stepID, lastSuccessfulCommitID string, log *zap.SugaredLogger) (changedFiles []types.File, err error) {
+	client, err := grpcclient.NewTiProxyClient(consts.LiteEnginePort, log)
+	if err != nil {
+		return changedFiles, err
+	}
+	defer client.CloseConn()
+	req := &pb.GetChangedFilesPushTriggerRequest{
+		StepId: stepID,
+		LastSuccCommit: lastSuccessfulCommitID,
+	}
+	resp, err := client.Client().GetChangedFilesPushTrigger(ctx, req)
+	if err != nil {
+		return changedFiles, err
+	}
+	err = json.Unmarshal([]byte(resp.ChangedFiles), &changedFiles)
+	if err != nil {
+		log.Errorw("could not unmarshal changed files response on addon", zap.Error(err))
+		return changedFiles, err
+	}
+	return changedFiles, nil
+}
+
 /*
 Downloads url to path with specified fs.
 Args:

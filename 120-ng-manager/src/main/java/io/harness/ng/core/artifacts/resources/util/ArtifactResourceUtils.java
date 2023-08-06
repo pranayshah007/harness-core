@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.artifacts.resources.util;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
@@ -18,10 +17,14 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.InputSetValidatorType;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
@@ -127,6 +130,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_APPROVALS,
+        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ArtifactResourceUtils {
@@ -183,6 +189,11 @@ public class ArtifactResourceUtils {
         gitEntityBasicInfo.getYamlGitConfigId(), gitEntityBasicInfo.getDefaultFromOtherRepo(), BOOLEAN_FALSE_VALUE,
         TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build(), false));
     return response.getMergedPipelineYaml();
+  }
+
+  public boolean checkValidRegexType(ParameterField<String> artifactConfig) {
+    return artifactConfig.getExpressionValue() != null && artifactConfig.getInputSetValidator() != null
+        && artifactConfig.getInputSetValidator().getValidatorType() == InputSetValidatorType.REGEX;
   }
 
   @Nullable
@@ -267,8 +278,17 @@ public class ArtifactResourceUtils {
     if (!shouldResolveExpression) {
       return;
     }
-    String mergedCompleteYaml = getMergedCompleteYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    String mergedCompleteYaml = "";
+
+    try {
+      mergedCompleteYaml = getMergedCompleteYaml(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    } catch (InvalidRequestException invalidRequestException) {
+      if (invalidRequestException.getMessage().contains("doesn't exist or has been deleted")) {
+        return;
+      }
+      throw invalidRequestException;
+    }
     if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
       mergedCompleteYaml = applyTemplatesOnGivenYaml(
           accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);

@@ -78,7 +78,8 @@ public class RuntimeInputExecutionInputsControllerTest extends WingsBaseTest {
   public void testQLExecutionInputReturnsCorrectServices() {
     WorkflowExecution pipelineExecution =
         JsonUtils.readResourceFile("execution/pipeline_execution.json", WorkflowExecution.class);
-    when(workflowExecutionService.getWorkflowExecution(anyString(), anyString())).thenReturn(pipelineExecution);
+    when(workflowExecutionService.getWorkflowExecution(anyString(), anyString(), any(String[].class)))
+        .thenReturn(pipelineExecution);
     Pipeline pipeline = JsonUtils.readResourceFile("pipeline/pipeline.json", Pipeline.class);
     when(pipelineService.readPipeline(anyString(), anyString(), eq(true))).thenReturn(pipeline);
     when(pipelineExecutionController.resolveEnvId(eq(pipeline), anyList())).thenReturn("envId");

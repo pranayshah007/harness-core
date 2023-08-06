@@ -45,8 +45,8 @@ import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.annotations.Id;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
+import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,6 +64,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionInitializer {
   private static final Map<Class<? extends PersistentEntity>, QueryParams> TASKS_INFO = new HashMap<>();
   private static final String ENV = isEmpty(System.getenv("ENV")) ? "localhost" : System.getenv("ENV");
+
+  @Inject private Clock clock;
   @Inject private HarnessMetricRegistry metricRegistry;
   static {
     TASKS_INFO.put(CVNGStepTask.class,
@@ -111,7 +113,7 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
       Query<? extends PersistentEntity> query =
           hPersistence.createQuery(clazz).field(queryParams.getStatusField()).in(queryParams.getNonFinalStatuses());
       log.info("Starting getting tasks status based metrics {}", clazz.getSimpleName());
-      long startTime = Instant.now().toEpochMilli();
+      long startTime = clock.instant().toEpochMilli();
       int limit = hPersistence.getMaxDocumentLimit(clazz);
       AggregationPipeline aggregationPipeline =
           hPersistence.getDatastore(clazz).createAggregation(clazz).match(query).group(
@@ -146,33 +148,19 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
             });
       });
       log.info("Total time taken to collect metrics for class {} {} (ms)", clazz.getSimpleName(),
-          Instant.now().toEpochMilli() - startTime);
+          clock.instant().toEpochMilli() - startTime);
     });
   }
 
-  private void sendLEAutoscaleMetrics() {
-    long now = Instant.now().toEpochMilli();
-    LearningEngineTask earliestTask = hPersistence.createQuery(LearningEngineTask.class)
-                                          .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
-                                          .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt))
-                                          .get();
-    long timeSinceTask = earliestTask == null ? 0l : now - earliestTask.getLastUpdatedAt();
-    Duration maxTime = null;
-    metricService.recordMetric("learning_engine_max_queued_time_" + ENV, timeSinceTask);
+  @VisibleForTesting
+  void sendLEAutoscaleMetrics() {
+    long now = clock.instant().toEpochMilli();
+    recordLEMaxQueuedTime(now);
+    recordLEDeploymentMaxQueuedTime(now);
+    recordLEServiceHealthMaxQueuedTime(now);
+  }
 
-    LearningEngineTask earliestDeploymentTask = hPersistence.createQuery(LearningEngineTask.class)
-                                                    .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
-                                                    .field(LearningEngineTaskKeys.analysisType)
-                                                    .in(LearningEngineTaskType.getDeploymentTaskTypes())
-                                                    .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt))
-                                                    .get();
-
-    timeSinceTask = earliestDeploymentTask == null ? 0l : now - earliestDeploymentTask.getLastUpdatedAt();
-    maxTime = Duration.ofMillis(timeSinceTask);
-    metricService.recordMetric("learning_engine_deployment_max_queued_time_" + ENV, timeSinceTask);
-    metricRegistry.recordGaugeValue(ENV + "_"
-            + "ng_le_deployment_max_queued_time_sec",
-        null, maxTime.getSeconds());
+  private void recordLEServiceHealthMaxQueuedTime(long now) {
     LearningEngineTask earliestLiveHealthTask = hPersistence.createQuery(LearningEngineTask.class)
                                                     .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
                                                     .field(LearningEngineTaskKeys.analysisType)
@@ -180,12 +168,37 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
                                                     .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt))
                                                     .get();
 
-    timeSinceTask = earliestLiveHealthTask == null ? 0l : now - earliestLiveHealthTask.getLastUpdatedAt();
-    maxTime = Duration.ofMillis(timeSinceTask);
+    long timeSinceTask = earliestLiveHealthTask == null ? 0L : now - earliestLiveHealthTask.getLastUpdatedAt();
+    Duration maxTime = Duration.ofMillis(timeSinceTask);
     metricService.recordMetric("learning_engine_service_health_max_queued_time_" + ENV, timeSinceTask);
     metricRegistry.recordGaugeValue(ENV + "_"
             + "ng_le_service_health_max_queued_time_sec",
         null, maxTime.getSeconds());
+  }
+
+  private void recordLEDeploymentMaxQueuedTime(long now) {
+    LearningEngineTask earliestDeploymentTask = hPersistence.createQuery(LearningEngineTask.class)
+                                                    .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
+                                                    .field(LearningEngineTaskKeys.analysisType)
+                                                    .in(LearningEngineTaskType.getDeploymentTaskTypes())
+                                                    .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt))
+                                                    .get();
+    long timeSinceDeploymentTask =
+        earliestDeploymentTask == null ? 0L : now - earliestDeploymentTask.getLastUpdatedAt();
+    Duration deploymentMaxTime = Duration.ofMillis(timeSinceDeploymentTask);
+    metricService.recordMetric("learning_engine_deployment_max_queued_time_" + ENV, timeSinceDeploymentTask);
+    metricRegistry.recordGaugeValue(ENV + "_"
+            + "ng_le_deployment_max_queued_time_sec",
+        null, deploymentMaxTime.getSeconds());
+  }
+
+  private void recordLEMaxQueuedTime(long now) {
+    LearningEngineTask earliestTask = hPersistence.createQuery(LearningEngineTask.class)
+                                          .filter(LearningEngineTaskKeys.taskStatus, QUEUED)
+                                          .order(Sort.ascending(VerificationTaskBaseKeys.lastUpdatedAt))
+                                          .get();
+    long timeSinceTask = earliestTask == null ? 0L : now - earliestTask.getLastUpdatedAt();
+    metricService.recordMetric("learning_engine_max_queued_time_" + ENV, timeSinceTask);
   }
 
   @Override

@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.creator.plan.steps.aws.sam;
-
 import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_MANIFESTS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.aws.sam.AwsSamBuildStepNode;
 import io.harness.cdng.aws.sam.AwsSamBuildStepParameters;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
@@ -23,6 +25,8 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import com.google.common.collect.Sets;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(HarnessTeam.CDP)
 public class AwsSamBuildStepPlanCreator extends CDPMSStepPlanCreatorV2<AwsSamBuildStepNode> {
   @Override

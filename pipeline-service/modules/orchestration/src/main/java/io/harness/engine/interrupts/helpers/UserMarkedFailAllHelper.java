@@ -6,13 +6,15 @@
  */
 
 package io.harness.engine.interrupts.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eraro.ErrorCode.USER_MARKED_FAILURE;
 import static io.harness.pms.contracts.interrupts.InterruptType.USER_MARKED_FAIL_ALL;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.node.NodeExecutionUpdateFailedException;
@@ -23,7 +25,9 @@ import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.interrupts.Interrupt;
+import io.harness.interrupts.InterruptEffect;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutionMode;
@@ -31,6 +35,8 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.interrupts.InterruptConfig;
+import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -40,6 +46,8 @@ import java.time.Duration;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 @OwnedBy(PIPELINE)
 public class UserMarkedFailAllHelper {
@@ -59,7 +67,8 @@ public class UserMarkedFailAllHelper {
 
       if (nodeExecution.getMode() == ExecutionMode.SYNC || ExecutionModeUtils.isParentMode(nodeExecution.getMode())) {
         log.info("Aborting directly because mode is {}", nodeExecution.getMode());
-        failDiscontinuingNode(nodeExecution.getAmbiance());
+        failDiscontinuingNode(nodeExecution.getAmbiance(), nodeExecution.getUuid(), interrupt.getType(),
+            interrupt.getUuid(), interrupt.getInterruptConfig());
         return;
       }
 
@@ -86,7 +95,17 @@ public class UserMarkedFailAllHelper {
     }
   }
 
-  public void failDiscontinuingNode(Ambiance ambiance) {
+  public void failDiscontinuingNode(Ambiance ambiance, String nodeExecutionId, InterruptType interruptType,
+      String interruptId, InterruptConfig interruptConfig) {
+    nodeExecutionService.updateV2(nodeExecutionId,
+        ops
+        -> ops.addToSet(NodeExecutionKeys.interruptHistories,
+            InterruptEffect.builder()
+                .interruptType(interruptType)
+                .tookEffectAt(System.currentTimeMillis())
+                .interruptId(interruptId)
+                .interruptConfig(interruptConfig)
+                .build()));
     engine.processStepResponse(ambiance,
         StepResponseProto.newBuilder()
             .setStatus(Status.FAILED)

@@ -6,15 +6,17 @@
  */
 
 package io.harness.pms.pipeline.service.yamlschema;
-
 import static java.lang.String.format;
 
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceConfiguration;
 import io.harness.SchemaCacheKey;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.logging.ResponseTimeRecorder;
 import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
@@ -41,6 +43,8 @@ import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 @Singleton
@@ -51,14 +55,13 @@ public class SchemaFetcher {
   @Inject @Named("partialSchemaCache") Cache<SchemaCacheKey, PartialSchemaDTOWrapperValue> schemaCache;
   @Inject private SchemaGetterFactory schemaGetterFactory;
 
-  @Inject @Named("staticSchemaCache") Cache<SchemaCacheKey, String> staticSchemaCache;
+  private JsonNode pipelineStaticSchema = null;
 
   private final String PIPELINE_JSON_PATH = "static-schema/pipeline.json";
 
   @Inject PipelineServiceConfiguration pipelineServiceConfiguration;
 
   private final String PIPELINE_JSON = "pipeline.json";
-  private final String TEMPLATE_JSON = "template.json";
 
   private final String PRE_QA = "stress";
 
@@ -120,7 +123,6 @@ public class SchemaFetcher {
     log.info("[PMS] Invalidating yaml schema cache");
     schemaCache.clear();
     schemaDetailsCache.clear();
-    staticSchemaCache.clear();
     log.info("[PMS] Yaml schema cache was successfully invalidated");
   }
 
@@ -140,20 +142,15 @@ public class SchemaFetcher {
         orgIdentifier, projectIdentifier, scope, entityType, yamlGroup, yamlSchemaWithDetailsList);
   }
 
-  @Nullable
-  public JsonNode fetchStaticYamlSchema(String accountId) {
+  public JsonNode fetchStaticYamlSchema() {
     log.info("[PMS] Fetching static schema");
     try (ResponseTimeRecorder ignore = new ResponseTimeRecorder("Fetching Static Schema")) {
-      SchemaCacheKey schemaCacheKey = SchemaCacheKey.builder().build();
-
-      if (staticSchemaCache.containsKey(schemaCacheKey)) {
-        log.info("[PMS_SCHEMA] Fetching static schema from cache for account {}", accountId);
-        return JsonUtils.readTree(staticSchemaCache.get(schemaCacheKey));
-      }
-
-      JsonNode jsonNode = getStaticSchema();
-
-      return jsonNode;
+      /*
+        Fetches schema from Github repo in case of PRE_QA Env.
+        If pipelineStaticSchema is null, then we read it from the pipeline.json resource file and set it to
+        pipelineStaticSchema and return pipelineStaticSchema.
+      */
+      return getStaticSchema();
     } catch (Exception e) {
       log.warn(format("[PMS] Unable to get static schema"), e);
       return null;
@@ -170,10 +167,13 @@ public class SchemaFetcher {
   }
 
   public JsonNode fetchFile(String filePath) throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    String staticJson =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
-    return JsonUtils.asObject(staticJson, JsonNode.class);
+    if (null == pipelineStaticSchema) {
+      ClassLoader classLoader = this.getClass().getClassLoader();
+      String staticJson =
+          Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
+      pipelineStaticSchema = JsonUtils.asObject(staticJson, JsonNode.class);
+    }
+    return pipelineStaticSchema;
   }
 
   public JsonNode fetchSchemaFromRepo(EntityType entityType, String version) throws IOException {
@@ -195,9 +195,6 @@ public class SchemaFetcher {
     switch (entityType) {
       case PIPELINES:
         entityTypeJson = PIPELINE_JSON;
-        break;
-      case TEMPLATE:
-        entityTypeJson = TEMPLATE_JSON;
         break;
       default:
         entityTypeJson = PIPELINE_JSON;

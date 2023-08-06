@@ -19,7 +19,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.Strings;
 
@@ -83,13 +82,15 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
   }
 
   private List<String> getPackageLicenses(String licenseDeclared) {
-    String[] licenses = licenseDeclared.split(" AND ");
-    for (int i = 0; i < licenses.length; i++) {
-      if (licenses[i].contains(SBOMUtils.LICENSE_REF_DELIM)) {
-        licenses[i] = licenses[i].split(SBOMUtils.LICENSE_REF_DELIM)[1];
+    List<String> licenses = SBOMUtils.processExpression(licenseDeclared);
+
+    for (int i = 0; i < licenses.size(); i++) {
+      if (licenses.get(i).contains(SBOMUtils.LICENSE_REF_DELIM)) {
+        String newLicense = licenses.get(i).split(SBOMUtils.LICENSE_REF_DELIM)[1];
+        licenses.set(i, newLicense);
       }
     }
-    return Arrays.stream(licenses).collect(Collectors.toList());
+    return licenses;
   }
 
   private List<String> getPackageManagerSpdx(SpdxDTO.Package spdxPackage) {

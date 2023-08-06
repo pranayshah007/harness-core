@@ -6,9 +6,12 @@
  */
 
 package io.harness.gitx;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 public class GitXTransientBranchGuard implements AutoCloseable {
   public GitXTransientBranchGuard(String transientBranch) {
     GitAwareContextHelper.setTransientBranch(transientBranch);

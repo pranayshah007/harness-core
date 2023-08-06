@@ -60,6 +60,7 @@ public class PythonMappers {
     pythonInput.setWorkloadType(source.getWorkloadType());
     pythonInput.setAwsAccount(source.getAwsAccount());
     pythonInput.setAwsService(source.getAwsService());
+    pythonInput.setAwsUsageType(source.getAwsUsageType());
     pythonInput.setGcpProject(source.getGcpProject());
     pythonInput.setGcpProduct(source.getGcpProduct());
     pythonInput.setGcpSKUId(source.getGcpSKUId());

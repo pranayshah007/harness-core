@@ -60,6 +60,7 @@ public class PluginInfoApiImpl implements PluginInfoApi {
       response.setPlugin(pluginDetailedInfo);
       return Response.status(Response.Status.OK).entity(response).build();
     } catch (Exception e) {
+      log.error("Could not get plugin details", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

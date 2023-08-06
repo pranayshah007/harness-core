@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.connector.vaultconnector;
 
 import static io.harness.SecretManagerDescriptionConstants.AWS_REGION;
+import static io.harness.SecretManagerDescriptionConstants.ENABLE_CACHE;
 import static io.harness.SecretManagerDescriptionConstants.K8S_AUTH_ENDPOINT;
 import static io.harness.SecretManagerDescriptionConstants.RENEW_APPROLE_TOKEN;
 import static io.harness.SecretManagerDescriptionConstants.SERVICE_ACCOUNT_TOKEN_PATH;
@@ -52,13 +53,15 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 @OwnedBy(PL)
 @Getter
 @Setter
-@Builder
+@Builder(toBuilder = true)
+@NoArgsConstructor
 @ToString(exclude = {"authToken", "secretId", "sinkPath", "xVaultAwsIamServerId"})
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -105,6 +108,41 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @Schema(description = SERVICE_ACCOUNT_TOKEN_PATH) private String serviceAccountTokenPath;
   @Schema(description = K8S_AUTH_ENDPOINT) private String k8sAuthEndpoint;
   @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
+  @Schema(description = ENABLE_CACHE) private boolean enableCache = true;
+
+  @Builder
+  public VaultConnectorDTO(SecretRefData authToken, String basePath, String vaultUrl, boolean isReadOnly,
+      long renewalIntervalMinutes, boolean secretEngineManuallyConfigured, String secretEngineName, String appRoleId,
+      SecretRefData secretId, boolean isDefault, int secretEngineVersion, Set<String> delegateSelectors,
+      String namespace, String sinkPath, boolean useVaultAgent, boolean useAwsIam, String awsRegion,
+      String vaultAwsIamRole, SecretRefData headerAwsIam, boolean useK8sAuth, String vaultK8sAuthRole,
+      String serviceAccountTokenPath, String k8sAuthEndpoint, boolean renewAppRoleToken, boolean enableCache) {
+    this.authToken = authToken;
+    this.basePath = basePath;
+    this.vaultUrl = vaultUrl;
+    this.isReadOnly = isReadOnly;
+    this.renewalIntervalMinutes = renewalIntervalMinutes;
+    this.secretEngineManuallyConfigured = secretEngineManuallyConfigured;
+    this.secretEngineName = secretEngineName;
+    this.appRoleId = appRoleId;
+    this.secretId = secretId;
+    this.isDefault = isDefault;
+    this.secretEngineVersion = secretEngineVersion;
+    this.delegateSelectors = delegateSelectors;
+    this.namespace = namespace;
+    this.sinkPath = sinkPath;
+    this.useVaultAgent = useVaultAgent;
+    this.useAwsIam = useAwsIam;
+    this.awsRegion = awsRegion;
+    this.vaultAwsIamRole = vaultAwsIamRole;
+    this.headerAwsIam = headerAwsIam;
+    this.useK8sAuth = useK8sAuth;
+    this.vaultK8sAuthRole = vaultK8sAuthRole;
+    this.serviceAccountTokenPath = serviceAccountTokenPath;
+    this.k8sAuthEndpoint = k8sAuthEndpoint;
+    this.renewAppRoleToken = renewAppRoleToken;
+    this.enableCache = enableCache;
+  }
 
   public AccessType getAccessType() {
     if (useVaultAgent) {
@@ -151,6 +189,7 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
         .serviceAccountTokenPath(serviceAccountTokenPath)
         .k8sAuthEndpoint(k8sAuthEndpoint)
         .renewAppRoleToken(renewAppRoleToken)
+        .enableCache(enableCache)
         .build();
   }
 

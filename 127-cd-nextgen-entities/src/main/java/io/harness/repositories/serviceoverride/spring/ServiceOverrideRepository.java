@@ -6,8 +6,10 @@
  */
 
 package io.harness.repositories.serviceoverride.spring;
-
 import io.harness.annotation.HarnessRepo;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.repositories.serviceoverride.custom.ServiceOverrideRepositoryCustom;
@@ -18,6 +20,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @HarnessRepo
 public interface ServiceOverrideRepository
     extends PagingAndSortingRepository<NGServiceOverridesEntity, String>, ServiceOverrideRepositoryCustom {

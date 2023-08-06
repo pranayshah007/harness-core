@@ -15,7 +15,6 @@ data:
   BACKGROUND_SCHEDULER_CLUSTERED: {{ .Values.config.BACKGROUND_SCHEDULER_CLUSTERED | quote }}
   CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND }}
   CAPSULE_JAR: {{ .Values.config.CAPSULE_JAR }}
-  DELEGATE_DOCKER_IMAGE: {{ include "migrator.delegate_docker_image" . }}
   IMMUTABLE_DELEGATE_ENABLED: {{ .Values.config.IMMUTABLE_DELEGATE_ENABLED | default .Values.global.useImmutableDelegate | quote }}
   IMMUTABLE_DELEGATE_DOCKER_IMAGE: {{ include "migrator.immutable_delegate_docker_image" . }}
   UPGRADER_DOCKER_IMAGE: {{ include "migrator.upgrader_docker_image" . }}
@@ -26,7 +25,6 @@ data:
   DISABLE_NEW_RELIC: {{ .Values.config.DISABLE_NEW_RELIC | quote }}
   ENABLE_G1GC: {{ .Values.config.ENABLE_G1GC | quote }}
   EXTERNAL_GRAPHQL_RATE_LIMIT: {{ .Values.config.EXTERNAL_GRAPHQL_RATE_LIMIT | quote }}
-  FEATURES: {{ include "migrator.ffString" . | quote }}
   GITOPS_SERVICE_CLIENT_BASEURL: {{ .Values.config.GITOPS_SERVICE_CLIENT_BASEURL | default "http://gitops:7908/api/v1/" }}
   HAZELCAST_NAMESPACE: {{ .Values.config.HAZELCAST_NAMESPACE | default .Release.Namespace }}
   HAZELCAST_SERVICE: {{ .Values.config.HAZELCAST_SERVICE }}
@@ -43,11 +41,11 @@ data:
   NG_MANAGER_BASE_URL: {{ .Values.config.NG_MANAGER_BASE_URL | default "http://ng-manager:7090/" }}
   ACCESS_CONTROL_ENABLED: {{ .Values.config.ACCESS_CONTROL_ENABLED | quote }}
   ACCESS_CONTROL_BASE_URL: {{ .Values.config.ACCESS_CONTROL_BASE_URL | default "http://access-control:9006/api/" }}
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ .Values.config.EVENTS_FRAMEWORK_REDIS_SENTINELS | default ("redis://redis-sentinel-harness-announce-0.NAMESPACE:26379,redis://redis-sentinel-harness-announce-1.NAMESPACE:26379,redis://redis-sentinel-harness-announce-2.NAMESPACE:26379" | replace "NAMESPACE" .Release.Namespace ) }}
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME }}
-  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.config.EVENTS_FRAMEWORK_USE_SENTINEL | quote }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: {{ .Values.config.EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM | quote }}
-  EVENTS_FRAMEWORK_REDIS_URL: {{ .Values.config.EVENTS_FRAMEWORK_REDIS_URL }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: {{ .Values.config.HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER | quote }}
   MONGO_SSL_CONFIG: {{ .Values.config.MONGO_SSL_CONFIG | quote }}
   ENABLE_ITERATORS: {{ .Values.config.ENABLE_ITERATORS | quote }}

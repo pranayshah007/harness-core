@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.terragrunt;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -29,10 +28,14 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.defaultString;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.cli.CliResponse;
 import io.harness.connector.helper.DecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
@@ -94,6 +97,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @Singleton
 @OwnedBy(CDP)
@@ -106,6 +111,7 @@ public class TerragruntTaskService {
   @Inject private EncryptDecryptHelper encryptDecryptHelper;
   @Inject TerraformBaseHelper terraformBaseHelper;
   @Inject private HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandler;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public void decryptTaskParameters(AbstractTerragruntTaskParameters taskParameters) {
     List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails =
@@ -254,6 +260,26 @@ public class TerragruntTaskService {
         .varFilesSourceReference(varFilesSourceReference)
         .client(terragruntClient)
         .build();
+  }
+
+  public void mapGitConfig(AbstractTerragruntTaskParameters taskParameters) {
+    taskParameters.setConfigFilesStore(mapGitConfigFromGitFileStore(taskParameters.getConfigFilesStore()));
+    List<StoreDelegateConfig> storeDelegateConfigs = new ArrayList<>();
+    taskParameters.getVarFiles().forEach(
+        storeDelegateConfig -> storeDelegateConfigs.add(mapGitConfigFromGitFileStore(storeDelegateConfig)));
+    taskParameters.setVarFiles(storeDelegateConfigs);
+    taskParameters.setBackendFilesStore(mapGitConfigFromGitFileStore(taskParameters.getBackendFilesStore()));
+  }
+
+  private StoreDelegateConfig mapGitConfigFromGitFileStore(StoreDelegateConfig storeDelegateConfig) {
+    if (storeDelegateConfig instanceof GitStoreDelegateConfig) {
+      GitStoreDelegateConfig gitStoreDelegateConfig = (GitStoreDelegateConfig) storeDelegateConfig;
+      return gitStoreDelegateConfig.toBuilder()
+          .gitConfigDTO(scmConnectorMapperDelegate.toGitConfigDTO(
+              gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails()))
+          .build();
+    }
+    return storeDelegateConfig;
   }
 
   private void cleanupTerragruntLocalFiles(String scriptDirectory) {

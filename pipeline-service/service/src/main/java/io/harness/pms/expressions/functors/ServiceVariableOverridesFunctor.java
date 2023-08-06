@@ -6,26 +6,33 @@
  */
 
 package io.harness.pms.expressions.functors;
-
 import static io.harness.expression.common.ExpressionConstants.EXPR_END;
 import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.expression.LateBindingMap;
-import io.harness.plan.ExpressionModeMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.ExpressionModeMapper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE})
 public class ServiceVariableOverridesFunctor extends LateBindingMap {
   private final Ambiance ambiance;
   private final PmsEngineExpressionService pmsEngineExpressionService;
+  private static final String EXECUTION = "EXECUTION";
 
   public ServiceVariableOverridesFunctor(Ambiance ambiance, PmsEngineExpressionService pmsEngineExpressionService) {
     this.ambiance = ambiance;
@@ -43,6 +50,13 @@ public class ServiceVariableOverridesFunctor extends LateBindingMap {
     List<Level> levels = ambiance.getLevelsList();
     List<Level> subLevels;
     List<String> fqnList = new ArrayList<>();
+
+    Set<String> groups = levels.stream().map(Level::getGroup).collect(Collectors.toSet());
+    // step group overrides are rendered within execution context only
+    if (!groups.contains(EXECUTION)) {
+      // functor will return null to return original expression with mode RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED
+      return null;
+    }
 
     // base fqn is serviceVariables.variable_name
     fqnList.add(

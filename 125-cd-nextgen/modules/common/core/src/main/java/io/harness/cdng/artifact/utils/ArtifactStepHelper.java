@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.artifact.utils;
-
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
@@ -112,6 +114,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
@@ -127,9 +130,7 @@ public class ArtifactStepHelper {
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   public void saveArtifactExecutionDataToStageInfo(Ambiance ambiance, ArtifactsOutcome artifactsOutcome) {
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)
-        && artifactsOutcome != null) {
+    if (artifactsOutcome != null) {
       stageExecutionInfoService.updateStageExecutionInfo(ambiance,
           StageExecutionInfoUpdateDTO.builder()
               .artifactsSummary(mapArtifactsOutcomeToSummary(artifactsOutcome))

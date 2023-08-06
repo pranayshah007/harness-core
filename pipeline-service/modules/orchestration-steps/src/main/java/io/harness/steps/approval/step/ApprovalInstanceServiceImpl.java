@@ -6,7 +6,6 @@
  */
 
 package io.harness.steps.approval.step;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
@@ -14,7 +13,10 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
@@ -76,6 +78,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Slf4j
 public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
@@ -152,8 +155,12 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   @Override
   public HarnessApprovalInstance getHarnessApprovalInstance(@NotNull String approvalInstanceId) {
     ApprovalInstance instance = get(approvalInstanceId);
-    if (instance == null || instance.getType() != ApprovalType.HARNESS_APPROVAL) {
+    if (instance == null) {
       throw new InvalidRequestException(String.format("Invalid harness approval instance id: %s", approvalInstanceId));
+    } else if (instance.getType() != ApprovalType.HARNESS_APPROVAL) {
+      throw new InvalidRequestException(String.format(
+          "operation not permitted for %s type of approval step, it is supported only for Harness Approval Step",
+          instance.getType()));
     }
     return (HarnessApprovalInstance) instance;
   }
@@ -468,33 +475,38 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   @VisibleForTesting
   HarnessApprovalInstance addHarnessApprovalActivityInTransaction(@NotNull String approvalInstanceId,
       @NotNull EmbeddedUser user, @NotNull @Valid HarnessApprovalActivityRequestDTO request) {
-    HarnessApprovalInstance instance = fetchWaitingHarnessApproval(approvalInstanceId);
-    Ambiance ambiance = instance.getAmbiance();
-    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
-    if (instance.hasExpired()) {
-      throw new InvalidRequestException("Harness approval instance has already expired");
-    }
+    try {
+      HarnessApprovalInstance instance = fetchWaitingHarnessApproval(approvalInstanceId);
+      Ambiance ambiance = instance.getAmbiance();
+      NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
+      if (instance.hasExpired()) {
+        throw new InvalidRequestException("Harness approval instance has already expired");
+      }
 
-    if (request.isAutoApprove()) {
-      instance.setStatus(ApprovalStatus.APPROVED);
-    } else if (request.getAction() == HarnessApprovalAction.REJECT) {
-      instance.setStatus(ApprovalStatus.REJECTED);
-    } else {
-      int newCount = (instance.getApprovalActivities() == null ? 0 : instance.getApprovalActivities().size()) + 1;
-      instance.setStatus(
-          (newCount >= instance.getApprovers().getMinimumCount()) ? ApprovalStatus.APPROVED : ApprovalStatus.WAITING);
+      if (request.isAutoApprove()) {
+        instance.setStatus(ApprovalStatus.APPROVED);
+      } else if (request.getAction() == HarnessApprovalAction.REJECT) {
+        instance.setStatus(ApprovalStatus.REJECTED);
+      } else {
+        int newCount = (instance.getApprovalActivities() == null ? 0 : instance.getApprovalActivities().size()) + 1;
+        instance.setStatus(
+            (newCount >= instance.getApprovers().getMinimumCount()) ? ApprovalStatus.APPROVED : ApprovalStatus.WAITING);
+      }
+      instance.addApprovalActivity(user, request);
+      logCallback.saveExecutionLog(String.format(
+          "Request to %s this approval received by %s with comments:{%s} and inputs:%s", request.getAction(),
+          StringUtils.isBlank(user.getName()) ? user.getName() : user.getEmail(), request.getComments(),
+          isEmpty(request.getApproverInputs())
+              ? "[]"
+              : request.getApproverInputs()
+                    .stream()
+                    .map(input -> String.format("( %s : %s)", input.getName(), input.getValue()))
+                    .collect(Collectors.toList())));
+      return approvalInstanceRepository.save(instance);
+    } catch (Exception e) {
+      log.error("failed to add approval activity", e);
+      throw new InvalidRequestException(String.format("Unable to add Harness Approval Activity : %s", e.getMessage()));
     }
-    instance.addApprovalActivity(user, request);
-    logCallback.saveExecutionLog(String.format(
-        "Request to %s this approval received by %s with comments:{%s} and inputs:%s", request.getAction(),
-        StringUtils.isBlank(user.getName()) ? user.getName() : user.getEmail(), request.getComments(),
-        isEmpty(request.getApproverInputs())
-            ? "[]"
-            : request.getApproverInputs()
-                  .stream()
-                  .map(input -> String.format("( %s : %s)", input.getName(), input.getValue()))
-                  .collect(Collectors.toList())));
-    return approvalInstanceRepository.save(instance);
   }
 
   private HarnessApprovalInstance fetchWaitingHarnessApproval(String approvalInstanceId) {

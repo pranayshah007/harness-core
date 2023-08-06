@@ -8,6 +8,7 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.ENCRYPT_DECRYPT_ERROR;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -87,19 +88,21 @@ public class SettingResourceNg {
     }
     SmtpConfig smtpConfig = (SmtpConfig) variable.getValue();
     SecretManagerConfig secretManagerConfig = secretManagerConfigService.getDefaultSecretManager(accountId);
-    SecretText secretText = new SecretText();
-    String password = (smtpConfig.getPassword() == null) ? "" : new String(smtpConfig.getPassword());
-    secretText.setValue(password);
-    String secretName = variable.getName() + "-" + accountId + "-SmtpSecret";
-    secretName = secretName.replaceAll("[^a-zA-Z0-9_-]", "-");
-    secretText.setName(secretName);
-    secretText.setScopedToAccount(true);
-    secretText.setKmsId(secretManagerConfig.getUuid());
-    try {
-      smtpConfig.setPassword(secretManager.saveSecretText(accountId, secretText, true).toCharArray());
-    } catch (SecretManagementException ex) {
-      log.error(" Exception received while setting SMTP password {}", ex);
-      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, ex.getMessage(), USER);
+    if (isNotEmpty(smtpConfig.getPassword())) {
+      SecretText secretText = new SecretText();
+      String password = new String(smtpConfig.getPassword());
+      secretText.setValue(password);
+      String secretName = variable.getName() + "-" + accountId + "-SmtpSecret";
+      secretName = secretName.replaceAll("[^a-zA-Z0-9_-]", "-");
+      secretText.setName(secretName);
+      secretText.setScopedToAccount(true);
+      secretText.setKmsId(secretManagerConfig.getUuid());
+      try {
+        smtpConfig.setPassword(secretManager.saveSecretText(accountId, secretText, true).toCharArray());
+      } catch (SecretManagementException ex) {
+        log.error(" Exception received while setting SMTP password {}", ex);
+        throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, ex.getMessage(), USER);
+      }
     }
     variable.setValue(smtpConfig);
     settingAuthHandler.authorize(variable, appId);
@@ -176,16 +179,18 @@ public class SettingResourceNg {
     SmtpConfig smtpConfig = (SmtpConfig) variable.getValue();
     SecretManagerConfig secretManagerConfig =
         secretManagerConfigService.getDefaultSecretManager(variable.getAccountId());
-    SecretText secretText = new SecretText();
-    String password = (smtpConfig.getPassword() == null) ? "" : new String(smtpConfig.getPassword());
-    secretText.setValue(password);
-    String secretName = variable.getName() + "-" + variable.getAccountId() + "-SmtpSecret";
-    secretText.setName(secretName);
-    secretText.setScopedToAccount(true);
-    secretText.setKmsId(secretManagerConfig.getUuid());
-    String secretId = existingSmtpConfig.getEncryptedPassword();
-    Boolean isSuccessful = secretManager.updateSecretText(variable.getAccountId(), secretId, secretText, true);
-    smtpConfig.setPassword(secretId.toCharArray());
+    if (isNotEmpty(smtpConfig.getPassword())) {
+      SecretText secretText = new SecretText();
+      String password = (smtpConfig.getPassword() == null) ? "" : new String(smtpConfig.getPassword());
+      secretText.setValue(password);
+      String secretName = variable.getName() + "-" + variable.getAccountId() + "-SmtpSecret";
+      secretText.setName(secretName);
+      secretText.setScopedToAccount(true);
+      secretText.setKmsId(secretManagerConfig.getUuid());
+      String secretId = existingSmtpConfig.getEncryptedPassword();
+      Boolean isSuccessful = secretManager.updateSecretText(variable.getAccountId(), secretId, secretText, true);
+      smtpConfig.setPassword(secretId.toCharArray());
+    }
     variable.setValue(smtpConfig);
     settingAuthHandler.authorize(variable, appId);
     SettingAttribute updatedSettingAttribute = settingsService.updateWithSettingFields(variable, attrId, appId);
@@ -210,7 +215,9 @@ public class SettingResourceNg {
     String storedSecretId = existingSmtpConfig.getEncryptedPassword();
     settingAuthHandler.authorize(appId, attrId);
     settingsService.delete(appId, attrId);
-    secretManager.deleteSecret(existingAttribute.getAccountId(), storedSecretId, null, true);
+    if (isNotEmpty(storedSecretId)) {
+      secretManager.deleteSecret(existingAttribute.getAccountId(), storedSecretId, null, true);
+    }
     return new RestResponse<>(true);
   }
 

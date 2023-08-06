@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETTINGS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Consumer;
@@ -44,11 +45,12 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
   @Inject
   public EntityCRUDStreamConsumer(@Named(ENTITY_CRUD) Consumer redisConsumer,
       @Named(CONNECTOR_ENTITY + ENTITY_CRUD) MessageListener connectorEntityCRUDStreamListener,
-      QueueController queueController) {
+      @Named(SETTINGS + ENTITY_CRUD) MessageListener ccmSettingsCRUDStreamListener, QueueController queueController) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
     messageListenersList = new ArrayList<>();
     messageListenersList.add(connectorEntityCRUDStreamListener);
+    messageListenersList.add(ccmSettingsCRUDStreamListener);
   }
 
   @Override

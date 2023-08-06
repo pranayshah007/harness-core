@@ -118,6 +118,7 @@ public class ECSRecommendationService {
                           .totalWeight(cpuHistogramCp.getTotalWeight())
                           .build())
         .jiraDetails(recommendation.getJiraDetails())
+        .serviceNowDetails(recommendation.getServiceNowDetails())
         .build();
   }
 

@@ -6,11 +6,13 @@
  */
 
 package io.harness.delegate.task.servicenow;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowCapabilityHelper;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -21,15 +23,14 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.servicenow.ServiceNowActionNG;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Value
 @Builder
@@ -61,17 +62,6 @@ public class ServiceNowTaskNGParameters implements TaskParameters, ExecutionCapa
   @Expression(ALLOW_SECRETS) String importData;
 
   List<String> delegateSelectors;
-
-  public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-    if (serviceNowConnectorDTO != null && serviceNowConnectorDTO.getDelegateSelectors() != null) {
-      combinedDelegateSelectors.addAll(serviceNowConnectorDTO.getDelegateSelectors());
-    }
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-    return combinedDelegateSelectors;
-  }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

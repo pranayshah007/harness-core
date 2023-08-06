@@ -105,11 +105,11 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
 
   public static final Long DELEGATE_QUEUE_TIMEOUT = Duration.ofSeconds(6).toMillis();
 
-  private String runnerType;
   private byte[] taskData;
   private byte[] runnerData;
-  private String requestUri;
-  private String requestMethod;
+  // SETUP, EXECUTE or CLEANUP
+  private String eventType;
+  private String runnerType;
   private String infraId;
   // moved from TaskData to here
   private long executionTimeout;
@@ -257,7 +257,7 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
     if (Objects.nonNull(data)) {
       return String.format("task type: %s", data.getTaskType());
     }
-    return String.format("Delegate Task: %s %s", requestMethod, requestUri);
+    return String.format("Delegate Task: %s", eventType);
   }
 
   public enum Status {

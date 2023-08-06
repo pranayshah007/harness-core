@@ -6,14 +6,16 @@
  */
 
 package io.harness.repositories.executions;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static org.springframework.data.domain.Sort.by;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -35,13 +37,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -73,7 +75,6 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   public Page<PipelineExecutionSummaryEntity> findAll(Criteria criteria, Pageable pageable) {
     try {
       Query query = new Query(criteria).with(pageable);
-      query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
       // Do not add directly the read helper inside the lambda, as secondary mongo reads were not going through if used
       // inside lambda in PageableExecutionUtils
       long count = pmsExecutionSummaryReadHelper.findCount(query);

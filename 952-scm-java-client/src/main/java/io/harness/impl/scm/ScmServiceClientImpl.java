@@ -6,7 +6,6 @@
  */
 
 package io.harness.impl.scm;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -16,12 +15,17 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.ContentType;
 import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.FileGitDetails;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
@@ -49,6 +53,7 @@ import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logger.RepoBranchLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.ResponseTimeRecorder;
+import io.harness.product.ci.scm.proto.BranchFilterParams;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CompareCommitsRequest;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
@@ -110,6 +115,7 @@ import io.harness.product.ci.scm.proto.PageRequest;
 import io.harness.product.ci.scm.proto.Provider;
 import io.harness.product.ci.scm.proto.RefreshTokenRequest;
 import io.harness.product.ci.scm.proto.RefreshTokenResponse;
+import io.harness.product.ci.scm.proto.RepoFilterParams;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.product.ci.scm.proto.Signature;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
@@ -133,6 +139,7 @@ import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @Singleton
@@ -141,6 +148,8 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   ScmGitProviderMapper scmGitProviderMapper;
   ScmGitProviderHelper scmGitProviderHelper;
   SCMGitAccessToProviderMapper scmGitAccessToProviderMapper;
+  public static final int LIST_REPO_API_VERSION_TWO = 2;
+  public static final int LIST_REPO_DEFAULT_API_VERSION = 1;
 
   @Override
   public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
@@ -407,21 +416,24 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public ListBranchesWithDefaultResponse listBranchesWithDefault(
       ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    final String slug = scmGitProviderHelper.getSlug(scmConnector);
-    final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    int pageNumber = 1;
     ListBranchesWithDefaultRequest listBranchesWithDefaultRequest =
-        ListBranchesWithDefaultRequest.newBuilder()
-            .setSlug(slug)
-            .setProvider(provider)
-            .setPagination(PageRequest.newBuilder().setPage(pageNumber).build())
-            .build();
+        buildListBranchesWithDefaultRequest(scmConnector, PageRequest.newBuilder().setPage(1).build(), null);
     ListBranchesWithDefaultResponse listBranchesWithDefaultResponse = ScmGrpcClientUtils.retryAndProcessException(
         scmBlockingStub::listBranchesWithDefault, listBranchesWithDefaultRequest);
     if (isNotEmpty(listBranchesWithDefaultResponse.getError())) {
       return listBranchesWithDefaultResponse;
     }
     return listMoreBranches(scmConnector, listBranchesWithDefaultResponse, pageRequest.getPageSize(), scmBlockingStub);
+  }
+
+  @Override
+  public ListBranchesWithDefaultResponse listBranchesWithDefault(ScmConnector scmConnector, PageRequestDTO pageRequest,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, BranchFilterParamsDTO branchFilterParamsDTO) {
+    ListBranchesWithDefaultRequest listBranchesWithDefaultRequest = buildListBranchesWithDefaultRequest(scmConnector,
+        PageRequest.newBuilder().setPage(pageRequest.getPageIndex()).setSize(pageRequest.getPageSize()).build(),
+        branchFilterParamsDTO);
+    return ScmGrpcClientUtils.retryAndProcessException(
+        scmBlockingStub::listBranchesWithDefault, listBranchesWithDefaultRequest);
   }
 
   @VisibleForTesting
@@ -947,14 +959,17 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
   @Override
   public GetUserReposResponse getUserRepos(
-      ScmConnector scmConnector, io.harness.beans.PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
-    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos,
-        GetUserReposRequest.newBuilder()
-            .setPagination(PageRequest.newBuilder().setPage(pageRequest.getPageIndex() + 1).build())
-            .setProvider(gitProvider)
-            .setFetchAllRepos(pageRequest.isFetchAll())
-            .build());
+      ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
+    GetUserReposRequest getUserReposRequest =
+        buildGetUserReposRequest(scmConnector, pageRequest, null, LIST_REPO_DEFAULT_API_VERSION);
+    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos, getUserReposRequest);
+  }
+  @Override
+  public GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, RepoFilterParamsDTO repoFilterParamsDTO) {
+    GetUserReposRequest getUserReposRequest =
+        buildGetUserReposRequest(scmConnector, pageRequest, repoFilterParamsDTO, LIST_REPO_API_VERSION_TWO);
+    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos, getUserReposRequest);
   }
 
   @Override
@@ -1273,5 +1288,53 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     if (exception instanceof ConnectException || exception instanceof GeneralException) {
       throw exception;
     }
+  }
+
+  @VisibleForTesting
+  GetUserReposRequest buildGetUserReposRequest(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO, int version) {
+    Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    GetUserReposRequest getUserReposRequest = GetUserReposRequest.newBuilder()
+                                                  .setPagination(PageRequest.newBuilder()
+                                                                     .setPage(pageRequest.getPageIndex() + 1)
+                                                                     .setSize(pageRequest.getPageSize())
+                                                                     .build())
+                                                  .setProvider(gitProvider)
+                                                  .setFetchAllRepos(pageRequest.isFetchAll())
+                                                  .build();
+    if (repoFilterParamsDTO != null) {
+      getUserReposRequest =
+          GetUserReposRequest.newBuilder(getUserReposRequest)
+              .setRepoFilterParams(
+                  RepoFilterParams.newBuilder()
+                      .setRepoName(isEmpty(repoFilterParamsDTO.getRepoName()) ? "" : repoFilterParamsDTO.getRepoName())
+                      .setUserName(scmGitProviderHelper.getRepoOwner(scmConnector))
+                      .build())
+              .setVersion(version)
+              .build();
+    }
+    return getUserReposRequest;
+  }
+
+  private ListBranchesWithDefaultRequest buildListBranchesWithDefaultRequest(
+      ScmConnector scmConnector, PageRequest pageRequest, BranchFilterParamsDTO branchFilterParamsDTO) {
+    final String slug = scmGitProviderHelper.getSlug(scmConnector);
+    final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    ListBranchesWithDefaultRequest listBranchesWithDefaultRequest = ListBranchesWithDefaultRequest.newBuilder()
+                                                                        .setSlug(slug)
+                                                                        .setProvider(provider)
+                                                                        .setPagination(pageRequest)
+                                                                        .build();
+    if (branchFilterParamsDTO != null) {
+      listBranchesWithDefaultRequest =
+          ListBranchesWithDefaultRequest.newBuilder(listBranchesWithDefaultRequest)
+              .setBranchFilterParams(
+                  BranchFilterParams.newBuilder()
+                      .setBranchName(
+                          isEmpty(branchFilterParamsDTO.getBranchName()) ? "" : branchFilterParamsDTO.getBranchName())
+                      .build())
+              .build();
+    }
+    return listBranchesWithDefaultRequest;
   }
 }

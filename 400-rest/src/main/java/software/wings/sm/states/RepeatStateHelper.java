@@ -6,16 +6,19 @@
  */
 
 package software.wings.sm.states;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.context.ContextElementType;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.WorkflowExecutionService;
@@ -28,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Slf4j
 @Singleton
@@ -38,8 +42,8 @@ public class RepeatStateHelper {
 
   public List<ContextElement> filterElementsWithArtifactFromLastDeployment(
       ExecutionContextImpl context, List<ContextElement> repeatElements) {
-    WorkflowExecution workflowExecution =
-        workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
+    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
+        context.getAppId(), context.getWorkflowExecutionId(), WorkflowExecutionKeys.artifacts);
     if (workflowExecution == null) {
       throw new InvalidRequestException("Execution No longer Exists : " + context.getWorkflowExecutionId());
     }

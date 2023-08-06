@@ -64,7 +64,7 @@ public class SscaOrchestrationStepInfo implements PluginCompatibleStep, WithConn
 
   @NotNull SbomSource source;
 
-  @NotNull Attestation attestation;
+  Attestation attestation;
   ContainerResource resources;
 
   @Override

@@ -6,11 +6,15 @@
  */
 
 package io.harness.git.model;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
@@ -30,6 +34,7 @@ public class PushRequest extends GitBaseRequest {
         .repoType(parent.getRepoType())
         .pushOnlyIfHeadSeen(parent.isPushOnlyIfHeadSeen())
         .forcePush(parent.isForcePush())
+        .repoUrl(parent.getRepoUrl())
         .build();
   }
 }

@@ -6,9 +6,11 @@
  */
 
 package io.harness.steps.matrix.v1;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 @NoArgsConstructor

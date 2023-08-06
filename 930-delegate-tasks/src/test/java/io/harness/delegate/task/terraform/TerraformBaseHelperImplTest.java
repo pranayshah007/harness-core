@@ -50,6 +50,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.service.git.NGGitService;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateFileManagerBase;
@@ -75,6 +76,7 @@ import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientHelper;
 import io.harness.git.GitClientV2;
 import io.harness.git.model.GitBaseRequest;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanJsonLogOutputStream;
 import io.harness.logging.PlanLogOutputStream;
@@ -87,6 +89,7 @@ import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 import io.harness.terraform.TerraformClientImpl;
+import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformApplyCommandRequest;
 import io.harness.terraform.request.TerraformDestroyCommandRequest;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
@@ -154,6 +157,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Mock ObjectMetadata objectMetadata;
   @Mock HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
   @Mock HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNG;
+  @Mock ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private File tfBackendConfig;
   private final EncryptedRecordData encryptedPlanContent =
@@ -164,6 +168,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     spyTerraformBaseHelper = spy(terraformBaseHelper);
     tfBackendConfig = createBackendConfigFile("a1 = b1\na2 = b2\na3 = b3", "backendConfigFile.txt");
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
   }
 
   @After
@@ -421,6 +426,27 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .destroy(TerraformDestroyCommandRequest.builder().targets(terraformExecuteStepRequest.getTargets()).build(),
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testexecuteTerraformPlanAndWeGetExitCodeFromPlanCommand()
+      throws IOException, InterruptedException, TimeoutException {
+    TerraformExecuteStepRequest terraformExecuteStepRequest =
+        getTerraformExecuteStepRequest().isSaveTerraformJson(true).build();
+
+    doReturn(CliResponse.builder().exitCode(2).commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+        .when(terraformClient)
+        .plan(any(), anyLong(), any(), anyString(), any());
+    doReturn(CliResponse.builder().exitCode(0).commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+        .when(terraformClient)
+        .show(any(), anyLong(), any(), anyString(), any(), (PlanJsonLogOutputStream) any());
+
+    TerraformStepResponse stepResponse = terraformBaseHelper.executeTerraformPlanCommand(terraformExecuteStepRequest);
+    Mockito.verify(terraformClient, times(1))
+        .show(anyString(), anyLong(), anyMap(), anyString(), any(), (PlanJsonLogOutputStream) any());
+    assertThat(stepResponse.getCliResponse().getExitCode()).isEqualTo(2);
   }
 
   @Test

@@ -10,6 +10,7 @@ package io.harness.pms.plan.execution;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
@@ -34,6 +35,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
@@ -43,6 +46,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.rule.Owner;
@@ -90,6 +94,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   PipelineExecutionSummaryEntity executionSummaryEntity;
   OrchestrationGraphDTO orchestrationGraph;
   EntityGitDetails entityGitDetails;
+  PipelineExecutionIdentifierSummaryDTO pipelineExecutionIdentifierSummaryDTO;
 
   @Before
   public void setUp() throws IOException {
@@ -139,6 +144,15 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
                                                 .adjacencyMap(Collections.emptyMap())
                                                 .build())
                              .build();
+
+    pipelineExecutionIdentifierSummaryDTO = PipelineExecutionIdentifierSummaryDTO.builder()
+                                                .orgIdentifier(ORG_IDENTIFIER)
+                                                .pipelineIdentifier(PIPELINE_IDENTIFIER)
+                                                .projectIdentifier(PROJ_IDENTIFIER)
+                                                .runSequence(2)
+                                                .planExecutionId(PLAN_EXECUTION_ID)
+                                                .status(ExecutionStatus.ABORTED)
+                                                .build();
   }
 
   @Test
@@ -169,6 +183,36 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
     assertThat(responseDTO.getPipelineIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
     assertThat(responseDTO.getPlanExecutionId()).isEqualTo(PLAN_EXECUTION_ID);
     assertThat(responseDTO.getRunSequence()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testExecutionIdAndStatus() {
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
+    Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
+        new PageImpl<>(Collections.singletonList(executionSummaryEntity), pageable, 1);
+
+    Criteria criteria = Criteria.where("a").is("b");
+    doReturn(criteria)
+        .when(pmsExecutionService)
+        .formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null,
+            ExecutionStatus.getListExecutionStatus(StatusUtils.finalStatuses()), false, false, true);
+
+    List<String> projections =
+        Arrays.asList(PlanExecutionSummaryKeys.planExecutionId, PlanExecutionSummaryKeys.runSequence,
+            PlanExecutionSummaryKeys.orgIdentifier, PlanExecutionSummaryKeys.pipelineIdentifier,
+            PlanExecutionSummaryKeys.projectIdentifier, PlanExecutionSummaryKeys.status);
+
+    doReturn(pipelineExecutionSummaryEntities)
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntityWithProjection(criteria, pageable, projections);
+
+    Page<PipelineExecutionIdentifierSummaryDTO> content =
+        executionDetailsResource
+            .getListOfExecutionIdentifier(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, 0, 10, null)
+            .getData();
+    assertThat(content).isNotEmpty();
   }
 
   @Test

@@ -6,10 +6,12 @@
  */
 
 package io.harness.delegate.task.http;
-
 import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HttpCertificateNG;
 import io.harness.beans.KeyValuePair;
 import io.harness.data.structure.EmptyPredicate;
@@ -28,6 +30,8 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Value
 @Builder
 public class HttpTaskParametersNg implements TaskParameters, ExecutionCapabilityDemander {
@@ -38,8 +42,9 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
   int socketTimeoutMillis;
   boolean useProxy;
   boolean isCertValidationRequired;
-  boolean shouldAvoidHeadersInCapability;
+  @Deprecated boolean shouldAvoidHeadersInCapability;
   boolean isIgnoreResponseCode;
+  boolean supportNonTextResponse;
 
   // New type for supporting NG secret resolution
   @Expression(ALLOW_SECRETS) HttpCertificateNG certificateNG;
@@ -47,32 +52,20 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    if (shouldAvoidHeadersInCapability) {
-      if (isIgnoreResponseCode) {
-        return Collections.singletonList(
-            HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
-                url, maskingEvaluator, true, QUERY));
-      } else {
-        return Collections.singletonList(
-            HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-                url, QUERY, maskingEvaluator));
+    List<KeyValuePair> headers = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(requestHeader)) {
+      for (HttpHeaderConfig headerConfig : requestHeader) {
+        headers.add(KeyValuePair.builder().key(headerConfig.getKey()).value(headerConfig.getValue()).build());
       }
+    }
+    if (isIgnoreResponseCode) {
+      return Collections.singletonList(
+          HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
+              url, maskingEvaluator, true, headers, QUERY));
     } else {
-      List<KeyValuePair> headers = new ArrayList<>();
-      if (EmptyPredicate.isNotEmpty(requestHeader)) {
-        for (HttpHeaderConfig headerConfig : requestHeader) {
-          headers.add(KeyValuePair.builder().key(headerConfig.getKey()).value(headerConfig.getValue()).build());
-        }
-      }
-      if (isIgnoreResponseCode) {
-        return Collections.singletonList(
-            HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
-                url, maskingEvaluator, true, headers, QUERY));
-      } else {
-        return Collections.singletonList(
-            HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-                url, headers, QUERY, maskingEvaluator));
-      }
+      return Collections.singletonList(
+          HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+              url, headers, QUERY, maskingEvaluator));
     }
   }
 }

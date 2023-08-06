@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.K8sServiceProvider;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId.NodePoolIdKeys;
@@ -78,6 +79,7 @@ public final class K8sNodeRecommendation
   TotalResourceUsage totalResourceUsage;
 
   CCMJiraDetails jiraDetails;
+  CCMServiceNowDetails serviceNowDetails;
 
   long createdAt;
   long lastUpdatedAt;

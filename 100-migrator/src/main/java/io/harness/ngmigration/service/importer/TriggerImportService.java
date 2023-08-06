@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service.importer;
-
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.WorkflowType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -73,6 +75,7 @@ import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class TriggerImportService implements ImportService {
@@ -130,7 +133,7 @@ public class TriggerImportService implements ImportService {
                                                              .id(yamlFile.getCgBasicInfo().getId())
                                                              .type(yamlFile.getCgBasicInfo().getType())
                                                              .build(),
-                                                      yamlFile -> yamlFile));
+                                                      yamlFile -> yamlFile, (yamlFile1, yamlFile2) -> yamlFile1));
 
     MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(authToken, importDTO);
     PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);

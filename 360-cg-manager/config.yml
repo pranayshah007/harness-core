@@ -367,7 +367,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 0c5acd02
+scmVersion: 77a09eac
 
 ngAuthUIEnabled: false
 
@@ -707,7 +707,7 @@ delegateQueueServiceConfig:
     enableQueueAndDequeue: false
     queueServiceClientConfig:
       httpClientConfig:
-        baseUrl: http://localhost:9091/
+        baseUrl: http://localhost:9544/
         connectTimeOutSeconds: 15
         readTimeOutSeconds: 15
       queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret

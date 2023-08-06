@@ -12,6 +12,7 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
@@ -35,6 +36,7 @@ public class VmIACMStepSerializer {
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmPluginStep serialize(Ambiance ambiance, IACMTerraformPluginInfo stepInfo,
       StageInfraDetails stageInfraDetails, ParameterField<Timeout> parameterFieldTimeout) {
@@ -56,6 +58,8 @@ public class VmIACMStepSerializer {
       image = ciExecutionConfigService.getPluginVersionForVM(
           stepInfo.getNonYamlInfo().getStepInfoType(), ngAccess.getAccountIdentifier());
     }
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
 
     ConnectorDetails harnessInternalImageConnector =
         harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);

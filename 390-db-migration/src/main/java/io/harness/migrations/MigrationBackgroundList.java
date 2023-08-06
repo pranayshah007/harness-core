@@ -6,9 +6,11 @@
  */
 
 package io.harness.migrations;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.migrations.all.AccountNextGenEnabledMigration;
 import io.harness.migrations.all.AddAccountIdToActivityCollection;
 import io.harness.migrations.all.AddAccountIdToBarrierInstanceCollection;
@@ -100,6 +102,7 @@ import io.harness.migrations.all.DeleteStaleThirdPartyApiCallLogsMigration;
 import io.harness.migrations.all.DeletedAccountStatusMigration;
 import io.harness.migrations.all.DisableArtifactCollectionForInactiveAccount;
 import io.harness.migrations.all.DisableServiceGuardsWithDeletedConnectorsMigration;
+import io.harness.migrations.all.EncryptDelegateTokenAndStoreAsNewFieldAndDeleteExistingRecordsMigration;
 import io.harness.migrations.all.EncryptDelegateTokenMigration;
 import io.harness.migrations.all.ExecuteWorkflowAbortActionMigration;
 import io.harness.migrations.all.ExecuteWorkflowRollbackActionMigration;
@@ -152,6 +155,7 @@ import io.harness.migrations.all.TimeSeriesThresholdsMigration;
 import io.harness.migrations.all.UpdateAccountEncryptionClassNames;
 import io.harness.migrations.all.UpdateCorruptedEmptyClusterNameInstanceStatsMigration;
 import io.harness.migrations.all.UpdateCorruptedInstanceStatsMigration;
+import io.harness.migrations.all.UpdateEncryptedTokenToDelegateToken;
 import io.harness.migrations.all.UpdateInstanceInfoWithLastArtifactIdMigration;
 import io.harness.migrations.all.UpdateIsCrossGenerationAccessEnabledForAllAccountsMigration;
 import io.harness.migrations.all.UpdateNameInAwsInfrastructureMappingMigration;
@@ -168,6 +172,8 @@ import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_SERVERLESS})
 @UtilityClass
 @OwnedBy(HarnessTeam.PL)
 public class MigrationBackgroundList {
@@ -431,6 +437,8 @@ public class MigrationBackgroundList {
         .add(Pair.of(251, EncryptDelegateTokenMigration.class))
         .add(Pair.of(252, AddAccountIdToLearningEngineExperimentalAnalysisTask.class))
         .add(Pair.of(253, SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration.class))
+        .add(Pair.of(254, UpdateEncryptedTokenToDelegateToken.class))
+        .add(Pair.of(255, EncryptDelegateTokenAndStoreAsNewFieldAndDeleteExistingRecordsMigration.class))
         .build();
   }
 }

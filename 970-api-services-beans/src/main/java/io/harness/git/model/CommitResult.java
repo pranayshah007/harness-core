@@ -7,12 +7,15 @@
 
 package io.harness.git.model;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@RecasterAlias("io.harness.git.model.CommitResult")
 public class CommitResult extends GitBaseResult {
   private String commitId;
   private int commitTime;

@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.serverless;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -15,12 +14,15 @@ import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
@@ -35,8 +37,8 @@ import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData
 import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
+import io.harness.cdng.serverless.beans.ServerlessV2ValuesYamlDataOutcome;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters;
-import io.harness.cdng.serverless.container.steps.ServerlessValuesYamlDataOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
@@ -72,7 +74,6 @@ import io.harness.delegate.task.serverless.response.ServerlessS3FetchResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.NGAccess;
@@ -87,7 +88,6 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -126,10 +126,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class ServerlessStepCommonHelper extends ServerlessStepUtils {
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
@@ -145,8 +147,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    ExpressionEvaluatorUtils.updateExpressions(
-        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
     validateManifestsOutcome(ambiance, manifestsOutcome);
     ManifestOutcome serverlessManifestOutcome =
         getServerlessManifestOutcome(manifestsOutcome.values(), serverlessStepHelper);
@@ -186,10 +187,16 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
 
   @NotNull
   public String convertByte64ToString(String input) {
+    if (EmptyPredicate.isEmpty(input)) {
+      return input;
+    }
     return new String(Base64.getDecoder().decode(input));
   }
 
   public StackDetails getStackDetails(String stackDetailsString) throws JsonProcessingException {
+    if (EmptyPredicate.isEmpty(stackDetailsString)) {
+      return null;
+    }
     ObjectMapper objectMapper = new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     return objectMapper.readValue(stackDetailsString, StackDetails.class);
   }
@@ -675,7 +682,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         }
       }
     }
-    return engineExpressionService.renderExpression(ambiance, manifestFileContent);
+    return cdExpressionResolver.renderExpression(ambiance, manifestFileContent);
   }
 
   public ServerlessInfraConfig getServerlessInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
@@ -724,11 +731,11 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
                 + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
 
     if (serverlessValuesYamlDataOptionalOutput.isFound()) {
-      ServerlessValuesYamlDataOutcome awsSamValuesYamlDataOutcome =
-          (ServerlessValuesYamlDataOutcome) serverlessValuesYamlDataOptionalOutput.getOutput();
+      ServerlessV2ValuesYamlDataOutcome serverlessV2ValuesYamlDataOutcome =
+          (ServerlessV2ValuesYamlDataOutcome) serverlessValuesYamlDataOptionalOutput.getOutput();
 
-      String valuesYamlContent = awsSamValuesYamlDataOutcome.getValuesYamlContent();
-      String valuesYamlPath = awsSamValuesYamlDataOutcome.getValuesYamlPath();
+      String valuesYamlContent = serverlessV2ValuesYamlDataOutcome.getValuesYamlContent();
+      String valuesYamlPath = serverlessV2ValuesYamlDataOutcome.getValuesYamlPath();
 
       if (StringUtils.isNotBlank(valuesYamlContent) && StringUtils.isNotBlank(valuesYamlPath)) {
         envVarMap.put("PLUGIN_VALUES_YAML_CONTENT", valuesYamlContent);

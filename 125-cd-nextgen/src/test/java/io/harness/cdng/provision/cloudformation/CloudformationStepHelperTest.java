@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.cloudformation;
 
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,10 +21,11 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.S3UrlStoreConfig;
@@ -42,8 +44,14 @@ import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConne
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
@@ -51,6 +59,7 @@ import io.harness.delegate.task.cloudformation.CloudformationTaskNGParameters;
 import io.harness.delegate.task.cloudformation.CloudformationTaskType;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.FetchFilesResult;
@@ -76,17 +85,21 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.TaskType;
 import software.wings.sm.states.provision.S3UriParser;
 
 import com.amazonaws.services.s3.AmazonS3URI;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.joor.Reflect;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -96,6 +109,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
@@ -104,7 +118,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @PrepareForTest({StepUtils.class})
 @RunWith(MockitoJUnitRunner.class)
-public class CloudformationStepHelperTest extends CategoryTest {
+public class CloudformationStepHelperTest extends CDNGTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private EngineExpressionService engineExpressionService;
   @Mock private SecretManagerClientService secretManagerClientService;
@@ -114,6 +128,8 @@ public class CloudformationStepHelperTest extends CategoryTest {
   @Mock private StepHelper stepHelper;
   @Mock private CloudformationStepExecutor cloudformationStepExecutor;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @InjectMocks private final CloudformationStepHelper cloudformationStepHelper = new CloudformationStepHelper();
   private static final String TAGS = "[\n"
       + "  {\n"
@@ -128,6 +144,16 @@ public class CloudformationStepHelperTest extends CategoryTest {
       + "    \"ParameterValue\": \"nasser.gonzalez@harness.io\"\n"
       + "  }\n"
       + "]";
+
+  @Before
+  public void setUp() throws Exception {
+    MockitoAnnotations.initMocks(this);
+    Reflect.on(cdExpressionResolver).set("engineExpressionService", engineExpressionService);
+    Reflect.on(cloudformationStepHelper).set("cdExpressionResolver", cdExpressionResolver);
+    Reflect.on(cdExpressionResolver).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
+    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
+  }
 
   @Test
   @Owner(developers = TMACARI)
@@ -1123,5 +1149,65 @@ public class CloudformationStepHelperTest extends CategoryTest {
         .putAllSetupAbstractions(setupAbstractions)
         .setStageExecutionId("stageExecutionId")
         .build();
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testStartChainLinkWithGitForGithubApp() {
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .authentication(
+                GithubAuthenticationDTO.builder()
+                    .authType(GitAuthType.HTTP)
+                    .credentials(GithubHttpCredentialsDTO.builder()
+                                     .type(GithubHttpAuthenticationType.GITHUB_APP)
+                                     .httpCredentialsSpec(GithubAppDTO.builder()
+                                                              .installationId("id")
+                                                              .applicationId("app")
+                                                              .privateKeyRef(SecretRefData.builder().build())
+                                                              .build())
+                                     .build())
+                    .build())
+            .build();
+    StepElementParameters stepElementParameters = createStepParametersWithGit(true);
+    ConnectorInfoDTO awsConnectorDTO =
+        ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build();
+    ConnectorInfoDTO gitConnectorInfoDTO =
+        ConnectorInfoDTO.builder()
+            .connectorConfig(GitConfigDTO.builder().gitConnectionType(GitConnectionType.REPO).build())
+            .build();
+    doReturn(awsConnectorDTO).doReturn(gitConnectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+
+    doReturn(githubConnectorDTO).when(cdStepHelper).getScmConnector(any(), any(), any());
+    doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
+    List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
+    doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+    MockedStatic mockedStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    TaskChainResponse response =
+        cloudformationStepHelper.startChainLink(cloudformationStepExecutor, getAmbiance(), stepElementParameters);
+
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    mockedStatic.close();
+    assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
+    GitFetchRequest gitFetchRequest = (GitFetchRequest) taskDataArgumentCaptor.getValue().getParameters()[0];
+    assertThat(gitFetchRequest).isExactlyInstanceOf(GitFetchRequest.class);
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().size()).isEqualTo(4);
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().get(0).getIdentifier()).isEqualTo("test-identifier");
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().get(1).getIdentifier()).isEqualTo("test-identifier2");
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().get(2).getIdentifier()).isEqualTo("templateFile");
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().get(3).getIdentifier()).isEqualTo("tagsFile");
+    assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.GIT_FETCH_NEXT_GEN_TASK.name());
+    assertThat(response.getTaskRequest()).isNotNull();
+    assertThat(response.getPassThroughData()).isNotNull();
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs().get(0).getGitStoreDelegateConfig().getGitConfigDTO())
+        .isInstanceOf(GithubConnectorDTO.class);
   }
 }

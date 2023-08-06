@@ -358,3 +358,12 @@ replace_key_value clickHouseConfig.username "$CLICKHOUSE_USERNAME"
 replace_key_value clickHouseConfig.password "$CLICKHOUSE_PASSWORD"
 
 replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"
+
+replace_key_value governanceConfig.useDkron "$GOVERNANCE_USE_DKRON"
+replace_key_value governanceConfig.callbackApiEndpoint "$GOVERNANCE_CALLBACK_API_ENDPOINT"
+replace_key_value governanceConfig.dkronJobEnabled "$GOVERNANCE_DKRON_JOB_ENABLED"
+replace_key_value governanceConfig.awsFaktoryJobType "$GOVERNANCE_AWS_FAKTORY_JOB_TYPE"
+replace_key_value governanceConfig.awsFaktoryQueueName "$GOVERNANCE_AWS_FAKTORY_QUEUE_NAME"
+replace_key_value governanceConfig.azureFaktoryJobType "$GOVERNANCE_AZURE_FAKTORY_JOB_TYPE"
+replace_key_value governanceConfig.azureFaktoryQueueName "$GOVERNANCE_AZURE_FAKTORY_QUEUE_NAME"
+replace_key_value governanceConfig.OOTBAccount "$GOVERNANCE_OOTB_ACCOUNT"

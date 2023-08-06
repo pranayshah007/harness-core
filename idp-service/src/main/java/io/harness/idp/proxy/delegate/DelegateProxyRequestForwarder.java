@@ -97,6 +97,7 @@ public class DelegateProxyRequestForwarder {
         .requestHeader(headers)
         .body(body)
         .socketTimeoutMillis(SOCKET_TIMEOUT_IN_MILLISECONDS)
+        .supportNonTextResponse(true)
         .build();
   }
 }

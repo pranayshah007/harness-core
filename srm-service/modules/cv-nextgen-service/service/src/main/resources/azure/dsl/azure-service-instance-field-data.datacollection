@@ -1,0 +1,9 @@
+Var azureTokenBodyMap = {}
+Var:azureTokenBodyMap.put("grant_type", "client_credentials")
+Var:azureTokenBodyMap.put("client_id", Env:clientId)
+Var:azureTokenBodyMap.put("resource", Env:baseUrl)
+Var:azureTokenBodyMap.put("client_secret", Env:clientSecret)
+
+Var response = sync-call-azure(url=Env:url, header=Env:commonHeaders, options=Env:commonOptions, method=GET, azureTokenUrl=Env:azureTokenUrl, azureTokenBody=Var:azureTokenBodyMap)
+Var dimensions = extract(Var:response, $.value.[0].dimensions)
+return Var:dimensions

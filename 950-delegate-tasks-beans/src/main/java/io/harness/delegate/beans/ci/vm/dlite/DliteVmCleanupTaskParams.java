@@ -21,6 +21,18 @@ public class DliteVmCleanupTaskParams implements CICleanupTaskParams {
   @JsonProperty("pool_id") private String poolId;
   @JsonProperty("stage_runtime_id") private String stageRuntimeId;
   @JsonProperty("log_key") private String logKey; // key to store lite engine logs
+  @JsonProperty("context") private Context context;
+
+  @Data
+  @Builder
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public static class Context {
+    @JsonProperty("account_id") String accountID;
+    @JsonProperty("org_id") String orgID;
+    @JsonProperty("project_id") String projectID;
+    @JsonProperty("pipeline_id") String pipelineID;
+    @JsonProperty("run_sequence") int runSequence;
+  }
 
   @Builder.Default private static final CICleanupTaskParams.Type type = CICleanupTaskParams.Type.DLITE_VM;
 

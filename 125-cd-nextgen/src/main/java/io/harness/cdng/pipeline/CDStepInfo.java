@@ -8,8 +8,11 @@
 package io.harness.cdng.pipeline;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepInfo;
@@ -43,6 +46,7 @@ import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
+import io.harness.cdng.gitops.revertpr.RevertPRStepInfo;
 import io.harness.cdng.gitops.syncstep.SyncStepInfo;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepInfo;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepInfo;
@@ -66,6 +70,11 @@ import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepInfo;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
+import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkDeployStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkDestroyStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkDiffStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkSynthStepInfo;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateBPStepInfo;
@@ -111,10 +120,13 @@ import io.harness.yaml.core.StepSpecType;
 
 import io.swagger.annotations.ApiModel;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITOPS, HarnessModuleComponent.CDS_SERVERLESS,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @ApiModel(
-    subTypes = {MergePRStepInfo.class, SyncStepInfo.class, K8sApplyStepInfo.class, K8sBlueGreenStepInfo.class,
-        K8sCanaryStepInfo.class, K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class, K8sScaleStepInfo.class,
-        K8sDeleteStepInfo.class, K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class,
+    subTypes = {MergePRStepInfo.class, RevertPRStepInfo.class, SyncStepInfo.class, K8sApplyStepInfo.class,
+        K8sBlueGreenStepInfo.class, K8sCanaryStepInfo.class, K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class,
+        K8sScaleStepInfo.class, K8sDeleteStepInfo.class, K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class,
         TerraformApplyStepInfo.class, TerraformPlanStepInfo.class, TerraformDestroyStepInfo.class,
         TerraformRollbackStepInfo.class, HelmDeployStepInfo.class, HelmRollbackStepInfo.class,
         CloudformationCreateStackStepInfo.class, CloudformationDeleteStackStepInfo.class,
@@ -142,7 +154,9 @@ import io.swagger.annotations.ApiModel;
         AwsLambdaRollbackStepInfo.class, BambooBuildStepInfo.class, TasRouteMappingStepInfo.class,
         GoogleFunctionsGenOneDeployStep.class, GoogleFunctionsGenOneRollbackStep.class, K8sBGStageScaleDownStep.class,
         ServerlessAwsLambdaPrepareRollbackV2StepInfo.class, ServerlessAwsLambdaDeployV2StepInfo.class,
-        ServerlessAwsLambdaPackageV2StepInfo.class, ServerlessAwsLambdaRollbackV2StepInfo.class})
+        ServerlessAwsLambdaPackageV2StepInfo.class, ServerlessAwsLambdaRollbackV2StepInfo.class,
+        AwsCdkBootstrapStepInfo.class, AwsCdkSynthStepInfo.class, AwsCdkDiffStepInfo.class, AwsCdkDeployStepInfo.class,
+        AwsCdkDestroyStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

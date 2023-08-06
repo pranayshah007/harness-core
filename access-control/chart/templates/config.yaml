@@ -45,7 +45,7 @@ data:
   AUDIT_CLIENT_BASE_URL: {{ .Values.config.AUDIT_CLIENT_BASE_URL | default "http://platform-service:9005/api/" }}
   DISTRIBUTED_LOCK_IMPLEMENTATION: {{ .Values.config.DISTRIBUTED_LOCK_IMPLEMENTATION }}
   GOOGLE_APPLICATION_CREDENTIALS: {{ .Values.config.GOOGLE_APPLICATION_CREDENTIALS }}
-  MEMORY: {{ .Values.config.MEMORY | default 512 }}m
+  MEMORY: {{ .Values.java.memory | default "512m" }}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
 
   # Additional configs

@@ -6,10 +6,12 @@
  */
 
 package io.harness.execution.step.approval.servicenow;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.step.StepExecutionDetails;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -17,14 +19,17 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
 @JsonTypeName("ServiceNowApproval")
+@FieldNameConstants(innerTypeName = "ServiceNowApprovalStepExecutionDetailsKeys")
 @TypeAlias("ServiceNowApprovalStepExecutionDetails")
 public class ServiceNowApprovalStepExecutionDetails implements StepExecutionDetails {
   String ticketNumber;

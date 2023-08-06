@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 
 import io.leangen.graphql.annotations.GraphQLNonNull;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,4 +36,5 @@ public class AzureVmRecommendationDTO implements RecommendationDetailsDTO {
   @GraphQLNonNull @Builder.Default Boolean showTerminated = false;
   @Schema(name = "TargetConfigurations", description = "Target vm configurations") AzureVmDTO target;
   CCMJiraDetails jiraDetails;
+  CCMServiceNowDetails serviceNowDetails;
 }

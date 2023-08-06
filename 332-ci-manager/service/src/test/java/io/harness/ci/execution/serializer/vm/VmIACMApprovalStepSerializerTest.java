@@ -21,6 +21,7 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.serializer.vm.VmIACMApprovalStepSerializer;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.HarnessImageUtils;
@@ -47,6 +48,7 @@ public class VmIACMApprovalStepSerializerTest {
   @Mock private CIExecutionConfigService ciExecutionConfigService;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private HarnessImageUtils harnessImageUtils;
+  @Mock private SerializerUtils serializerUtils;
 
   @Mock IACMStepsUtils iacmStepsUtils;
   @InjectMocks private VmIACMApprovalStepSerializer vmIACMApprovalStepSerializer;
@@ -100,7 +102,7 @@ public class VmIACMApprovalStepSerializerTest {
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(ConnectorDetails.builder().build());
 
     VmPluginStep vmPluginStep = vmIACMApprovalStepSerializer.serialize(ambiance, stepInfo, null, null);
-    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(5);
+    assertThat(vmPluginStep.getEnvVariables().size()).isEqualTo(6);
     assertThat(vmPluginStep.getEnvVariables().get("ENV_SECRETS_keytest1")).contains("${ngSecretManager.obtain");
     assertThat(vmPluginStep.getEnvVariables().get("PLUGIN_keytest2")).isEqualTo("keyValue2");
     assertThat(vmPluginStep.getEnvVariables().get("TFVARS_SECRETS_keytest3")).contains("${ngSecretManager.obtain");

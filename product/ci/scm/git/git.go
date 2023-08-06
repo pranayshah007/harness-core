@@ -401,7 +401,7 @@ func ListBranches(ctx context.Context, request *pb.ListBranchesRequest, log *zap
 		return nil, err
 	}
 
-	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 	if err != nil {
 		log.Errorw("ListBranches failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		if response == nil {
@@ -425,6 +425,7 @@ func ListBranches(ctx context.Context, request *pb.ListBranchesRequest, log *zap
 		Branches: branches,
 		Pagination: &pb.PageResponse{
 			Next: int32(response.Page.Next),
+			NextUrl: response.Page.NextURL,
 		},
 	}
 	return out, nil
@@ -440,7 +441,10 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		return nil, err
 	}
 
-	branchesContent, response, err := client.Git.ListBranches(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	branchesContent, response, err := client.Git.ListBranchesV2(ctx, request.GetSlug(), scm.BranchListOptions{
+		SearchTerm:      getBranchFilterParams(request),
+		PageListOptions: scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())},
+	})
 	if err != nil {
 		// this is an error from the git provider, e.g. authentication.
 		log.Errorw("ListBranchesWithDefault failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -469,6 +473,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 			Branches: branches,
 			Pagination: &pb.PageResponse{
 				Next: int32(response.Page.Next),
+				NextUrl: response.Page.NextURL,
 			},
 		}
 		return out, nil
@@ -497,6 +502,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		DefaultBranch: userRepoResponse.GetRepo().GetBranch(),
 		Pagination: &pb.PageResponse{
 			Next: int32(response.Page.Next),
+			NextUrl: response.Page.NextURL,
 		},
 	}
 	log.Infow("ListBranchesWithDefault success", "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start))
@@ -619,9 +625,17 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 		var response *scm.Response
 
 		if isGithubApp {
-			repoList, response, err = client.Repositories.(*github.RepositoryService).ListByInstallation(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+			repoList, response, err = client.Repositories.(*github.RepositoryService).ListByInstallation(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 		} else {
-			repoList, response, err = client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+			if request.GetVersion() == 2 {
+				repoList, response, err = client.Repositories.ListV2(ctx, scm.RepoListOptions{
+					RepoSearchTerm: getRepoFilterParams(request),
+					ListOptions: scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())},
+					})
+			} else {
+				repoList, response, err = client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
+			}
+			
 		}
 		if err != nil {
 			log.Errorw("GetUserRepos failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -643,6 +657,7 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 			Repos:  convertRepoList(repoList),
 			Pagination: &pb.PageResponse{
 				Next: int32(response.Page.Next),
+				NextUrl: response.Page.NextURL,
 			},
 		}
 		return out, nil
@@ -810,5 +825,27 @@ func isGithubApp(p *pb.Provider) (out bool) {
 		return true
 	} else {
 		return false
+	}
+}
+
+func getRepoFilterParams(request *pb.GetUserReposRequest) (out scm.RepoSearchTerm){
+	if nil == request.GetRepoFilterParams() {
+		return scm.RepoSearchTerm{
+			RepoName: "",
+			User:     "",
+		}
+	} else {
+		return scm.RepoSearchTerm{
+			RepoName: request.GetRepoFilterParams().GetRepoName(),
+			User:     request.GetRepoFilterParams().GetUserName(),
+		}
+	}
+}
+
+func getBranchFilterParams(request *pb.ListBranchesWithDefaultRequest) (string){
+	if nil == request.GetBranchFilterParams() {
+		return ""
+	} else {
+		return request.GetBranchFilterParams().GetBranchName()
 	}
 }

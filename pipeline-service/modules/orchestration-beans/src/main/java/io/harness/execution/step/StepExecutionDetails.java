@@ -6,10 +6,12 @@
  */
 
 package io.harness.execution.step;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.step.approval.custom.CustomApprovalStepExecutionDetails;
 import io.harness.execution.step.approval.harness.HarnessApprovalStepExecutionDetails;
 import io.harness.execution.step.approval.jira.JiraApprovalStepExecutionDetails;
@@ -20,6 +22,7 @@ import io.harness.execution.step.jira.update.JiraUpdateStepExecutionDetails;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDP)
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, property = "stepType", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

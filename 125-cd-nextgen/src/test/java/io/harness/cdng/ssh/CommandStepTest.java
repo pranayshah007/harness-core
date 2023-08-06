@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -113,12 +114,18 @@ public class CommandStepTest extends CategoryTest {
                                           .build()))
           .build();
 
+  private final CommandStepParameters winrmCommandStepParameters =
+      CommandStepParameters.infoBuilder()
+          .host(ParameterField.createValueField(localhost))
+          .commandUnits(Arrays.asList(CommandUnitWrapper.builder().type("WinRm").name("winrm-svc").build()))
+          .build();
+
   private final CommandStepParameters commandStepParametersNoHosts =
       CommandStepParameters.infoBuilder()
           .commandUnits(Arrays.asList(CommandUnitWrapper.builder()
                                           .type("Script")
                                           .spec(ScriptCommandUnitSpec.builder().build())
-                                          .name("test")
+                                          .name("winrm-svc")
                                           .build()))
           .build();
   private SshCommandTaskParameters sshCommandTaskParameters =
@@ -138,7 +145,7 @@ public class CommandStepTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(sshCommandTaskParameters)
         .when(sshCommandStepHelper)
-        .buildCommandTaskParameters(ambiance, commandStepParameters);
+        .buildCommandTaskParameters(eq(ambiance), eq(commandStepParameters), any());
     doReturn(EnvironmentType.ALL).when(stepHelper).getEnvironmentType(ambiance);
     doReturn(serializedParams).when(kryoSerializer).asDeflatedBytes(sshCommandTaskParameters);
   }
@@ -154,11 +161,32 @@ public class CommandStepTest extends CategoryTest {
 
     TaskRequest taskRequest =
         commandStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build());
-    verify(sshCommandStepHelper, times(1)).buildCommandTaskParameters(ambiance, commandStepParameters);
+    verify(sshCommandStepHelper, times(1)).buildCommandTaskParameters(ambiance, commandStepParameters, "30m");
     assertThat(taskRequest).isNotNull();
     assertThat(taskRequest.getDelegateTaskRequest().getTaskName()).isEqualTo(TaskType.COMMAND_TASK_NG.getDisplayName());
     assertThat(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getKryoParameters())
         .isEqualTo(ByteString.copyFrom(serializedParams));
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void testExecuteTaskWithTimeOutGreaterThan30Minutes() {
+    final StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                            .spec(winrmCommandStepParameters)
+                                                            .timeout(ParameterField.createValueField("45m"))
+                                                            .build();
+    doReturn(sshCommandTaskParameters)
+        .when(sshCommandStepHelper)
+        .buildCommandTaskParameters(eq(ambiance), eq(winrmCommandStepParameters), any());
+
+    TaskRequest taskRequest =
+        commandStep.obtainTaskAfterRbac(ambiance, stepElementParameters, StepInputPackage.builder().build());
+    verify(sshCommandStepHelper, times(1)).buildCommandTaskParameters(ambiance, winrmCommandStepParameters, "45m");
+    assertThat(taskRequest).isNotNull();
+    assertThat(taskRequest.getDelegateTaskRequest().getTaskName()).isEqualTo(TaskType.COMMAND_TASK_NG.getDisplayName());
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getExecutionTimeout().getSeconds())
+        .isEqualTo(2700);
   }
 
   @Test

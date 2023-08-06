@@ -26,8 +26,13 @@ public class LogClusterLearningEngineTask extends LearningEngineTask {
   private String testDataUrl;
   private String host;
   private LogClusterLevel clusterLevel;
+  private LearningEngineTaskType type;
   @Override
   public LearningEngineTaskType getType() {
-    return LOG_CLUSTER;
+    if (type == null) {
+      return LOG_CLUSTER;
+    } else {
+      return type;
+    }
   }
 }

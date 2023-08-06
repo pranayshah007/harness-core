@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.merger.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
@@ -34,6 +36,8 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @UtilityClass
 public class RuntimeInputsValidator {
@@ -41,6 +45,8 @@ public class RuntimeInputsValidator {
   private static final String USE_FROM_STAGE_NODE = "useFromStage";
   private static final String STAGE_NODE = "stage";
   private static final String CHILD_SERVICE_REF_NODE = "service.serviceRef";
+  private static final String CHILD_ENVIRONMENT_REF_NODE = "environment.environmentRef";
+  private static final String CHILD_INFRA_DEFINITIONS_REF_NODE = "environment.infrastructureDefinitions";
 
   public boolean areInputsValidAgainstSourceNode(JsonNode nodeToValidate, JsonNode sourceNode) {
     return areInputsValidAgainstSourceNode(nodeToValidate, sourceNode, new HashSet<>());
@@ -144,6 +150,24 @@ public class RuntimeInputsValidator {
             nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForService.get());
             continue;
           }
+
+          // This is to handle if sourceYaml has environmentRef as input but user choose useFromStage in nodeToRefresh
+          // EnvironmentInputs node from sourceYaml is already getting handled with skipValidationIfAbsentKeySet
+          Optional<FQN> nodeFQNOneOfForEnvironment =
+              isNodeToValidationKeyIsOneOfForEnvironment(nodeToValidateFqnToValueMap, key);
+          if (nodeFQNOneOfForEnvironment.isPresent()) {
+            nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForEnvironment.get());
+            continue;
+          }
+
+          // This is to handle if sourceYaml has environment.infrastructureDefinitions as input but user choose
+          // useFromStage in nodeToRefresh
+          Optional<FQN> nodeFQNOneOfForInfraDefinition =
+              isNodeToValidationKeyIsOneOfForInfraDefinition(nodeToValidateFqnToValueMap, key);
+          if (nodeFQNOneOfForInfraDefinition.isPresent()) {
+            nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForInfraDefinition.get());
+            continue;
+          }
           return false;
         }
         // remove the subMap from nodeToValidateFqnToValueMap
@@ -168,14 +192,28 @@ public class RuntimeInputsValidator {
   }
 
   private Optional<FQN> isNodeToValidationKeyIsOneOfForService(Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
-    if (key.getExpressionFqn().endsWith(CHILD_SERVICE_REF_NODE)) {
+    return getFqn(nodeToValidateFqnToValueMap, key, CHILD_SERVICE_REF_NODE);
+  }
+
+  private Optional<FQN> isNodeToValidationKeyIsOneOfForEnvironment(
+      Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
+    return getFqn(nodeToValidateFqnToValueMap, key, CHILD_ENVIRONMENT_REF_NODE);
+  }
+
+  private Optional<FQN> isNodeToValidationKeyIsOneOfForInfraDefinition(
+      Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
+    return getFqn(nodeToValidateFqnToValueMap, key, CHILD_INFRA_DEFINITIONS_REF_NODE);
+  }
+
+  private Optional<FQN> getFqn(Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key, String childEnvironmentRefNode) {
+    if (key.getExpressionFqn().endsWith(childEnvironmentRefNode)) {
       List<FQNNode> fqnList = new ArrayList<>(key.getParent().getFqnList());
       FQNNode fqnNode1 = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(USE_FROM_STAGE_NODE).build();
       FQNNode fqnNode2 = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(STAGE_NODE).build();
       fqnList.add(fqnNode1);
       fqnList.add(fqnNode2);
       FQN useFromStageFQN = FQN.builder().fqnList(fqnList).build();
-      if (nodeToValidateFqnToValueMap.containsKey(useFromStageFQN)) {
+      if (nodeToValidateFqnToValueMap.isEmpty() || nodeToValidateFqnToValueMap.containsKey(useFromStageFQN)) {
         return Optional.of(useFromStageFQN);
       }
     }

@@ -138,6 +138,7 @@ public class VmInitializeTaskParamsBuilder {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String poolId;
     List<String> fallbackPoolIds = new ArrayList<>();
+    vmInitializeUtils.validateDebug(hostedVmInfraYaml, ambiance);
     if (isBareMetalEnabled(accountId, hostedVmInfraYaml.getSpec().getPlatform(), initializeStepInfo)) {
       poolId = getHostedBareMetalPoolId(hostedVmInfraYaml.getSpec().getPlatform());
       fallbackPoolIds.add(getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId));
@@ -145,7 +146,7 @@ public class VmInitializeTaskParamsBuilder {
       poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId);
     }
     CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId, fallbackPoolIds);
-    SetupVmRequest setupVmRequest = convertHostedSetupParams(params);
+    SetupVmRequest setupVmRequest = convertHostedSetupParams(params, ambiance);
     List<ExecuteStepRequest> services = new ArrayList<>();
     if (isNotEmpty(params.getServiceDependencies())) {
       for (VmServiceDependency serviceDependency : params.getServiceDependencies()) {
@@ -155,6 +156,7 @@ public class VmInitializeTaskParamsBuilder {
 
     DliteVmInitializeTaskParams taskParams =
         DliteVmInitializeTaskParams.builder().setupVmRequest(setupVmRequest).services(services).build();
+
     hostedVmSecretResolver.resolve(ambiance, taskParams);
     return taskParams;
   }
@@ -163,7 +165,7 @@ public class VmInitializeTaskParamsBuilder {
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
     validateInfrastructure(infrastructure);
-
+    vmInitializeUtils.validateDebug(infrastructure, ambiance);
     VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
     String poolId = getPoolName(vmPoolYaml);
     return getVmInitializeParams(initializeStepInfo, ambiance, poolId, Collections.emptyList());
@@ -207,12 +209,15 @@ public class VmInitializeTaskParamsBuilder {
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
-        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
+        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone(), ambiance);
     Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs, gitConnector);
     Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(
         gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
 
     Map<String, String> envVars = new HashMap<>();
+    Map<String, String> stageEnvVars =
+        vmInitializeUtils.getStageEnvVars(integrationStageConfig.getPlatform(), os, workDir, poolId, infrastructure);
+    envVars.putAll(stageEnvVars);
     envVars.putAll(codebaseEnvVars);
     envVars.putAll(gitEnvVars);
 
@@ -519,6 +524,7 @@ public class VmInitializeTaskParamsBuilder {
         executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(key));
     if (!optionalSweepingOutput.isFound()) {
       executionSweepingOutputResolver.consume(ambiance, key, value, StepOutcomeGroup.STAGE.name());
+      log.info("successfully saved stageInfraDetails sweeping output");
     }
   }
 
@@ -642,7 +648,7 @@ public class VmInitializeTaskParamsBuilder {
     return ciExecutionServiceConfig.getHostedVmConfig().isSplitWindowsAmd64Pool();
   }
 
-  private SetupVmRequest convertHostedSetupParams(CIVmInitializeTaskParams params) {
+  private SetupVmRequest convertHostedSetupParams(CIVmInitializeTaskParams params, Ambiance ambiance) {
     Map<String, String> env = new HashMap<>();
     List<String> secrets = new ArrayList<>();
     if (isNotEmpty(params.getSecrets())) {
@@ -679,6 +685,13 @@ public class VmInitializeTaskParamsBuilder {
         .tags(params.getTags())
         //            .correlationID(taskId)
         .poolID(params.getPoolID())
+        .context(SetupVmRequest.Context.builder()
+                     .accountID(AmbianceUtils.getAccountId(ambiance))
+                     .orgID(AmbianceUtils.getOrgIdentifier(ambiance))
+                     .projectID(AmbianceUtils.getProjectIdentifier(ambiance))
+                     .pipelineID(AmbianceUtils.getPipelineIdentifier(ambiance))
+                     .runSequence(ambiance.getMetadata().getRunSequence())
+                     .build())
         .fallbackPoolIDs(params.getFallbackPoolIDs())
         .config(config)
         .logKey(params.getLogKey())

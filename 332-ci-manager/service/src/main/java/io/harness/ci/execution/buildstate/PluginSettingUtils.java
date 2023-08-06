@@ -156,7 +156,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return getECRStepInfoEnvVariables(
             ambiance, (ECRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case ACR:
-        return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType);
+        return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case GCR:
         return getGCRStepInfoEnvVariables((GCRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case DOCKER:
@@ -180,7 +180,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case GIT_CLONE:
         final String connectorRef = stepInfo.getConnectorRef().getValue();
         final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-        final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, connectorRef);
+        final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
+            ngAccess, connectorRef, ambiance, ((GitCloneStepInfo) stepInfo).getRepoName().getValue());
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, gitConnector, identifier);
       case SSCA_ORCHESTRATION:
         return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
@@ -371,7 +372,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
   }
 
   private static Map<String, String> getACRStepInfoEnvVariables(
-      ACRStepInfo stepInfo, String identifier, Type infraType) {
+      ACRStepInfo stepInfo, String identifier, Type infraType, boolean isContainerizedPlugin) {
     Map<String, String> map = new HashMap<>();
     String pluginRepo =
         resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
@@ -419,6 +420,23 @@ public class PluginSettingUtils extends PluginServiceImpl {
       getACRStepInfoVariablesForK8s(stepInfo, identifier, map);
     } else if (infraType == Type.VM) {
       PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
+      if (!isContainerizedPlugin) {
+        // Only populate cache-from and cache-to if we're using the buildx plugin
+        List<String> cacheFromList =
+            resolveListParameter("cacheFrom", "BuildAndPushACR", identifier, stepInfo.getCacheFrom(), false);
+        if (!isEmpty(cacheFromList)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_FROM, listToCustomStringSlice(cacheFromList));
+        }
+        String cacheTo =
+            resolveStringParameterV2("cacheTo", "BuildAndPushACR", identifier, stepInfo.getCacheTo(), false);
+        if (!isEmpty(cacheTo)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_TO, cacheTo);
+        }
+        if (resolveBooleanParameter(stepInfo.getCaching(), false)) {
+          setOptionalEnvironmentVariable(
+              map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
+        }
+      }
     }
     return map;
   }
@@ -916,6 +934,11 @@ public class PluginSettingUtils extends PluginServiceImpl {
         cacheTo = resolveStringParameter("cacheTo", "BuildAndPushGCR", "", gcrStepInfo.getCacheTo(), false);
         break;
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+        caching = resolveBooleanParameter(acrStepInfo.getCaching(), false);
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushACR", "", acrStepInfo.getCacheFrom(), false);
+        cacheTo = resolveStringParameter("cacheTo", "BuildAndPushACR", "", acrStepInfo.getCacheTo(), false);
+        break;
       default:
         return false;
     }
@@ -934,6 +957,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
         GCRStepInfo gcrStepInfo = (GCRStepInfo) stepInfo;
         return resolveBooleanParameter(gcrStepInfo.getCaching(), false);
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+        return resolveBooleanParameter(acrStepInfo.getCaching(), false);
       default:
         return false;
     }
@@ -955,6 +980,9 @@ public class PluginSettingUtils extends PluginServiceImpl {
         repo = resolveStringParameter("imageName", "BuildAndPushGCR", identifier, gcrStepInfo.getImageName(), true);
         return String.format("%s/%s/", accountId, repo);
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+        repo = resolveStringParameter("imageName", "BuildAndPushACR", identifier, acrStepInfo.getRepository(), true);
+        return String.format("%s/%s/", accountId, repo);
       default:
         return "";
     }
@@ -1013,6 +1041,21 @@ public class PluginSettingUtils extends PluginServiceImpl {
         gcrStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
         return;
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+
+        // Append cacheFromArg to the list
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushACR", identifier, acrStepInfo.getCacheFrom(), false);
+        if (isEmpty(cacheFrom)) {
+          cacheFrom = new ArrayList<>();
+        } else {
+          cacheFrom = new ArrayList(cacheFrom);
+        }
+        cacheFrom.add(cacheFromArg);
+        acrStepInfo.setCacheFrom(ParameterField.createValueField(cacheFrom));
+
+        // Overwrite cacheTo with cacheToArg
+        acrStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
+        return;
       default:
         return;
     }

@@ -95,6 +95,7 @@ notificationServiceConfig:
     connectionsPerHost: 300
     indexManagerMode: AUTO
     aliasDBName: notification
+    maxDocumentsToBeFetched: 2147483647
 
   smtp:
     type: SMTP
@@ -131,6 +132,7 @@ auditServiceConfig:
     indexManagerMode: AUTO
     aliasDBName: ng-audits
     transactionsEnabled: false
+    maxDocumentsToBeFetched: 2147483647
 
   enableAuditService: true
   hostname: ${HOSTNAME:-localhost}
@@ -224,6 +226,7 @@ resourceGroupServiceConfig:
     connectionsPerHost: 300
     indexManagerMode: AUTO
     aliasDBName: resourcegroup
+    maxDocumentsToBeFetched: 2147483647
   enableAudit: false
   auditClientConfig:
     baseUrl: http://localhost:9005/api/
@@ -250,3 +253,23 @@ enforcementClientConfiguration:
   enforcementCheckEnabled: false
 
 enableOpentelemetry: false
+
+eventsFramework:
+  redis:
+    sentinel: false
+    masterName: "test"
+    redisUrl: "redis://localhost:6379"
+    sentinelUrls:
+      - "redis://redis1:26379"
+      - "redis://redis2:26379"
+      - "redis://redis3:26379"
+    envNamespace: ""
+    readMode: MASTER
+    nettyThreads: 16
+    useScriptCache: true
+    userName: ""
+    password: ""
+    sslConfig:
+      enabled: false
+      CATrustStorePath: "/tmp/ca_trust_store"
+      CATrustStorePassword: ""

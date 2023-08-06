@@ -44,6 +44,7 @@ public class VaultEntityToDTO implements ConnectorEntityToDTOMapper<VaultConnect
         .secretId(SecretRefHelper.createSecretRef(connector.getSecretIdRef()))
         .delegateSelectors(connector.getDelegateSelectors())
         .renewAppRoleToken(connector.getRenewAppRoleToken())
+        .enableCache(connector.getEnableCache())
         .build();
   }
 }

@@ -13,6 +13,16 @@ bq show --format=prettyjson ce-prod-274307:BillingReport_wfhxhd0rrqwoo8tizt5yvw.
 aws_cur_table_schema = [
     {
         "mode": "NULLABLE",
+        "name": "payeraccountid",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "lineitemdescription",
+        "type": "STRING"
+    },
+    {
+        "mode": "NULLABLE",
         "name": "resourceid",
         "type": "STRING"
     },

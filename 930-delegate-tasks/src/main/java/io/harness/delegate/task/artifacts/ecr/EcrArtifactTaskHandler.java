@@ -6,12 +6,14 @@
  */
 
 package io.harness.delegate.task.artifacts.ecr;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static software.wings.helpers.ext.ecr.EcrService.MAX_NO_OF_IMAGES;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDateDescending;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -39,6 +41,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @OwnedBy(PIPELINE)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))

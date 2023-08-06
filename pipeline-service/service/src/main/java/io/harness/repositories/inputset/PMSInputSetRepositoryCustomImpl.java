@@ -84,7 +84,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
   public Page<InputSetEntity> findAll(
       Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     List<InputSetEntity> inputSetEntities = gitAwarePersistence.find(
-        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, InputSetEntity.class);
+        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, InputSetEntity.class, true);
 
     return PageableExecutionUtils.getPage(inputSetEntities, pageable,
         ()

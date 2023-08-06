@@ -7,6 +7,7 @@
 
 package io.harness.cdng.configfile.steps;
 
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -135,7 +136,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
         fetchConfigFilesMetadataFromSweepingOutput(ambiance);
 
     final List<ConfigFileWrapper> configFiles = configFilesSweepingOutput.getFinalSvcConfigFiles();
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
           "No config files configured in the service. configFiles expressions will not work", LogLevel.WARN);

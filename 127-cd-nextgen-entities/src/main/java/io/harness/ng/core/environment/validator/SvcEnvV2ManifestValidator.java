@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.environment.validator;
-
 import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -14,6 +13,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.ManifestConfigType;
@@ -34,6 +36,7 @@ import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @UtilityClass
 public class SvcEnvV2ManifestValidator {
   public static void checkDuplicateManifestIdentifiersWithIn(List<ManifestConfigWrapper> manifests) {

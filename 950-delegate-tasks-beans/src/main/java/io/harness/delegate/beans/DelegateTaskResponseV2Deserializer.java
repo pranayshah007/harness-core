@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.beans;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.tasks.ResponseData;
 
 import software.wings.TaskTypeToRequestResponseMapper;
@@ -21,6 +23,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 public class DelegateTaskResponseV2Deserializer extends StdDeserializer<DelegateTaskResponseV2> {
   String CLASS_ANNOTATION = "@class";

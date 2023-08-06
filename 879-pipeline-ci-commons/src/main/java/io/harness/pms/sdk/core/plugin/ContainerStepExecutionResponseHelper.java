@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.sdk.core.plugin;
-
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
@@ -42,6 +44,9 @@ import java.util.EnumSet;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_SERVERLESS,
+        HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -56,6 +61,7 @@ public class ContainerStepExecutionResponseHelper {
     for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
       entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
       if (entry.getValue() instanceof BinaryResponseData) {
+        log.info("Binary Response Data Received");
         entry.setValue((ResponseData) referenceFalseKryoSerializer.asInflatedObject(
             ((BinaryResponseData) entry.getValue()).getData()));
       }
@@ -204,5 +210,16 @@ public class ContainerStepExecutionResponseHelper {
   }
   private StepStatusTaskResponseData filterK8StepResponse(ResponseData responseData) {
     return responseData instanceof StepStatusTaskResponseData ? ((StepStatusTaskResponseData) responseData) : null;
+  }
+
+  public void deserializeResponse(Map<String, ResponseData> responseDataMap) {
+    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
+      log.info(String.format("ResponseData with class %s received", entry.getValue().getClass()));
+      entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
+      if (entry.getValue() instanceof BinaryResponseData) {
+        entry.setValue((ResponseData) referenceFalseKryoSerializer.asInflatedObject(
+            ((BinaryResponseData) entry.getValue()).getData()));
+      }
+    }
   }
 }

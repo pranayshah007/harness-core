@@ -14,8 +14,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.iterator.PersistentCronIterable;
+import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,5 +59,16 @@ public class CIModuleLicense extends ModuleLicense implements PersistentCronIter
   @Override
   public Long obtainNextIteration(String fieldName) {
     return EmptyPredicate.isEmpty(nextIterations) ? System.currentTimeMillis() : nextIterations.get(0);
+  }
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList.<MongoIndex>builder()
+        .add(CompoundMongoIndex.builder()
+                 .name("moduleType_status_nextIterations")
+                 .field(ModuleLicenseKeys.moduleType)
+                 .field(ModuleLicenseKeys.status)
+                 .field(CIModuleLicenseKeys.nextIterations)
+                 .build())
+        .build();
   }
 }

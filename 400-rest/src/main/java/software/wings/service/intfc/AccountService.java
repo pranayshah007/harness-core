@@ -76,6 +76,8 @@ public interface AccountService {
 
   Boolean cleanUpNextGen(String accountId);
 
+  Boolean disableIpAllowList(String accountId);
+
   Boolean updateIsProductLed(String accountId, boolean isProductLed);
 
   AccountDetails getAccountDetails(String accountId);
@@ -299,4 +301,8 @@ public interface AccountService {
 
   Account updateCrossGenerationAccessEnabled(
       String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen);
+
+  boolean getPublicAccessEnabled(String accountId);
+
+  void setPublicAccessEnabled(String accountId, boolean publicAccessEnabled);
 }

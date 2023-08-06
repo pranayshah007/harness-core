@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.triggers.webhook.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.constants.Constants.X_HUB_SIGNATURE_256;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -29,7 +28,10 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
 import static io.harness.pms.contracts.triggers.Type.WEBHOOK;
 
 import io.harness.NgAutoLogContext;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
@@ -115,6 +117,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -225,9 +228,10 @@ public class TriggerEventExecutionHelper {
       log.error("Webhook registration status update failed", ex);
     }
     ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
+    List<HeaderConfig> headerConfigList = triggerWebhookEvent.getHeaders();
     eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
         getTriggerPayloadForWebhookTrigger(parseWebhookResponse, triggerWebhookEvent, yamlVersion),
-        triggerWebhookEvent.getPayload()));
+        triggerWebhookEvent.getPayload(), headerConfigList));
   }
 
   @VisibleForTesting
@@ -267,7 +271,7 @@ public class TriggerEventExecutionHelper {
   }
 
   private TriggerEventResponse triggerPipelineExecution(TriggerWebhookEvent triggerWebhookEvent,
-      TriggerDetails triggerDetails, TriggerPayload triggerPayload, String payload) {
+      TriggerDetails triggerDetails, TriggerPayload triggerPayload, String payload, List<HeaderConfig> header) {
     String runtimeInputYaml = null;
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     try {
@@ -282,7 +286,7 @@ public class TriggerEventExecutionHelper {
         runtimeInputYaml = triggerExecutionHelper.fetchInputSetYAML(triggerDetails, triggerWebhookEvent);
       }
       PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
-          triggerDetails, triggerPayload, triggerWebhookEvent, payload, runtimeInputYaml);
+          triggerDetails, triggerPayload, triggerWebhookEvent, payload, header, runtimeInputYaml);
       return generateEventHistoryForSuccess(
           triggerDetails, runtimeInputYaml, ngTriggerEntity, triggerWebhookEvent, response, null);
     } catch (Exception e) {

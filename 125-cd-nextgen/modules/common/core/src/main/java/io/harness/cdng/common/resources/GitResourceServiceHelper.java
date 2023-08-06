@@ -17,6 +17,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.CDStepHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -44,12 +45,14 @@ import java.util.Optional;
 public class GitResourceServiceHelper {
   private final ConnectorService connectorService;
   private final GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
+  private final CDStepHelper cdStepHelper;
 
   @Inject
   public GitResourceServiceHelper(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
-      GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper) {
+      GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper, CDStepHelper cdStepHelper) {
     this.connectorService = connectorService;
     this.gitConfigAuthenticationInfoHelper = gitConfigAuthenticationInfoHelper;
+    this.cdStepHelper = cdStepHelper;
   }
 
   public ConnectorInfoDTO getConnectorInfoDTO(String connectorId, NGAccess ngAccess) {
@@ -72,10 +75,12 @@ public class GitResourceServiceHelper {
       gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
     }
     SSHKeySpecDTO sshKeySpecDTO = getSshKeySpecDTO(gitConfigDTO, ngAccess);
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(
+        (ScmConnector) connectorDTO.getConnectorConfig(), ngAccess.getAccountIdentifier(), gitConfigDTO);
     List<EncryptedDataDetail> encryptedDataDetails =
-        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, ngAccess);
+        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, ngAccess);
     return GitStoreDelegateConfig.builder()
-        .gitConfigDTO(gitConfigDTO)
+        .gitConfigDTO(scmConnector)
         .sshKeySpecDTO(sshKeySpecDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .fetchType(fetchType)

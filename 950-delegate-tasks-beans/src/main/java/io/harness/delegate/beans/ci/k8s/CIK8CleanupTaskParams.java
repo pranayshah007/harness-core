@@ -23,6 +23,7 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Data
 @Builder
@@ -34,6 +35,7 @@ public class CIK8CleanupTaskParams implements CICleanupTaskParams, ExecutionCapa
   @NotNull private List<String> cleanupContainerNames;
   @Expression(ALLOW_SECRETS) @NotNull private String namespace;
   @Builder.Default private static final CICleanupTaskParams.Type type = Type.GCP_K8;
+  private Boolean useSocketCapability; // using a boxed boolean for forward compatibility and null value handling
 
   @Override
   public Type getType() {
@@ -44,6 +46,7 @@ public class CIK8CleanupTaskParams implements CICleanupTaskParams, ExecutionCapa
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     KubernetesClusterConfigDTO kubernetesClusterConfigDTO =
         (KubernetesClusterConfigDTO) k8sConnector.getConnectorConfig();
-    return K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(kubernetesClusterConfigDTO, maskingEvaluator);
+    return K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(
+        kubernetesClusterConfigDTO, maskingEvaluator, BooleanUtils.toBoolean(useSocketCapability));
   }
 }

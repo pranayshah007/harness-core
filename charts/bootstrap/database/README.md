@@ -1,6 +1,6 @@
 # database
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -8,8 +8,8 @@ A Helm chart for Kubernetes
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://./redis | redis | 0.2.x |
-| file://./timescaledb | timescaledb | 0.2.x |
+| file://./redis | redis | 0.8.x |
+| file://./timescaledb | timescaledb | 0.8.x |
 | https://charts.bitnami.com/bitnami | minio | 11.9.1 |
 | https://charts.bitnami.com/bitnami | mongodb | 13.1.2 |
 | https://charts.bitnami.com/bitnami | postgresql | 12.4.2 |
@@ -26,9 +26,10 @@ A Helm chart for Kubernetes
 | minio.auth.existingSecret | string | `"minio"` |  |
 | minio.defaultBuckets | string | `"logs"` |  |
 | minio.fullnameOverride | string | `"minio"` |  |
+| minio.image.tag | string | `"2023.5.18-debian-11-r2"` |  |
 | minio.mode | string | `"standalone"` |  |
 | minio.persistence.size | string | `"200Gi"` |  |
-| mongodb | object | `{"arbiter":{"enabled":true},"architecture":"replicaset","auth":{"existingSecret":"mongodb-replicaset-chart","rootUser":"admin"},"fullnameOverride":"mongodb-replicaset-chart","image":{"registry":"docker.io","repository":"harness/mongo","tag":"4.4.19"},"persistence":{"size":"200Gi"},"podLabels":{"app":"mongodb-replicaset"},"replicaCount":3,"resources":{"limits":{"cpu":4,"memory":"8192Mi"},"requests":{"cpu":4,"memory":"8192Mi"}},"service":{"nameOverride":"mongodb-replicaset-chart"}}` | configurations for mongodb |
+| mongodb | object | `{"arbiter":{"enabled":true},"architecture":"replicaset","auth":{"existingSecret":"mongodb-replicaset-chart","rootUser":"admin"},"fullnameOverride":"mongodb-replicaset-chart","image":{"registry":"docker.io","repository":"harness/mongo","tag":"4.4.22"},"persistence":{"size":"200Gi"},"podLabels":{"app":"mongodb-replicaset"},"replicaCount":3,"resources":{"limits":{"cpu":4,"memory":"8192Mi"},"requests":{"cpu":4,"memory":"8192Mi"}},"service":{"nameOverride":"mongodb-replicaset-chart"}}` | configurations for mongodb |
 | postgresql.auth.database | string | `"overops"` |  |
 | postgresql.auth.existingSecret | string | `"postgres"` |  |
 | postgresql.commonLabels.app | string | `"postgres"` |  |
@@ -36,7 +37,7 @@ A Helm chart for Kubernetes
 | postgresql.image.digest | string | `""` |  |
 | postgresql.image.registry | string | `"docker.io"` |  |
 | postgresql.image.repository | string | `"bitnami/postgresql"` |  |
-| postgresql.image.tag | string | `"14.7.0-debian-11-r26"` |  |
+| postgresql.image.tag | string | `"14.8.0-debian-11-r17"` |  |
 | postgresql.primary.persistence.size | string | `"200Gi"` |  |
 | postgresql.primary.resources.limits.cpu | int | `4` |  |
 | postgresql.primary.resources.limits.memory | string | `"8192Mi"` |  |

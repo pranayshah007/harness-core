@@ -6,14 +6,16 @@
  */
 
 package io.harness.ci.plan.creator;
-
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.ssca.SscaBeansRegistrar.sscaStepPaletteSteps;
 import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.ci.creator.variables.ActionStepVariableCreator;
 import io.harness.ci.creator.variables.ArtifactoryUploadStepVariableCreator;
@@ -93,6 +95,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @OwnedBy(HarnessTeam.CI)
 public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvider {

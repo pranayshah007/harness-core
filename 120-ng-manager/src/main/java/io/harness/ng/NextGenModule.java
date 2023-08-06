@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng;
-
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_CONFIGURATION;
@@ -32,9 +31,13 @@ import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.AZURE_ARM_CONFIG_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_ACCOUNT_EXECUTION_METADATA;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CLOUDFORMATION_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DEPLOYMENT_ACCOUNTS;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DEPLOYMENT_SUMMARY_NG;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.INSTANCE_DEPLOYMENT_INFO;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SERVICEACCOUNT_ENTITY;
@@ -65,11 +68,15 @@ import io.harness.accesscontrol.AccessControlAdminClientModule;
 import io.harness.account.AbstractAccountModule;
 import io.harness.account.AccountClientModule;
 import io.harness.account.AccountConfig;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
@@ -134,6 +141,7 @@ import io.harness.govern.ProviderModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.GrpcClientConfig;
+import io.harness.hsqs.client.beans.HsqsDequeueConfig;
 import io.harness.licensing.LicenseModule;
 import io.harness.licensing.event.ModuleLicenseEventListener;
 import io.harness.lock.DistributedLockImplementation;
@@ -186,14 +194,18 @@ import io.harness.ng.core.entityactivity.event.EntityActivityCrudEventMessageLis
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.entitysetupusage.event.SetupUsageChangeEventMessageListener;
 import io.harness.ng.core.entitysetupusage.event.SetupUsageChangeEventMessageProcessor;
+import io.harness.ng.core.event.AccountExecutionMetadataCRUDStreamListener;
 import io.harness.ng.core.event.AccountSetupListener;
 import io.harness.ng.core.event.ApiKeyEventListener;
 import io.harness.ng.core.event.AzureARMConfigEntityCRUDStreamListener;
 import io.harness.ng.core.event.CloudformationConfigEntityCRUDStreamListener;
 import io.harness.ng.core.event.ConnectorEntityCRUDStreamListener;
+import io.harness.ng.core.event.DeploymentAccountsCRUDStreamListener;
+import io.harness.ng.core.event.DeploymentSummaryNGCRUDStreamListener;
 import io.harness.ng.core.event.EnvironmentGroupEntityCrudStreamListener;
 import io.harness.ng.core.event.FilterEventListener;
 import io.harness.ng.core.event.FreezeEventListener;
+import io.harness.ng.core.event.InstanceDeploymentInfoCRUDStreamListener;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ng.core.event.MessageProcessor;
 import io.harness.ng.core.event.PollingDocumentEventListener;
@@ -289,6 +301,7 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.UserProvider;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
+import io.harness.pipeline.triggers.TriggersClientModule;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.expression.NoopEngineExpressionServiceImpl;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -386,6 +399,8 @@ import org.jooq.ExecuteListener;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TRIGGERS, HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class NextGenModule extends AbstractModule {
@@ -597,9 +612,25 @@ public class NextGenModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
   }
 
+  @Provides
+  @Singleton
+  @Named("webhookBranchHookEventHsqsDequeueConfig")
+  public HsqsDequeueConfig getWebhookBranchHookEventHsqsDequeueConfig() {
+    return appConfig.getWebhookBranchHookEventHsqsDequeueConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("webhookPushEventHsqsDequeueConfig")
+  public HsqsDequeueConfig getWebhookPushEventHsqsDequeueConfig() {
+    return appConfig.getWebhookPushEventHsqsDequeueConfig();
+  }
+
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
+    install(new io.harness.hsqs.client.HsqsServiceClientModule(
+        appConfig.getQueueServiceClientConfig(), AuthorizationServiceHeader.BEARER.getServiceId()));
     install(PrimaryVersionManagerModule.getInstance());
     install(new NGSettingModule(appConfig));
     install(new AbstractPersistenceTracerModule() {
@@ -752,6 +783,9 @@ public class NextGenModule extends AbstractModule {
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(new AgentNgManagerCgManagerClientModule(appConfig.getManagerClientConfig(),
         appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
+    install(new TriggersClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(appConfig.getPipelineServiceClientConfig().getBaseUrl()).build(),
+        appConfig.getNextGenConfig().getPipelineServiceSecret(), NG_MANAGER.toString()));
     bind(NgGlobalKmsService.class).to(NgGlobalKmsServiceImpl.class);
     bind(FreezeCRUDService.class).to(FreezeCRUDServiceImpl.class);
     bind(FreezeEvaluateService.class).to(FreezeEvaluateServiceImpl.class);
@@ -1130,6 +1164,18 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.GIT_SYNC_ENTITY_STREAM + ENTITY_CRUD))
         .to(GitSyncProjectCleanup.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(CD_ACCOUNT_EXECUTION_METADATA + ENTITY_CRUD))
+        .to(AccountExecutionMetadataCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(DEPLOYMENT_ACCOUNTS + ENTITY_CRUD))
+        .to(DeploymentAccountsCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(DEPLOYMENT_SUMMARY_NG + ENTITY_CRUD))
+        .to(DeploymentSummaryNGCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(INSTANCE_DEPLOYMENT_INFO + ENTITY_CRUD))
+        .to(InstanceDeploymentInfoCRUDStreamListener.class);
 
     bind(ServiceAccountService.class).to(ServiceAccountServiceImpl.class);
     bind(OpaService.class).to(OpaServiceImpl.class);

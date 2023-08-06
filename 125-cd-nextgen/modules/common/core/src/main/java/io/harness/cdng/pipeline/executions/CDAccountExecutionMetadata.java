@@ -6,13 +6,16 @@
  */
 
 package io.harness.cdng.pipeline.executions;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.DbAliases;
+import io.harness.persistence.PersistentEntity;
 import io.harness.pms.plan.execution.AccountExecutionInfo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -25,6 +28,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(PIPELINE)
 @Data
 @Builder
@@ -35,7 +39,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("cdAccountExecutionMetadata")
 @TypeAlias("cdAccountExecutionMetadata")
 @HarnessEntity(exportable = true)
-public class CDAccountExecutionMetadata {
+public class CDAccountExecutionMetadata implements PersistentEntity {
   @Wither @Id @dev.morphia.annotations.Id String uuid;
   String accountId;
   Long executionCount;

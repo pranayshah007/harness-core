@@ -36,6 +36,7 @@ public class CENGCoreMigrationProvider implements MigrationProvider {
     return new ArrayList<Class<? extends MigrationDetails>>() {
       { add(CENGCoreMigrationDetails.class); }
       { add(CENGTimescaleMigrationDetails.class); }
+      { add(CENGClickhouseMigrationDetails.class); }
     };
   }
 }

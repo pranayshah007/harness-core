@@ -6,16 +6,18 @@
  */
 
 package software.wings.graphql.datafetcher.execution;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notBlankCheck;
 import static io.harness.validation.Validator.notNullCheck;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidRequestException;
 
@@ -23,6 +25,7 @@ import software.wings.beans.ArtifactVariable;
 import software.wings.beans.ExecutionArgs;
 import software.wings.beans.Pipeline;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.graphql.schema.mutation.pipeline.input.QLRuntimeExecutionInputs;
 import software.wings.graphql.schema.mutation.pipeline.payload.QLContinueExecutionPayload;
@@ -36,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
@@ -51,8 +55,10 @@ public class ResumePipelineController {
     notBlankCheck("Invalid pipeline execution", parameter.getPipelineExecutionId());
     notBlankCheck("Invalid pipeline stage ", parameter.getPipelineStageElementId());
 
+    String[] fields = {WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.stageName,
+        WorkflowExecutionKeys.workflowId, WorkflowExecutionKeys.workflowType};
     WorkflowExecution execution =
-        workflowExecutionService.getWorkflowExecution(appId, parameter.getPipelineExecutionId());
+        workflowExecutionService.getWorkflowExecution(appId, parameter.getPipelineExecutionId(), fields);
     notNullCheck("No execution found for the given application " + appId, execution, USER);
     String pipelineId = execution.getWorkflowId();
     Pipeline pipeline = pipelineService.readPipeline(appId, pipelineId, true);

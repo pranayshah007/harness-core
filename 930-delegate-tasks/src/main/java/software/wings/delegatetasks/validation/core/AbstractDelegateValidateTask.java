@@ -6,14 +6,16 @@
  */
 
 package software.wings.delegatetasks.validation.core;
-
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.network.Http.connectableHttpUrl;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
@@ -28,6 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Created by brett on 11/1/17
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public abstract class AbstractDelegateValidateTask implements DelegateValidateTask {

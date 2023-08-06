@@ -11,15 +11,10 @@ option java_multiple_files = true;
 option go_package = "920_delegate_service_beans";
 
 service DelegateTask {
-  rpc QueueTask(DelegateClassicTaskRequest) returns (QueueTaskResponse);
   rpc QueueTaskV2(DelegateClassicTaskRequest) returns (QueueTaskResponse);
-  rpc ExecuteTask(DelegateClassicTaskRequest) returns (ExecuteTaskResponse);
   rpc ExecuteTaskV2(DelegateClassicTaskRequest) returns (ExecuteTaskResponse);
-  rpc AbortTask(AbortExpireTaskRequest) returns (AbortTaskResponse);
   rpc AbortTaskV2(AbortExpireTaskRequest) returns (AbortTaskResponse);
-  rpc ExpireTask(AbortExpireTaskRequest) returns (ExpireTaskResponse);
   rpc ExpireTaskV2(AbortExpireTaskRequest) returns (ExpireTaskResponse);
-  rpc CreatePerpetualTaskClassic(CreatePerpetualTaskRequestClassic) returns (CreatePerpetualTaskResponseClassic);
   rpc CreatePerpetualTaskClassicV2(CreatePerpetualTaskRequestClassic) returns (CreatePerpetualTaskResponseClassic);
 }
 

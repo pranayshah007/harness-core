@@ -17,6 +17,9 @@ import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
@@ -50,5 +53,14 @@ public class GitDecryptionHelper {
           decryptionHelper.decrypt(apiAccessDecryptableEntity, encryptionDetails);
       GitApiAccessDecryptionHelper.setAPIAccessDecryptableEntity(scmConnector, decryptedScmSpec);
     }
+  }
+
+  public GithubHttpCredentialsDTO decryptGitHubAppAuthenticationConfig(
+      GithubConnectorDTO githubConnectorDTO, List<EncryptedDataDetail> encryptionDetails) {
+    GithubCredentialsDTO githubCredentialsDTO = githubConnectorDTO.getAuthentication().getCredentials();
+    DecryptableEntity decryptableEntity = ((GithubHttpCredentialsDTO) githubCredentialsDTO).getHttpCredentialsSpec();
+    final DecryptableEntity decryptedScmSpec = decryptionHelper.decrypt(decryptableEntity, encryptionDetails);
+    return GitAuthenticationDecryptionHelper.getGitHubAppAuthenticationDecryptableEntity(
+        githubConnectorDTO, decryptedScmSpec);
   }
 }

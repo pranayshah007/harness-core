@@ -430,6 +430,18 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(
         evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
         .isEqualTo(false);
+    // and operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // or operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" or <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // =~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> =~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // !~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
 
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");
@@ -620,6 +632,18 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // Not operator
     assertThat(
         evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
+        .isEqualTo(false);
+    // and operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // or operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" or <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // =~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> =~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // !~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
         .isEqualTo(false);
 
     // Complex double nesting with concatenate expressions with prefix combinations

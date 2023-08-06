@@ -98,7 +98,7 @@ public class DefaultPipelineStepMonitoredServiceResolutionServiceImplTest extend
     String actualIdentifier =
         defaultService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
             .getMonitoredServiceIdentifier();
-    assertThat(actualIdentifier).isNull();
+    assertThat(actualIdentifier).isNotNull();
   }
 
   @Test

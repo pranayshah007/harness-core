@@ -103,6 +103,7 @@ public abstract class DataCollectionTask
   @FdIndex @NonNull private DataCollectionExecutionStatus status;
 
   private Instant lastPickedAt;
+  private Instant firstPickedAt;
   private int retryCount;
 
   private String exception;
@@ -168,10 +169,10 @@ public abstract class DataCollectionTask
   }
 
   public Duration waitTime() {
-    Preconditions.checkNotNull(lastPickedAt,
+    Preconditions.checkNotNull(firstPickedAt,
         "Last picked up needs to be not null for wait time calculation for dataCollectionTaskId: " + uuid);
     Instant maxOfCreatedAndValidAfter = getMaximumInstant(validAfter, Instant.ofEpochMilli(getCreatedAt()));
-    return Duration.between(maxOfCreatedAndValidAfter, lastPickedAt);
+    return Duration.between(maxOfCreatedAndValidAfter, firstPickedAt);
   }
   public LogLevel getLogLevel() {
     if (DataCollectionExecutionStatus.getFailedStatuses().contains(status)) {

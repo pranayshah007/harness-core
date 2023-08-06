@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.helm;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.CUSTOM_REMOTE;
@@ -45,13 +44,19 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
+import io.harness.delegate.beans.helm.HelmDeployProgressDataVersion;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
@@ -98,6 +103,7 @@ import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -145,6 +151,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_K8S})
 @Slf4j
 public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final Set<StoreDelegateConfigType> HELM_SUPPORTED_STORE_TYPES =
@@ -161,7 +169,10 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   @Inject private ExecutionConfigOverrideFromFileOnDelegate delegateLocalConfigService;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
   private ILogStreamingTaskClient logStreamingTaskClient;
+  private ILogStreamingTaskClient taskProgressStreamingTaskClient;
+  private String taskId;
   @Inject private TimeLimiter timeLimiter;
   @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
   @Inject private HelmSteadyStateService helmSteadyStateService;
@@ -173,9 +184,20 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private static final String NON_DIGITS_REGEX = "\\D+";
   private static final int VERSION_LENGTH = 3;
   private static final int KUBERNETESS_116_VERSION = 116;
+
+  @Override
+  public void setTaskId(String taskId) {
+    this.taskId = taskId;
+  }
+
   @Override
   public void setLogStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient) {
     this.logStreamingTaskClient = iLogStreamingTaskClient;
+  }
+
+  @Override
+  public void setTaskProgressStreamingClient(ILogStreamingTaskClient iLogStreamingTaskClient) {
+    this.taskProgressStreamingTaskClient = iLogStreamingTaskClient;
   }
 
   @Override
@@ -188,6 +210,11 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     String initWorkingDir = commandRequest.getWorkingDir();
     ReleaseHistory releaseHistory = null;
     try {
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
+
+      List<K8sPod> existingPodList = k8sTaskHelperBase.getHelmPodList(
+          commandRequest.getTimeoutInMillis(), kubernetesConfig, commandRequest.getReleaseName(), logCallback);
       HelmInstallCmdResponseNG commandResponse;
       logCallback.saveExecutionLog(
           "List all existing deployed releases for release name: " + commandRequest.getReleaseName());
@@ -216,8 +243,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       serviceHookHandler.addToContext(MANIFEST_FILES_DIRECTORY.getContextName(), manifestFilesDirectory);
       serviceHookHandler.execute(
           ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES, serviceHookDTO.getWorkingDirectory(), logCallback);
-      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-          commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
       serviceHookHandler.execute(
@@ -259,6 +284,18 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       // list releases cmd passed
       isInstallUpgrade = true;
+
+      if (commandRequest.isSendTaskProgressEvents()) {
+        HelmDeployProgressData helmDeployProgressData =
+            HelmDeployProgressData.builder()
+                .progressDataVersion(HelmDeployProgressDataVersion.V1.getVersionName())
+                .prevReleaseVersion(prevVersion)
+                .hasInstallUpgradeStarted(isInstallUpgrade)
+                .build();
+        k8sTaskHelperBase.getTaskProgressCallback(taskProgressStreamingTaskClient, taskId)
+            .sendTaskProgressUpdate("Helm Install/Upgrade started", helmDeployProgressData);
+      }
+
       if (checkNewHelmInstall(helmListReleaseResponseNG)) {
         // install
         logCallback.saveExecutionLog("No previous deployment found for release. Installing chart");
@@ -308,7 +345,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
           serviceHookDTO.getWorkingDirectory(), logCallback);
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WrapUp);
-
+      List<K8sPod> newPodList =
+          k8sTaskHelperBase.tagNewPods(k8sTaskHelperBase.getHelmPodList(commandRequest.getTimeoutInMillis(),
+                                           kubernetesConfig, commandRequest.getReleaseName(), logCallback),
+              existingPodList);
+      commandResponse.setPreviousK8sPodList(existingPodList);
+      commandResponse.setK8sPodList(newPodList);
       return commandResponse;
 
     } catch (InterruptedException ex) {
@@ -586,6 +628,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
     try {
+      List<K8sPod> existingPodList = k8sTaskHelperBase.getHelmPodList(
+          commandRequest.getTimeoutInMillis(), kubernetesConfig, commandRequest.getReleaseName(), logCallback);
+
       logCallback = markDoneAndStartNew(commandRequest, logCallback, Rollback);
       HelmInstallCmdResponseNG commandResponse = HelmCommandResponseMapper.getHelmInstCmdRespNG(
           helmClient.rollback(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true));
@@ -624,6 +669,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       commandResponse.setHelmChartInfo(helmChartInfo);
 
       logCallback.saveExecutionLog("\nDone", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      List<K8sPod> newPodList =
+          k8sTaskHelperBase.tagNewPods(k8sTaskHelperBase.getHelmPodList(commandRequest.getTimeoutInMillis(),
+                                           kubernetesConfig, commandRequest.getReleaseName(), logCallback),
+              existingPodList);
+      commandResponse.setPreviousK8sPodList(existingPodList);
+      commandResponse.setK8sPodList(newPodList);
       return commandResponse;
     } catch (UncheckedTimeoutException e) {
       log.error(TIMED_OUT_IN_STEADY_STATE, ExceptionMessageSanitizer.sanitizeException(e));
@@ -845,7 +896,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         scmFetchFilesHelper.downloadFilesUsingScm(
             manifestFilesDirectory, gitStoreDelegateConfig, commandRequest.getLogCallback());
       } else {
-        GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+        GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+            gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
         gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
         ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
             gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());

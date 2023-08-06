@@ -1,0 +1,5 @@
+# This is outbox metrics group template. To use this metric, copy this file to the corresponding module's folder
+name: Outbox Event Metrics Group
+identifier: outbox_event_metrics_group
+labels:
+  - resourceType

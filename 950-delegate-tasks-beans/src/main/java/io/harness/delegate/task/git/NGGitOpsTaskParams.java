@@ -6,13 +6,14 @@
  */
 
 package io.harness.delegate.task.git;
-
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
@@ -27,6 +28,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(GITOPS)
 @Data
 @Builder
@@ -42,15 +44,14 @@ public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDe
   private GitApiTaskParams gitApiTaskParams;
   private String prTitle;
   private boolean isCloseLogStream;
-
+  private boolean isRevertPR;
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
-    if (GitOpsTaskType.UPDATE_RELEASE_REPO.equals(gitOpsTaskType)) {
+    if (GitOpsTaskType.UPDATE_RELEASE_REPO.equals(gitOpsTaskType) || GitOpsTaskType.REVERT_PR.equals(gitOpsTaskType)) {
       GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
       capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ScmConnectorMapper.toGitConfigDTO(gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO()),
-          gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+          gitStoreDelegateConfig, gitStoreDelegateConfig.getEncryptedDataDetails()));
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
     }

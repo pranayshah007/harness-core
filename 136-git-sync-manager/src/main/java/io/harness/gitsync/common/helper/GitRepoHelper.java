@@ -6,12 +6,14 @@
  */
 
 package io.harness.gitsync.common.helper;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -24,6 +26,8 @@ import com.google.inject.Singleton;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -58,15 +62,6 @@ public class GitRepoHelper {
     List<String> segments = List.of(url.split("/"));
     String namespace = segments.get(segments.size() - 2);
     return namespace + "/" + repo;
-  }
-
-  public boolean isRepoPresent(List<Repository> repoList, String absoluteRepoName) {
-    for (Repository repository : repoList) {
-      if (absoluteRepoName.equals(repository.getName())) {
-        return true;
-      }
-    }
-    return false;
   }
 
   public String getCompleteRepoName(Repository repo) {

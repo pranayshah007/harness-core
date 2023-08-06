@@ -26,6 +26,8 @@ pkg_tar(
     srcs = [
         "//400-rest/src/main/resources:redisson-jcache.yaml",
         "//idp-service/config:config.yml",
+        "//idp-service/config:keystore.jks",
+        "//idp-service/src/main/resources:enterprise-redisson-jcache.yaml",
     ],
     files = {
         "@alpn_boot_8.1.13.v20181017//file": "alpn-boot-8.1.13.v20181017.jar",

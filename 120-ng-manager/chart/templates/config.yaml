@@ -12,10 +12,11 @@ data:
   MANAGER_AUTHORITY: harness-manager:9879
   NG_MANAGER_TARGET: ng-manager:13002
   NG_MANAGER_AUTHORITY: ng-manager:13002
-  EVENTS_FRAMEWORK_REDIS_URL: 'redis://localhost:6379'
-  EVENTS_FRAMEWORK_USE_SENTINEL: "true"
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   GRPC_SERVER_PORT: "9979"
   SHOULD_CONFIGURE_WITH_PMS: "true"
   PMS_GITSYNC_TARGET:  pipeline-service:14002
@@ -26,9 +27,10 @@ data:
   PMS_AUTHORITY:  pipeline-service:12011
   MEMORY: {{ .Values.java.memory | quote }}
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
-  LOCK_CONFIG_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
-  LOCK_CONFIG_USE_SENTINEL: "true"
+  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
   USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
   MOCK_ACCESS_CONTROL_SERVICE: "false"
@@ -71,7 +73,6 @@ data:
   PIPELINE_SERVICE_CLIENT_BASEURL: http://pipeline-service:12001/api/
   CI_MANAGER_SERVICE_CLIENT_BASEURL: http://ci-manager:7090/
   CVNG_SERVICE_CLIENT_BASEURL: http://cv-nextgen:6060/cv/api/
-  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}

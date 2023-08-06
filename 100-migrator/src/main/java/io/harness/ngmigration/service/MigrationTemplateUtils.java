@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.infrastructure.InfrastructureResourceClient;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -30,6 +32,7 @@ import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class MigrationTemplateUtils {

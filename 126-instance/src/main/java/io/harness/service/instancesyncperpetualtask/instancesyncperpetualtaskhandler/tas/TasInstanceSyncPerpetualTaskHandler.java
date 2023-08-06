@@ -6,8 +6,11 @@
  */
 package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.tas;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.tas.TasEntityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -34,6 +37,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.CDP)

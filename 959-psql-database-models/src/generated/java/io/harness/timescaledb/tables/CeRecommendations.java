@@ -1,8 +1,8 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
 /*
@@ -10,6 +10,7 @@
  */
 package io.harness.timescaledb.tables;
 
+import io.harness.timescaledb.Indexes;
 import io.harness.timescaledb.Keys;
 import io.harness.timescaledb.Public;
 import io.harness.timescaledb.tables.records.CeRecommendationsRecord;
@@ -19,9 +20,10 @@ import java.util.Arrays;
 import java.util.List;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row17;
+import org.jooq.Row21;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -141,7 +143,8 @@ public class CeRecommendations extends TableImpl<CeRecommendationsRecord> {
    * The column <code>public.ce_recommendations.recommendationstate</code>.
    */
   public final TableField<CeRecommendationsRecord, String> RECOMMENDATIONSTATE =
-      createField(DSL.name("recommendationstate"), SQLDataType.CLOB, this, "");
+      createField(DSL.name("recommendationstate"),
+          SQLDataType.CLOB.defaultValue(DSL.field("'OPEN'::text", SQLDataType.CLOB)), this, "");
 
   /**
    * The column <code>public.ce_recommendations.governanceruleid</code>.
@@ -154,6 +157,30 @@ public class CeRecommendations extends TableImpl<CeRecommendationsRecord> {
    */
   public final TableField<CeRecommendationsRecord, String> CLOUDPROVIDER =
       createField(DSL.name("cloudprovider"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.ce_recommendations.servicenowconnectorref</code>.
+   */
+  public final TableField<CeRecommendationsRecord, String> SERVICENOWCONNECTORREF =
+      createField(DSL.name("servicenowconnectorref"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.ce_recommendations.servicenowissuekey</code>.
+   */
+  public final TableField<CeRecommendationsRecord, String> SERVICENOWISSUEKEY =
+      createField(DSL.name("servicenowissuekey"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.ce_recommendations.servicenowstatus</code>.
+   */
+  public final TableField<CeRecommendationsRecord, String> SERVICENOWSTATUS =
+      createField(DSL.name("servicenowstatus"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.ce_recommendations.servicenowtickettype</code>.
+   */
+  public final TableField<CeRecommendationsRecord, String> SERVICENOWTICKETTYPE =
+      createField(DSL.name("servicenowtickettype"), SQLDataType.CLOB, this, "");
 
   private CeRecommendations(Name alias, Table<CeRecommendationsRecord> aliased) {
     this(alias, aliased, null);
@@ -194,6 +221,12 @@ public class CeRecommendations extends TableImpl<CeRecommendationsRecord> {
   }
 
   @Override
+  public List<Index> getIndexes() {
+    return Arrays.<Index>asList(Indexes.RECOMMENDATION_ACCOUNTID_LASTPROCESSEDAT_ISVALID_RESOURCETYPE_I,
+        Indexes.RECOMMENDATION_ACCOUNTID_VALID_INDEX);
+  }
+
+  @Override
   public UniqueKey<CeRecommendationsRecord> getPrimaryKey() {
     return Keys.CE_RECOMMENDATIONS_PKEY;
   }
@@ -230,13 +263,13 @@ public class CeRecommendations extends TableImpl<CeRecommendationsRecord> {
   }
 
   // -------------------------------------------------------------------------
-  // Row11 type methods
+  // Row21 type methods
   // -------------------------------------------------------------------------
 
   @Override
-  public Row17<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime, OffsetDateTime,
-      String, String, String, String, String, String>
+  public Row21<String, String, String, Double, Double, String, String, String, Boolean, OffsetDateTime, OffsetDateTime,
+      String, String, String, String, String, String, String, String, String, String>
   fieldsRow() {
-    return (Row17) super.fieldsRow();
+    return (Row21) super.fieldsRow();
   }
 }

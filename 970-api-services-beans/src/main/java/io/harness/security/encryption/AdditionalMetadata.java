@@ -7,6 +7,8 @@
 
 package io.harness.security.encryption;
 
+import io.harness.annotation.RecasterAlias;
+
 import io.swagger.annotations.ApiModelProperty;
 import java.util.Map;
 import lombok.Builder;
@@ -17,6 +19,7 @@ import lombok.Value;
 @Value
 @Builder
 @EqualsAndHashCode
+@RecasterAlias("io.harness.security.encryption.AdditionalMetadata")
 public class AdditionalMetadata {
   @ApiModelProperty(dataType = "Map[String,String]") @Singular private Map<String, Object> values;
 }

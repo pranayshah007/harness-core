@@ -212,12 +212,12 @@ public class WebhookEventResponseHelperTest extends CategoryTest {
                        .build());
     assertThat(TriggerEventStatusHelper.toStatus(POLLING_EVENT_WITH_NO_VERSIONS))
         .isEqualTo(TriggerEventStatus.builder()
-                       .status(TriggerEventStatus.FinalResponse.FAILURE)
+                       .status(TriggerEventStatus.FinalResponse.FAILED)
                        .message(POLLING_EVENT_WITH_NO_VERSIONS.getMessage())
                        .build());
     assertThat(TriggerEventStatusHelper.toStatus(null))
         .isEqualTo(TriggerEventStatus.builder()
-                       .status(TriggerEventStatus.FinalResponse.FAILURE)
+                       .status(TriggerEventStatus.FinalResponse.FAILED)
                        .message("Unknown status")
                        .build());
   }

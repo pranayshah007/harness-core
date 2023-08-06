@@ -54,6 +54,8 @@ import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
+import io.harness.logstreaming.LogLine;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
@@ -82,6 +84,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -128,11 +131,13 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     CIK8InitializeTaskParams cik8InitializeTaskParams = (CIK8InitializeTaskParams) ciInitializeTaskParams;
     String cik8BuildTaskParamsStr = cik8InitializeTaskParams.toString();
     ConnectorDetails gitConnectorDetails = cik8InitializeTaskParams.getCik8PodParams().getGitConnector();
-
     PodParams podParams = cik8InitializeTaskParams.getCik8PodParams();
     String namespace = podParams.getNamespace();
     String podName = podParams.getName();
     String serviceAccountName = podParams.getServiceAccountName();
+
+    streamLogLine(logStreamingTaskClient, LogLevel.INFO,
+        format("Starting job to create pod %s on %s namespace", podName, namespace));
 
     if (namespace != null) {
       namespace = namespace.replaceAll("\\s+", "");
@@ -182,11 +187,15 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
             CiK8sTaskResponse.builder().podStatus(podStatus).podName(podName).podNamespace(namespace).build();
         boolean isPodRunning = podStatus.getStatus() == RUNNING;
         if (isPodRunning) {
+          streamLogLine(logStreamingTaskClient, LogLevel.INFO,
+              format("Pod %s is now in running status on %s namespace", podName, namespace));
           result = K8sTaskExecutionResponse.builder()
                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                        .k8sTaskResponse(k8sTaskResponse)
                        .build();
         } else {
+          streamLogLine(logStreamingTaskClient, LogLevel.INFO,
+              format("Pod %s has failed to start on %s namespace", podName, namespace));
           result = K8sTaskExecutionResponse.builder()
                        .commandExecutionStatus(CommandExecutionStatus.FAILURE)
                        .errorMessage(podStatus.getErrorMessage())
@@ -217,6 +226,12 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     }
     log.info("CI lite-engine task took: {} for pod: {} ", timer.stop(), podParams.getName());
     return result;
+  }
+
+  public void streamLogLine(ILogStreamingTaskClient logStreamingTaskClient, LogLevel logLevel, String message) {
+    LogLine logLine =
+        LogLine.builder().level(logLevel).message(message).timestamp(OffsetDateTime.now().toInstant()).build();
+    logStreamingTaskClient.writeLogLine(logLine, "");
   }
 
   private void createServicePod(CoreV1Api coreV1Api, String namespace, CIK8ServicePodParams servicePodParams)

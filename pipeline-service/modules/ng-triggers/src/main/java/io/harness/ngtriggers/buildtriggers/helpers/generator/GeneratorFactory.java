@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.buildtriggers.helpers.generator;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.ManifestType.HELM_MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
@@ -30,7 +29,10 @@ import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.JENKINS;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.NEXUS2_REGISTRY;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactType.NEXUS3_REGISTRY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.artifact.BuildStoreType;
@@ -41,6 +43,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(PIPELINE)

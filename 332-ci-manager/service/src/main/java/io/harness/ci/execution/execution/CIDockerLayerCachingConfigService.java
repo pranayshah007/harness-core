@@ -21,13 +21,13 @@ public class CIDockerLayerCachingConfigService {
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject CIFeatureFlagService featureFlagService;
 
-  public CIDockerLayerCachingConfig getDockerLayerCachingConfig(String accountId) {
+  public CIDockerLayerCachingConfig getDockerLayerCachingConfig(String accountId, boolean isBareMetalUsed) {
     if (!featureFlagService.isEnabled(FeatureName.CI_ENABLE_DLC, accountId)) {
       return null;
     }
     // Placeholder for vendor APIs for bucket creation. Instead of the global keys, return the
     // keys specific to the bucket of the user when APIs are implemented
-    if (featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_DLC, accountId)) {
+    if (isBareMetalUsed) {
       return ciExecutionServiceConfig.getDockerLayerCachingConfig();
     }
     return convertFromGCS(ciExecutionServiceConfig.getDockerLayerCachingGCSConfig());

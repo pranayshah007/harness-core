@@ -6,7 +6,6 @@
  */
 
 package io.harness.eraro;
-
 import static io.harness.eraro.Status.BAD_REQUEST;
 import static io.harness.eraro.Status.CONFLICT;
 import static io.harness.eraro.Status.EXPECTATION_FAILED;
@@ -20,8 +19,11 @@ import static io.harness.eraro.Status.UNSUPPORTED_MEDIA_TYPE;
 
 import static java.util.stream.Collectors.joining;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.google.common.base.Splitter;
@@ -29,6 +31,8 @@ import com.google.common.base.Splitter;
 /**
  * The enum Error codes.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.DX)
 public enum ErrorCode {
   @JsonEnumDefaultValue DEFAULT_ERROR_CODE,
@@ -680,7 +684,9 @@ public enum ErrorCode {
   HTTP_SERVICE_UNAVAILABLE,
   HTTP_GATEWAY_TIMEOUT,
   HTTP_SERVER_ERROR_RESPONSE,
-  SERVICENOW_REFRESH_TOKEN_ERROR;
+  PIPELINE_UPDATE_EXCEPTION,
+  SERVICENOW_REFRESH_TOKEN_ERROR,
+  PARAMETER_FIELD_CAST_ERROR;
 
   private Status status = BAD_REQUEST;
   private String description;

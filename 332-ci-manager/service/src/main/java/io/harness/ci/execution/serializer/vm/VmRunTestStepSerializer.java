@@ -48,6 +48,8 @@ public class VmRunTestStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject CIFeatureFlagService featureFlagService;
+  @Inject private SerializerUtils serializerUtils;
+
   String NULL_STR = "null";
 
   public VmRunTestStep serialize(RunTestsStepInfo runTestsStepInfo, String identifier,
@@ -120,6 +122,8 @@ public class VmRunTestStepSerializer {
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
 
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runTestsStepInfo.getShell());
     preCommand = earlyExitCommand + preCommand;
 

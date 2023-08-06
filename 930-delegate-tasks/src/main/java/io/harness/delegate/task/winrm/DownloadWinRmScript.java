@@ -6,12 +6,16 @@
  */
 
 package io.harness.delegate.task.winrm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class DownloadWinRmScript {
@@ -103,6 +107,12 @@ public class DownloadWinRmScript {
   public static final String JENKINS_DOWNLOAD_ARTIFACT_USING_CREDENTIALS_PS = BASE_JENKINS_DOWNLOAD_SCRIPT + "\n"
       + "$webClient.Headers[[System.Net.HttpRequestHeader]::Authorization] = \"${AUTHORIZATION}\"\n"
       + "$webClient.DownloadFile($url, $localfilename)\n";
+
+  public static final String AZURE_UPACK_DOWNLOAD_ARTIFACT_BASH_ORG = "export AZURE_DEVOPS_EXT_PAT=${TOKEN}\n"
+      + "az artifacts universal download --organization \"${AZURE_ARTIFACTS_URL}\" --feed \"${FEED}\" --name \"${PKG_NAME}\" --version \"${PKG_VERSION}\" --path ${DESTINATION_PATH}";
+
+  public static final String AZURE_UPACK_DOWNLOAD_ARTIFACT_BASH_PROJ = "export AZURE_DEVOPS_EXT_PAT=${TOKEN}\n"
+      + "az artifacts universal download --organization \"${AZURE_ARTIFACTS_URL}\" --project=\"${PROJECT}\" --scope project --feed \"${FEED}\" --name \"${PKG_NAME}\" --version \"${PKG_VERSION}\" --path ${DESTINATION_PATH}";
 
   public static final String AZURE_UPACK_DOWNLOAD_ARTIFACT_PS_ORG = "$env:AZURE_DEVOPS_EXT_PAT = \"${TOKEN}\"\n"
       + "az artifacts universal download --organization \"${AZURE_ARTIFACTS_URL}\" --feed \"${FEED}\" --name \"${PKG_NAME}\" --version \"${PKG_VERSION}\" --path ${DESTINATION_PATH}";

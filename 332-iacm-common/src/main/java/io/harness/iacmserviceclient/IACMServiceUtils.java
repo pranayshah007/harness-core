@@ -14,8 +14,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.entities.Execution;
 import io.harness.beans.entities.IACMServiceConfig;
+import io.harness.beans.entities.ResourceResponseData;
 import io.harness.beans.entities.TerraformEndpointsData;
 import io.harness.beans.entities.Workspace;
+import io.harness.beans.entities.WorkspaceOutput;
 import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.exception.GeneralException;
 import io.harness.ng.core.NGAccess;
@@ -33,6 +35,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import lombok.Getter;
 import lombok.Setter;
@@ -151,6 +155,63 @@ public class IACMServiceUtils {
       throw new GeneralException("Could not fetch token from IACM service. Response body is null");
     }
     return response.body().get("token").getAsString();
+  }
+
+  public Map<String, String> getIacmWorkspaceOutputs(
+      String org, String projectId, String accountId, String workspaceID) {
+    log.info("Initiating request to IACM service for ouput retrieval: {}", this.iacmServiceConfig.getBaseUrl());
+    RetryPolicy<Response<JsonObject>> retryPolicy = getRetryPolicyJsonObject(
+        format("[Retrying failed call to retrieve output variables from the IAC Server info: {}"),
+        format("Failed to retrieve output variables from the IAC Server after retrying {} times"));
+
+    Response<JsonObject> response;
+
+    try {
+      response = Failsafe.with(retryPolicy)
+                     .get(()
+                              -> iacmServiceClient
+                                     .getWorkspaceResoures(org, projectId, workspaceID,
+                                         generateJWTToken(accountId, org, projectId), accountId)
+                                     .execute());
+    } catch (Exception e) {
+      log.error("Error while trying to execute the query in the IACM Service: ", e);
+      throw new GeneralException("Error retrieving the resources from the IACM service. Call failed", e);
+    }
+    if (!response.isSuccessful()) {
+      String errorBody = null;
+      try {
+        if (response.errorBody() != null) {
+          errorBody = response.errorBody().string();
+        }
+      } catch (IOException e) {
+        log.error("Could not read error body {}", response.errorBody());
+      }
+      log.error("error querying the iac server{}", errorBody);
+
+      throw new GeneralException(String.format("Could not parse body for the env retrieval response = %s, message = %s",
+          response.code(), response.message()));
+    }
+
+    if (response.body() == null) {
+      throw new GeneralException("Could not retrieve IACM variables from the IACM service. Response body is null");
+    }
+    ObjectMapper objectMapper = new ObjectMapper();
+    ResourceResponseData responseData;
+    Map<String, String> outputs = new HashMap<>();
+    try {
+      responseData = objectMapper.readValue(response.body().toString(), ResourceResponseData.class);
+      for (WorkspaceOutput output : responseData.getOutputs()) {
+        outputs.put(output.getName(), output.getValue());
+      }
+    } catch (JsonProcessingException ex) {
+      log.error("Could not parse json body {}", response.body().toString());
+      throw new GeneralException(
+          "Could not parse variables response. Please contact Harness Support for more information");
+    }
+    if (outputs.size() == 0) {
+      log.info("There are no outputs in this workspace");
+    }
+    return outputs;
   }
 
   public WorkspaceVariables[] getIacmWorkspaceEnvs(String org, String projectId, String accountId, String workspaceID) {

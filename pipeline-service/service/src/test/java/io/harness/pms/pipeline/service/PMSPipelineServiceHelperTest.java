@@ -195,28 +195,29 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testPopulateFilterUsingIdentifier() {
     String filterIdentifier = "filterIdentifier";
-    FilterDTO filterDTO =
-        FilterDTO.builder()
-            .filterProperties(PipelineFilterPropertiesDto.builder()
-                                  .name(pipelineIdentifier)
-                                  .description("some description")
-                                  .pipelineTags(Collections.singletonList(NGTag.builder().key("c").value("h").build()))
-                                  .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
-                                  .build())
-            .build();
+    FilterDTO filterDTO = FilterDTO.builder()
+                              .filterProperties(PipelineFilterPropertiesDto.builder()
+                                                    .name(pipelineIdentifier)
+                                                    .description("some description")
+                                                    .pipelineTags(List.of(NGTag.builder().key("c").value("h").build(),
+                                                        NGTag.builder().key("c").value(null).build()))
+                                                    .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
+                                                    .build())
+                              .build();
     doReturn(null)
         .when(filterService)
         .get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
     assertThatThrownBy(()
-                           -> pmsPipelineServiceHelper.populateFilterUsingIdentifier(
-                               new Criteria(), accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier))
+                           -> pmsPipelineServiceHelper.populateFilterUsingIdentifier(new ArrayList<>(), new Criteria(),
+                               accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier))
         .isInstanceOf(InvalidRequestException.class);
     doReturn(filterDTO)
         .when(filterService)
         .get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
     Criteria criteria = new Criteria();
+    List<Criteria> criteriaList = new ArrayList<>();
     pmsPipelineServiceHelper.populateFilterUsingIdentifier(
-        criteria, accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier);
+        criteriaList, criteria, accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier);
     Document criteriaObject = criteria.getCriteriaObject();
     assertThat(criteriaObject.get(PipelineEntityKeys.name)).isEqualTo(pipelineIdentifier);
     assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.identifier)).get("$in")).size())
@@ -224,16 +225,32 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
     assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.identifier)).get("$in"))
                    .contains(pipelineIdentifier))
         .isTrue();
-    assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.tags)).get("$in")).size()).isEqualTo(1);
-    assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.tags)).get("$in"))
-                   .contains(NGTag.builder().key("c").value("h").build()))
-        .isTrue();
+    assertEquals(criteriaList.size(), 1);
+    assertEquals(criteriaList.get(0).getCriteriaObject().toString(),
+        "Document{{$or=[Document{{tags.key=Document{{$in=[c]}}}}, Document{{tags.value=Document{{$in=[c]}}}}, Document{{tags=Document{{$in=[NGTag(key=c, value=h)]}}}}]}}");
+    filterDTO = FilterDTO.builder()
+                    .filterProperties(PipelineFilterPropertiesDto.builder()
+                                          .name(pipelineIdentifier)
+                                          .description("some description")
+                                          .pipelineTags(List.of(NGTag.builder().key(null).value("c").build()))
+                                          .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
+                                          .build())
+                    .build();
+    doReturn(filterDTO)
+        .when(filterService)
+        .get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
+    assertThatThrownBy(()
+                           -> pmsPipelineServiceHelper.populateFilterUsingIdentifier(new ArrayList<>(), criteria,
+                               accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Key in Pipeline Tags filter cannot be null");
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testPopulateFilter() {
+    List<Criteria> criteriaList = new ArrayList<>();
     Criteria criteria = new Criteria();
     PipelineFilterPropertiesDto pipelineFilter =
         PipelineFilterPropertiesDto.builder()
@@ -242,7 +259,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
             .pipelineTags(Collections.singletonList(NGTag.builder().key("c").value("h").build()))
             .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
             .build();
-    PMSPipelineServiceHelper.populateFilter(criteria, pipelineFilter);
+    PMSPipelineServiceHelper.populateFilter(criteriaList, criteria, pipelineFilter);
     Document criteriaObject = criteria.getCriteriaObject();
     assertThat(criteriaObject.get(PipelineEntityKeys.name)).isEqualTo(pipelineIdentifier);
     assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.identifier)).get("$in")).size())
@@ -250,10 +267,9 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
     assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.identifier)).get("$in"))
                    .contains(pipelineIdentifier))
         .isTrue();
-    assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.tags)).get("$in")).size()).isEqualTo(1);
-    assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.tags)).get("$in"))
-                   .contains(NGTag.builder().key("c").value("h").build()))
-        .isTrue();
+    assertEquals(criteriaList.size(), 1);
+    assertEquals(
+        criteriaList.get(0).getCriteriaObject().toString(), "Document{{tags=Document{{$in=[NGTag(key=c, value=h)]}}}}");
   }
 
   @Test

@@ -6,14 +6,16 @@
  */
 
 package io.harness.cdng.provision.terraform.steps.rolllback;
-
 import static java.lang.String.format;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.executables.CdTaskChainExecutable;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.provision.terraform.TerraformConfig;
@@ -30,7 +32,6 @@ import io.harness.delegate.task.terraform.TerraformTaskNGParameters.TerraformTas
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.persistence.HIterator;
@@ -41,7 +42,6 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.data.StringOutcome;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -68,6 +68,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
@@ -81,7 +83,8 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
   @Inject private TerraformStepHelper terraformStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private StepHelper stepHelper;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
+
   @Inject public TerraformConfigDAL terraformConfigDAL;
   @Inject private AccountService accountService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
@@ -135,8 +138,7 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
         rollbackMessage.append(prepareExecutionUrl(rollbackConfig.getPipelineExecutionId(), ambiance));
       }
 
-      ExpressionEvaluatorUtils.updateExpressions(
-          rollbackConfig, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+      cdExpressionResolver.updateExpressions(ambiance, rollbackConfig);
 
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TERRAFORM_CONFIG,
           TerraformConfigSweepingOutput.builder().terraformConfig(rollbackConfig).tfTaskType(tfTaskType).build(),
@@ -216,7 +218,7 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     TerraformRollbackStepParameters stepParameters = (TerraformRollbackStepParameters) stepElementParameters.getSpec();
@@ -226,8 +228,9 @@ public class TerraformRollbackStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     log.info("Handling Task Result With Security Context for the Rollback Step");
     StepResponse stepResponse = null;
 

@@ -54,6 +54,10 @@ func (b *unittestRunner) AutoDetectTests(ctx context.Context, testGlobs []string
 	return GetPythonTests(testGlobs)
 }
 
+func (b *unittestRunner) ReadPackages(files []types.File) []types.File {
+	return files
+}
+
 func (b *unittestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	// Run all the tests
 	testCmd := ""
@@ -63,8 +67,8 @@ func (b *unittestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest,
 		if ignoreInstr {
 			return strings.TrimSpace(fmt.Sprintf("%s %s", unittestCmd, userArgs)), nil
 		}
-		testCmd = strings.TrimSpace(fmt.Sprintf("python3 %s %s --test_harness %s",
-			scriptPath, currentDir, userCmd))
+		testCmd = strings.TrimSpace(fmt.Sprintf("python3 %s %s --test_harness %s --config_file %s",
+			scriptPath, currentDir, userCmd, agentConfigPath))
 		return testCmd, nil
 	}
 
@@ -90,7 +94,7 @@ func (b *unittestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest,
 		return strings.TrimSpace(fmt.Sprintf("%s %s %s", unittestCmd, testStr, userArgs)), nil
 	}
 
-	testCmd = fmt.Sprintf("python3 %s %s --test_harness %s --test_files %s",
-		scriptPath, currentDir, userCmd, testStr)
+	testCmd = fmt.Sprintf("python3 %s %s --test_harness %s --test_files %s --config_file %s",
+		scriptPath, currentDir, userCmd, testStr, agentConfigPath)
 	return testCmd, nil
 }

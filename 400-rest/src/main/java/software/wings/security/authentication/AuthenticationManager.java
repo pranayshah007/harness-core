@@ -41,6 +41,7 @@ import io.harness.exception.InvalidCredentialsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.metrics.impl.LoginApiMetricsServiceImpl;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
@@ -102,6 +103,7 @@ public class AuthenticationManager {
   @Inject private AuditServiceHelper auditServiceHelper;
   @Inject private LoginSettingsService loginSettingsService;
   @Inject private DeployVariant deployVariant;
+  @Inject private LoginApiMetricsServiceImpl loginApiMetricsService;
   @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
   private UserClient userClient;
   private static final String LOGIN_ERROR_CODE_INVALIDSSO = "#/login?errorCode=invalidsso";
@@ -432,6 +434,7 @@ public class AuthenticationManager {
         user = authHandler.authenticate(userName, password, account.getUuid()).getUser();
       }
 
+      updateDefaultLoginMetricsSuccess(account.getUuid(), account.getAuthenticationMechanism());
       if (user.isTwoFactorAuthenticationEnabled() || account.isTwoFactorAdminEnforced()) {
         return generate2faJWTToken(user);
       } else {
@@ -442,6 +445,7 @@ public class AuthenticationManager {
       }
 
     } catch (WingsException we) {
+      updateDefaultLoginMetricsFailure(account.getUuid(), account.getAuthenticationMechanism());
       log.error("Failed to login via default mechanism with raised exception", we);
       User user = userService.getUserByEmail(userName);
       if (Objects.nonNull(user)) {
@@ -451,6 +455,7 @@ public class AuthenticationManager {
       }
       throw we;
     } catch (Exception e) {
+      updateDefaultLoginMetricsFailure(account.getUuid(), account.getAuthenticationMechanism());
       log.error("Failed to login via default mechanism due to unknown failure", e);
       User user = userService.getUserByEmail(userName);
       if (Objects.nonNull(user)) {
@@ -520,6 +525,11 @@ public class AuthenticationManager {
     return accountId;
   }
 
+  private String getAccountIdFromUserCredential(User user, String... credentials) {
+    return (credentials != null && credentials.length >= 3) ? credentials[2]
+                                                            : ((user == null) ? null : user.getDefaultAccountId());
+  }
+
   public Response samlLogin(String... credentials) throws URISyntaxException {
     String accountId = null;
     User user = null;
@@ -539,10 +549,12 @@ public class AuthenticationManager {
 
       Map<String, String> params = getRedirectParamsForSsoRedirection(jwtToken, encodedApiUrl);
       URI redirectUrl = authenticationUtils.buildAbsoluteUrl("/saml.html", params, accountId);
+      loginApiMetricsService.recordLoginRequestSuccessSaml(accountId);
       return Response.seeOther(redirectUrl).build();
     } catch (WingsException e) {
+      accountId = getAccountIdFromUserCredential(user, credentials);
+      loginApiMetricsService.recordLoginRequestFailureSaml(accountId);
       if (e.getCode() == ErrorCode.SAML_TEST_SUCCESS_MECHANISM_NOT_ENABLED) {
-        accountId = getAccountId(user, credentials);
         String baseUrl = accountService.get(accountId).getSubdomainUrl();
         if (isEmpty(baseUrl)) {
           baseUrl = getBaseUrl();
@@ -558,6 +570,8 @@ public class AuthenticationManager {
         return generateInvalidSSOResponse(e);
       }
     } catch (Exception e) {
+      accountId = getAccountIdFromUserCredential(user, credentials);
+      loginApiMetricsService.recordLoginRequestFailureSaml(accountId);
       return generateInvalidSSOResponse(e);
     }
   }
@@ -592,8 +606,8 @@ public class AuthenticationManager {
   }
 
   public Response oauth2CallbackUrl(String... credentials) throws URISyntaxException {
+    User user = null;
     try {
-      User user;
       AuthenticationResponse authenticationResponse = oauthBasedAuthHandler.authenticate(credentials);
 
       if (null == authenticationResponse.getUser()) {
@@ -614,8 +628,17 @@ public class AuthenticationManager {
       Map<String, String> params = getRedirectParamsForSsoRedirection(jwtToken, encodedApiUrl);
       URI redirectUrl = authenticationUtils.buildAbsoluteUrl("/saml.html", params, user.getDefaultAccountId());
 
+      loginApiMetricsService.recordLoginRequestSuccessOAuth(
+          oauthBasedAuthHandler.getOauthProviderName(credentials), user.getDefaultAccountId());
       return Response.seeOther(redirectUrl).build();
     } catch (Exception e) {
+      String accountId = null;
+      if (user != null) {
+        // OAuth login is for the default account.
+        accountId = user.getDefaultAccountId();
+      }
+      loginApiMetricsService.recordLoginRequestFailureOAuth(
+          oauthBasedAuthHandler.getOauthProviderName(credentials), accountId);
       log.warn("Failed to login via oauth", e);
       URI redirectUrl = new URI(getBaseUrl() + LOGIN_ERROR_CODE_INVALIDSSO);
       return Response.seeOther(redirectUrl).build();
@@ -638,5 +661,39 @@ public class AuthenticationManager {
       baseUrl += "/";
     }
     return baseUrl;
+  }
+
+  private void updateDefaultLoginMetricsSuccess(String accountId, AuthenticationMechanism authMechanism) {
+    switch (authMechanism) {
+      case SAML:
+        loginApiMetricsService.recordLoginRequestSuccessSaml(accountId);
+        break;
+      case LDAP:
+        loginApiMetricsService.recordLoginRequestSuccessLdap(accountId);
+        break;
+      case OAUTH:
+        loginApiMetricsService.recordLoginRequestSuccessOAuth("", accountId);
+        break;
+      default:
+        loginApiMetricsService.recordLoginRequestSuccessPassword(accountId);
+        break;
+    }
+  }
+
+  private void updateDefaultLoginMetricsFailure(String accountId, AuthenticationMechanism authMechanism) {
+    switch (authMechanism) {
+      case SAML:
+        loginApiMetricsService.recordLoginRequestFailureSaml(accountId);
+        break;
+      case LDAP:
+        loginApiMetricsService.recordLoginRequestFailureLdap(accountId);
+        break;
+      case OAUTH:
+        loginApiMetricsService.recordLoginRequestFailureOAuth("", accountId);
+        break;
+      default:
+        loginApiMetricsService.recordLoginRequestFailurePassword(accountId);
+        break;
+    }
   }
 }

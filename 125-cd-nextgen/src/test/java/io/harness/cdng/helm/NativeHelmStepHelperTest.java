@@ -50,6 +50,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.K8sHelmCommonStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -166,7 +167,6 @@ import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.data.OrchestrationRefType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
@@ -219,7 +219,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   @Mock private NativeHelmStepExecutor nativeHelmStepExecutor;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
-  @Mock private EngineExpressionService engineExpressionService;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   // internally used fields -- don't remove
@@ -251,7 +251,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
         .when(cdFeatureFlagHelper)
         .isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.USE_LATEST_CHARTMUSEUM_VERSION);
     doAnswer(invocation -> invocation.getArgument(1, String.class))
-        .when(engineExpressionService)
+        .when(cdExpressionResolver)
         .renderExpression(eq(ambiance), any());
     Reflect.on(nativeHelmStepHelper).set("cdStepHelper", cdStepHelper);
   }

@@ -6,14 +6,16 @@
  */
 
 package io.harness.delegate.task.shell.winrm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getShellExecutorConfig;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getStatus;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWinRmSessionConfig;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getWorkingDir;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -34,7 +36,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.BaseScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
@@ -48,10 +49,12 @@ import java.util.Collections;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(CDP)
 @Singleton
 public class WinRmInitCommandHandler implements CommandHandler {
-  private static final String AZURE_CLI_CHECK_SCRIPT = "az -v";
+  private static final String AZURE_CLI_CHECK_SCRIPT = "az devops -h";
 
   @Inject private WinRmExecutorFactoryNG winRmExecutorFactoryNG;
   @Inject private WinRmConfigAuthEnhancer winRmConfigAuthEnhancer;
@@ -83,13 +86,11 @@ public class WinRmInitCommandHandler implements CommandHandler {
 
     try {
       checkIfDownloadAzureUniversalArtifactSupported(executor, winRmCommandTaskParameters);
-
       CommandExecutionStatus commandExecutionStatus = executeCommand(executor, winRmCommandTaskParameters, commandUnit);
-
+      closeLogStream(executor.getLogCallback(), commandExecutionStatus);
       return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
     } catch (Exception e) {
-      executor.getLogCallback().saveExecutionLog("Command finished with status " + CommandExecutionStatus.FAILURE,
-          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      closeLogStreamWithError(executor.getLogCallback());
       throw e;
     }
   }
@@ -106,12 +107,7 @@ public class WinRmInitCommandHandler implements CommandHandler {
   @NotNull
   private CommandExecutionStatus executeOnDelegate(AbstractScriptExecutor executor, String script) {
     ExecuteCommandResponse executeCommandResponse = executor.executeCommandString(script, Collections.emptyList());
-
-    final CommandExecutionStatus status = getStatus(executeCommandResponse);
-
-    executor.getLogCallback().saveExecutionLog("Command finished with status " + status, LogLevel.INFO, status);
-
-    return status;
+    return getStatus(executeCommandResponse);
   }
 
   @NotNull

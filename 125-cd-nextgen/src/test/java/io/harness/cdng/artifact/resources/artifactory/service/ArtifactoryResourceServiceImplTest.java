@@ -319,8 +319,8 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
                     ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(new ArrayList<>()).build())
                 .build());
 
-    ArtifactoryResponseDTO artifactoryResponseDTO = artifactoryResourceService.getBuildDetails(
-        identifierRef, REPO_NAME, IMAGE_PATH, RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    ArtifactoryResponseDTO artifactoryResponseDTO = artifactoryResourceService.getBuildDetails(identifierRef, REPO_NAME,
+        IMAGE_PATH, RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "stable.*");
     assertThat(artifactoryResponseDTO).isNotNull();
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
@@ -343,43 +343,43 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> artifactoryResourceService.getBuildDetails(identifierRef, "<+input>", IMAGE_PATH,
-                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("value for repository is empty or not provided");
     assertThatThrownBy(()
                            -> artifactoryResourceService.getBuildDetails(identifierRef, null, IMAGE_PATH,
-                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("value for repository is empty or not provided");
     assertThatThrownBy(()
                            -> artifactoryResourceService.getBuildDetails(identifierRef, "<+input>.regex()", IMAGE_PATH,
-                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("value for repository is empty or not provided");
     assertThatThrownBy(()
                            -> artifactoryResourceService.getBuildDetails(identifierRef, "", IMAGE_PATH,
-                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("value for repository is empty or not provided");
     assertThatThrownBy(()
                            -> artifactoryResourceService.getBuildDetails(identifierRef, "repository", "<+input>",
-                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("value for artifactPath is empty or not provided");
     assertThatThrownBy(
         ()
             -> artifactoryResourceService.getBuildDetails(identifierRef, "repository", "<+input>.regex(hello)",
-                RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+                RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("value for artifactPath is empty or not provided");
     assertThatThrownBy(()
                            -> artifactoryResourceService.getBuildDetails(identifierRef, "repository", null,
-                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("value for artifactPath is empty or not provided");
     assertThatThrownBy(()
                            -> artifactoryResourceService.getBuildDetails(identifierRef, "repository", "",
-                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("value for artifactPath is empty or not provided");
   }

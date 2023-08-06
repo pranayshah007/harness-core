@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
 import static io.harness.helpers.EncryptDecryptHelperImpl.ON_FILE_STORAGE;
@@ -14,7 +13,10 @@ import static io.harness.security.SimpleEncryption.CHARSET;
 
 import static java.lang.Boolean.TRUE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.FileMetadata;
@@ -41,6 +43,8 @@ import java.nio.ByteBuffer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.input.ReaderInputStream;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 @Slf4j
 public class DelegateManagerEncryptionDecryptionHarnessSMServiceImpl

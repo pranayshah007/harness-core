@@ -45,7 +45,7 @@
     },
     "name": {
       "type": "string",
-      "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+      "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
     },
     "strategy": {
       "oneOf": [
@@ -153,6 +153,32 @@
                   "additionalProperties": {
                     "type": "string"
                   }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
                 },
                 {
                   "type": "string"
@@ -402,11 +428,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -554,11 +589,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -669,11 +713,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -1071,11 +1124,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -1285,11 +1347,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -1332,6 +1403,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "sbom": {
+              "$ref": "#/definitions/STOYamlSBOM"
             },
             "settings": {
               "oneOf": [
@@ -1400,11 +1474,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -1678,11 +1761,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -1972,11 +2064,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -2087,11 +2188,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -2292,11 +2402,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -2786,11 +2905,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -2918,11 +3046,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -3030,11 +3167,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -3178,11 +3324,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -3816,11 +3971,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -3934,11 +4098,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -4274,11 +4447,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -4389,11 +4571,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -5024,11 +5215,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -5575,11 +5775,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -5695,11 +5904,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -5837,11 +6055,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -5949,11 +6176,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -6064,11 +6300,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -6184,11 +6429,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -6396,11 +6650,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -6521,11 +6784,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -7180,7 +7452,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -7197,7 +7469,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -7621,11 +7893,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -7681,6 +7962,9 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlPrismaCloudToolData"
             }
           }
         }
@@ -7761,11 +8045,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -7873,11 +8166,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -7985,11 +8287,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -8341,7 +8652,7 @@
           "properties": {
             "spec": {
               "readOnly": true,
-              "$ref": "#/definitions/RetryFailureSpecConfig"
+              "$ref": "#/definitions/RetryStepGroupFailureSpecConfig"
             },
             "type": {
               "type": "string",
@@ -8352,6 +8663,28 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RetryStepGroupFailureSpecConfig": {
+      "type": "object",
+      "required": [
+        "retryCount",
+        "retryIntervals"
+      ],
+      "properties": {
+        "retryCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "retryIntervals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 2147483647,
+          "minItems": 1
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "RunStepInfo": {
@@ -8792,7 +9125,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -8880,7 +9213,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -9018,7 +9351,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -9097,7 +9430,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -9144,6 +9477,49 @@
         },
         "project_token": {
           "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlPrismaCloudToolData": {
+      "type": "object",
+      "properties": {
+        "image_name": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlSBOM": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "spdx-json",
+                "cyclonedx-json"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        },
+        "generate": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -9882,7 +10258,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+          "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
         },
         "strategy": {
           "oneOf": [
@@ -10090,11 +10466,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -10202,11 +10587,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -10314,11 +10708,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -10432,11 +10835,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -10547,11 +10959,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -10664,8 +11085,7 @@
           "type": "object",
           "required": [
             "policy",
-            "source",
-            "verifyAttestation"
+            "source"
           ],
           "properties": {
             "policy": {
@@ -10693,7 +11113,6 @@
         {
           "type": "object",
           "required": [
-            "attestation",
             "source",
             "tool"
           ],
@@ -10793,7 +11212,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+          "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
         },
         "strategy": {
           "oneOf": [
@@ -11994,7 +12413,7 @@
         },
         "name": {
           "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+          "pattern": "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
         },
         "sharedPaths": {
           "oneOf": [
@@ -12325,11 +12744,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -12442,7 +12870,7 @@
         },
         "versionLabel": {
           "type": "string",
-          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+          "pattern": "^[0-9a-zA-Z][^\\s/&]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -12496,11 +12924,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -12992,11 +13429,20 @@
               "$ref": "#/definitions/STOYamlIngestion"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {
@@ -13400,11 +13846,20 @@
               "$ref": "#/definitions/STOYamlInstance"
             },
             "mode": {
-              "type": "string",
-              "enum": [
-                "ingestion",
-                "orchestration",
-                "extraction"
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "ingestion",
+                    "orchestration",
+                    "extraction"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
               ]
             },
             "outputVariables": {

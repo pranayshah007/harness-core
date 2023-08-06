@@ -15,6 +15,9 @@ import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -39,7 +42,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -326,19 +328,19 @@ public class ReflectionUtilsTest extends CategoryTest {
   public void testGetInterfaceFieldValues() {
     // Test case 1: Class with matching interface fields
     Set<String> values1 = ReflectionUtils.getFieldValuesByType(AccessibleInterface.class, String.class);
-    Assert.assertNotNull(values1);
-    Assert.assertTrue(values1.contains("Value 1"));
-    Assert.assertTrue(values1.contains("Value 2"));
-    Assert.assertEquals(2, values1.size());
+    assertNotNull(values1);
+    assertTrue(values1.contains("Value 1"));
+    assertTrue(values1.contains("Value 2"));
+    assertEquals(2, values1.size());
 
     // Test case 2: Class with no matching interface fields
     Set<String> values2 = ReflectionUtils.getFieldValuesByType(AccessibleInterface.class, Integer.class);
-    Assert.assertNotNull(values2);
-    Assert.assertTrue(values2.isEmpty());
+    assertNotNull(values2);
+    assertTrue(values2.isEmpty());
 
     // Test case 2: Class with no matching interface fields
     Set<String> values3 = ReflectionUtils.getFieldValuesByType(AccessibleInterface.class, Long.class);
-    Assert.assertNotNull(values3);
-    Assert.assertTrue(values3.isEmpty());
+    assertNotNull(values3);
+    assertTrue(values3.isEmpty());
   }
 }

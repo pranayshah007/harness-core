@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.artifact.bean.artifactsource;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 
 import lombok.Builder;
@@ -15,6 +17,7 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Value
 @FieldNameConstants(innerTypeName = "DockerArtifactSourceKeys")
 @EqualsAndHashCode(callSuper = true)

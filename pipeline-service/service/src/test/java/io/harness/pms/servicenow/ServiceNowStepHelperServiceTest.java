@@ -7,12 +7,15 @@
 
 package io.harness.pms.servicenow;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,7 +26,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
@@ -36,8 +41,13 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -45,10 +55,13 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.ServiceNowImportSetResponseNG;
 import io.harness.servicenow.ServiceNowImportSetTransformMapResult;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetOutcome;
+import io.harness.steps.servicenow.importset.ServiceNowImportSetSpecParameters;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
@@ -60,6 +73,8 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class ServiceNowStepHelperServiceTest extends CategoryTest {
   private static final String STAGING_TABLE = "STAGING_TABLE";
@@ -73,6 +88,38 @@ public class ServiceNowStepHelperServiceTest extends CategoryTest {
   private static final String DISPLAY_VALUE = "INC0083151";
   private static final String ERROR_STATUS = "error";
   private static final String ERROR_MESSAGE = "No transform entry or scripts are defined; Target record not found";
+  private static final TaskSelectorYaml TASK_SELECTOR_YAML = getTaskSelectorYaml();
+  private static final String ACCOUNT = "account";
+  private static final String ORG = "org";
+  private static final String PROJECT = "project";
+  private static final String CONNECTOR = "connector";
+  private static final String TASK_NAME = "task";
+  private static final String TIME_OUT = "10m";
+
+  private static final ParameterField DELEGATE_SELECTORS = ParameterField.createValueField(List.of(TASK_SELECTOR_YAML));
+
+  private static final List<TaskSelector> TASK_SELECTORS = TaskSelectorYaml.toTaskSelector(DELEGATE_SELECTORS);
+
+  private static final Ambiance AMBIANCE = Ambiance.newBuilder()
+                                               .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT)
+                                               .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG)
+                                               .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT)
+                                               .build();
+  private static final ConnectorDTO CONNECTOR_DTO =
+      ConnectorDTO.builder()
+          .connectorInfo(
+              ConnectorInfoDTO.builder()
+                  .identifier(CONNECTOR)
+                  .connectorConfig(ServiceNowConnectorDTO.builder()
+                                       .auth(ServiceNowAuthenticationDTO.builder()
+                                                 .credentials(ServiceNowUserNamePasswordDTO.builder().build())
+                                                 .build())
+                                       .username("USERNAME")
+                                       .serviceNowUrl("url")
+                                       .passwordRef(SecretRefData.builder().build())
+                                       .build())
+                  .build())
+          .build();
 
   private ServiceNowImportSetTransformMapResult normalResult;
   private ServiceNowImportSetTransformMapResult errorResult;
@@ -244,17 +291,19 @@ public class ServiceNowStepHelperServiceTest extends CategoryTest {
                             .build();
 
     when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO1);
-    assertThatThrownBy(
-        () -> serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance, "connectorRef", null, ""))
+    assertThatThrownBy(()
+                           -> serviceNowStepHelperService.prepareTaskRequest(
+                               paramsBuilder, ambiance, "connectorRef", null, "", TASK_SELECTORS))
         .isInstanceOf(InvalidRequestException.class);
 
     when(NGRestUtils.getResponse(null)).thenReturn(Optional.empty());
-    assertThatThrownBy(
-        () -> serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance, "connectorRef", null, ""))
+    assertThatThrownBy(()
+                           -> serviceNowStepHelperService.prepareTaskRequest(
+                               paramsBuilder, ambiance, "connectorRef", null, "", TASK_SELECTORS))
         .isInstanceOf(InvalidRequestException.class);
 
     when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO);
-    serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance, "connectorRef", "10m", "");
+    serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance, "connectorRef", "10m", "", TASK_SELECTORS);
     ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
         ArgumentCaptor.forClass(DecryptableEntity.class);
     ArgumentCaptor<NGAccess> requestArgumentCaptorForNGAccess = ArgumentCaptor.forClass(NGAccess.class);
@@ -264,11 +313,88 @@ public class ServiceNowStepHelperServiceTest extends CategoryTest {
     assertThat(requestArgumentCaptorForSecretService.getValue() instanceof ServiceNowConnectorDTO).isTrue();
     assertThat(requestArgumentCaptorForNGAccess.getValue()).isEqualTo(AmbianceUtils.getNgAccess(ambiance));
     when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO2);
-    serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance, "connectorRef", "10m", "");
+    serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance, "connectorRef", "10m", "", TASK_SELECTORS);
     verify(secretManagerClientService, times(2))
         .getEncryptionDetails(
             requestArgumentCaptorForNGAccess.capture(), requestArgumentCaptorForSecretService.capture());
     assertThat(requestArgumentCaptorForSecretService.getValue() instanceof ServiceNowAuthCredentialsDTO).isTrue();
     assertThat(requestArgumentCaptorForNGAccess.getValue()).isEqualTo(AmbianceUtils.getNgAccess(ambiance));
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testPrepareTestRequest_CreateStepDelegateSelectors() throws IOException {
+    Call mockCall = mock(Call.class);
+    doReturn(mockCall).when(connectorResourceClient).get(any(), any(), any(), any());
+    doReturn(mockCall).when(mockCall).clone();
+
+    doReturn(Response.success(ResponseDTO.newResponse(Optional.of(CONNECTOR_DTO)))).when(mockCall).execute();
+    doReturn(List.of())
+        .when(secretManagerClientService)
+        .getEncryptionDetails(any(NGAccess.class), any(JiraUserNamePasswordDTO.class));
+
+    TaskRequest taskRequest = serviceNowStepHelperService.prepareTaskRequest(
+        ServiceNowTaskNGParameters.builder(), AMBIANCE, CONNECTOR, TIME_OUT, TASK_NAME, TASK_SELECTORS);
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getSelectors(0).getSelector())
+        .isEqualTo(TASK_SELECTOR_YAML.getDelegateSelectors());
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getSelectors(0).getOrigin())
+        .isEqualTo(TASK_SELECTOR_YAML.getOrigin());
+    verify(connectorResourceClient).get(CONNECTOR, ACCOUNT, ORG, PROJECT);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testPrepareTestRequest_UpdateStepDelegateSelectors() throws IOException {
+    Call mockCall = mock(Call.class);
+    doReturn(mockCall).when(connectorResourceClient).get(any(), any(), any(), any());
+    doReturn(mockCall).when(mockCall).clone();
+
+    doReturn(Response.success(ResponseDTO.newResponse(Optional.of(CONNECTOR_DTO)))).when(mockCall).execute();
+    doReturn(List.of())
+        .when(secretManagerClientService)
+        .getEncryptionDetails(any(NGAccess.class), any(JiraUserNamePasswordDTO.class));
+
+    TaskRequest taskRequest = serviceNowStepHelperService.prepareTaskRequest(
+        ServiceNowTaskNGParameters.builder(), AMBIANCE, CONNECTOR, TIME_OUT, TASK_NAME, TASK_SELECTORS);
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getSelectors(0).getSelector())
+        .isEqualTo(TASK_SELECTOR_YAML.getDelegateSelectors());
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getSelectors(0).getOrigin())
+        .isEqualTo(TASK_SELECTOR_YAML.getOrigin());
+    verify(connectorResourceClient).get(CONNECTOR, ACCOUNT, ORG, PROJECT);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testPrepareTestRequest_ImportStepDelegateSelectors() throws IOException {
+    Call mockCall = mock(Call.class);
+    doReturn(mockCall).when(connectorResourceClient).get(any(), any(), any(), any());
+    doReturn(mockCall).when(mockCall).clone();
+
+    doReturn(Response.success(ResponseDTO.newResponse(Optional.of(CONNECTOR_DTO)))).when(mockCall).execute();
+    doReturn(List.of())
+        .when(secretManagerClientService)
+        .getEncryptionDetails(any(NGAccess.class), any(JiraUserNamePasswordDTO.class));
+
+    ServiceNowImportSetSpecParameters serviceNowImportSetSpecParameters =
+        ServiceNowImportSetSpecParameters.builder()
+            .delegateSelectors(ParameterField.createValueField(List.of(TASK_SELECTOR_YAML)))
+            .build();
+    TaskRequest taskRequest = serviceNowStepHelperService.prepareTaskRequest(
+        ServiceNowTaskNGParameters.builder(), AMBIANCE, CONNECTOR, TIME_OUT, TASK_NAME, TASK_SELECTORS);
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getSelectors(0).getSelector())
+        .isEqualTo(TASK_SELECTOR_YAML.getDelegateSelectors());
+    assertThat(taskRequest.getDelegateTaskRequest().getRequest().getSelectors(0).getOrigin())
+        .isEqualTo(TASK_SELECTOR_YAML.getOrigin());
+    verify(connectorResourceClient).get(CONNECTOR, ACCOUNT, ORG, PROJECT);
+  }
+
+  private static TaskSelectorYaml getTaskSelectorYaml() {
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml();
+    taskSelectorYaml.setOrigin("step");
+    taskSelectorYaml.setDelegateSelectors("step-selector");
+    return taskSelectorYaml;
   }
 }

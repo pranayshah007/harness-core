@@ -55,6 +55,10 @@ if [[ "" != "$LE_IMAGE" ]]; then
   export LE_IMAGE; yq -i '.ciExecutionServiceConfig.liteEngineImage=env(LE_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TMATE_ENDPOINT" ]]; then
+  export TMATE_ENDPOINT; yq -i '.ciExecutionServiceConfig.tmateEndpoint=env(TMATE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$GIT_CLONE_IMAGE" ]]; then
   export GIT_CLONE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.gitCloneConfig.image=env(GIT_CLONE_IMAGE)' $CONFIG_FILE
 fi

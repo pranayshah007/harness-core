@@ -8,9 +8,9 @@
 package io.harness.ng.core.activityhistory;
 
 import static io.harness.EntityType.CONNECTORS;
-import static io.harness.EntityType.PIPELINES;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.EntityType;
 import io.harness.beans.EntityReference;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.activityhistory.dto.EntityUsageActivityDetailDTO;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ActivityHistoryTestHelper {
   public static NGActivityDTO createActivityHistoryDTO(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String identifier, NGActivityStatus status, long activityTime,
-      NGActivityType activityType) {
+      NGActivityType activityType, EntityType referredByEntityType) {
     String identifier1;
     if (isNotEmpty(projectIdentifier)) {
       identifier1 = "identifier1";
@@ -39,7 +39,8 @@ public class ActivityHistoryTestHelper {
     EntityReference referredByEntityRef =
         IdentifierRefHelper.getIdentifierRef(identifier1, accountIdentifier, orgIdentifier, projectIdentifier);
     EntityDetail referredEntity = EntityDetail.builder().entityRef(referredEntityRef).type(CONNECTORS).build();
-    EntityDetail referredByEntity = EntityDetail.builder().entityRef(referredByEntityRef).type(PIPELINES).build();
+    EntityDetail referredByEntity =
+        EntityDetail.builder().entityRef(referredByEntityRef).type(referredByEntityType).build();
     return NGActivityDTO.builder()
         .description("description")
         .accountIdentifier(accountIdentifier)

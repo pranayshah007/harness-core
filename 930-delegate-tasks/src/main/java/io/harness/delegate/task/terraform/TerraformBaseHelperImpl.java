@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.terraform;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -55,12 +54,16 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.cli.CliResponse;
 import io.harness.connector.service.git.NGGitService;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateFile;
@@ -154,6 +157,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(CDP)
 public class TerraformBaseHelperImpl implements TerraformBaseHelper {
@@ -182,6 +187,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   @Inject AwsNgConfigMapper awsNgConfigMapper;
   @Inject HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
   @Inject HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNg;
+  @Inject ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Override
   public void downloadTfStateFile(String workspace, String accountId, String currentStateFileId, String scriptDirectory)
@@ -342,12 +348,11 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
           terraformExecuteStepRequest.getLogCallback());
 
       if (terraformExecuteStepRequest.isSaveTerraformJson() && !terraformExecuteStepRequest.isTerraformCloudCli()) {
-        response =
-            executeTerraformShowCommandWithTfClient(terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
-                terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-                terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
-                terraformExecuteStepRequest.getPlanJsonLogOutputStream(),
-                terraformExecuteStepRequest.isUseOptimizedTfPlan());
+        executeTerraformShowCommandWithTfClient(terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
+            terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
+            terraformExecuteStepRequest.getPlanJsonLogOutputStream(),
+            terraformExecuteStepRequest.isUseOptimizedTfPlan());
       }
 
       // Generating Human Readable Representation of the tfplan
@@ -1087,7 +1092,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     if (remoteFileInfo.getGitFetchFilesConfig() != null) {
       GitStoreDelegateConfig gitStoreDelegateConfig =
           remoteFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig();
-      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
+      GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+          gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
       if (EmptyPredicate.isNotEmpty(gitStoreDelegateConfig.getPaths())) {
         String commitId = handleGitVarFiles(
             logCallback, accountId, tfVarDirectory, filesDirAbsPath, filePaths, gitStoreDelegateConfig, gitConfigDTO);

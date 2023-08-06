@@ -9,6 +9,9 @@ package io.harness.service.instancesynchandler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -28,6 +31,8 @@ import io.harness.perpetualtask.PerpetualTaskType;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 public class CustomDeploymentInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
   public String getPerpetualTaskType() {

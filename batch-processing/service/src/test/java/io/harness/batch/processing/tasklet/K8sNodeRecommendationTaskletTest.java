@@ -137,7 +137,7 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
         .thenReturn(entityUuid);
     doNothing()
         .when(recommendationCrudService)
-        .upsertNodeRecommendation(eq(entityUuid), any(), eq(nodePoolId), eq(CLUSTER_NAME), any());
+        .upsertNodeRecommendation(eq(entityUuid), any(), eq(nodePoolId), eq(CLUSTER_NAME), any(), any());
     when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
              anyString(), any(CloudServiceProvider.class), any(Currency.class)))
         .thenReturn(1.0);
@@ -178,7 +178,7 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
     // execution.
     verify(banzaiRecommenderClient, times(1)).getRecommendation(any(), any(), any(), any());
     verify(k8sRecommendationDAO, times(0)).insertNodeRecommendationResponse(any(), any(), any(), any(), any(), any());
-    verify(recommendationCrudService, times(0)).upsertNodeRecommendation(any(), any(), any(), any(), any());
+    verify(recommendationCrudService, times(0)).upsertNodeRecommendation(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -219,7 +219,7 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
     ArgumentCaptor<RecommendationOverviewStats> statsCaptor =
         ArgumentCaptor.forClass(RecommendationOverviewStats.class);
     verify(recommendationCrudService, times(1))
-        .upsertNodeRecommendation(any(), any(), any(), any(), statsCaptor.capture());
+        .upsertNodeRecommendation(any(), any(), any(), any(), statsCaptor.capture(), any());
 
     final RecommendationOverviewStats stats = statsCaptor.getValue();
     assertThat(stats).isNotNull();
@@ -286,7 +286,8 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
 
     ArgumentCaptor<RecommendationOverviewStats> captor = ArgumentCaptor.forClass(RecommendationOverviewStats.class);
 
-    verify(recommendationCrudService, times(1)).upsertNodeRecommendation(any(), any(), any(), any(), captor.capture());
+    verify(recommendationCrudService, times(1))
+        .upsertNodeRecommendation(any(), any(), any(), any(), captor.capture(), any());
 
     RecommendationOverviewStats stats = captor.getValue();
     assertThat(stats).isNotNull();
@@ -324,7 +325,7 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
 
     // shouldn't upsert recommendation
     verify(k8sRecommendationDAO, times(0)).insertNodeRecommendationResponse(any(), any(), any(), any(), any(), any());
-    verify(recommendationCrudService, times(0)).upsertNodeRecommendation(any(), any(), any(), any(), any());
+    verify(recommendationCrudService, times(0)).upsertNodeRecommendation(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -352,7 +353,7 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
 
     // shouldn't upsert recommendation
     verify(k8sRecommendationDAO, times(0)).insertNodeRecommendationResponse(any(), any(), any(), any(), any(), any());
-    verify(recommendationCrudService, times(0)).upsertNodeRecommendation(any(), any(), any(), any(), any());
+    verify(recommendationCrudService, times(0)).upsertNodeRecommendation(any(), any(), any(), any(), any(), any());
   }
 
   @Test

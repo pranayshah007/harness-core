@@ -105,7 +105,6 @@ public class CdngPipelineExecutionUpdateEventHandlerTest extends CategoryTest {
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
   public void testDeploymentStatusUpdateEventWithFFDisabled() {
-    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
     cdngPipelineExecutionUpdateEventHandler.handleEvent(
         OrchestrationEvent.builder()
             .status(Status.SUCCEEDED)
@@ -118,7 +117,7 @@ public class CdngPipelineExecutionUpdateEventHandlerTest extends CategoryTest {
                                          .build())
                           .build())
             .build());
-    verify(stageExecutionInfoService, times(0)).update(any(Scope.class), anyString(), any(Map.class));
+    verify(stageExecutionInfoService, times(1)).update(any(Scope.class), anyString(), any(Map.class));
   }
 
   @Test

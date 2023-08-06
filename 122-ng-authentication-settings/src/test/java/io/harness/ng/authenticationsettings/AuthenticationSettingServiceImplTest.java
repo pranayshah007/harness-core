@@ -284,13 +284,16 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
 
     Call<RestResponse<Boolean>> twoFARequest = mock(Call.class);
     Call<RestResponse<Integer>> sessionTimeoutRequest = mock(Call.class);
+    Call<RestResponse<Boolean>> publicAccessRequest = mock(Call.class);
     doReturn(twoFARequest).when(managerClient).twoFactorEnabled(anyString());
     doReturn(sessionTimeoutRequest).when(managerClient).getSessionTimeoutAtAccountLevel(anyString());
+    doReturn(publicAccessRequest).when(managerClient).getPublicAccess(anyString());
     RestResponse<Boolean> twoFARep = new RestResponse<>(false);
     RestResponse<Integer> sessionTimeoutResp = new RestResponse<>(50);
+    RestResponse<Boolean> publicAccessRep = new RestResponse<>(false);
     doReturn(Response.success(twoFARep)).when(twoFARequest).execute();
     doReturn(Response.success(sessionTimeoutResp)).when(sessionTimeoutRequest).execute();
-
+    doReturn(Response.success(publicAccessRep)).when(publicAccessRequest).execute();
     Call<RestResponse<LoginSettings>> loginSettingsRequest = mock(Call.class);
     doReturn(loginSettingsRequest).when(managerClient).getUserNamePasswordSettings(anyString());
 

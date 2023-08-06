@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.googlefunctions;
-
 import static io.harness.cdng.manifest.ManifestType.GOOGLE_FUNCTIONS_GEN_ONE_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.manifest.ManifestType.GOOGLE_FUNCTIONS_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -19,10 +18,13 @@ import static io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionGenOnePrepareRollbackOutcome;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionGenOneStepOutcome;
 import io.harness.cdng.googlefunctions.beans.GoogleFunctionPrepareRollbackOutcome;
@@ -65,7 +67,6 @@ import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.googlefunctions.command.GoogleFunctionsCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -81,7 +82,6 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -109,9 +109,10 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class GoogleFunctionsHelper extends CDStepHelper {
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private GoogleFunctionsEntityHelper googleFunctionsEntityHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
@@ -131,8 +132,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
     // Update expressions in ManifestsOutcome
-    ExpressionEvaluatorUtils.updateExpressions(
-        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
 
     // Validate ManifestsOutcome
     validateManifestsOutcome(ambiance, manifestsOutcome);
@@ -464,7 +464,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
 
   private String getManifestContentFromGitResponse(GitTaskNGResponse gitTaskResponse, Ambiance ambiance) {
     String manifestContent = gitTaskResponse.getGitFetchFilesResults().get(0).getFiles().get(0).getFileContent();
-    return engineExpressionService.renderExpression(ambiance, manifestContent);
+    return cdExpressionResolver.renderExpression(ambiance, manifestContent);
   }
 
   private TaskChainResponse prepareManifestGitFetchTask(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance,
@@ -579,7 +579,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
     }
     // Render expressions for all file content fetched from Harness File Store
     if (harnessStoreManifestContent != null) {
-      harnessStoreManifestContent = engineExpressionService.renderExpression(ambiance, harnessStoreManifestContent);
+      harnessStoreManifestContent = cdExpressionResolver.renderExpression(ambiance, harnessStoreManifestContent);
     }
     return harnessStoreManifestContent;
   }

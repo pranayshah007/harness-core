@@ -39,6 +39,8 @@ import static io.harness.govern.Switch.unhandled;
 
 import static java.lang.String.format;
 import static org.apache.commons.codec.binary.Hex.encodeHexString;
+import static org.apache.commons.lang3.StringUtils.stripEnd;
+import static org.apache.commons.lang3.StringUtils.stripStart;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GitClientException;
@@ -72,12 +74,17 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.TransportConfigCallback;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.JGitInternalException;
 import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.errors.TransportException;
+import org.eclipse.jgit.transport.TransportHttp;
+import org.eclipse.jgit.transport.http.HttpConnectionFactory;
+import org.eclipse.jgit.transport.http.apache.HttpClientConnectionFactory;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(CDP)
@@ -107,6 +114,9 @@ public class GitClientHelper {
   private static final String AZURE_NEW_REPO_PREFIX_HTTP = "https://dev.azure.com/";
 
   private static final String AZURE_NEW_REPO_PREFIX_SSH = "git@ssh.dev.azure.com:v3/";
+
+  public static final Integer GIT_AUTHENTICATION_VERIFY_TIMEOUT_SECONDS = 5;
+  public static final HttpConnectionFactory connectionFactory = new HttpClientConnectionFactory();
 
   static {
     try {
@@ -226,7 +236,27 @@ public class GitClientHelper {
 
   public static String getHarnessApiURL(String url) {
     String domain = GitClientHelper.getGitSCM(url);
-    return getHttpProtocolPrefix(url) + domain;
+    if (domain.startsWith("git.")) {
+      return getHttpProtocolPrefix(url) + domain;
+    }
+    return getHttpProtocolPrefix(url) + domain + "/gateway/code";
+  }
+
+  public static String convertToHarnessRepoName(String accountId, String orgId, String projectId, String repo) {
+    repo = stripStart(repo, "/");
+    repo = stripEnd(repo, "/");
+    if (repo.endsWith(".git")) {
+      repo = repo.replaceAll("\\.git$", "");
+    }
+
+    String parts[] = repo.split("/");
+    if (parts.length == 3) {
+      return accountId + "/" + repo;
+    } else if (parts.length == 2) {
+      return accountId + "/" + orgId + "/" + repo;
+    } else {
+      return accountId + "/" + orgId + "/" + projectId + "/" + repo;
+    }
   }
 
   private static boolean isUrlHTTP(String url) {
@@ -659,6 +689,13 @@ public class GitClientHelper {
     return httpURL;
   }
 
+  public static String convertToAlternateHTTPUrlForAzure(String httpUrl) {
+    final String AZURE_REPO_URL = "https://dev.azure.com/";
+    String afterHttps = StringUtils.remove(httpUrl, HTTPS + "://");
+    String orgName = StringUtils.remove(httpUrl, AZURE_REPO_URL).split("/")[0];
+    return HTTPS + "://" + orgName + "@" + afterHttps;
+  }
+
   public static String convertToNewSSHUrlForAzure(String sshURL) {
     // Convert Old Azure URLs to new URLs if any
     if (sshURL.contains(AZURE_OLD_REPO_PREFIX)) {
@@ -702,5 +739,21 @@ public class GitClientHelper {
       return s.substring(4) + "/+";
     }
     return s + "/+";
+  }
+
+  public static boolean isGitUrlPrivate(String gitUrl) {
+    try {
+      TransportConfigCallback transportConfigCallback = transport -> {
+        if (transport instanceof TransportHttp) {
+          TransportHttp http = (TransportHttp) transport;
+          http.setTimeout(GIT_AUTHENTICATION_VERIFY_TIMEOUT_SECONDS);
+          http.setHttpConnectionFactory(connectionFactory);
+        }
+      };
+      Git.lsRemoteRepository().setRemote(gitUrl).setTransportConfigCallback(transportConfigCallback).call();
+      return false; // If the operation succeeds, it is a public repository
+    } catch (Exception e) {
+      return true; // If the operation fails (due to no authentication), it is a private repository
+    }
   }
 }

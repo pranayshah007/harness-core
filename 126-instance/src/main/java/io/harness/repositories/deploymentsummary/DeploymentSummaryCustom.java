@@ -21,4 +21,6 @@ public interface DeploymentSummaryCustom {
 
   Optional<DeploymentSummary> fetchLatestByInstanceKeyAndPipelineExecutionIdNot(
       String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, String pipelineExecutionId);
+
+  boolean delete(String accountId, String org, String project);
 }

@@ -10,7 +10,6 @@ package io.harness.cvng.cdng.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cvng.cdng.beans.v2.DefaultAndConfiguredMonitoredServiceSpec;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

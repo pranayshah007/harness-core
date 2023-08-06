@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.app.modules;
-
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployMode.isOnPrem;
 import static io.harness.delegate.service.DelegateAgentServiceImpl.getDelegateId;
@@ -15,10 +14,14 @@ import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractTarget;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.app.DelegateGrpcServiceModule;
 import io.harness.delegate.app.modules.common.DelegateHealthModule;
 import io.harness.delegate.app.modules.common.DelegateTokensModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.service.handlermapping.SchedulingTaskEventMessageModule;
 import io.harness.delegate.task.citasks.CITaskFactoryModule;
 import io.harness.delegate.task.k8s.apiclient.KubernetesApiClientFactoryModule;
 import io.harness.event.client.impl.appender.AppenderModule;
@@ -38,6 +41,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @RequiredArgsConstructor
 @Slf4j
 public class DelegateAgentModule extends AbstractModule {
@@ -54,6 +59,7 @@ public class DelegateAgentModule extends AbstractModule {
 
     install(new DelegateTokensModule(configuration));
     install(new DelegateServiceTokenModule(configuration));
+    install(new SchedulingTaskEventMessageModule(configuration));
     install(new DelegateHealthModule());
     install(KryoModule.getInstance());
     install(new DelegateKryoModule());

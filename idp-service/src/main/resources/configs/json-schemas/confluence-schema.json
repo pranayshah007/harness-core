@@ -1,0 +1,86 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1689762178.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "confluence"
+  ],
+  "properties": {
+    "confluence": {
+      "$id": "#root/confluence",
+      "title": "Confluence",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wikiUrl",
+        "spaces",
+        "auth"
+      ],
+      "properties": {
+        "wikiUrl": {
+          "$id": "#root/confluence/wikiUrl",
+          "title": "Wikiurl",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "https://<your-org-name>.atlassian.net/wiki"
+          ],
+          "pattern": "^.*$"
+        },
+        "spaces": {
+          "$id": "#root/confluence/spaces",
+          "title": "Spaces",
+          "type": "array",
+          "default": [],
+          "items":{
+            "$id": "#root/confluence/spaces/items",
+            "title": "Items",
+            "type": "string",
+            "default": "",
+            "examples": [
+              "ENG"
+            ],
+            "pattern": "^.*$"
+          }
+        },
+        "auth": {
+          "$id": "#root/confluence/auth",
+          "title": "Auth",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "username",
+            "password"
+          ],
+          "properties": {
+            "username": {
+              "$id": "#root/confluence/auth/username",
+              "title": "Username",
+              "type": "string",
+              "default": "",
+              "examples": [
+                "<your-username>"
+              ],
+              "pattern": "^.*$"
+            },
+            "password": {
+              "$id": "#root/confluence/auth/password",
+              "title": "Password",
+              "type": "string",
+              "default": "",
+              "examples": [
+                "${CONFLUENCE_TOKEN}"
+              ],
+              "pattern": "^.*$"
+            }
+          }
+        }
+
+      }
+    }
+
+  }
+}

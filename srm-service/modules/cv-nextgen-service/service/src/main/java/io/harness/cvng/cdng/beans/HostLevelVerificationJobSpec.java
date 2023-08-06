@@ -35,16 +35,16 @@ public abstract class HostLevelVerificationJobSpec extends VerificationJobSpec {
 
   public void validate() {
     super.validate();
-    validateRegex(testNodeRegExPattern);
-    validateRegex(controlNodeRegExPattern);
+    validateRegex(testNodeRegExPattern, "Test");
+    validateRegex(controlNodeRegExPattern, "Control");
   }
 
-  private void validateRegex(ParameterField<String> pattern) {
+  private void validateRegex(ParameterField<String> pattern, String nodeType) {
     if (pattern != null && StringUtils.isNotEmpty(pattern.getValue())) {
       try {
         Pattern.compile(pattern.getValue());
       } catch (PatternSyntaxException ex) {
-        throw new IllegalArgumentException("Node Regex syntax isn't right.");
+        throw new IllegalArgumentException(nodeType + " Node Regex syntax isn't right.");
       }
     }
   }

@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
-
 import static io.harness.cdng.provision.terragrunt.TerragruntStepHelper.DEFAULT_TIMEOUT;
 import static io.harness.provision.TerragruntConstants.APPLY;
 import static io.harness.provision.TerragruntConstants.DESTROY;
@@ -18,10 +17,13 @@ import static software.wings.beans.TaskType.TERRAGRUNT_DESTROY_TASK_NG;
 import static java.lang.String.format;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -33,7 +35,6 @@ import io.harness.delegate.beans.terragrunt.response.AbstractTerragruntTaskRespo
 import io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse;
 import io.harness.delegate.beans.terragrunt.response.TerragruntDestroyTaskResponse;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.UnitProgress;
 import io.harness.persistence.HIterator;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -44,7 +45,6 @@ import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -67,6 +67,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntTaskResponse> {
@@ -76,7 +77,7 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
   @Inject private TerragruntStepHelper terragruntStepHelper;
   @Inject private TerragruntConfigDAL terragruntConfigDAL;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
@@ -129,8 +130,7 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
         rollbackTaskType = TerragruntRollbackTaskType.APPLY;
       }
 
-      ExpressionEvaluatorUtils.updateExpressions(
-          rollbackConfig, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+      cdExpressionResolver.updateExpressions(ambiance, rollbackConfig);
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TERRAGRUNT_CONFIG,
           TerragruntConfigSweepingOutput.builder()
               .terragruntConfig(rollbackConfig)
@@ -173,8 +173,9 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<AbstractTerragruntTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<AbstractTerragruntTaskResponse> responseDataSupplier)
+      throws Exception {
     log.info("Handling Task Result With Security Context for Terragrunt Rollback Step");
     StepResponse stepResponse = null;
     List<UnitProgress> unitProgresses = null;

@@ -6,14 +6,17 @@
  */
 
 package io.harness.cf.pipeline;
-
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -47,6 +50,8 @@ import java.util.Set;
 
 // TODO we should implement GenericStagePlanCreator however we need to understand how
 // the getSpecParameters method should behave for CF.
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CF)
 public class FeatureFlagStagePlanCreator extends ChildrenPlanCreator<StageElementConfig> {
   @Inject private KryoSerializer kryoSerializer;
@@ -115,12 +120,17 @@ public class FeatureFlagStagePlanCreator extends ChildrenPlanCreator<StageElemen
       }
       YamlField siblingField = stageField.getNode().nextSiblingFromParentArray(
           stageField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
+      // Comparing pipelineRollbackStageId with siblingFieldUuid to add rollback stage if required
+      String pipelineRollbackStageId = StrategyUtils.getPipelineRollbackStageId(stageField);
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
+        String siblingFieldUuid = siblingField.getNode().getUuid();
         adviserObtainments.add(
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
                 .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                    NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+                    NextStepAdviserParameters.builder()
+                        .nextNodeId(siblingFieldUuid.equals(pipelineRollbackStageId) ? null : siblingFieldUuid)
+                        .build())))
                 .build());
       }
     }

@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.ws.rs.BadRequestException;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -33,7 +34,7 @@ public class PrometheusQueryUtils {
       return rawQuery;
     }
     if (!areBracketsBalanced(rawQuery)) {
-      throw new RuntimeException("Bad Query");
+      throw new BadRequestException("Bad Prometheus Query: " + rawQuery);
     }
     rawQuery = cleanUpWhitespacesOnAggregationOperators(rawQuery);
     StringBuilder query = new StringBuilder(rawQuery);

@@ -56,7 +56,7 @@ public class PerpetualTaskRecordDao {
           persistence.createUpdateOperations(PerpetualTaskRecord.class)
               .set(PerpetualTaskRecordKeys.delegateId, delegateId)
               .set(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
-              .set(PerpetualTaskRecordKeys.assignAfterMs, 0)
+              .set(PerpetualTaskRecordKeys.assignAfterMs, 0L)
               .unset(PerpetualTaskRecordKeys.assignTryCount)
               .unset(PerpetualTaskRecordKeys.unassignedReason)
               .set(PerpetualTaskRecordKeys.client_context_last_updated, lastContextUpdated);

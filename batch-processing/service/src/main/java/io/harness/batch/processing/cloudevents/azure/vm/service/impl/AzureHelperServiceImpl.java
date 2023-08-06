@@ -215,6 +215,7 @@ public class AzureHelperServiceImpl implements AzureHelperService {
     PagedIterable<VirtualMachineSizeInner> virtualMachineSizeInners =
         getVirtualMachineSizes(regionName, vmStoredDetails, vmSizeClient);
     if (virtualMachineSizeInners == null) {
+      log.info("No VirtualMachineSizeInners found for regionName: {}", regionName);
       return null;
     }
 
@@ -222,8 +223,16 @@ public class AzureHelperServiceImpl implements AzureHelperService {
         targetSku.equals(SHUTDOWN) ? currentSkuMonthlySavings : getSkuPotentialCost(currentSku, regionName);
     AzureVmDetails currentVmDetails =
         getVirtualMachineDetails(currentSku, virtualMachineSizeInners, currentSkuCost, conversionFactor);
+    if (currentVmDetails == null) {
+      log.info("currentVmDetails is null for sku {}", currentSku);
+      return null;
+    }
     AzureVmDetails targetVmDetails = getVirtualMachineDetails(
         targetSku, virtualMachineSizeInners, currentSkuCost - currentSkuMonthlySavings, conversionFactor);
+    if (targetVmDetails == null) {
+      log.info("targetVmDetails is null for sku {}", targetSku);
+      return null;
+    }
 
     Double currentSkuAvgCpuUtilisation = azureMetricsUtilisationService.getAverageAzureVmMetricUtilisationData(
         vmId, accountId, Integer.parseInt(duration), AzureVmMetricType.PERCENTAGE_CPU);
@@ -269,16 +278,21 @@ public class AzureHelperServiceImpl implements AzureHelperService {
 
   private VirtualMachineSizeInner getVirtualMachineSize(
       String skuName, PagedIterable<VirtualMachineSizeInner> virtualMachineSizeInners) {
-    return virtualMachineSizeInners.stream()
-        .filter(vm -> vm.name().equals(skuName))
-        .collect(Collectors.toList())
-        .get(0);
+    for (VirtualMachineSizeInner virtualMachineSizeInner : virtualMachineSizeInners) {
+      if (virtualMachineSizeInner.name().equals(skuName)) {
+        return virtualMachineSizeInner;
+      }
+    }
+    return null;
   }
 
   private AzureVmDetails getVirtualMachineDetails(String sku,
       PagedIterable<VirtualMachineSizeInner> virtualMachineSizeInners, double cost, Double conversionFactor) {
     if (!sku.equals(SHUTDOWN)) {
       VirtualMachineSizeInner skuDetails = getVirtualMachineSize(sku, virtualMachineSizeInners);
+      if (skuDetails == null) {
+        return null;
+      }
       return constructAzureVmDetailsDTO(
           sku, skuDetails.numberOfCores(), skuDetails.memoryInMB(), cost, conversionFactor);
     }

@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service.servicev2;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.configfile.ConfigFileWrapper;
@@ -25,11 +27,16 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
 
+import software.wings.beans.GraphNode;
 import software.wings.beans.Service;
+import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowExecution;
+import software.wings.service.intfc.WorkflowService;
 
 import com.google.common.collect.Lists;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class AmiServiceV2Mapper implements ServiceV2Mapper {
   // Choice, GumGum
@@ -37,10 +44,23 @@ public class AmiServiceV2Mapper implements ServiceV2Mapper {
       Lists.newArrayList("R7OsqSbNQS69mq74kMNceQ", "EBGrtCo0RE6i_E9yNDdCOg");
 
   @Override
-  public ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
-      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
+  public ServiceDefinition getServiceDefinition(WorkflowService workflowService, MigrationContext migrationContext,
+      Service service, List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations) {
     if (ELASTIC_GROUP_ACCOUNT_IDS.contains(migrationContext.getAccountId())) {
+      WorkflowExecution workflowExecution = workflowService.getLastSuccessfulWorkflowExecution(
+          service.getAccountId(), service.getAppId(), service.getUuid());
+      if (workflowExecution != null) {
+        Workflow workflow = workflowService.readWorkflow(service.getAppId(), workflowExecution.getWorkflowId());
+        List<GraphNode> steps = MigratorUtility.getSteps(workflow);
+        if (isNotEmpty(steps)) {
+          for (GraphNode step : steps) {
+            if (ServiceV2Factory.checkForASG(step.getType())) {
+              return getAsgServiceDefinition(migrationContext, service, manifests, configFiles);
+            }
+          }
+        }
+      }
       return getElasticGroupServiceDefinition(
           migrationContext, service, manifests, configFiles, startupScriptConfigurations);
     }

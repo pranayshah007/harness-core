@@ -6,10 +6,12 @@
  */
 
 package io.harness.repositories.custom;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
@@ -17,6 +19,7 @@ import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.PollingSubscriptionStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
 import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus.TriggerStatusKeys;
 import io.harness.ngtriggers.beans.entity.metadata.status.ValidationStatus;
 import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
@@ -42,6 +45,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -59,7 +63,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
         triggers, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), NGTriggerEntity.class));
   }
 
-  private static List<NGTriggerEntity> updateTriggerStatus(List<NGTriggerEntity> triggers) {
+  public static List<NGTriggerEntity> updateTriggerStatus(List<NGTriggerEntity> triggers) {
     for (NGTriggerEntity trigger : triggers) {
       TriggerStatus triggerStatus = trigger.getTriggerStatus();
 
@@ -94,15 +98,21 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
             && EmptyPredicate.isNotEmpty(webhookAutoRegistrationStatus.getDetailedMessage())) {
           detailedMessages.add(webhookAutoRegistrationStatus.getDetailedMessage());
         }
+      } else if (pollingSubscriptionStatus != null
+          && pollingSubscriptionStatus.getStatusResult() == StatusResult.PENDING) {
+        // TODO: (Vinicius) Set trigger status to PENDING here when UI is capable of handling it.
+        triggerStatus.setStatus(StatusResult.SUCCESS);
       } else {
         triggerStatus.setStatus(StatusResult.SUCCESS);
       }
 
+      if (pollingSubscriptionStatus != null) {
+        triggerStatus.setLastPolled(pollingSubscriptionStatus.getLastPolled());
+        triggerStatus.setLastPollingUpdate(pollingSubscriptionStatus.getLastPollingUpdate());
+      }
       triggerStatus.setDetailMessages(detailedMessages);
-
       trigger.setTriggerStatus(triggerStatus);
     }
-
     return triggers;
   }
 
@@ -183,6 +193,27 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
       log.error("Error while updating trigger yaml", ex);
       throw ex;
     }
+  }
+
+  @Override
+  public boolean updateManyTriggerPollingSubscriptionStatusBySignatures(String accountId, List<String> signatures,
+      boolean status, String errorMessage, List<String> versions, Long timestamp) {
+    Update update = new Update();
+    PollingSubscriptionStatus pollingSubscriptionStatus =
+        PollingSubscriptionStatus.builder()
+            .statusResult(status ? StatusResult.SUCCESS : StatusResult.FAILED)
+            .detailedMessage(errorMessage)
+            .lastPolled(versions)
+            .lastPollingUpdate(timestamp)
+            .build();
+    update.set(NGTriggerEntityKeys.triggerStatus + "." + TriggerStatusKeys.pollingSubscriptionStatus,
+        pollingSubscriptionStatus);
+    Query query =
+        new Query(TriggerFilterHelper.createCriteriaFormBuildTriggerUsingAccIdAndSignature(accountId, signatures));
+    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+        "[Retrying]: Failed updating Trigger; attempt: {}", "[Failed]: Failed updating Trigger; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.updateMulti(query, update, NGTriggerEntity.class));
+    return true;
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

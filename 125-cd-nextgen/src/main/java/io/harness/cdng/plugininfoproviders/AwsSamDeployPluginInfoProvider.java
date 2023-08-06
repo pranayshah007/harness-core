@@ -6,14 +6,17 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
-
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
+import io.harness.cdng.aws.sam.AwsSamStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -30,6 +33,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -59,6 +63,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.jooq.tools.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
   @Inject private CDExpressionResolver cdExpressionResolver;
@@ -68,7 +73,7 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
-  @Inject private AwsSamPluginInfoProviderHelper awsSamPluginInfoProviderHelper;
+  @Inject private AwsSamStepHelper awsSamStepHelper;
 
   @Override
   public PluginCreationResponseWrapper getPluginInfo(
@@ -168,6 +173,9 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
 
         awsSecretKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
             awsManualConfigSpecDTO.getSecretKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
+      } else {
+        String errorMessage = "Only AWS Manual Credentials Connector is supported in AWS SAM";
+        throw new InvalidRequestException(errorMessage);
       }
     }
 
@@ -177,17 +185,21 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
         (ManifestsOutcome) outcomeService
             .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
             .getOutcome();
+    // @todo(hinger) render manifests here
 
     AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
-        (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
-            manifestsOutcome.values());
+        (AwsSamDirectoryManifestOutcome) awsSamStepHelper.getAwsSamDirectoryManifestOutcome(manifestsOutcome.values());
 
-    String samDir = awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
-        awsSamDirectoryManifestOutcome);
+    String samDir =
+        awsSamStepHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(awsSamDirectoryManifestOutcome);
 
     samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
-    samDeployEnvironmentVariablesMap.put(
-        "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+
+    if (ParameterField.isNotNull(deployCommandOptions)) {
+      samDeployEnvironmentVariablesMap.put(
+          "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+    }
+
     samDeployEnvironmentVariablesMap.put("PLUGIN_STACK_NAME", stackName.getValue());
 
     if (awsAccessKey != null) {

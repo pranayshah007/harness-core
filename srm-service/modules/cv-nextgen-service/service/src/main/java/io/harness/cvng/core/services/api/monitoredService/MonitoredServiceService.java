@@ -12,7 +12,6 @@ import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.HealthMonitoringFlagResponse;
 import io.harness.cvng.core.beans.monitoredService.AnomaliesSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.CountServiceDTO;
-import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthScoreDTO;
 import io.harness.cvng.core.beans.monitoredService.HistoricalTrend;
 import io.harness.cvng.core.beans.monitoredService.MetricDTO;
@@ -31,9 +30,9 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
-import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
 import io.harness.ng.beans.PageResponse;
@@ -95,7 +94,7 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   HealthMonitoringFlagResponse setHealthMonitoringFlag(ProjectParams projectParams, String identifier, boolean enable);
 
   HistoricalTrend getOverAllHealthScore(
-      ProjectParams projectParams, String identifier, DurationDTO duration, Instant endTime);
+      ProjectParams projectParams, String identifier, Instant startTime, Instant endTime);
 
   HealthScoreDTO getCurrentAndDependentServicesScore(MonitoredServiceParams monitoredServiceParams);
 
@@ -129,8 +128,8 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams);
 
-  PageResponse<NotificationRuleCondition> getNotificationRuleConditions(ProjectParams projectParams,
-      String monitoredServiceIdentifier, PageParams pageParams, List<NotificationRuleConditionType> conditionTypes);
+  List<MonitoredServiceNotificationRule> getNotificationRules(ProjectParams projectParams,
+      String monitoredServiceIdentifier, List<NotificationRuleConditionType> conditionTypes);
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
   long countUniqueEnabledServices(String accountId);
 

@@ -7,6 +7,8 @@ load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
+HarnessTeam = "IACM"
+
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
@@ -20,5 +22,26 @@ java_library(
         "//999-annotations:module",
     ],
 )
+
+test_deps = [
+    ":module",
+    "//960-persistence:supporter-test",
+    "//990-commons-test:module",
+    "@maven//:io_dropwizard_dropwizard_testing",
+    "@maven//:junit_junit",
+    "@maven//:org_assertj_assertj_core",
+    "@maven//:org_mockito_mockito_core",
+    "@maven//:org_mongodb_morphia_morphia",
+]
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/java/io/harness/beans/functors/*.java"]),
+    visibility = ["//visibility:public"],
+    deps = test_deps,
+)
+
+run_tests()
 
 run_analysis()

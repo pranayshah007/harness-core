@@ -11,6 +11,7 @@ import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.CCMSortOrder;
@@ -154,6 +155,7 @@ public class RuleExecutionDAO {
     overviewExecutionDetails.setTotalRuleEnforcements(ruleEnforcementDAO.list(accountId).size());
     return overviewExecutionDetails;
   }
+
   public void updateJiraInGovernanceRecommendation(
       @NonNull String accountId, @NonNull String id, CCMJiraDetails jiraDetails) {
     hPersistence.upsert(hPersistence.createQuery(RuleRecommendation.class)
@@ -161,6 +163,15 @@ public class RuleExecutionDAO {
                             .filter(RuleRecommendationId.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(RuleRecommendation.class)
             .set(RuleRecommendationId.jiraDetails, jiraDetails));
+  }
+
+  public void updateServicenowDetailsInGovernanceRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(RuleRecommendation.class)
+                            .filter(RuleRecommendationId.accountId, accountId)
+                            .filter(RuleRecommendationId.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(RuleRecommendation.class)
+            .set(RuleRecommendationId.serviceNowDetails, serviceNowDetails));
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)

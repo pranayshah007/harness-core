@@ -38,6 +38,7 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -95,9 +96,11 @@ public class CustomManifestFetchTask extends AbstractDelegateRunnableTask {
         logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
         logCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(defaultSourceWorkingDirectory));
 
-        if (!isManifestsFilesSizeAllowed(logCallback, defaultSourceWorkingDirectory)) {
+        Path pathToManifestFiles =
+            Paths.get(defaultSourceWorkingDirectory, customManifestSource.getFilePaths().get(0)).normalize();
+        if (!isManifestsFilesSizeAllowed(logCallback, pathToManifestFiles.toString())) {
           return CustomManifestValuesFetchResponse.builder()
-              .errorMessage("Custom Manifest File size exceeds allowed max size of 25Mb")
+              .errorMessage(format(KubernetesExceptionMessages.CUSTOM_REMOTE_MANIFEST_SIZE_LIMIT, pathToManifestFiles))
               .commandExecutionStatus(FAILURE)
               .build();
         }

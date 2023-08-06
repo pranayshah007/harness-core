@@ -6,7 +6,6 @@
  */
 
 package software.wings.helpers.ext.nexus;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -18,8 +17,11 @@ import static software.wings.helpers.ext.nexus.NexusServiceImpl.getRetrofit;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
@@ -68,6 +70,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import retrofit2.Response;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._960_API_SERVICES)
 @Singleton

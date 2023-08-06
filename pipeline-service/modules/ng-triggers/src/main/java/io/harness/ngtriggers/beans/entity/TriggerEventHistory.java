@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngtriggers.beans.entity;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -35,6 +37,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "TriggerEventHistoryKeys")
@@ -54,6 +57,16 @@ public class TriggerEventHistory implements PersistentEntity {
                  .field(TriggerEventHistoryKeys.projectIdentifier)
                  .field(TriggerEventHistoryKeys.triggerIdentifier)
                  .field(TriggerEventHistoryKeys.targetIdentifier)
+                 .descSortField(TriggerEventHistoryKeys.createdAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("las_execution_not_attempted")
+                 .field(TriggerEventHistoryKeys.accountId)
+                 .field(TriggerEventHistoryKeys.orgIdentifier)
+                 .field(TriggerEventHistoryKeys.projectIdentifier)
+                 .field(TriggerEventHistoryKeys.triggerIdentifier)
+                 .field(TriggerEventHistoryKeys.targetIdentifier)
+                 .field(TriggerEventHistoryKeys.executionNotAttempted)
                  .descSortField(TriggerEventHistoryKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
@@ -82,6 +95,7 @@ public class TriggerEventHistory implements PersistentEntity {
   String message;
   String planExecutionId;
   boolean exceptionOccurred;
+  @Nullable Boolean executionNotAttempted;
   String triggerIdentifier;
   @FdTtlIndex @Default Date validUntil = Date.from(OffsetDateTime.now().plusDays(7).toInstant());
   TargetExecutionSummary targetExecutionSummary;

@@ -23,15 +23,14 @@ public abstract class DelegateSecretManager {
 
   public String getDelegateTokenValue(DelegateToken delegateToken) {
     if (featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, delegateToken.getAccountId())) {
-      return decrypt(delegateToken);
+      return decodeBase64ToString(decrypt(delegateToken));
     }
     return delegateToken.isNg() ? decodeBase64ToString(delegateToken.getValue()) : delegateToken.getValue();
   }
 
-  // this flow doesn't need to decodeBase64, it used for to display token in UI or yaml
   public String getBase64EncodedTokenValue(DelegateToken delegateToken) {
     if (featureFlagService.isEnabled(FeatureName.READ_ENCRYPTED_DELEGATE_TOKEN, delegateToken.getAccountId())) {
-      return fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
+      return decrypt(delegateToken);
     }
     return delegateToken.getValue();
   }
@@ -49,9 +48,7 @@ public abstract class DelegateSecretManager {
   }
 
   public String decrypt(DelegateToken delegateToken) {
-    return delegateToken.isNg()
-        ? decodeBase64ToString(fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId()))
-        : fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
+    return fetchSecretValue(delegateToken.getAccountId(), delegateToken.getEncryptedTokenId());
   }
 
   protected abstract String fetchSecretValue(String accountId, String ecryptedTokenId);

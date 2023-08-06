@@ -6,33 +6,49 @@
  */
 
 package io.harness.cdng.ecs;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class EcsStepHelperImpl implements EcsStepHelper {
   @Override
   public List<ManifestOutcome> getEcsManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {
     // Filter only ecs supported manifest types
-    List<ManifestOutcome> ecsManifests =
+    Map<String, List<ManifestOutcome>> manifestTypeMap =
         manifestOutcomes.stream()
             .filter(manifestOutcome -> ManifestType.ECS_SUPPORTED_MANIFEST_TYPES.contains(manifestOutcome.getType()))
-            .collect(Collectors.toList());
+            .collect(Collectors.groupingBy(ManifestOutcome::getType));
+
+    List<ManifestOutcome> ecsManifests = new ArrayList<>();
+
+    manifestTypeMap.forEach((type, manifests) -> {
+      if (ManifestType.EcsTaskDefinition.equals(type) || ManifestType.EcsServiceDefinition.equals(type)) {
+        ecsManifests.add(manifests.stream().min(Comparator.comparingInt(ManifestOutcome::getOrder).reversed()).get());
+      } else {
+        ecsManifests.addAll(manifests);
+      }
+    });
 
     // Check if ECS Manifests are empty
     if (isEmpty(ecsManifests)) {

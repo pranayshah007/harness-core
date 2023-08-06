@@ -6,7 +6,9 @@
  */
 
 package io.harness.kryo.registrars;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.KeyValuePair;
 import io.harness.beans.NGInstanceUnitType;
@@ -113,6 +115,7 @@ import io.harness.delegate.beans.executioncapability.SocketConnectivityExecution
 import io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
 import io.harness.delegate.beans.executioncapability.WinrmConnectivityExecutionCapability;
+import io.harness.delegate.beans.helm.HelmDeployProgressData;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
@@ -261,6 +264,7 @@ import software.wings.beans.TaskType;
 import com.esotericsoftware.kryo.Kryo;
 import java.util.LinkedHashSet;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class K8sNgTaskRegister implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
@@ -439,6 +443,7 @@ public class K8sNgTaskRegister implements KryoRegistrar {
     kryo.register(EmptyHostDelegateConfig.class, 60015);
     kryo.register(TaskGroup.class, 74001);
     kryo.register(UnitProgressData.class, 95001);
+    kryo.register(HelmDeployProgressData.class, 95003);
     kryo.register(CfCliVersion.class, 97023);
     kryo.register(KubernetesResourceId.class, 97031);
     kryo.register(ValueType.class, 543215);

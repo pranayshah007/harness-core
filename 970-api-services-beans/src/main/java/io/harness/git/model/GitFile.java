@@ -7,12 +7,15 @@
 
 package io.harness.git.model;
 
+import io.harness.annotation.RecasterAlias;
+
 import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.git.model.GitFile")
 public class GitFile implements Serializable {
   private String filePath;
   private String fileContent;

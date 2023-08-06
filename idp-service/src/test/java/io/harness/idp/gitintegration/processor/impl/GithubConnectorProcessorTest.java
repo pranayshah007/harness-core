@@ -44,6 +44,7 @@ import io.harness.git.model.ListRemoteResult;
 import io.harness.idp.common.Constants;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
+import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -93,6 +94,8 @@ public class GithubConnectorProcessorTest {
   private static final String GITHUB_APP_PRIVATE_KEY_SECRET_IDENTIFIER = "test-github-private-key-secret-identifier";
   private static final String GITHUB_APP_PRIVATE_KEY_DECRYPTED_VALUE = "test-github-private-key-decrypted-value";
   private static final String GITHUB_APP_INSTALLATION_ID = "test-github-installation-id";
+  private static final String TEST_INTEGRATION_CONFIG = "test-config";
+  private static final String TEST_HOST = "github.com";
 
   @Before
   public void setUp() {
@@ -146,9 +149,6 @@ public class GithubConnectorProcessorTest {
                                                     .orgIdentifier(null)
                                                     .projectIdentifier(null)
                                                     .build();
-    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = Mockito.mockStatic(ConfigManagerUtils.class);
-    mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
-        .thenReturn("");
     when(ngSecretService.getDecryptedSecretValue(ACCOUNT_IDENTIFIER, null, null, TOKEN_SECRET_IDENTIFIER))
         .thenReturn(decryptedSecretValue);
 
@@ -159,7 +159,6 @@ public class GithubConnectorProcessorTest {
         ((BackstageEnvSecretVariable) response.get(Constants.GITHUB_TOKEN)).getHarnessSecretIdentifier());
     assertEquals(Constants.GITHUB_TOKEN, response.get(Constants.GITHUB_TOKEN).getEnvName());
     mockRestStatic.close();
-    mockedStaticConfigManagerUtils.close();
   }
 
   @Test
@@ -184,9 +183,6 @@ public class GithubConnectorProcessorTest {
                                                               .orgIdentifier(null)
                                                               .projectIdentifier(null)
                                                               .build();
-    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = Mockito.mockStatic(ConfigManagerUtils.class);
-    mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
-        .thenReturn("");
     when(ngSecretService.getDecryptedSecretValue(any(), any(), any(), any()))
         .thenReturn(decryptedSecretValuePrivateRef)
         .thenReturn(decryptedSecretValueToken);
@@ -203,7 +199,40 @@ public class GithubConnectorProcessorTest {
         ((BackstageEnvSecretVariable) response.get(Constants.GITHUB_TOKEN)).getHarnessSecretIdentifier());
     assertEquals(Constants.GITHUB_TOKEN, response.get(Constants.GITHUB_TOKEN).getEnvName());
     mockRestStatic.close();
-    mockedStaticConfigManagerUtils.close();
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testCreateOrUpdateIntegrationConfigForGithubUsernameAndTokenAuthHttpConnection() {
+    ConnectorInfoDTO connectorInfoDTO = getGithubConnectorDTO(false, true, true, true, true).getConnectorInfo();
+    doNothing().when(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
+    MockedStatic<ConfigManagerUtils> mockRestUtilsConfigManagerUtils = mockStatic(ConfigManagerUtils.class);
+    MockedStatic<GitIntegrationUtils> mockRestUtilsGitIntegrationUtils = mockStatic(GitIntegrationUtils.class);
+    mockRestUtilsGitIntegrationUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
+        .thenReturn(TEST_INTEGRATION_CONFIG);
+    mockRestUtilsGitIntegrationUtils.when(() -> GitIntegrationUtils.getHostForConnector(any())).thenReturn(TEST_HOST);
+    githubConnectorProcessor.createOrUpdateIntegrationConfig(ACCOUNT_IDENTIFIER, connectorInfoDTO);
+    verify(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
+    mockRestUtilsConfigManagerUtils.close();
+    mockRestUtilsGitIntegrationUtils.close();
+  }
+
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testCreateOrUpdateIntegrationConfigForUsernameAndTokenAuthWithGithubAppWithHttpConnection() {
+    ConnectorInfoDTO connectorInfoDTO = getGithubConnectorDTO(true, true, true, true, true).getConnectorInfo();
+    doNothing().when(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
+    MockedStatic<ConfigManagerUtils> mockRestUtilsConfigManagerUtils = mockStatic(ConfigManagerUtils.class);
+    MockedStatic<GitIntegrationUtils> mockRestUtilsGitIntegrationUtils = mockStatic(GitIntegrationUtils.class);
+    mockRestUtilsGitIntegrationUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
+        .thenReturn(TEST_INTEGRATION_CONFIG);
+    mockRestUtilsGitIntegrationUtils.when(() -> GitIntegrationUtils.getHostForConnector(any())).thenReturn(TEST_HOST);
+    githubConnectorProcessor.createOrUpdateIntegrationConfig(ACCOUNT_IDENTIFIER, connectorInfoDTO);
+    verify(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
+    mockRestUtilsConfigManagerUtils.close();
+    mockRestUtilsGitIntegrationUtils.close();
   }
 
   @Test
