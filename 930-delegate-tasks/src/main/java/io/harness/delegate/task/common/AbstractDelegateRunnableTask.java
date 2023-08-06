@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.common;
 
+import static io.harness.delegate.metrics.DelegateMetric.TASK_FAILED;
 import static io.harness.exception.WingsException.ExecutionContext.DELEGATE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -50,7 +51,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
@@ -72,10 +72,6 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
   public static final String TASK_FAILED = "task_failed";
   private static String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
-  private static String DELEGATE_NAME_METRICS_ILLEGAL_CHARACTERS = "[~!@#$%^&*'\"/?<>,;.]";
-  private static String DELEGATE_NAME_METRICS = isNotBlank(DELEGATE_NAME)
-      ? StringUtils.replaceAll(DELEGATE_NAME, DELEGATE_NAME_METRICS_ILLEGAL_CHARACTERS, "_")
-      : "default";
 
   public AbstractDelegateRunnableTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
@@ -148,8 +144,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
                                   .errorMessage(errorMessage)
                                   .build());
         taskResponse.responseCode(ResponseCode.FAILED);
-        metricRegistry.registerCounterMetric(
-            TASK_FAILED, new String[] {DELEGATE_NAME_METRICS, taskType}, "Total number of task failed");
+        metricRegistry.recordCounterInc("task_failed", DELEGATE_NAME, taskType);
       }
       log.debug("Completed executing task {}", taskId);
     } catch (DelegateRetryableException exception) {

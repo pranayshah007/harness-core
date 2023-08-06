@@ -299,10 +299,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final String HOST_NAME = getLocalHostName();
   private static String DELEGATE_NAME =
       isNotBlank(System.getenv().get("DELEGATE_NAME")) ? System.getenv().get("DELEGATE_NAME") : "";
-  private static String DELEGATE_NAME_METRICS_ILLEGAL_CHARACTERS = "[~!@#$%^&*'\"/?<>,;.]";
-  private static String DELEGATE_NAME_METRICS = isNotBlank(DELEGATE_NAME)
-      ? StringUtils.replaceAll(DELEGATE_NAME, DELEGATE_NAME_METRICS_ILLEGAL_CHARACTERS, "_")
-      : "default";
+
   private static String DELEGATE_TYPE = System.getenv().get("DELEGATE_TYPE");
   private static final boolean IsEcsDelegate = "ECS".equals(DELEGATE_TYPE);
   private static String DELEGATE_GROUP_NAME = System.getenv().get("DELEGATE_GROUP_NAME");
@@ -770,7 +767,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(
           RESOURCE_CONSUMPTION_ABOVE_THRESHOLD.getMetricName(), new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), DELEGATE_NAME_METRICS);
+      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), DELEGATE_NAME);
       return;
     }
 
@@ -782,7 +779,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(
           RESOURCE_CONSUMPTION_ABOVE_THRESHOLD.getMetricName(), new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), DELEGATE_NAME_METRICS);
+      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), DELEGATE_NAME);
       return;
     }
     log.debug("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
@@ -795,7 +792,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(
           RESOURCE_CONSUMPTION_ABOVE_THRESHOLD.getMetricName(), new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), DELEGATE_NAME_METRICS);
+      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), DELEGATE_NAME);
       return;
     }
 
@@ -2543,7 +2540,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
     if (stillRunning) {
       log.info("Task {} of taskType {} timed out after {} milliseconds", taskId, taskData.getTaskType(), timeout);
-      metricRegistry.recordCounterInc(TASK_TIMEOUT.getMetricName(), DELEGATE_NAME_METRICS, taskData.getTaskType());
+      metricRegistry.recordCounterInc(TASK_TIMEOUT.getMetricName(), DELEGATE_NAME, taskData.getTaskType());
       Optional.ofNullable(currentlyExecutingFutures.get(taskId).getTaskFuture())
           .ifPresent(future -> future.cancel(true));
     }
@@ -2857,7 +2854,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         if (response != null && response.code() >= 200 && response.code() <= 299) {
           log.debug("Task {} type {},  response sent to manager", taskId, taskResponse.getTaskTypeName());
           metricRegistry.recordCounterInc(
-              TASK_COMPLETED.getMetricName(), DELEGATE_NAME_METRICS, taskResponse.getTaskTypeName());
+              TASK_COMPLETED.getMetricName(), DELEGATE_NAME, taskResponse.getTaskTypeName());
           break;
         }
         log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
@@ -2874,8 +2871,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     } catch (IOException e) {
       log.error("Unable to send response to manager", e);
-      metricRegistry.recordCounterInc(
-          TASK_FAILED.getMetricName(), DELEGATE_NAME_METRICS, taskResponse.getTaskTypeName());
+      metricRegistry.recordCounterInc(TASK_FAILED.getMetricName(), DELEGATE_NAME, taskResponse.getTaskTypeName());
     } finally {
       if (response != null && response.errorBody() != null && !response.isSuccessful()) {
         response.errorBody().close();
@@ -2900,7 +2896,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
             .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
             .build();
-    metricRegistry.recordCounterInc(TASK_FAILED.getMetricName(), DELEGATE_NAME_METRICS, taskResponse.getTaskTypeName());
+    metricRegistry.recordCounterInc(TASK_FAILED.getMetricName(), DELEGATE_NAME, taskResponse.getTaskTypeName());
     log.error("Sending error response for task{} due to exception", taskId, exception);
     try {
       Response<ResponseBody> resp;
