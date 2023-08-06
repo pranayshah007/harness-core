@@ -24,8 +24,7 @@ else
   if [ $1 == "immutable" ]; then
     echo "building immutable delegate"
     BAZEL_ARGUMENTS="${BAZEL_ARGUMENTS} --define is_immutable=true"
-    bazel ${bazelrc} build //260-delegate:module_deploy.jar ${BAZEL_ARGUMENTS}
-
+    bazel build --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json //260-delegate:module_deploy.jar ${BAZEL_ARGUMENTS}
   else
     echo "building legacy delegate"
      bazel ${bazelrc} build --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json //260-delegate:module_deploy.jar ${BAZEL_ARGUMENTS}
