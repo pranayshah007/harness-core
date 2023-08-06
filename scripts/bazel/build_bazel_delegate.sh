@@ -14,7 +14,8 @@ if [ "${PLATFORM}" == "harness-ci" ]; then
 fi
 
 BAZEL_DIRS=${HOME}/.bazel-dirs
-BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
+BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
+#BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
 
 if [ $1 == "core" ]; then
   echo "building core delegate"
