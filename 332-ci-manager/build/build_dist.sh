@@ -27,8 +27,6 @@ cp ../../332-ci-manager/build/container/Dockerfile-ci-manager-cie-jdk ./Dockerfi
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../332-ci-manager/build/container/scripts/ .
-pwd
-ls
 
 cp ../../ci-manager-protocol.info .
 echo ${JDK} > jdk.txt
@@ -40,4 +38,3 @@ fi
 java -jar ci-manager-capsule.jar scan-classpath-metadata
 
 cd ../..
-pwd
