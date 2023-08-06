@@ -27,6 +27,6 @@ else
   else
     echo "building legacy delegate"
   fi
- bazel ${bazelrc} --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json build //260-delegate:module_deploy.jar ${BAZEL_ARGUMENTS}
+ bazel ${bazelrc} build --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json build //260-delegate:module_deploy.jar ${BAZEL_ARGUMENTS}
  cp ${BAZEL_DIRS}/bin/260-delegate/module_deploy.jar ./dockerization/delegate/delegate.jar
 fi
