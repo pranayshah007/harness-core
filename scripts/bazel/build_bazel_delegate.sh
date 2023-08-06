@@ -14,8 +14,7 @@ if [ "${PLATFORM}" == "harness-ci" ]; then
 fi
 
 BAZEL_DIRS=${HOME}/.bazel-dirs
-BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
-#BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
+BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
 
 if [ $1 == "core" ]; then
   echo "building core delegate"
@@ -28,6 +27,6 @@ else
   else
     echo "building legacy delegate"
   fi
- bazel ${bazelrc} build //260-delegate:module_deploy.jar ${BAZEL_ARGUMENTS}
+ bazel ${bazelrc} --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json build //260-delegate:module_deploy.jar ${BAZEL_ARGUMENTS}
  cp ${BAZEL_DIRS}/bin/260-delegate/module_deploy.jar ./dockerization/delegate/delegate.jar
 fi
