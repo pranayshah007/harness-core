@@ -39,6 +39,12 @@ COPY --chown=65534:65534 --from=builder \
  /app/dist/332-ci-manager/profile.jfc \
  /app/dockerization/base-images/apm/*.sh \
  /opt/harness/
+RUN ls /app/dist/332-ci-manager/scripts
+RUN ls  /opt/harness/
+RUN pwd
+RUN ls  /opt/harness/
+
+
 
 RUN chmod +x /opt/harness/*.sh
 CMD [ "/opt/harness/run.sh" ]
