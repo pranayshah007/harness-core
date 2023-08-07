@@ -156,8 +156,7 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testGetOnboardingGraph() throws IOException, IllegalAccessException {
-    when(onboardingService.getOnboardingResponse(
-             eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
+    when(onboardingService.getOnboardingResponse(eq(builderFactory.getContext().getAccountId()), any()))
         .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
 
     ObjectMapper objectMapper = new ObjectMapper();

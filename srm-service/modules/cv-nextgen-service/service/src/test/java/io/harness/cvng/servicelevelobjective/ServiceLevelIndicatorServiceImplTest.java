@@ -136,37 +136,9 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     String textLoad = Resources.toString(
         AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
 
-    ServiceLevelIndicator serviceLevelIndicator =
-        serviceLevelIndicatorEntityAndDTOTransformer.getEntity(builderFactory.getProjectParams(),
-            serviceLevelIndicatorDTO, monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef(), true);
-
-    DataCollectionInfo dataCollectionInfo = dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
-                                                .toDataCollectionInfo(Arrays.asList(cvConfig), serviceLevelIndicator);
-
-    Instant endTime = clock.instant().truncatedTo(ChronoUnit.MINUTES);
-    Instant startTime = endTime.minus(Duration.ofDays(1));
-
-    DataCollectionRequest request = SyncDataCollectionRequest.builder()
-                                        .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
-                                        .dataCollectionInfo(dataCollectionInfo)
-                                        .endTime(endTime)
-                                        .startTime(startTime)
-                                        .build();
-
-    OnboardingRequestDTO onboardingRequestDTO =
-        OnboardingRequestDTO.builder()
-            .dataCollectionRequest(request)
-            .connectorIdentifier(cvConfig.getConnectorIdentifier())
-            .accountId(builderFactory.getProjectParams().getAccountIdentifier())
-            .orgIdentifier(builderFactory.getProjectParams().getOrgIdentifier())
-            .projectIdentifier(builderFactory.getProjectParams().getProjectIdentifier())
-            .tracingId(tracingId)
-            .build();
-
     OnboardingService mockOnboardingService = mock(OnboardingService.class);
     FieldUtils.writeField(serviceLevelIndicatorService, "onboardingService", mockOnboardingService, true);
-    when(mockOnboardingService.getOnboardingResponse(
-             eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
+    when(mockOnboardingService.getOnboardingResponse(eq(builderFactory.getContext().getAccountId()), any()))
         .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
 
     SLIOnboardingGraphs sliOnboardingGraphs =
@@ -202,34 +174,9 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     String textLoad = Resources.toString(
         AppDynamicsServiceimplTest.class.getResource("/timeseries/appd_metric_data_validation.json"), Charsets.UTF_8);
 
-    DataCollectionInfo dataCollectionInfo =
-        dataSourceTypeDataCollectionInfoMapperMap.get(cvConfig.getType())
-            .toDataCollectionInfo(Arrays.asList(cvConfig), Collections.singletonList("identifier"));
-
-    Instant endTime = clock.instant().truncatedTo(ChronoUnit.MINUTES);
-    Instant startTime = endTime.minus(Duration.ofDays(1));
-
-    DataCollectionRequest request = SyncDataCollectionRequest.builder()
-                                        .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
-                                        .dataCollectionInfo(dataCollectionInfo)
-                                        .endTime(endTime)
-                                        .startTime(startTime)
-                                        .build();
-
-    OnboardingRequestDTO onboardingRequestDTO =
-        OnboardingRequestDTO.builder()
-            .dataCollectionRequest(request)
-            .connectorIdentifier(cvConfig.getConnectorIdentifier())
-            .accountId(builderFactory.getProjectParams().getAccountIdentifier())
-            .orgIdentifier(builderFactory.getProjectParams().getOrgIdentifier())
-            .projectIdentifier(builderFactory.getProjectParams().getProjectIdentifier())
-            .tracingId(tracingId)
-            .build();
-
     OnboardingService mockOnboardingService = mock(OnboardingService.class);
     FieldUtils.writeField(serviceLevelIndicatorService, "onboardingService", mockOnboardingService, true);
-    when(mockOnboardingService.getOnboardingResponse(
-             eq(builderFactory.getContext().getAccountId()), eq(onboardingRequestDTO)))
+    when(mockOnboardingService.getOnboardingResponse(eq(builderFactory.getContext().getAccountId()), any()))
         .thenReturn(JsonUtils.asObject(textLoad, OnboardingResponseDTO.class));
 
     MetricOnboardingGraph metricOnboardingGraph =

@@ -1,44 +1,58 @@
 {
-  "accountId" : "kmpySmUISimoRrJL6NL73w",
-  "result" : [ {
-	"txnName" : "Overall Application Performance",
-	"metricName" : "Errors per Minute",
-	  "metricIdentifier" : "Errors per Minute",
-	  "metricValue" : 233.0,
-	"timestamp" : 1595760660000
-  }, {
-	"txnName" : "Overall Application Performance",
-	"metricName" : "Calls per Minute",
-	  "metricIdentifier" : "Calls per Minute",
-	  "metricValue" : 343.0,
-	"timestamp" : 1595760660000
-  }, {
-	"txnName" : "Overall Application Performance",
-	"metricName" : "Average Response Time (ms)",
-	  "metricIdentifier" : "Average Response Time (ms)",
-	  "metricValue" : 46.0,
-	"timestamp" : 1616754300000
-  },{
-	  "txnName" : "Overall Application Performance",
-	  "metricName" : "Exceptions per Minute",
-	  "metricIdentifier" : "Exceptions per Minute",
-	  "metricValue" : 233.0,
-	  "timestamp" : 1616754300000
-  } ,{
-	  "txnName" : "Overall Application Performance",
-	  "metricName" : "name",
-	  "metricIdentifier" : "identifier",
-	  "metricValue" : 343.0,
-	  "timestamp" : 1595760660000
-  },{
-	  "txnName" : "Overall Application Performance",
-	  "metricName" : "zero metric",
-	  "metricIdentifier" : "zero metric identifier",
-	  "metricValue" : 0.0,
-	  "timestamp" : 1595760660000
-  }  ],
-  "projectIdentifier" : "raghu_p",
-  "orgIdentifier" : "harness_test",
-  "connectorIdentifier" : "AppdUITest",
-  "tracingId" : "1616754663730"
+  "accountId": "kmpySmUISimoRrJL6NL73w",
+  "result": [
+    {
+      "txnName": "Overall Application Performance",
+      "metricName": "Errors per Minute",
+      "metricIdentifier": "Errors per Minute",
+      "metricValue": 233.0,
+      "timestamp": 1595760660000
+    },
+    {
+      "txnName": "Overall Application Performance",
+      "metricName": "Calls per Minute",
+      "metricIdentifier": "Calls per Minute",
+      "metricValue": 343.0,
+      "timestamp": 1595760660000
+    },
+    {
+      "txnName": "Overall Application Performance",
+      "metricName": "Average Response Time (ms)",
+      "metricIdentifier": "Average Response Time (ms)",
+      "metricValue": 46.0,
+      "timestamp": 1616754300000
+    },
+    {
+      "txnName": "Overall Application Performance",
+      "metricName": "Exceptions per Minute",
+      "metricIdentifier": "Exceptions per Minute",
+      "metricValue": 233.0,
+      "timestamp": 1616754300000
+    },
+    {
+      "txnName": "Overall Application Performance",
+      "metricName": "name",
+      "metricIdentifier": "identifier",
+      "metricValue": 343.0,
+      "timestamp": 1595760660000
+    },
+    {
+      "txnName": "Overall Application Performance",
+      "metricName": "zero metric",
+      "metricIdentifier": "zero metric identifier",
+      "metricValue": 0.0,
+      "timestamp": 1595760660000
+    },
+    {
+      "txnName": "Overall Application Performance",
+      "metricName": "throughput metric",
+      "metricIdentifier": "throughput_metric",
+      "metricValue": 25.0,
+      "timestamp": 1595760660000
+    }
+  ],
+  "projectIdentifier": "raghu_p",
+  "orgIdentifier": "harness_test",
+  "connectorIdentifier": "AppdUITest",
+  "tracingId": "1616754663730"
 }
