@@ -77,7 +77,7 @@ public class K8EventHandler {
     });
     try {
       executorService.shutdown();
-      executorService.awaitTermination(30, TimeUnit.SECONDS);
+      executorService.awaitTermination(1, TimeUnit.SECONDS);
     } catch (Exception e) {
       log.warn("failed to stop event watch", e);
     }

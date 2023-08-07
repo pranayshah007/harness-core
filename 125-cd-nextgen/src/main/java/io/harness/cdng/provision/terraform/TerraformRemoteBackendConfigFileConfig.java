@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -14,5 +15,6 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.cdng.provision.terraform.TerraformRemoteBackendConfigFileConfig")
 public class TerraformRemoteBackendConfigFileConfig
     extends TerraformRemoteFileConfig implements TerraformBackendConfigFileConfig {}

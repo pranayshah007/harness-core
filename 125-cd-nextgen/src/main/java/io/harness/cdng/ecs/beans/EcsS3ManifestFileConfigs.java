@@ -7,6 +7,7 @@
 
 package io.harness.cdng.ecs.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.ecs.EcsS3FetchFileConfig;
@@ -18,6 +19,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs")
 public class EcsS3ManifestFileConfigs {
   EcsS3FetchFileConfig ecsS3TaskDefinitionFileConfig;
   EcsS3FetchFileConfig ecsS3ServiceDefinitionFileConfig;

@@ -627,10 +627,15 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 		if isGithubApp {
 			repoList, response, err = client.Repositories.(*github.RepositoryService).ListByInstallation(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 		} else {
-			repoList, response, err = client.Repositories.ListV2(ctx, scm.RepoListOptions{
-				RepoSearchTerm: getRepoFilterParams(request),
-				ListOptions: scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())},
-			})
+			if request.GetVersion() == 2 {
+				repoList, response, err = client.Repositories.ListV2(ctx, scm.RepoListOptions{
+					RepoSearchTerm: getRepoFilterParams(request),
+					ListOptions: scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())},
+					})
+			} else {
+				repoList, response, err = client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
+			}
+			
 		}
 		if err != nil {
 			log.Errorw("GetUserRepos failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))

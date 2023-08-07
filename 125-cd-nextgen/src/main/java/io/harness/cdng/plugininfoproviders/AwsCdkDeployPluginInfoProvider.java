@@ -43,17 +43,12 @@ public class AwsCdkDeployPluginInfoProvider implements CDPluginInfoProvider {
   public PluginCreationResponseWrapper getPluginInfo(
       PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
-    CdAbstractStepNode cdAbstractStepNode;
-
-    cdAbstractStepNode = getCdAbstractStepNode(request, stepJsonNode);
-
+    CdAbstractStepNode cdAbstractStepNode = getCdAbstractStepNode(request, stepJsonNode);
     AwsCdkDeployStepInfo awsCdkDeployStepInfo = (AwsCdkDeployStepInfo) cdAbstractStepNode.getStepSpecType();
-
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
         awsCdkDeployStepInfo.getResources(), awsCdkDeployStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
-
     if (ParameterField.isNotNull(awsCdkDeployStepInfo.getConnectorRef())
         || isNotEmpty(awsCdkDeployStepInfo.getConnectorRef().getValue())) {
       imageDetails = PluginInfoProviderHelper.getImageDetails(awsCdkDeployStepInfo.getConnectorRef(),
@@ -61,9 +56,7 @@ public class AwsCdkDeployPluginInfoProvider implements CDPluginInfoProvider {
     }
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
-
     pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(awsCdkDeployStepInfo));
-
     PluginCreationResponse response =
         PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
@@ -93,7 +86,6 @@ public class AwsCdkDeployPluginInfoProvider implements CDPluginInfoProvider {
 
   private Map<String, String> getEnvironmentVariables(AwsCdkDeployStepInfo awsCdkDeployStepInfo) {
     ParameterField<Map<String, String>> envVariables = awsCdkDeployStepInfo.getEnvVariables();
-
     HashMap<String, String> environmentVariablesMap = new HashMap<>();
 
     environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, getParameterFieldValue(awsCdkDeployStepInfo.getAppPath()));
@@ -102,6 +94,7 @@ public class AwsCdkDeployPluginInfoProvider implements CDPluginInfoProvider {
     if (isNotEmpty(commandOptions)) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_COMMAND_OPTIONS, String.join(" ", commandOptions));
     }
+
     if (isNotEmpty(getParameterFieldValue(awsCdkDeployStepInfo.getStackNames()))) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_STACK_NAMES, String.join(" ", stackNames));
     }

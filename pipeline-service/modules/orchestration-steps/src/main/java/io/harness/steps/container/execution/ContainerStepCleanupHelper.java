@@ -16,6 +16,7 @@ import static java.util.Collections.emptyList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -36,6 +37,7 @@ import io.harness.steps.container.utils.ConnectorUtils;
 import io.harness.steps.plugin.infrastructure.ContainerCleanupDetails;
 import io.harness.steps.plugin.infrastructure.ContainerInfraYamlSpec;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
+import io.harness.utils.PmsFeatureFlagService;
 
 import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
@@ -60,6 +62,7 @@ public class ContainerStepCleanupHelper {
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject OutcomeService outcomeService;
   @Inject LogStreamingStepClientFactory logStreamingClient;
+  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
   private final int MAX_ATTEMPTS = 3;
 
@@ -120,6 +123,9 @@ public class ContainerStepCleanupHelper {
     final List<String> podNames = new ArrayList<>();
     podNames.add(podDetails.getPodName());
 
+    boolean useSocketCapability = pmsFeatureFlagService.isEnabled(
+        ngAccess.getAccountIdentifier(), FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG);
+
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, clusterConnectorRef);
 
     return CIK8CleanupTaskParams.builder()
@@ -128,6 +134,7 @@ public class ContainerStepCleanupHelper {
         .namespace(namespace)
         .podNameList(podNames)
         .serviceNameList(new ArrayList<>())
+        .useSocketCapability(useSocketCapability)
         .build();
   }
 

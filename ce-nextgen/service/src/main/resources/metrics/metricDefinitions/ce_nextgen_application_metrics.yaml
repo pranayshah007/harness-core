@@ -1,0 +1,120 @@
+name: CE Nextgen Application Metrics
+identifier: ceNextgenApplicationMetrics
+metricGroup: ceNextgenApplicationMetricsGroup
+metrics:
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_4xx_responses_count
+    metricDefinition: Total number of 4xx error responses
+    type: LastValue
+    unit: count
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_5xx_responses_count
+    metricDefinition: Total number of 5xx error responses
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_total_max
+    metricDefinition: JVM Memory - Max
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_total_committed
+    metricDefinition: JVM Memory - Total Committed
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_total_used
+    metricDefinition: JVM Memory - Used Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_non_heap_max
+    metricDefinition: JVM Memory - Max Non-Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_non_heap_committed
+    metricDefinition: JVM Memory - Committed Non-Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_non_heap_used
+    metricDefinition: JVM Memory - Non-Heap Memory Usage
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_heap_max
+    metricDefinition: JVM Memory - Max Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_heap_committed
+    metricDefinition: JVM Memory - Committed Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_heap_used
+    metricDefinition: JVM Memory - Heap Memory Usage
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_pools_Metaspace_committed
+    metricDefinition: JVM Memory - Committed Metaspace Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_pools_Metaspace_used
+    metricDefinition: JVM Memory - Metaspace Memory Usage
+    type: LastValue
+    unit: count
+  - metricName: jvm_threads_count
+    metricDefinition: JVM Threads - Total Count
+    type: LastValue
+    unit: count
+  - metricName: jvm_threads_blocked_count
+    metricDefinition: JVM Threads - Blocked Count
+    type: LastValue
+    unit: count
+  - metricName: jvm_threads_daemon_count
+    metricDefinition: JVM Threads - Daemon Count
+    type: LastValue
+    unit: count
+  - metricName: jvm_threads_deadlock_count
+    metricDefinition: JVM Threads - Deadlocked Count
+    type: LastValue
+    unit: count
+  - metricName: jvm_threads_peak_count
+    metricDefinition: JVM Threads - Peak Count
+    type: LastValue
+    unit: count
+  - metricName: jvm_threads_runnable_count
+    metricDefinition: JVM Threads - Runnable Count
+    type: LastValue
+    unit: count
+  - metricName: jvm_threads_timed_waiting_count
+    metricDefinition: JVM Threads - Timed_Wait Count
+    type: LastValue
+    unit: count
+  - metricName: jvm_threads_waiting_count
+    metricDefinition: JVM Threads - Wait Count
+    type: LastValue
+    unit: count
+  - metricName: org_eclipse_jetty_util_thread_QueuedThreadPool_dw_size
+    metricDefinition: Number of threads in (Jetty) web server pool that are servicing requests
+    type: LastValue
+    unit: count
+  - metricName: org_eclipse_jetty_util_thread_QueuedThreadPool_dw_utilization
+    metricDefinition: Number of threads in (Jetty) web server that are currently being used
+    type: LastValue
+    unit: count
+  - metricName: org_eclipse_jetty_util_thread_QueuedThreadPool_dw_jobs
+    metricDefinition: Number of jobs queued waiting for a thread from (Jetty) web server
+    type: LastValue
+    unit: count
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_requests_count
+    metricDefinition: Jetty - Total number of Requests Count
+    type: LastValue
+    unit: count
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_999thPercentile
+    metricDefinition: Jetty - P999 Response Time
+    type: LastValue
+    unit: count
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_99thPercentile
+    metricDefinition: Jetty - P99 Response Time
+    type: LastValue
+    unit: count
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_requests_snapshot_95thPercentile
+    metricDefinition: Jetty - P95 Response Time
+    type: LastValue
+    unit: count
+  - metricName: org_eclipse_jetty_server_HttpConnectionFactory_7090_connections_count
+    metricDefinition: Jetty - Connection Count
+    type: LastValue
+    unit: count

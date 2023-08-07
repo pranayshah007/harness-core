@@ -92,9 +92,9 @@ public class VmStepSerializer {
         return vmIACMApprovalStepSerializer.serialize(
             ambiance, (IACMApprovalInfo) stepInfo, stageInfraDetails, parameterFieldTimeout);
       case ACTION:
-        return vmActionStepSerializer.serialize((ActionStepInfo) stepInfo, identifier, stageInfraDetails);
+        return vmActionStepSerializer.serialize((ActionStepInfo) stepInfo, identifier, stageInfraDetails, ambiance);
       case BITRISE:
-        return vmBitriseStepSerializer.serialize((BitriseStepInfo) stepInfo, identifier, stageInfraDetails);
+        return vmBitriseStepSerializer.serialize((BitriseStepInfo) stepInfo, identifier, stageInfraDetails, ambiance);
       case CLEANUP:
       case TEST:
       case BUILD:

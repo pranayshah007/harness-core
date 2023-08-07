@@ -141,7 +141,8 @@ public class K8sCanaryStep extends CdTaskChainExecutable implements K8sStepExecu
             .cleanUpIncompleteCanaryDeployRelease(true)
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
-            .enabledSupportHPAAndPDB(cdStepHelper.isEnabledSupportHPAAndPDB(accountId));
+            .enabledSupportHPAAndPDB(cdStepHelper.isEnabledSupportHPAAndPDB(accountId))
+            .disableFabric8(cdStepHelper.shouldDisableFabric8(accountId));
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       canaryRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));

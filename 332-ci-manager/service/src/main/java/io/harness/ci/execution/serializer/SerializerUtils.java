@@ -7,11 +7,16 @@
 
 package io.harness.ci.serializer;
 
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_BUILD_STATUS;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_STATUS;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_FAILED_STEPS;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_STATUS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.steps.StepStatusMetadata;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
@@ -19,14 +24,18 @@ import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
+import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.CIStepStatusRepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +47,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SerializerUtils {
+  @Inject protected CIStepStatusRepository ciStepStatusRepository;
+
   private static Pattern pattern = Pattern.compile("\\$\\{ngSecretManager\\.obtain[^\\}]*\\}");
 
   public static List<String> getEntrypoint(ParameterField<CIShellType> parametrizedShellType) {
@@ -331,5 +342,21 @@ public class SerializerUtils {
       return ParameterField.createValueField(finalString);
     }
     return ParameterField.ofNull();
+  }
+  public Map<String, String> getStepStatusEnvVars(Ambiance ambiance) {
+    Map<String, String> statusEnvVars = new HashMap<>();
+    StepStatusMetadata stepStatusMetadata =
+        ciStepStatusRepository.findByStageExecutionId(ambiance.getStageExecutionId());
+    if (stepStatusMetadata != null && stepStatusMetadata.getStatus() == StepExecutionStatus.FAILURE) {
+      statusEnvVars.put(DRONE_STAGE_STATUS, StepExecutionStatus.FAILURE.name());
+      statusEnvVars.put(DRONE_BUILD_STATUS, StepExecutionStatus.FAILURE.name());
+      statusEnvVars.put(CI_BUILD_STATUS, StepExecutionStatus.FAILURE.name());
+      statusEnvVars.put(DRONE_FAILED_STEPS, stepStatusMetadata.getFailedSteps().toString());
+    } else {
+      statusEnvVars.put(DRONE_STAGE_STATUS, StepExecutionStatus.SUCCESS.name());
+      statusEnvVars.put(DRONE_BUILD_STATUS, StepExecutionStatus.SUCCESS.name());
+      statusEnvVars.put(CI_BUILD_STATUS, StepExecutionStatus.SUCCESS.name());
+    }
+    return statusEnvVars;
   }
 }

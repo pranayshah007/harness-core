@@ -8,6 +8,7 @@
 package io.harness.idp.onboarding.mappers;
 
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL;
+import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_SERVICES;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_LIFECYCLE;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_OWNER;
 import static io.harness.rule.OwnerRule.SATHISH;
@@ -81,7 +82,9 @@ public class HarnessEntityToBackstageEntityMapperTest extends CategoryTest {
   final OnboardingModuleConfig onboardingModuleConfig =
       OnboardingModuleConfig.builder()
           .harnessCiCdAnnotations(Map.of("projectUrl",
-              "https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details"))
+              "https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details",
+              "serviceUrl",
+              "https://localhost:8181/ng/account/accountIdentifier/cd/orgs/orgIdentifier/projects/projectIdentifier/services/serviceIdentifier"))
           .build();
 
   @Before
@@ -302,7 +305,7 @@ public class HarnessEntityToBackstageEntityMapperTest extends CategoryTest {
     assertEquals(serviceResponseDTO.getIdentifier(), backstageCatalogComponentEntity.getMetadata().getName());
     assertEquals(serviceResponseDTO.getDescription(), backstageCatalogComponentEntity.getMetadata().getDescription());
     assertEquals(Collections.EMPTY_LIST, backstageCatalogComponentEntity.getMetadata().getTags());
-    assertEquals(2, backstageCatalogComponentEntity.getMetadata().getAnnotations().size());
+    assertEquals(3, backstageCatalogComponentEntity.getMetadata().getAnnotations().size());
     assertEquals("Service", backstageCatalogComponentEntity.getSpec().getType());
     assertEquals(ENTITY_UNKNOWN_LIFECYCLE, backstageCatalogComponentEntity.getSpec().getLifecycle());
     assertEquals(ENTITY_UNKNOWN_OWNER, backstageCatalogComponentEntity.getSpec().getOwner());
@@ -329,7 +332,7 @@ public class HarnessEntityToBackstageEntityMapperTest extends CategoryTest {
     assertEquals(serviceResponseDTO.getIdentifier(), backstageCatalogComponentEntity.getMetadata().getName());
     assertEquals(serviceResponseDTO.getDescription(), backstageCatalogComponentEntity.getMetadata().getDescription());
     assertEquals(Collections.EMPTY_LIST, backstageCatalogComponentEntity.getMetadata().getTags());
-    assertEquals(2, backstageCatalogComponentEntity.getMetadata().getAnnotations().size());
+    assertEquals(3, backstageCatalogComponentEntity.getMetadata().getAnnotations().size());
     assertEquals("Service", backstageCatalogComponentEntity.getSpec().getType());
     assertEquals(ENTITY_UNKNOWN_LIFECYCLE, backstageCatalogComponentEntity.getSpec().getLifecycle());
     assertEquals(ENTITY_UNKNOWN_OWNER, backstageCatalogComponentEntity.getSpec().getOwner());
@@ -356,13 +359,17 @@ public class HarnessEntityToBackstageEntityMapperTest extends CategoryTest {
     assertEquals(serviceResponseDTO.getIdentifier(), backstageCatalogComponentEntity.getMetadata().getName());
     assertEquals(serviceResponseDTO.getDescription(), backstageCatalogComponentEntity.getMetadata().getDescription());
     assertEquals(2, backstageCatalogComponentEntity.getMetadata().getTags().size());
-    assertEquals(2, backstageCatalogComponentEntity.getMetadata().getAnnotations().size());
+    assertEquals(3, backstageCatalogComponentEntity.getMetadata().getAnnotations().size());
     assertEquals("https://localhost:8181/ng/account/" + serviceResponseDTO.getAccountId() + "/home/orgs/"
             + serviceResponseDTO.getOrgIdentifier() + "/projects/" + serviceResponseDTO.getProjectIdentifier()
             + "/details",
         backstageCatalogComponentEntity.getMetadata().getAnnotations().get("harness.io/project-url"));
     assertEquals(serviceResponseDTO.getIdentifier(),
         backstageCatalogComponentEntity.getMetadata().getAnnotations().get("harness.io/cd-serviceId"));
+    assertEquals(serviceResponseDTO.getIdentifier() + ": https://localhost:8181/ng/account/"
+            + serviceResponseDTO.getAccountId() + "/cd/orgs/" + serviceResponseDTO.getOrgIdentifier() + "/projects/"
+            + serviceResponseDTO.getProjectIdentifier() + "/services/" + serviceResponseDTO.getIdentifier() + "\n",
+        backstageCatalogComponentEntity.getMetadata().getAnnotations().get(BACKSTAGE_HARNESS_ANNOTATION_SERVICES));
     assertEquals("Service", backstageCatalogComponentEntity.getSpec().getType());
     assertEquals(ENTITY_UNKNOWN_LIFECYCLE, backstageCatalogComponentEntity.getSpec().getLifecycle());
     assertEquals(ENTITY_UNKNOWN_OWNER, backstageCatalogComponentEntity.getSpec().getOwner());
@@ -435,12 +442,16 @@ public class HarnessEntityToBackstageEntityMapperTest extends CategoryTest {
   public void testHarnessServiceToBackstageComponentMapperForEnvBasedHarnessCiCdAnnotations() {
     BackstageCatalogComponentEntity backstageCatalogComponentEntity =
         harnessServiceToBackstageComponentStressEnv.map(serviceResponseDTO);
-    assertEquals(2, backstageCatalogComponentEntity.getMetadata().getAnnotations().size());
+    assertEquals(3, backstageCatalogComponentEntity.getMetadata().getAnnotations().size());
     assertTrue(backstageCatalogComponentEntity.getMetadata().getAnnotations().containsKey(
                    BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL + "-stress")
         && backstageCatalogComponentEntity.getMetadata().getAnnotations().get(
                BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL + "-stress")
             != null);
+    assertEquals(serviceResponseDTO.getIdentifier() + ": https://localhost:8181/ng/account/"
+            + serviceResponseDTO.getAccountId() + "/cd/orgs/" + serviceResponseDTO.getOrgIdentifier() + "/projects/"
+            + serviceResponseDTO.getProjectIdentifier() + "/services/" + serviceResponseDTO.getIdentifier() + "\n",
+        backstageCatalogComponentEntity.getMetadata().getAnnotations().get(BACKSTAGE_HARNESS_ANNOTATION_SERVICES));
   }
 
   @After

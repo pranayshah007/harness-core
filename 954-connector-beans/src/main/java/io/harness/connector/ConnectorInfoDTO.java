@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.ConnectorConstants;
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
@@ -39,6 +40,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(DX)
 @Schema(name = "ConnectorInfo", description = "This has the Connector details defined in Harness")
+@RecasterAlias("io.harness.connector.ConnectorInfoDTO")
 public class ConnectorInfoDTO {
   @NotNull @NotBlank @NGEntityName @Schema(description = ConnectorConstants.CONNECTOR_NAME) String name;
   @NotNull

@@ -6,7 +6,9 @@
  */
 
 package software.wings.service.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CG_SPG_JIRA_APPROVAL_POLLING_ASYNC;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.jira.JiraAction.CHECK_APPROVAL;
@@ -36,6 +38,8 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraUserData;
+import io.harness.waiter.NotifyCallback;
+import io.harness.waiter.OrchestrationNotifyEventListener;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.api.ApprovalStateExecutionData;
@@ -52,6 +56,7 @@ import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.security.SecretManager;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.annotations.Transient;
@@ -88,6 +93,8 @@ public class JiraHelperService {
   public static final String REJECTION_FIELD_KEY = "rejection_field";
   public static final String REJECTION_VALUE_KEY = "rejection_value";
   public static final String APPROVAL_ID_KEY = "approval_id";
+
+  public static final long DEFAULT_TIMEOUT = 60 * 1000L;
   @Inject private software.wings.security.SecretManager secretManagerForToken;
 
   /**
@@ -155,29 +162,76 @@ public class JiraHelperService {
     String appId = entity.getAppId();
     String stateExecutionInstanceId = entity.getStateExecutionInstanceId();
     try {
-      jiraExecutionData = getApprovalStatus(entity);
+      if (featureFlagService.isEnabled(CG_SPG_JIRA_APPROVAL_POLLING_ASYNC, entity.getAccountId())) {
+        checkApprovalAsync(entity);
+      } else {
+        jiraExecutionData = getApprovalStatus(entity); // doing a sync task
+        ExecutionStatus issueStatus = jiraExecutionData.getExecutionStatus();
+        log.info("Issue: {} Status from JIRA: {} Current Status {} for approvalId: {}, workflowExecutionId: {} ",
+            issueId, issueStatus, jiraExecutionData.getCurrentStatus(), approvalId, workflowExecutionId);
+
+        ApprovalStateExecutionData approvalStateExecutionData = ApprovalStateExecutionData.builder()
+                                                                    .appId(appId)
+                                                                    .approvalId(approvalId)
+                                                                    .workflowExecutionService(workflowExecutionService)
+                                                                    .issueKey(issueId)
+                                                                    .currentStatus(jiraExecutionData.getCurrentStatus())
+                                                                    .waitingForChangeWindow(false)
+                                                                    .build();
+
+        checkApproval(stateExecutionService, waitNotifyEngine, workflowExecutionId, stateExecutionInstanceId,
+            jiraExecutionData.getErrorMessage(), issueStatus, approvalStateExecutionData);
+      }
+
     } catch (Exception ex) {
       log.warn(
           "Error occurred while polling JIRA status. Continuing to poll next minute. approvalId: {}, workflowExecutionId: {} , issueId: {}",
           entity.getApprovalId(), entity.getWorkflowExecutionId(), entity.getIssueId(), ex);
       return;
     }
+  }
 
-    ExecutionStatus issueStatus = jiraExecutionData.getExecutionStatus();
-    log.info("Issue: {} Status from JIRA: {} Current Status {} for approvalId: {}, workflowExecutionId: {} ", issueId,
-        issueStatus, jiraExecutionData.getCurrentStatus(), approvalId, workflowExecutionId);
+  @VisibleForTesting
+  void checkApprovalAsync(ApprovalPollingJobEntity entity) {
+    SettingAttribute settingAttribute =
+        settingService.getByAccountAndId(entity.getAccountId(), entity.getConnectorId());
+    notNullCheck("Jira connector may be deleted.", settingAttribute, USER);
+    JiraConfig jiraConfig = (JiraConfig) settingAttribute.getValue();
 
-    ApprovalStateExecutionData approvalStateExecutionData = ApprovalStateExecutionData.builder()
-                                                                .appId(appId)
-                                                                .approvalId(approvalId)
-                                                                .workflowExecutionService(workflowExecutionService)
-                                                                .issueKey(issueId)
-                                                                .currentStatus(jiraExecutionData.getCurrentStatus())
-                                                                .waitingForChangeWindow(false)
-                                                                .build();
+    JiraTaskParameters jiraTaskParameters =
+        JiraTaskParameters.builder()
+            .jiraConfig(jiraConfig)
+            .encryptionDetails(secretManager.getEncryptionDetails(jiraConfig, entity.getAppId(), WORKFLOW_EXECUTION_ID))
+            .accountId(entity.getAccountId())
+            .approvalId(entity.getApprovalId())
+            .issueId(entity.getIssueId())
+            .jiraAction(JiraAction.CHECK_APPROVAL)
+            .approvalField(entity.getApprovalField())
+            .approvalValue(entity.getApprovalValue())
+            .rejectionField(entity.getRejectionField())
+            .rejectionValue(entity.getRejectionValue())
+            .build();
 
-    checkApproval(stateExecutionService, waitNotifyEngine, workflowExecutionId, stateExecutionInstanceId,
-        jiraExecutionData.getErrorMessage(), issueStatus, approvalStateExecutionData);
+    DelegateTask delegateTask = DelegateTask.builder()
+                                    .accountId(entity.getAccountId())
+                                    .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, entity.getAppId())
+                                    .tags(jiraConfig.getDelegateSelectors())
+                                    .data(TaskData.builder()
+                                              .async(true)
+                                              .taskType(TaskType.JIRA.name())
+                                              .parameters(new Object[] {jiraTaskParameters})
+                                              .timeout(DEFAULT_TIMEOUT)
+                                              .build())
+                                    .build();
+    String taskId = delegateService.queueTaskV2(delegateTask);
+    NotifyCallback callback = ApprovalPollingCallback.builder()
+                                  .workflowExecutionService(workflowExecutionService)
+                                  .stateExecutionService(stateExecutionService)
+                                  .workflowExecutionId(entity.getWorkflowExecutionId())
+                                  .stateExecutionInstanceId(entity.getStateExecutionInstanceId())
+                                  .entity(entity)
+                                  .build();
+    waitNotifyEngine.waitForAllOn(OrchestrationNotifyEventListener.ORCHESTRATION, callback, taskId);
   }
 
   public JSONArray getProjects(String connectorId, String accountId, String appId) {
@@ -257,20 +311,21 @@ public class JiraHelperService {
       timeout = Long.min(timeoutMillis, JIRA_DELEGATE_TIMEOUT_MILLIS);
       log.info("Timeout configured for the Jira delegate task is {}", timeout);
     }
-    try {
-      DelegateTask delegateTask = DelegateTask.builder()
-                                      .accountId(accountId)
-                                      .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, appId)
-                                      .tags(jiraConfig.getDelegateSelectors())
-                                      .data(TaskData.builder()
-                                                .async(false)
-                                                .taskType(TaskType.JIRA.name())
-                                                .parameters(new Object[] {jiraTaskParameters})
-                                                .timeout(timeout)
-                                                .build())
-                                      .build();
-      DelegateResponseData responseData = delegateService.executeTaskV2(delegateTask);
 
+    try {
+      DelegateTask delegateTask;
+      delegateTask = DelegateTask.builder()
+                         .accountId(accountId)
+                         .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, appId)
+                         .tags(jiraConfig.getDelegateSelectors())
+                         .data(TaskData.builder()
+                                   .async(false)
+                                   .taskType(TaskType.JIRA.name())
+                                   .parameters(new Object[] {jiraTaskParameters})
+                                   .timeout(timeout)
+                                   .build())
+                         .build();
+      DelegateResponseData responseData = delegateService.executeTaskV2(delegateTask);
       if (jiraTaskParameters.getJiraAction() == CHECK_APPROVAL && delegateTask != null) {
         log.info("Delegate task Id = {}, for Polling Jira Approval for IssueId {}", delegateTask.getUuid(),
             jiraTaskParameters.getIssueId());
@@ -349,6 +404,7 @@ public class JiraHelperService {
   public JiraExecutionData getApprovalStatus(ApprovalPollingJobEntity approvalPollingJobEntity) {
     JiraTaskParameters jiraTaskParameters = JiraTaskParameters.builder()
                                                 .accountId(approvalPollingJobEntity.getAccountId())
+                                                .approvalId(approvalPollingJobEntity.getApprovalId())
                                                 .issueId(approvalPollingJobEntity.getIssueId())
                                                 .jiraAction(JiraAction.CHECK_APPROVAL)
                                                 .approvalField(approvalPollingJobEntity.getApprovalField())

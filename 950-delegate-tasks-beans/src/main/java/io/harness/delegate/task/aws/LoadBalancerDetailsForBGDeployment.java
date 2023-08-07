@@ -7,9 +7,12 @@
 
 package io.harness.delegate.task.aws;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Data;
 
 @Data
+@RecasterAlias("io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment")
 public class LoadBalancerDetailsForBGDeployment {
   public LoadBalancerDetailsForBGDeployment() {}
   private String loadBalancerName;

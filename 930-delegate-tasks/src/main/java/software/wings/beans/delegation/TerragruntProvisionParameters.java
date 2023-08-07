@@ -137,7 +137,7 @@ public class TerragruntProvisionParameters implements TaskParameters, ActivityAc
                              .build());
       }
     }
-    if (secretManagerConfig != null) {
+    if (secretManagerConfig != null && !isEncryptDecryptPlanForHarnessSMOnManager()) {
       capabilities.addAll(
           EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilityForSecretManager(secretManagerConfig, null));
     }

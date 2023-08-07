@@ -49,7 +49,6 @@ public class VmIACMStepSerializerTest extends CategoryTest {
   @Mock private CIExecutionConfigService ciExecutionConfigService;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private HarnessImageUtils harnessImageUtils;
-
   @Mock IACMStepsUtils iacmStepsUtils;
   @InjectMocks private VmIACMStepSerializer vmIACMPluginCompatibleStepSerializer;
   private Ambiance ambiance = Ambiance.newBuilder()

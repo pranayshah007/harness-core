@@ -104,10 +104,14 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
     }
     long permissionsChangeTime = System.currentTimeMillis() - startTime;
     try (DelayLogContext ignore = new DelayLogContext(permissionsChangeTime, OVERRIDE_ERROR)) {
-      log.info("RoleChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for {} Time taken: {}",
-          numberOfACLsCreated, id, permissionsChangeTime);
-      log.info("RoleChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {} Time taken: {}",
-          numberOfACLsDeleted, id, permissionsChangeTime);
+      log.info(
+          "RoleChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for id: {}, identifier: {}, scope: {} Time taken: {}",
+          numberOfACLsCreated, id, updatedRole.getIdentifier(), updatedRole.getScopeIdentifier(),
+          permissionsChangeTime);
+      log.info(
+          "RoleChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for id: {}, identifier: {}, scope: {} Time taken: {}",
+          numberOfACLsDeleted, id, updatedRole.getIdentifier(), updatedRole.getScopeIdentifier(),
+          permissionsChangeTime);
     }
     return true;
   }

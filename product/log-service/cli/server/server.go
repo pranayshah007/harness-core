@@ -114,14 +114,14 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	if config.Redis.UseSentinel {
 		// Create Redis Sentinel storage instance
 		db := redisDb.NewConnection("", config.Redis.Password, false, true, "", config.Redis.MasterName, config.Redis.SentinelAddrs)
-		stream = redisStream.NewWithClient(db, config.Redis.DisableExpiryWatcher)
+		stream = redisStream.NewWithClient(db, config.Redis.DisableExpiryWatcher, config.Redis.ScanBatch)
 		cache = redisCache.NewWithClient(db)
 		queue = redisQueue.NewWithClient(db)
 		queue.Create(ctx, config.ConsumerWorker.StreamName, config.ConsumerWorker.ConsumerGroup)
 		logrus.Infof("configuring log stream, cache and queue to use Redis Sentinel")
 	} else if config.Redis.Endpoint != "" {
 		db := redisDb.NewConnection(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, false, config.Redis.CertPath, "", nil)
-		stream = redisStream.NewWithClient(db, config.Redis.DisableExpiryWatcher)
+		stream = redisStream.NewWithClient(db, config.Redis.DisableExpiryWatcher, config.Redis.ScanBatch)
 		cache = redisCache.NewWithClient(db)
 		queue = redisQueue.NewWithClient(db)
 		queue.Create(ctx, config.ConsumerWorker.StreamName, config.ConsumerWorker.ConsumerGroup)

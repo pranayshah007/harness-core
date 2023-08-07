@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.provision.awscdk;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -82,10 +83,15 @@ public class AwsCdkSynthStep extends AbstractContainerStepV2<StepElementParamete
     if (stepStatusTaskResponseData != null
         && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
       StepMapOutput stepOutput = (StepMapOutput) stepStatusTaskResponseData.getStepStatus().getOutput();
-      Map<String, String> decodedOutput = new HashMap<>();
-      stepOutput.getMap().forEach(
-          (key, value) -> decodedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "=")))));
-      stepOutput.setMap(decodedOutput);
+      Map<String, String> processedOutput = new HashMap<>();
+      stepOutput.getMap().forEach((key, value) -> {
+        if (key.endsWith("template.json")) {
+          processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+        } else {
+          processedOutput.put(key, value);
+        }
+      });
+      stepOutput.setMap(processedOutput);
     }
     return super.handleAsyncResponse(ambiance, stepParameters, responseDataMap);
   }

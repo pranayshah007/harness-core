@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.CiStepParametersUtils;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
@@ -62,6 +63,7 @@ public class SscaEnforcementStepTest extends CIExecutionTestBase {
   @Mock private SSCAServiceUtils sscaServiceUtils;
   @Mock protected CIFeatureFlagService featureFlagService;
   @Mock protected CIStageOutputRepository ciStageOutputRepository;
+  @Mock CiStepParametersUtils ciStepParametersUtils;
 
   @Test
   @Owner(developers = INDER)

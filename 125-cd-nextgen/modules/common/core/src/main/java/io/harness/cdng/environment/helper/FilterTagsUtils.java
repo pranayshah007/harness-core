@@ -9,8 +9,11 @@ package io.harness.cdng.environment.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.environment.filters.MatchType;
 import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.exception.InvalidRequestException;
@@ -22,6 +25,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.GITOPS)
 public class FilterTagsUtils {
   public static boolean areAllTagFiltersMatching(List<NGTag> entityTags, List<NGTag> filterTags) {
@@ -41,7 +46,12 @@ public class FilterTagsUtils {
 
   public static boolean areTagsFilterMatching(List<NGTag> entityTags, TagsFilter tagsFilter) {
     String matchType = tagsFilter.getMatchType().getValue();
-
+    Object tagsValue = tagsFilter.getTags().getValue();
+    if (!(tagsValue instanceof Map<?, ?>) ) {
+      throw new InvalidRequestException(String.format(
+          "Invalid filter tags value found [%s]. Filter tags should be non-empty key-value pairs of string values.",
+          tagsFilter.getTags().getValue()));
+    }
     Map<String, String> tagsMap = tagsFilter.getTags().getValue();
     // Remove unwanted UUID from tags
     TagUtils.removeUuidFromTags(tagsMap);

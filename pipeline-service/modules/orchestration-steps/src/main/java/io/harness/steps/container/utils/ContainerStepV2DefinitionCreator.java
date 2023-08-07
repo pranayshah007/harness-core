@@ -81,7 +81,8 @@ public class ContainerStepV2DefinitionCreator {
                             ImageDetailsUtils.getImageDetails(pluginDetails.getImageDetails().getImageInformation()))
                         .connectorIdentifier(pluginDetails.getImageDetails().getConnectorDetails().getConnectorRef())
                         .build())
-                .isHarnessManagedImage(true)
+                .isHarnessManagedImage(
+                    !pluginDetails.hasIsHarnessManaged() || pluginDetails.getIsHarnessManaged().getValue())
                 .containerResourceParams(getContainerResourceParams(pluginDetails))
                 // Using this as proto object is being serialized
                 .ports(new ArrayList<Integer>(pluginDetails.getPortUsedList()))

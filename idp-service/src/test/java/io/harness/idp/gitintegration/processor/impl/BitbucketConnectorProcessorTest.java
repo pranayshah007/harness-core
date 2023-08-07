@@ -8,6 +8,7 @@
 package io.harness.idp.gitintegration.processor.impl;
 
 import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_PROXY;
+import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static junit.framework.TestCase.assertEquals;
@@ -115,6 +116,17 @@ public class BitbucketConnectorProcessorTest {
   }
 
   @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testCreateOrUpdateIntegrationConfigForValidUserNameRefAndHasApiAccess() {
+    ConnectorInfoDTO connectorInfoDTO = getBitbucketConnectorDTO(true, true, true, true).getConnectorInfo();
+    MockedStatic<ConfigManagerUtils> mockRestUtilsConfigManagerUtils = mockStatic(ConfigManagerUtils.class);
+    bitbucketConnectorProcessor.createOrUpdateIntegrationConfig(ACCOUNT_IDENTIFIER, connectorInfoDTO);
+    verify(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
+    mockRestUtilsConfigManagerUtils.close();
+  }
+
+  @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetConnectorSecretsInfoForInValidUserNameRefAndHasApiAccess() {
@@ -172,9 +184,6 @@ public class BitbucketConnectorProcessorTest {
                                                     .orgIdentifier(null)
                                                     .projectIdentifier(null)
                                                     .build();
-    MockedStatic<ConfigManagerUtils> mockedStaticConfigManagerUtils = Mockito.mockStatic(ConfigManagerUtils.class);
-    mockedStaticConfigManagerUtils.when(() -> ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any()))
-        .thenReturn("");
     when(ngSecretService.getDecryptedSecretValue(any(), any(), any(), any())).thenReturn(decryptedSecretValue);
     MockedStatic<SourcePrincipalContextBuilder> mockedStaticContextBuilder =
         mockStatic(SourcePrincipalContextBuilder.class);
@@ -198,7 +207,6 @@ public class BitbucketConnectorProcessorTest {
     verify(ngSecretService).getDecryptedSecretValue(any(), any(), any(), stringCaptor.capture());
     assertEquals(PWD_SECRET_IDENTIFIER, stringCaptor.getValue());
     mockRestStatic.close();
-    mockedStaticConfigManagerUtils.close();
     mockedStaticContextBuilder.close();
     mockedStaticFile.close();
     mockedStaticGitSyncUtils.close();

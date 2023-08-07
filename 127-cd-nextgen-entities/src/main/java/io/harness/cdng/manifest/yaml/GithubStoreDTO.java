@@ -7,6 +7,7 @@
 
 package io.harness.cdng.manifest.yaml;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.pms.yaml.ParameterField;
 
@@ -16,6 +17,7 @@ import lombok.Value;
 
 @Value
 @Builder
+@RecasterAlias("io.harness.cdng.manifest.yaml.GithubStoreDTO")
 public class GithubStoreDTO implements GitStoreConfigDTO {
   String connectorRef;
 

@@ -158,6 +158,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
                                        .delegateId("")
                                        .state(PerpetualTaskState.TASK_UNASSIGNED)
                                        .assignIteration(currentTimeMillis())
+                                       .assignAfterMs(currentTimeMillis())
                                        .taskDescription(taskDescription)
                                        .build();
 

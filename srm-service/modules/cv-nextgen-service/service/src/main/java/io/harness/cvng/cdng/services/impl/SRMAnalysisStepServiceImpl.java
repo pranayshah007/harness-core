@@ -20,7 +20,7 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.PLAN_
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.STAGE_STEP_ID;
 
-import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail.SRMAnalysisStepExecutionDetailsKeys;
@@ -59,6 +59,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
@@ -71,15 +72,14 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
 
   @Inject Clock clock;
 
-  @Inject ActivityService activityService;
-
   @Inject MonitoredServiceService monitoredServiceService;
 
   @Inject MSHealthReportService msHealthReportService;
 
   @Override
-  public String createSRMAnalysisStepExecution(Ambiance ambiance, String monitoredServiceIdentifier,
-      ServiceEnvironmentParams serviceEnvironmentParams, Duration duration) {
+  public String createSRMAnalysisStepExecution(Ambiance ambiance, String monitoredServiceIdentifier, String stepName,
+      ServiceEnvironmentParams serviceEnvironmentParams, Duration duration,
+      Optional<ArtifactsOutcome> optionalArtifactsOutcome) {
     String pipelineName = ambiance.getMetadata().getPipelineIdentifier();
     try {
       Object pmsExecutionSummary = NGRestUtils.getResponse(pipelineServiceClient.getExecutionDetailV2(
@@ -99,10 +99,12 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
             .stageStepId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getSetupId())
             .pipelineId(ambiance.getMetadata().getPipelineIdentifier())
             .planExecutionId(ambiance.getPlanExecutionId())
+            .stepName(stepName)
+            .serviceIdentifier(serviceEnvironmentParams.getServiceIdentifier())
+            .envIdentifier(serviceEnvironmentParams.getEnvironmentIdentifier())
             .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
-            .monitoredServiceIdentifier(monitoredServiceIdentifier)
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
             .analysisStartTime(instant.toEpochMilli())
             .analysisStatus(SRMAnalysisStatus.RUNNING)
@@ -110,6 +112,10 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
             .analysisDuration(duration)
             .pipelineName(pipelineName)
             .build();
+    if (optionalArtifactsOutcome.isPresent()) {
+      executionDetails.setArtifactType(optionalArtifactsOutcome.get().getPrimary().getArtifactType());
+      executionDetails.setArtifactTag(optionalArtifactsOutcome.get().getPrimary().getTag());
+    }
     return hPersistence.save(executionDetails);
   }
 

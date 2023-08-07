@@ -165,7 +165,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
                                                               .environmentIdentifier(changeEventDTO.getEnvIdentifier())
                                                               .build();
       String executionDetailId = srmAnalysisStepService.createSRMAnalysisStepExecution(ambiance,
-          changeEventDTO.getMonitoredServiceIdentifier(), serviceEnvironmentParams, metadata.getAnalysisDuration());
+          changeEventDTO.getMonitoredServiceIdentifier(), null, serviceEnvironmentParams,
+          metadata.getAnalysisDuration(), Optional.empty());
       Activity activity = transformer.getEntity(changeEventDTO);
       activity.setUuid(executionDetailId);
       activityService.upsert(activity);

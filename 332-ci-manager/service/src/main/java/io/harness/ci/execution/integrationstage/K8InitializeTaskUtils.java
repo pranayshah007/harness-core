@@ -11,6 +11,11 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerPara
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_ARCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_NAME;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_OS;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_TYPE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_WORKSPACE;
 import static io.harness.ci.commonconstants.CICommonPodConstants.POD_NAME_PREFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ACCOUNT_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOLUME;
@@ -48,6 +53,7 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_C
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_CACHE_ENV_NAME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_DIR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_ENV_NAME;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_PIPELINE;
 import static io.harness.ci.utils.UsageUtils.getExecutionUser;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
@@ -79,6 +85,8 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Capabilities;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
+import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml;
@@ -541,7 +549,8 @@ public class K8InitializeTaskUtils {
 
   @NotNull
   public Map<String, String> getCommonStepEnvVariables(K8PodDetails k8PodDetails, Map<String, String> gitEnvVars,
-      Map<String, String> runtimeCodebaseVars, String workDirPath, String logPrefix, Ambiance ambiance) {
+      Map<String, String> runtimeCodebaseVars, String workDirPath, String logPrefix, Ambiance ambiance,
+      InitializeStepInfo initializeStepInfo, OSType os) {
     Map<String, String> envVars = new HashMap<>();
     final String accountID = AmbianceUtils.getAccountId(ambiance);
     final String userID = getExecutionUser(ambiance.getMetadata().getPrincipalInfo());
@@ -574,8 +583,17 @@ public class K8InitializeTaskUtils {
     envVars.put(PLUGIN_PIPELINE, pipelineID);
     envVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildNumber));
     envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
+    envVars.put(DRONE_STAGE_NAME, stageID);
     envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
     envVars.put(HARNESS_LOG_PREFIX_VARIABLE, logPrefix);
+    ParameterField<Platform> platform = initializeStepInfo.getStageElementConfig().getPlatform();
+    if (platform.getValue() != null && platform.getValue().getArch() != null) {
+      ArchType arch = RunTimeInputHandler.resolveArchType(platform.getValue().getArch());
+      envVars.put(DRONE_STAGE_ARCH, arch.toString());
+    }
+    envVars.put(DRONE_STAGE_TYPE, Infrastructure.Type.KUBERNETES_DIRECT.toString());
+    envVars.put(DRONE_STAGE_OS, os.toString());
+    envVars.put(DRONE_WORKSPACE, workDirPath);
     return envVars;
   }
 
