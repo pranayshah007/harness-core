@@ -21,6 +21,7 @@ import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.encryption.Scope;
 import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -113,14 +114,13 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
 
     CIInitializeTaskParams buildSetupTaskParams =
         containerStepInitHelper.getK8InitializeTaskParams(containerStepInfo, ambiance, logPrefix);
-
     String stageId = ambiance.getStageExecutionId();
-    List<TaskSelector> taskSelectors = new ArrayList<>();
 
     TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
     TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
-        taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+        TaskSelectorYaml.toTaskSelector(containerStepInfo.getDelegateSelectors()), Scope.PROJECT, EnvironmentType.ALL,
+        false, new ArrayList<>(), false, stageId);
 
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
