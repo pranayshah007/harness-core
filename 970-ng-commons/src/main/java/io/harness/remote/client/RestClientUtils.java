@@ -24,7 +24,7 @@ import retrofit2.Response;
 @UtilityClass
 @Slf4j
 public class RestClientUtils {
-  private static final int MAX_ATTEMPTS = 3;
+  private static final int MAX_ATTEMPTS = 6;
   public static <T> RetryPolicy<Response<ResponseDTO<T>>> getRetryPolicy(String failureMessage) {
     return new RetryPolicy<Response<ResponseDTO<T>>>()
         .withBackoff(1, 10, ChronoUnit.SECONDS)
