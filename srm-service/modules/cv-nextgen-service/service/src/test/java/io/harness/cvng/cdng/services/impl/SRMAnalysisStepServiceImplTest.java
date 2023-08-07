@@ -141,6 +141,7 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
 
     SRMAnalysisStepDetailDTO analysisStepDetailDTO =
         srmAnalysisStepServiceMock.abortRunningSrmAnalysisStep(analysisExecutionDetailsId);
+    assertThat(analysisStepDetailDTO.getStepName()).isEqualTo(stepName);
     assertThat(analysisStepDetailDTO.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.ABORTED);
     assertThat(analysisStepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(analysisStepDetailDTO.getAnalysisStartTime()).isEqualTo(stepExecutionDetail.getAnalysisStartTime());
@@ -168,6 +169,7 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     assertThat(stepExecutionDetail.getAnalysisStartTime()).isEqualTo(stepExecutionDetail.getAnalysisStartTime());
     assertThat(stepExecutionDetail.getUuid()).isEqualTo(analysisExecutionDetailsId);
     assertThat(stepExecutionDetail.getPipelineName()).isEqualTo("Mocked Pipeline");
+    assertThat(stepExecutionDetail.getStepName()).isEqualTo(stepName);
     verify(srmAnalysisStepServiceMock).handleReportNotification(any());
   }
 
@@ -216,6 +218,7 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     assertThat(analysisStepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(analysisStepDetailDTO.getAnalysisStartTime()).isEqualTo(stepExecutionDetail.getAnalysisStartTime());
     assertThat(analysisStepDetailDTO.getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
+    assertThat(analysisStepDetailDTO.getStepName()).isEqualTo(stepName);
     assertThat(analysisStepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
   }
 }
