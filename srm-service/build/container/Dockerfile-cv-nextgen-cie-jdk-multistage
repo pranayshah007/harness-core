@@ -15,29 +15,30 @@ WORKDIR /app
 ENV BUILD_PURPOSE=DEVELOPMENT
 
 RUN chmod +x \
-    /app/build/feature_build.sh \
-    /app/build/build_dist.sh \
+    /app/srm-service/build/feature_build.sh \
+    /app/srm-service/build/build_dist.sh \
     /app/scripts/bazel/generate_credentials.sh \
     && /app/scripts/bazel/generate_credentials.sh \
-    && /app/build/feature_build.sh $GCP_KEY
-#    && /app/build/build_dist.sh
+    && /app/srm-service/build/feature_build.sh $GCP_KEY
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
 # Add the capsule JAR and config.yml
-COPY --chown=65534:65534 --from=builder \
-  /app/dist/srm-service/cv-nextgen-capsule.jar \
-  /app/dist/srm-service/keystore.jks \
-  /app/dist/srm-service/cv-nextgen-config.yml \
-  /app/dist/srm-service/classpath_metadata.json \
-  /app/dist/srm-service/redisson-jcache.yaml \
-  /app/dist/srm-service/enterprise-redisson-jcache.yaml \
-  /app/dist/srm-service/protocol.info \
-  /app/dist/srm-service/default.jfc \
-  /app/dist/srm-service/default.jfc \ 
-  /app/dist/srm-service/scripts /opt/harness \
-  /app/dockerization/base-images/apm/*.sh \
-  /opt/harness/
+
+COPY --chown=65534:65534 -from=builder \
+    /app/dist/srm-service/cv-nextgen-capsule.jar \
+    /app/dist/srm-service/keystore.jks \
+    /app/dist/srm-service/cv-nextgen-config.yml \
+    /app/dist/srm-service/redisson-jcache.yaml \
+    /app/dist/srm-service/enterprise-redisson-jcache.yaml \
+    /app/dist/srm-service/classpath_metadata.json \
+    /app/dist/srm-service/protocol.info \
+    /app/dist/srm-service/default.jfc \
+    /app/dist/srm-service/profile.jfc \
+    /app/dist/srm-service/scripts \
+    /app/dockerization/base-images/apm/*.sh \
+    /opt/harness/
+
 RUN chmod +x /opt/harness/*.sh
 CMD [ "/opt/harness/run.sh" ]
 
