@@ -155,6 +155,9 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     // At this point we're sure that manifest has been applied successfully and canary workload is deployed
     this.canaryWorkloadDeployed = true;
     this.saveReleaseHistory = true;
+    k8sTaskHelperBase.saveRelease(k8sCanaryDeployRequest.isUseDeclarativeRollback(), false,
+        k8sCanaryHandlerConfig.getKubernetesConfig(), k8sCanaryHandlerConfig.getCurrentRelease(),
+        k8sCanaryHandlerConfig.getReleaseHistory(), k8sCanaryHandlerConfig.getReleaseName());
 
     LogCallback steadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
@@ -186,10 +189,6 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     List<K8sPod> allPods = k8sCanaryBaseHandler.getAllPods(
         k8sCanaryHandlerConfig, k8sCanaryDeployRequest.getReleaseName(), timeoutInMillis);
     k8sCanaryBaseHandler.wrapUp(k8sCanaryHandlerConfig.getClient(), k8sDelegateTaskParams, wrapUpLogCallback);
-
-    k8sTaskHelperBase.saveRelease(k8sCanaryDeployRequest.isUseDeclarativeRollback(), false,
-        k8sCanaryHandlerConfig.getKubernetesConfig(), k8sCanaryHandlerConfig.getCurrentRelease(),
-        k8sCanaryHandlerConfig.getReleaseHistory(), k8sCanaryHandlerConfig.getReleaseName());
 
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
