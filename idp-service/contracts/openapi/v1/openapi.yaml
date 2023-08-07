@@ -803,6 +803,8 @@ paths:
       x-internal: true
       tags:
         - MergedPluginsConfig
+      x-stoplight:
+        id: wi7ws58usbw6j
   /v1/data-sources:
     get:
       summary: Get Datasources Present In Account
@@ -930,6 +932,160 @@ paths:
           description: 'Identifier for score card '
           required: true
     parameters: []
+  /v1/checks:
+    get:
+      summary: Get all checks available
+      parameters:
+        - $ref: '#/components/parameters/CheckType'
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Checks
+      x-stoplight:
+        id: wgwb9m2yk2ff0
+      operationId: get-checks
+      description: Get all checks available
+      x-internal: true
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CheckResponseList'
+    post:
+      summary: Create a custom check
+      tags:
+        - Checks
+      operationId: create-check
+      responses:
+        '201':
+          description: Created
+      x-stoplight:
+        id: 3odk9i73co8ny
+      description: Create a custom check
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckDetailsRequest'
+      x-internal: true
+  /v1/checks/{check-id}:
+    get:
+      summary: Get check details for given checkId
+      tags:
+        - Checks
+      responses:
+        '200':
+          $ref: '#/components/responses/CheckDetailsResponse'
+      operationId: get-check
+      x-stoplight:
+        id: u673cwcp1mw4m
+      description: Get check details for given checkId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CheckIdentifier'
+      x-internal: true
+    put:
+      summary: Update check details for given checkId
+      tags:
+        - Checks
+      operationId: update-check
+      responses:
+        '200':
+          description: OK
+      x-stoplight:
+        id: 94y43314ia7cu
+      description: Update check details for given checkId
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CheckIdentifier'
+      requestBody:
+        $ref: '#/components/schemas/CheckDetailsRequest'
+  /v1/scorecards:
+    get:
+      summary: Get all scorecards available
+      tags:
+        - Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardResponseList'
+      operationId: get-scorecards
+      x-stoplight:
+        id: 4sfeax7ziigq9
+      description: Get all scorecards available
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    post:
+      summary: Create scorecard
+      tags:
+        - Scorecards
+      operationId: create-scorecard
+      responses:
+        '201':
+          description: Created
+      x-stoplight:
+        id: vs8mu57g6sy8h
+      description: Create scorecard
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScorecardDetailsRequest'
+      x-internal: true
+  /v1/scorecards/{scorecard-id}:
+    get:
+      summary: Get scorecard details for given scorecardId
+      tags:
+        - Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/ScorecardDetailsResponse'
+      operationId: get-scorecard
+      description: Get scorecard details for given scorecardId
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ScorecardIdentifier'
+      x-stoplight:
+        id: fr7i2p91vje24
+    put:
+      summary: Update scorecard details for given scorecardId
+      tags:
+        - Scorecards
+      operationId: update-scorecard
+      responses:
+        '200':
+          description: OK
+      x-stoplight:
+        id: eifr2cushvum8
+      description: Update scorecard details for given scorecardId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ScorecardIdentifier'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScorecardDetailsRequest'
+      x-internal: true
 components:
   schemas:
     BackstageEnvVariable:
@@ -1998,6 +2154,344 @@ components:
       properties:
         resolved_env_variables:
           type: string
+    Check:
+      title: Check
+      x-stoplight:
+        id: ep5latvpj75jo
+      type: object
+      description: Check
+      properties:
+        identifier:
+          type: string
+          x-stoplight:
+            id: vwu5mcl0cybrg
+        name:
+          type: string
+          x-stoplight:
+            id: ymtljtb4jcg1z
+        description:
+          type: string
+          x-stoplight:
+            id: fkj0wcsllrkbk
+        expression:
+          type: string
+          x-stoplight:
+            id: ps0abyx9gk9is
+        labels:
+          type: array
+          x-stoplight:
+            id: jvxsddo5xl3u2
+          items:
+            x-stoplight:
+              id: na722h8vio416
+            type: string
+      required:
+        - identifier
+        - name
+    CheckListItem:
+      title: CheckListItem
+      x-stoplight:
+        id: g8cowo6ez7lrk
+      description: CheckListItem
+      allOf:
+        - $ref: '#/components/schemas/Check'
+        - type: object
+          x-stoplight:
+            id: afuahdja26wv2
+          properties:
+            data_source:
+              type: array
+              x-stoplight:
+                id: 3qndin9rfc9mz
+              items:
+                x-stoplight:
+                  id: r92yngvhh4jxc
+                type: string
+          required:
+            - data_source
+    CheckResponse:
+      title: CheckResponse
+      x-stoplight:
+        id: y0ud4ar2g6s7e
+      type: object
+      properties:
+        check:
+          $ref: '#/components/schemas/CheckListItem'
+    CheckDetails:
+      title: CheckDetails
+      x-stoplight:
+        id: 3fxpqllsol50x
+      allOf:
+        - $ref: '#/components/schemas/Check'
+        - type: object
+          properties:
+            rule_strategy:
+              x-stoplight:
+                id: 5qwfqqdhyoiq6
+              type: string
+              enum:
+                - ALL_OF
+                - ANY_OF
+            rules:
+              type: array
+              items:
+                $ref: '#/components/schemas/Rule'
+            harness_managed:
+              type: boolean
+              x-stoplight:
+                id: d866s5x1c11b4
+            custom:
+              type: boolean
+              x-stoplight:
+                id: it7cwhdz3iybm
+            tags:
+              type: array
+              x-stoplight:
+                id: jz5a6os04cen1
+              items:
+                x-stoplight:
+                  id: uow20bew76m73
+                type: string
+            default_behaviour:
+              x-stoplight:
+                id: 13d4z9h0oimjr
+              type: string
+              enum:
+                - PASS
+                - FAIL
+            fail_message:
+              type: string
+              x-stoplight:
+                id: gvk8shltqnmx6
+          required:
+            - rule_strategy
+            - rules
+            - custom
+            - default_behaviour
+    CheckDetailsRequest:
+      title: CheckDetailsRequest
+      x-stoplight:
+        id: oqpu0ll5iawtt
+      type: object
+      properties:
+        check_details:
+          $ref: '#/components/schemas/CheckDetails'
+    CheckDetailsResponse:
+      title: CheckDetailsResponse
+      x-stoplight:
+        id: ekd57304tip2s
+      type: object
+      properties:
+        check_details:
+          $ref: '#/components/schemas/CheckDetails'
+      required:
+        - check_details
+    Rule:
+      title: Rule
+      x-stoplight:
+        id: qg6l73nz6jl5o
+      type: object
+      properties:
+        data_source_identifier:
+          type: string
+          x-stoplight:
+            id: rhssuuh5er4s3
+        data_point_identifier:
+          type: string
+          x-stoplight:
+            id: rd4wn3x31i8a4
+        operator:
+          type: string
+          x-stoplight:
+            id: lbmqhea79dixr
+        value:
+          type: string
+          x-stoplight:
+            id: fw6ab4ouzxyh2
+      required:
+        - data_source_identifier
+        - data_point_identifier
+        - operator
+        - value
+    ScorecardChecks:
+      title: ScorecardChecks
+      x-stoplight:
+        id: b1ud9f2eb17ib
+      type: object
+      properties:
+        identifier:
+          type: string
+          x-stoplight:
+            id: v0pe05xr0ka2p
+        weightage:
+          type: number
+          x-stoplight:
+            id: 9u8dxhjfrafed
+          format: double
+      required:
+        - identifier
+    ScorecardChecksDetails:
+      title: ScorecardChecksDetails
+      x-stoplight:
+        id: 804lt93uee79f
+      allOf:
+        - $ref: '#/components/schemas/ScorecardChecks'
+        - type: object
+          x-stoplight:
+            id: a2hd3q0rlk4cx
+          properties:
+            name:
+              type: string
+              x-stoplight:
+                id: vwp9icmaj66xs
+            description:
+              type: string
+              x-stoplight:
+                id: nkijttl2v7o11
+          required:
+            - name
+    Scorecard:
+      title: Scorecard
+      x-stoplight:
+        id: snmwp4e0s3dlc
+      type: object
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: kt28kkjpta5kz
+        identifier:
+          type: string
+          x-stoplight:
+            id: zzxd0l8eme1v9
+        description:
+          type: string
+          x-stoplight:
+            id: q2uqq8ic90w76
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Check'
+      required:
+        - name
+        - identifier
+        - checks
+    ScorecardDetails:
+      title: ScorecardDetails
+      x-stoplight:
+        id: 31j9gl9dggi4o
+      type: object
+      properties:
+        name:
+          type: string
+        identifier:
+          type: string
+        description:
+          type: string
+        filters:
+          x-stoplight:
+            id: f1au4kix9z5hv
+          type: array
+          items:
+            $ref: '#/components/schemas/ScorecardFilters'
+        weightage_strategy:
+          type: string
+          x-stoplight:
+            id: u1cf8kpqi6n2a
+          enum:
+            - EQUAL_WEIGHTS
+            - CUSTOM
+          default: EQUAL_WEIGHTS
+        published:
+          type: boolean
+          x-stoplight:
+            id: zo3ufqnmsgvo1
+      required:
+        - name
+        - identifier
+        - filters
+        - published
+    ScorecardFilters:
+      title: ScorecardFilters
+      x-stoplight:
+        id: 2oxyg4tys853p
+      type: object
+      properties:
+        kind:
+          type: string
+          x-stoplight:
+            id: 9pjoy1gvfgy49
+        type:
+          type: string
+          x-stoplight:
+            id: xuouiab4bhs9b
+        owners:
+          type: array
+          x-stoplight:
+            id: hjklljta1ctzr
+          items:
+            x-stoplight:
+              id: ws9ltw83iq43w
+            type: string
+        tags:
+          type: array
+          x-stoplight:
+            id: cp5tp6stp38jh
+          items:
+            x-stoplight:
+              id: pvsc8m0x8ui18
+            type: string
+        lifecycle:
+          type: array
+          x-stoplight:
+            id: 2u3bc5f8a2n8w
+          items:
+            x-stoplight:
+              id: t12ghm5683pex
+            type: string
+      required:
+        - kind
+        - type
+    ScorecardResponse:
+      title: ScorecardResponse
+      x-stoplight:
+        id: t4wfkyz264f2c
+      type: object
+      properties:
+        scorecard:
+          $ref: '#/components/schemas/Scorecard'
+    ScorecardDetailsResponse:
+      title: ScorecardDetailsResponse
+      x-stoplight:
+        id: in285l7s6f5xk
+      type: object
+      properties:
+        scorecard:
+          $ref: '#/components/schemas/ScorecardDetails'
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScorecardChecksDetails'
+      required:
+        - scorecard
+        - checks
+    ScorecardDetailsRequest:
+      title: ScorecardDetailsRequest
+      x-stoplight:
+        id: cx94vkt0lkeqy
+      type: object
+      properties:
+        scorecard:
+          $ref: '#/components/schemas/ScorecardDetails'
+        checks:
+          type: array
+          x-stoplight:
+            id: ysjktghcp0zzx
+          items:
+            $ref: '#/components/schemas/ScorecardChecks'
+      required:
+        - scorecard
+        - checks
     DataSource:
       title: DataSource
       x-stoplight:
@@ -2411,6 +2905,27 @@ components:
       schema:
         type: string
       description: Namespace from where the request is being made
+    CheckType:
+      name: custom
+      in: query
+      schema:
+        type: boolean
+      description: Type of checks to be returned
+      required: true
+    CheckIdentifier:
+      name: check-id
+      in: path
+      description: Check Identifier
+      required: true
+      schema:
+        type: string
+    ScorecardIdentifier:
+      name: scorecard-id
+      in: path
+      description: Scorecard Identifier
+      required: true
+      schema:
+        type: string
     EntityIdentifier:
       name: entity_identifier
       in: query
@@ -2543,6 +3058,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ConfigurationEntities'
+    CheckDetailsRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CheckDetailsRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/CheckDetailsRequest'
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -2821,6 +3344,50 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ScorecardRecalibrateResponse'
+    CheckResponseList:
+      description: Response for all checks available
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CheckResponse'
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CheckResponse'
+    CheckDetailsResponse:
+      description: Response for check details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CheckDetailsResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/CheckDetailsResponse'
+    ScorecardResponseList:
+      description: Response for all scorecards available
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ScorecardResponse'
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ScorecardResponse'
+    ScorecardDetailsResponse:
+      description: Response for scorecard details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScorecardDetailsResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ScorecardDetailsResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key
