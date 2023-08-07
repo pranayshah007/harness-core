@@ -803,7 +803,7 @@ paths:
       x-internal: true
       tags:
         - MergedPluginsConfig
-  /v1/datasources:
+  /v1/data-sources:
     get:
       summary: Get Datasources Present In Account
       tags:
@@ -820,7 +820,7 @@ paths:
       x-internal: true
       security:
         - x-api-key: []
-  '/v1/data-source/{data-source}/datapoints':
+  '/v1/data-sources/{data-source}/datapoints':
     parameters:
       - schema:
           type: string
@@ -2073,7 +2073,6 @@ components:
         - type
         - name
         - description
-        - isConditional
     DataPointsResponse:
       title: DataPointResponse
       x-stoplight:
