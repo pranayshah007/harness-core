@@ -84,9 +84,11 @@ import io.harness.idp.proxy.services.ProxyApiImpl;
 import io.harness.idp.scorecard.checks.resources.ChecksApiImpl;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.idp.scorecard.checks.service.CheckServiceImpl;
+import io.harness.idp.scorecard.datasources.resources.DataSourceApiImpl;
 import io.harness.idp.scorecard.scorecards.resources.ScorecardsApiImpl;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
 import io.harness.idp.scorecard.scorecards.service.ScorecardServiceImpl;
+import io.harness.idp.scorecard.scores.resources.ScoreApiImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
 import io.harness.idp.settings.resources.BackstagePermissionsApiImpl;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -127,6 +129,7 @@ import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
 import io.harness.spec.server.idp.v1.ChecksApi;
 import io.harness.spec.server.idp.v1.ConnectorInfoApi;
+import io.harness.spec.server.idp.v1.DataSourceApi;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
 import io.harness.spec.server.idp.v1.MergedPluginsConfigApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
@@ -134,6 +137,7 @@ import io.harness.spec.server.idp.v1.OnboardingResourceApi;
 import io.harness.spec.server.idp.v1.PluginInfoApi;
 import io.harness.spec.server.idp.v1.ProvisionApi;
 import io.harness.spec.server.idp.v1.ScorecardsApi;
+import io.harness.spec.server.idp.v1.ScoresApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
@@ -333,6 +337,8 @@ public class IdpModule extends AbstractModule {
     bind(ScorecardService.class).to(ScorecardServiceImpl.class);
     bind(ChecksApi.class).to(ChecksApiImpl.class);
     bind(CheckService.class).to(CheckServiceImpl.class);
+    bind(ScoresApi.class).to(ScoreApiImpl.class);
+    bind(DataSourceApi.class).to(DataSourceApiImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));
