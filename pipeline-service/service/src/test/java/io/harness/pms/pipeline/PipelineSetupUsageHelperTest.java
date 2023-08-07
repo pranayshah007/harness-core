@@ -46,7 +46,6 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
-import io.harness.pms.rbac.InternalReferredEntityExtractor;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
@@ -83,13 +82,11 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
   private static final String ACCOUNT_ID = "accountId";
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
   @Mock private Producer eventProducer;
-  @Mock private InternalReferredEntityExtractor internalReferredEntityExtractor;
   @InjectMocks private PipelineSetupUsageHelper pipelineSetupUsageHelper;
 
   @Before
   public void init() {
     MockitoAnnotations.initMocks(this);
-    when(internalReferredEntityExtractor.extractInternalEntities(any(), anyList())).thenReturn(new ArrayList<>());
   }
 
   @After
