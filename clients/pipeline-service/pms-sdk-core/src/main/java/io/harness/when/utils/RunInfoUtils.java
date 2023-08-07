@@ -72,7 +72,7 @@ public class RunInfoUtils {
 
   public String getRunConditionForRollback(ParameterField<StepWhenCondition> stepWhenCondition) {
     if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
-      return getStatusExpression(ROLLBACK_MODE_EXECUTION) + " || " + getStatusExpression(STAGE_FAILURE);
+      return getDefaultWhenConditionForRollback();
     }
     if (stepWhenCondition.getValue().getStageStatus() == null) {
       throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");
@@ -91,6 +91,10 @@ public class RunInfoUtils {
       return condition.getValue();
     }
     return condition.getExpressionValue();
+  }
+
+  public String getDefaultWhenConditionForRollback() {
+    return getStatusExpression(ROLLBACK_MODE_EXECUTION) + " || " + getStatusExpression(STAGE_FAILURE);
   }
 
   public String getDefaultWhenCondition(boolean isStage) {

@@ -8,6 +8,7 @@
 package io.harness.plancreator.steps.http.v1;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
@@ -68,6 +69,8 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
   @SneakyThrows
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
+    final boolean isStepInsideRollback =
+        YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
     HttpStepNodeV1 stepNode = YamlUtils.read(field.getNode().toString(), HttpStepNodeV1.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
@@ -94,8 +97,10 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
                     .setType(
                         FacilitatorType.newBuilder().setType(stepNode.getStepSpecType().getFacilitatorType()).build())
                     .build())
-            .whenCondition(ParameterField.isNull(stepNode.getWhen()) ? RunInfoUtils.getDefaultWhenCondition(false)
-                    : isNotEmpty(stepNode.getWhen().getValue())      ? stepNode.getWhen().getValue()
+            .whenCondition(ParameterField.isNull(stepNode.getWhen()) ? isStepInsideRollback
+                        ? RunInfoUtils.getDefaultWhenConditionForRollback()
+                        : RunInfoUtils.getDefaultWhenCondition(false)
+                    : isNotEmpty(stepNode.getWhen().getValue()) ? stepNode.getWhen().getValue()
                                                                      : stepNode.getWhen().getExpressionValue())
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
