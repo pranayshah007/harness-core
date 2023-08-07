@@ -15,6 +15,7 @@ import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdSparseIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
@@ -27,6 +28,8 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -59,6 +62,7 @@ public class SRMAnalysisStepExecutionDetail
         .build();
   }
   @Id private String uuid;
+  @NotNull String stepName;
 
   @NotNull private long analysisStartTime;
   @NotNull private long analysisEndTime;
@@ -69,22 +73,26 @@ public class SRMAnalysisStepExecutionDetail
 
   @NotNull private String accountId;
   String monitoredServiceIdentifier;
+  String serviceIdentifier;
+  String envIdentifier;
   @NotNull private String projectIdentifier;
   @NotNull private String orgIdentifier;
 
   @FdSparseIndex String planExecutionId;
   String pipelineId;
+  String pipelineName;
   String stageStepId;
   String stageId;
+  String artifactType;
+  String artifactTag;
 
   @FdIndex Long reportNotificationIteration;
-
-  String pipelineName;
 
   List<MonitoredServiceNotificationRule> notificationRulesSent;
 
   @FdIndex private long createdAt;
   @FdIndex private long lastUpdatedAt;
+  @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusMonths(2).toInstant());
 
   @Override
   public Long obtainNextIteration(String fieldName) {

@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.expressions;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -184,7 +185,7 @@ public class MigratorExpressionUtils {
     context.put("servicevariable", new ServiceVariablesMigratorFunctor());
     context.put("environmentVariable", new EnvVariablesMigratorFunctor());
     context.put("environmentVariables", new EnvVariablesMigratorFunctor());
-    context.put("configFile", new ConfigFileMigratorFunctor());
+    context.put("configFile", new ConfigFileMigratorFunctor(identifierCaseFormat));
 
     // Secrets
     context.put(

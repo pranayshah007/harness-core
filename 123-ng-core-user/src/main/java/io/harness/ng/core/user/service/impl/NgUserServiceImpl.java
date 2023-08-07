@@ -959,6 +959,11 @@ public class NgUserServiceImpl implements NgUserService {
     return true;
   }
 
+  public boolean deleteUserMetadata(String userId) {
+    userMetadataRepository.deleteById(userId);
+    return true;
+  }
+
   private void validateUserMembershipsDeletion(Scope scope, String userId, NGRemoveUserFilter removeUserFilter) {
     if (!NGRemoveUserFilter.STRICTLY_FORCE_REMOVE_USER.equals(removeUserFilter) && isEmpty(scope.getOrgIdentifier())) {
       checkIfUserIsLastAccountAdmin(scope.getAccountIdentifier(), userId);

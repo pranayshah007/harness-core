@@ -9,6 +9,7 @@ package io.harness.idp.configmanager.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.configmanager.beans.entity.PluginConfigEnvVariablesEntity;
 import io.harness.idp.configmanager.mappers.ConfigEnvVariablesMapper;
@@ -20,9 +21,15 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -42,6 +49,8 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
       "%s - is reserved env variable name, please use some other env variable name";
   private static final String CONFLICTING_ENV_VARIABLE_MESSAGE =
       "%s - is already used in plugin - %s , please use some other env variable name";
+
+  private static final String ENV_VARIABLE_NOT_CONFIGURED_ERROR_MESSAGE = "Please set value for %s";
 
   @Override
   public List<BackstageEnvSecretVariable> insertConfigEnvVariables(AppConfig appConfig, String accountIdentifier) {
@@ -113,6 +122,35 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
     return pluginsEnvVariablesEntity.stream()
         .map(PluginConfigEnvVariablesEntity::getEnvName)
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public void validateConfigEnvVariables(AppConfig appConfig) {
+    // regex for fetching text present in ${..}
+    Pattern pattern = Pattern.compile("\\$\\{(.*?)\\}");
+
+    Matcher matcher = pattern.matcher(appConfig.getConfigs());
+
+    Set<String> fetchedEnvVariablesFromConfig = new HashSet<>();
+
+    while (matcher.find()) {
+      fetchedEnvVariablesFromConfig.add(matcher.group(1));
+    }
+    Set<String> configuredEnvVariables =
+        getAllEnvVariableNamesFromBackstageEnvSecretVariable(appConfig.getEnvVariables());
+
+    Set<String> notConfiguredEnvVariables = Sets.difference(fetchedEnvVariablesFromConfig, configuredEnvVariables);
+
+    if (!notConfiguredEnvVariables.isEmpty()) {
+      throw new UnsupportedOperationException(
+          String.format(ENV_VARIABLE_NOT_CONFIGURED_ERROR_MESSAGE, String.join(", ", notConfiguredEnvVariables)));
+    }
+  }
+
+  @VisibleForTesting
+  Set<String> getAllEnvVariableNamesFromBackstageEnvSecretVariable(
+      List<BackstageEnvSecretVariable> backstageEnvSecretVariables) {
+    return backstageEnvSecretVariables.stream().map(entity -> entity.getEnvName()).collect(Collectors.toSet());
   }
 
   private List<BackstageEnvVariable> getListOfBackstageEnvSecretVariable(AppConfig appConfig) {

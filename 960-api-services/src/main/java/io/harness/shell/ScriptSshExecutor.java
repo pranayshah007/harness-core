@@ -113,7 +113,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
 
   @Override
   public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean displayCommand) {
-    if (config.isUseSshClient()) {
+    if (config.isVaultSSH() || config.isUseSshClient()) {
       try {
         ExecResponse response = SshClientManager.exec(
             ExecRequest.builder().command(command).displayCommand(displayCommand).build(), config, logCallback);
@@ -239,7 +239,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
     secretEnvVariablesToCollect =
         secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect;
-    if (config.isUseSshClient()) {
+    if (config.isUseSshClient() || config.isVaultSSH()) {
       try {
         return executeCommandStringWithSshClient(command, envVariablesToCollect, secretEnvVariablesToCollect);
       } catch (Exception ex) {

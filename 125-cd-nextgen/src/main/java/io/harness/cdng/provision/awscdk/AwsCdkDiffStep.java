@@ -10,9 +10,6 @@ package io.harness.cdng.provision.awscdk;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
-import io.harness.delegate.task.stepstatus.StepExecutionStatus;
-import io.harness.delegate.task.stepstatus.StepMapOutput;
-import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -27,7 +24,6 @@ import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,23 +65,6 @@ public class AwsCdkDiffStep extends AbstractContainerStepV2<StepElementParameter
         stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
         awsCdkDiffStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
-
-  @Override
-  public StepResponse handleAsyncResponse(
-      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    StepStatusTaskResponseData stepStatusTaskResponseData =
-        containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
-    if (stepStatusTaskResponseData != null
-        && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
-      StepMapOutput stepOutput = (StepMapOutput) stepStatusTaskResponseData.getStepStatus().getOutput();
-      Map<String, String> decodedOutput = new HashMap<>();
-      stepOutput.getMap().forEach(
-          (key, value) -> decodedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "=")))));
-      stepOutput.setMap(decodedOutput);
-    }
-    return super.handleAsyncResponse(ambiance, stepParameters, responseDataMap);
-  }
-
   @Override
   public StepResponse.StepOutcome getAnyOutComeForStep(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {

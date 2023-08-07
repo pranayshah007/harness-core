@@ -94,6 +94,7 @@ public class VmPluginStepSerializer {
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmStepInfo serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries,
@@ -124,6 +125,8 @@ public class VmPluginStepSerializer {
       }
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
         ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 

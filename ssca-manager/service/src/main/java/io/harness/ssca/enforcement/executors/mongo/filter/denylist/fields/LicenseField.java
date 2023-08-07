@@ -11,11 +11,12 @@ import io.harness.ssca.beans.DenyList.DenyListItem;
 import io.harness.ssca.enforcement.executors.mongo.MongoOperators;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMEntityKeys;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import lombok.NoArgsConstructor;
 import org.bson.Document;
-import org.eclipse.jgit.ignore.internal.Strings;
 
 @NoArgsConstructor
 public class LicenseField implements Field {
@@ -27,12 +28,11 @@ public class LicenseField implements Field {
   @Override
   public Document getQueryDocument(DenyListItem denyListItem) {
     if (denyListItem.getLicense().contains("!")) {
-      String allowLicense = Strings.split(denyListItem.getLicense(), '!').get(1);
-      Map<String, Object> regexPattern = new HashMap<>();
-      regexPattern.put(MongoOperators.MONGO_REGEX, allowLicense);
-      regexPattern.put(MongoOperators.MONGO_REGEX_OPTIONS, 'i');
+      String allowLicense = denyListItem.getLicense().split("!")[1];
+      Pattern regex = Pattern.compile(allowLicense, Pattern.CASE_INSENSITIVE);
       return new Document(NormalizedSBOMEntityKeys.packageLicense.toLowerCase(),
-          new Document(MongoOperators.MONGO_NOT, new Document(regexPattern)));
+          new Document(
+              MongoOperators.MONGO_NOT, new Document(MongoOperators.MONGO_IN, Collections.singletonList(regex))));
     } else {
       Map<String, Object> regexPattern = new HashMap<>();
       regexPattern.put(MongoOperators.MONGO_REGEX, denyListItem.getLicense());

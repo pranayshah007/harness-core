@@ -85,7 +85,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches) {
     if (getDistinctFromBranches) {
       return EntityDistinctElementHelper.getDistinctElementPage(mongoTemplate, criteria, pageable, PipelineEntity.class,
-          PipelineEntityKeys.accountId, PipelineEntityKeys.orgIdentifier, PipelineEntityKeys.projectIdentifier,
+          true, PipelineEntityKeys.accountId, PipelineEntityKeys.orgIdentifier, PipelineEntityKeys.projectIdentifier,
           PipelineEntityKeys.identifier);
     }
     List<PipelineEntity> pipelineEntities = gitAwarePersistence.find(

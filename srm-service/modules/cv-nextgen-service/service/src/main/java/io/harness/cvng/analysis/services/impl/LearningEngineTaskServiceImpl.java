@@ -21,6 +21,7 @@ import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKe
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
+import io.harness.cvng.beans.CVNGTaskMetadataConstants;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.core.entities.VerificationTask;
@@ -233,6 +234,8 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
 
   private static List<CVNGLogTag> getCvngLogTagsForFinalState(LearningEngineTask learningEngineTask, Clock clock) {
     List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(learningEngineTask.getUuid());
+    cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+        CVNGTaskMetadataConstants.TASK_TYPE, String.valueOf(learningEngineTask.getAnalysisType())));
     if (learningEngineTask.getPickedAt() != null) {
       cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
           CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, learningEngineTask.waitTime()));

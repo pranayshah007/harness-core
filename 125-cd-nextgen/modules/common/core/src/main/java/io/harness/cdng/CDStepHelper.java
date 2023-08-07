@@ -776,6 +776,10 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_HPA_AND_PDB_NG);
   }
 
+  public boolean shouldDisableFabric8(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_DISABLE_FABRIC8_NG);
+  }
+
   public boolean isSkipUnchangedManifest(String accountId, boolean value) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG) && value;
   }
@@ -798,7 +802,7 @@ public class CDStepHelper {
         currentProgressData.getUnitProgresses()
             .stream()
             .map(unitProgress -> {
-              if (unitProgress.getStatus() == RUNNING) {
+              if (unitProgress.getStatus() != UnitStatus.SUCCESS && unitProgress.getStatus() != UnitStatus.FAILURE) {
                 LogCallback logCallback = getLogCallback(unitProgress.getUnitName(), ambiance, false);
                 logCallback.saveExecutionLog(exceptionMessage, LogLevel.ERROR, FAILURE);
                 return UnitProgress.newBuilder(unitProgress)
@@ -1114,12 +1118,12 @@ public class CDStepHelper {
                                                .collect(Collectors.toList()));
   }
 
-  public ScmConnector getScmConnector(ScmConnector scmConnector, String accountIdentifier) {
+  public ScmConnector getScmConnector(ScmConnector scmConnector, String accountIdentifier, GitConfigDTO gitConfigDTO) {
     if (scmConnector instanceof GithubConnectorDTO && isGithubAppAuth((GithubConnectorDTO) scmConnector)
         && cdFeatureFlagHelper.isEnabled(accountIdentifier, CDS_GITHUB_APP_AUTHENTICATION)) {
       return scmConnector;
     } else {
-      return ScmConnectorMapper.toGitConfigDTO(scmConnector);
+      return gitConfigDTO;
     }
   }
 }

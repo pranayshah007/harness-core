@@ -21,6 +21,7 @@ import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.serializer.vm.VmIACMApprovalStepSerializer;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.HarnessImageUtils;
@@ -47,6 +48,7 @@ public class VmIACMApprovalStepSerializerTest {
   @Mock private CIExecutionConfigService ciExecutionConfigService;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private HarnessImageUtils harnessImageUtils;
+  @Mock private SerializerUtils serializerUtils;
 
   @Mock IACMStepsUtils iacmStepsUtils;
   @InjectMocks private VmIACMApprovalStepSerializer vmIACMApprovalStepSerializer;

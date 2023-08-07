@@ -1,0 +1,6 @@
+name: Login Metrics Group
+identifier: login_metrics_group
+labels:
+  - loginType
+  - loginSubType
+  - accountId

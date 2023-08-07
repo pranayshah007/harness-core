@@ -220,6 +220,8 @@ public class RecommendationsOverviewQueryV2 {
                            .resourceName(item.getResourceName())
                            .monthlyCost(item.getMonthlyCost())
                            .monthlySaving(item.getMonthlySaving())
+                           .isValid(item.getIsValid())
+                           .lastProcessedAt(item.getLastProcessedAt())
                            .resourceType(item.getResourceType())
                            .recommendationState(item.getRecommendationState())
                            .jiraConnectorRef(item.getJiraConnectorRef())

@@ -97,7 +97,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Test
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
-  public void shouldProcessEnvInfraFilteringForEnvFilterWithNoFilteredEnvironments() {
+  public void shouldNotProcessEnvInfraFilteringForEnvFilterWithNoFilteredEnvironments() {
     FilterYaml envFilter = FilterYaml.builder()
                                .entities(new HashSet<>(List.of(Entity.environments)))
                                .type(FilterType.tags)
@@ -116,7 +116,8 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         .assertThatThrownBy(()
                                 -> environmentInfraFilterHelper.processEnvInfraFiltering(
                                     ACC_ID, ORG_ID, PROJ_ID, environmentsYaml, null, ServiceDefinitionType.KUBERNETES))
-        .hasMessageContaining("No Environments are eligible for deployment due to applied filters for tags - ");
+        .hasMessageContaining(
+            "Invalid filter tags value found [null]. Filter tags should be non-empty key-value pairs of string values.");
   }
 
   @Test
@@ -393,7 +394,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Test
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
-  public void shouldFilterEnvsAndClustersForEnvFilterWithNoFilteredEnvironments() {
+  public void shouldNotFilterEnvsAndClustersForEnvFilterWithNoFilteredEnvironments() {
     FilterYaml envFilter = FilterYaml.builder()
                                .entities(new HashSet<>(List.of(Entity.environments)))
                                .type(FilterType.tags)
@@ -412,7 +413,8 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         .assertThatThrownBy(()
                                 -> environmentInfraFilterHelper.filterEnvsAndClusters(
                                     environmentsYaml, Collections.emptyList(), ACC_ID, ORG_ID, PROJ_ID))
-        .hasMessageContaining("No Environments are eligible for deployment due to applied filters for tags - ");
+        .hasMessageContaining(
+            "Invalid filter tags value found [null]. Filter tags should be non-empty key-value pairs of string values.");
   }
 
   @Test

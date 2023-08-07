@@ -949,5 +949,9 @@ public class YamlUtilsTest extends CategoryTest {
     assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("+1234.12")))).isEqualTo("k: \"+1234.12\"\n");
     assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("+1234.")))).isEqualTo("k: \"+1234.\"\n");
     assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("+.12")))).isEqualTo("k: \"+.12\"\n");
+    assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("123_321")))).isEqualTo("k: \"123_321\"\n");
+    assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("_12321")))).isEqualTo("k: _12321\n");
+    assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("123_321_")))).isEqualTo("k: \"123_321_\"\n");
+    assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("12321_")))).isEqualTo("k: \"12321_\"\n");
   }
 }

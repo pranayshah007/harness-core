@@ -9,7 +9,6 @@ package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.parseBoolean;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -308,28 +307,11 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
     }
     final List<QLCEViewPreferenceAggregation> viewPreferenceAggregations = new ArrayList<>();
     try {
-      final Set<ViewFieldIdentifier> dataSources = viewParametersHelper.getDataSourcesFromCEView(ceView);
-      if (Objects.isNull(dataSources) || dataSources.isEmpty()) {
-        // All cloud providers are present
-        viewPreferenceAggregations.addAll(getViewPreferenceAggregations(viewPreferences));
-      } else if (Objects.nonNull(ceView.getDataSources())
-          && ceView.getDataSources().contains(ViewFieldIdentifier.BUSINESS_MAPPING)) {
-        viewPreferenceAggregations.addAll(getViewPreferenceAggregations(viewPreferences, ceView.getAccountId()));
-      } else {
-        viewPreferenceAggregations.addAll(getViewPreferenceAggregations(viewPreferences, dataSources));
-      }
+      viewPreferenceAggregations.addAll(getViewPreferenceAggregations(viewPreferences, ceView.getAccountId()));
     } catch (final Exception exception) {
       log.error("Exception while generating perspective preference aggregation list. ceView: {}, viewPreferences: {}",
           ceView, viewPreferences, exception);
     }
-    return viewPreferenceAggregations;
-  }
-
-  private List<QLCEViewPreferenceAggregation> getViewPreferenceAggregations(final ViewPreferences viewPreferences) {
-    final List<QLCEViewPreferenceAggregation> viewPreferenceAggregations = new ArrayList<>();
-    viewPreferenceAggregations.add(getQLCEOthersViewPreferenceAggregation());
-    viewPreferenceAggregations.addAll(getQLCEAWSViewPreferenceAggregation(viewPreferences));
-    viewPreferenceAggregations.addAll(getQLCEGCPViewPreferenceAggregation(viewPreferences));
     return viewPreferenceAggregations;
   }
 
@@ -344,27 +326,21 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
             .showAnomalies(viewPreferences.getShowAnomalies())
             .includeOthers(viewPreferences.getIncludeOthers())
             .includeUnallocatedCost(viewPreferences.getIncludeUnallocatedCost())
-            .awsPreferences(
-                firstNonNull(viewPreferences.getAwsPreferences(), getDefaultAWSViewPreferences(settingsMap)))
-            .gcpPreferences(
-                firstNonNull(viewPreferences.getGcpPreferences(), getDefaultGCPViewPreferences(settingsMap)))
+            .awsPreferences(Objects.nonNull(viewPreferences.getAwsPreferences())
+                    ? viewPreferences.getAwsPreferences()
+                    : getDefaultAWSViewPreferences(settingsMap))
+            .gcpPreferences(Objects.nonNull(viewPreferences.getGcpPreferences())
+                    ? viewPreferences.getGcpPreferences()
+                    : getDefaultGCPViewPreferences(settingsMap))
             .build();
     return getViewPreferenceAggregations(modifiedViewPreferences);
   }
 
-  private List<QLCEViewPreferenceAggregation> getViewPreferenceAggregations(
-      final ViewPreferences viewPreferences, final Set<ViewFieldIdentifier> dataSources) {
+  private List<QLCEViewPreferenceAggregation> getViewPreferenceAggregations(final ViewPreferences viewPreferences) {
     final List<QLCEViewPreferenceAggregation> viewPreferenceAggregations = new ArrayList<>();
-    if (dataSources.contains(ViewFieldIdentifier.AWS)) {
-      viewPreferenceAggregations.addAll(getQLCEAWSViewPreferenceAggregation(viewPreferences));
-    }
-    if (dataSources.contains(ViewFieldIdentifier.GCP)) {
-      viewPreferenceAggregations.addAll(getQLCEGCPViewPreferenceAggregation(viewPreferences));
-    }
-    dataSources.removeAll(ImmutableSet.of(ViewFieldIdentifier.AWS, ViewFieldIdentifier.GCP));
-    if (!dataSources.isEmpty()) {
-      viewPreferenceAggregations.add(getQLCEOthersViewPreferenceAggregation());
-    }
+    viewPreferenceAggregations.add(getQLCEOthersViewPreferenceAggregation());
+    viewPreferenceAggregations.addAll(getQLCEAWSViewPreferenceAggregation(viewPreferences));
+    viewPreferenceAggregations.addAll(getQLCEGCPViewPreferenceAggregation(viewPreferences));
     return viewPreferenceAggregations;
   }
 

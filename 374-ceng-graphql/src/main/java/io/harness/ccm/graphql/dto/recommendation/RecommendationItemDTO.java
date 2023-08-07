@@ -12,6 +12,7 @@ import io.harness.ccm.commons.beans.recommendation.ResourceType;
 
 import io.leangen.graphql.annotations.GraphQLNonNull;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.OffsetDateTime;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
@@ -26,6 +27,8 @@ public class RecommendationItemDTO {
   String resourceName;
   Double monthlySaving;
   Double monthlyCost;
+  Boolean isValid;
+  OffsetDateTime lastProcessedAt;
   @GraphQLNonNull @NotNull ResourceType resourceType;
   RecommendationState recommendationState;
   String jiraConnectorRef;

@@ -164,7 +164,7 @@ public class WebhookTriggerProcessorUtils {
         .authorLogin(author.getLogin())
         .authorName(author.getName())
         .authorEmail(author.getEmail())
-        .authorAvatar(author.getAvatar())
+        .authorAvatar(isEmpty(author.getAvatar()) ? pushHook.getSender().getAvatar() : author.getAvatar())
         .sender(pushHook.getSender().getLogin())
         .build();
   }

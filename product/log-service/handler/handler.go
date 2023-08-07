@@ -82,7 +82,7 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 		}
 
 		sr.Post("/", HandleOpen(stream))
-		sr.Delete("/", HandleClose(stream, store))
+		sr.Delete("/", HandleClose(stream, store, config.Redis.ScanBatch))
 		sr.Put("/", HandleWrite(stream))
 		sr.Get("/", HandleTail(stream))
 		sr.Get("/info", HandleInfo(stream))

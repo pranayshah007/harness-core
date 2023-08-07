@@ -15,8 +15,10 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EphemeralOrchestrationGraph;
 import io.harness.beans.ExecutionGraph;
 import io.harness.beans.OrchestrationGraph;
+import io.harness.beans.converter.EphemeralOrchestrationGraphConverter;
 import io.harness.category.element.UnitTests;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.dto.converter.OrchestrationGraphDTOConverter;
@@ -25,6 +27,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
 import io.harness.rule.Owner;
 import io.harness.service.GraphGenerationService;
+import io.harness.skip.service.VertexSkipperService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,6 +55,8 @@ public class ExecutionGraphServiceImplTest extends CategoryTest {
   @Mock NodeExecutionService nodeExecutionService;
   @Mock GraphGenerationService graphGenerationService;
   @Mock OrchestrationGraphDTOConverter orchestrationGraphDTOConverter;
+  @Mock EphemeralOrchestrationGraph ephemeralOrchestrationGraph;
+  @Mock VertexSkipperService vertexSkipperService;
   private AutoCloseable mocks;
 
   @Before
@@ -76,12 +81,16 @@ public class ExecutionGraphServiceImplTest extends CategoryTest {
     when(nodeExecutionService.fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithoutOldRetries(
              "planExecutionId", parentIds))
         .thenReturn(new LinkedList<>());
-    MockedStatic<OrchestrationGraphDTOConverter> aStatic = Mockito.mockStatic(OrchestrationGraphDTOConverter.class);
-    aStatic.when(() -> OrchestrationGraphDTOConverter.convertFrom(any(OrchestrationGraph.class)))
-        .thenReturn(OrchestrationGraphDTO.builder().build());
+    MockedStatic<EphemeralOrchestrationGraphConverter> aStatic =
+        Mockito.mockStatic(EphemeralOrchestrationGraphConverter.class);
+    aStatic.when(() -> EphemeralOrchestrationGraphConverter.convertFrom(any(OrchestrationGraph.class)))
+        .thenReturn(EphemeralOrchestrationGraph.builder().build());
     MockedStatic<ExecutionGraphMapper> bStatic = Mockito.mockStatic(ExecutionGraphMapper.class);
     bStatic.when(() -> ExecutionGraphMapper.toExecutionGraph(any(OrchestrationGraphDTO.class)))
         .thenReturn(ExecutionGraph.builder().build());
+    MockedStatic<OrchestrationGraphDTOConverter> cStatic = Mockito.mockStatic(OrchestrationGraphDTOConverter.class);
+    cStatic.when(() -> OrchestrationGraphDTOConverter.convertFrom(any(EphemeralOrchestrationGraph.class)))
+        .thenReturn(OrchestrationGraphDTO.builder().build());
     executionGraphService.getNodeExecutionSubGraph("nodeExecutionId", "planExecutionId");
   }
 

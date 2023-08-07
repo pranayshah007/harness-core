@@ -36,9 +36,7 @@ const (
 	// Maximum number of keys that we will return with a given prefix. If there are more than maxPrefixes keys with a given prefix,
 	// only the first maxPrefixes keys will be returned.
 	maxPrefixes = 200
-	// scan redis keys in batches
-	scanBatch = 2000
-	entryKey  = "line"
+	entryKey    = "line"
 
 	// Redis TTL error values
 	TTL_NOT_SET          = -1
@@ -49,12 +47,12 @@ type Redis struct {
 	Client redis.Cmdable
 }
 
-func NewWithClient(cmdable *redis.Cmdable, disableExpiryWatcher bool) *Redis {
+func NewWithClient(cmdable *redis.Cmdable, disableExpiryWatcher bool, scanBatch int64) *Redis {
 	rc := &Redis{Client: *cmdable}
 	if !disableExpiryWatcher {
 		logrus.Infof("starting expiry watcher thread on Redis instance")
 		s := gocron.NewScheduler(time.UTC)
-		s.Every(defaultKeyExpiryTimeSeconds).Seconds().Do(rc.expiryWatcher, defaultKeyExpiryTimeSeconds*time.Second)
+		s.Every(defaultKeyExpiryTimeSeconds).Seconds().Do(rc.expiryWatcher, defaultKeyExpiryTimeSeconds*time.Second, scanBatch)
 		s.StartAsync()
 	}
 	return rc
@@ -197,7 +195,7 @@ func (r *Redis) Exists(ctx context.Context, key string) error {
 	return nil
 }
 
-func (r *Redis) ListPrefix(ctx context.Context, prefix string) ([]string, error) {
+func (r *Redis) ListPrefix(ctx context.Context, prefix string, scanBatch int64) ([]string, error) {
 	// Return all the keys with the given prefix
 	l := []string{}
 	if len(prefix) == 0 {
@@ -338,7 +336,7 @@ func (r *Redis) setExpiry(key string, expiry time.Duration) error {
 }
 
 // Scan all the keys and set an expiry on them if it's not set
-func (r *Redis) expiryWatcher(expiry time.Duration) {
+func (r *Redis) expiryWatcher(expiry time.Duration, scanBatch int64) {
 	logrus.Infof("running expiry watcher thread")
 	st := time.Now()
 	var cursor uint64

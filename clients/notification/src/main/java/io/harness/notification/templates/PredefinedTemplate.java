@@ -86,6 +86,13 @@ public enum PredefinedTemplate {
 
   CVNG_MONITOREDSERVICE_REPORT_SLACK(
       "cvng_notification_templates/cvng_monitoredservice_report_slack.txt", "cvng_monitoredservice_report_slack"),
+  CVNG_MONITOREDSERVICE_REPORT_EMAIL(
+      "cvng_notification_templates/cvng_monitoredservice_report_email.txt", "cvng_monitoredservice_report_email"),
+  CVNG_MONITOREDSERVICE_REPORT_PAGERDUTY("cvng_notification_templates/cvng_monitoredservice_report_pagerduty.txt",
+      "cvng_monitoredservice_report_pagerduty"),
+
+  CVNG_MONITOREDSERVICE_REPORT_MSTEAMS(
+      "cvng_notification_templates/cvng_monitoredservice_report_msteams.txt", "cvng_monitoredservice_report_msteams"),
   CVNG_MONITOREDSERVICE_EMAIL(
       "cvng_notification_templates/cvng_monitoredservice_email.txt", "cvng_monitoredservice_email"),
   CVNG_MONITOREDSERVICE_ET_EMAIL(

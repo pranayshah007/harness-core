@@ -8,6 +8,7 @@
 package io.harness.idp.gitintegration.processor.impl;
 
 import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_PROXY;
+import static io.harness.rule.OwnerRule.DEVESH;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
 import static junit.framework.TestCase.assertEquals;
@@ -107,6 +108,17 @@ public class AzureRepoConnectorProcessorTest {
     String expectResult = "harness-core?path=/harness-idp-entities&version=GBdevelop";
     assertEquals(
         expectResult, azureRepoConnectorProcessor.getLocationTarget(catalogConnectorInfo, "/harness-idp-entities"));
+  }
+  @Test
+  @Owner(developers = DEVESH)
+  @Category(UnitTests.class)
+  public void testGetConnectorSecretsInfoWithConfigUpdate() {
+    ConnectorDTO connectorDTO = getAzureRepoConnectorDTO(true, true);
+    doNothing().when(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
+    MockedStatic<ConfigManagerUtils> mockRestUtils = mockStatic(ConfigManagerUtils.class);
+    azureRepoConnectorProcessor.createOrUpdateIntegrationConfig(ACCOUNT_IDENTIFIER, connectorDTO.getConnectorInfo());
+    verify(configManagerService).createOrUpdateAppConfigForGitIntegrations(any(), any(), any(), any());
+    mockRestUtils.close();
   }
 
   @Test

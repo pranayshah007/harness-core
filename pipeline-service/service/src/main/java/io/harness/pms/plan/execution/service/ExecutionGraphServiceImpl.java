@@ -10,8 +10,10 @@ package io.harness.pms.plan.execution.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EphemeralOrchestrationGraph;
 import io.harness.beans.ExecutionGraph;
 import io.harness.beans.OrchestrationGraph;
+import io.harness.beans.converter.EphemeralOrchestrationGraphConverter;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.dto.converter.OrchestrationGraphDTOConverter;
 import io.harness.engine.executions.node.NodeExecutionService;
@@ -19,6 +21,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
 import io.harness.pms.plan.execution.beans.dto.NodeExecutionSubGraphResponse;
 import io.harness.service.GraphGenerationService;
+import io.harness.skip.service.VertexSkipperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -35,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ExecutionGraphServiceImpl implements ExecutionGraphService {
   NodeExecutionService nodeExecutionService;
   GraphGenerationService graphGenerationService;
+  VertexSkipperService vertexSkipperService;
 
   @Override
   public NodeExecutionSubGraphResponse getNodeExecutionSubGraph(String nodeExecutionId, String planExecutionId) {
@@ -51,7 +55,10 @@ public class ExecutionGraphServiceImpl implements ExecutionGraphService {
     nodeExecutions.add(nodeExecutionService.get(nodeExecutionId));
     OrchestrationGraph graph = graphGenerationService.buildOrchestrationGraphForNodeExecution(
         planExecutionId, nodeExecutionId, nodeExecutions);
-    OrchestrationGraphDTO orchestrationGraphDTO = OrchestrationGraphDTOConverter.convertFrom(graph);
+    EphemeralOrchestrationGraph ephemeralOrchestrationGraph = EphemeralOrchestrationGraphConverter.convertFrom(graph);
+    vertexSkipperService.removeSkippedVertices(ephemeralOrchestrationGraph);
+    OrchestrationGraphDTO orchestrationGraphDTO =
+        OrchestrationGraphDTOConverter.convertFrom(ephemeralOrchestrationGraph);
     ExecutionGraph executionGraph = ExecutionGraphMapper.toExecutionGraph(orchestrationGraphDTO);
     return NodeExecutionSubGraphResponse.builder().executionGraph(executionGraph).build();
   }

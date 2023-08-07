@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.ngpipeline.inputset.resources;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.removeRuntimeInputFromYaml;
 import static io.harness.utils.PageUtils.getNGPageResponse;
@@ -68,6 +69,7 @@ import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
 import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -333,6 +335,24 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                                        .pipelineYaml(mergedYaml)
                                        .completePipelineYaml(fullYaml)
                                        .build());
+  }
+
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public ResponseDTO<MergeInputSetResponseDTOPMS> getMergeInputForExecution(
+      @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
+      @NotNull @ProjectIdentifier String projectIdentifier, boolean resolveExpressions,
+      ResolveInputYamlType resolveExpressionsType, @NotNull String planExecutionId) {
+    String mergedYaml;
+    try {
+      mergedYaml = executionService.mergeRuntimeInputIntoPipeline(
+          accountId, orgIdentifier, projectIdentifier, planExecutionId, resolveExpressions, resolveExpressionsType);
+    } catch (InvalidInputSetException e) {
+      InputSetErrorWrapperDTOPMS errorWrapperDTO = (InputSetErrorWrapperDTOPMS) e.getMetadata();
+      return ResponseDTO.newResponse(
+          MergeInputSetResponseDTOPMS.builder().isErrorResponse(true).inputSetErrorWrapper(errorWrapperDTO).build());
+    }
+    return ResponseDTO.newResponse(
+        MergeInputSetResponseDTOPMS.builder().isErrorResponse(false).pipelineYaml(mergedYaml).build());
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)

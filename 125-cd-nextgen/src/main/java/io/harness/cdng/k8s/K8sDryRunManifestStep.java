@@ -120,7 +120,8 @@ public class K8sDryRunManifestStep extends TaskChainExecutableWithRollbackAndRba
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
-            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome));
+            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
+            .disableFabric8(cdStepHelper.shouldDisableFabric8(accountId));
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       k8sDryRunManifestRequestbuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));

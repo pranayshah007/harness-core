@@ -34,6 +34,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.beans.steps.CiStepParametersUtils;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.output.CIStageOutput;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -46,7 +47,6 @@ import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StepLogKeyDetails;
 import io.harness.beans.sweepingoutputs.StepTaskDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
-import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.category.element.UnitTests;
@@ -56,7 +56,6 @@ import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
-import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.serializer.vm.VmStepSerializer;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -134,6 +133,9 @@ public class RunStepTest extends CIExecutionTestBase {
   @Mock CILogServiceUtils logServiceUtils;
   @Mock WaitNotifyEngine waitNotifyEngine;
   @Mock SerializedResponseDataHelper serializedResponseDataHelper;
+
+  @Mock CiStepParametersUtils ciStepParametersUtils;
+
   @Mock protected CIFeatureFlagService featureFlagService;
   @Mock protected CIStageOutputRepository ciStageOutputRepository;
   @Inject private ExceptionManager exceptionManager;
@@ -251,7 +253,7 @@ public class RunStepTest extends CIExecutionTestBase {
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     when(runStepProtobufSerializer.serializeStepWithStepParameters(
-             any(), any(), any(), any(), any(), any(), any(), any(), any()))
+             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(UnitStep.newBuilder().build());
 
     AsyncExecutableResponse asyncExecutableResponse =
@@ -701,69 +703,5 @@ public class RunStepTest extends CIExecutionTestBase {
     when(ciStageOutputRepository.findFirstByStageExecutionId(any()))
         .thenReturn(Optional.of(CIStageOutput.builder().stageExecutionId("stage").outputs(outputMap).build()));
     runStep.populateCIStageOutputs(outputVariables, "acc", "stage");
-  }
-
-  @Test
-  @Owner(developers = DEV_MITTAL)
-  @Category(UnitTests.class)
-  public void testGetSafeGitDirectoryCmd() {
-    String command = SerializerUtils.getSafeGitDirectoryCmd(CIShellType.SH);
-    assertThat(command).isEqualTo("set +x\n"
-        + "if [ -x \"$(command -v git)\" ]; then\n"
-        + "  git config --global --add safe.directory '*' || true \n"
-        + "fi\n");
-  }
-
-  @Test
-  @Owner(developers = DEV_MITTAL)
-  @Category(UnitTests.class)
-  public void testPrependPrintCommandPython() {
-    String command = "print(\"white color\"); \na = 15; \nprint(a);";
-    String fullCommand =
-        SerializerUtils.prependPrintCommand(command, ParameterField.createValueField(CIShellType.PYTHON));
-    assertThat(fullCommand)
-        .isEqualTo("print('''\u001B[33;1mExecuting the following command(s):\n"
-            + "\u001B[33;1mprint(\"white color\"); \n"
-            + "\u001B[33;1ma = 15; \n"
-            + "\u001B[33;1mprint(a);\n"
-            + "''')\n"
-            + "\n"
-            + "print(\"white color\"); \n"
-            + "a = 15; \n"
-            + "print(a);");
-  }
-
-  @Test
-  @Owner(developers = DEV_MITTAL)
-  @Category(UnitTests.class)
-  public void testPrependPrintCommandSh() {
-    String command = "echo hello world \na=15; \necho b=16;";
-    String fullCommand = SerializerUtils.prependPrintCommand(command, ParameterField.createValueField(CIShellType.SH));
-    assertThat(fullCommand)
-        .isEqualTo("echo \"\u001B[33;1mExecuting the following command(s):\"\n"
-            + "echo \"\u001B[33;1mecho hello world \"\n"
-            + "echo \"\u001B[33;1ma=15; \"\n"
-            + "echo \"\u001B[33;1mecho b=16;\"\n"
-            + "echo \n"
-            + "echo hello world \n"
-            + "a=15; \n"
-            + "echo b=16;");
-  }
-
-  @Test
-  @Owner(developers = DEV_MITTAL)
-  @Category(UnitTests.class)
-  public void testPrependPrintCommandPwsh() {
-    String command =
-        "Write-Host hello world \nInvoke-WebRequest -Uri https://app.harness.io/gratis/healthz -UseBasicParsing";
-    String fullCommand =
-        SerializerUtils.prependPrintCommand(command, ParameterField.createValueField(CIShellType.PWSH));
-    assertThat(fullCommand)
-        .isEqualTo("Write-Host \"\u001B[33;1mExecuting the following command(s):\"\n"
-            + "Write-Host \"\u001B[33;1mWrite-Host hello world \"\n"
-            + "Write-Host \"\u001B[33;1mInvoke-WebRequest -Uri https://app.harness.io/gratis/healthz -UseBasicParsing\"\n"
-            + "Write-Host \n"
-            + "Write-Host hello world \n"
-            + "Invoke-WebRequest -Uri https://app.harness.io/gratis/healthz -UseBasicParsing");
   }
 }

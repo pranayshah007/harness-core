@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.azureconnector.outcome;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
@@ -27,6 +28,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcomeDTO")
 public class AzureConnectorOutcomeDTO
     extends ConnectorConfigOutcomeDTO implements DelegateSelectable, ManagerExecutable {
   @NotNull @Valid AzureCredentialOutcomeDTO credential;

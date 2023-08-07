@@ -7,6 +7,8 @@
 
 package io.harness.cvng.beans.cvnglog;
 
+import static io.harness.cvng.beans.cvnglog.ApiCallLogUtils.requestWithoutSensitiveKeys;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.serializer.JsonUtils;
@@ -62,6 +64,7 @@ public class ApiCallLogDTO extends CVNGLogDTO {
     if (this.requests == null) {
       this.requests = new ArrayList<>();
     }
+    request = requestWithoutSensitiveKeys(request);
     FieldType fieldType = ApiCallLogUtils.mapRequestBodyContentTypeToFieldType(request);
     String requestBody = getCallObjectToLog(ApiCallLogUtils.requestBodyToString(request, false), fieldType);
     if (fieldType == FieldType.TEXT && ApiCallLogUtils.isFormEncoded(request)) {

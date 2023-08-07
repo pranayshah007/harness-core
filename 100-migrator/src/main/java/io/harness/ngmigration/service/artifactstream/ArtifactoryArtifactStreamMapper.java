@@ -7,6 +7,9 @@
 
 package io.harness.ngmigration.service.artifactstream;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.utils.RepositoryType.docker;
 
@@ -22,6 +25,8 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactoryRegistrySpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.ArtifactStream;
@@ -31,6 +36,8 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -60,7 +67,29 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
-    return null;
+    String connectorRef = getConnectorRef(migratedEntities, artifactStream);
+    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    String imagePath = PLEASE_FIX_ME;
+    String repository = PLEASE_FIX_ME;
+    String format = docker.name();
+    String repositoryUrl = "";
+    if (artifactStream != null) {
+      ArtifactoryArtifactStream stream = (ArtifactoryArtifactStream) artifactStream;
+      imagePath = stream.getImageName();
+      repository = stream.getJobname();
+      format = docker.name().equals(stream.getRepositoryType()) ? docker.name() : "generic";
+      repositoryUrl = stream.getDockerRepositoryServer();
+    }
+
+    return ArtifactoryRegistrySpec.builder()
+        .connectorRef(connectorRef)
+        .eventConditions(eventConditions)
+        .repositoryFormat(format)
+        .repository(repository)
+        .repositoryUrl(repositoryUrl)
+        .artifactDirectory(imagePath)
+        .artifactPath(TRIGGER_TAG_VALUE_DEFAULT)
+        .build();
   }
 
   private ArtifactoryRegistryArtifactConfig generateDockerConfig(

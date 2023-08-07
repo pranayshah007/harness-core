@@ -3034,6 +3034,9 @@ public class UserServiceImpl implements UserService {
       updateOperations.set(UserKeys.externalUserId, user.getExternalUserId());
     }
 
+    if (isNotEmpty(user.getEmail())) {
+      updateOperations.set(UserKeys.email, user.getEmail());
+    }
     return updateUser(user.getUuid(), updateOperations);
   }
 
@@ -3273,7 +3276,7 @@ public class UserServiceImpl implements UserService {
       List<Account> updatedActiveAccounts = userServiceHelper.updatedActiveAccounts(user, accountId);
       List<Account> updatedPendingAccounts = userServiceHelper.updatedPendingAccount(user, accountId);
 
-      if (isUserPartOfAccountInNG.get()) {
+      if (isUserPartOfAccountInNG.get() && removeUserFilter.equals(NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK)) {
         userServiceHelper.deleteUserFromNG(userId, accountId, removeUserFilter);
       }
 
@@ -3283,6 +3286,7 @@ public class UserServiceImpl implements UserService {
 
       if (updatedActiveAccounts.isEmpty() && updatedPendingAccounts.isEmpty()) {
         deleteUser(user);
+        userServiceHelper.deleteUserMetadata(userId);
         return;
       }
 

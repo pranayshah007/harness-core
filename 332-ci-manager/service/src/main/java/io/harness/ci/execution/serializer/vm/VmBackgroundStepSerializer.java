@@ -43,6 +43,7 @@ public class VmBackgroundStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject CIFeatureFlagService featureFlagService;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmBackgroundStep serialize(BackgroundStepInfo backgroundStepInfo, Ambiance ambiance, String identifier,
       List<CIRegistry> registries, String delegateId) {
@@ -86,15 +87,15 @@ public class VmBackgroundStepSerializer {
       }
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
         ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 
     if (!isEmpty(command)) {
-      String earlyExitCommand = SerializerUtils.getEarlyExitCommand(backgroundStepInfo.getShell(), false);
+      String earlyExitCommand = SerializerUtils.getEarlyExitCommand(backgroundStepInfo.getShell());
       command = earlyExitCommand + command;
     }
-
-    command = SerializerUtils.prependPrintCommand(command, backgroundStepInfo.getShell());
 
     ConnectorDetails connectorDetails = null;
     if (!StringUtils.isEmpty(image) && !StringUtils.isEmpty(connectorIdentifier)) {

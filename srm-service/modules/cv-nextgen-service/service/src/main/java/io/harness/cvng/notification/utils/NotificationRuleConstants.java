@@ -24,7 +24,12 @@ public class NotificationRuleConstants {
   public static final String HEADER_MESSAGE = "HEADER_MESSAGE";
   public static final String TRIGGER_MESSAGE = "TRIGGER_MESSAGE";
   public static final String ANOMALOUS_METRIC = "ANOMALOUS_METRIC";
+  public static final String SLO_PERFORMANCE_SLACK = "SLO_PERFORMANCE_SLACK";
+
+  public static final String SLO_PERFORMANCE_EMAIL = "SLO_PERFORMANCE_EMAIL";
+
   public static final String SLO_PERFORMANCE = "SLO_PERFORMANCE";
+
   public static final String MS_HEALTH_REPORT = "MS_HEALTH_REPORT";
   public static final String MODULE_NAME = "cv";
   public static final String CET_MODULE_NAME = "cet";
@@ -86,20 +91,28 @@ public class NotificationRuleConstants {
   public static final String ANALYSIS_STARTED_AT = "ANALYSIS_STARTED_AT";
 
   public static final String ANALYSIS_PIPELINE_NAME = "ANALYSIS_PIPELINE_NAME";
-  public static final String PIPELINE_URL = "PIPELINE_URL";
 
   public static final String PIPELINE_URL_FORMAT =
       "/account/%s/cd/orgs/%s/projects/%s/pipelines/%s/executions/%s/pipeline?stage=%s";
 
   public static final String ANALYSIS_ENDED_AT = "ANALYSIS_ENDED_AT";
 
-  public static String SLO_PERFORMANCE_SECTION = "SLO Name: <${SLO_URL}|${SLO_NAME}>\n"
+  public static String SLO_PERFORMANCE_SECTION_FOR_FIREHYDRANT_SLACK = "SLO Name: <${SLO_URL}|${SLO_NAME}>\n"
       + "SLO Target: ${SLO_TARGET}%\n"
       + "SLI 1 hour before: ${PAST_SLO_TARGET}%\n"
       + "SLI now: ${CURRENT_SLO_TARGET}%\n"
       + "Error budget burned: ${ERROR_BUDGET_BURNED} min\n\n";
 
-  public static String SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT = "SLO Name: <${SLO_URL}|${SLO_NAME}>\n"
+  public static String SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT_PAGERDUTY = "SLO Name: ${SLO_NAME}\n"
+      + "SLO Target: ${SLO_TARGET}%\n"
+      + "SLI at the start of the analysis: ${PAST_SLO_TARGET}%\n"
+      + "SLI at the end of the analysis: ${CURRENT_SLO_TARGET}%\n"
+      + "Error budget burned: ${ERROR_BUDGET_BURNED} min\n\n";
+
+  public static String SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT_EMAIL =
+      "<p>\n<div>\n  <div>\n    <b>SLO Name</b>: <a href=\\\"${SLO_URL}\\\" target=\\\"_blank\\\" style=\\\"text-decoration: none; color: #1a89bf;\\\">\n      <b>${SLO_NAME}</b>\n    </a>\n  </div>\n  <div style=\\\"color: #0B0B0D;\\\">\n    <b>SLO Target</b>: ${SLO_TARGET}%\n  </div>\n  <div style=\\\"color: #0B0B0D;\\\">\n    <b>SLI at the start of the analysis</b>: ${PAST_SLO_TARGET}%\n  </div>\n  <div style=\\\"color: #0B0B0D;\\\">\n    <b>SLI at the end of the analysis</b>: ${CURRENT_SLO_TARGET}%\n  </div>\n  <div style=\\\"color: #0B0B0D;\\\">\n    <b>Error Budget Remaining</b>: ${ERROR_BUDGET_BURNED} min\n  </div>\n</div>\n</p>";
+
+  public static String SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT_SLACK = "SLO Name: <${SLO_URL}|${SLO_NAME}>\n"
       + "SLO Target: ${SLO_TARGET}%\n"
       + "SLI at the start of the analysis: ${PAST_SLO_TARGET}%\n"
       + "SLI at the end of the analysis: ${CURRENT_SLO_TARGET}%\n"

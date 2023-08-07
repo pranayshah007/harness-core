@@ -50,6 +50,7 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
 import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
 import io.harness.pms.pipeline.PipelineResourceConstants;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 
 import io.swagger.annotations.Api;
@@ -443,6 +444,36 @@ public interface InputSetResourcePMS {
       @Parameter(description = "Github Repo identifier of the Pipeline to which the Input Sets belong")
       @QueryParam("pipelineRepoID") String pipelineRepoID, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @NotNull @Valid MergeInputSetForRerunRequestDTO mergeInputSetForRerunRequestDTO);
+
+  @POST
+  @Path("merge-input-for-execution")
+  @ApiOperation(value = "Merges pipeline template and input set yaml of pipeline execution for given planExecutionId",
+      nickname = "getMergeInputForExecution")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "mergeInputsForExecution",
+      summary = "Merges pipeline template and input set yaml of pipeline execution for given planExecutionId",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Merges pipeline template and input set yaml of pipeline execution for given planExecutionId")
+      })
+  @Hidden
+  ResponseDTO<MergeInputSetResponseDTOPMS>
+  getMergeInputForExecution(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
+                                description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier @Parameter(
+          description = PipelineResourceConstants.ORG_PARAM_MESSAGE) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
+          description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
+      @Parameter(
+          description = "A boolean that indicates whether or not expressions should be resolved in input set yaml")
+      @QueryParam("resolveExpressions") @DefaultValue("false") boolean resolveExpressions,
+      @Parameter(description =
+                     "Resolve Expressions Type indicates what kind of expressions should be resolved in input set yaml."
+              + "The default value is UNKNOWN in which case no expressions will be resolved"
+              + "Choose a value from the enum list: [RESOLVE_ALL_EXPRESSIONS, RESOLVE_TRIGGER_EXPRESSIONS, UNKNOWN]")
+      @QueryParam("resolveExpressionsType") @DefaultValue("UNKNOWN") ResolveInputYamlType resolveExpressionsType,
+      @NotNull @QueryParam("planExecutionId") String planExecutionId);
 
   @POST
   @Path("mergeWithTemplateYaml")

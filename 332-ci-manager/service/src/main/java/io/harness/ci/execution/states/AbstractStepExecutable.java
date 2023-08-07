@@ -24,6 +24,7 @@ import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.CiStepParametersUtils;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
@@ -67,6 +68,7 @@ import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunTestStep;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.delegate.task.HDelegateTask;
+import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.delegate.task.stepstatus.artifact.Artifact;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
@@ -136,6 +138,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
   @Inject private HostedVmSecretResolver hostedVmSecretResolver;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private InputSetValidatorFactory inputSetValidatorFactory;
+  @Inject private CiStepParametersUtils ciStepParametersUtils;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -375,6 +378,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       if (isNotEmpty(taskResponse.getErrorMessage())) {
         errMsg = taskResponse.getErrorMessage();
       }
+      ciStepParametersUtils.saveCIStepStatusInfo(ambiance, StepExecutionStatus.FAILURE, stepIdentifier);
       return stepResponseBuilder.status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder()
                            .setErrorMessage(errMsg)
@@ -409,19 +413,19 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
   @Override
   public UnitStep serialiseStep(CIStepInfo ciStepInfo, String taskId, String logKey, String stepIdentifier,
       Integer port, String accountId, String stepName, String timeout, OSType os, Ambiance ambiance,
-      StageDetails stageDetails) {
+      StageDetails stageDetails, String podName) {
     switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
         return runStepProtobufSerializer.serializeStepWithStepParameters((RunStepInfo) ciStepInfo, port, taskId, logKey,
-            stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName,
-            ambiance);
+            stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName, ambiance,
+            podName);
       case BACKGROUND:
-        return backgroundStepProtobufSerializer.serializeStepWithStepParameters(
-            (BackgroundStepInfo) ciStepInfo, port, taskId, logKey, stepIdentifier, accountId, stepName, ambiance);
+        return backgroundStepProtobufSerializer.serializeStepWithStepParameters((BackgroundStepInfo) ciStepInfo, port,
+            taskId, logKey, stepIdentifier, accountId, stepName, ambiance, podName);
       case PLUGIN:
         return pluginStepProtobufSerializer.serializeStepWithStepParameters((PluginStepInfo) ciStepInfo, port, taskId,
             logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName,
-            stageDetails.getExecutionSource());
+            stageDetails.getExecutionSource(), podName, ambiance);
       case GCR:
       case DOCKER:
       case ECR:
@@ -441,11 +445,11 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       case IACM_APPROVAL:
         return pluginCompatibleStepSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
-            stepName, os, ambiance);
+            stepName, os, ambiance, podName);
       case RUN_TESTS:
         return runTestsStepProtobufSerializer.serializeStepWithStepParameters((RunTestsStepInfo) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
-            stepName, ambiance);
+            stepName, ambiance, podName);
       case CLEANUP:
       case TEST:
       case BUILD:

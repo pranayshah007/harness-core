@@ -37,6 +37,7 @@ import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -346,7 +347,7 @@ public class HarnessApprovalStepTest {
     Ambiance ambiance = buildAmbiance();
     StepElementParameters parameters = getStepElementParameters();
     harnessApprovalStep.handleAbort(ambiance, parameters, null);
-    verify(approvalInstanceService).expireByNodeExecutionId(null);
+    verify(approvalInstanceService).abortByNodeExecutionId(INSTANCE_ID);
     verify(logStreamingStepClient).closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
@@ -410,6 +411,7 @@ public class HarnessApprovalStepTest {
         .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+        .addLevels(Level.newBuilder().setRuntimeId(INSTANCE_ID).build())
         .build();
   }
 

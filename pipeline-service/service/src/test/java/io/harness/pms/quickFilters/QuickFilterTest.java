@@ -298,7 +298,7 @@ public class QuickFilterTest extends CategoryTest {
 
     // Verify that tags are present in criteria.
     assertEquals(form.getCriteriaObject().get("$and").toString(),
-        "[Document{{$and=[Document{{$or=[Document{{tags.key=Document{{$in=[key1]}}}}, Document{{tags.value=Document{{$in=[key1]}}}}]}}], tags=Document{{$in=[NGTag(key=key1, value=val1)]}}}}]");
+        "[Document{{$and=[Document{{$or=[Document{{tags.key=Document{{$in=[key1]}}}}, Document{{tags.value=Document{{$in=[key1]}}}}, Document{{tags=Document{{$in=[NGTag(key=key1, value=val1)]}}}}]}}]}}]");
     assertThatThrownBy(()
                            -> pmsExecutionServiceImpl.formCriteria(accountId, orgId, projId, pipelineId, null,
                                PipelineExecutionFilterPropertiesDTO.builder()

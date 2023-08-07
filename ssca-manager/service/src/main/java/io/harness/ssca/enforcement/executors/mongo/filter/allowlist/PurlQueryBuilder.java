@@ -13,9 +13,10 @@ import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMEnti
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import lombok.Builder;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.query.BasicQuery;
@@ -57,24 +58,23 @@ public class PurlQueryBuilder implements QueryBuilder {
       filterList.add(new Document(NormalizedSBOMEntityKeys.packageName.toLowerCase(), packageName));
 
       List<Document> innerFilters = new ArrayList<>();
-      Map<String, Object> regexPattern = new HashMap<>();
-      regexPattern.put(MongoOperators.MONGO_REGEX, version);
-      regexPattern.put(MongoOperators.MONGO_REGEX_OPTIONS, 'i');
+      Pattern regex = Pattern.compile(version, Pattern.CASE_INSENSITIVE);
       Document packageVersionFilter = new Document(NormalizedSBOMEntityKeys.packageVersion.toLowerCase(),
-          new Document(MongoOperators.MONGO_NOT, new Document(regexPattern)));
+          new Document(
+              MongoOperators.MONGO_NOT, new Document(MongoOperators.MONGO_IN, Collections.singletonList(regex))));
 
-      regexPattern.put(MongoOperators.MONGO_REGEX, packageManager);
-      regexPattern.put(MongoOperators.MONGO_REGEX_OPTIONS, 'i');
+      regex = Pattern.compile(packageManager, Pattern.CASE_INSENSITIVE);
       Document packageManagerFilter = new Document(NormalizedSBOMEntityKeys.packageManager.toLowerCase(),
-          new Document(MongoOperators.MONGO_NOT, new Document(regexPattern)));
+          new Document(
+              MongoOperators.MONGO_NOT, new Document(MongoOperators.MONGO_IN, Collections.singletonList(regex))));
       innerFilters.add(
           new Document(MongoOperators.MONGO_AND, Arrays.asList(packageVersionFilter, packageManagerFilter)));
 
       if (packageNamespace != null) {
-        regexPattern.put(MongoOperators.MONGO_REGEX, packageNamespace);
-        regexPattern.put(MongoOperators.MONGO_REGEX_OPTIONS, 'i');
+        regex = Pattern.compile(packageNamespace, Pattern.CASE_INSENSITIVE);
         Document packageNamespaceFilter = new Document(NormalizedSBOMEntityKeys.packageNamespace.toLowerCase(),
-            new Document(MongoOperators.MONGO_NOT, new Document(regexPattern)));
+            new Document(
+                MongoOperators.MONGO_NOT, new Document(MongoOperators.MONGO_IN, Collections.singletonList(regex))));
         innerFilters.add(packageNamespaceFilter);
       }
 

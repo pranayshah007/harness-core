@@ -179,6 +179,12 @@ public class SshSessionFactory {
       }
     }
     session.setConfig("StrictHostKeyChecking", "no");
+
+    //    Ref:
+    //    https://github.com/mwiede/jsch/blob/master/Readme.md#why-do-ssh-rsa-type-keys-not-work-with-this-jsch-fork-and-my-server
+    session.setConfig("server_host_key", session.getConfig("server_host_key") + ",ssh-rsa");
+    session.setConfig("PubkeyAcceptedAlgorithms", session.getConfig("PubkeyAcceptedAlgorithms") + ",ssh-rsa");
+
     session.setTimeout(config.getSshSessionTimeout());
     session.setServerAliveInterval(10 * 1000); // Send noop packet every 10 sec
 

@@ -10,6 +10,7 @@ package io.harness.cdng.execution.tas;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFileOutcome;
@@ -29,6 +30,7 @@ import lombok.experimental.FieldNameConstants;
 @Builder
 @FieldNameConstants(innerTypeName = "TasStageExecutionDetailsKeys")
 @JsonTypeName("TasStageExecutionDetails")
+@RecasterAlias("io.harness.cdng.execution.tas.TasStageExecutionDetails")
 public class TasStageExecutionDetails implements ExecutionDetails {
   private List<ArtifactOutcome> artifactsOutcome;
   private Map<String, ConfigFileOutcome> configFilesOutcome;

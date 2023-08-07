@@ -39,6 +39,8 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+    clickhouse:
+      enabled: false
   ingress:
     enabled: false
     className: harness
@@ -73,7 +75,7 @@ image:
   repository: harness/event-service-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "77317"
+  tag: "79404-000"
   digest: ""
 # image pull secrets to use for event-service image
   imagePullSecrets: []
@@ -141,18 +143,17 @@ ingress:
 
 resources:
   limits:
-    cpu: "512m"
     memory: "1840Mi"
   requests:
     cpu: "512m"
     memory: "1840Mi"
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
-  maxReplicas: 2
-  targetCPUUtilizationPercentage: 80
-# targetMemoryUtilizationPercentage: 80
+  maxReplicas: 100
+  targetCPU: ""
+  targetMemory: ""
 
 nodeSelector: {}
 
@@ -161,3 +162,24 @@ tolerations: []
 affinity: {}
 
 additionalConfigs: {}
+
+# extraVolumes:
+#   - name: volume-test
+#     configMap:
+#       name: test-config
+#       # readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: volume-test
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+lifecycleHooks: {}
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:

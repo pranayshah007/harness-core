@@ -64,8 +64,8 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
           null, "coll", null);
   private static final String key = "key";
   private static final String value = "value";
-  ChangeEvent<String, String> testRecord = new EmbeddedEngineChangeEvent<>(key, value, null);
-  ChangeEvent<String, String> emptyRecord = new EmbeddedEngineChangeEvent<>(null, null, null);
+  ChangeEvent<String, String> testRecord = new EmbeddedEngineChangeEvent<>(key, value, null, null);
+  ChangeEvent<String, String> emptyRecord = new EmbeddedEngineChangeEvent<>(null, null, null, null);
   @Mock DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> recordCommitter;
   @Test
   @Owner(developers = SHALINI)
@@ -116,7 +116,7 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
     List<ChangeEvent<String, String>> records = new ArrayList<>();
     ConnectHeaders headers = new ConnectHeaders();
     headers.add("__op", "c", Schema.STRING_SCHEMA);
-    ChangeEvent<String, String> testRecord = new EmbeddedEngineChangeEvent<>(key, value,
+    ChangeEvent<String, String> testRecord = new EmbeddedEngineChangeEvent<>(key, value, null,
         new SourceRecord(new HashMap<>(), new HashMap<>(), "topic", 0, Schema.BOOLEAN_SCHEMA, "", Schema.BOOLEAN_SCHEMA,
             "", 0L, headers));
     records.add(testRecord);

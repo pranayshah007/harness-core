@@ -25,7 +25,10 @@ import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.toSet;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.concurrent.HTimeLimiter;
@@ -133,6 +136,7 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetHealthDescription;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @OwnedBy(CDP)
 public class AsgSdkManager {
@@ -501,6 +505,19 @@ public class AsgSdkManager {
 
     long totalNrOfInstances = instances.size();
     return totalNrOfInstances == 0;
+  }
+
+  public void downSizeToZero(String asgName) {
+    info("Downsizing ASG `%s` to 0", asgName);
+    UpdateAutoScalingGroupRequest req = new UpdateAutoScalingGroupRequest()
+                                            .withAutoScalingGroupName(asgName)
+                                            .withMinSize(0)
+                                            .withMaxSize(0)
+                                            .withDesiredCapacity(0);
+    asgCall(asgClient -> asgClient.updateAutoScalingGroup(req));
+
+    String operationName = format("Asg %s to reach steady state", asgName);
+    waitReadyState(asgName, this::checkAsgDownsizedToZero, operationName);
   }
 
   public StartInstanceRefreshResult startInstanceRefresh(

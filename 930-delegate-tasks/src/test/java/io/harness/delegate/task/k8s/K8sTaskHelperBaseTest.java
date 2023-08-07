@@ -27,8 +27,6 @@ import static io.harness.k8s.K8sConstants.SKIP_FILE_FOR_DEPLOY_PLACEHOLDER_TEXT;
 import static io.harness.k8s.KubernetesConvention.ReleaseHistoryKeyName;
 import static io.harness.k8s.manifest.ManifestHelper.processYaml;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
-import static io.harness.k8s.model.K8sExpressions.canaryDestinationExpression;
-import static io.harness.k8s.model.K8sExpressions.stableDestinationExpression;
 import static io.harness.k8s.model.Kind.ConfigMap;
 import static io.harness.k8s.model.Kind.Deployment;
 import static io.harness.k8s.model.Kind.DeploymentConfig;
@@ -159,7 +157,6 @@ import io.harness.exception.WingsException;
 import io.harness.filesystem.FileIo;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
-import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.ProcessResponse;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
@@ -177,10 +174,8 @@ import io.harness.k8s.kubectl.RolloutHistoryCommand;
 import io.harness.k8s.kubectl.ScaleCommand;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessAnnotations;
-import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.HelmVersion;
-import io.harness.k8s.model.IstioDestinationWeight;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
@@ -212,27 +207,6 @@ import com.google.common.io.Resources;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
-import io.fabric8.istio.api.networking.v1alpha3.Destination;
-import io.fabric8.istio.api.networking.v1alpha3.DestinationBuilder;
-import io.fabric8.istio.api.networking.v1alpha3.HTTPRoute;
-import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteBuilder;
-import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestination;
-import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestinationBuilder;
-import io.fabric8.istio.api.networking.v1alpha3.PortSelectorBuilder;
-import io.fabric8.istio.api.networking.v1alpha3.Subset;
-import io.fabric8.istio.api.networking.v1alpha3.TCPRoute;
-import io.fabric8.istio.api.networking.v1alpha3.TLSRoute;
-import io.fabric8.istio.api.networking.v1alpha3.VirtualService;
-import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceBuilder;
-import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceSpec;
-import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceSpecBuilder;
-import io.fabric8.kubernetes.api.model.ContainerStatusBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.fabric8.kubernetes.api.model.PodStatusBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.ParameterNamespaceListVisitFromServerGetDeleteRecreateWaitApplicable;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
@@ -323,7 +297,6 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Mock private K8sYamlToDelegateDTOMapper mockK8sYamlToDelegateDTOMapper;
   @Mock private SecretDecryptionService mockSecretDecryptionService;
   @Mock private ExecutionConfigOverrideFromFileOnDelegate delegateLocalConfigService;
-  @Mock private KubernetesHelperService kubernetesHelperService;
   @Mock private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Mock private NGErrorHelper ngErrorHelper;
   @Mock private K8sApiClient k8sApiClient;
@@ -1886,120 +1859,6 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
-  public void testUpdateVirtualServiceWithDestinationWeights() throws IOException {
-    VirtualService service = virtualServiceWith(ImmutableMap.of("localhost", 2304));
-    List<IstioDestinationWeight> destinationWeights =
-        asList(IstioDestinationWeight.builder().destination(canaryDestinationExpression).weight("10").build(),
-            IstioDestinationWeight.builder().destination(stableDestinationExpression).weight("40").build(),
-            IstioDestinationWeight.builder().destination("host: test\nsubset: default").weight("50").build());
-
-    k8sTaskHelperBase.updateVirtualServiceWithDestinationWeights(destinationWeights, service, executionLogCallback);
-    List<HTTPRouteDestination> routes = service.getSpec().getHttp().get(0).getRoute();
-    assertThat(routes.stream().map(HTTPRouteDestination::getWeight)).containsExactly(10, 40, 50);
-    assertThat(routes.stream().map(HTTPRouteDestination::getDestination).map(Destination::getSubset))
-        .containsExactly(HarnessLabelValues.trackCanary, HarnessLabelValues.trackStable, "default");
-  }
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testUpdateVirtualServiceWithDestinationWeightsMultipleRoutes() {
-    VirtualService service = virtualServiceWith(ImmutableMap.of("localhost", 2304, "0.0.0.0", 8030));
-    List<IstioDestinationWeight> destinationWeights = emptyList();
-    assertThatThrownBy(()
-                           -> k8sTaskHelperBase.updateVirtualServiceWithDestinationWeights(
-                               destinationWeights, service, executionLogCallback))
-        .hasMessageContaining("Only one route is allowed in VirtualService");
-  }
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testUpdateVirtualServiceWithDestinationWeightsNoRoutes() {
-    VirtualService service = virtualServiceWith(ImmutableMap.of());
-    List<IstioDestinationWeight> destinationWeights = emptyList();
-    assertThatThrownBy(()
-                           -> k8sTaskHelperBase.updateVirtualServiceWithDestinationWeights(
-                               destinationWeights, service, executionLogCallback))
-        .hasMessageContaining("Http route is not present in VirtualService. Only Http routes are allowed");
-  }
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testUpdateVirtualServiceWithDestinationWeightsNonHttpRoutes() {
-    VirtualServiceSpec spec = new VirtualServiceSpecBuilder().withHttp(new HTTPRoute()).withTcp(new TCPRoute()).build();
-    VirtualService service = new VirtualServiceBuilder().withSpec(spec).build();
-    List<IstioDestinationWeight> destinationWeights = emptyList();
-    assertThatThrownBy(()
-                           -> k8sTaskHelperBase.updateVirtualServiceWithDestinationWeights(
-                               destinationWeights, service, executionLogCallback))
-        .hasMessageContaining("Only Http routes are allowed in VirtualService for Traffic split");
-
-    spec.setTcp(emptyList());
-    spec.setTls(asList(new TLSRoute()));
-    assertThatThrownBy(()
-                           -> k8sTaskHelperBase.updateVirtualServiceWithDestinationWeights(
-                               destinationWeights, service, executionLogCallback))
-        .hasMessageContaining("Only Http routes are allowed in VirtualService for Traffic split");
-  }
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testUpdateVirtualServiceManifestFilesWithRoutesForCanary() throws IOException {
-    VirtualService service1 = virtualServiceWith(ImmutableMap.of("localhost", 1234));
-    List<KubernetesResource> resources =
-        asList(KubernetesResource.builder()
-                   .resourceId(KubernetesResourceId.builder().name("service1").kind(Kind.VirtualService.name()).build())
-                   .value(ImmutableMap.of(
-                       "metadata", ImmutableMap.of("annotations", ImmutableMap.of(HarnessAnnotations.managed, "true"))))
-                   .spec("mock")
-                   .build(),
-            KubernetesResource.builder()
-                .resourceId(KubernetesResourceId.builder().name("service2").kind(Kind.VirtualService.name()).build())
-                .value(ImmutableMap.of())
-                .build(),
-            KubernetesResource.builder()
-                .resourceId(KubernetesResourceId.builder().name("deployment").kind(Deployment.name()).build())
-                .build());
-
-    KubernetesClient mockClient = mock(KubernetesClient.class);
-    doReturn(mockClient).when(kubernetesHelperService).getKubernetesClient(any());
-    ParameterNamespaceListVisitFromServerGetDeleteRecreateWaitApplicable resource =
-        mock(ParameterNamespaceListVisitFromServerGetDeleteRecreateWaitApplicable.class);
-    doReturn(resource).when(mockClient).load(any());
-    doReturn(asList(service1)).when(resource).items();
-    VirtualService result = k8sTaskHelperBase.updateVirtualServiceManifestFilesWithRoutesForCanary(
-        resources, KubernetesConfig.builder().build(), executionLogCallback);
-    List<HTTPRouteDestination> routes = result.getSpec().getHttp().get(0).getRoute();
-    assertThat(routes.stream().map(HTTPRouteDestination::getWeight)).containsExactly(100, 0);
-    assertThat(routes.stream().map(HTTPRouteDestination::getDestination).map(Destination::getSubset))
-        .containsExactly(HarnessLabelValues.trackStable, HarnessLabelValues.trackCanary);
-  }
-
-  private VirtualService virtualServiceWith(Map<String, Integer> destinations) {
-    List<HTTPRoute> routes =
-        destinations.entrySet()
-            .stream()
-            .map(entry
-                -> new HTTPRouteBuilder()
-                       .withRoute(new HTTPRouteDestinationBuilder()
-                                      .withDestination(
-                                          new DestinationBuilder()
-                                              .withHost(entry.getKey())
-                                              .withPort(new PortSelectorBuilder().withNumber(entry.getValue()).build())
-                                              .build())
-                                      .build())
-                       .build())
-            .collect(Collectors.toList());
-
-    return new VirtualServiceBuilder().withSpec(new VirtualServiceSpecBuilder().withHttp(routes).build()).build();
-  }
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
   public void testDelete() throws Exception {
     Kubectl kubectl = Kubectl.client("kubectl", "test");
     K8sDelegateTaskParams params = K8sDelegateTaskParams.builder().build();
@@ -2316,27 +2175,6 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(podsWithReleaseNameEmpty).isEmpty();
   }
 
-  private Pod k8sApiMockPodWith(String uid, Map<String, String> labels, List<String> containerIds) {
-    return new PodBuilder()
-        .withMetadata(new ObjectMetaBuilder()
-                          .withUid(uid)
-                          .withName(uid + "-name")
-                          .withNamespace("default")
-                          .withLabels(labels)
-                          .build())
-        .withStatus(new PodStatusBuilder()
-                        .withContainerStatuses(containerIds.stream()
-                                                   .map(id
-                                                       -> new ContainerStatusBuilder()
-                                                              .withContainerID(id)
-                                                              .withName(id + "-name")
-                                                              .withImage("example:0.0.1")
-                                                              .build())
-                                                   .collect(Collectors.toList()))
-                        .build())
-        .build();
-  }
-
   private void assertThatK8sPodHas(K8sPod pod, String uid, Map<String, String> labels, List<String> containerIds) {
     assertThat(pod.getUid()).isEqualTo(uid);
     assertThat(pod.getName()).isEqualTo(uid + "-name");
@@ -2349,21 +2187,6 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
       assertThat(container.getName()).isEqualTo(expectedContainerId + "-name");
       assertThat(container.getImage()).isEqualTo("example:0.0.1");
     });
-  }
-
-  @Test
-  @Owner(developers = SAHIL)
-  @Category(UnitTests.class)
-  public void testGenerateSubsetsForDestinationRule() {
-    List<String> subsetNames = new ArrayList<>();
-    subsetNames.add(HarnessLabelValues.trackCanary);
-    subsetNames.add(HarnessLabelValues.trackStable);
-    subsetNames.add(HarnessLabelValues.colorBlue);
-    subsetNames.add(HarnessLabelValues.colorGreen);
-
-    final List<Subset> result = k8sTaskHelperBase.generateSubsetsForDestinationRule(subsetNames);
-
-    assertThat(result.size()).isEqualTo(4);
   }
 
   @Test

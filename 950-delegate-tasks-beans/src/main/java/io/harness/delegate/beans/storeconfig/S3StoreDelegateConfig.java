@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.storeconfig;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -20,6 +21,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig")
 public class S3StoreDelegateConfig implements StoreDelegateConfig {
   String bucketName;
   String region;

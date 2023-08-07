@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.genericgitconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.delegate.beans.connector.scm.GitConfigConstants;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitAuthenticationOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitHTTPAuthenticationOutcomeDTO;
@@ -29,6 +30,7 @@ import lombok.EqualsAndHashCode;
 @OneOfField(fields = {"username", "usernameRef"})
 @Schema(name = "GitAuthentication",
     description = "This contains details of the Generic Git authentication information used via HTTP connections")
+@RecasterAlias("io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO")
 public class GitHTTPAuthenticationDTO extends GitAuthenticationDTO {
   String username;
   @SecretReference @ApiModelProperty(dataType = "string") SecretRefData usernameRef;

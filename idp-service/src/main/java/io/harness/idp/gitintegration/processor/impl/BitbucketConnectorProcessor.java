@@ -52,7 +52,6 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
   public Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
-    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.BITBUCKET_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not bitbucket connector for accountId: [%s]", connectorIdentifier,
@@ -114,6 +113,15 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
           GitIntegrationUtils.getBackstageEnvSecretVariable(
               bitbucketUsernameTokenApiAccessDTO.getTokenRef().getIdentifier(), Constants.BITBUCKET_API_ACCESS_TOKEN));
     }
+    return secrets;
+  }
+
+  @Override
+  public void createOrUpdateIntegrationConfig(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
+    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
+    BitbucketConnectorDTO config = (BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    BitbucketApiAccessDTO apiAccess = config.getApiAccess();
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
 
     if (apiAccess != null && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
       connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_SERVER_PAT;
@@ -129,7 +137,6 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
 
     configManagerService.createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO,
         ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString), connectorTypeAsString);
-    return secrets;
   }
 
   @Override

@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -90,4 +91,7 @@ public interface PMSExecutionService {
   String mergeRuntimeInputIntoPipelineForRerun(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, String pipelineBranch, String pipelineRepoID,
       List<String> stageIdentifiers);
+
+  String mergeRuntimeInputIntoPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String planExecutionId, boolean resolveExpressions, ResolveInputYamlType resolveExpressionsType);
 }

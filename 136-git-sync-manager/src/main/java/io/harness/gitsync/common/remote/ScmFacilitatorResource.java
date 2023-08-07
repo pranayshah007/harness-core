@@ -361,9 +361,7 @@ public class ScmFacilitatorResource {
       @Parameter(description = SIZE_PARAM_MESSAGE + "(max 100)"
               + "Default Value: 50") @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("50") @Max(100)
       int pageSize,
-      @Parameter(description = GitSyncApiConstants.APPLY_GITX_REPO_ALLOW_LIST_FILTER_PARAM_MESSAGE)
-      @QueryParam(NGCommonEntityConstants.APPLY_GITX_REPO_ALLOW_LIST_FILTER) @DefaultValue("false")
-      boolean applyGitXRepoAllowListFilter, @BeanParam ScmRepoFilterParams scmRepoFilterParams) {
+      @BeanParam ScmRepoFilterParams scmRepoFilterParams) {
     RepoFilterParameters repoFilterParameters;
     if (scmRepoFilterParams == null) {
       repoFilterParameters = RepoFilterParameters.builder().build();
@@ -371,11 +369,12 @@ public class ScmFacilitatorResource {
       repoFilterParameters = RepoFilterParameters.builder()
                                  .repoName(scmRepoFilterParams.getRepoName())
                                  .userName(scmRepoFilterParams.getUserName())
+                                 .applyGitXRepoAllowListFilter(scmRepoFilterParams.isApplyGitXRepoAllowListFilter())
                                  .build();
     }
-    return ResponseDTO.newResponse(scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier,
-        projectIdentifier, connectorRef, PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(),
-        repoFilterParameters, applyGitXRepoAllowListFilter));
+    return ResponseDTO.newResponse(
+        scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
+            PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(), repoFilterParameters));
   }
 
   @GET

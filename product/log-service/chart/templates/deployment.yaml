@@ -52,6 +52,9 @@ spec:
                 name: {{ .Values.logServiceS3SecretAccessKey.name }}
                 key: {{ .Values.logServiceS3SecretAccessKey.key }}
           {{- end }}
+          {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "LOG_SERVICE_REDIS_USERNAME" "passwordVariableName" "LOG_SERVICE_REDIS_PASSWORD") | indent 10 }}
+          - name: LOG_SERVICE_REDIS_DISABLE_EXPIRY_WATCHER
+            value: {{ .Values.redis.disableWatcher | quote }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -74,6 +77,13 @@ spec:
           protocol: "TCP"
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.lifecycleHooks }}
+        lifecycle: {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.extraVolumeMounts }}
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+        {{- end }}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -94,4 +104,8 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.extraVolumes }}
+      volumes:
+      {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.extraVolumes "context" $ ) | nindent 8 }}
       {{- end }}

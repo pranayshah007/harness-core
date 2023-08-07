@@ -8,17 +8,21 @@
 package io.harness.connector.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.beans.connector.scm.github.GithubConnectorConstants.GITHUB_APP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsSpecDTO;
 import io.harness.exception.InvalidRequestException;
 
+import java.util.Arrays;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -30,6 +34,13 @@ public class GitAuthenticationDecryptionHelper {
       return gitHubConnector.getAuthentication().getAuthType() == GitAuthType.HTTP
           && ((GithubHttpCredentialsDTO) gitHubConnector.getAuthentication().getCredentials()).getHttpCredentialsSpec()
                  instanceof GithubAppDTO;
+    } else if (scmConnector instanceof GitConfigDTO) {
+      GitConfigDTO gitConfigDTO = (GitConfigDTO) scmConnector;
+      return gitConfigDTO.getGitAuth() instanceof GitHTTPAuthenticationDTO
+          && (GITHUB_APP.equals(
+              ((GitHTTPAuthenticationDTO) gitConfigDTO.getGitAuth()).getPasswordRef().getIdentifier()))
+          && (Arrays.equals(GITHUB_APP.toCharArray(),
+              ((GitHTTPAuthenticationDTO) gitConfigDTO.getGitAuth()).getPasswordRef().getDecryptedValue()));
     }
     return false;
   }

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.genericgitconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -48,6 +49,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @OwnedBy(HarnessTeam.DX)
 
 @Schema(name = "GitConfig", description = "This contains details of the Generic Git connector")
+@RecasterAlias("io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO")
 public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable, ManagerExecutable {
   @NotNull @JsonProperty("type") private GitAuthType gitAuthType;
   @NotNull @JsonProperty("connectionType") private GitConnectionType gitConnectionType;

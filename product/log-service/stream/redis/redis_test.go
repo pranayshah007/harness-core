@@ -461,7 +461,7 @@ func TestListPrefixes(t *testing.T) {
 	mr.XAdd("key2", "*", []string{"k1", "v1"})
 	mr.XAdd("differentPrefix", "*", []string{"k1", "v1"})
 
-	l, err := rdb.ListPrefix(ctx, "key")
+	l, err := rdb.ListPrefix(ctx, "key", 1000)
 	assert.Nil(t, err)
 	assert.Equal(t, len(l), 2)
 	assert.Contains(t, l, "key1")

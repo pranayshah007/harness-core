@@ -44,5 +44,6 @@ public enum Action {
   PAUSE,
   RESUME,
   ABORT,
-  TIMEOUT
+  TIMEOUT,
+  SIGNED_EULA
 }
