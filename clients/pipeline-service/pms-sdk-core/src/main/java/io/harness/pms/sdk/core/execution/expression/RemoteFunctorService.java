@@ -40,6 +40,7 @@ public class RemoteFunctorService extends RemoteFunctorServiceImplBase {
       SdkFunctor functor = functorRegistry.obtain(request.getFunctorKey());
       ProtocolStringList argsList = request.getArgsList();
       Object result = functor.get(request.getAmbiance(), argsList.toArray(new String[0]));
+      log.info("REMOTE_FUNCTOR_EVALUATE: Size: {} for args: {}", result.toString().length(), argsList);
       if (RecastReflectionUtils.isPrimitiveLike(result.getClass())) {
         expressionResponse = ExpressionResponse.newBuilder()
                                  .setIsPrimitive(true)
