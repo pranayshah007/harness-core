@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Arrays;
 import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("archType")
@@ -29,7 +30,8 @@ public enum ArchType {
         return archType;
       }
     }
-    throw new IllegalArgumentException("Invalid value: " + yamlName);
+    throw new IllegalArgumentException(
+        String.format("Arch type %s is invalid, valid values are : %s", yamlName, Arrays.asList(ArchType.values())));
   }
 
   ArchType(String yamlName) {

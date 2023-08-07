@@ -2,24 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
-  secrets:
-    app:
-      external:
-        ## if FALSE, Generate all secrets within K8s Namespace
-        ## If TRUE, use one of the followings kids to inject
-        enabled: false 
-        kind:
-          # use ExternalSecrets Operator
-          externalSecrets: false
-          # Use CSI Driver volume mount
-          csiSecretDriver: false          
-    database:
-      external:
-        enabled: false
-        kind:
-          externalSecrets: false
-          csiSecretDriver: false 
-  useExternalSecrets: false
   loadbalancerURL: "https://test"
   database:
     postgres:
@@ -57,6 +39,10 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+      certName: ""
+      certKey: ""
+    clickhouse:
+      enabled: false
   ingress:
     enabled: false
     className: harness
@@ -77,8 +63,6 @@ replicaCount: 1
 
 isolatedReplica: 0
 
-
-
 java:
   memory: "7168"
 
@@ -87,7 +71,7 @@ image:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "78605-000"
+  tag: "80001-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -97,7 +81,7 @@ imageClickhouseEnabled:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "78605-000"
+  tag: "80001-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -159,9 +143,9 @@ service:
 autoscaling:
   enabled: false
   minReplicas: 1
-  maxReplicas: 2
-  targetCPUUtilizationPercentage: 80
-# targetMemoryUtilizationPercentage: 80
+  maxReplicas: 100
+  targetCPU: ""
+  targetMemory: ""
 
 nodeSelector: {}
 
@@ -180,7 +164,6 @@ awsAccountTagsCollectionJobConfig:
   enabled: true
 
 clickhouse:
-  enabled: false
   username: "default"
   password:
     name: clickhouse
@@ -191,10 +174,30 @@ workloadIdentity:
 
 resources:
   limits:
-    cpu: "1024m"
     memory: "10Gi"
   requests:
     cpu: "1024m"
     memory: "10Gi"
 
 additionalConfigs: {}
+
+# extraVolumes:
+#   - name: volume-test
+#     configMap:
+#       name: test-config
+#       # readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: volume-test
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+lifecycleHooks: {}
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:

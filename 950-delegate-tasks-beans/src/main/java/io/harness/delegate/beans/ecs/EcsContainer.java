@@ -7,11 +7,14 @@
 
 package io.harness.delegate.beans.ecs;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.delegate.beans.ecs.EcsContainer")
 public class EcsContainer {
   private String containerArn;
   private String name;

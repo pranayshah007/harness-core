@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -460,6 +461,160 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     assertThat(nodeExecutions)
         .extracting(NodeExecution::getUuid)
         .containsExactlyInAnyOrder(nodeExecution.getUuid(), nodeExecution1.getUuid());
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testFetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithoutOldRetries() {
+    String stpGrp1Fqn = "pipeline.stages.stage1.stg1";
+    String stpGrp1Child1Fqn = "pipeline.stages.stage1.stg1.shell1";
+    String stpGrp2Fqn = "pipeline.stages.stage1.stg1.stg2";
+    String stpGrp2Child1Fqn = "pipeline.stages.stage1.stg1.stg2.shell2";
+
+    String planExecutionUuid = generateUuid();
+    String parentId = generateUuid();
+    String nodeUuid = generateUuid();
+    String nodeExecutionUuid = generateUuid();
+
+    // Node execution of Parent StepGroup
+    NodeExecution nodeExecution1 =
+        NodeExecution.builder()
+            .uuid(nodeExecutionUuid)
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .planNode(
+                PlanNode.builder()
+                    .uuid(nodeUuid)
+                    .name("name")
+                    .identifier("stg1")
+                    .stageFqn(stpGrp1Fqn)
+                    .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP_GROUP).build())
+                    .serviceName("CD")
+                    .build())
+            .status(Status.RUNNING)
+            .nodeId(nodeUuid)
+            .name("name")
+            .identifier("stage1")
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP_GROUP).build())
+            .module("CD")
+            .build();
+    String nodeUuid2 = generateUuid();
+    String nodeExecutionUuid2 = generateUuid();
+    // Node execution of type step
+    NodeExecution nodeExecution2 =
+        NodeExecution.builder()
+            .uuid(nodeExecutionUuid2)
+            .parentId(nodeExecutionUuid)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .planNode(PlanNode.builder()
+                          .uuid(nodeUuid2)
+                          .name("name")
+                          .identifier("shell1")
+                          .stageFqn(stpGrp1Child1Fqn)
+                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+                          .serviceName("CD")
+                          .build())
+            .status(Status.RUNNING)
+            .nodeId(nodeUuid2)
+            .name("name")
+            .identifier("shell1")
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .build();
+
+    String nodeUuid3 = generateUuid();
+    String nodeExecutionUuid3 = generateUuid();
+    // Node execution of type child Step group
+    NodeExecution nodeExecution3 =
+        NodeExecution.builder()
+            .uuid(nodeExecutionUuid3)
+            .parentId(nodeExecutionUuid)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .planNode(
+                PlanNode.builder()
+                    .uuid(nodeUuid3)
+                    .name("name")
+                    .stageFqn(stpGrp2Fqn)
+                    .identifier("stage3")
+                    .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP_GROUP).build())
+                    .serviceName("CD")
+                    .build())
+            .status(Status.RUNNING)
+            .nodeId(nodeUuid3)
+            .name("name")
+            .identifier("stage3")
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP_GROUP).build())
+            .module("CD")
+            .build();
+
+    String nodeUuid4 = generateUuid();
+    String nodeExecutionUuid4 = generateUuid();
+    // Node execution of type step old retry
+    NodeExecution nodeExecution4 =
+        NodeExecution.builder()
+            .uuid(nodeExecutionUuid4)
+            .parentId(nodeExecutionUuid3)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .planNode(PlanNode.builder()
+                          .uuid(nodeUuid4)
+                          .name("name")
+                          .identifier("shell2")
+                          .stageFqn(stpGrp2Child1Fqn)
+                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+                          .serviceName("CD")
+                          .build())
+            .status(Status.RUNNING)
+            .nodeId(nodeUuid4)
+            .name("name")
+            .oldRetry(true)
+            .identifier("shell1")
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .build();
+
+    String nodeUuid5 = generateUuid();
+    String nodeExecutionUuid5 = generateUuid();
+    // Node execution of type shell latest retry
+    NodeExecution nodeExecution5 =
+        NodeExecution.builder()
+            .uuid(nodeExecutionUuid5)
+            .parentId(nodeExecutionUuid3)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .planNode(PlanNode.builder()
+                          .uuid(nodeUuid5)
+                          .name("name")
+                          .identifier("shell2")
+                          .stageFqn(stpGrp2Child1Fqn)
+                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+                          .serviceName("CD")
+                          .build())
+            .status(Status.RUNNING)
+            .nodeId(nodeUuid5)
+            .name("name")
+            .oldRetry(false)
+            .identifier("shell1")
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .build();
+
+    // saving nodeExecution
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
+    nodeExecutionService.save(nodeExecution1);
+    nodeExecutionService.save(nodeExecution2);
+    nodeExecutionService.save(nodeExecution3);
+    nodeExecutionService.save(nodeExecution4);
+    nodeExecutionService.save(nodeExecution5);
+    List<NodeExecution> nodeExecutions =
+        nodeExecutionService.fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithoutOldRetries(
+            planExecutionUuid, Arrays.asList(parentId));
+
+    assertThat(nodeExecutions).isNotEmpty();
+    assertThat(nodeExecutions.size()).isEqualTo(4);
+    assertThat(nodeExecutions)
+        .extracting(NodeExecution::getUuid)
+        .containsExactlyInAnyOrder(
+            nodeExecution1.getUuid(), nodeExecution2.getUuid(), nodeExecution3.getUuid(), nodeExecution5.getUuid());
   }
 
   @Test

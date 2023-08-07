@@ -215,6 +215,9 @@ public class VmInitializeTaskParamsBuilder {
         gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
 
     Map<String, String> envVars = new HashMap<>();
+    Map<String, String> stageEnvVars =
+        vmInitializeUtils.getStageEnvVars(integrationStageConfig.getPlatform(), os, workDir, poolId, infrastructure);
+    envVars.putAll(stageEnvVars);
     envVars.putAll(codebaseEnvVars);
     envVars.putAll(gitEnvVars);
 

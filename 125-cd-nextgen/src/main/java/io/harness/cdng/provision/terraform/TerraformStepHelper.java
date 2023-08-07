@@ -1101,6 +1101,7 @@ public class TerraformStepHelper {
             .fileStoreConfig(rollbackConfig.getFileStoreConfig())
             .varFileConfigs(rollbackConfig.getVarFileConfigs())
             .backendConfig(rollbackConfig.getBackendConfig())
+            .backendConfigFileConfig(rollbackConfig.getBackendConfigFileConfig())
             .environmentVariables(rollbackConfig.getEnvironmentVariables())
             .workspace(rollbackConfig.getWorkspace())
             .targets(rollbackConfig.getTargets())

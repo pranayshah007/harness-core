@@ -24,9 +24,6 @@ import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
-import io.harness.mongo.collation.CollationLocale;
-import io.harness.mongo.collation.CollationStrength;
-import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -256,7 +253,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         .add(
             SortCompoundMongoIndex.builder()
                 .name(
-                    "accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_parent_info_range_WithCollationIdx")
+                    "accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_parent_info_range_idx")
                 .field(PlanExecutionSummaryKeys.accountId)
                 .field(PlanExecutionSummaryKeys.orgIdentifier)
                 .field(PlanExecutionSummaryKeys.projectIdentifier)
@@ -270,8 +267,6 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                 .ascRangeField(PlanExecutionSummaryKeys.status)
                 .ascRangeField(PlanExecutionSummaryKeys.modules)
                 .ascRangeField(PlanExecutionSummaryKeys.isChildPipeline)
-                .collation(
-                    Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.SECONDARY).build())
                 .build())
         // Sort queries are added for list page
         .add(SortCompoundMongoIndex.builder()

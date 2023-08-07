@@ -27,6 +27,7 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import software.wings.beans.Service;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
+import software.wings.service.intfc.WorkflowService;
 
 import java.util.List;
 import java.util.Map;
@@ -35,8 +36,8 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDC)
 public class WinrmServiceV2Mapper implements ServiceV2Mapper {
   @Override
-  public ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
-      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
+  public ServiceDefinition getServiceDefinition(WorkflowService workflowService, MigrationContext migrationContext,
+      Service service, List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations) {
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();

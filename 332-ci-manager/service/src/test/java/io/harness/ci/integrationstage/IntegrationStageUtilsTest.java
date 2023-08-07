@@ -233,7 +233,7 @@ public class IntegrationStageUtilsTest {
   public void getBuildTimeMultiplier() {
     K8sHostedInfraYaml k8sHostedInfraYaml = K8sHostedInfraYaml.builder().build();
     Double buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(k8sHostedInfraYaml);
-    assertThat(buildTimeMultiplier).isEqualTo(1.0);
+    assertThat(buildTimeMultiplier).isEqualTo(2.0);
     HostedVmInfraYaml hostedVmInfraYaml =
         HostedVmInfraYaml.builder()
             .spec(HostedVmInfraYaml.HostedVmInfraSpec.builder()
@@ -242,21 +242,21 @@ public class IntegrationStageUtilsTest {
                       .build())
             .build();
     buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(hostedVmInfraYaml);
-    assertThat(buildTimeMultiplier).isEqualTo(1.0);
+    assertThat(buildTimeMultiplier).isEqualTo(2.0);
 
     hostedVmInfraYaml.setSpec(HostedVmInfraSpec.builder()
                                   .platform(ParameterField.createValueField(
                                       Platform.builder().os(ParameterField.createValueField(OSType.MacOS)).build()))
                                   .build());
     buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(hostedVmInfraYaml);
-    assertThat(buildTimeMultiplier).isEqualTo(10.0);
+    assertThat(buildTimeMultiplier).isEqualTo(60.0);
 
     hostedVmInfraYaml.setSpec(HostedVmInfraSpec.builder()
                                   .platform(ParameterField.createValueField(
                                       Platform.builder().os(ParameterField.createValueField(OSType.Windows)).build()))
                                   .build());
     buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(hostedVmInfraYaml);
-    assertThat(buildTimeMultiplier).isEqualTo(2.0);
+    assertThat(buildTimeMultiplier).isEqualTo(8.0);
   }
 
   @Test

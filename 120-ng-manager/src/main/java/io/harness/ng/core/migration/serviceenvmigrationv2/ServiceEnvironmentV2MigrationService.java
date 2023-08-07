@@ -6,10 +6,12 @@
  */
 
 package io.harness.ng.core.migration.serviceenvmigrationv2;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.gitsync.beans.StoreType.REMOTE;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
@@ -44,7 +46,6 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ProjectFilterDTO;
@@ -99,6 +100,7 @@ import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -431,7 +433,7 @@ public class ServiceEnvironmentV2MigrationService {
     NGRestUtils.getResponse(pipelineServiceClient.updatePipeline(null, requestDto.getPipelineIdentifier(), accountId,
         requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), null, null, null,
         RequestBody.create(MediaType.parse("application/yaml"), migratedPipelineYaml), branch, rootFolder, filePath,
-        "migrate pipeline", objectId, null, StoreType.REMOTE, commitId, isNewBranch, createPr, baseBranch));
+        "migrate pipeline", objectId, null, REMOTE, commitId, isNewBranch, createPr, baseBranch));
   }
 
   private Optional<JsonNode> createMigratedYaml(String accountId, YamlNode stageNode,
@@ -1110,9 +1112,14 @@ public class ServiceEnvironmentV2MigrationService {
           ProjectFilterDTO.builder().hasModule(true).moduleType(ModuleType.CD).orgIdentifiers(orgIds).build());
 
       List<PipelineDetailsDto> pipelinesDetails = new ArrayList<>();
-      List<ServiceEntity> serviceEntities = new ArrayList<>();
+      List<ServiceEntity> serviceEntitiesV1List = new ArrayList<>();
+      List<ServiceEntity> serviceEntitiesV2List = new ArrayList<>();
       List<String> infrastructures = new ArrayList<>();
       List<String> serviceConfigs = new ArrayList<>();
+      Set<String> projectIdsWithServiceV1 = new HashSet<>();
+      List<String> pipelinesWithServiceV2 = new ArrayList<>();
+      List<String> pipelinesWithGitXEnabled = new ArrayList<>();
+      List<String> pipelinesWithGitXDisabled = new ArrayList<>();
 
       int currentPage = 0;
       int currentSize = 0;
@@ -1162,8 +1169,20 @@ public class ServiceEnvironmentV2MigrationService {
             if (getInfrastructuresYaml) {
               infrastructures.addAll(getInfrastructures(stageNodes));
             }
+
+            List<String> serviceConfigsOfPipeline = getServiceConfigs(stageNodes);
             if (getServiceConfigsYaml) {
-              serviceConfigs.addAll(getServiceConfigs(stageNodes));
+              serviceConfigs.addAll(serviceConfigsOfPipeline);
+            }
+            if (isEmpty(serviceConfigsOfPipeline)) {
+              pipelinesWithServiceV2.add(pipeline.getIdentifier());
+            }
+            if (REMOTE.equals(pipeline.getStoreType())) {
+              pipelinesWithGitXEnabled.add(pipeline.getIdentifier());
+            }
+
+            else {
+              pipelinesWithGitXDisabled.add(pipeline.getIdentifier());
             }
           });
           currentPage++;
@@ -1178,15 +1197,33 @@ public class ServiceEnvironmentV2MigrationService {
                                                     .stream()
                                                     .filter(this::isServiceV1)
                                                     .collect(Collectors.toList());
-        serviceEntities.addAll(serviceEntitiesV1);
+        serviceEntitiesV1List.addAll(serviceEntitiesV1);
+        List<ServiceEntity> serviceEntitiesV2 = serviceEntityService
+                                                    .getAllNonDeletedServices(accountId, project.getOrgIdentifier(),
+                                                        project.getIdentifier(), new ArrayList<>())
+                                                    .stream()
+                                                    .filter(this::isServiceV2)
+                                                    .collect(Collectors.toList());
+        serviceEntitiesV2List.addAll(serviceEntitiesV2);
+
+        if (isNotEmpty(serviceEntitiesV1List)) {
+          projectIdsWithServiceV1.add(project.getIdentifier());
+        }
       }
 
       return AccountSummaryResponseDto.builder()
           .pipelinesDetails(pipelinesDetails)
           .deploymentPipelines(pipelinesDetails.size())
-          .v1Services(serviceEntities.size())
+          .v1Services(serviceEntitiesV1List.size())
           .infrastructures(infrastructures)
           .serviceDefinitions(serviceConfigs)
+          .orgs(orgIds.size())
+          .projects(projects.size())
+          .v2Services(serviceEntitiesV2List.size())
+          .projectWithServiceV1(projectIdsWithServiceV1.size())
+          .pipelinesWithServiceV2(pipelinesWithServiceV2.size())
+          .pipelinesWithGitXEnabled(pipelinesWithGitXEnabled.size())
+          .pipelinesWithGitXDisabled(pipelinesWithGitXDisabled.size())
           .build();
     } catch (Exception e) {
       log.error(e.getMessage());
@@ -1291,6 +1328,15 @@ public class ServiceEnvironmentV2MigrationService {
   boolean isServiceV1(ServiceEntity serviceEntity) {
     try {
       return getYamlField(serviceEntity.getYaml(), "service").fromYamlPath("serviceDefinition") == null;
+    } catch (IOException e) {
+      log.error(e.getMessage());
+    }
+    return true;
+  }
+
+  boolean isServiceV2(ServiceEntity serviceEntity) {
+    try {
+      return getYamlField(serviceEntity.getYaml(), "service").fromYamlPath("serviceDefinition") != null;
     } catch (IOException e) {
       log.error(e.getMessage());
     }

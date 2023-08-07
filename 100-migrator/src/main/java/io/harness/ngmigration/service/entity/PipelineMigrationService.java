@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.entity;
+
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -125,6 +126,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -301,6 +303,7 @@ public class PipelineMigrationService extends NgMigrationService {
     Map<String, String> envToStageMap = new HashMap<>();
     Map<String, String> infraToStageMap = new HashMap<>();
     List<String> barrierNames = new ArrayList<>();
+    List<String> approvalStageIdentifiers = new ArrayList<>();
     for (int i = 0; i < pipeline.getPipelineStages().size(); ++i) {
       PipelineStage pipelineStage = pipeline.getPipelineStages().get(i);
       switch (getStageType(pipeline.getPipelineStages(), i)) {
@@ -347,7 +350,8 @@ public class PipelineMigrationService extends NgMigrationService {
                 infraToStageMap, allFunctors, barrierNames);
           }
         } else {
-          stage = buildApprovalStage(migrationContext, stageElement, stageIdentifier, allFunctors);
+          stage = buildApprovalStage(
+              migrationContext, stageElement, stageIdentifier, allFunctors, approvalStageIdentifiers);
           allFunctors.addAll(getApprovalStageFunctors(migrationContext, stageIdentifier, stageElement));
         }
         // If the stage cannot be migrated then we skip building the pipeline.
@@ -439,7 +443,8 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   private StageElementWrapperConfig buildApprovalStage(MigrationContext migrationContext,
-      PipelineStageElement stageElement, String stageIdentifier, List<StepExpressionFunctor> functors) {
+      PipelineStageElement stageElement, String stageIdentifier, List<StepExpressionFunctor> functors,
+      List<String> existingIdentifiers) {
     CaseFormat caseFormat = migrationContext.getInputDTO().getIdentifierCaseFormat();
     AbstractStepNode stepNode = approvalStepMapper.getSpec(migrationContext, stageElement);
     ExecutionWrapperConfig stepWrapper =
@@ -447,7 +452,8 @@ public class PipelineMigrationService extends NgMigrationService {
 
     ApprovalStageNode approvalStageNode = new ApprovalStageNode();
     approvalStageNode.setName(MigratorUtility.generateName(stageElement.getName()));
-    approvalStageNode.setIdentifier(MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat));
+    approvalStageNode.setIdentifier(
+        getApprovalStageIdentifier(existingIdentifiers, caseFormat, stageElement.getName()));
     approvalStageNode.setApprovalStageConfig(
         ApprovalStageConfig.builder()
             .execution(ExecutionElementConfig.builder().steps(Collections.singletonList(stepWrapper)).build())
@@ -459,7 +465,21 @@ public class PipelineMigrationService extends NgMigrationService {
                                             .condition(ParameterField.createValueField(getWhenCondition(
                                                 migrationContext, stageElement, stageIdentifier, functors)))
                                             .build()));
+    existingIdentifiers.add(approvalStageNode.getIdentifier());
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(approvalStageNode)).build();
+  }
+
+  private String getApprovalStageIdentifier(List<String> existingIdentifiers, CaseFormat caseFormat, String stageName) {
+    String identifier = MigratorUtility.generateIdentifier(stageName, caseFormat);
+    if (CollectionUtils.isEmpty(existingIdentifiers)) {
+      return identifier;
+    }
+    int index = 1;
+    while (existingIdentifiers.contains(identifier) && index < 10) {
+      identifier = MigratorUtility.generateIdentifier(stageName + index, caseFormat);
+      index++;
+    }
+    return identifier;
   }
 
   private List<StepExpressionFunctor> getApprovalStageFunctors(

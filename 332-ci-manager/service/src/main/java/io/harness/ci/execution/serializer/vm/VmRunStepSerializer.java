@@ -51,6 +51,7 @@ public class VmRunStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries, String delegateId,
@@ -86,6 +87,9 @@ public class VmRunStepSerializer {
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
 
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
+
     List<String> outputVarNames = new ArrayList<>();
     if (isNotEmpty(runStepInfo.getOutputVariables().getValue())) {
       outputVarNames = runStepInfo.getOutputVariables()
@@ -95,7 +99,7 @@ public class VmRunStepSerializer {
                            .collect(Collectors.toList());
     }
 
-    String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runStepInfo.getShell(), false);
+    String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runStepInfo.getShell());
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
         && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, ngAccess.getAccountIdentifier())) {
@@ -107,8 +111,6 @@ public class VmRunStepSerializer {
     } else {
       command = earlyExitCommand + command;
     }
-
-    command = SerializerUtils.prependPrintCommand(command, runStepInfo.getShell());
 
     VmRunStepBuilder runStepBuilder = VmRunStep.builder()
                                           .image(image)

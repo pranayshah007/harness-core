@@ -17,6 +17,7 @@ import io.harness.ci.execution.CIDockerLayerCachingConfigService;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -47,6 +48,7 @@ public class VmPluginCompatibleStepSerializer {
   @Inject private PluginSettingUtils pluginSettingUtils;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private CIDockerLayerCachingConfigService dockerLayerCachingConfigService;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmStepInfo serialize(Ambiance ambiance, PluginCompatibleStep pluginCompatibleStep,
       StageInfraDetails stageInfraDetails, String identifier, ParameterField<Timeout> parameterFieldTimeout,
@@ -60,6 +62,8 @@ public class VmPluginCompatibleStepSerializer {
     }
     Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
         pluginCompatibleStep, identifier, timeout, ambiance, Type.VM, true, true);
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     return getContainerizedStep(ambiance, pluginCompatibleStep, stageInfraDetails, envVars, timeout);
   }
 

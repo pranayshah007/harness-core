@@ -564,7 +564,6 @@ perpetualTask {"name": "assignIterator", "background": true} {"state": 1, "assig
 perpetualTask {"name": "assigned_delegate", "background": true} {"accountId": 1, "state": 1, "delegateId": 1}
 perpetualTask {"name": "clientContext_clientParams_infrastructureMappingId", "background": true, "sparse": true} {"clientContext.clientParams.infrastructureMappingId": 1}
 perpetualTask {"name": "delegateId_1", "background": true} {"delegateId": 1}
-perpetualTask {"name": "rebalanceIterator", "background": true} {"state": 1, "rebalanceIteration": 1}
 perpetualTask {"name": "state_assignIteration_assignAfterMs", "background": true} {"state": 1, "assignIteration": 1, "assignAfterMs": 1}
 perpetualTaskScheduleConfig {"name": "unique_perpetualTaskScheduleConfig_index1", "unique": true} {"accountId": 1, "perpetualTaskType": 1}
 personalization {"name": "unique_identification", "unique": true} {"accountId": 1, "userId": 1}

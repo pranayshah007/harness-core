@@ -33,19 +33,18 @@ data:
   MONGO_INDEX_MANAGER_MODE: AUTO
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   GOOGLE_APPLICATION_CREDENTIALS: /opt/harness/svc/cloud_stackdriver.json
-  EVENTS_FRAMEWORK_REDIS_URL: 'redis://localhost:6379'
-  EVENTS_FRAMEWORK_USE_SENTINEL: "true"
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
-  EVENTS_FRAMEWORK_REDIS_SSL_ENABLED: "true"
-  EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH: /opt/harness/svc/redis_labs_ca_truststore
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
   ENABLE_DASHBOARD_TIMESCALE: "true"
   TIMESCALE_URI: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'
   CACHE_BACKEND: REDIS
-  CACHE_CONFIG_USE_SENTINEL: "true"
+  CACHE_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
-  CACHE_CONFIG_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   {{- if .Values.scalabilityTest}}
   PLAN_CREATOR_SERVICE_EXECUTOR_POOL_CORE_SIZE: "150"
   PLAN_CREATOR_SERVICE_EXECUTOR_POOL_MAX_SIZE: "200"

@@ -158,7 +158,7 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
                              .build());
       }
     }
-    if (secretManagerConfig != null) {
+    if (secretManagerConfig != null && !isEncryptDecryptPlanForHarnessSMOnManager()) {
       capabilities.addAll(
           EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilityForSecretManager(secretManagerConfig, null));
     }

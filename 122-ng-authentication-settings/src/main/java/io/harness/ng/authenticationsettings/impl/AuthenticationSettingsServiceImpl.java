@@ -484,6 +484,11 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
         managerClient.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, Boolean.TRUE.equals(enable)));
   }
 
+  @Override
+  public boolean setPublicAccess(String accountIdentifier, Boolean publicAccessEnabled) {
+    return getResponse(managerClient.setPublicAccess(accountIdentifier, publicAccessEnabled));
+  }
+
   private LDAPSettings fromCGLdapSettings(LdapSettings ldapSettings) {
     return LDAPSettings.builder()
         .identifier(ldapSettings.getUuid())
@@ -520,6 +525,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
 
     boolean twoFactorEnabled = getResponse(managerClient.twoFactorEnabled(accountIdentifier));
     Integer sessionTimeoutInMinutes = getResponse(managerClient.getSessionTimeoutAtAccountLevel(accountIdentifier));
+    boolean publicAccessEnabled = getResponse(managerClient.getPublicAccess(accountIdentifier)).equals(Boolean.TRUE);
 
     return AuthenticationSettingsResponse.builder()
         .whitelistedDomains(whitelistedDomains)
@@ -527,6 +533,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
         .authenticationMechanism(ssoConfig.getAuthenticationMechanism())
         .twoFactorEnabled(twoFactorEnabled)
         .sessionTimeoutInMinutes(sessionTimeoutInMinutes)
+        .publicAccessEnabled(publicAccessEnabled)
         .build();
   }
 

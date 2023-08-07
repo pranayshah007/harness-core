@@ -55,6 +55,7 @@ import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.CommandExecutionStatus;
@@ -92,6 +93,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -549,7 +551,7 @@ public class K8sTaskHelper {
 
   public boolean restore(List<KubernetesResource> kubernetesResources, K8sClusterConfig clusterConfig,
       K8sDelegateTaskParams k8sDelegateTaskParams, K8sHandlerConfig k8sHandlerConfig,
-      ExecutionLogCallback executionLogCallback) {
+      @Nullable K8sRequestHandlerContext requestHandlerContext, ExecutionLogCallback executionLogCallback) {
     try {
       executionLogCallback.saveExecutionLog("Restoring inherited resources: \n");
       executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(kubernetesResources));
@@ -557,6 +559,10 @@ public class K8sTaskHelper {
       k8sHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
           k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
       k8sHandlerConfig.setResources(kubernetesResources);
+
+      if (requestHandlerContext != null) {
+        requestHandlerContext.setResources(kubernetesResources);
+      }
       executionLogCallback.saveExecutionLog("Done.. \n", INFO, SUCCESS);
     } catch (Exception e) {
       executionLogCallback.saveExecutionLog("Failed to restore inherited resources: \n", ERROR, FAILURE);

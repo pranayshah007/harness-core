@@ -120,10 +120,14 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
 
     long permissionsChangeTime = System.currentTimeMillis() - startTime;
     try (DelayLogContext ignore = new DelayLogContext(permissionsChangeTime, OVERRIDE_ERROR)) {
-      log.info("UserGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for {} Time taken: {}",
-          numberOfACLsCreated, id, permissionsChangeTime);
-      log.info("UserGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {} Time taken: {}",
-          numberOfACLsDeleted, id, permissionsChangeTime);
+      log.info(
+          "UserGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for id: {}, identifier: {}, scope: {} Time taken: {}",
+          numberOfACLsCreated, id, userGroup.get().getIdentifier(), userGroup.get().getScopeIdentifier(),
+          permissionsChangeTime);
+      log.info(
+          "UserGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for id: {}, identifier: {}, scope: {} Time taken: {}",
+          numberOfACLsDeleted, id, userGroup.get().getIdentifier(), userGroup.get().getScopeIdentifier(),
+          permissionsChangeTime);
     }
     return true;
   }

@@ -84,6 +84,7 @@ import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -1056,6 +1057,17 @@ public class K8sTaskHelperTest extends CategoryTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testRestore() {
+    testRestore(new K8sRequestHandlerContext());
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testRestoreNullContext() {
+    testRestore(null);
+  }
+
+  private void testRestore(K8sRequestHandlerContext requestHandlerContext) {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
     List<KubernetesResource> kubernetesResources = new ArrayList<>();
     K8sClusterConfig clusterConfig = K8sClusterConfig.builder().build();
@@ -1063,8 +1075,8 @@ public class K8sTaskHelperTest extends CategoryTest {
     K8sHandlerConfig k8sHandlerConfig = new K8sHandlerConfig();
     ExecutionLogCallback executionLogCallback = mock(ExecutionLogCallback.class);
     doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(any(), anyBoolean());
-    boolean result = helper.restore(
-        kubernetesResources, clusterConfig, k8sDelegateTaskParams, k8sHandlerConfig, executionLogCallback);
+    boolean result = helper.restore(kubernetesResources, clusterConfig, k8sDelegateTaskParams, k8sHandlerConfig,
+        requestHandlerContext, executionLogCallback);
     assertThat(result).isTrue();
     assertThat(k8sHandlerConfig.getResources()).isEqualTo(kubernetesResources);
     assertThat(k8sHandlerConfig.getKubernetesConfig()).isEqualTo(kubernetesConfig);
@@ -1084,7 +1096,7 @@ public class K8sTaskHelperTest extends CategoryTest {
         .when(containerDeploymentDelegateHelper)
         .getKubernetesConfig(any(), anyBoolean());
     boolean result = helper.restore(
-        kubernetesResources, clusterConfig, k8sDelegateTaskParams, k8sHandlerConfig, executionLogCallback);
+        kubernetesResources, clusterConfig, k8sDelegateTaskParams, k8sHandlerConfig, null, executionLogCallback);
     assertThat(result).isFalse();
   }
 }

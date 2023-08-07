@@ -34,6 +34,6 @@ public class HelmInstanceSyncRequest extends HelmCommandRequestNG {
     super(releaseName, helmCommandType, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig, accountId,
         k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback, namespace,
         helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
-        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, false, false, false);
+        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, false, false, false, false);
   }
 }

@@ -332,6 +332,54 @@ func getStepTypeContext(stepType, infra string) string {
 		return "while uploading the files to Jfrog artifactory in Harness CI"
 	case "JiraUpdate":
 		return "while updating the Jira ticket in Harness"
+	case "TERRAFORM_APPLY":
+		return "while applying the terrform manifest in Harness CD"
+	case "K8S_BLUE_GREEN":
+		return "while performing Blue Green Deployment for kubernetes in Harness CD"
+	case "K8S_ROLLING":
+		return "while performing Rolling Deployment for Kubernetes in Harness CD"
+	case "K8S_ROLLBACK_ROLLING":
+		return "while performing Rolling Deployment rollback for Kubernetes in Harness CD"
+	case "K8S_APPLY":
+		return "while applying the Kubernetes manifest in Harness CD"
+	case "K8S_SCALE":
+		return "while scaling the Kubernetes deployment in Harness CD"
+	case "K8S_CANARY":
+		return "while performing Canary Deployment for Kubernetes in Harness CD"
+	case "K8S_BG_SWAP_SERVICES":
+		return "while swapping the Kubernetes services in Harness CD"
+	case "K8S_DELETE":
+		return "while deleting the Kubernetes deployment in Harness CD"
+	case "K8S_CANARY_DELETE":
+		return "while deleting the Canary Deployment for Kubernetes in Harness CD"
+	case "K8S_DRY_RUN_MANIFEST":
+		return "while performing a dry run of the Kubernetes manifest in Harness CD"
+	case "SERVERLESS_AWS_LAMBDA_DEPLOY":
+		return "while deploying the AWS Lambda function in Harness CD"
+	case "SERVERLESS_AWS_LAMBDA_ROLLBACK":
+		return "while rolling back the AWS Lambda function in Harness CD"
+	case "SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2":
+		return "while preparing to rollback the AWS Lambda function in Harness CD"
+	case "SERVERLESS_AWS_LAMBDA_ROLLBACK_V2":
+		return "while rolling back the AWS Lambda function in Harness CD"
+	case "SERVERLESS_AWS_LAMBDA_DEPLOY_V2":
+		return "while deploying the AWS Lambda function in Harness CD"
+	case "SERVERLESS_AWS_LAMBDA_PACKAGE_V2":
+		return "while packaging the AWS Lambda function in Harness CD"
+	case "ECS_ROLLING_DEPLOY":
+		return "while performing Rolling Deployment for ECS in Harness CD"
+	case "ECS_ROLLING_ROLLBACK":
+		return "while performing Rolling Deployment rollback for ECS in Harness CD"
+	case "ECS_CANARY_DEPLOY":
+		return "while performing Canary Deployment for ECS in Harness CD"
+	case "ECS_CANARY_DELETE":
+		return "while deleting the Canary Deployment for ECS in Harness CD"
+	case "ECS_BLUE_GREEN_CREATE_SERVICE":
+		return "while creating the ECS service for Blue Green Deployment in Harness CD"
+	case "ECS_BLUE_GREEN_ROLLBACK":
+		return "while rolling back the ECS service for Blue Green Deployment in Harness CD"
+	case "ECS_RUN_TASK":
+		return "while running the ECS task in Harness CD"
 	}
 	return ""
 }

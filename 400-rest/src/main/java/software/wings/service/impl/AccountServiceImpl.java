@@ -672,6 +672,19 @@ public class AccountServiceImpl implements AccountService {
     return updatedAccount;
   }
 
+  @Override
+  public boolean getPublicAccessEnabled(String accountId) {
+    Query<Account> getQuery = wingsPersistence.createQuery(Account.class).filter(ID_KEY2, accountId);
+    return Optional.ofNullable(getQuery.get().isPublicAccessEnabled()).orElse(false);
+  }
+
+  @Override
+  public void setPublicAccessEnabled(String accountId, boolean publicAccessEnabled) {
+    Account account = get(accountId);
+    account.setPublicAccessEnabled(publicAccessEnabled);
+    update(account);
+  }
+
   private void ngAuditAccountDetailsCrossGenerationAccess(
       String accountIdentifier, boolean oldIsCrossGenerationAccessEnabled, boolean newIsCrossGenerationAccessEnabled) {
     try {
@@ -1062,7 +1075,8 @@ public class AccountServiceImpl implements AccountService {
             .set(AccountKeys.ceAutoCollectK8sEvents, account.isCeAutoCollectK8sEvents())
             .set("whitelistedDomains", account.getWhitelistedDomains())
             .set("smpAccount", account.isSmpAccount())
-            .set("isProductLed", account.isProductLed());
+            .set("isProductLed", account.isProductLed())
+            .set(AccountKeys.publicAccessEnabled, account.isPublicAccessEnabled());
 
     if (null != account.getSessionTimeOutInMinutes()) {
       updateOperations.set(AccountKeys.sessionTimeOutInMinutes, account.getSessionTimeOutInMinutes());

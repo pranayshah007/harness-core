@@ -214,7 +214,7 @@ public class DelegateSetupNgResource {
   publishedDelegateVersion(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier) throws IOException {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, null, null),
-        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
     SupportedDelegateVersion supportedDelegateVersion =
         CGRestUtils.getResponse(delegateNgManagerCgManagerClient.getPublishedDelegateVersion(accountIdentifier));
 

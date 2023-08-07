@@ -77,6 +77,8 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
 
   @Setter @NonFinal @Builder.Default Boolean renewAppRoleToken = Boolean.TRUE;
 
+  @Setter @NonFinal @Builder.Default Boolean enableCache = Boolean.TRUE;
+
   public long getRenewedAt() {
     if (renewedAt == null) {
       return 0;
@@ -108,6 +110,10 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
 
   public Boolean getRenewAppRoleToken() {
     return renewAppRoleToken == null ? Boolean.TRUE : renewAppRoleToken;
+  }
+
+  public Boolean getEnableCache() {
+    return enableCache == null ? Boolean.TRUE : enableCache;
   }
 
   @Override

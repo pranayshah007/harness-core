@@ -238,7 +238,6 @@ public class BusinessMappingSharedCostHelper {
       final Set<String> selectedCostTargets = new HashSet<>(selectedCostTargetList);
       final List<QLCEViewFilterWrapper> removedBusinessMappingFilters =
           viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid());
-
       final UnionQuery sharedCostUnionQuery =
           viewBillingServiceHelper.getSharedCostUnionQuery(removedBusinessMappingFilters, groupBy, aggregateFunction,
               cloudProviderTableName, queryParams, sharedCostBusinessMapping, entityCosts, totalCost,
@@ -252,7 +251,7 @@ public class BusinessMappingSharedCostHelper {
 
   private boolean isProportionalSharingStrategyPresent(final BusinessMapping businessMapping) {
     boolean sharingStrategyPresent = false;
-    if (Objects.nonNull(businessMapping) && Objects.nonNull(businessMapping.getSharedCosts())) {
+    if (Objects.nonNull(businessMapping.getSharedCosts())) {
       for (final SharedCost sharedCost : businessMapping.getSharedCosts()) {
         if (PROPORTIONAL == sharedCost.getStrategy()) {
           sharingStrategyPresent = true;

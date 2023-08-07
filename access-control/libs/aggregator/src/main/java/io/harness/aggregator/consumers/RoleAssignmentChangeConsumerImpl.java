@@ -46,11 +46,13 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getResourceGroupIdentifier())
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getPrincipalIdentifier())
         || updatedRoleAssignmentDBO.getDisabled() != null) {
-      log.info("Number of ACLs deleted: {} for roleassignment: {}", deleteACLs(id), id);
+      log.info("Number of ACLs deleted: {} for roleassignment: id: {}, identifier: {}, scope: {}", deleteACLs(id), id,
+          updatedRoleAssignmentDBO.getIdentifier(), updatedRoleAssignmentDBO.getScopeIdentifier());
       Optional<RoleAssignmentDBO> roleAssignment = roleAssignmentRepository.findById(id);
       if (roleAssignment.isPresent()) {
         long createdCount = createACLs(roleAssignment.get());
-        log.info("Number of ACLs created: {} for roleassignment: {}", createdCount, id);
+        log.info("Number of ACLs created: {} for roleassignment: id: {}, identifier: {}, scope: {}", createdCount, id,
+            updatedRoleAssignmentDBO.getIdentifier(), updatedRoleAssignmentDBO.getScopeIdentifier());
       }
       return true;
     }
@@ -94,8 +96,10 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
     long numberOfACLsCreated = createACLs(newRoleAssignmentDBO);
     long permissionsChangeTime = System.currentTimeMillis() - startTime;
     try (DelayLogContext ignore = new DelayLogContext(permissionsChangeTime, OVERRIDE_ERROR)) {
-      log.info("RoleAssignmentChangeConsumerImpl.consumeCreateEvent: Number of ACLs created: {} for {} Time taken: {}",
-          numberOfACLsCreated, id, permissionsChangeTime);
+      log.info(
+          "RoleAssignmentChangeConsumerImpl.consumeCreateEvent: Number of ACLs created: {} for id: {}, identifier: {}, scope: {} Time taken: {}",
+          numberOfACLsCreated, id, newRoleAssignmentDBO.getIdentifier(), newRoleAssignmentDBO.getScopeIdentifier(),
+          permissionsChangeTime);
     }
     return true;
   }

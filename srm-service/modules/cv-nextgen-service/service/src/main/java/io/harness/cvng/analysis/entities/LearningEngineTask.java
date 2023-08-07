@@ -35,6 +35,7 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -103,24 +104,29 @@ public abstract class LearningEngineTask extends VerificationTaskBase
   private Date validUntil = Date.from(OffsetDateTime.now().plusDays(31).toInstant());
 
   public enum LearningEngineTaskType {
-    SERVICE_GUARD_TIME_SERIES,
-    LOG_CLUSTER,
-    SERVICE_GUARD_LOG_ANALYSIS,
-    CANARY_LOG_ANALYSIS,
-    TEST_LOG_ANALYSIS,
-    TIME_SERIES_CANARY,
-    CANARY_DEPLOYMENT_TIME_SERIES,
-    BEFORE_AFTER_DEPLOYMENT_TIME_SERIES,
-    SERVICE_GUARD_FEEDBACK_ANALYSIS,
-    BEFORE_AFTER_DEPLOYMENT_LOG,
-    CANARY_DEPLOYMENT_LOG,
-    LOG_ANALYSIS,
-    TIME_SERIES_LOAD_TEST,
-    LOG_FEEDBACK,
-    CV_LOG_CLUSTER;
+    SERVICE_GUARD_TIME_SERIES(false),
+    LOG_CLUSTER(false),
+    SERVICE_GUARD_LOG_ANALYSIS(false),
+    CANARY_LOG_ANALYSIS(true),
+    TEST_LOG_ANALYSIS(true),
+    TIME_SERIES_CANARY(true),
+    CANARY_DEPLOYMENT_TIME_SERIES(true),
+    BEFORE_AFTER_DEPLOYMENT_TIME_SERIES(true),
+    SERVICE_GUARD_FEEDBACK_ANALYSIS(false),
+    BEFORE_AFTER_DEPLOYMENT_LOG(true),
+    CANARY_DEPLOYMENT_LOG(true),
+    LOG_ANALYSIS(true),
+    TIME_SERIES_LOAD_TEST(true),
+    LOG_FEEDBACK(true),
+    CV_LOG_CLUSTER(true);
+
+    private final boolean isDeploymentTask;
 
     public static List<LearningEngineTaskType> getDeploymentTaskTypes() {
-      return Arrays.asList(TIME_SERIES_CANARY, TIME_SERIES_LOAD_TEST, CANARY_LOG_ANALYSIS, TEST_LOG_ANALYSIS);
+      return Arrays.stream(values()).filter(type -> type.isDeploymentTask).collect(Collectors.toList());
+    }
+    LearningEngineTaskType(boolean isDeploymentTask) {
+      this.isDeploymentTask = isDeploymentTask;
     }
   }
 

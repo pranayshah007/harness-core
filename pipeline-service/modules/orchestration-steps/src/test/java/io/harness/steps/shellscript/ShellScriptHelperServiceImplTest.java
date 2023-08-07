@@ -10,23 +10,30 @@ package io.harness.steps.shellscript;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filestore.remote.FileStoreClient;
+import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
@@ -42,6 +49,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
@@ -49,6 +57,7 @@ import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.ScriptType;
 import io.harness.steps.OutputExpressionConstants;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -91,6 +100,10 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Mock private NGSettingsClient settingsClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> response;
   @Mock private EngineExpressionService engineExpressionService;
+  @Mock FileStoreClient fileStoreClient;
+  @Mock private InputSetValidatorFactory inputSetValidatorFactory;
+  @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
+
   @InjectMocks private ShellScriptHelperServiceImpl shellScriptHelperServiceImpl;
 
   @Before
@@ -339,16 +352,80 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetShellScript() {
     String script = "echo <+unresolved1>\necho <+unresolved2>";
+    Ambiance ambiance = Ambiance.newBuilder().putAllSetupAbstractions(Map.of("accountId", "testAcc")).build();
+
     ParameterField<String> parameterFieldScript = ParameterField.createExpressionField(true, script, null, true);
     ShellScriptInlineSource source = ShellScriptInlineSource.builder().script(parameterFieldScript).build();
     ShellScriptStepParameters stepParameters =
         ShellScriptStepParameters.infoBuilder()
             .source(ShellScriptSourceWrapper.builder().spec(source).type("Inline").build())
             .build();
-    assertThat(shellScriptHelperServiceImpl.getShellScript(stepParameters))
+    assertThat(shellScriptHelperServiceImpl.getShellScript(stepParameters, ambiance))
         .isEqualTo("echo <+unresolved1>\necho <+unresolved2>");
     source.setScript(ParameterField.createValueField("echo hi"));
-    assertThat(shellScriptHelperServiceImpl.getShellScript(stepParameters)).isEqualTo("echo hi");
+    assertThat(shellScriptHelperServiceImpl.getShellScript(stepParameters, ambiance)).isEqualTo("echo hi");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetShellScriptWithFileScript() {
+    final String fileContent = "echo hi";
+    Ambiance ambiance = Ambiance.newBuilder().putAllSetupAbstractions(Map.of("accountId", "testAcc")).build();
+
+    ParameterField<String> parameterFieldFile = ParameterField.createValueField("account:/test");
+    HarnessFileStoreSource source = HarnessFileStoreSource.builder().file(parameterFieldFile).build();
+    ShellScriptStepParameters stepParameters =
+        ShellScriptStepParameters.infoBuilder()
+            .source(ShellScriptSourceWrapper.builder().spec(source).type("Harness").build())
+            .build();
+
+    Call call = mock(Call.class);
+
+    try (MockedStatic<SafeHttpCall> safeHttpCallMockedStatic = mockStatic(SafeHttpCall.class)) {
+      doReturn(call).when(fileStoreClient).getContent(anyString(), anyString(), anyString(), anyString());
+      doReturn(fileContent).when(engineExpressionService).renderExpression(any(), anyString());
+      doReturn(true).when(pmsFeatureFlagHelper).isEnabled(anyString(), any(FeatureName.class));
+
+      safeHttpCallMockedStatic.when(() -> SafeHttpCall.executeWithExceptions(any()))
+          .thenReturn(ResponseDTO.newResponse(fileContent));
+      String ret = shellScriptHelperServiceImpl.getShellScript(stepParameters, ambiance);
+      assertThat(ret).isEqualTo(fileContent);
+    }
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetShellScriptWithFileScriptFFNotEnabled() {
+    Ambiance ambiance = Ambiance.newBuilder().putAllSetupAbstractions(Map.of("accountId", "testAcc")).build();
+
+    ParameterField<String> parameterFieldFile = ParameterField.createValueField("account:/test");
+    HarnessFileStoreSource source = HarnessFileStoreSource.builder().file(parameterFieldFile).build();
+    ShellScriptStepParameters stepParameters =
+        ShellScriptStepParameters.infoBuilder()
+            .source(ShellScriptSourceWrapper.builder().spec(source).type("Harness").build())
+            .build();
+
+    assertThatThrownBy(() -> shellScriptHelperServiceImpl.getShellScript(stepParameters, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetShellScriptThrowsException() {
+    Ambiance ambiance = Ambiance.newBuilder().putAllSetupAbstractions(Map.of("accountId", "testAcc")).build();
+
+    ParameterField<String> parameterFieldFile = ParameterField.createValueField("account:/test");
+    HarnessFileStoreSource source = HarnessFileStoreSource.builder().file(parameterFieldFile).build();
+    ShellScriptStepParameters stepParameters =
+        ShellScriptStepParameters.infoBuilder()
+            .source(ShellScriptSourceWrapper.builder().spec(source).type("Unknown").build())
+            .build();
+
+    assertThatThrownBy(() -> shellScriptHelperServiceImpl.getShellScript(stepParameters, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test
@@ -400,7 +477,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
     inputVars.put("key1", "val1");
     List<String> taskOutputVars = Arrays.asList("key1", "key2");
 
-    doReturn(script).when(shellScriptHelperService).getShellScript(stepParameters);
+    doReturn(script).when(shellScriptHelperService).getShellScript(stepParameters, ambiance);
     doNothing()
         .when(shellScriptHelperService)
         .prepareTaskParametersForExecutionTarget(eq(ambiance), eq(stepParameters), any());

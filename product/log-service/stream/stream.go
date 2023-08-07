@@ -45,7 +45,7 @@ type Stream interface {
 	Exists(ctx context.Context, key string) error
 
 	// ListPrefix returns a list of keys starting with the given prefix in the stream.
-	ListPrefix(ctx context.Context, prefix string) ([]string, error)
+	ListPrefix(ctx context.Context, prefix string, scanBatch int64) ([]string, error)
 }
 
 // Line represents a line in the logs.

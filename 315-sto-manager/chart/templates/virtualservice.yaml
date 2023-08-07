@@ -20,7 +20,7 @@ spec:
     - {{ . }}
     {{- end }}
   http:
-    - name: sto-manager
+  - name: sto-manager
     match:
     - uri:
         prefix: /sto-manager/

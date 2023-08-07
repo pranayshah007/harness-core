@@ -5,10 +5,12 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   CACHE_BACKEND: "REDIS"
-  CACHE_CONFIG_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
-  CACHE_CONFIG_USE_SENTINEL: "true"
+  CACHE_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   DEPLOY_MODE: KUBERNETES_ONPREM
+  ENABLE_AUTH: {{ .Values.enableAuth | quote }}
   MANAGER_TARGET: harness-manager:9879
   MANAGER_AUTHORITY: harness-manager:9879
   GRPC_SERVER_PORT: {{.Values.service.grpcport | quote}}
@@ -19,7 +21,7 @@ data:
   DOCKER_PUSH_IMAGE: '{{ .Values.ci_images.kaniko.image.repository }}:{{ .Values.ci_images.kaniko.image.tag }}'
   ECR_PUSH_IMAGE: '{{ .Values.ci_images.kaniko_ecr.image.repository }}:{{ .Values.ci_images.kaniko_ecr.image.tag }}'
   GCR_PUSH_IMAGE: '{{ .Values.ci_images.kaniko_gcr.image.repository }}:{{ .Values.ci_images.kaniko_gcr.image.tag }}'
-  ACR_PUSH_IMAGE: '{{ .Values.ci_images.kaniko_acr.image.repository }}:{{ .Values.ci_images.kaniko_acr.image.tag }}'  
+  ACR_PUSH_IMAGE: '{{ .Values.ci_images.kaniko_acr.image.repository }}:{{ .Values.ci_images.kaniko_acr.image.tag }}'
   GCS_UPLOAD_IMAGE: '{{ .Values.ci_images.gcs_upload.image.repository }}:{{ .Values.ci_images.gcs_upload.image.tag }}'
   S3_UPLOAD_IMAGE: '{{ .Values.ci_images.s3_upload.image.repository }}:{{ .Values.ci_images.s3_upload.image.tag }}'
   ARTIFACTORY_UPLOAD_IMAGE: '{{ .Values.ci_images.artifactory_upload.image.repository }}:{{ .Values.ci_images.artifactory_upload.image.tag }}'
@@ -29,13 +31,17 @@ data:
   PMS_TARGET:  pipeline-service:12011
   PMS_AUTHORITY:  pipeline-service:12011
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
-  EVENTS_FRAMEWORK_REDIS_URL: 'redis://localhost:6379'
-  EVENTS_FRAMEWORK_USE_SENTINEL: "true"
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   SHOULD_CONFIGURE_WITH_PMS: "true"
   ENABLE_DASHBOARD_TIMESCALE: "true"
-  MEMORY: '{{ .Values.java.memory }}m'
+  MEMORY: {{ .Values.java.memory | quote }}
   USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
  {{- if .Values.global.airgap }}
   DEFAULT_INTERNAL_IMAGE_CONNECTOR: "account.harnessImage"
@@ -48,10 +54,32 @@ data:
   TI_SERVICE_INTERNAL_URL: 'http://ti-service:8078/'
   API_URL: '{{ .Values.global.loadbalancerURL }}/ng/#/'
   STO_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/sto/'
-  STO_SERVICE_INTERNAL_ENDPOINT: 'http://sto-core.{{ .Release.Namespace }}.svc.cluster.local:4000/'
   LOG_SERVICE_GLOBAL_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
   TI_SERVICE_GLOBAL_TOKEN: 78d16b66-4b4c-11eb-8377-acde48001122
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+
+  # The following image variables are just for the reference and do not impact any functionality
+  AWS_ECR_IMAGE: harness/aws-ecr-job-runner:latest
+  AWS_SECURITY_HUB_IMAGE: harness/aws-security-hub-job-runner:latest
+  AQUA_TRIVY_IMAGE: harness/aqua-trivy-job-runner:latest
+  BANDIT_IMAGE: harness/bandit-job-runner:latest
+  BLACKDUCK_IMAGE: harness/blackduckhub-job-runner:latest
+  BRAKEMAN_IMAGE: harness/brakeman-job-runner:latest
+  STO_IMAGE: harness/sto-plugin:latest
+  FOSSA_IMAGE: harness/fossa-job-runner:latest
+  GRYPE_IMAGE: harness/grype-job-runner:latest
+  NMAP_IMAGE: harness/nmap-job-runner:latest
+  NIKTO_IMAGE: harness/nikto-job-runner:latest
+  OWASP_IMAGE: harness/owasp-dependency-check-job-runner:latest
+  SYNK_IMAGE: harness/snyk-job-runner:latest
+  SONARQUBE_IMAGE: harness/sonarqube-agent-job-runner:latest
+  PROWLER_IMAGE: harness/prowler-job-runner:latest
+  TWISTLOCK_IMAGE: harness/twistlock-job-runner:latest
+  CHECKMARX_IMAGE: harness/checkmarx-job-runner:latest
+  VERACODE_IMAGE: harness/veracode-agent-job-runner:latest
+  ZAP_IMAGE: harness/zap-job-runner:latest
+  WHITE_SOURCE_IMAGE: harness/whitesource-agent-job-runner:latest
+
 {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
 {{- end }}

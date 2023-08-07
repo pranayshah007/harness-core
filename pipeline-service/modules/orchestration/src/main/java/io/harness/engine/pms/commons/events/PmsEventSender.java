@@ -88,6 +88,10 @@ public class PmsEventSender {
     if (stepType != null && INIT_CONTAINER_V2_STEP_TYPE.getType().equals(stepType.getType())) {
       serviceName = ModuleType.PMS.name().toLowerCase();
     }
+    // NodeTypeLookupServiceImpl we handled FF stage module to be set as cf service though its pms
+    if (serviceName.equals("cf")) {
+      serviceName = ModuleType.PMS.name().toLowerCase();
+    }
     log.info("Sending {} event for {} to the producer", eventCategory, serviceName);
     ImmutableMap.Builder<String, String> metadataBuilder = ImmutableMap.<String, String>builder()
                                                                .put(SERVICE_NAME, serviceName)

@@ -134,6 +134,7 @@ onboardingModuleConfig:
   catalogInfoLocationDefaultPath: /.harness-idp-entities
   harnessCiCdAnnotations:
     projectUrl: https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details
+    serviceUrl: https://localhost:8181/ng/account/accountIdentifier/cd/orgs/orgIdentifier/projects/projectIdentifier/services/serviceIdentifier
 
 gitManagerGrpcClientConfig:
   target: localhost:13001

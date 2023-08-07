@@ -31,6 +31,7 @@ public class SRMAnalysisStepDetailDTO {
   @NotNull private String monitoredServiceIdentifier;
 
   @NotNull private String executionDetailIdentifier;
+  @NotNull private String stepName;
 
   public static SRMAnalysisStepDetailDTO getDTOFromEntity(SRMAnalysisStepExecutionDetail stepExecutionDetail) {
     return SRMAnalysisStepDetailDTO.builder()
@@ -40,6 +41,7 @@ public class SRMAnalysisStepDetailDTO {
         .analysisEndTime(stepExecutionDetail.getAnalysisEndTime())
         .analysisDuration(stepExecutionDetail.getAnalysisDuration())
         .executionDetailIdentifier(stepExecutionDetail.getUuid())
+        .stepName(stepExecutionDetail.getStepName())
         .build();
   }
 }
