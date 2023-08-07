@@ -87,9 +87,9 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
       "^https://git-codecommit\\.([^/.]*)\\.amazonaws\\.com/v1/repos(?:/?|/[^/.]*)$";
   public static final String PLUGIN_ARTIFACT_FILE_VALUE = "/addon/tmp/.plugin/artifact";
   public static final String AZURE_REPO_BASE_URL = "azure.com";
-  public static final Double MACOS_BUILD_MULTIPLIER = 10.0;
-  public static final Double WINDOWS_BUILD_MULTIPLIER = 2.0;
-  public static final Double DEFAULT_BUILD_MULTIPLIER = 1.0;
+  public static final Double MACOS_BUILD_MULTIPLIER = 60.0;
+  public static final Double WINDOWS_BUILD_MULTIPLIER = 8.0;
+  public static final Double DEFAULT_BUILD_MULTIPLIER = 2.0;
 
   public static final String NULL_STR = "null";
 
