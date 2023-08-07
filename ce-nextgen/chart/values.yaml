@@ -52,7 +52,7 @@ global:
       passwordKey: "redis-password"
       extraArgs: ""
     clickhouse:
-      enabled: true
+      enabled: false
   ingress:
     enabled: false
     className: harness
@@ -90,7 +90,7 @@ image:
   repository: harness/ce-nextgen-signed
   pullPolicy: IfNotPresent
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80102-000"
+  tag: "80103-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -100,7 +100,7 @@ imageClickhouseEnabled:
   repository: harness/ce-nextgen-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80102-000"
+  tag: "80103-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []

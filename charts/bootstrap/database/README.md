@@ -23,6 +23,7 @@ A Helm chart for Kubernetes
 | clickhouse.fullnameOverride | string | `"clickhouse"` |  |
 | clickhouse.image.tag | string | `"23.3.4-debian-11-r0"` |  |
 | clickhouse.persistence.size | string | `"1Ti"` |  |
+| clickhouse.podLabels.app | string | `"clickhouse"` |  |
 | clickhouse.replicaCount | int | `1` |  |
 | clickhouse.resources.limits.memory | string | `"8Gi"` |  |
 | clickhouse.resources.requests.cpu | int | `6` |  |
