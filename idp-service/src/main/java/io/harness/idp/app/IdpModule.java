@@ -81,6 +81,8 @@ import io.harness.idp.proxy.delegate.DelegateProxyApiImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
 import io.harness.idp.proxy.services.ProxyApi;
 import io.harness.idp.proxy.services.ProxyApiImpl;
+import io.harness.idp.scorecard.datasources.resources.DataSourceApiImpl;
+import io.harness.idp.scorecard.scores.resources.ScoreApiImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
 import io.harness.idp.settings.resources.BackstagePermissionsApiImpl;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -120,12 +122,14 @@ import io.harness.spec.server.idp.v1.AuthInfoApi;
 import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
 import io.harness.spec.server.idp.v1.ConnectorInfoApi;
+import io.harness.spec.server.idp.v1.DataSourceApi;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
 import io.harness.spec.server.idp.v1.MergedPluginsConfigApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
 import io.harness.spec.server.idp.v1.PluginInfoApi;
 import io.harness.spec.server.idp.v1.ProvisionApi;
+import io.harness.spec.server.idp.v1.ScoresApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
@@ -321,6 +325,8 @@ public class IdpModule extends AbstractModule {
     bind(AllowListApi.class).to(AllowListApiImpl.class);
     bind(AllowListService.class).to(AllowListServiceImpl.class);
     bind(PluginsProxyInfoService.class).to(PluginsProxyInfoServiceImpl.class);
+    bind(ScoresApi.class).to(ScoreApiImpl.class);
+    bind(DataSourceApi.class).to(DataSourceApiImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));
