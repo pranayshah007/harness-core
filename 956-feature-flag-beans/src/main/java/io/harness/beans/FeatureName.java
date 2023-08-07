@@ -857,7 +857,9 @@ public enum FeatureName {
   CDS_MERGED_RUN_AND_RETRY_PIPELINE_COMPONENT(
       "When enabled RunPipelineForm component will be used for Retry From (Failed) Stage", HarnessTeam.CDP),
   CDS_SUPPORT_SERVICE_INPUTS_AS_EXECUTION_INPUTS(
-      "Service Inputs will be marked as execution inputs if service is an expression", HarnessTeam.CDC);
+      "Service Inputs will be marked as execution inputs if service is an expression", HarnessTeam.CDC),
+  CDS_STORE_INSTANCE_STATS_ITERATOR_RUN_TIME(
+      "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated
