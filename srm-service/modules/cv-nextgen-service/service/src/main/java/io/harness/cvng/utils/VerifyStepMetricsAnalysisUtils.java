@@ -83,7 +83,7 @@ public class VerifyStepMetricsAnalysisUtils {
         return AnalysisReason.NO_TEST_DATA;
       case NO_ANALYSIS:
         if (metricType == MetricType.PERFORMANCE_THROUGHPUT) {
-          return AnalysisReason.NO_ANALYSIS_FOR_THROUGHPUT;
+          return AnalysisReason.NO_ANALYSIS_FOR_THROUGHPUT_METRICS;
         }
         return AnalysisReason.NO_CONTROL_DATA;
       case HEALTHY:

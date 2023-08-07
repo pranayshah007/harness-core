@@ -164,11 +164,11 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
     CVConfig cvConfig = verificationJobInstance.getCvConfigMap().values().iterator().next();
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
-    String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+    verificationTaskService.createDeploymentVerificationTask(
         accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
 
     TimeSeriesAnalysisSummary summary =
-        deploymentTimeSeriesAnalysisService.getAnalysisSummary(Arrays.asList(verificationJobInstanceId));
+        deploymentTimeSeriesAnalysisService.getAnalysisSummary(List.of(verificationJobInstanceId));
 
     assertThat(summary).isNotNull();
     assertThat(summary.getNumAnomMetrics()).isEqualTo(0);
@@ -1091,7 +1091,8 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testGetFilteredMetricAnalysesForVerifyStepExecutionId() {
-    timeSeriesRecordDtos = getTimeSeriesRecordDtos();
+    timeSeriesRecordDtos = getTimeSeriesRecordDtos("identifier");
+    timeSeriesRecordDtos.addAll(getTimeSeriesRecordDtos("throughput_metric"));
     when(mockedTimeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(any(), any(), any(), any()))
         .thenReturn(timeSeriesRecordDtos);
 
@@ -1116,7 +1117,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     List<MetricsAnalysis> metricsAnalyses =
         deploymentTimeSeriesAnalysisService.getFilteredMetricAnalysesForVerifyStepExecutionId(
             accountId, verificationJobInstanceId, deploymentTimeSeriesAnalysisFilter);
-    assertThat(metricsAnalyses).hasSize(2);
+    assertThat(metricsAnalyses).hasSize(3);
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isEqualTo("identifier");
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
@@ -1185,13 +1186,27 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData().get(0).getValue()).isEqualTo(9.0);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData().get(0).getTimestampInMillis())
         .isEqualTo(14040000);
+
+    // test No analysis reason for throughput metric
+    assertThat(metricsAnalyses.get(1).getMetricName()).isEqualTo("throughput metric");
+    assertThat(metricsAnalyses.get(1).getMetricIdentifier()).isEqualTo("throughput_metric");
+    assertThat(metricsAnalyses.get(1).getTransactionGroup()).isEqualTo("txn");
+    assertThat(metricsAnalyses.get(1).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
+    assertThat(metricsAnalyses.get(1).getMetricType()).isEqualTo(MetricType.PERFORMANCE_THROUGHPUT);
+    assertThat(metricsAnalyses.get(1).getTestDataNodes().get(1).getAnalysisResult())
+        .isEqualTo(AnalysisResult.NO_ANALYSIS);
+    assertThat(metricsAnalyses.get(1).getTestDataNodes().get(1).getAnalysisReason())
+        .isEqualTo(AnalysisReason.NO_ANALYSIS_FOR_THROUGHPUT_METRICS);
+    assertThat(metricsAnalyses.get(1).getTestDataNodes().get(1).getAppliedThresholds()).contains("thresholdId");
+    assertThat(metricsAnalyses.get(1).getTestDataNodes().get(1).getControlNodeIdentifier()).isEqualTo("node3");
+    assertThat(metricsAnalyses.get(1).getTestDataNodes().get(1).getControlDataType()).isNull();
   }
 
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testGetFilteredMetricAnalysesForVerifyStepExecutionId_filteredNodeNames() {
-    timeSeriesRecordDtos = getTimeSeriesRecordDtos();
+    timeSeriesRecordDtos = getTimeSeriesRecordDtos("identifier");
     when(mockedTimeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(any(), any(), any(), any()))
         .thenReturn(timeSeriesRecordDtos);
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
@@ -1215,7 +1230,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     List<MetricsAnalysis> metricsAnalyses =
         deploymentTimeSeriesAnalysisService.getFilteredMetricAnalysesForVerifyStepExecutionId(
             accountId, verificationJobInstanceId, deploymentTimeSeriesAnalysisFilter);
-    assertThat(metricsAnalyses).hasSize(2);
+    assertThat(metricsAnalyses).hasSize(3);
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
@@ -1225,13 +1240,21 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
     assertThat(metricsAnalyses.get(0).getTestDataNodes()).hasSize(1);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNodeIdentifier()).isEqualTo("node1");
+
+    assertThat(metricsAnalyses.get(1).getMetricName()).isEqualTo("throughput metric");
+    assertThat(metricsAnalyses.get(1).getMetricIdentifier()).isEqualTo("throughput_metric");
+    assertThat(metricsAnalyses.get(1).getTransactionGroup()).isEqualTo("txn");
+    assertThat(metricsAnalyses.get(1).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
+    assertThat(metricsAnalyses.get(1).getMetricType()).isEqualTo(MetricType.PERFORMANCE_THROUGHPUT);
+    assertThat(metricsAnalyses.get(1).getTestDataNodes()).hasSize(1);
+    assertThat(metricsAnalyses.get(1).getTestDataNodes().get(0).getNodeIdentifier()).isEqualTo("node1");
   }
 
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testGetFilteredMetricAnalysesForVerifyStepExecutionId_filteredAnalysisResult() {
-    timeSeriesRecordDtos = getTimeSeriesRecordDtos();
+    timeSeriesRecordDtos = getTimeSeriesRecordDtos("identifier");
     when(mockedTimeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(any(), any(), any(), any()))
         .thenReturn(timeSeriesRecordDtos);
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
@@ -1255,7 +1278,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     List<MetricsAnalysis> metricsAnalyses =
         deploymentTimeSeriesAnalysisService.getFilteredMetricAnalysesForVerifyStepExecutionId(
             accountId, verificationJobInstanceId, deploymentTimeSeriesAnalysisFilter);
-    assertThat(metricsAnalyses).hasSize(1);
+    assertThat(metricsAnalyses).hasSize(2);
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
@@ -1265,6 +1288,14 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
     assertThat(metricsAnalyses.get(0).getTestDataNodes()).hasSize(1);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNodeIdentifier()).isEqualTo("node2");
+
+    assertThat(metricsAnalyses.get(1).getMetricName()).isEqualTo("throughput metric");
+    assertThat(metricsAnalyses.get(1).getMetricIdentifier()).isEqualTo("throughput_metric");
+    assertThat(metricsAnalyses.get(1).getTransactionGroup()).isEqualTo("txn");
+    assertThat(metricsAnalyses.get(1).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
+    assertThat(metricsAnalyses.get(1).getMetricType()).isEqualTo(MetricType.PERFORMANCE_THROUGHPUT);
+    assertThat(metricsAnalyses.get(1).getTestDataNodes()).hasSize(1);
+    assertThat(metricsAnalyses.get(1).getTestDataNodes().get(0).getNodeIdentifier()).isEqualTo("node2");
   }
 
   @Test
@@ -1355,7 +1386,6 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
         createHostData("node1", -1, 0.0, Arrays.asList(1D), Arrays.asList(1D));
     DeploymentTimeSeriesAnalysisDTO.HostData hostData2 =
         createHostData("node2", 2, 2.0, Arrays.asList(1D), Arrays.asList(1D));
-
     DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData1 =
         createTransactionMetricHostData(
             "/todolist/inside", "Errors per Minute", 0, 0.5, Arrays.asList(hostData1, hostData2));
@@ -1414,12 +1444,15 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData1 =
         createTransactionMetricHostData("txn", "identifier", 2, 0.5, Arrays.asList(hostData1, hostData2));
 
+    DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData2 =
+        createTransactionMetricHostData("txn", "throughput_metric", 2, 0.5, Arrays.asList(hostData1, hostData2));
+
     return DeploymentTimeSeriesAnalysis.builder()
         .accountId(accountId)
         .score(.7)
         .risk(Risk.UNHEALTHY)
         .verificationTaskId(verificationTaskId)
-        .transactionMetricSummaries(List.of(transactionMetricHostData1))
+        .transactionMetricSummaries(List.of(transactionMetricHostData1, transactionMetricHostData2))
         .hostSummaries(Arrays.asList(hostInfo1, hostInfo2, hostInfo3))
         .startTime(Instant.now())
         .endTime(Instant.now().plus(1, ChronoUnit.MINUTES))
@@ -1431,24 +1464,24 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     return cvConfigService.save(cvConfig);
   }
 
-  private List<TimeSeriesRecordDTO> getTimeSeriesRecordDtos() {
+  private List<TimeSeriesRecordDTO> getTimeSeriesRecordDtos(String identifier) {
     List<TimeSeriesRecordDTO> timeSeriesRecordDtos = new ArrayList<>();
     timeSeriesRecordDtos.add(TimeSeriesRecordDTO.builder()
-                                 .metricIdentifier("identifier")
+                                 .metricIdentifier(identifier)
                                  .metricValue(22.0)
                                  .epochMinute(33L)
                                  .host("node1")
                                  .groupName("txn")
                                  .build());
     timeSeriesRecordDtos.add(TimeSeriesRecordDTO.builder()
-                                 .metricIdentifier("identifier")
+                                 .metricIdentifier(identifier)
                                  .metricValue(2332.0)
                                  .epochMinute(4433L)
                                  .host("node2")
                                  .groupName("txn")
                                  .build());
     timeSeriesRecordDtos.add(TimeSeriesRecordDTO.builder()
-                                 .metricIdentifier("identifier")
+                                 .metricIdentifier(identifier)
                                  .metricValue(9.0)
                                  .epochMinute(234L)
                                  .host("node3")
