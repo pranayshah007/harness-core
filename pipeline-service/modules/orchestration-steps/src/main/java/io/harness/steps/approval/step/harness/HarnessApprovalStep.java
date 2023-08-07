@@ -155,10 +155,9 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
         if (!outputOptional.isFound()) {
           log.error(HARNESS_APPROVAL_STEP_OUTCOME + " sweeping output not found. unable to perform auto approval");
           FailureInfo failureInfo = FailureInfo.newBuilder().setErrorMessage("Step timeout occurred").build();
-          dashboardExecutorService.submit(
-              ()
-                  -> stepExecutionEntityService.updateStepExecutionEntity(
-                      ambiance, failureInfo, null, stepParameters.getName(), Status.APPROVAL_WAITING));
+          dashboardExecutorService.submit(()
+                                              -> stepExecutionEntityService.updateStepExecutionEntity(ambiance,
+                                                  failureInfo, null, stepParameters.getName(), Status.FAILED));
           return StepResponse.builder().status(Status.FAILED).failureInfo(failureInfo).build();
         }
         NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
@@ -177,7 +176,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
             ()
                 -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, null,
                     createHarnessApprovalStepExecutionDetailsFromHarnessApprovalOutcome(outcome),
-                    stepParameters.getName(), Status.APPROVAL_WAITING));
+                    stepParameters.getName(), Status.SUCCEEDED));
         return StepResponse.builder()
             .status(Status.SUCCEEDED)
             .stepOutcome(StepResponse.StepOutcome.builder().name("output").outcome(outcome).build())
