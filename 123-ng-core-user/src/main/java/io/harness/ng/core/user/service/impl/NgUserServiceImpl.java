@@ -396,9 +396,6 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public List<UserMetadataDTO> listUsersHavingRole(Scope scope, String roleIdentifier) {
-    if (Edition.COMMUNITY.equals(licenseService.calculateAccountEdition(scope.getAccountIdentifier()))) {
-      return listUsers(scope);
-    }
     PageResponse<RoleAssignmentResponseDTO> roleAssignmentPage =
         getResponse(accessControlAdminClient.getFilteredRoleAssignments(scope.getAccountIdentifier(),
             scope.getOrgIdentifier(), scope.getProjectIdentifier(), 0, DEFAULT_PAGE_SIZE,
