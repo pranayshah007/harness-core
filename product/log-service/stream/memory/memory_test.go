@@ -191,7 +191,7 @@ func TestStreamListPrefixes(t *testing.T) {
 	assert.Nil(t, err)
 	err = s.Create(ctx, key3)
 	assert.Nil(t, err)
-	l, err := s.ListPrefix(ctx, "key")
+	l, err := s.ListPrefix(ctx, "key", 1)
 	assert.Nil(t, err)
 	assert.Contains(t, l, "key1")
 	assert.Contains(t, l, "key2")

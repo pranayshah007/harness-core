@@ -18,6 +18,7 @@ package io.harness.cdng.provision.terragrunt;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
@@ -30,6 +31,7 @@ import lombok.NoArgsConstructor;
 @OwnedBy(CDP)
 @Data
 @NoArgsConstructor
+@RecasterAlias("io.harness.cdng.provision.terragrunt.InlineTerragruntVarFileSpec")
 public class InlineTerragruntVarFileSpec implements TerragruntVarFileSpec {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
 

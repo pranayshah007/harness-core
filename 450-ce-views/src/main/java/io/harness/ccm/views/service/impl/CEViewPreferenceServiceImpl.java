@@ -9,7 +9,6 @@ package io.harness.ccm.views.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.parseBoolean;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -327,10 +326,12 @@ public class CEViewPreferenceServiceImpl implements CEViewPreferenceService {
             .showAnomalies(viewPreferences.getShowAnomalies())
             .includeOthers(viewPreferences.getIncludeOthers())
             .includeUnallocatedCost(viewPreferences.getIncludeUnallocatedCost())
-            .awsPreferences(
-                firstNonNull(viewPreferences.getAwsPreferences(), getDefaultAWSViewPreferences(settingsMap)))
-            .gcpPreferences(
-                firstNonNull(viewPreferences.getGcpPreferences(), getDefaultGCPViewPreferences(settingsMap)))
+            .awsPreferences(Objects.nonNull(viewPreferences.getAwsPreferences())
+                    ? viewPreferences.getAwsPreferences()
+                    : getDefaultAWSViewPreferences(settingsMap))
+            .gcpPreferences(Objects.nonNull(viewPreferences.getGcpPreferences())
+                    ? viewPreferences.getGcpPreferences()
+                    : getDefaultGCPViewPreferences(settingsMap))
             .build();
     return getViewPreferenceAggregations(modifiedViewPreferences);
   }

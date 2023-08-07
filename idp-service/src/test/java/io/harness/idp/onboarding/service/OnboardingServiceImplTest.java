@@ -107,7 +107,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
   static final String GENERATE_YAML_DEF =
       "apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: my-example-service\n  description: |\n    My Example service which has something to do with APIs and database.\n  links:\n    - title: Website\n      url: http://my-internal-website.com\n  annotations:\n    github.com/project-slug: myorg/myrepo\n    backstage.io/techdocs-ref: dir:.\n    lighthouse.com/website-url: https://harness.io\n# labels:\n#   key1: value1\n# tags: \nspec:\n  type: service\n  owner: my-team\n  lifecycle: experimental\n  system: my-project\n#  dependsOn:\n#    - resource:default/my-db\n#  consumesApis:\n#    - user-api\n#  providesApis:\n#    - example-api";
   static final String GENERATE_YAML_DEF_WITH_ENTITIES =
-      "kind: Component\nspec:\n  type: Service\n  lifecycle: Unknown\n  owner: Unknown\n  system: projectId\napiVersion: backstage.io/v1alpha1\nmetadata:\n  name: serviceId\n  description: serviceDesc\n  tags: []\n  annotations:\n    harness.io/project-url: https://localhost:8181/ng/account/123/home/orgs/orgId/projects/projectId/details\n    harness.io/cd-serviceId: serviceId\n";
+      "kind: Component\nspec:\n  type: Service\n  lifecycle: Unknown\n  owner: Unknown\n  system: projectId\napiVersion: backstage.io/v1alpha1\nmetadata:\n  name: serviceId\n  description: serviceDesc\n  tags: []\n  annotations:\n    harness.io/project-url: https://localhost:8181/ng/account/123/home/orgs/orgId/projects/projectId/details\n    harness.io/cd-serviceId: serviceId\n    harness.io/services: |\n      serviceId: https://localhost:8181/ng/account/123/cd/orgs/orgId/projects/projectId/services/serviceId\n";
   private static final String URL = "https://www.github.com";
   private static final String CONNECTOR_NAME = "test-connector-name";
   private static final String DELEGATE_SELECTOR1 = "ds1";
@@ -139,7 +139,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
               "A YAML file will be created for each service inside your GitHub repository. An example of what the files will look like is shown below")
           .tmpPathForCatalogInfoYamlStore("/tmp")
           .harnessCiCdAnnotations(Map.of("projectUrl",
-              "https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details"))
+              "https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details",
+              "serviceUrl",
+              "https://localhost:8181/ng/account/accountIdentifier/cd/orgs/orgIdentifier/projects/projectIdentifier/services/serviceIdentifier"))
           .build();
 
   @Before

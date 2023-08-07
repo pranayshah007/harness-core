@@ -69,7 +69,7 @@ public class GitCloneStep extends CommonAbstractStepExecutable {
   @Override
   public UnitStep serialiseStep(CIStepInfo ciStepInfo, String taskId, String logKey, String stepIdentifier,
       Integer port, String accountId, String stepName, String timeout, OSType os, Ambiance ambiance,
-      StageDetails stageDetails) {
+      StageDetails stageDetails, String podName) {
     // Not Implemented
     return null;
   }

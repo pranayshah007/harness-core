@@ -148,6 +148,8 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   ScmGitProviderMapper scmGitProviderMapper;
   ScmGitProviderHelper scmGitProviderHelper;
   SCMGitAccessToProviderMapper scmGitAccessToProviderMapper;
+  public static final int LIST_REPO_API_VERSION_TWO = 2;
+  public static final int LIST_REPO_DEFAULT_API_VERSION = 1;
 
   @Override
   public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
@@ -958,13 +960,15 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public GetUserReposResponse getUserRepos(
       ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    GetUserReposRequest getUserReposRequest = buildGetUserReposRequest(scmConnector, pageRequest, null);
+    GetUserReposRequest getUserReposRequest =
+        buildGetUserReposRequest(scmConnector, pageRequest, null, LIST_REPO_DEFAULT_API_VERSION);
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos, getUserReposRequest);
   }
   @Override
   public GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest,
       SCMGrpc.SCMBlockingStub scmBlockingStub, RepoFilterParamsDTO repoFilterParamsDTO) {
-    GetUserReposRequest getUserReposRequest = buildGetUserReposRequest(scmConnector, pageRequest, repoFilterParamsDTO);
+    GetUserReposRequest getUserReposRequest =
+        buildGetUserReposRequest(scmConnector, pageRequest, repoFilterParamsDTO, LIST_REPO_API_VERSION_TWO);
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos, getUserReposRequest);
   }
 
@@ -1286,8 +1290,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
   }
 
-  private GetUserReposRequest buildGetUserReposRequest(
-      ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO) {
+  @VisibleForTesting
+  GetUserReposRequest buildGetUserReposRequest(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO, int version) {
     Provider gitProvider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
     GetUserReposRequest getUserReposRequest = GetUserReposRequest.newBuilder()
                                                   .setPagination(PageRequest.newBuilder()
@@ -1305,6 +1310,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
                       .setRepoName(isEmpty(repoFilterParamsDTO.getRepoName()) ? "" : repoFilterParamsDTO.getRepoName())
                       .setUserName(scmGitProviderHelper.getRepoOwner(scmConnector))
                       .build())
+              .setVersion(version)
               .build();
     }
     return getUserReposRequest;

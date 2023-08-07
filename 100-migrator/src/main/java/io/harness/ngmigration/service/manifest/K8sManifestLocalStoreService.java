@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.manifest;
 
+import static io.harness.ngmigration.utils.CaseFormat.SNAKE_CASE;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestConfigType;
@@ -49,16 +51,18 @@ public class K8sManifestLocalStoreService implements NgManifestService {
       return new ArrayList<>();
     }
 
-    List<NGYamlFile> manifestFiles = yamlFileList.stream()
-                                         .filter(file
-                                             -> !MigratorUtility.endsWithIgnoreCase(
-                                                 ((FileYamlDTO) file.getYaml()).getName(), "values.yaml", "values.yml"))
-                                         .collect(Collectors.toList());
-    List<NGYamlFile> valuesFiles = yamlFileList.stream()
-                                       .filter(file
-                                           -> MigratorUtility.endsWithIgnoreCase(
-                                               ((FileYamlDTO) file.getYaml()).getName(), "values.yaml", "values.yml"))
-                                       .collect(Collectors.toList());
+    List<NGYamlFile> manifestFiles =
+        yamlFileList.stream()
+            .filter(file
+                -> !MigratorUtility.endsWithIgnoreCase(
+                    ((FileYamlDTO) file.getYaml()).getName(), "values.yaml", getValuesYamlPaths(identifierCaseFormat)))
+            .collect(Collectors.toList());
+    List<NGYamlFile> valuesFiles =
+        yamlFileList.stream()
+            .filter(file
+                -> MigratorUtility.endsWithIgnoreCase(
+                    ((FileYamlDTO) file.getYaml()).getName(), "values.yaml", getValuesYamlPaths(identifierCaseFormat)))
+            .collect(Collectors.toList());
 
     K8sManifest k8sManifest =
         K8sManifest.builder()
@@ -80,5 +84,12 @@ public class K8sManifestLocalStoreService implements NgManifestService {
                                                        .spec(k8sManifest)
                                                        .build())
                                          .build());
+  }
+
+  private String[] getValuesYamlPaths(CaseFormat identifierCaseFormat) {
+    if (SNAKE_CASE.equals(identifierCaseFormat)) {
+      return new String[] {"_values_.yaml", "_values_.yml"};
+    }
+    return new String[] {"values.yaml", "values.yml"};
   }
 }

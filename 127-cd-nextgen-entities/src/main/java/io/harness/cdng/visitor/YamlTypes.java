@@ -241,4 +241,5 @@ public interface YamlTypes {
   String AWS_CDK_SYNTH = StepSpecTypeConstants.AWS_CDK_SYNTH;
   String AWS_CDK_DIFF = StepSpecTypeConstants.AWS_CDK_DIFF;
   String AWS_CDK_DEPLOY = StepSpecTypeConstants.AWS_CDK_DEPLOY;
+  String AWS_CDK_DESTROY = StepSpecTypeConstants.AWS_CDK_DESTROY;
 }

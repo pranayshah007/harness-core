@@ -40,6 +40,7 @@ import software.wings.beans.artifact.ArtifactStream;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.service.intfc.WorkflowService;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,8 +58,8 @@ public interface ServiceV2Mapper {
     return true;
   }
 
-  ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
-      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
+  ServiceDefinition getServiceDefinition(WorkflowService workflowService, MigrationContext migrationContext,
+      Service service, List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations);
 
   default List<NGYamlFile> getChildYamlFiles(

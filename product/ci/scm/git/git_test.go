@@ -369,6 +369,7 @@ func TestGetGetUserRepos(t *testing.T) {
 			},
 			Endpoint: ts.URL,
 		},
+		Version: 2,
 	}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)

@@ -7,6 +7,7 @@
 
 package io.harness.plugin.service;
 
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_MACHINE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
 
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
@@ -31,7 +32,7 @@ public abstract class BasePluginCompatibleSerializer implements ProtobufStepSeri
 
   public UnitStep serializeStepWithStepParameters(PluginCompatibleStep pluginCompatibleStep, Integer port,
       String callbackId, String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout,
-      String accountId, String stepName, OSType os, Ambiance ambiance) {
+      String accountId, String stepName, OSType os, Ambiance ambiance, String podName) {
     if (port == null) {
       throw new CIStageExecutionException("Port can not be null");
     }
@@ -46,6 +47,7 @@ public abstract class BasePluginCompatibleSerializer implements ProtobufStepSeri
     StepContext stepContext = StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build();
     Map<String, String> envVarMap = pluginService.getPluginCompatibleEnvVariables(
         pluginCompatibleStep, identifier, timeout, ambiance, StageInfraDetails.Type.K8, true, true);
+    envVarMap.put(DRONE_STAGE_MACHINE, podName);
     PluginStep pluginStep = PluginStep.newBuilder()
                                 .setContainerPort(port)
                                 .setImage(getImageName(pluginCompatibleStep, accountId))

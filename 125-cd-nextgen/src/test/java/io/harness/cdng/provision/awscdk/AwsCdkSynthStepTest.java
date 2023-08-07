@@ -148,7 +148,10 @@ public class AwsCdkSynthStepTest extends CategoryTest {
         StepStatusTaskResponseData.builder()
             .stepStatus(StepStatus.builder()
                             .stepExecutionStatus(StepExecutionStatus.SUCCESS)
-                            .output(StepMapOutput.builder().output("test", "dGVzdHZhbHVlZQ--").build())
+                            .output(StepMapOutput.builder()
+                                        .output("teststack.template.json", "dGVzdHZhbHVlZQ--")
+                                        .output("test", "notEncodedValue")
+                                        .build())
                             .build())
             .build();
     Map<String, ResponseData> responseDataMap = new HashMap<>();
@@ -161,11 +164,11 @@ public class AwsCdkSynthStepTest extends CategoryTest {
     awsCdkSynthStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
 
     verify(containerStepExecutionResponseHelper).handleAsyncResponseInternal(any(), captor.capture(), any());
-    assertThat(
-        ((StepMapOutput) ((StepStatusTaskResponseData) captor.getValue().get("test")).getStepStatus().getOutput())
-            .getMap()
-            .get("test"))
-        .isEqualTo("testvaluee");
+
+    StepMapOutput stepMapOutput =
+        (StepMapOutput) ((StepStatusTaskResponseData) captor.getValue().get("test")).getStepStatus().getOutput();
+    assertThat(stepMapOutput.getMap().get("teststack.template.json")).isEqualTo("testvaluee");
+    assertThat(stepMapOutput.getMap().get("test")).isEqualTo("notEncodedValue");
   }
 
   private Ambiance getAmbiance() {

@@ -593,8 +593,14 @@ public abstract class WorkflowHandler {
     if (deploymentType != null) {
       ServiceDefinitionType serviceDefinitionType = ServiceV2Factory.mapDeploymentTypeToServiceDefType(deploymentType);
       if (serviceDefinitionType != null) {
-        if (ServiceDefinitionType.ASG.equals(serviceDefinitionType)
-            && ELASTIC_GROUP_ACCOUNT_IDS.contains(context.getWorkflow().getAccountId())) {
+        if (ELASTIC_GROUP_ACCOUNT_IDS.contains(context.getWorkflow().getAccountId())) {
+          if (isNotEmpty(steps)) {
+            for (GraphNode step : steps) {
+              if (ServiceV2Factory.checkForASG(step.getType())) {
+                return ServiceDefinitionType.ASG;
+              }
+            }
+          }
           return ServiceDefinitionType.ELASTIGROUP;
         }
         return serviceDefinitionType;

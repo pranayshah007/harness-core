@@ -7,12 +7,12 @@ dependencies:
   version: 13.1.2
 - name: timescaledb
   repository: file://./timescaledb
-  version: 0.2.19
+  version: 0.8.0
 - name: redis
   repository: file://./redis
-  version: 0.2.7
+  version: 0.8.0
 - name: postgresql
   repository: https://charts.bitnami.com/bitnami
   version: 12.4.2
-digest: sha256:2267630149ceec19aa6496e8c65e645aa2073fe2120c70879267047b1a654230
-generated: "2023-05-18T21:13:53.498544+05:30"
+digest: sha256:cb2d867d49155652d642ce1b6f48776f234ca340aa0fb083c1ba8bd86a311c60
+generated: "2023-08-03T16:31:45.434728+05:30"

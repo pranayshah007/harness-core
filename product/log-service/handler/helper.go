@@ -15,6 +15,7 @@ const (
 	keyParam       = "key"
 	snapshotParam  = "snapshot"
 	usePrefixParam = "prefix"
+	keyListParam   = "keyList"
 )
 
 // writeBadRequest writes the json-encoded error message

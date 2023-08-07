@@ -40,6 +40,13 @@ public class KubernetesExceptionHints {
   public final String APPLY_MANIFEST_FAILED =
       "Manifest could contain invalid/missing values, one of resources name may not match kubernetes requirements or missing permissions to create or update specific kubernetes resources";
   public final String APPLY_NO_FILEPATH_SPECIFIED = "Please specify a valid file path to manifests from repository";
+  public final String KUBECTL_COMMAND_TIMEOUT =
+      "kubectl command has timed out. Please check if your K8s cluster is available and accessible.";
+  public final String KUBECTL_CONNECTION_REFUSED =
+      "kubectl command has failed due to connection being refused by server. " + K8S_API_GENERIC_NETWORK_EXCEPTION;
+  public final String KUBECTL_UNABLE_TO_CONNECT =
+      "kubectl command has failed due to not being unable to connect to the server. "
+      + K8S_API_GENERIC_NETWORK_EXCEPTION;
 
   public final String WAIT_FOR_STEADY_STATE_FAILED =
       "Please check for possible issues in:\n1. Execution logs(under \"Wait for Steady State\" section). \n2. Deployment pods probe checks. \n3. Availability of nodes/resources in the target cluster. \n4. Valid image pull secrets.";

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/harness/harness-core/product/log-service/logger"
@@ -65,7 +66,7 @@ func HandleOpen(stream stream.Stream) http.HandlerFunc {
 
 // HandleClose returns an http.HandlerFunc that closes
 // the live stream and optionally snapshots the stream.
-func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
+func HandleClose(logStream stream.Stream, store store.Store, scanBatch int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		st := time.Now()
@@ -78,6 +79,7 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 		// with that prefix. If no keys are found with that prefix, it's not
 		// an error.
 		usePrefix := r.FormValue(usePrefixParam)
+		keyList := r.FormValue(keyListParam)
 
 		logger.FromRequest(r).WithField("key", key).
 			WithField(usePrefixParam, usePrefix).
@@ -87,7 +89,7 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 		if usePrefix == "true" {
 			// Use the provided key as a prefix
 			var err error
-			keys, err = logStream.ListPrefix(ctx, key)
+			keys, err = logStream.ListPrefix(ctx, key, scanBatch)
 			if err != nil {
 				WriteInternalError(w, err)
 				logger.FromRequest(r).
@@ -96,6 +98,11 @@ func HandleClose(logStream stream.Stream, store store.Store) http.HandlerFunc {
 					WithField(usePrefixParam, "true").
 					Errorln("api: unable to fetch prefixes")
 				return
+			}
+		} else if keyList != "" {
+			keys = strings.Split(keyList, ",")
+			for i := range keys {
+				keys[i] = CreateAccountSeparatedKey(accountID, keys[i])
 			}
 		} else {
 			keys = []string{key}

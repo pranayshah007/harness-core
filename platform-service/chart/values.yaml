@@ -2,6 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  kubeVersion: ""
   secrets:
     app:
       external:
@@ -66,6 +67,16 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis:6379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
+      extraArgs: ""
   ingress:
     # -- create ingress objects
     enabled: false
@@ -101,10 +112,9 @@ image:
   repository: harness/platform-service-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "76201"
+  tag: "79601"
   digest: ""
   imagePullSecrets: []
-  
 
 waitForInitContainer:
   image:
@@ -155,20 +165,17 @@ service:
 
 resources:
   limits:
-    cpu: 0.5
     memory: 8192Mi
   requests:
     cpu: 0.5
     memory: 512Mi
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
-
+  targetCPU: ""
+  targetMemory: ""
 
 nodeSelector: {}
 
@@ -179,3 +186,30 @@ affinity: {}
 imagePullSecrets: {}
 
 additionalConfigs: {}
+
+# extraVolumes:
+# - name: volume-test
+#   configMap:
+#     name: test-config
+#     readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: test-volume-mount
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:
+
+# extraEnvVars:
+# - name: POD_NAME
+#   valueFrom:
+#     fieldRef:
+#       fieldPath: metadata.name
+extraEnvVars: []

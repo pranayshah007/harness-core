@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,6 +49,10 @@ import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
@@ -60,6 +65,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -95,9 +101,9 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import retrofit2.Call;
 
 @OwnedBy(HarnessTeam.CDC)
 @RunWith(JUnitParamsRunner.class)
@@ -109,6 +115,9 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @InjectMocks private DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
 
   @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
+
+  @Mock private NGSettingsClient ngSettingsClient;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
 
   private AutoCloseable mocks;
   ObjectMapper mapper = new ObjectMapper();
@@ -161,7 +170,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfig")
   @PrepareForTest(YamlUtils.class)
-  public void testCreatePlanForChildrenNodes(DeploymentStageNode node) {
+  public void testCreatePlanForChildrenNodes(DeploymentStageNode node) throws IOException {
     node.setFailureStrategies(
         ParameterField.createValueField(List.of(FailureStrategyConfig.builder()
                                                     .onFailure(OnFailureConfig.builder()
@@ -176,21 +185,26 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                       PlanCreationContextValue.newBuilder().setAccountIdentifier("accountId").build()))
                                   .currentField(new YamlField(new YamlNode("spec", jsonNode)))
                                   .build();
-    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
-    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(new YamlNode("spec", jsonNode));
-    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
-        deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
-    mockSettings.close();
 
-    assertThat(planCreationResponseMap).hasSize(11);
-    assertThat(planCreationResponseMap.values()
-                   .stream()
-                   .map(PlanCreationResponse::getPlanNode)
-                   .filter(Objects::nonNull)
-                   .map(PlanNode::getIdentifier)
-                   .collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder(
-            "provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles", "hooks");
+    try (MockedStatic<YamlUtils> mockSettings = mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+         MockedStatic<NGRestUtils> ngRestUtilsMockedStatic = mockStatic(NGRestUtils.class)) {
+      SettingValueResponseDTO settingValueResponseDTO =
+          SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+      when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(new YamlNode("spec", jsonNode));
+      when(NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
+          deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
+
+      assertThat(planCreationResponseMap).hasSize(11);
+      assertThat(planCreationResponseMap.values()
+                     .stream()
+                     .map(PlanCreationResponse::getPlanNode)
+                     .filter(Objects::nonNull)
+                     .map(PlanNode::getIdentifier)
+                     .collect(Collectors.toSet()))
+          .containsExactlyInAnyOrder(
+              "provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles", "hooks");
+    }
   }
 
   @Test

@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -77,6 +78,7 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2, StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2,
         StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2, StepSpecTypeConstants.GITOPS_REVERT_PR,
         StepSpecTypeConstants.AWS_CDK_BOOTSTRAP, StepSpecTypeConstants.AWS_CDK_SYNTH,
-        StepSpecTypeConstants.AWS_CDK_DIFF, StepSpecTypeConstants.AWS_CDK_DEPLOY);
+        StepSpecTypeConstants.AWS_CDK_DIFF, StepSpecTypeConstants.AWS_CDK_DEPLOY,
+        StepSpecTypeConstants.AWS_CDK_DESTROY);
   }
 }

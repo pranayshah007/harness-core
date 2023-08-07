@@ -11,6 +11,7 @@ import io.harness.beans.steps.stepinfo.IACMApprovalInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
@@ -35,6 +36,8 @@ public class VmIACMApprovalStepSerializer {
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject IACMServiceUtils iacmServiceUtils;
   @Inject IACMStepsUtils iacmStepsUtils;
+  @Inject private SerializerUtils serializerUtils;
+
   public VmPluginStep serialize(Ambiance ambiance, IACMApprovalInfo stepInfo, StageInfraDetails stageInfraDetails,
       ParameterField<Timeout> parameterFieldTimeout) {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, stepInfo.getDefaultTimeout());
@@ -44,6 +47,8 @@ public class VmIACMApprovalStepSerializer {
     envVars.put("PLUGIN_ENDPOINT_VARIABLES",
         iacmStepsUtils.populatePipelineIds(ambiance, envVars.get("PLUGIN_ENDPOINT_VARIABLES")));
 
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     String image;
     if (stepInfo.getImage().getValue() != null) {
       image = stepInfo.getImage().getValue();

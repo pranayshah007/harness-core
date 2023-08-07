@@ -197,6 +197,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
   @Inject private AlertService alertService;
+
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private NotificationMessageResolver notificationMessageResolver;
   @Inject private NotificationService notificationService;

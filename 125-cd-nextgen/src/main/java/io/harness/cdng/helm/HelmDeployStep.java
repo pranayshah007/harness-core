@@ -262,7 +262,8 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
             .skipSteadyStateCheck(skipSteadyStateCheck)
             .sendTaskProgressEvents(cdFeatureFlagHelper.isEnabled(
-                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG));
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG))
+            .disableFabric8(cdStepHelper.shouldDisableFabric8(AmbianceUtils.getAccountId(ambiance)));
 
     if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       helmCommandRequestBuilder.serviceHooks(nativeHelmStepHelper.getServiceHooks(ambiance));

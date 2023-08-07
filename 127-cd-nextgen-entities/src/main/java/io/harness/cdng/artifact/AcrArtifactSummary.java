@@ -9,6 +9,7 @@ package io.harness.cdng.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 
@@ -20,6 +21,7 @@ import lombok.Data;
 @Data
 @Builder
 @JsonTypeName(ArtifactSourceConstants.ACR_NAME)
+@RecasterAlias("io.harness.cdng.artifact.AcrArtifactSummary")
 public class AcrArtifactSummary implements ArtifactSummary {
   String imagePath;
   String tag;

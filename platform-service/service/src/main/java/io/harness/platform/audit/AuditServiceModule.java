@@ -32,7 +32,6 @@ import io.harness.audit.repositories.streaming.StreamingBatchRepository;
 import io.harness.audit.repositories.streaming.StreamingBatchRepositoryImpl;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.govern.ProviderModule;
-import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -111,7 +110,6 @@ public class AuditServiceModule extends AbstractModule {
       }
     });
 
-    install(new MetricsModule());
     install(ExecutorModule.getInstance());
     bind(PlatformConfiguration.class).toInstance(appConfig);
     install(new AbstractMongoModule() {

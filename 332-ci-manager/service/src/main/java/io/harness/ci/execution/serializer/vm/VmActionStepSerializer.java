@@ -16,6 +16,7 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.pms.contracts.ambiance.Ambiance;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -26,8 +27,10 @@ import java.util.Map;
 @Singleton
 public class VmActionStepSerializer {
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private SerializerUtils serializerUtils;
 
-  public VmRunStep serialize(ActionStepInfo actionStepInfo, String identifier, StageInfraDetails stageInfraDetails) {
+  public VmRunStep serialize(
+      ActionStepInfo actionStepInfo, String identifier, StageInfraDetails stageInfraDetails, Ambiance ambiance) {
     if (stageInfraDetails.getType() != StageInfraDetails.Type.DLITE_VM) {
       throw new CIStageExecutionException("Action step is only applicable for builds on cloud infrastructure");
     }
@@ -44,6 +47,8 @@ public class VmActionStepSerializer {
       env.put("PLUGIN_WITH", SerializerUtils.convertMapToJsonString(with));
     }
 
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    env.putAll(statusEnvVars);
     return VmRunStep.builder()
         .entrypoint(Arrays.asList("plugin", "-kind", "action", "-name"))
         .command(uses)

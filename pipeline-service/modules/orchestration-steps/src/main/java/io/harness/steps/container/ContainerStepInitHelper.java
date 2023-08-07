@@ -31,6 +31,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -88,6 +89,7 @@ import io.harness.steps.plugin.infrastructure.ContainerCleanupDetails;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.RetryUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
@@ -133,6 +135,7 @@ public class ContainerStepInitHelper {
   @Inject PluginExecutionConfigHelper pluginExecutionConfigHelper;
   @Inject PluginUtils pluginUtils;
   @Inject CiServiceResourceClient ciServiceResourceClient;
+  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
       ContainerStepSpec containerStepInfo, Ambiance ambiance, String logPrefix) {
@@ -145,11 +148,15 @@ public class ContainerStepInitHelper {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     String connectorRef = infrastructure.getSpec().getConnectorRef().getValue();
 
+    boolean useSocketCapability = pmsFeatureFlagService.isEnabled(
+        ngAccess.getAccountIdentifier(), FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG);
+
     ConnectorDetails k8sConnector = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
     return CIK8InitializeTaskParams.builder()
         .k8sConnector(k8sConnector)
         .cik8PodParams(getK8DirectPodParams(containerStepInfo, k8PodDetails, infrastructure, ambiance, logPrefix))
         .podMaxWaitUntilReadySecs(k8sPodInitUtils.getPodWaitUntilReadTimeout(infrastructure))
+        .useSocketCapability(useSocketCapability)
         .build();
   }
 

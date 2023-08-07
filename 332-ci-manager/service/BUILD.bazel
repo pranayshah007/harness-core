@@ -431,6 +431,8 @@ java_library(
         "@maven//:org_mockito_mockito_inline",
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:org_powermock_powermock_reflect",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_core",
     ],
 )
 
