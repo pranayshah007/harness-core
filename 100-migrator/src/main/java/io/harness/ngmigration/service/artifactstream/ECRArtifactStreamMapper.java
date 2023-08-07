@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -77,7 +78,7 @@ public class ECRArtifactStreamMapper implements ArtifactStreamMapper {
         .connectorRef(getConnectorRef(migratedEntities, artifactStream))
         .region(region)
         .imagePath(imagePath)
-        .tag(PLEASE_FIX_ME)
+        .tag(TRIGGER_TAG_VALUE_DEFAULT)
         .eventConditions(Collections.emptyList())
         .build();
   }
