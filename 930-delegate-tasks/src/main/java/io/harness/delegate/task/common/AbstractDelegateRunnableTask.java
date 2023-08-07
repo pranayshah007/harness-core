@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.common;
 
+import static io.harness.delegate.metrics.DelegateMetric.TASK_FAILED;
 import static io.harness.exception.WingsException.ExecutionContext.DELEGATE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 

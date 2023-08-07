@@ -757,6 +757,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(
           RESOURCE_CONSUMPTION_ABOVE_THRESHOLD.getMetricName(), new String[] {DELEGATE_NAME}, 1.0);
+      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), new String[] {DELEGATE_NAME});
       metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), DELEGATE_NAME);
       return;
     }
@@ -769,7 +770,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(
           RESOURCE_CONSUMPTION_ABOVE_THRESHOLD.getMetricName(), new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), DELEGATE_NAME);
+      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), new String[] {DELEGATE_NAME});
       return;
     }
     log.debug("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
@@ -782,7 +783,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       rejectRequest.compareAndSet(false, true);
       metricRegistry.recordGaugeValue(
           RESOURCE_CONSUMPTION_ABOVE_THRESHOLD.getMetricName(), new String[] {DELEGATE_NAME}, 1.0);
-      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), DELEGATE_NAME);
+      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), new String[] {DELEGATE_NAME});
       return;
     }
 
