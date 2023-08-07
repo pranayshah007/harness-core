@@ -28,7 +28,7 @@ COPY --chown=65534:65534  --from=builder \
   /app/dist/access-control/keystore.jks \
   /app/dist/access-control/config.yml \
   /app/dist/access-control/classpath_metadata.json \
-  /app/dist/access-control/scripts /opt/harness \
+  /app/dist/access-control/scripts \
   /app/dist/access-control/default.jfc \
   /app/dist/access-control/profile.jfc \
   /app/dockerization/base-images/apm/*.sh \
