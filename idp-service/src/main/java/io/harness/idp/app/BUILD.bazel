@@ -62,6 +62,7 @@ java_binary(
         "//idp-service/src/main/java/io/harness/idp/proxy/delegate:module",
         "//idp-service/src/main/java/io/harness/idp/proxy/layout:module",
         "//idp-service/src/main/java/io/harness/idp/proxy/services:module",
+        "//idp-service/src/main/java/io/harness/idp/scorecard/scorecards:module",
         "//idp-service/src/main/java/io/harness/idp/serializer:module",
         "//idp-service/src/main/java/io/harness/idp/settings:module",
         "//idp-service/src/main/java/io/harness/idp/status:module",
