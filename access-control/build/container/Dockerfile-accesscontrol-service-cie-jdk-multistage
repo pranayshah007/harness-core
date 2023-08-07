@@ -7,7 +7,6 @@ FROM us.gcr.io/platform-205701/cie-agent-harness-core-jdk11:latest as builder
 
 RUN mkdir -p /app
 ARG GCP_KEY
-ENV SERVICE_NAME="access-control"
 COPY . /app
 
 WORKDIR /app
@@ -16,12 +15,10 @@ ENV BUILD_PURPOSE=DEVELOPMENT
 
 RUN chmod +x \
     /app/build/feature_build.sh \
-    /app/build/build_jar.sh \
     /app/build/build_dist.sh \
     /app/scripts/bazel/generate_credentials.sh \
     && /app/scripts/bazel/generate_credentials.sh \
-    && /app/build/feature_build.sh $GCP_KEY \
-    && /app/build/build_dist.sh
+    && /app/build/feature_build.sh $GCP_KEY
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
@@ -36,6 +33,7 @@ COPY --chown=65534:65534  --from=builder \
   /app/dist/access-control/profile.jfc \
   /app/dockerization/base-images/apm/*.sh \
   /opt/harness/
+
 RUN chmod +x /opt/harness/*.sh
 CMD [ "/opt/harness/run.sh" ]
 
