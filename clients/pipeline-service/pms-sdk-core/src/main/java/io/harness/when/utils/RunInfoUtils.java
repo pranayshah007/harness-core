@@ -6,6 +6,7 @@
  */
 
 package io.harness.when.utils;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.plan.ExecutionMode.NORMAL;
 
@@ -92,7 +93,7 @@ public class RunInfoUtils {
     return condition.getExpressionValue();
   }
 
-  private String getDefaultWhenCondition(boolean isStage) {
+  public String getDefaultWhenCondition(boolean isStage) {
     return getDefaultWhenCondition(isStage, NORMAL);
   }
 

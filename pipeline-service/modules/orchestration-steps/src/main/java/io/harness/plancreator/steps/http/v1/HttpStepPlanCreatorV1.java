@@ -7,12 +7,13 @@
 
 package io.harness.plancreator.steps.http.v1;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.http.HttpStepNode;
+import io.harness.plancreator.steps.http.HttpStepNodeV1;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -67,7 +68,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
   @SneakyThrows
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
-    HttpStepNode stepNode = YamlUtils.read(field.getNode().toString(), HttpStepNode.class);
+    HttpStepNodeV1 stepNode = YamlUtils.read(field.getNode().toString(), HttpStepNodeV1.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
 
@@ -93,7 +94,9 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
                     .setType(
                         FacilitatorType.newBuilder().setType(stepNode.getStepSpecType().getFacilitatorType()).build())
                     .build())
-            .whenCondition(RunInfoUtils.getRunConditionForStep(stepNode.getWhen()))
+            .whenCondition(ParameterField.isNull(stepNode.getWhen()) ? RunInfoUtils.getDefaultWhenCondition(false)
+                    : isNotEmpty(stepNode.getWhen().getValue())      ? stepNode.getWhen().getValue()
+                                                                     : stepNode.getWhen().getExpressionValue())
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
