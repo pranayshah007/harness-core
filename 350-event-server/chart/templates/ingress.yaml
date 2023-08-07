@@ -9,17 +9,17 @@ metadata:
 spec:
   ingressClassName: {{ .Values.global.ingress.className | quote }}
   rules:
-    {{- range .Values.global.ingress.hosts }}
-    - host: {{ . | quote }}
-      http:
+    - http:
         paths:
           - backend:
               service:
                 name: event-service
                 port:
-                  number: {{ $.Values.service.port }}
+                  number: {{ .Values.service.port }}
             path: /ccmevent(/|$)(.*)
             pathType: ImplementationSpecific
+    {{- range .Values.global.ingress.hosts }}
+      host: {{ . | quote }}
     {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}
   tls:
