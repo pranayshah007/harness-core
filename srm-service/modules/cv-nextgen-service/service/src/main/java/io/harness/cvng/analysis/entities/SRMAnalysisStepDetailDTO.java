@@ -29,6 +29,10 @@ public class SRMAnalysisStepDetailDTO {
   @NotNull private SRMAnalysisStatus analysisStatus;
 
   @NotNull private String monitoredServiceIdentifier;
+  @NotNull private String serviceIdentifier;
+  String serviceName;
+  @NotNull private String envIdentifier;
+  String environmentName;
 
   @NotNull private String executionDetailIdentifier;
   @NotNull private String stepName;
@@ -37,6 +41,8 @@ public class SRMAnalysisStepDetailDTO {
     return SRMAnalysisStepDetailDTO.builder()
         .analysisStatus(stepExecutionDetail.getAnalysisStatus())
         .monitoredServiceIdentifier(stepExecutionDetail.getMonitoredServiceIdentifier())
+        .serviceIdentifier(stepExecutionDetail.getServiceIdentifier())
+        .envIdentifier(stepExecutionDetail.getEnvIdentifier())
         .analysisStartTime(stepExecutionDetail.getAnalysisStartTime())
         .analysisEndTime(stepExecutionDetail.getAnalysisEndTime())
         .analysisDuration(stepExecutionDetail.getAnalysisDuration())

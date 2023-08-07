@@ -26,6 +26,7 @@ import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail.SRMAnalysisStepExecutionDetailsKeys;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
+import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.change.MSHealthReport;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -37,6 +38,8 @@ import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
+import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
+import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -69,6 +72,8 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
   @Inject HPersistence hPersistence;
 
   @Inject PipelineServiceClient pipelineServiceClient;
+
+  @Inject NextGenService nextGenService;
 
   @Inject Clock clock;
 
@@ -184,11 +189,21 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
   }
 
   @Override
-  public SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String activityId) {
-    SRMAnalysisStepExecutionDetail stepExecutionDetail = getSRMAnalysisStepExecutionDetail(activityId);
-    Preconditions.checkArgument(
-        !stepExecutionDetail.equals(null), String.format("Step Execution Details %s is not present.", activityId));
-    return SRMAnalysisStepDetailDTO.getDTOFromEntity(stepExecutionDetail);
+  public SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String executionDetailId) {
+    SRMAnalysisStepExecutionDetail stepExecutionDetail = getSRMAnalysisStepExecutionDetail(executionDetailId);
+    Preconditions.checkArgument(!stepExecutionDetail.equals(null),
+        String.format("Step Execution Details %s is not present.", executionDetailId));
+    ServiceResponseDTO serviceResponseDTO =
+        nextGenService.getService(stepExecutionDetail.getAccountId(), stepExecutionDetail.getOrgIdentifier(),
+            stepExecutionDetail.getProjectIdentifier(), stepExecutionDetail.getServiceIdentifier());
+    EnvironmentResponseDTO environmentResponseDTO =
+        nextGenService.getEnvironment(stepExecutionDetail.getAccountId(), stepExecutionDetail.getOrgIdentifier(),
+            stepExecutionDetail.getProjectIdentifier(), stepExecutionDetail.getEnvIdentifier());
+    SRMAnalysisStepDetailDTO srmAnalysisStepDetailDTO = SRMAnalysisStepDetailDTO.getDTOFromEntity(stepExecutionDetail);
+    srmAnalysisStepDetailDTO.setServiceName(serviceResponseDTO != null ? serviceResponseDTO.getName() : null);
+    srmAnalysisStepDetailDTO.setEnvironmentName(
+        environmentResponseDTO != null ? environmentResponseDTO.getName() : null);
+    return srmAnalysisStepDetailDTO;
   }
 
   @Override
