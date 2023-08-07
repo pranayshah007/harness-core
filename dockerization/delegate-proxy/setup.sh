@@ -179,7 +179,7 @@ for kustomizeVersion in v3.5.4 v4.0.0; do
 done
 
 
-for tfConfigInspectVersion in v1.0 v1.1 v1.2; do
+for tfConfigInspectVersion in v1.0 v1.1 v1.2 v1.3; do
   echo "Adding terraform-config-inspect" $tfConfigInspectVersion
 
   TF_CONFIG_INSPECT_LINUX_DIR="${IMAGES_DIR}/tf-config-inspect/linux/$tfConfigInspectVersion/"
@@ -285,7 +285,7 @@ function setupClientUtils() {
       cp images/chartmuseum/${platform}/$chartmuseumversion/chartmuseum ${STORAGE_DIR_LOCATION}/harness-download/harness-chartmuseum/release/$chartmuseumversion/bin/${platform}/amd64/
     done
 
-    for tfConfigInspectVersion in v1.0 v1.1 v1.2; do
+    for tfConfigInspectVersion in v1.0 v1.1 v1.2 v1.3; do
       mkdir -p ${STORAGE_DIR_LOCATION}/harness-download/harness-terraform-config-inspect/"$tfConfigInspectVersion"/${platform}/amd64/
       cp images/tf-config-inspect/${platform}/"$tfConfigInspectVersion"/terraform-config-inspect ${STORAGE_DIR_LOCATION}/harness-download/harness-terraform-config-inspect/"$tfConfigInspectVersion"/${platform}/amd64/
     done
