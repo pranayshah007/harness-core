@@ -2540,7 +2540,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
     if (stillRunning) {
       log.info("Task {} of taskType {} timed out after {} milliseconds", taskId, taskData.getTaskType(), timeout);
-      metricRegistry.recordCounterInc(TASK_TIMEOUT.getMetricName(), DELEGATE_NAME, taskData.getTaskType());
+      metricRegistry.recordCounterInc(
+          TASK_TIMEOUT.getMetricName(), new String[] {DELEGATE_NAME, taskData.getTaskType()});
       Optional.ofNullable(currentlyExecutingFutures.get(taskId).getTaskFuture())
           .ifPresent(future -> future.cancel(true));
     }
@@ -2854,7 +2855,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         if (response != null && response.code() >= 200 && response.code() <= 299) {
           log.debug("Task {} type {},  response sent to manager", taskId, taskResponse.getTaskTypeName());
           metricRegistry.recordCounterInc(
-              TASK_COMPLETED.getMetricName(), DELEGATE_NAME, taskResponse.getTaskTypeName());
+              TASK_COMPLETED.getMetricName(), new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()});
           break;
         }
         log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
@@ -2871,7 +2872,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     } catch (IOException e) {
       log.error("Unable to send response to manager", e);
-      metricRegistry.recordCounterInc(TASK_FAILED.getMetricName(), DELEGATE_NAME, taskResponse.getTaskTypeName());
+      metricRegistry.recordCounterInc(
+          TASK_FAILED.getMetricName(), new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()});
     } finally {
       if (response != null && response.errorBody() != null && !response.isSuccessful()) {
         response.errorBody().close();
@@ -2896,7 +2898,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .responseCode(DelegateTaskResponse.ResponseCode.FAILED)
             .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
             .build();
-    metricRegistry.recordCounterInc(TASK_FAILED.getMetricName(), DELEGATE_NAME, taskResponse.getTaskTypeName());
+    metricRegistry.recordCounterInc(
+        TASK_FAILED.getMetricName(), new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()});
     log.error("Sending error response for task{} due to exception", taskId, exception);
     try {
       Response<ResponseBody> resp;
