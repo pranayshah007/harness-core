@@ -7,6 +7,7 @@ FROM us.gcr.io/platform-205701/cie-agent-harness-core-jdk11:latest as builder
 
 RUN mkdir -p /app
 ARG GCP_KEY
+ENV SERVICE_NAME="access-control"
 COPY . /app
 
 WORKDIR /app
