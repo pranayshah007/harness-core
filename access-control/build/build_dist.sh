@@ -24,7 +24,7 @@ if [ ! -z ${PURPOSE} ]
 then
     echo ${PURPOSE} > purpose.txt
 fi
-/app/dist/accesscontrol-service
+
 cp ${HOME}/.bazel-dirs/bin/access-control/service/module_deploy.jar accesscontrol-service-capsule.jar
 cp ../../access-control/config/config.yml .
 cp ../../access-control/config/keystore.jks .
