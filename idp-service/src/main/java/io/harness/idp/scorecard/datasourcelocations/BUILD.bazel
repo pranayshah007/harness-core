@@ -18,6 +18,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/morphia:module",
         "//999-annotations:module",
         "//idp-service/src/main/java/io/harness/idp/onboarding:module",
+        "//idp-service/src/main/java/io/harness/idp/proxy/delegate:module",
         "//idp-service/src/main/java/io/harness/idp/scorecard/datapoints:module",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_springframework_data_spring_data_commons",

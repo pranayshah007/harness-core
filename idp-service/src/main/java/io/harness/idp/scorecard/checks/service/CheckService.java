@@ -7,14 +7,16 @@
 
 package io.harness.idp.scorecard.checks.service;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
+import io.harness.spec.server.idp.v1.model.CheckDetails;
+import io.harness.spec.server.idp.v1.model.CheckListItem;
 
 import java.util.List;
 
-@OwnedBy(HarnessTeam.IDP)
 public interface CheckService {
-  void createOrUpdateCheck();
-  List<CheckEntity> getAllChecks(String accountIdentifier, String scoreIdentifier);
+  void createCheck(CheckDetails checkDetails, String accountIdentifier);
+  void updateCheck(CheckDetails checkDetails, String accountIdentifier);
+  List<CheckListItem> getChecksByAccountId(boolean custom, String accountIdentifier);
+  CheckDetails getCheckDetails(String accountIdentifier, String identifier);
+  List<CheckEntity> getChecksByAccountIdAndIdentifiers(String accountIdentifier, List<String> identifiers);
 }

@@ -7,4 +7,4 @@
 
 package io.harness.provision.model;
 
-public enum TfConfigInspectVersion { V1_0, V1_1, V1_2 }
+public enum TfConfigInspectVersion { V1_0, V1_1, V1_2, V1_3 }

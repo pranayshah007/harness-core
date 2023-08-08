@@ -44,10 +44,11 @@ public class TimeoutInstanceRemover implements AsyncInformObserver, NodeStatusUp
       return;
     }
 
-    List<String> timeoutInstanceIds = nodeUpdateInfo.getNodeExecution().getTimeoutInstanceIds();
+    // timeoutInstanceIds in updatedNodeExecution is empty as we make it empty with endTs
+    List<String> timeoutInstanceIds = nodeUpdateInfo.getTimeoutInstanceIds();
 
     try (AutoLogContext autoLogContext = obtainAutoLogContext(nodeUpdateInfo)) {
-      boolean isSuccess = deleteTimeoutInstancesWithRetry(timeoutInstanceIds);
+      boolean isSuccess = timeoutInstanceIds.isEmpty() || deleteTimeoutInstancesWithRetry(timeoutInstanceIds);
       if (isSuccess) {
         log.info("Timeout instances {} are removed successfully", timeoutInstanceIds);
       } else {

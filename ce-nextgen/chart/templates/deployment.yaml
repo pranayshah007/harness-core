@@ -41,12 +41,22 @@ spec:
           - "pod"
           - "-lapp=mongodb-replicaset"
       {{- end }}
+      {{- if .Values.global.database.timescaledb.installed }}
       - name: wait-for-timescale
         image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
         imagePullPolicy: IfNotPresent
         args:
           - "pod"
           - "-lapp=timescaledb-single-chart"
+      {{- end }}
+      {{- if .Values.global.database.clickhouse.enabled }}
+      - name: wait-for-clickhouse
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=clickhouse"
+      {{- end }}
       containers:
         - name: nextgen-ce
           securityContext:

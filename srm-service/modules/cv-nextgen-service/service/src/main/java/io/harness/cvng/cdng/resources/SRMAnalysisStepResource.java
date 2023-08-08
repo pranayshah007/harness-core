@@ -33,12 +33,12 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class SRMAnalysisStepResource {
   @Inject SRMAnalysisStepService srmAnalysisStepService;
   @GET
-  @Path("/{activityId}/analysis-summary")
+  @Path("/{executionDetailId}/analysis-summary")
   @ApiOperation(value = "get summary of srm analysis activity", nickname = "getSRMAnalysisSummary")
   public RestResponse<SRMAnalysisStepDetailDTO> getSRMAnalysisSummary(
       @NotEmpty @NotNull @QueryParam("accountId") String accountId,
-      @NotNull @PathParam("activityId") String activityId) {
-    return new RestResponse(srmAnalysisStepService.getSRMAnalysisSummary(activityId));
+      @NotNull @PathParam("executionDetailId") String executionDetailId) {
+    return new RestResponse(srmAnalysisStepService.getSRMAnalysisSummary(executionDetailId));
   }
 
   @PUT

@@ -26,6 +26,13 @@ public interface PmsEngineExpressionService {
 
   String evaluateExpression(Ambiance ambiance, String expression);
   String evaluateExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode);
+
+  // newRecastFlow -> to handle primitives recast transformation at first class level
+  String evaluateExpression(Ambiance ambiance, String expression, boolean newRecastFlow);
+
+  // newRecastFlow -> to handle primitives recast transformation at first class level
+  String evaluateExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode, boolean newRecastFlow);
+
   @Deprecated Object resolve(Ambiance ambiance, Object o, boolean skipUnresolvedExpressionsCheck);
   Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode);
 

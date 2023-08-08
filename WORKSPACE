@@ -5427,7 +5427,7 @@ amazon_v2_artifacts = [
             "commons-logging:commons-logging",
         ],
         group = "software.amazon.awssdk",
-        version = "2.20.109",
+        version = "2.17.220",
     )
     for x in [
         "ecs",
@@ -5616,7 +5616,7 @@ maven_install(
         "com.azure:azure-storage-common:12.15.1",
         "com.azure.resourcemanager:azure-resourcemanager-advisor:1.0.0-beta.2",
         "com.azure.resourcemanager:azure-resourcemanager-compute:2.26.0",
-        "software.amazon.awssdk:account:2.20.109",
+        "software.amazon.awssdk:account:2.20.74",
     ],
     repositories = [
         "https://harness-artifactory.harness.io/artifactory/portal-maven",

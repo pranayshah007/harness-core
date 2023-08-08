@@ -48,7 +48,7 @@ public class IndividualConfigFileStep
     ConfigFileAttributes finalConfigFile = applyConfigFileOverrides(stepParameters);
     cdExpressionResolver.updateStoreConfigExpressions(ambiance, finalConfigFile.getStore().getValue());
     validateConfigFileAttributes(stepParameters.getIdentifier(), finalConfigFile, true);
-    verifyConfigFileReference(stepParameters.getIdentifier(), finalConfigFile, ambiance);
+    verifyConfigFileReference(stepParameters.getIdentifier(), finalConfigFile, ambiance, null);
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()

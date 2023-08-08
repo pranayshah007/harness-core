@@ -56,6 +56,8 @@ public class InstallUtilsTest extends CategoryTest {
       PWD + "/client-tools/tf-config-inspect/v1.0/terraform-config-inspect";
   private static final String DEFAULT_TFCONFIG_INSPECT_1_1_PATH =
       PWD + "/client-tools/tf-config-inspect/v1.1/terraform-config-inspect";
+  private static final String DEFAULT_TFCONFIG_INSPECT_1_3_PATH =
+      PWD + "/client-tools/tf-config-inspect/v1.3/terraform-config-inspect";
   private static final String DEFAULT_CHARTMUSEUM_0_8_PATH = PWD + "/client-tools/chartmuseum/v0.8.2/chartmuseum";
   private static final String DEFAULT_CHARTMUSEUM_0_12_PATH = PWD + "/client-tools/chartmuseum/v0.12.0/chartmuseum";
   private static final String DEFAULT_HELM_38_PATH = PWD + "/client-tools/helm/v3.8.0/helm";
@@ -237,11 +239,13 @@ public class InstallUtilsTest extends CategoryTest {
     assertThat(getLatestVersionPath(CHARTMUSEUM)).isEqualTo(DEFAULT_CHARTMUSEUM_0_12_PATH);
     assertThat(getPath(CHARTMUSEUM, ChartmuseumVersion.V0_8)).isEqualTo(DEFAULT_CHARTMUSEUM_0_8_PATH);
     assertThat(getPath(CHARTMUSEUM, ChartmuseumVersion.V0_12)).isEqualTo(DEFAULT_CHARTMUSEUM_0_12_PATH);
-    assertThat(getLatestVersionPath(TERRAFORM_CONFIG_INSPECT)).isEqualTo(DEFAULT_TFCONFIG_INSPECT_1_1_PATH);
+    assertThat(getLatestVersionPath(TERRAFORM_CONFIG_INSPECT)).isEqualTo(DEFAULT_TFCONFIG_INSPECT_1_3_PATH);
     assertThat(getPath(TERRAFORM_CONFIG_INSPECT, TerraformConfigInspectVersion.V1_0))
         .isEqualTo(DEFAULT_TFCONFIG_INSPECT_1_0_PATH);
     assertThat(getPath(TERRAFORM_CONFIG_INSPECT, TerraformConfigInspectVersion.V1_1))
         .isEqualTo(DEFAULT_TFCONFIG_INSPECT_1_1_PATH);
+    assertThat(getPath(TERRAFORM_CONFIG_INSPECT, TerraformConfigInspectVersion.V1_3))
+        .isEqualTo(DEFAULT_TFCONFIG_INSPECT_1_3_PATH);
     assertThat(getPath(OC, OcVersion.V4_2)).isEqualTo(DEFAULT_OC_PATH);
     assertThat(getLatestVersionPath(KUSTOMIZE)).isEqualTo(DEFAULT_KUSTOMIZE_4_PATH);
     assertThat(getPath(KUSTOMIZE, KustomizeVersion.V3)).isEqualTo(DEFAULT_KUSTOMIZE_3_PATH);
@@ -271,11 +275,13 @@ public class InstallUtilsTest extends CategoryTest {
     assertThat(getLatestVersionPath(CHARTMUSEUM)).isEqualTo(DEFAULT_CHARTMUSEUM_0_12_PATH);
     assertThat(getPath(CHARTMUSEUM, ChartmuseumVersion.V0_8)).isEqualTo(DEFAULT_CHARTMUSEUM_0_8_PATH);
     assertThat(getPath(CHARTMUSEUM, ChartmuseumVersion.V0_12)).isEqualTo(DEFAULT_CHARTMUSEUM_0_12_PATH);
-    assertThat(getLatestVersionPath(TERRAFORM_CONFIG_INSPECT)).isEqualTo(DEFAULT_TFCONFIG_INSPECT_1_1_PATH);
+    assertThat(getLatestVersionPath(TERRAFORM_CONFIG_INSPECT)).isEqualTo(DEFAULT_TFCONFIG_INSPECT_1_3_PATH);
     assertThat(getPath(TERRAFORM_CONFIG_INSPECT, TerraformConfigInspectVersion.V1_0))
         .isEqualTo(DEFAULT_TFCONFIG_INSPECT_1_0_PATH);
     assertThat(getPath(TERRAFORM_CONFIG_INSPECT, TerraformConfigInspectVersion.V1_1))
         .isEqualTo(DEFAULT_TFCONFIG_INSPECT_1_1_PATH);
+    assertThat(getPath(TERRAFORM_CONFIG_INSPECT, TerraformConfigInspectVersion.V1_3))
+        .isEqualTo(DEFAULT_TFCONFIG_INSPECT_1_3_PATH);
     assertThat(getPath(OC, OcVersion.V4_2)).isEqualTo(DEFAULT_OC_PATH);
     assertThat(getLatestVersionPath(KUSTOMIZE)).isEqualTo(DEFAULT_KUSTOMIZE_4_PATH);
     assertThat(getPath(KUSTOMIZE, KustomizeVersion.V3)).isEqualTo(DEFAULT_KUSTOMIZE_3_PATH);

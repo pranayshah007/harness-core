@@ -1,6 +1,6 @@
 # nextgen-ce
 
-![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80102](https://img.shields.io/badge/AppVersion-0.0.80102-informational?style=flat-square)
+![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80103](https://img.shields.io/badge/AppVersion-0.0.80103-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -40,7 +40,7 @@ A Helm chart for Kubernetes
 | extraVolumes | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
 | global.ccm.gcpProjectId | string | `"placeHolder"` |  |
-| global.database.clickhouse.enabled | bool | `true` |  |
+| global.database.clickhouse.enabled | bool | `false` |  |
 | global.database.mongo.extraArgs | string | `""` |  |
 | global.database.mongo.hosts | list | `[]` | provide default values if mongo.installed is set to false |
 | global.database.mongo.installed | bool | `true` |  |
@@ -88,13 +88,13 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/ce-nextgen-signed"` |  |
-| image.tag | string | `"80102-000"` |  |
+| image.tag | string | `"80103-000"` |  |
 | imageClickhouseEnabled.digest | string | `""` |  |
 | imageClickhouseEnabled.imagePullSecrets | list | `[]` |  |
 | imageClickhouseEnabled.pullPolicy | string | `"Always"` |  |
 | imageClickhouseEnabled.registry | string | `"docker.io"` |  |
 | imageClickhouseEnabled.repository | string | `"harness/ce-nextgen-signed"` |  |
-| imageClickhouseEnabled.tag | string | `"80102-000"` |  |
+| imageClickhouseEnabled.tag | string | `"80103-000"` |  |
 | ingress.className | string | `"nginx"` |  |
 | java.memory | string | `"4096m"` |  |
 | java.memoryLimit | string | `"4096m"` |  |

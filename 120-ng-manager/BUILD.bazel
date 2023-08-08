@@ -23,6 +23,11 @@ shared_dependencies = [
 ] + [
     "//:lombok",
     "//120-ng-manager/contracts/openapi/v1:ng-manager-server-spec-module",
+    "//120-ng-manager/modules/eula/src/main/java/io/harness/eula/outbox:module",
+    "//120-ng-manager/modules/eula/src/main/java/io/harness/eula/resource:module",
+    "//120-ng-manager/modules/eula/src/main/java/io/harness/eula/service:module",
+    "//120-ng-manager/modules/eula/src/main/java/io/harness/eula/service/impl:module",
+    "//120-ng-manager/modules/eula/src/main/java/io/harness/serializer:module",
     "//120-ng-manager/modules/ldap:module",
     "//120-ng-manager/modules/ldap/contracts:module",
     "//120-ng-manager/modules/ng-settings:module",
