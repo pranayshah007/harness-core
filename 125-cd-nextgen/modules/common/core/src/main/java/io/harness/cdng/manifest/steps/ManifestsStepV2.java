@@ -37,6 +37,7 @@ import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.ManifestConfigType;
+import io.harness.cdng.manifest.beans.ManifestsData;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.mappers.ManifestSummaryMapper;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
@@ -300,7 +301,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     List<ManifestConfigWrapper> manifests;
     Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMapV1 = new HashMap<>();
     Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
-    Map<String, String> manifestFileLocation = new HashMap<>();
+    Map<String, String> manifestFileLocation;
     List<ManifestConfigWrapper> svcManifests = new ArrayList<>();
     String primaryManifestId = StringUtils.EMPTY;
 
@@ -322,9 +323,10 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
         return Optional.empty();
       }
       svcManifests = filterServiceManifest(svcManifests, primaryManifestId, isMultipleManifestEnabled);
-      manifests =
-          aggregateManifestsFromAllLocationsV2(svcManifests, manifestsFromOverride, logCallback, manifestFileLocation);
-
+      ManifestsData manifestsData =
+          aggregateManifestsFromAllLocationsV2(svcManifests, manifestsFromOverride, logCallback);
+      manifests = manifestsData.getManifests();
+      manifestFileLocation = manifestsData.getManifestFileLocation();
     } else {
       finalSvcManifestsMapV1 = ngManifestsMetadataSweepingOutput.getFinalSvcManifestsMap();
 
@@ -336,7 +338,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
       }
       finalSvcManifestsMapV1.replace(SERVICE,
           filterServiceManifest(finalSvcManifestsMapV1.get(SERVICE), primaryManifestId, isMultipleManifestEnabled));
-      manifests = aggregateManifestsFromAllLocations(finalSvcManifestsMapV1, manifestFileLocation);
+      ManifestsData manifestsData = aggregateManifestsFromAllLocations(finalSvcManifestsMapV1);
+      manifests = manifestsData.getManifests();
+      manifestFileLocation = manifestsData.getManifestFileLocation();
     }
 
     List<ManifestAttributes> manifestAttributes = manifests.stream()
@@ -391,10 +395,10 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   }
 
   // Used for override v2 design
-  private List<ManifestConfigWrapper> aggregateManifestsFromAllLocationsV2(List<ManifestConfigWrapper> svcManifests,
-      Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride, NGLogCallback logCallback,
-      Map<String, String> manifestFileLocation) {
+  private ManifestsData aggregateManifestsFromAllLocationsV2(List<ManifestConfigWrapper> svcManifests,
+      Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride, NGLogCallback logCallback) {
     List<ManifestConfigWrapper> manifests = new ArrayList<>();
+    Map<String, String> manifestFileLocation = new HashMap<>();
     if (isNotEmpty(svcManifests)) {
       logCallback.saveExecutionLog("Adding manifest from service", LogLevel.INFO);
       createManifestList(manifests, svcManifests, manifestFileLocation, SERVICE);
@@ -410,7 +414,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     }
 
     overrideHelmRepoConnectorIfHelmChartExistsV2(manifestsFromOverride, manifests);
-    return manifests;
+    return ManifestsData.builder().manifestFileLocation(manifestFileLocation).manifests(manifests).build();
   }
 
   private static boolean noManifestsConfigured(Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
@@ -427,9 +431,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   }
 
   @NotNull
-  private List<ManifestConfigWrapper> aggregateManifestsFromAllLocations(
-      @NonNull Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap,
-      Map<String, String> manifestFileLocation) {
+  private ManifestsData aggregateManifestsFromAllLocations(
+      @NonNull Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
+    Map<String, String> manifestFileLocation = new HashMap<>();
     List<ManifestConfigWrapper> manifests = new ArrayList<>();
     if (isNotEmpty(finalSvcManifestsMap.get(SERVICE))) {
       createManifestList(manifests, finalSvcManifestsMap.get(SERVICE), manifestFileLocation, SERVICE);
@@ -444,7 +448,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     }
 
     overrideHelmRepoConnectorIfHelmChartExists(finalSvcManifestsMap, manifests);
-    return manifests;
+    return ManifestsData.builder().manifestFileLocation(manifestFileLocation).manifests(manifests).build();
   }
 
   private void overrideHelmRepoConnectorIfHelmChartExists(
@@ -563,15 +567,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
               String.join(",", identifiersList), String.join(",", fileLocationList)));
     }
 
-    Map<String, Set<String>> connectorIdentifierRefs =
-        manifestsToConsider.stream().collect(Collectors.toMap(manifestConfig
-            -> manifestConfig.getStoreConfig().getConnectorReference().getValue(),
-            manifestConfig
-            -> new HashSet<>(Collections.singletonList(manifestConfig.getIdentifier())),
-            (existingSet, newSet) -> {
-              existingSet.addAll(newSet);
-              return existingSet;
-            }));
+    Map<String, Set<String>> connectorIdentifierRefs = getConnectorIdToManifestIdMap(manifestsToConsider);
 
     final Set<String> connectorsNotFound = new HashSet<>();
     final Set<String> connectorsNotValid = new HashSet<>();
@@ -624,6 +620,17 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
           String.join(",", connectorsNotValid), String.join(",", manifestIdentifierList),
           String.join(",", fileLocationList)));
     }
+  }
+
+  private Map<String, Set<String>> getConnectorIdToManifestIdMap(List<ManifestAttributes> manifestsToConsider) {
+    return manifestsToConsider.stream().collect(Collectors.toMap(manifestConfig
+        -> manifestConfig.getStoreConfig().getConnectorReference().getValue(),
+        manifestConfig
+        -> new HashSet<>(Collections.singletonList(manifestConfig.getIdentifier())),
+        (existingSet, newSet) -> {
+          existingSet.addAll(newSet);
+          return existingSet;
+        }));
   }
 
   void checkForAccessOrThrow(Ambiance ambiance, List<ManifestAttributes> manifestAttributes) {
