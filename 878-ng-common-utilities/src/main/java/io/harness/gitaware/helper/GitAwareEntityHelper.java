@@ -424,6 +424,7 @@ public class GitAwareEntityHelper {
                                              .build(),
             repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap,
             getFileContentOnly, gitContextRequestParams.isApplyRepoAllowListFilter());
+    GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return scmGetFileResponse.getFileContent();
   }
 

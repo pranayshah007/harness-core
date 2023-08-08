@@ -63,6 +63,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   String repoName = "repo";
   String filePath = "file/path";
   String data = "data: pipelineYaml";
+  String readMe = "README Content";
   String data2 = "data2: pipelineYaml";
 
   String branch = "dev";
@@ -77,6 +78,7 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   Scope scope;
 
   String yamlFilePath = ".harness/test.yaml";
+  String readMeFilePath = ".harness/README.md";
   EntityType entityType;
 
   private static final String BranchName = "branch";
@@ -135,6 +137,33 @@ public class GitAwareEntityHelperTest extends CategoryTest {
     GitAware gitAware = gitAwareEntityHelper.fetchEntityFromRemote(dummyGitAware, scope, gitContextRequestParams, null);
     assertThat(gitAware.getData()).isEqualTo(data);
     ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
+    assertThat(scmGitMetaDataInContext.getRepoName()).isEqualTo(repoName);
+    assertThat(scmGitMetaDataInContext.getBranchName()).isEqualTo(branch);
+    assertThat(scmGitMetaDataInContext.getFilePath()).isEqualTo(filePath);
+    assertThat(scmGitMetaDataInContext.getCommitId()).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testFetchReadMeFileFromRemote() {
+    gitContextRequestParams = GitContextRequestParams.builder()
+                                  .connectorRef(connectorRef)
+                                  .repoName(repoName)
+                                  .filePath(readMeFilePath)
+                                  .branchName(branch)
+                                  .entityType(EntityType.TEMPLATE)
+                                  .build();
+    ScmGetFileResponse getFileResponse =
+        ScmGetFileResponse.builder().fileContent(readMe).gitMetaData(scmGitMetaData).build();
+    doReturn(getFileResponse)
+        .when(scmGitSyncHelper)
+        .getFileByBranch(
+            scope, repoName, branch, "", readMeFilePath, connectorRef, false, EntityType.TEMPLATE, null, false, false);
+    DummyGitAware dummyGitAware = DummyGitAware.builder().build();
+    String file = gitAwareEntityHelper.fetchReadMeFileFromRemote(dummyGitAware, scope, gitContextRequestParams, null);
+    ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
+    assertThat(file).isEqualTo(readMe);
     assertThat(scmGitMetaDataInContext.getRepoName()).isEqualTo(repoName);
     assertThat(scmGitMetaDataInContext.getBranchName()).isEqualTo(branch);
     assertThat(scmGitMetaDataInContext.getFilePath()).isEqualTo(filePath);
