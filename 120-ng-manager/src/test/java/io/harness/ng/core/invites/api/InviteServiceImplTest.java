@@ -50,7 +50,6 @@ import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.AccountOrgProjectHelper;
@@ -80,7 +79,6 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.user.remote.UserClient;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
-import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.Claim;
 import java.io.IOException;
 import java.net.URI;

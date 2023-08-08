@@ -100,7 +100,6 @@ import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.auth0.jwt.exceptions.InvalidClaimException;
 import com.auth0.jwt.exceptions.JWTDecodeException;
-import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
