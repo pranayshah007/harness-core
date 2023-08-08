@@ -25,15 +25,14 @@ FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534  --from=builder \
-  /app/dist/access-control/accesscontrol-service-capsule.jar  \
-  /app/dist/access-control/keystore.jks \
-  /app/dist/access-control/config.yml \
-  /app/dist/access-control/classpath_metadata.json \
-  /app/dist/access-control/scripts \
-  /app/dist/access-control/default.jfc \
-  /app/dist/access-control/profile.jfc \
+  /app/dist/accesscontrol-service/accesscontrol-service-capsule.jar  \
+  /app/dist/accesscontrol-service/keystore.jks \
+  /app/dist/accesscontrol-service/config.yml \
+  /app/dist/accesscontrol-service/classpath_metadata.json \
+  /app/dist/accesscontrol-service/scripts \
+  /app/dist/accesscontrol-service/default.jfc \
+  /app/dist/accesscontrol-service/profile.jfc \
   /app/dockerization/base-images/apm/*.sh \
-  /app/*.sh \
   /opt/harness/
 
 RUN  ls /opt/harness/
