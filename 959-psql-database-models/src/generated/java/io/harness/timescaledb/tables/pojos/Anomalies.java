@@ -32,6 +32,7 @@ public class Anomalies implements Serializable {
   private String workloadname;
   private String workloadtype;
   private String namespace;
+  private String service;
   private String region;
   private String gcpproduct;
   private String gcpskuid;
@@ -67,6 +68,7 @@ public class Anomalies implements Serializable {
     this.workloadname = value.workloadname;
     this.workloadtype = value.workloadtype;
     this.namespace = value.namespace;
+    this.service = value.service;
     this.region = value.region;
     this.gcpproduct = value.gcpproduct;
     this.gcpskuid = value.gcpskuid;
@@ -90,7 +92,7 @@ public class Anomalies implements Serializable {
 
   public Anomalies(String id, String accountid, Double actualcost, Double expectedcost, OffsetDateTime anomalytime,
       String timegranularity, String note, String clusterid, String clustername, String workloadname,
-      String workloadtype, String namespace, String region, String gcpproduct, String gcpskuid,
+      String workloadtype, String namespace, String service, String region, String gcpproduct, String gcpskuid,
       String gcpskudescription, String gcpproject, String awsservice, String awsaccount, String awsinstancetype,
       String awsusagetype, Double anomalyscore, String reportedby, String feedback, Boolean slackdailynotification,
       Boolean slackinstantnotification, Boolean slackweeklynotification, Boolean newentity,
@@ -107,6 +109,7 @@ public class Anomalies implements Serializable {
     this.workloadname = workloadname;
     this.workloadtype = workloadtype;
     this.namespace = namespace;
+    this.service = service;
     this.region = region;
     this.gcpproduct = gcpproduct;
     this.gcpskuid = gcpskuid;
@@ -305,6 +308,21 @@ public class Anomalies implements Serializable {
    */
   public Anomalies setNamespace(String namespace) {
     this.namespace = namespace;
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.anomalies.service</code>.
+   */
+  public String getService() {
+    return this.service;
+  }
+
+  /**
+   * Setter for <code>public.anomalies.service</code>.
+   */
+  public Anomalies setService(String service) {
+    this.service = service;
     return this;
   }
 
@@ -662,6 +680,11 @@ public class Anomalies implements Serializable {
         return false;
     } else if (!namespace.equals(other.namespace))
       return false;
+    if (service == null) {
+      if (other.service != null)
+        return false;
+    } else if (!service.equals(other.service))
+      return false;
     if (region == null) {
       if (other.region != null)
         return false;
@@ -776,6 +799,7 @@ public class Anomalies implements Serializable {
     result = prime * result + ((this.workloadname == null) ? 0 : this.workloadname.hashCode());
     result = prime * result + ((this.workloadtype == null) ? 0 : this.workloadtype.hashCode());
     result = prime * result + ((this.namespace == null) ? 0 : this.namespace.hashCode());
+    result = prime * result + ((this.service == null) ? 0 : this.service.hashCode());
     result = prime * result + ((this.region == null) ? 0 : this.region.hashCode());
     result = prime * result + ((this.gcpproduct == null) ? 0 : this.gcpproduct.hashCode());
     result = prime * result + ((this.gcpskuid == null) ? 0 : this.gcpskuid.hashCode());
@@ -814,6 +838,7 @@ public class Anomalies implements Serializable {
     sb.append(", ").append(workloadname);
     sb.append(", ").append(workloadtype);
     sb.append(", ").append(namespace);
+    sb.append(", ").append(service);
     sb.append(", ").append(region);
     sb.append(", ").append(gcpproduct);
     sb.append(", ").append(gcpskuid);
