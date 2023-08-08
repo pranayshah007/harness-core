@@ -97,6 +97,7 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
   private static final String APP_ID = "appId";
   private static final String ACCOUNT_ID = "accountId";
   private static final String DEFAULT_DIR = "DEFAULT_DIR";
+  private static final String INNER_DIR = "INNER_DIR";
   private static final String TEMP_DIR = "TEMP_DIR";
   private static final Map<String, Collection<CustomSourceFile>> valuesFilesContentMap =
       singletonMap("Service", singletonList(CustomSourceFile.builder().build()));
@@ -158,16 +159,16 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRunFetchTask() throws IOException {
     CustomManifestSource customManifestSource =
-        CustomManifestSource.builder().script("test script").filePaths(singletonList("test1.yaml")).build();
+        CustomManifestSource.builder().script("test script").filePaths(singletonList(INNER_DIR)).build();
     CustomManifestValuesFetchParams taskParams =
         createTaskParams(singletonList(CustomManifestFetchConfig.builder().key("value").build()), customManifestSource);
     CustomManifestValuesFetchResponse fetchValueFileResponse = CustomManifestValuesFetchResponse.builder()
                                                                    .commandExecutionStatus(SUCCESS)
                                                                    .valuesFilesContentMap(valuesFilesContentMap)
                                                                    .build();
-    FileIo.createDirectoryIfDoesNotExist(DEFAULT_DIR);
+    FileIo.createDirectoryIfDoesNotExist(DEFAULT_DIR + "/" + INNER_DIR);
     FileIo.createDirectoryIfDoesNotExist(TEMP_DIR);
-    Files.createFile(Paths.get(DEFAULT_DIR, "test1.yaml"));
+    Files.createFile(Paths.get(DEFAULT_DIR, INNER_DIR, "test1.yaml"));
 
     doReturn(DEFAULT_DIR)
         .when(customManifestService)
@@ -197,7 +198,7 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
     assertThat(response.getValuesFilesContentMap()).isEqualTo(valuesFilesContentMap);
 
     // clean up
-    FileIo.deleteDirectoryAndItsContentIfExists(DEFAULT_DIR);
+    FileIo.deleteDirectoryAndItsContentIfExists(DEFAULT_DIR + "/" + INNER_DIR);
     FileIo.deleteDirectoryAndItsContentIfExists(TEMP_DIR);
   }
 
@@ -228,13 +229,13 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRunZipAndUploadTaskFail() throws IOException {
     CustomManifestSource customManifestSource =
-        CustomManifestSource.builder().script("test script").filePaths(singletonList("test1.yaml")).build();
+        CustomManifestSource.builder().script("test script").filePaths(singletonList(INNER_DIR)).build();
     CustomManifestValuesFetchParams taskParams =
         createTaskParams(singletonList(CustomManifestFetchConfig.builder().key("value").build()), customManifestSource);
 
-    FileIo.createDirectoryIfDoesNotExist(DEFAULT_DIR);
+    FileIo.createDirectoryIfDoesNotExist(DEFAULT_DIR + "/" + INNER_DIR);
     FileIo.createDirectoryIfDoesNotExist(TEMP_DIR);
-    Files.createFile(Paths.get(DEFAULT_DIR, "test1.yaml"));
+    Files.createFile(Paths.get(DEFAULT_DIR, INNER_DIR, "test1.yaml"));
 
     doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
     doReturn(DEFAULT_DIR)
@@ -254,7 +255,7 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRunFetchTaskInAbsoluteDirectory() throws IOException {
     CustomManifestSource customManifestSource =
-        CustomManifestSource.builder().script("Test script").filePaths(singletonList(ABSOLUTE_DIR)).build();
+        CustomManifestSource.builder().script("Test script").filePaths(singletonList(INNER_DIR)).build();
     CustomManifestValuesFetchParams taskParams =
         createTaskParams(singletonList(CustomManifestFetchConfig.builder().key("value").build()), customManifestSource);
     CustomManifestValuesFetchResponse fetchValueFileResponse = CustomManifestValuesFetchResponse.builder()
@@ -263,7 +264,7 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
                                                                    .build();
 
     FileIo.createDirectoryIfDoesNotExist(TEMP_DIR);
-    FileIo.createDirectoryIfDoesNotExist(ABSOLUTE_DIR);
+    FileIo.createDirectoryIfDoesNotExist(ABSOLUTE_DIR + "/" + INNER_DIR);
 
     doReturn(ABSOLUTE_DIR)
         .when(customManifestService)
@@ -293,7 +294,7 @@ public class CustomManifestFetchTaskNGTest extends CategoryTest {
     assertThat(response.getValuesFilesContentMap()).isEqualTo(valuesFilesContentMap);
 
     // clean up
-    FileIo.deleteDirectoryAndItsContentIfExists(ABSOLUTE_DIR);
+    FileIo.deleteDirectoryAndItsContentIfExists(ABSOLUTE_DIR + "/" + INNER_DIR);
     FileIo.deleteDirectoryAndItsContentIfExists(TEMP_DIR);
   }
 
