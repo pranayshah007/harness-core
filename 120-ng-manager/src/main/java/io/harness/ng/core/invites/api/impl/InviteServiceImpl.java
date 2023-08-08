@@ -45,10 +45,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
-import io.harness.exception.DuplicateFieldException;
-import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedException;
-import io.harness.exception.WingsException;
+import io.harness.exception.*;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.logging.AutoLogContext;
 import io.harness.mongo.MongoConfig;
@@ -109,6 +106,7 @@ import com.google.inject.name.Named;
 import com.j256.twofactorauth.TimeBasedOneTimePasswordUtil;
 import com.mongodb.MongoClientURI;
 import java.io.UnsupportedEncodingException;
+import java.lang.UnsupportedOperationException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -510,9 +508,9 @@ public class InviteServiceImpl implements InviteService {
     Optional<Invite> inviteOptional = null;
     try {
       inviteOptional = getInviteFromToken(jwtToken, true);
-    } catch (JWTDecodeException e) {
+    } catch (InvalidTokenException e) {
       return InviteAcceptResponse.builder().response(INVITE_INVALID).build();
-    } catch (InvalidClaimException e) {
+    } catch (ExpiredTokenException e) {
       return InviteAcceptResponse.builder().response(INVITE_EXPIRED).build();
     }
     if (!inviteOptional.isPresent() || !inviteOptional.get().getInviteToken().equals(jwtToken)) {
@@ -562,9 +560,9 @@ public class InviteServiceImpl implements InviteService {
       inviteIdOptional = getInviteIdFromToken(jwtToken);
     } catch (InvalidRequestException e) {
       if (INVALID_JWT_TOKEN.equals(e.getMessage())) {
-        throw new JWTDecodeException(INVALID_JWT_TOKEN);
+        throw new InvalidTokenException(INVALID_JWT_TOKEN, WingsException.USER);
       } else if (TOKEN_EXPIRED.equals(e.getMessage())) {
-        throw new InvalidClaimException(TOKEN_EXPIRED);
+        throw new ExpiredTokenException(TOKEN_EXPIRED, WingsException.USER);
       }
     }
     if (!inviteIdOptional.isPresent()) {
