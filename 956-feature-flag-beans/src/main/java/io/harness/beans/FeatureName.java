@@ -478,6 +478,7 @@ public enum FeatureName {
   MOVE_AWS_AMI_SPOT_INST_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_AWS_CODE_DEPLOY_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_AWS_LAMBDA_INSTANCE_SYNC_TO_PERPETUAL_TASK,
+  CD_MAKE_CD_LICENSE_USAGE_REPORTS_ASYNC("Make CD License Usage dashboards to be async", HarnessTeam.CDC),
   MOVE_AWS_SSH_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_CONTAINER_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK,
@@ -688,8 +689,6 @@ public enum FeatureName {
   SPG_ENVIRONMENT_QUERY_LOGS(
       "This is a debug FF, no behaviour will be changed. We are adding logs to help find a root cause", SPG),
   SPG_FETCH_ARTIFACT_FROM_DB("Fetch artifact from database if available in artifact collection step", HarnessTeam.SPG),
-  SPG_FIX_APPROVAL_WAITING_FOR_INPUTS(
-      "Fixes a bug where approval step is going to waiting for inputs state", HarnessTeam.SPG),
   SPG_GENERATE_CURL_WITHOUT_ARTIFACT(
       "Enable curl generation to trigger when last collected without artifacts.", HarnessTeam.SPG),
   SPG_GRAPHQL_VERIFY_APPLICATION_FROM_USER_GROUP(
@@ -700,8 +699,8 @@ public enum FeatureName {
   SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG),
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
       "Flag to support deployment freeze exclusions. Depends on NEW_DEPLOYMENT_FREEZE", HarnessTeam.SPG),
-  SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
+  SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
       "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),

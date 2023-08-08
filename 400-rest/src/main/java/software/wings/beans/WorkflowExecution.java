@@ -124,9 +124,6 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   public static String ACCOUNTID_CREATEDAT_REJECTEDBYFREEZEWINDOWIDS =
       "accountId_1_createdAt_-1_rejectedByFreezeWindowIds_1";
   public static String ACCOUNTID_APPID_ONDEMANDROLLBACK_CREATEDAT = "accountId_appId_onDemandRollback_createdAt";
-  public static String WFE_EXECUTIONS_SEARCH_WORKFLOWID = "wfe_executions_search_workflowId";
-  public static String WFE_EXECUTIONS_SEARCH_SERVICEIDS = "wfe_executions_search_serviceIds";
-  public static String WFE_EXECUTIONS_SEARCH_ENVIDS = "wfe_executions_search_envIds";
   public static String ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS =
       "accountId_appId_workflowId_createdAt_cdPageCandidate_status";
   public static String ACCOUNTID_APPID_SERVICEIDS_CREATEDAT_CDPAGECANDIDATE_STATUS =
@@ -258,33 +255,6 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.appId)
                  .field(WorkflowExecutionKeys.onDemandRollback)
                  .descSortField(WorkflowExecutionKeys.createdAt)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name(WFE_EXECUTIONS_SEARCH_WORKFLOWID)
-                 .field(WorkflowExecutionKeys.accountId)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
-                 .rangeField(WorkflowExecutionKeys.appId)
-                 .rangeField(WorkflowExecutionKeys.workflowId)
-                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
-                 .rangeField(WorkflowExecutionKeys.status)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name(WFE_EXECUTIONS_SEARCH_SERVICEIDS)
-                 .field(WorkflowExecutionKeys.accountId)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
-                 .rangeField(WorkflowExecutionKeys.appId)
-                 .rangeField(WorkflowExecutionKeys.serviceIds)
-                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
-                 .rangeField(WorkflowExecutionKeys.status)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name(WFE_EXECUTIONS_SEARCH_ENVIDS)
-                 .field(WorkflowExecutionKeys.accountId)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
-                 .rangeField(WorkflowExecutionKeys.appId)
-                 .rangeField(WorkflowExecutionKeys.envIds)
-                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
-                 .rangeField(WorkflowExecutionKeys.status)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name(ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS)
