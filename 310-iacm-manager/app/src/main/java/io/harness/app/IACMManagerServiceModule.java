@@ -9,6 +9,11 @@ package io.harness.app;
 
 import static io.harness.authorization.AuthorizationServiceHeader.IACM_MANAGER;
 import static io.harness.ci.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
+import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
+import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
+import static io.harness.eventsframework.EventsFrameworkConstants.IACM_ORCHESTRATION_NOTIFY_EVENT;
+import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELEGATE_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
@@ -28,6 +33,7 @@ import io.harness.callback.MongoDatabase;
 import io.harness.ci.CIExecutionServiceModule;
 import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.buildstate.SecretDecryptorViaNg;
+import io.harness.ci.execution.DelegateTaskEventListener;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
@@ -48,6 +54,12 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
+import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.eventsframework.api.Consumer;
+import io.harness.eventsframework.api.Producer;
+import io.harness.eventsframework.impl.noop.NoOpConsumer;
+import io.harness.eventsframework.impl.redis.GitAwareRedisProducer;
+import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
@@ -61,11 +73,13 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
+import io.harness.ng.core.event.MessageListener;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
@@ -104,6 +118,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RedissonClient;
 import org.reflections.Reflections;
 
 @Slf4j
@@ -222,6 +237,7 @@ public class IACMManagerServiceModule extends AbstractModule {
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class); // same?
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class); // same?
     bind(AwsClient.class).to(AwsClientImpl.class); // same?
+    registerEventListeners();
     if (iacmManagerConfiguration.isLocal()) {
       bind(CILicenseService.class)
           .to(IACMLicenseNoopServiceImpl.class)
@@ -319,5 +335,40 @@ public class IACMManagerServiceModule extends AbstractModule {
         return iacmManagerConfiguration.getSegmentConfiguration();
       }
     });
+  }
+
+  private void registerEventListeners() {
+    final RedisConfig redisConfig = iacmManagerConfiguration.getEventsFrameworkConfiguration().getRedisConfig();
+    String orchestrationEvent = IACM_ORCHESTRATION_NOTIFY_EVENT;
+    String serviceId = "IACM_MANAGER";
+
+    if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
+      bind(Consumer.class)
+          .annotatedWith(Names.named(OBSERVER_EVENT_CHANNEL))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+
+    } else {
+      RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
+      bind(Consumer.class)
+          .annotatedWith(Names.named(OBSERVER_EVENT_CHANNEL))
+          .toInstance(RedisConsumer.of(OBSERVER_EVENT_CHANNEL, serviceId, redissonClient, DEFAULT_MAX_PROCESSING_TIME,
+              DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
+
+      bind(MessageListener.class)
+          .annotatedWith(Names.named(DELEGATE_ENTITY + OBSERVER_EVENT_CHANNEL))
+          .to(DelegateTaskEventListener.class);
+
+      bind(Producer.class)
+          .annotatedWith(Names.named(orchestrationEvent))
+          .toInstance(GitAwareRedisProducer.of(
+              orchestrationEvent, redissonClient, 5000, serviceId, redisConfig.getEnvNamespace()));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(orchestrationEvent))
+          .toInstance(RedisConsumer.of(orchestrationEvent, serviceId, redissonClient,
+              EventsFrameworkConstants.PLAN_NOTIFY_EVENT_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
+    }
   }
 }
