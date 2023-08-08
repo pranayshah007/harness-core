@@ -57,8 +57,8 @@ public class RemoteExpressionFunctor extends LateBindingMap implements Expressio
             expressionResponse.getValue(), expressionResponse.getPrimitiveType());
       }
       long evaluatedExpressionTimeInMs = System.currentTimeMillis() - startEvaluateExpressionTimeInMs;
-      log.info("Expression evaluated successfully, functorKey: {}, time taken in ms: {}", functorKey,
-          evaluatedExpressionTimeInMs);
+      log.info("Expression evaluated successfully, functorKey: {}, time taken in ms: {} for planExecutionId: {}",
+          functorKey, evaluatedExpressionTimeInMs, ambiance.getPlanExecutionId());
       return RecastOrchestrationUtils.fromJson(expressionResponse.getValue());
     } catch (ClassNotFoundException e) {
       log.error(e.getMessage());
