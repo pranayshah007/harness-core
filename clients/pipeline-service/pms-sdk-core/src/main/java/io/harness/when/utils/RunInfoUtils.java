@@ -8,6 +8,7 @@
 package io.harness.when.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.contracts.plan.ExecutionMode.NORMAL;
 
 import io.harness.annotations.dev.CodePulse;
@@ -93,11 +94,11 @@ public class RunInfoUtils {
     return condition.getExpressionValue();
   }
 
-  public String getDefaultWhenConditionForRollback() {
+  private String getDefaultWhenConditionForRollback() {
     return getStatusExpression(ROLLBACK_MODE_EXECUTION) + " || " + getStatusExpression(STAGE_FAILURE);
   }
 
-  public String getDefaultWhenCondition(boolean isStage) {
+  private String getDefaultWhenCondition(boolean isStage) {
     return getDefaultWhenCondition(isStage, NORMAL);
   }
 
@@ -131,15 +132,33 @@ public class RunInfoUtils {
   }
 
   public String getStageWhenCondition(YamlField field) {
-    StageWhenCondition stageWhenCondition = null;
+    ParameterField<String> stageWhenConditionParameterField = null;
     if (field.getNode().getField(YAMLFieldNameConstants.WHEN) != null) {
       try {
-        stageWhenCondition = YamlUtils.read(
-            field.getNode().getField(YAMLFieldNameConstants.WHEN).getNode().toString(), StageWhenCondition.class);
+        stageWhenConditionParameterField = YamlUtils.read(
+            field.getNode().getField(YAMLFieldNameConstants.WHEN).getNode().toString(), ParameterField.class);
       } catch (IOException e) {
         // Empty whenCondition. Default will be used.
       }
     }
-    return getRunConditionForStage(ParameterField.createValueField(stageWhenCondition));
+    return getStageWhenCondition(stageWhenConditionParameterField);
+  }
+
+  private String getStageWhenCondition(ParameterField<String> stageWhenCondition) {
+    return getStageWhenCondition(stageWhenCondition, NORMAL);
+  }
+
+  private String getStageWhenCondition(ParameterField<String> stageWhenCondition, ExecutionMode executionMode) {
+    return ParameterField.isNull(stageWhenCondition) ? RunInfoUtils.getDefaultWhenCondition(true, executionMode)
+        : isNotEmpty(stageWhenCondition.getValue())  ? stageWhenCondition.getValue()
+                                                     : stageWhenCondition.getExpressionValue();
+  }
+
+  public String getStepWhenCondition(ParameterField<String> stepWhenCondition, boolean isStepInsideRollback) {
+    return ParameterField.isNull(stepWhenCondition) ? isStepInsideRollback
+            ? RunInfoUtils.getDefaultWhenConditionForRollback()
+            : RunInfoUtils.getDefaultWhenCondition(false)
+        : isNotEmpty(stepWhenCondition.getValue()) ? stepWhenCondition.getValue()
+                                                    : stepWhenCondition.getExpressionValue();
   }
 }

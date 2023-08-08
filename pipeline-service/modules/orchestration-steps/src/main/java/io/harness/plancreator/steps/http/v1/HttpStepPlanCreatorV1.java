@@ -7,7 +7,6 @@
 
 package io.harness.plancreator.steps.http.v1;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
@@ -97,11 +96,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
                     .setType(
                         FacilitatorType.newBuilder().setType(stepNode.getStepSpecType().getFacilitatorType()).build())
                     .build())
-            .whenCondition(ParameterField.isNull(stepNode.getWhen()) ? isStepInsideRollback
-                        ? RunInfoUtils.getDefaultWhenConditionForRollback()
-                        : RunInfoUtils.getDefaultWhenCondition(false)
-                    : isNotEmpty(stepNode.getWhen().getValue()) ? stepNode.getWhen().getValue()
-                                                                     : stepNode.getWhen().getExpressionValue())
+            .whenCondition(RunInfoUtils.getStepWhenCondition(stepNode.getWhen(), isStepInsideRollback))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
