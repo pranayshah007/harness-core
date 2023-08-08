@@ -40,4 +40,5 @@ pwd
 ls /app
 cd ../..
 pwd
-ls
+ls /app
+ls /app/scripts/
