@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class K8sManifestLocalStoreService implements NgManifestService {
@@ -69,12 +70,14 @@ public class K8sManifestLocalStoreService implements NgManifestService {
             .identifier(MigratorUtility.generateManifestIdentifier(applicationManifest.getUuid(), identifierCaseFormat))
             .skipResourceVersioning(ParameterField.createValueField(
                 Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
-            .valuesPaths(MigratorUtility.getFileStorePaths(valuesFiles))
             .store(ParameterField.createValueField(StoreConfigWrapper.builder()
                                                        .type(StoreConfigType.HARNESS)
                                                        .spec(manifestMigrationService.getHarnessStore(manifestFiles))
                                                        .build()))
             .build();
+    if (CollectionUtils.isNotEmpty(valuesFiles)) {
+      k8sManifest.setValuesPaths(MigratorUtility.getFileStorePaths(valuesFiles));
+    }
 
     return Collections.singletonList(ManifestConfigWrapper.builder()
                                          .manifest(ManifestConfig.builder()
