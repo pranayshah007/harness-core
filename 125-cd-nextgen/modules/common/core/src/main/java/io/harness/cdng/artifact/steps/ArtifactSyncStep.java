@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.artifact.steps;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.mappers.ArtifactResponseToOutcomeMapper;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
@@ -25,6 +27,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 
 import com.google.inject.Inject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactSyncStep implements SyncExecutable<ArtifactStepParameters> {
   @Inject private ArtifactStepHelper artifactStepHelper;

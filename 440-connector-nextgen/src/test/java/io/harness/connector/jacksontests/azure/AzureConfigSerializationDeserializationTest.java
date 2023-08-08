@@ -49,6 +49,7 @@ public class AzureConfigSerializationDeserializationTest extends CategoryTest {
   String tenantId = "tenantId";
   String name = "name";
   String description = "description";
+  String accountIdentifier = "accountIdentifier";
   String projectIdentifier = "projectIdentifier";
   String orgIdentifier = "orgIdentifier";
   String connectorIdentifier = "identifier";
@@ -87,6 +88,7 @@ public class AzureConfigSerializationDeserializationTest extends CategoryTest {
         .name(name)
         .identifier(connectorIdentifier)
         .description(description)
+        .accountIdentifier(accountIdentifier)
         .projectIdentifier(projectIdentifier)
         .orgIdentifier(orgIdentifier)
         .tags(tags)

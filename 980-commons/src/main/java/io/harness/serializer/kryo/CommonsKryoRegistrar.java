@@ -6,9 +6,11 @@
  */
 
 package io.harness.serializer.kryo;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileData;
 import io.harness.beans.KeyValuePair;
 import io.harness.context.GlobalContext;
@@ -43,6 +45,7 @@ import io.harness.exception.FunctorException;
 import io.harness.exception.GcpServerException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.GitOperationException;
+import io.harness.exception.HarnessRemoteServiceException;
 import io.harness.exception.HintException;
 import io.harness.exception.HttpResponseException;
 import io.harness.exception.IllegalArgumentException;
@@ -104,6 +107,7 @@ import com.esotericsoftware.kryo.Kryo;
 import java.net.SocketException;
 import java.time.ZonedDateTime;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PL)
 public class CommonsKryoRegistrar implements KryoRegistrar {
   @Override
@@ -209,5 +213,6 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(TerragruntCommandExecutionException.class, 10000262);
     kryo.register(TerraformCloudException.class, 10000305);
     kryo.register(ServiceNowOIDCException.class, 10000122);
+    kryo.register(HarnessRemoteServiceException.class, 10000124);
   }
 }

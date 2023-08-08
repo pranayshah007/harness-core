@@ -6,7 +6,6 @@
  */
 
 package io.harness.filestore.resource;
-
 import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE;
@@ -24,6 +23,7 @@ import static io.harness.NGCommonEntityConstants.FILE_YAML_DEFINITION_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILTER_IDENTIFIER_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FOLDER_DETAILS_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FOLDER_NODE_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_KEY;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
@@ -47,10 +47,14 @@ import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 
 import io.harness.EntityType;
+import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SearchPageParams;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.eraro.ErrorCode;
@@ -70,6 +74,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
 import io.harness.ng.core.filestore.dto.FileStoreRequest;
+import io.harness.ng.core.utils.URLDecoderUtility;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PageUtils;
@@ -113,6 +118,7 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(CDP)
 @Path("/file-store")
 @Api("/file-store")
@@ -288,12 +294,14 @@ public class FileStoreResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
       @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier @PathParam(
-          IDENTIFIER_KEY) String identifier) {
+          IDENTIFIER_KEY) String identifier,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, identifier), FILE_DELETE_PERMISSION);
 
     return ResponseDTO.newResponse(
-        fileStoreService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier));
+        fileStoreService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete));
   }
 
   @POST
@@ -498,7 +506,7 @@ public class FileStoreResource {
   @Consumes({"application/json"})
   @Path("files/{scopedFilePath}/content")
   @ApiOperation(
-      value = "Get file content as string using scopedFilePath", nickname = "getFileContentUsingScopedFilePath")
+      value = "Get file content as string using encoded scopedFilePath", nickname = "getFileContentUsingScopedFilePath")
   @Operation(operationId = "getFileContentUsingScopedFilePath", summary = "Get file content of scopedFilePath",
       responses =
       {
@@ -510,6 +518,7 @@ public class FileStoreResource {
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
+    scopedFilePath = URLDecoderUtility.getDecodedString(scopedFilePath);
     return ResponseDTO.newResponse(fileStoreService.getFileContentAsString(
         accountIdentifier, orgIdentifier, projectIdentifier, scopedFilePath, Long.MAX_VALUE));
   }

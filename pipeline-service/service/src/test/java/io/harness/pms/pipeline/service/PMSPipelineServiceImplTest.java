@@ -47,6 +47,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -129,6 +130,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private ProjectClient projectClient;
   @Mock private AccountClient accountClient;
   @Mock GitXSettingsHelper gitXSettingsHelper;
+  @Mock GitAwareEntityHelper gitAwareEntityHelper;
   private MockedStatic<NGRestUtils> aStatic;
   MockedStatic<CGRestUtils> cgStatic;
 
@@ -661,8 +663,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     pmsPipelineService.applyGitXSettingsIfApplicable(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     InOrder inOrder = inOrder(gitXSettingsHelper);
     inOrder.verify(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
-    inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any(), any());
+    inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
+    inOrder.verify(gitXSettingsHelper).setDefaultRepoForRemoteEntity(any(), any(), any());
   }
 
   @Test
@@ -674,6 +677,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
                                                               .filePath("newFilePath")
                                                               .repoName("repoName")
                                                               .build();
+    doNothing().when(gitAwareEntityHelper).validateRepo(any(), any(), any(), any(), any());
     doReturn(null).when(pmsPipelineRepositoryMock).updateEntity(any(), any());
     assertThatThrownBy(()
                            -> pmsPipelineService.updateGitMetadata(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER,

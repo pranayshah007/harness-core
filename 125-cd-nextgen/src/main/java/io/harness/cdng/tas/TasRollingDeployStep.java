@@ -6,13 +6,15 @@
  */
 
 package io.harness.cdng.tas;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -81,6 +83,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac implements TasStepExecutor {
@@ -237,9 +240,8 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
     ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
         () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for TAS")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
-    List<String> routeMaps =
-        tasStepHelper.getRouteMaps(executionPassThroughData.getTasManifestsPackage().getManifestYml(),
-            getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
+    List<String> routeMaps = tasStepHelper.getRouteMaps(executionPassThroughData.getTasManifestsPackage(),
+        getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
     TasInfraConfig tasInfraConfig = cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance);
     TaskParameters taskParameters =
         CfRollingDeployRequestNG.builder()

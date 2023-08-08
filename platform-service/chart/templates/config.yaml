@@ -8,12 +8,14 @@ data:
   AUDIT_ENABLED: 'true'
   ENABLE_RESOURCE_GROUP: 'true'
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
-  EVENTS_FRAMEWORK_USE_SENTINEL: 'true'
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
-  LOCK_CONFIG_USE_SENTINEL: 'true'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
-  LOCK_CONFIG_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   ACCESS_CONTROL_ENABLED: 'true'
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
   DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS

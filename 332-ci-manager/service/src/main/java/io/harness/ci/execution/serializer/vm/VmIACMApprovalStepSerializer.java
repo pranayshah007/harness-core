@@ -11,10 +11,12 @@ import io.harness.beans.steps.stepinfo.IACMApprovalInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep.VmPluginStepBuilder;
+import io.harness.exception.ngexception.IACMStageExecutionException;
 import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.iacmserviceclient.IACMServiceUtils;
 import io.harness.ng.core.NGAccess;
@@ -34,14 +36,19 @@ public class VmIACMApprovalStepSerializer {
   @Inject private HarnessImageUtils harnessImageUtils;
   @Inject IACMServiceUtils iacmServiceUtils;
   @Inject IACMStepsUtils iacmStepsUtils;
+  @Inject private SerializerUtils serializerUtils;
+
   public VmPluginStep serialize(Ambiance ambiance, IACMApprovalInfo stepInfo, StageInfraDetails stageInfraDetails,
       ParameterField<Timeout> parameterFieldTimeout) {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, stepInfo.getDefaultTimeout());
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
-    String workspaceId = stepInfo.getWorkspace();
-    Map<String, String> envVars = iacmStepsUtils.getIACMEnvVariables(ambiance, workspaceId, "approval");
+    Map<String, String> envVars = stepInfo.getEnvVariables().getValue();
+    envVars.put("PLUGIN_ENDPOINT_VARIABLES",
+        iacmStepsUtils.populatePipelineIds(ambiance, envVars.get("PLUGIN_ENDPOINT_VARIABLES")));
 
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     String image;
     if (stepInfo.getImage().getValue() != null) {
       image = stepInfo.getImage().getValue();
@@ -58,8 +65,21 @@ public class VmIACMApprovalStepSerializer {
             .envVariables(envVars)
             .timeoutSecs(timeout)
             .imageConnector(harnessInternalImageConnector);
-
-    vmPluginStepBuilder.connector(iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, stepInfo.getWorkspace()));
+    String connectorRef;
+    String provider;
+    if (envVars.containsKey("PLUGIN_CONNECTOR_REF")) {
+      connectorRef = envVars.get("PLUGIN_CONNECTOR_REF");
+      envVars.remove("PLUGIN_CONNECTOR_REF");
+    } else {
+      throw new IACMStageExecutionException("The connector ref is missing. Check the workspace");
+    }
+    if (envVars.containsKey("PLUGIN_PROVISIONER")) {
+      provider = envVars.get("PLUGIN_PROVISIONER");
+      envVars.remove("PLUGIN_PROVISIONER");
+    } else {
+      throw new IACMStageExecutionException("The provisioner type is missing. Check the workspace");
+    }
+    vmPluginStepBuilder.connector(iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, connectorRef, provider));
 
     return vmPluginStepBuilder.build();
   }

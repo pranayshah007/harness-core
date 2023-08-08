@@ -6,11 +6,13 @@
  */
 
 package software.wings.helpers.ext.gcb;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.network.Http.getOkHttpClientBuilder;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.artifacts.gcr.exceptions.GcbClientException;
 import io.harness.delegate.task.gcp.helpers.GcpHelperService;
 import io.harness.network.Http;
@@ -55,6 +57,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -192,7 +195,8 @@ public class GcbServiceImpl implements GcbService {
   private Retry buildRetryAndRegisterListeners() {
     final Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(),
         new Class[] {ConnectException.class, TimeoutException.class, ConnectionShutdownException.class,
-            StreamResetException.class, SocketTimeoutException.class, GcbClientException.class, SocketException.class});
+            StreamResetException.class, SocketTimeoutException.class, GcbClientException.class, SocketException.class,
+            IOException.class});
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
   }

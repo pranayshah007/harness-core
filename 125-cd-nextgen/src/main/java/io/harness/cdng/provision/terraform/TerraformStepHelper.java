@@ -22,14 +22,18 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -118,6 +122,7 @@ import io.harness.git.model.GitFile;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.mappers.SecretManagerConfigMapper;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -193,6 +198,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
@@ -317,8 +324,6 @@ public class TerraformStepHelper {
     SSHKeySpecDTO sshKeySpecDTO =
         gitConfigAuthenticationInfoHelper.getSSHKey(gitConfigDTO, AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-    List<EncryptedDataDetail> encryptedDataDetails =
-        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
     String repoName = gitStoreConfig.getRepoName() != null ? gitStoreConfig.getRepoName().getValue() : null;
     if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
       String repoUrl = getGitRepoUrl(gitConfigDTO, repoName);
@@ -331,8 +336,12 @@ public class TerraformStepHelper {
     } else {
       paths.addAll(getParameterFieldValue(gitStoreConfig.getPaths()));
     }
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(
+        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
+    List<EncryptedDataDetail> encryptedDataDetails =
+        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-                                                        .gitConfigDTO(gitConfigDTO)
+                                                        .gitConfigDTO(scmConnector)
                                                         .sshKeySpecDTO(sshKeySpecDTO)
                                                         .encryptedDataDetails(encryptedDataDetails)
                                                         .fetchType(gitStoreConfig.getGitFetchType())
@@ -577,11 +586,13 @@ public class TerraformStepHelper {
       outputKeys.put(TF_CONFIG_FILES, commitIdForConfigFilesMap.get(TF_CONFIG_FILES));
       outputKeys.put(TF_BACKEND_CONFIG_FILE, commitIdForConfigFilesMap.get(TF_BACKEND_CONFIG_FILE));
       int i = 0;
-      for (TerraformVarFileConfig file : varFileConfigs) {
-        if (file instanceof TerraformRemoteVarFileConfig && isNotEmpty(file.getIdentifier())) {
-          i++;
-          if (((TerraformRemoteVarFileConfig) file).getGitStoreConfigDTO() != null) {
-            outputKeys.put(file.getIdentifier(), commitIdForConfigFilesMap.get(format(TF_VAR_FILES, i)));
+      if (isNotEmpty(varFileConfigs)) {
+        for (TerraformVarFileConfig file : varFileConfigs) {
+          if (file instanceof TerraformRemoteVarFileConfig && isNotEmpty(file.getIdentifier())) {
+            i++;
+            if (((TerraformRemoteVarFileConfig) file).getGitStoreConfigDTO() != null) {
+              outputKeys.put(file.getIdentifier(), commitIdForConfigFilesMap.get(format(TF_VAR_FILES, i)));
+            }
           }
         }
       }
@@ -1090,6 +1101,7 @@ public class TerraformStepHelper {
             .fileStoreConfig(rollbackConfig.getFileStoreConfig())
             .varFileConfigs(rollbackConfig.getVarFileConfigs())
             .backendConfig(rollbackConfig.getBackendConfig())
+            .backendConfigFileConfig(rollbackConfig.getBackendConfigFileConfig())
             .environmentVariables(rollbackConfig.getEnvironmentVariables())
             .workspace(rollbackConfig.getWorkspace())
             .targets(rollbackConfig.getTargets())
@@ -1422,6 +1434,13 @@ public class TerraformStepHelper {
 
   private void runCleanupTerraformSecretTask(Ambiance ambiance, EncryptionConfig encryptionConfig,
       List<EncryptedRecordData> encryptedRecordDataList, String cleanupSecretUuid) {
+    BaseNGAccess ngAccess = BaseNGAccess.builder()
+                                .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+                                .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+                                .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+                                .build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
+
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -1432,7 +1451,7 @@ public class TerraformStepHelper {
                                 .build())
             .taskType(TaskType.TERRAFORM_SECRET_CLEANUP_TASK_NG.name())
             .executionTimeout(Duration.ofMinutes(10))
-            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
+            .taskSetupAbstractions(abstractions)
             .logStreamingAbstractions(new LinkedHashMap<>() {
               { put(SetupAbstractionKeys.accountId, AmbianceUtils.getAccountId(ambiance)); }
             })

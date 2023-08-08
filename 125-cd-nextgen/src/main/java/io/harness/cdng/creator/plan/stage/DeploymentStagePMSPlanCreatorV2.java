@@ -10,8 +10,13 @@ package io.harness.cdng.creator.plan.stage;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.lang.Boolean.parseBoolean;
+
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
@@ -45,6 +50,7 @@ import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -76,6 +82,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacUtility;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.strategy.StrategyValidationUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -131,6 +138,8 @@ import lombok.extern.slf4j.Slf4j;
  *          execution
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @Slf4j
 public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<DeploymentStageNode> {
@@ -144,6 +153,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private ServicePlanCreatorHelper servicePlanCreatorHelper;
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
+  @Inject private NGSettingsClient settingsClient;
+
+  private static final String PROJECT_SCOPED_RESOURCE_CONSTRAINT_SETTING_ID =
+      "project_scoped_resource_constraint_queue";
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -239,8 +252,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         throw new InvalidRequestException("Execution section cannot be absent in deploy stage");
       }
 
-      final boolean isProjectScopedResourceConstraintQueue = featureFlagHelperService.isEnabled(
-          ctx.getAccountIdentifier(), FeatureName.CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE);
+      final boolean isProjectScopedResourceConstraintQueue = isProjectScopedResourceConstraintQueueByFFOrSetting(ctx);
       if (v2Flow(stageNode)) {
         if (isGitopsEnabled(stageNode.getDeploymentStageConfig())) {
           // GitOps flow doesn't fork on environments, so handling it in this function.
@@ -248,7 +260,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         } else {
           List<AdviserObtainment> adviserObtainments = addResourceConstraintDependencyWithWhenCondition(
               planCreationResponseMap, specField, ctx, isProjectScopedResourceConstraintQueue);
-          String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
+          String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments, specField);
           Optional<String> provisionerIdOptional =
               addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
           String serviceNextNodeId = provisionerIdOptional.orElse(infraNodeId);
@@ -275,6 +287,15 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       throw new InvalidRequestException(
           "Invalid yaml for Deployment stage with identifier - " + stageNode.getIdentifier(), e);
     }
+  }
+
+  private boolean isProjectScopedResourceConstraintQueueByFFOrSetting(PlanCreationContext ctx) {
+    return featureFlagHelperService.isEnabled(
+               ctx.getAccountIdentifier(), FeatureName.CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE)
+        || parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                PROJECT_SCOPED_RESOURCE_CONSTRAINT_SETTING_ID, ctx.getAccountIdentifier(), null, null))
+                            .getValue());
   }
 
   private LinkedHashMap<String, PlanCreationResponse> buildPlanCreationResponse(PlanCreationContext ctx,
@@ -572,7 +593,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return serviceNodeId;
   }
   private String addInfrastructureNode(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      DeploymentStageNode stageNode, List<AdviserObtainment> adviserObtainments) throws IOException {
+      DeploymentStageNode stageNode, List<AdviserObtainment> adviserObtainments, YamlField specField)
+      throws IOException {
     EnvironmentYamlV2 environment;
     if (stageNode.getDeploymentStageConfig().getEnvironments() != null
         || stageNode.getDeploymentStageConfig().getEnvironmentGroup() != null) {
@@ -580,8 +602,13 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     } else {
       environment = stageNode.getDeploymentStageConfig().getEnvironment();
     }
-    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(environment, adviserObtainments,
-        stageNode.getDeploymentStageConfig().getDeploymentType(), stageNode.skipInstances);
+
+    final EnvironmentYamlV2 finalEnvironmentYamlV2 = ServiceAllInOnePlanCreatorUtils.useFromStage(environment)
+        ? ServiceAllInOnePlanCreatorUtils.useEnvironmentYamlFromStage(environment.getUseFromStage(), specField)
+        : environment;
+
+    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(finalEnvironmentYamlV2,
+        adviserObtainments, stageNode.getDeploymentStageConfig().getDeploymentType(), stageNode.skipInstances);
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
     return node.getUuid();
   }

@@ -79,7 +79,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<AsgCommandResponse> responseDataSupplier)
       throws Exception {
     StepResponse stepResponse = null;

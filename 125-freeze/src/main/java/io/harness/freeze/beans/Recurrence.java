@@ -7,11 +7,14 @@
 
 package io.harness.freeze.beans;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
+@RecasterAlias("io.harness.freeze.beans.Recurrence")
 public class Recurrence {
   @NotNull @JsonProperty("type") RecurrenceType recurrenceType;
   RecurrenceSpec spec;

@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 54
+version: 55
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1527,6 +1527,62 @@ permissions:
       - project
   - identifier: chaos_chaossecuritygovernance_view
     name: View a Chaos Security Governance
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: cet_agents_view
+    name: View CET Agent
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: cet_token_view
+    name: View CET Token
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: cet_token_create
+    name: Create CET Token
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: cet_token_revoke
+    name: Revoke CET Token
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: cet_criticalevent_view
+    name: View CET Critical Event
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: cet_criticalevent_create
+    name: Create/Edit CET Critical Event
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: cet_criticalevent_delete
+    name: Delete CET Critical Event
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:

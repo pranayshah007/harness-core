@@ -150,7 +150,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
                                          .toByteArray())
             .build();
     CodebaseSweepingOutput codebaseSweepingOutput =
-        codeBaseTaskStep.buildCommitShaCodebaseSweepingOutput(scmGitRefTaskResponseData, "tag");
+        codeBaseTaskStep.buildCommitShaCodebaseSweepingOutput(scmGitRefTaskResponseData, null);
     assertThat(codebaseSweepingOutput.getCommitSha()).isEqualTo("commitId");
     assertThat(codebaseSweepingOutput.getShortCommitSha()).isEqualTo("commitI");
     assertThat(codebaseSweepingOutput.getBranch()).isEqualTo("main");
@@ -159,6 +159,43 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getGitUser()).isEqualTo("name");
     assertThat(codebaseSweepingOutput.getGitUserEmail()).isEqualTo("email");
     assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("avatar");
+    assertThat(codebaseSweepingOutput.getCommitRef()).isEqualTo("refs/heads/main");
+    assertThat(codebaseSweepingOutput.getBuild().getType()).isEqualTo("branch");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldBuildCommitShaCodebaseSweepingOutputFromTag() throws InvalidProtocolBufferException {
+    ScmGitRefTaskResponseData scmGitRefTaskResponseData =
+        ScmGitRefTaskResponseData.builder()
+            .repoUrl("http://github.com/octocat/hello-world")
+            .getLatestCommitResponse(GetLatestCommitResponse.newBuilder()
+                                         .setCommit(Commit.newBuilder()
+                                                        .setSha("commitId")
+                                                        .setAuthor(Signature.newBuilder()
+                                                                       .setLogin("login")
+                                                                       .setAvatar("avatar")
+                                                                       .setName("name")
+                                                                       .setEmail("email")
+                                                                       .build())
+                                                        .build())
+                                         .setCommitId("commitId")
+                                         .build()
+                                         .toByteArray())
+            .build();
+    CodebaseSweepingOutput codebaseSweepingOutput =
+        codeBaseTaskStep.buildCommitShaCodebaseSweepingOutput(scmGitRefTaskResponseData, "tag");
+    assertThat(codebaseSweepingOutput.getCommitSha()).isEqualTo("commitId");
+    assertThat(codebaseSweepingOutput.getShortCommitSha()).isEqualTo("commitI");
+    assertThat(codebaseSweepingOutput.getRepoUrl()).isEqualTo("http://github.com/octocat/hello-world");
+    assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("login");
+    assertThat(codebaseSweepingOutput.getGitUser()).isEqualTo("name");
+    assertThat(codebaseSweepingOutput.getGitUserEmail()).isEqualTo("email");
+    assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("avatar");
+    assertThat(codebaseSweepingOutput.getCommitRef()).isEqualTo("refs/tags/tag");
+    assertThat(codebaseSweepingOutput.getBuild().getType()).isEqualTo("tag");
+    assertThat(codebaseSweepingOutput.getTag()).isEqualTo("tag");
   }
 
   @Test
@@ -239,6 +276,30 @@ public class CodeBaseTaskStepTest extends CategoryTest {
                        .build());
     assertThat(codebaseSweepingOutput.getState()).isEqualTo("open");
     assertThat(codebaseSweepingOutput.getMergeSha()).isEqualTo("mergeSha");
+
+    FindPRResponse prResponse = FindPRResponse.newBuilder()
+                                    .setPr(PullRequest.newBuilder()
+                                               .setTarget("main")
+                                               .setSource("feature/abc")
+                                               .setNumber(1)
+                                               .setTitle("Title")
+                                               .setSha("commitId")
+                                               .setRef("ref")
+                                               .setBase(Reference.newBuilder().setSha("commitIdBase").build())
+                                               .setAuthor(User.newBuilder().setAvatar("http://...").build())
+                                               .setLink("http://github.com/octocat/hello-world/pull/1")
+                                               .setClosed(false)
+                                               .setMerged(false)
+                                               .setMergeSha("mergeSha")
+                                               .build())
+                                    .build();
+
+    scmGitRefTaskResponseData.setFindPRResponse(prResponse.toByteArray());
+    codebaseSweepingOutput = codeBaseTaskStep.buildPRCodebaseSweepingOutput(scmGitRefTaskResponseData);
+    assertThat(codebaseSweepingOutput.getGitUser()).isEqualTo("First Last");
+    assertThat(codebaseSweepingOutput.getGitUserEmail()).isEqualTo("first.last@email.com");
+    assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("http://...");
+    assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("firstLast");
   }
 
   @Test
@@ -296,6 +357,37 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getPullRequestLink()).isEqualTo("http://github.com/octocat/hello-world/pull/1");
     assertThat(codebaseSweepingOutput.getMergeSha()).isEqualTo("mergeSha");
     assertThat(codebaseSweepingOutput.getCommitMessage()).isEqualTo("Last commit message");
+
+    PRWebhookEvent prWebhookEvent =
+        PRWebhookEvent.builder()
+            .sourceBranch("feature/abc")
+            .targetBranch("main")
+            .pullRequestId(1L)
+            .title("Title")
+            .pullRequestLink("http://github.com/octocat/hello-world/pull/1")
+            .baseAttributes(WebhookBaseAttributes.builder()
+                                .after("commitId")
+                                .before("commitIdBase")
+                                .authorAvatar("http://...")
+                                .mergeSha("mergeSha")
+                                .build())
+            .commitDetailsList(
+                Arrays.asList(CommitDetails.builder().message("First commit message").timeStamp(110).build(),
+                    CommitDetails.builder()
+                        .message("Last commit message")
+                        .ownerId("firstLast")
+                        .ownerEmail("first.last@email.com")
+                        .ownerName("First Last")
+                        .timeStamp(120)
+                        .build()))
+            .repository(Repository.builder().link("http://github.com/octocat/hello-world").build())
+            .build();
+    webhookExecutionSource = WebhookExecutionSource.builder().webhookEvent(prWebhookEvent).build();
+    codebaseSweepingOutput = codeBaseTaskStep.buildWebhookCodebaseSweepingOutput(webhookExecutionSource);
+    assertThat(codebaseSweepingOutput.getGitUser()).isEqualTo("First Last");
+    assertThat(codebaseSweepingOutput.getGitUserEmail()).isEqualTo("first.last@email.com");
+    assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("http://...");
+    assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("firstLast");
   }
 
   @Test
@@ -314,6 +406,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
                                         .authorEmail("first.last@email.com")
                                         .authorAvatar("http://...")
                                         .authorLogin("firstLast")
+                                        .ref("refs/heads/main")
                                         .build())
                     .commitDetailsList(Arrays.asList(CommitDetails.builder().message("Last commit message").build()))
                     .repository(Repository.builder().link("http://github.com/octocat/hello-world").build())
@@ -331,6 +424,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("http://...");
     assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("firstLast");
     assertThat(codebaseSweepingOutput.getCommitMessage()).isEqualTo("Last commit message");
+    assertThat(codebaseSweepingOutput.getCommitRef()).isEqualTo("refs/heads/main");
   }
 
   @Test

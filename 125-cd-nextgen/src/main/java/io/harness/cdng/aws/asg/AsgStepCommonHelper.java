@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.aws.asg;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -21,12 +20,15 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.aws.asg.AsgRollingPrepareRollbackDataOutcome.AsgRollingPrepareRollbackDataOutcomeBuilder;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
@@ -70,7 +72,6 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -86,7 +87,6 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -114,9 +114,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class AsgStepCommonHelper extends CDStepHelper {
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private AsgEntityHelper asgEntityHelper;
   @Inject private AsgStepHelper asgStepHelper;
   @Inject private CDStepHelper cdStepHelper;
@@ -139,8 +140,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
     // Update expressions in ManifestsOutcome
-    ExpressionEvaluatorUtils.updateExpressions(
-        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
 
     // Validate ManifestsOutcome
     validateManifestsOutcome(ambiance, manifestsOutcome);
@@ -256,7 +256,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   private String renderExpressionsForManifestContent(String content, Ambiance ambiance) {
-    return engineExpressionService.renderExpression(ambiance, content);
+    return cdExpressionResolver.renderExpression(ambiance, content);
   }
 
   private TaskChainResponse prepareAsgTask(AsgStepExecutor asgStepExecutor, Ambiance ambiance,
@@ -612,8 +612,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
     String image = null;
     if (artifactOutcome.isPresent()) {
       AMIArtifactOutcome amiArtifactOutcome = (AMIArtifactOutcome) artifactOutcome.get();
-      ExpressionEvaluatorUtils.updateExpressions(
-          amiArtifactOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+      cdExpressionResolver.updateExpressions(ambiance, amiArtifactOutcome);
       image = amiArtifactOutcome.getAmiId();
     }
     if (isEmpty(image)) {

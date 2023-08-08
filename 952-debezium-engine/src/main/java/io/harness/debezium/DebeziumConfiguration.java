@@ -7,9 +7,13 @@
 
 package io.harness.debezium;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.redis.RedisConfig;
 import io.harness.serializer.JsonUtils;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +51,7 @@ public class DebeziumConfiguration {
   public static final String FIELD_EXCLUDE_LIST = "field.exclude.list";
   public static final String HEARTBEAT_INTERVAL_MS = "heartbeat.interval.ms";
   public static final String MONGODB_CONNECTION_STRING = "mongodb.connection.string";
+  public static final String CURSOR_PIPELINE = "cursor.pipeline";
 
   public static Properties getDebeziumProperties(DebeziumConfig debeziumConfig, RedisConfig redisLockConfig) {
     Properties props = new Properties();
@@ -101,6 +106,26 @@ public class DebeziumConfiguration {
     debeziumProperties.setProperty(DebeziumConfiguration.OFFSET_STORAGE_KEY,
         DebeziumConstants.DEBEZIUM_OFFSET_PREFIX + debeziumConfig.getConnectorName() + "-" + monitoredCollection);
     debeziumProperties.setProperty(DebeziumConfiguration.COLLECTION_INCLUDE_LIST, monitoredCollection);
+    addMongoCursorPipelineConfigs(debeziumProperties, debeziumConfig.getFieldExcludeList());
     return debeziumProperties;
+  }
+
+  public static void addMongoCursorPipelineConfigs(Properties properties, String fieldExcludeList) {
+    if (!isEmpty(fieldExcludeList)) {
+      List<String> excludedFields = Arrays.asList(fieldExcludeList.split(","));
+      StringBuilder cursor = new StringBuilder();
+      cursor.append(new StringBuilder().append("[{ $project: { "));
+      for (int i = 0; i < excludedFields.size(); i++) {
+        String excludedFieldName = excludedFields.get(i).split("\\.")[2];
+        if (i == excludedFields.size() - 1) {
+          cursor.append(new StringBuilder().append("\"fullDocument.").append(excludedFieldName).append("\": 0 "));
+        } else {
+          cursor =
+              cursor.append(new StringBuilder().append("\"fullDocument.").append(excludedFieldName).append("\": 0, "));
+        }
+      }
+      cursor = cursor.append(new StringBuilder().append("} } ]"));
+      properties.setProperty(CURSOR_PIPELINE, cursor.toString());
+    }
   }
 }

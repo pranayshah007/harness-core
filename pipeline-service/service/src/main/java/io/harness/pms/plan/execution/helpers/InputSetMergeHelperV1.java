@@ -6,11 +6,12 @@
  */
 
 package io.harness.pms.plan.execution.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
@@ -22,19 +23,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @UtilityClass
 @Slf4j
 public class InputSetMergeHelperV1 {
-  public String mergeInputSetIntoPipelineYaml(String inputSetYaml, String pipelineYaml) {
-    if (isEmpty(inputSetYaml)) {
-      return pipelineYaml;
-    }
-    JsonNode inputSetJsonNode = YamlUtils.readAsJsonNode(inputSetYaml);
-    JsonNode pipelineJsonNode = YamlUtils.readAsJsonNode(pipelineYaml);
-    return mergeInputSetIntoPipelineYaml(inputSetJsonNode, pipelineJsonNode);
-  }
-
   public String mergeInputSetIntoPipelineYaml(JsonNode inputSetJsonNode, JsonNode pipelineJsonNode) {
     if (EmptyPredicate.isEmpty(inputSetJsonNode)) {
       return YamlUtils.writeYamlString(pipelineJsonNode);

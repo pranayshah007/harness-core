@@ -6,9 +6,11 @@
  */
 
 package io.harness.perpetualtask.instancesync.helm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.perpetualtask.instancesync.DeploymentDetails;
 import io.harness.perpetualtask.instancesync.k8s.KubernetesCloudClusterConfig;
@@ -20,6 +22,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = true)

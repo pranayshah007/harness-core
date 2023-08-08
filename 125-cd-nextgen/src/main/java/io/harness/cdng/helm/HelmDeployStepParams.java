@@ -7,6 +7,7 @@
 
 package io.harness.cdng.helm;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
@@ -18,6 +19,7 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import lombok.Builder;
 
+@RecasterAlias("io.harness.cdng.helm.HelmDeployStepParams")
 public class HelmDeployStepParams extends HelmDeployBaseStepInfo implements HelmSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public HelmDeployStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmDeployFqn,

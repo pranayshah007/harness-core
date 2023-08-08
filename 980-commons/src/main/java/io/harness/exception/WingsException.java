@@ -6,7 +6,6 @@
  */
 
 package io.harness.exception;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
@@ -16,17 +15,17 @@ import static io.harness.exception.WingsException.ReportTarget.LOG_SYSTEM;
 import static io.harness.exception.WingsException.ReportTarget.RED_BELL_ALERT;
 import static io.harness.exception.WingsException.ReportTarget.REST_API;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
-import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ngexception.ErrorMetadataDTO;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
@@ -37,6 +36,9 @@ import org.slf4j.MDC;
 /**
  * The generic exception class for the Wings Application.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PL)
 @Getter
 public class WingsException extends RuntimeException {
@@ -204,10 +206,6 @@ public class WingsException extends RuntimeException {
     }
 
     return result;
-  }
-
-  public List<ResponseMessage> getResponseMessages() {
-    return new ArrayList<>(0);
   }
 
   @Deprecated

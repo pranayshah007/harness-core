@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.artifact.mappers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
@@ -85,6 +87,7 @@ import java.util.Map;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 @OwnedBy(CDC)
 public class ArtifactResponseToOutcomeMapper {
@@ -92,6 +95,10 @@ public class ArtifactResponseToOutcomeMapper {
   private final String DOCKER_CONFIG_JSON_START = "<+dockerConfigJsonSecret.";
 
   private final String IMAGE_PULL_SECRET_END = ">";
+
+  static final String ARTIFACT_ID = "artifactId";
+  static final String ARTIFACT_FILE_NAME = "fileName";
+  static final String PACKAGE_NAME = "package";
 
   public ArtifactOutcome toArtifactOutcome(
       ArtifactConfig artifactConfig, ArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
@@ -494,6 +501,23 @@ public class ArtifactResponseToOutcomeMapper {
         && isNotEmpty(artifactDelegateResponse.getBuildDetails().getUiDisplayName())) {
       displayName = artifactDelegateResponse.getBuildDetails().getUiDisplayName();
     }
+
+    Map<String, String> metadata = useDelegateResponse ? getMetadata(artifactDelegateResponse) : null;
+
+    String artifactPath = null;
+    if (isNotEmpty(metadata)) {
+      String artifactId = metadata.get(ARTIFACT_ID);
+      String packageName = metadata.get(PACKAGE_NAME);
+      String artifactFileName = metadata.get(ARTIFACT_FILE_NAME);
+      if (isNotEmpty(artifactId)) {
+        artifactPath = artifactId;
+      } else if (isNotEmpty(packageName)) {
+        artifactPath = packageName;
+      } else if (isNotEmpty(artifactFileName)) {
+        artifactPath = artifactFileName;
+      }
+    }
+
     return NexusArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
@@ -508,7 +532,8 @@ public class ArtifactResponseToOutcomeMapper {
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
         .displayName(displayName)
-        .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
+        .metadata(metadata)
+        .artifactPath(artifactPath)
         .build();
   }
 
@@ -602,6 +627,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .version(version)
         .image(version)
+        .tag(version)
         .displayName(useDelegateResponse ? customArtifactDelegateResponse.getBuildDetails().getUiDisplayName() : null)
         .metadata(useDelegateResponse ? customArtifactDelegateResponse.getMetadata() : null)
         .build();

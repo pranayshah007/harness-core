@@ -30,6 +30,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.GitStoreDTO;
@@ -89,8 +90,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 @PrepareForTest({StepUtils.class})
 public class TerraformRollbackStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-
   @Mock private TerraformStepHelper terraformStepHelper;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private TerraformConfigDAL terraformConfigDAL;
   @Mock private TerraformConfigHelper terraformConfigHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;

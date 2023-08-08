@@ -6,13 +6,15 @@
  */
 
 package io.harness.engine.pms.execution.strategy.plannode;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
@@ -81,6 +83,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -102,7 +105,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
-
   @Inject private PlanExpansionService planExpansionService;
 
   @Inject @Named("EngineExecutorService") ExecutorService executorService;
@@ -368,7 +370,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @VisibleForTesting
   ExecutionCheck performPreFacilitationChecks(Ambiance ambiance, PlanNode planNode) {
     // Ignore facilitation checks if node is retried
-
     if (AmbianceUtils.isRetry(ambiance)) {
       return ExecutionCheck.builder().proceed(true).reason("Node is retried.").build();
     }

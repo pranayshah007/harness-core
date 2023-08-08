@@ -92,9 +92,9 @@ public class VmStepSerializer {
         return vmIACMApprovalStepSerializer.serialize(
             ambiance, (IACMApprovalInfo) stepInfo, stageInfraDetails, parameterFieldTimeout);
       case ACTION:
-        return vmActionStepSerializer.serialize((ActionStepInfo) stepInfo, identifier, stageInfraDetails);
+        return vmActionStepSerializer.serialize((ActionStepInfo) stepInfo, identifier, stageInfraDetails, ambiance);
       case BITRISE:
-        return vmBitriseStepSerializer.serialize((BitriseStepInfo) stepInfo, identifier, stageInfraDetails);
+        return vmBitriseStepSerializer.serialize((BitriseStepInfo) stepInfo, identifier, stageInfraDetails, ambiance);
       case CLEANUP:
       case TEST:
       case BUILD:
@@ -106,15 +106,15 @@ public class VmStepSerializer {
     }
   }
 
-  public Set<String> preProcessStep(
-      Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails, String identifier) {
+  public Set<String> preProcessStep(Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails,
+      String identifier, boolean isBareMetalUsed) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case DOCKER:
       case ECR:
       case GCR:
-        return vmPluginCompatibleStepSerializer.preProcessStep(
-            ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier);
       case ACR:
+        return vmPluginCompatibleStepSerializer.preProcessStep(
+            ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, isBareMetalUsed);
       default:
         return new HashSet<>();
     }

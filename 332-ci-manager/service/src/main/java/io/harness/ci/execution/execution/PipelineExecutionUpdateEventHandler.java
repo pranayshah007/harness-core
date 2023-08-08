@@ -34,6 +34,7 @@ import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.AckRequest;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
+import io.harness.logging.AutoLogContext;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -47,6 +48,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.repositories.CIStageOutputRepository;
+import io.harness.repositories.CIStepStatusRepository;
 import io.harness.repositories.CITaskDetailsRepository;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
@@ -92,6 +94,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject @Named("ciRatelimitHandlerExecutor") private ExecutorService ciRatelimitHandlerExecutor;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject CIStageOutputRepository ciStageOutputRepository;
+  @Inject protected CIStepStatusRepository ciStepStatusRepository;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
@@ -102,8 +105,10 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     Status status = event.getStatus();
     ciRatelimitHandlerExecutor.submit(() -> { updateDailyBuildCount(level, status, serviceName, accountId); });
     executorService.submit(() -> {
-      sendGitStatus(level, ambiance, status, event, accountId);
-      sendCleanupRequest(level, ambiance, status, accountId);
+      try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+        sendGitStatus(level, ambiance, status, event, accountId);
+        sendCleanupRequest(level, ambiance, status, accountId);
+      }
     });
   }
 
@@ -113,6 +118,15 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       ciStageOutputRepository.deleteFirstByStageExecutionId(stageExecutionId);
     } catch (Exception e) {
       log.error("Error while deleting CI outputs for stageExecutionId " + stageExecutionId, e);
+    }
+  }
+
+  private void deleteCIStepStatusMetadata(Ambiance ambiance) {
+    String stageExecutionId = ambiance.getStageExecutionId();
+    try {
+      ciStepStatusRepository.deleteByStageExecutionId(stageExecutionId);
+    } catch (Exception e) {
+      log.error("Error while deleting CI StepStatusMetadata for stageExecutionId " + stageExecutionId, e);
     }
   }
 
@@ -143,7 +157,12 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           }
 
           deleteCIStageOutputs(ambiance);
+          deleteCIStepStatusMetadata(ambiance);
           CICleanupTaskParams ciCleanupTaskParams = stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
+
+          if (ciCleanupTaskParams == null) {
+            return;
+          }
 
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,
               ambiance.getPlanExecutionId(), level.getIdentifier());

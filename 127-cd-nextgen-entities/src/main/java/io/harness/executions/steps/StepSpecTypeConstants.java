@@ -9,11 +9,18 @@ package io.harness.executions.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 public interface StepSpecTypeConstants {
   String GITOPS_MERGE_PR = "MergePR";
+  String GITOPS_REVERT_PR = "RevertPR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_SYNC = "GitOpsSync";
   String CLOUDFORMATION_CREATE_STACK = "CreateStack";
@@ -136,4 +143,9 @@ public interface StepSpecTypeConstants {
   String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
   String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = "ServerlessAwsLambdaDeployV2";
   String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
+  String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
+  String AWS_CDK_SYNTH = "AwsCdkSynth";
+  String AWS_CDK_DIFF = "AwsCdkDiff";
+  String AWS_CDK_DEPLOY = "AwsCdkDeploy";
+  String AWS_CDK_DESTROY = "AwsCdkDestroy";
 }

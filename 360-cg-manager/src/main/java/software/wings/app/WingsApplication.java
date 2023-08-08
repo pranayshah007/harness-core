@@ -168,7 +168,6 @@ import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateProfileObserver;
 import io.harness.service.intfc.DelegateTokenService;
-import io.harness.springdata.SpringPersistenceModule;
 import io.harness.state.inspection.StateInspectionListener;
 import io.harness.state.inspection.StateInspectionServiceImpl;
 import io.harness.stream.AtmosphereBroadcaster;
@@ -261,6 +260,7 @@ import software.wings.service.impl.ExecutionEventListener;
 import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
 import software.wings.service.impl.SettingsServiceImpl;
+import software.wings.service.impl.UpdateHeartBeatIntervalAndResetPerpetualTaskJob;
 import software.wings.service.impl.UserAccountLevelDataMigrationJob;
 import software.wings.service.impl.WorkflowExecutionServiceHelper;
 import software.wings.service.impl.WorkflowExecutionServiceImpl;
@@ -506,7 +506,6 @@ public class WingsApplication extends Application<MainConfiguration> {
     List<Module> modules = new ArrayList<>();
     addModules(configuration, modules);
     Injector injector = Guice.createInjector(modules);
-
     initializeManagerSvc(injector, environment, configuration);
     injector.getInstance(CDRetentionHandler.class).configureRetentionPolicy();
     log.info("Starting app done");
@@ -864,16 +863,12 @@ public class WingsApplication extends Application<MainConfiguration> {
             .build();
       }
     });
-
     modules.add(new AbstractMongoModule() {
       @Override
       public UserProvider userProvider() {
         return new ThreadLocalUserProvider();
       }
     });
-
-    modules.add(new SpringPersistenceModule());
-
     ValidatorFactory validatorFactory = Validation.byDefaultProvider()
                                             .configure()
                                             .parameterNameProvider(new ReflectionParameterNameProvider())
@@ -1216,6 +1211,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().manage(injector.getInstance(AuditCleanupJob.class));
     environment.lifecycle().manage(injector.getInstance(RedisConsumerControllerCg.class));
     environment.lifecycle().manage(injector.getInstance(UserAccountLevelDataMigrationJob.class));
+    environment.lifecycle().manage(injector.getInstance(UpdateHeartBeatIntervalAndResetPerpetualTaskJob.class));
   }
 
   private void registerManagedBeansManager(

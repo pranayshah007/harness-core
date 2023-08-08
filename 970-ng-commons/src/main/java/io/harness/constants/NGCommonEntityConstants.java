@@ -6,13 +6,17 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(PL)
 @UtilityClass
 public class NGCommonEntityConstants {
@@ -65,7 +69,9 @@ public class NGCommonEntityConstants {
   public static final String REPO_URL = "repoURL";
   public static final String REPO_NAME = "repoName";
   public static final String PLAN_KEY = "planExecutionId";
+  public static final String NODE_KEY = "nodeExecutionId";
   public static final String STAGE_KEY = "stageExecutionId";
+  public static final String STEP_KEY = "stepExecutionId";
   public static final String TYPE_KEY = "type";
   public static final String TOKEN_KEY = "tokenId";
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
@@ -75,6 +81,9 @@ public class NGCommonEntityConstants {
   public static final String GA_CLIENT_ID = "ga_client_id";
   public static final String ENTITY_TYPE = "entityType";
   public static final String SEARCH_TERM = "searchTerm";
+  public static final String REPO_NAME_SEARCH_TERM = "repoNameSearchTerm";
+  public static final String USER_NAME_SEARCH_TERM = "userNameSearchTerm";
+  public static final String BRANCH_NAME_SEARCH_TERM = "branchNameSearchTerm";
   public static final String USER_ID = "userId";
   public static final String PAGE = "page";
   public static final String PAGE_SIZE = "page_size";
@@ -146,6 +155,9 @@ public class NGCommonEntityConstants {
   public static final String INTERNAL_SERVER_ERROR_CODE = "500";
   public static final String APPLICATION_JSON_MEDIA_TYPE = "application/json";
   public static final String APPLICATION_YAML_MEDIA_TYPE = "application/yaml";
+  public static final String CONTENT_TYPE_HEADER = "Content-Type";
+  public static final String APPLICATION_GZIP_MEDIA_TYPE = "application/x-gzip";
+  public static final String APPLICATION_OCTET_STREAM_MEDIA_TYPE = "application/octet-stream";
   public static final String OPERATOR_PARAM_MESSAGE = "Operator Criteria for Criterias ";
   public static final String RESOURCE = "Resource it targets (For icons)";
   public static final String POLICY = "Get YAML of the policy";
@@ -210,4 +222,5 @@ public class NGCommonEntityConstants {
   public static final String TARGET_IDENTIFIER_KEY = "targetIdentifier";
   public static final String NOTES_FOR_PIPELINE_EXECUTION = "notesForPipelineExecution";
   public static final String APPLY_GITX_REPO_ALLOW_LIST_FILTER = "applyGitXRepoAllowListFilter";
+  public static final String ACTIVITY_TYPES = "activityTypes";
 }

@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service.infra;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
 import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
@@ -42,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class CustomDeploymentInfraDefMapper implements InfraDefMapper {
   @Override

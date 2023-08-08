@@ -120,9 +120,11 @@ public class ExecutionQueryHelper {
       }
 
       if (filter.getEnvironment() != null) {
-        field = query.field(WorkflowExecutionKeys.deployedEnvironments + ".uuid");
         QLIdFilter idFilter = filter.getEnvironment();
-        utils.setIdFilter(field, idFilter);
+        if (featureFlagService.isNotEnabled(FeatureName.SPG_GC_ALLOW_GRAPHQL_GET_EXECUTIONS_RUNNING, accountId)) {
+          field = query.field(WorkflowExecutionKeys.deployedEnvironments + ".uuid");
+          utils.setIdFilter(field, idFilter);
+        }
         field = query.field(WorkflowExecutionKeys.envIds);
         utils.setIdFilter(field, idFilter);
         entityMap.put(Environment.class, idFilter);
@@ -143,9 +145,11 @@ public class ExecutionQueryHelper {
       }
 
       if (filter.getService() != null) {
-        field = query.field(WorkflowExecutionKeys.deployedServices);
         QLIdFilter idFilter = filter.getService();
-        utils.setIdFilter(field, idFilter);
+        if (featureFlagService.isNotEnabled(FeatureName.SPG_GC_ALLOW_GRAPHQL_GET_EXECUTIONS_RUNNING, accountId)) {
+          field = query.field(WorkflowExecutionKeys.deployedServices);
+          utils.setIdFilter(field, idFilter);
+        }
         field = query.field(WorkflowExecutionKeys.serviceIds);
         utils.setIdFilter(field, idFilter);
         entityMap.put(Service.class, idFilter);

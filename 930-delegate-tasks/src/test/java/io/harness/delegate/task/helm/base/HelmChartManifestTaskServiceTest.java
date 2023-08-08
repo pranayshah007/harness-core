@@ -30,6 +30,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
@@ -56,6 +57,7 @@ import io.harness.rule.Owner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,6 +67,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 import lombok.SneakyThrows;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -123,8 +126,14 @@ public class HelmChartManifestTaskServiceTest extends CategoryTest {
 
   @Mock private HelmTaskHelperBase helmTaskHelperBase;
   @Mock private GitFetchTaskHelper gitFetchTaskHelper;
+  @Mock private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @InjectMocks private HelmChartManifestTaskService helmChartManifestTaskService;
+
+  @Before
+  public void setUp() throws IOException {
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
+  }
 
   @Test
   @Owner(developers = ABOSII)
@@ -397,7 +406,13 @@ public class HelmChartManifestTaskServiceTest extends CategoryTest {
 
     doAnswer(invocation -> {
       HelmChartManifestDelegateConfig manifestConfig = invocation.getArgument(0);
-      String destinationDirectory = invocation.getArgument(3);
+      String destinationDirectory;
+      if (isNotEmpty(manifestConfig.getChartName())) {
+        destinationDirectory = Paths.get(invocation.getArgument(3), manifestConfig.getChartName()).toString();
+      } else {
+        destinationDirectory = invocation.getArgument(3);
+      }
+
       if (isNotEmpty(manifestConfig.getSubChartPath())) {
         saveChartYamlFileContentToFile(RES_CHART_YAML_PARENT, destinationDirectory, "");
       }

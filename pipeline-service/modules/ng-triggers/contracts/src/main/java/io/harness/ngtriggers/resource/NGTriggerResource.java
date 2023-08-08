@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.resource;
-
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -19,10 +18,14 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.Constants;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -68,6 +71,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.springframework.data.domain.Page;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Api("triggers")
 @Path("triggers")
 @Produces({"application/json", "application/yaml"})
@@ -179,6 +183,23 @@ public interface NGTriggerResource {
       @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
           "targetIdentifier") @ResourceIdentifier String targetIdentifier,
       @PathParam("triggerIdentifier") String triggerIdentifier, @NotNull @QueryParam("status") boolean status);
+
+  @PUT
+  @Hidden
+  @Path("pollingTriggerStatus")
+  @Operation(operationId = "updatePollingTriggerStatus",
+      summary = "Updates polling status data of a polling trigger using its signature(s).",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = " Returns the response status.")
+      })
+  @ApiOperation(value = "Update a trigger's polling status by signature", nickname = "updateTriggerPollingStatus")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  ResponseDTO<Boolean>
+  updateTriggerPollingStatus(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @RequestBody(required = true) PollingTriggerStatusUpdateDTO statusUpdate);
 
   @DELETE
   @Operation(operationId = "deleteTrigger", summary = "Deletes Trigger by identifier.",

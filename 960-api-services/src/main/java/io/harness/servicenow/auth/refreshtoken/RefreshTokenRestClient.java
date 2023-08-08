@@ -6,13 +6,16 @@
  */
 
 package io.harness.servicenow.auth.refreshtoken;
-
 import static io.harness.servicenow.auth.refreshtoken.RefreshTokenConstants.CLIENT_ID;
 import static io.harness.servicenow.auth.refreshtoken.RefreshTokenConstants.CLIENT_SECRET;
 import static io.harness.servicenow.auth.refreshtoken.RefreshTokenConstants.GRANT_TYPE;
 import static io.harness.servicenow.auth.refreshtoken.RefreshTokenConstants.REFRESH_TOKEN;
 import static io.harness.servicenow.auth.refreshtoken.RefreshTokenConstants.SCOPE;
 import static io.harness.servicenow.auth.refreshtoken.RefreshTokenConstants.SERVICENOW_TOKEN_URL_SUFFIX;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import retrofit2.Call;
 import retrofit2.http.Field;
@@ -21,6 +24,7 @@ import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Url;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public interface RefreshTokenRestClient {
   @FormUrlEncoded
   @Headers({"Content-Type: application/x-www-form-urlencoded; charset=utf-8", "Accept: application/json"})

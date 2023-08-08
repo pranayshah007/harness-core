@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.creator.filters;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.executions.steps.StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE;
@@ -18,8 +17,11 @@ import static io.harness.executions.steps.StepSpecTypeConstants.TERRAGRUNT_APPLY
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
@@ -74,6 +76,9 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT,
+        HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<DeploymentStageNode> {
@@ -165,6 +170,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       throw new InvalidYamlRuntimeException(
           "cannot save a stage template that propagates service from another stage. Please remove useFromStage and set the serviceRef to fixed value or runtime or an expression and try again");
     }
+    if (usesEnvironmentFromAnotherStage(deploymentStageConfig)
+        & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
+      throw new InvalidYamlRuntimeException(
+          "cannot save a stage template that propagates environment from another stage. Please remove useFromStage and set the environmentRef to fixed value or runtime or an expression and try again");
+    }
     if (deploymentStageConfig.getInfrastructure() != null) {
       throw new InvalidYamlRuntimeException(format(
           "infrastructure should not be present in stage [%s]. Please add environment or environment group instead",
@@ -191,6 +201,12 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   private boolean usesServiceFromAnotherStage(DeploymentStageConfig deploymentStageConfig) {
     return deploymentStageConfig.getService() != null && deploymentStageConfig.getService().getUseFromStage() != null
         && isNotEmpty(deploymentStageConfig.getService().getUseFromStage().getStage());
+  }
+
+  private boolean usesEnvironmentFromAnotherStage(DeploymentStageConfig deploymentStageConfig) {
+    return deploymentStageConfig.getEnvironment() != null
+        && deploymentStageConfig.getEnvironment().getUseFromStage() != null
+        && isNotEmpty(deploymentStageConfig.getEnvironment().getUseFromStage().getStage());
   }
 
   private void addServiceFilters(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
@@ -238,6 +254,20 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void addFiltersFromEnvironment(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
       EnvironmentYamlV2 env, boolean gitOpsEnabled) {
+    if (env.getEnvironmentRef() != null && isNotBlank(env.getEnvironmentRef().getValue())
+        && env.getUseFromStage() != null) {
+      throw new InvalidRequestException(
+          "Only one of environmentRef and useFromStage fields are allowed in environment. Please remove one and try again");
+    }
+
+    if (env.getUseFromStage() != null) {
+      if (isEmpty(env.getUseFromStage().getStage())) {
+        throw new InvalidYamlRuntimeException(format(
+            "stage identifier should be present in stage [%s] when propagating environment from a different stage. Please add it and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
+      return;
+    }
     final ParameterField<String> environmentRef = env.getEnvironmentRef();
     if (ParameterField.isNull(environmentRef)) {
       throw new InvalidYamlRuntimeException(
@@ -263,6 +293,12 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     if (!environmentRef.isExpression()) {
+      if (!gitOpsEnabled && ParameterField.isNull(env.getInfrastructureDefinitions())
+          && ParameterField.isNull(env.getInfrastructureDefinition()) && ParameterField.isBlank(env.getFilters())) {
+        throw new InvalidYamlRuntimeException(format(
+            "infrastructureDefinitions or infrastructureDefinition should be present in stage [%s]. Please add it and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
       Optional<Environment> environmentEntityOptional = environmentService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), environmentRef.getValue(), false);

@@ -22,8 +22,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER_TE
 
 import static java.util.stream.Collectors.groupingBy;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
@@ -87,6 +90,7 @@ import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class DiscoveryService {
@@ -314,16 +318,7 @@ public class DiscoveryService {
         if (!file.isExists()) {
           MigrationImportSummaryDTO importSummaryDTO =
               ngMigration.migrate(ngClient, pmsClient, templateClient, inputDTO, file);
-          if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
-            summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
-            summaryDTO.getSuccessfullyMigratedDetails().add(MigratedDetails.builder()
-                                                                .cgEntityDetail(file.getCgBasicInfo())
-                                                                .ngEntityDetail(file.getNgEntityDetail())
-                                                                .build());
-          }
-          if (importSummaryDTO != null && EmptyPredicate.isNotEmpty(importSummaryDTO.getErrors())) {
-            summaryDTO.getErrors().addAll(importSummaryDTO.getErrors());
-          }
+          addToSummary(summaryDTO, file, importSummaryDTO);
         } else {
           summaryDTO.getStats().get(file.getType()).incrementAlreadyMigrated();
           summaryDTO.getAlreadyMigratedDetails().add(MigratedDetails.builder()
@@ -340,6 +335,21 @@ public class DiscoveryService {
     }
     summaryDTO.setNgYamlFiles(ngYamlFiles);
     return summaryDTO;
+  }
+
+  public static void addToSummary(
+      SaveSummaryDTO summaryDTO, NGYamlFile file, MigrationImportSummaryDTO importSummaryDTO) {
+    summaryDTO.getStats().putIfAbsent(file.getType(), new EntityMigratedStats());
+    if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
+      summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
+      summaryDTO.getSuccessfullyMigratedDetails().add(MigratedDetails.builder()
+                                                          .cgEntityDetail(file.getCgBasicInfo())
+                                                          .ngEntityDetail(file.getNgEntityDetail())
+                                                          .build());
+    }
+    if (importSummaryDTO != null && EmptyPredicate.isNotEmpty(importSummaryDTO.getErrors())) {
+      summaryDTO.getErrors().addAll(importSummaryDTO.getErrors());
+    }
   }
 
   private void exportZip(List<NGYamlFile> ngYamlFiles, String dirName) {

@@ -40,6 +40,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
@@ -83,6 +84,7 @@ import io.harness.product.ci.scm.proto.GetAuthenticatedUserResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
+import io.harness.product.ci.scm.proto.GetUserReposRequest;
 import io.harness.product.ci.scm.proto.GithubProvider;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultRequest;
@@ -616,6 +618,40 @@ public class ScmServiceClientImplTest extends CategoryTest {
             .build();
     assertThat(helper.getSlug(harnessConnectorDTO))
         .isEqualTo("kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo/+");
+
+    harnessConnectorDTO = HarnessConnectorDTO.builder()
+                              .url("https://app.harness.io/code/git/_OKE5H2PQKOUfzFFDuD4FA/default/CODE/gitness.git")
+                              .build();
+    assertThat(helper.getSlug(harnessConnectorDTO)).isEqualTo("_OKE5H2PQKOUfzFFDuD4FA/default/CODE/gitness/+");
+
+    harnessConnectorDTO = HarnessConnectorDTO.builder()
+                              .url("https://app.harness.io/ng/account/_OKE5H2PQKOUfzFFDuD4FA/code/default/CODE/gitness")
+                              .build();
+    assertThat(helper.getSlug(harnessConnectorDTO)).isEqualTo("_OKE5H2PQKOUfzFFDuD4FA/default/CODE/gitness/+");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testBuildGetUserReposRequestWithoutVersion() {
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(gitProvider);
+    when(scmGitProviderHelper.getRepoOwner(any())).thenReturn("user");
+    GetUserReposRequest getUserReposRequest =
+        scmServiceClient.buildGetUserReposRequest(scmConnector, PageRequestDTO.builder().pageSize(5).build(), null, 0);
+    assertThat(getUserReposRequest).isNotNull();
+    assertThat(getUserReposRequest.getVersion()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testBuildGetUserReposRequestWithVersion() {
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(gitProvider);
+    when(scmGitProviderHelper.getRepoOwner(any())).thenReturn("user");
+    GetUserReposRequest getUserReposRequest = scmServiceClient.buildGetUserReposRequest(
+        scmConnector, PageRequestDTO.builder().pageSize(5).build(), RepoFilterParamsDTO.builder().build(), 2);
+    assertThat(getUserReposRequest).isNotNull();
+    assertThat(getUserReposRequest.getVersion()).isEqualTo(2);
   }
 
   private GitFileDetails getGitFileDetailsDefault() {

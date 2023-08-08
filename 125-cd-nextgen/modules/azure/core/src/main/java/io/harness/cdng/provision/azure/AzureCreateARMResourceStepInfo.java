@@ -6,14 +6,18 @@
  */
 
 package io.harness.cdng.provision.azure;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
+import io.harness.filters.WithFileRefs;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
@@ -36,6 +40,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -44,8 +49,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo")
-public class AzureCreateARMResourceStepInfo
-    extends AzureCreateARMResourceStepBaseStepInfo implements CDAbstractStepInfo, Visitable, WithConnectorRef {
+public class AzureCreateARMResourceStepInfo extends AzureCreateARMResourceStepBaseStepInfo
+    implements CDAbstractStepInfo, Visitable, WithConnectorRef, WithFileRefs {
   @NotNull @JsonProperty("configuration") AzureCreateARMResourceStepConfiguration createStepConfiguration;
 
   @Builder(builderMethodName = "infoBuilder")
@@ -107,5 +112,24 @@ public class AzureCreateARMResourceStepInfo
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
+  }
+
+  @Override
+  public Map<String, ParameterField<List<String>>> extractFileRefs() {
+    Map<String, ParameterField<List<String>>> fileRefMap = new HashMap<>();
+
+    if (createStepConfiguration.getTemplate().getStore().getSpec() instanceof HarnessStore) {
+      HarnessStore harnessStore = (HarnessStore) createStepConfiguration.getTemplate().getStore().getSpec();
+      ParameterField<List<String>> files = harnessStore.getFiles();
+      fileRefMap.put("configuration.template.store.spec.files", files);
+    }
+
+    if (createStepConfiguration.getParameters() != null
+        && createStepConfiguration.getParameters().getStore().getSpec() instanceof HarnessStore) {
+      HarnessStore harnessStore = (HarnessStore) createStepConfiguration.getParameters().getStore().getSpec();
+      ParameterField<List<String>> files = harnessStore.getFiles();
+      fileRefMap.put("configuration.parameters.store.spec.files", files);
+    }
+    return fileRefMap;
   }
 }

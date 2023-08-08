@@ -29,7 +29,6 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_SECRET_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
-import static io.harness.ci.commonconstants.CIExecutionConstants.WORKSPACE_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -62,6 +61,7 @@ import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep.VmRunStepBuilder;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.exception.ngexception.IACMStageExecutionException;
 import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -94,15 +94,12 @@ public class VmPluginStepSerializer {
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmStepInfo serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries,
       ExecutionSource executionSource, String delegateId) {
     Map<String, String> envVars = new HashMap<>();
-
-    if (iacmStepsUtils.isIACMStep(pluginStepInfo)) {
-      envVars = iacmStepsUtils.getIACMEnvVariables(ambiance, pluginStepInfo);
-    }
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
     if (executionSource != null && executionSource.getType() == ExecutionSource.Type.MANUAL) {
@@ -128,6 +125,8 @@ public class VmPluginStepSerializer {
       }
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
         ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 
@@ -174,8 +173,21 @@ public class VmPluginStepSerializer {
         }
       }
       if (iacmStepsUtils.isIACMStep(pluginStepInfo)) {
-        String workspaceId = pluginStepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue();
-        ConnectorDetails iacmConnector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, workspaceId);
+        String connectorRef;
+        String provider;
+        if (envVars.containsKey("PLUGIN_CONNECTOR_REF")) {
+          connectorRef = envVars.get("PLUGIN_CONNECTOR_REF");
+          envVars.remove("PLUGIN_CONNECTOR_REF");
+        } else {
+          throw new IACMStageExecutionException("The connector ref is missing. Check the workspace");
+        }
+        if (envVars.containsKey("PLUGIN_PROVISIONER")) {
+          provider = envVars.get("PLUGIN_PROVISIONER");
+          envVars.remove("PLUGIN_PROVISIONER");
+        } else {
+          throw new IACMStageExecutionException("The provisioner type is missing. Check the workspace");
+        }
+        ConnectorDetails iacmConnector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, connectorRef, provider);
         return convertContainerStep(ambiance, identifier, image, connectorIdentifier, envVars, timeout,
             stageInfraDetails, pluginStepInfo, iacmConnector);
       }

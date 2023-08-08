@@ -14,6 +14,7 @@ import io.harness.batch.processing.BatchProcessingException;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.commons.helper.ModuleLicenseHelper;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
 import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
@@ -59,6 +60,7 @@ public class BigQueryUpdateTopicSubscriber {
   private static final String FULL_SUBSCRIPTION_FORMAT = "projects/{}/subscriptions/{}";
   private static final String FULL_TOPIC_NAME_FORMAT = "projects/{}/topics/{}";
   @Inject private BatchMainConfig config;
+  @Inject private ModuleLicenseHelper moduleLicenseHelper;
   @Inject private BigQueryService bigQueryService;
   @Inject private BigQueryHelper bigQueryHelper;
   @Inject private BigQueryHelperService bigQueryHelperService;
@@ -109,13 +111,13 @@ public class BigQueryUpdateTopicSubscriber {
         getNgAccounts().stream().map(ModuleLicenseDTO::getAccountIdentifier).collect(Collectors.toSet()));
 
     ProjectSubscriptionName projectSubscriptionName = ProjectSubscriptionName.of(gcpProjectId, gcpSubscriptionName);
-    subscriber =
-        Subscriber
-            .newBuilder(projectSubscriptionName,
-                new BigQueryUpdateMessageReceiver(bigQueryHelper, bigQueryHelperService, businessMappingHistoryService,
-                    viewsQueryBuilder, accountsInCluster, featureFlagService, labelFlattenedService))
-            .setCredentialsProvider(credentialsProvider)
-            .build();
+    subscriber = Subscriber
+                     .newBuilder(projectSubscriptionName,
+                         new BigQueryUpdateMessageReceiver(moduleLicenseHelper, bigQueryHelper, bigQueryHelperService,
+                             businessMappingHistoryService, viewsQueryBuilder, accountsInCluster, featureFlagService,
+                             labelFlattenedService))
+                     .setCredentialsProvider(credentialsProvider)
+                     .build();
 
     log.info("Starting listening to pub/sub topic: {}; subscription: {}", fullTopicName, gcpSubscriptionName);
     try {

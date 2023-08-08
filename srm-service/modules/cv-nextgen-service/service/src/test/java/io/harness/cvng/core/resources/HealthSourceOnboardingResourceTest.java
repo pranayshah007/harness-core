@@ -529,6 +529,23 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
+  public void fetchIndexForElasticSearchLogWithException() throws JsonProcessingException {
+    HealthSourceParamValuesRequest healthSourceParamValuesRequest = new HealthSourceParamValuesRequest();
+    healthSourceParamValuesRequest.setProviderType(MonitoredServiceDataSourceType.ELASTICSEARCH);
+    healthSourceParamValuesRequest.setParamName(QueryParamsDTO.QueryParamKeys.index);
+    healthSourceParamValuesRequest.setConnectorIdentifier(null);
+    Response response = RESOURCES.client()
+                            .target(baseURL + "/health-source/param-values")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(objectMapper.writeValueAsString(healthSourceParamValuesRequest)));
+    HealthSourceParamValuesResponse paramValuesResponse =
+        response.readEntity(new GenericType<RestResponse<HealthSourceParamValuesResponse>>() {}).getResource();
+    assertThat(response.getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
   public void fetchTimestampFormatForElasticSearchLog() throws JsonProcessingException {
     HealthSourceParamValuesRequest healthSourceParamValuesRequest = new HealthSourceParamValuesRequest();
     healthSourceParamValuesRequest.setProviderType(MonitoredServiceDataSourceType.ELASTICSEARCH);

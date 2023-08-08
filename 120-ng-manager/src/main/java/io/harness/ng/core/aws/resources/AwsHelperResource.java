@@ -6,14 +6,16 @@
  */
 
 package io.harness.ng.core.aws.resources;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.service.AwsResourceServiceImpl;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
@@ -61,6 +63,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(HarnessTeam.CDP)
 @Api("aws")
 @Path("/aws/aws-helper")

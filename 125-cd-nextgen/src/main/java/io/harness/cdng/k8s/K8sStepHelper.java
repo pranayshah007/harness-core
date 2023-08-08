@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -23,11 +22,14 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.K8sHelmCommonStepHelper;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
@@ -76,7 +78,6 @@ import io.harness.eraro.Level;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -92,7 +93,6 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -127,6 +127,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -141,7 +143,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private EncryptionHelper encryptionHelper;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private AccountClient accountClient;
@@ -218,7 +220,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       return emptyList();
     }
     return patchesFileContents.stream()
-        .map(patchesFileContent -> engineExpressionService.renderExpression(ambiance, patchesFileContent, false))
+        .map(patchesFileContent -> cdExpressionResolver.renderExpression(ambiance, patchesFileContent, false))
         .collect(Collectors.toList());
   }
 
@@ -404,8 +406,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   public void resolveManifestsConfigExpressions(Ambiance ambiance, List<ManifestConfigWrapper> manifestConfigWrappers) {
     List<ManifestConfig> configs =
         manifestConfigWrappers.stream().map(ManifestConfigWrapper::getManifest).collect(Collectors.toList());
-    ExpressionEvaluatorUtils.updateExpressions(
-        configs, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, configs);
   }
 
   public TaskChainResponse startChainLink(
@@ -413,8 +414,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    ExpressionEvaluatorUtils.updateExpressions(
-        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
     cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
 
     ManifestOutcome k8sManifestOutcome = getK8sSupportedManifestOutcome(manifestsOutcome.values());

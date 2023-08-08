@@ -24,6 +24,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.CiStepParametersUtils;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
@@ -126,7 +127,9 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
 
   @Inject private BasePluginCompatibleSerializer basePluginCompatibleSerializer;
   @Inject protected CIStageOutputRepository ciStageOutputRepository;
+
   @Inject protected CIFeatureFlagService featureFlagService;
+  @Inject private CiStepParametersUtils ciStepParametersUtils;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
@@ -204,14 +207,24 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       String stringTimeout, K8StageInfraDetails k8StageInfraDetails, StageDetails stageDetails) {
     String parkedTaskId = ciDelegateTaskExecutor.queueParkedDelegateTask(ambiance, timeoutInMillis, accountId);
     OSType os = getK8OS(k8StageInfraDetails.getInfrastructure());
-    UnitStep unitStep = serialiseStepWrapper(ciStepInfo, parkedTaskId, logKey, stepIdentifier,
-        getPort(ambiance, stepIdentifier), accountId, stepParametersName, stringTimeout, os, ambiance, stageDetails);
+    String podName = k8StageInfraDetails.getPodName();
+    UnitStep unitStep =
+        serialiseStepWrapper(ciStepInfo, parkedTaskId, logKey, stepIdentifier, getPort(ambiance, stepIdentifier),
+            accountId, stepParametersName, stringTimeout, os, ambiance, stageDetails, podName);
     unitStep = injectOutputVarsAsEnvVars(unitStep, accountId, ambiance.getStageExecutionId());
+    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
+    String ip = "";
+    if (liteEnginePodDetailsOutcome == null) {
+      log.info("Failed to get pod local ipAddress details");
+    } else {
+      ip = liteEnginePodDetailsOutcome.getIpAddress();
+    }
     String liteEngineTaskId =
-        queueK8DelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, unitStep, runtimeId);
+        queueK8DelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, unitStep, runtimeId, ip);
 
-    log.info(
-        "Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId, stepIdentifier);
+    log.info("Created parked task {} and lite engine task {} for  step {} with ip {}", parkedTaskId, liteEngineTaskId,
+        stepIdentifier, ip);
 
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(parkedTaskId)
@@ -272,21 +285,21 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
 
   private UnitStep serialiseStepWrapper(CIStepInfo ciStepInfo, String taskId, String logKey, String stepIdentifier,
       Integer port, String accountId, String stepName, String timeout, OSType os, Ambiance ambiance,
-      StageDetails stageDetails) {
+      StageDetails stageDetails, String podName) {
     switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
       case GIT_CLONE:
         return basePluginCompatibleSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
-            stepName, os, ambiance);
+            stepName, os, ambiance, podName);
       default:
-        return serialiseStep(
-            ciStepInfo, taskId, logKey, stepIdentifier, port, accountId, stepName, timeout, os, ambiance, stageDetails);
+        return serialiseStep(ciStepInfo, taskId, logKey, stepIdentifier, port, accountId, stepName, timeout, os,
+            ambiance, stageDetails, podName);
     }
   }
 
   public abstract UnitStep serialiseStep(CIStepInfo ciStepInfo, String taskId, String logKey, String stepIdentifier,
       Integer port, String accountId, String stepName, String timeout, OSType os, Ambiance ambiance,
-      StageDetails stageDetails);
+      StageDetails stageDetails, String podName);
 
   public Integer getPort(Ambiance ambiance, String stepIdentifier) {
     // Ports are assigned in lite engine step
@@ -444,6 +457,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       return stepResponseBuilder.status(Status.ABORTED).build();
     } else {
       String maskedError = maskTransportExceptionError(stepStatus.getError());
+      ciStepParametersUtils.saveCIStepStatusInfo(ambiance, StepExecutionStatus.FAILURE, stepIdentifier);
       return stepResponseBuilder.status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder()
                            .setErrorMessage(maskedError)
@@ -499,11 +513,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
   }
 
   public String queueK8DelegateTask(Ambiance ambiance, long timeout, String accountId, CIDelegateTaskExecutor executor,
-      UnitStep unitStep, String executionId) {
-    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
-    String ip = liteEnginePodDetailsOutcome.getIpAddress();
-
+      UnitStep unitStep, String executionId, String ip) {
     ExecuteStepRequest executeStepRequest =
         ExecuteStepRequest.newBuilder().setExecutionId(executionId).setStep(unitStep).setTmpFilePath(TMP_PATH).build();
     CIK8ExecuteStepTaskParams params = CIK8ExecuteStepTaskParams.builder()

@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
@@ -65,6 +66,7 @@ public class GitFetchTaskNGTest {
   @Mock private ILogStreamingTaskClient logStreamingTaskClient;
   @Mock private ExecutorService executorService;
   @Mock private FetchFilesResult fetchFilesResult;
+  @Mock private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @InjectMocks
   GitFetchTaskNG gitFetchTaskNG = new GitFetchTaskNG(
@@ -115,6 +117,7 @@ public class GitFetchTaskNGTest {
         .when(gitFetchFilesTaskHelper)
         .printFileNamesInExecutionLogs(any(LogCallback.class), anyList(), any(Boolean.class));
     doReturn(new ArrayList<>()).when(fetchFilesResult).getFiles();
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
   }
 
   @Test
@@ -134,7 +137,6 @@ public class GitFetchTaskNGTest {
             any(GitConfigDTO.class));
     doReturn(new ArrayList<>()).when(fetchFilesResult).getFiles();
     when(gitDecryptionHelper.getSSHSessionConfig(any(), any())).thenReturn(mock(SshSessionConfig.class));
-
     GitFetchResponse response = gitFetchTaskNG.run(taskParameters);
     assertThat(response.getTaskStatus()).isEqualTo(TaskStatus.SUCCESS);
   }
@@ -162,7 +164,6 @@ public class GitFetchTaskNGTest {
         .fetchFilesByPath(anyString(), any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class),
             any(GitConfigDTO.class));
     when(gitDecryptionHelper.getSSHSessionConfig(any(), any())).thenReturn(mock(SshSessionConfig.class));
-
     assertThatThrownBy(() -> gitFetchTaskNG.run(taskParameters))
         .isInstanceOf(TaskNGDataException.class)
         .hasCauseInstanceOf(InvalidRequestException.class);

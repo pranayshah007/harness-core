@@ -6,12 +6,14 @@
  */
 
 package io.harness.steps.shellscript;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.encoding.EncodingUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
@@ -27,6 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 public interface ShellScriptHelperService {
   // Handles ParameterField and String type Objects, else throws Exception
@@ -41,7 +45,7 @@ public interface ShellScriptHelperService {
       @Nonnull ShellScriptStepParameters shellScriptStepParameters,
       @Nonnull ShellScriptTaskParametersNGBuilder taskParametersNGBuilder);
 
-  String getShellScript(@Nonnull ShellScriptStepParameters stepParameters);
+  String getShellScript(@Nonnull ShellScriptStepParameters stepParameters, Ambiance ambiance);
 
   String getWorkingDirectory(
       ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate);
@@ -62,7 +66,8 @@ public interface ShellScriptHelperService {
     Map<String, String> resolvedOutputVariables = new HashMap<>();
     outputVariables.keySet().forEach(name -> {
       Object value = ((ParameterField<?>) outputVariables.get(name)).getValue();
-      if (EmptyPredicate.isNotEmpty(secretOutputVariables) && secretOutputVariables.contains(name)) {
+      if (isNotEmpty(secretOutputVariables) && secretOutputVariables.contains(name)
+          && isNotEmpty(sweepingOutputEnvVariables.get(value.toString()))) {
         String encodedValue = EncodingUtils.encodeBase64(
             encryption.encrypt(sweepingOutputEnvVariables.get(value).getBytes(StandardCharsets.UTF_8)));
         String finalValue = "${sweepingOutputSecrets.obtain(\"" + name + "\",\"" + encodedValue + "\")}";

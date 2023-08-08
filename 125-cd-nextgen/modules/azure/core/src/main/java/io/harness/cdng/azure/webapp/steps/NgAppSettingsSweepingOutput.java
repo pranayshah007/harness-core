@@ -7,6 +7,7 @@
 
 package io.harness.cdng.azure.webapp.steps;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -23,6 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @JsonTypeName("NgAppSettingsSweepingOutput")
 @TypeAlias("ngAppSettingsSweepingOutput")
+@RecasterAlias("io.harness.cdng.azure.webapp.steps.NgAppSettingsSweepingOutput")
 public class NgAppSettingsSweepingOutput implements ExecutionSweepingOutput {
   @NotNull StoreConfigWrapper store;
 }

@@ -6,13 +6,16 @@
  */
 
 package io.harness.gitsync.common.scmerrorhandling.handlers.gitlab;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class ScmErrorExplanations {

@@ -9,13 +9,16 @@ package io.harness.template.gitsync;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -25,6 +28,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.NGTemplateReference;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
+import io.harness.eventsframework.api.EventsFrameworkDownException;
+import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.EntityDetail;
@@ -149,6 +154,42 @@ public class TemplateEntityGitSyncHandlerTest extends CategoryTest {
         .delete(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
     assertThat(templateEntityGitSyncHandler.delete(reference)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testDeleteException() {
+    NGTemplateReference reference = NGTemplateReference.builder()
+                                        .accountIdentifier(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier(TEMPLATE_IDENTIFIER)
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .build();
+    doThrow(EventsFrameworkDownException.class)
+        .when(templateService)
+        .delete(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
+    assertThrows(UnexpectedException.class, () -> templateEntityGitSyncHandler.delete(reference));
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testMarkEntityInvalid() {
+    NGTemplateReference reference = NGTemplateReference.builder()
+                                        .accountIdentifier(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier(TEMPLATE_IDENTIFIER)
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .build();
+    doReturn(true)
+        .when(templateService)
+        .markEntityInvalid(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null);
+    assertThat(templateEntityGitSyncHandler.markEntityInvalid(ACCOUNT_ID, reference, null)).isTrue();
   }
 
   @Test

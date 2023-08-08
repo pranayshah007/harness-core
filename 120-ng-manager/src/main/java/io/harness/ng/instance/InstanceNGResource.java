@@ -11,8 +11,8 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.HarnessServiceInfoNG;
-import io.harness.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
+import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.dtos.InstanceDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.InternalApi;
@@ -77,6 +77,7 @@ public class InstanceNGResource {
 
   @GET
   @Path("/stage-instance-info")
+  @InternalApi
   @ApiOperation(value = "Get instance info deployed in previous steps of stage", nickname = "getStageInstanceInfo")
   public ResponseDTO<List<StepExecutionInstanceInfo>> getInstanceInfo(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,

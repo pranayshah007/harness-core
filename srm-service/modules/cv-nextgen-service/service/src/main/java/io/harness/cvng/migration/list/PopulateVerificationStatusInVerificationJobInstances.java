@@ -33,23 +33,34 @@ public class PopulateVerificationStatusInVerificationJobInstances extends CVNGBa
   public void migrate() {
     log.info("Starting update of missing verification statuses in verificationJobInstances.");
     Query<VerificationJobInstance> queryToGetVerificationJobInstances =
-        hPersistence.createQuery(VerificationJobInstance.class, new HashSet<>());
+        hPersistence.createQuery(VerificationJobInstance.class, new HashSet<>())
+            .field(VerificationJobInstanceKeys.executionStatus)
+            .in(errorExecutionStatuses)
+            .field(VerificationJobInstanceKeys.verificationStatus)
+            .doesNotExist();
     try (HIterator<VerificationJobInstance> iterator = new HIterator<>(queryToGetVerificationJobInstances.fetch())) {
       while (iterator.hasNext()) {
-        VerificationJobInstance verificationJobInstance = iterator.next();
-        log.info("Checking verification status for VerificationJobInstanceId {}.", verificationJobInstance.getUuid());
         try {
-          if (Objects.isNull(verificationJobInstance.getVerificationStatus())
-              && errorExecutionStatuses.contains(verificationJobInstance.getExecutionStatus())) {
-            populateVerificationStatus(verificationJobInstance);
-          }
-        } catch (Exception ex) {
-          log.error("Exception while populating verification status for VerificationJobInstanceId {}.",
-              verificationJobInstance.getUuid());
+          VerificationJobInstance verificationJobInstance = iterator.next();
+          ensureVerificationStatusIsPopulated(verificationJobInstance);
+        } catch (Exception ignored) {
         }
       }
     }
     log.info("Completed update of missing verification statuses in verificationJobInstances.");
+  }
+
+  private void ensureVerificationStatusIsPopulated(VerificationJobInstance verificationJobInstance) {
+    log.info("Checking verification status for VerificationJobInstanceId {}.", verificationJobInstance.getUuid());
+    if (Objects.isNull(verificationJobInstance.getVerificationStatus())
+        && errorExecutionStatuses.contains(verificationJobInstance.getExecutionStatus())) {
+      try {
+        populateVerificationStatus(verificationJobInstance);
+      } catch (Exception ex) {
+        log.error("Exception while populating verification status for VerificationJobInstanceId {}.",
+            verificationJobInstance.getUuid());
+      }
+    }
   }
 
   private void populateVerificationStatus(VerificationJobInstance verificationJobInstance) {

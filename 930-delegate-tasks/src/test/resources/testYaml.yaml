@@ -1,0 +1,28 @@
+required:
+- "identifier"
+- "name"
+- "spec"
+- "type"
+key:
+  type: "string"
+self:
+  type: "string"
+url:
+  type: "string"
+id:
+  type: "string"
+name:
+  type: "string"
+orgIdentifier:
+  type: "string"
+projectIdentifier:
+  type: "string"
+tags:
+  type: "object"
+  additionalProperties:
+    type: "string"
+type:
+  type: "string"
+  enum:
+  - "K8sCluster"
+  - "Git"

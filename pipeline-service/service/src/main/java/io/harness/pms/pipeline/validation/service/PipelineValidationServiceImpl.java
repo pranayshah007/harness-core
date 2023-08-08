@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.pipeline.validation.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
@@ -30,6 +32,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Singleton
 @Slf4j
@@ -44,7 +47,7 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
       checkIfRootNodeIsPipeline(pipelineYaml);
     }
     pmsYamlSchemaService.validateYamlSchema(
-        accountIdentifier, orgIdentifier, projectIdentifier, yamlWithTemplatesResolved);
+        accountIdentifier, orgIdentifier, projectIdentifier, YamlUtils.readAsJsonNode(yamlWithTemplatesResolved));
     // validate unique fqn in resolveTemplateRefsInPipeline
     pmsYamlSchemaService.validateUniqueFqn(yamlWithTemplatesResolved);
     return true;
@@ -56,7 +59,8 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
     if (Objects.equals(harnessVersion, PipelineVersion.V0)) {
       checkIfRootNodeIsPipeline(pipelineYaml);
     }
-    pmsYamlSchemaService.validateYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, pipelineYaml);
+    pmsYamlSchemaService.validateYamlSchema(
+        accountIdentifier, orgIdentifier, projectIdentifier, YamlUtils.readAsJsonNode(pipelineYaml));
     pmsYamlSchemaService.validateUniqueFqn(pipelineYaml);
   }
 

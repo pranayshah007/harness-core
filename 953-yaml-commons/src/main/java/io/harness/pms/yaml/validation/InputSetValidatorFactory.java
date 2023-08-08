@@ -6,31 +6,34 @@
  */
 
 package io.harness.pms.yaml.validation;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.pms.expression.EngineExpressionResolver;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 public class InputSetValidatorFactory {
   @Inject private Injector injector;
 
   public RuntimeValidator obtainValidator(InputSetValidator inputSetValidator,
-      EngineExpressionEvaluator engineExpressionEvaluator, ExpressionMode expressionMode) {
+      EngineExpressionResolver engineExpressionResolver, ExpressionMode expressionMode) {
     RuntimeValidator runtimeValidator;
     switch (inputSetValidator.getValidatorType()) {
       case ALLOWED_VALUES:
-        runtimeValidator = new AllowedValuesValidator(engineExpressionEvaluator, expressionMode);
+        runtimeValidator = new AllowedValuesValidator(engineExpressionResolver, expressionMode);
         break;
       case REGEX:
-        runtimeValidator = new RegexValidator(engineExpressionEvaluator, expressionMode);
+        runtimeValidator = new RegexValidator(engineExpressionResolver, expressionMode);
         break;
       default:
         throw new InvalidRequestException(

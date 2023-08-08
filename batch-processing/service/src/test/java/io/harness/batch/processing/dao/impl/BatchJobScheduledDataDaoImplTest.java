@@ -51,6 +51,6 @@ public class BatchJobScheduledDataDaoImplTest extends BatchProcessingTestBase {
   }
 
   private BatchJobScheduledData batchJobScheduledData(Instant startInstant, Instant endInstant) {
-    return new BatchJobScheduledData(ACCOUNT_ID, BatchJobType.K8S_EVENT.name(), 1, startInstant, endInstant);
+    return new BatchJobScheduledData(ACCOUNT_ID, BatchJobType.K8S_EVENT.name(), 1, startInstant, endInstant, 111111L);
   }
 }

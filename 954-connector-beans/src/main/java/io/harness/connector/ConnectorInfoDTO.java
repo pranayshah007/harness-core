@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.ConnectorConstants;
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
@@ -39,6 +40,7 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(DX)
 @Schema(name = "ConnectorInfo", description = "This has the Connector details defined in Harness")
+@RecasterAlias("io.harness.connector.ConnectorInfoDTO")
 public class ConnectorInfoDTO {
   @NotNull @NotBlank @NGEntityName @Schema(description = ConnectorConstants.CONNECTOR_NAME) String name;
   @NotNull
@@ -47,6 +49,7 @@ public class ConnectorInfoDTO {
   @Schema(description = ConnectorConstants.CONNECTOR_IDENTIFIER_MSG)
   String identifier;
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
+  @Schema(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountIdentifier;
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = NGCommonEntityConstants.TAGS) Map<String, String> tags;
@@ -64,6 +67,9 @@ public class ConnectorInfoDTO {
   io.harness.delegate.beans.connector.ConnectorConfigDTO connectorConfig;
 
   // Adding custom setters for Jackson to set empty string as null
+  public void setAccountIdentifier(String accountIdentifier) {
+    this.accountIdentifier = isEmpty(accountIdentifier) ? null : accountIdentifier;
+  }
   public void setOrgIdentifier(String orgIdentifier) {
     this.orgIdentifier = isEmpty(orgIdentifier) ? null : orgIdentifier;
   }
@@ -73,12 +79,13 @@ public class ConnectorInfoDTO {
   }
 
   @Builder
-  public ConnectorInfoDTO(String name, String identifier, String description, String orgIdentifier,
-      String projectIdentifier, Map<String, String> tags, ConnectorType connectorType,
+  public ConnectorInfoDTO(String name, String identifier, String description, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, Map<String, String> tags, ConnectorType connectorType,
       ConnectorConfigDTO connectorConfig) {
     this.name = name;
     this.identifier = identifier;
     this.description = description;
+    this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = isEmpty(orgIdentifier) ? null : orgIdentifier;
     this.projectIdentifier = isEmpty(projectIdentifier) ? null : projectIdentifier;
     this.tags = tags;

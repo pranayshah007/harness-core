@@ -6,9 +6,11 @@
  */
 
 package io.harness.steps.approval.step.servicenow;
-
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.engine.executions.step.StepExecutionEntityService;
@@ -43,6 +45,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SERVICE_NOW_APPROVAL_STEP_TYPE;
@@ -50,6 +53,7 @@ public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
   @Inject private ApprovalInstanceService approvalInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
+  @Inject private ServiceNowApprovalHelperService serviceNowApprovalHelperService;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
 
   @Override
@@ -59,6 +63,9 @@ public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     ServiceNowApprovalInstance approvalInstance =
         ServiceNowApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    serviceNowApprovalHelperService.getServiceNowConnector(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+        approvalInstance.getConnectorRef());
     approvalInstance = (ServiceNowApprovalInstance) approvalInstanceService.save(approvalInstance);
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(approvalInstance.getId())
@@ -86,15 +93,15 @@ public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
                                                           .build())
                                       .build();
         dashboardExecutorService.submit(()
-                                            -> stepExecutionEntityService.updateStepExecutionEntity(ambiance,
-                                                failureInfo, null, stepParameters.getName(), Status.APPROVAL_WAITING));
+                                            -> stepExecutionEntityService.updateStepExecutionEntity(
+                                                ambiance, failureInfo, null, stepParameters.getName(), Status.FAILED));
         throw new ApprovalStepNGException(errorMsg);
       }
       dashboardExecutorService.submit(
           ()
               -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, instance.getFailureInfo(),
                   createServiceNowApprovalStepExecutionDetailsFromServiceNowApprovalInstance(instance),
-                  stepParameters.getName(), Status.APPROVAL_WAITING));
+                  stepParameters.getName(), instance.getStatus().toFinalExecutionStatus()));
       return StepResponse.builder()
           .status(instance.getStatus().toFinalExecutionStatus())
           .failureInfo(instance.getFailureInfo())

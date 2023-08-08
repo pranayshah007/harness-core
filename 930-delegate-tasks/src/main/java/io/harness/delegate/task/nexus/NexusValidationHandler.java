@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.nexus;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.ConnectorValidationHandler;
@@ -22,6 +24,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 public class NexusValidationHandler implements ConnectorValidationHandler {
   @Inject private SecretDecryptionService decryptionService;

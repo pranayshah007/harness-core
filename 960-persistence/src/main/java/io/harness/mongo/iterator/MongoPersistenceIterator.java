@@ -6,7 +6,6 @@
  */
 
 package io.harness.mongo.iterator;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
@@ -24,8 +23,11 @@ import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistentIrregularIterable;
 import io.harness.iterator.PersistentIterable;
@@ -57,6 +59,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.client.RedisException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.PL)
 @Builder
 @Slf4j
@@ -113,6 +116,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         executorService.submit(this::process);
         break;
       case LOOP:
+      case REDIS_BATCH:
         notifyAll();
         break;
       default:
@@ -376,7 +380,13 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
       // If there were no docs available then sleep for
       // the configured threadPool interval duration.
       if (docIds.isEmpty()) {
-        sleep(threadPoolIntervalInSeconds);
+        synchronized (this) {
+          try {
+            wait(threadPoolIntervalInSeconds.toMillis());
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }
       }
     }
   }

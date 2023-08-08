@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng;
-
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
 import static java.util.stream.Collectors.toSet;
@@ -16,8 +15,11 @@ import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.account.AccountConfig;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.cf.CfClientConfig;
@@ -30,6 +32,8 @@ import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.gitsync.GitServiceConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.hsqs.client.beans.HsqsDequeueConfig;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
@@ -85,6 +89,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Getter
 @OwnedBy(HarnessTeam.PL)
 @Slf4j
@@ -156,6 +161,7 @@ public class NextGenConfiguration extends Configuration {
 
   public static final String IP_ALLOWLIST_PACKAGE = "io.harness.ipallowlist.resource";
   public static final String FAVORITES_PACKAGE = "io.harness.favorites.remote";
+  public static final String EULA_PACKAGE = "io.harness.eula.resource";
   public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
   public static final String FREEZE_RESOURCE_PACKAGE = "io.harness.ng.freeze.resource";
   public static final String MANIFEST_RESOURCE_PACKAGE = "io.harness.ng.core.manifests.resources";
@@ -266,6 +272,11 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "pluginExecutionConfig") private PluginExecutionConfig pluginExecutionConfig;
   @JsonProperty("signupDomainDenylistConfig")
   private SignupDomainDenylistConfiguration signupDomainDenylistConfiguration;
+  @JsonProperty("queueServiceClientConfig") private QueueServiceClientConfig queueServiceClientConfig;
+  @JsonProperty("webhookBranchHookEventHsqsDequeueConfig")
+  private HsqsDequeueConfig webhookBranchHookEventHsqsDequeueConfig;
+  @JsonProperty("webhookPushEventHsqsDequeueConfig") private HsqsDequeueConfig webhookPushEventHsqsDequeueConfig;
+  private boolean useQueueServiceForWebhookTriggers;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
@@ -326,7 +337,8 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.TERRAFORM_CLOUD_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE,
                 NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE, NextGenConfiguration.TERRAFORM_RESOURCE_PACKAGE,
                 NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE,
-                NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE))
+                NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE,
+                NextGenConfiguration.EULA_PACKAGE))
         .collect(Collectors.toSet());
   }
 

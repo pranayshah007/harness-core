@@ -6,17 +6,22 @@
  */
 
 package io.harness.steps.approval.step.jira;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
+import static io.harness.jira.JiraConstantsNG.STATUS_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.engine.executions.step.StepExecutionEntityService;
 import io.harness.eraro.Level;
 import io.harness.exception.ApprovalStepNGException;
 import io.harness.execution.step.approval.jira.JiraApprovalStepExecutionDetails;
+import io.harness.jira.JiraIssueUtilsNG;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -45,6 +50,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
 @Slf4j
 public class JiraApprovalStep extends PipelineAsyncExecutable {
@@ -53,6 +60,7 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
   @Inject private ApprovalInstanceService approvalInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
+  @Inject private JiraApprovalHelperService jiraApprovalHelperService;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
 
   @Override
@@ -61,6 +69,9 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     JiraApprovalInstance approvalInstance = JiraApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    jiraApprovalHelperService.getJiraConnector(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+        approvalInstance.getConnectorRef());
     approvalInstance = (JiraApprovalInstance) approvalInstanceService.save(approvalInstance);
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(approvalInstance.getId())
@@ -88,15 +99,15 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
                                                           .build())
                                       .build();
         dashboardExecutorService.submit(()
-                                            -> stepExecutionEntityService.updateStepExecutionEntity(ambiance,
-                                                failureInfo, null, stepParameters.getName(), Status.APPROVAL_WAITING));
+                                            -> stepExecutionEntityService.updateStepExecutionEntity(
+                                                ambiance, failureInfo, null, stepParameters.getName(), Status.FAILED));
         throw new ApprovalStepNGException(errorMsg);
       }
       dashboardExecutorService.submit(
           ()
               -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, instance.getFailureInfo(),
-                  createJiraApprovalStepExecutionDetailsFromJiraApprovalInstance(instance), stepParameters.getName(),
-                  Status.APPROVAL_WAITING));
+                  createJiraApprovalStepExecutionDetailsFromJiraApprovalInstance(ambiance, instance),
+                  stepParameters.getName(), instance.getStatus().toFinalExecutionStatus()));
       return StepResponse.builder()
           .status(instance.getStatus().toFinalExecutionStatus())
           .failureInfo(instance.getFailureInfo())
@@ -109,12 +120,15 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
   }
 
   private JiraApprovalStepExecutionDetails createJiraApprovalStepExecutionDetailsFromJiraApprovalInstance(
-      JiraApprovalInstance jiraApprovalInstance) {
+      Ambiance ambiance, JiraApprovalInstance jiraApprovalInstance) {
     if (jiraApprovalInstance != null) {
+      JiraConnectorDTO jiraConnectorDTO = jiraApprovalHelperService.getJiraConnector(
+          AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+          AmbianceUtils.getProjectIdentifier(ambiance), jiraApprovalInstance.getConnectorRef());
       return JiraApprovalStepExecutionDetails.builder()
-          .issueKey(jiraApprovalInstance.getIssueKey())
           .issueType(jiraApprovalInstance.getIssueType())
-          .projectKey(jiraApprovalInstance.getProjectKey())
+          .url(JiraIssueUtilsNG.prepareIssueUrl(jiraConnectorDTO.getJiraUrl(), jiraApprovalInstance.getIssueKey()))
+          .ticketStatus(jiraApprovalInstance.getTicketFields().getOrDefault(STATUS_NAME, "").toString())
           .build();
     }
     return null;

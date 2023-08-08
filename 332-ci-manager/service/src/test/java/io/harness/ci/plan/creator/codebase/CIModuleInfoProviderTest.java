@@ -208,6 +208,7 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getSourceBranch()).isEqualTo("test");
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getTargetBranch()).isEqualTo("main");
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getCommits()).isEqualTo(ciBuildCommits);
+    assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getAuthor()).isNull();
   }
 
   @Test

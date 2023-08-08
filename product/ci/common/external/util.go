@@ -48,6 +48,7 @@ const (
 	logUploadFf        = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
 	gitBin             = "git"
 	diffFilesCmd       = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	diffFilesCmdPush   = "%s diff --name-status --diff-filter=MADR %s"
 	safeDirCommand     = "%s config --global --add safe.directory '*'"
 	harnessStepIndex   = "HARNESS_STEP_INDEX"
 	harnessStepTotal   = "HARNESS_STEP_TOTAL"
@@ -57,7 +58,7 @@ const (
 
 // GetChangedFiles executes a shell command and returns a list of files changed in the PR
 // along with their corresponding status
-func GetChangedFiles(ctx context.Context, workspace string, log *zap.SugaredLogger, procWriter io.Writer) ([]types.File, error) {
+func GetChangedFiles(ctx context.Context, workspace, lastSuccessfulCommitID string, isPushTrigger bool, log *zap.SugaredLogger, procWriter io.Writer) ([]types.File, error) {
 	cmdContextFactory := exec.OsCommandContextGracefulWithLog(log)
 	cmd := cmdContextFactory.CmdContext(ctx, "sh", "-c", fmt.Sprintf(safeDirCommand, gitBin)).
 		WithDir(workspace).WithStdout(procWriter).WithStderr(procWriter)
@@ -66,7 +67,12 @@ func GetChangedFiles(ctx context.Context, workspace string, log *zap.SugaredLogg
 		return nil, err
 	}
 
-	cmd = cmdContextFactory.CmdContext(ctx, "sh", "-c", fmt.Sprintf(diffFilesCmd, gitBin)).
+	diffFilesCmdFinal := fmt.Sprintf(diffFilesCmd, gitBin)
+	if isPushTrigger {
+		diffFilesCmdFinal = fmt.Sprintf(diffFilesCmdPush, gitBin, lastSuccessfulCommitID)
+	}
+
+	cmd = cmdContextFactory.CmdContext(ctx, "sh", "-c", diffFilesCmdFinal).
 		WithDir(workspace).WithStdout(procWriter).WithStderr(procWriter)
 	out, err = cmd.Output()
 	if err != nil {
@@ -418,6 +424,18 @@ func IsManualExecution() bool {
 	_, err3 := GetSha()
 	if err1 != nil || err2 != nil || err3 != nil {
 		return true // if any of them are not set, treat as a manual execution
+	}
+	return false
+}
+
+func IsPushTriggerExecution() bool {
+	if IsManualExecution() {
+		return false
+	}
+	sourceBranch, _ := GetSourceBranch()
+	targetBranch, _ := GetTargetBranch()	
+	if sourceBranch == targetBranch {
+		return true
 	}
 	return false
 }

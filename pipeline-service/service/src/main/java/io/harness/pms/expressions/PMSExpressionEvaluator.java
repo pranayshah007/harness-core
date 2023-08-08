@@ -6,17 +6,20 @@
  */
 
 package io.harness.pms.expressions;
-
 import io.harness.ModuleType;
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.engine.expressions.functors.StrategyFunctor;
+import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ngtriggers.expressions.functors.EventPayloadFunctor;
 import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
@@ -31,6 +34,7 @@ import io.harness.pms.expressions.functors.OrgFunctor;
 import io.harness.pms.expressions.functors.PipelineExecutionFunctor;
 import io.harness.pms.expressions.functors.ProjectFunctor;
 import io.harness.pms.expressions.functors.RemoteExpressionFunctor;
+import io.harness.pms.expressions.functors.ServiceVariableOverridesFunctor;
 import io.harness.pms.helpers.PipelineExpressionHelper;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
@@ -46,6 +50,8 @@ import com.google.inject.name.Named;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject Map<ModuleType, RemoteFunctorServiceBlockingStub> remoteFunctorServiceBlockingStubMap;
@@ -59,6 +65,8 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject ExecutionInputService executionInputService;
 
   @Inject PmsExecutionSummaryService pmsExecutionSummaryService;
+
+  @Inject PmsEngineExpressionService pmsEngineExpressionService;
 
   public PMSExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
       Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
@@ -101,6 +109,8 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
                 .build());
       }
     });
+
+    addToContext("serviceVariableOverrides", new ServiceVariableOverridesFunctor(ambiance, pmsEngineExpressionService));
 
     // Group aliases
     // TODO: Replace with step category

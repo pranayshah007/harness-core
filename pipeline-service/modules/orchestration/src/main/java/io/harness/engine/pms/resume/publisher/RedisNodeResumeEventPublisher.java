@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine.pms.resume.publisher;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
@@ -27,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j

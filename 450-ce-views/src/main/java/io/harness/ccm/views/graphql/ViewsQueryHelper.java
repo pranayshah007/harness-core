@@ -7,6 +7,7 @@
 
 package io.harness.ccm.views.graphql;
 
+import static io.harness.ccm.commons.constants.ViewFieldConstants.GCP_INVOICE_MONTH_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.NONE_FIELD;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
@@ -40,6 +41,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -58,6 +60,7 @@ public class ViewsQueryHelper {
   private static final double DEFAULT_DOUBLE_VALUE = 0;
   private static final String EFFICIENCY_SCORE_LABEL = "Efficiency Score";
   private static final long OBSERVATION_PERIOD = 29 * ONE_DAY_MILLIS;
+  private static final int COST_CATEGORY_MAX_LIMIT_VALUE = 1_000;
 
   public boolean isYearRequired(Instant startInstant, Instant endInstant) {
     LocalDate endDate = LocalDateTime.ofInstant(endInstant, ZoneOffset.UTC).toLocalDate();
@@ -627,5 +630,25 @@ public class ViewsQueryHelper {
       }
     }
     return searchString;
+  }
+
+  public boolean isGcpInvoiceMonthFilterPresent(List<QLCEViewFilterWrapper> filters) {
+    if (Objects.isNull(filters)) {
+      return false;
+    }
+    return filters.stream().anyMatch(filter
+        -> Objects.nonNull(filter.getIdFilter()) && Objects.nonNull(filter.getIdFilter().getField())
+            && filter.getIdFilter().getField().getIdentifier() == ViewFieldIdentifier.GCP
+            && GCP_INVOICE_MONTH_FIELD_ID.equals(filter.getIdFilter().getField().getFieldId()));
+  }
+
+  public int getModifiedBusinessMappingLimit(
+      Integer limit, boolean isGroupByBusinessMapping, boolean isSharedCostBusinessMappingEmpty) {
+    return isGroupByBusinessMapping && !isSharedCostBusinessMappingEmpty ? COST_CATEGORY_MAX_LIMIT_VALUE : limit;
+  }
+
+  public int getModifiedBusinessMappingOffset(
+      Integer offset, boolean isGroupByBusinessMapping, boolean isSharedCostBusinessMappingEmpty) {
+    return isGroupByBusinessMapping && !isSharedCostBusinessMappingEmpty ? 0 : offset;
   }
 }

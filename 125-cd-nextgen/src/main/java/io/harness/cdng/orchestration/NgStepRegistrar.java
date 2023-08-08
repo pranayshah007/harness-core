@@ -9,7 +9,10 @@ package io.harness.cdng.orchestration;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactSyncStep;
 import io.harness.cdng.artifact.steps.ArtifactsStep;
@@ -63,6 +66,7 @@ import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
+import io.harness.cdng.gitops.revertpr.RevertPRStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.gitops.syncstep.SyncStep;
@@ -102,6 +106,11 @@ import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildrenStep;
+import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStep;
+import io.harness.cdng.provision.awscdk.AwsCdkDeployStep;
+import io.harness.cdng.provision.awscdk.AwsCdkDestroyStep;
+import io.harness.cdng.provision.awscdk.AwsCdkDiffStep;
+import io.harness.cdng.provision.awscdk.AwsCdkSynthStep;
 import io.harness.cdng.provision.azure.AzureARMRollbackStep;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStep;
 import io.harness.cdng.provision.azure.AzureCreateBPStep;
@@ -162,6 +171,9 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITOPS, HarnessModuleComponent.CDS_SERVERLESS,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_ECS})
 @OwnedBy(CDC)
 @UtilityClass
 public class NgStepRegistrar {
@@ -170,6 +182,7 @@ public class NgStepRegistrar {
 
     // Add CDNG steps here
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
+    engineSteps.put(RevertPRStep.STEP_TYPE, RevertPRStep.class);
     engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
     engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
     engineSteps.put(SyncStep.STEP_TYPE, SyncStep.class);
@@ -328,6 +341,14 @@ public class NgStepRegistrar {
     engineSteps.put(TerraformRollbackStepV2.STEP_TYPE, TerraformRollbackStepV2.class);
 
     engineSteps.put(ServerlessAwsLambdaPackageV2Step.STEP_TYPE, ServerlessAwsLambdaPackageV2Step.class);
+
+    // AWS CDK
+    engineSteps.put(AwsCdkBootstrapStep.STEP_TYPE, AwsCdkBootstrapStep.class);
+    engineSteps.put(AwsCdkSynthStep.STEP_TYPE, AwsCdkSynthStep.class);
+    engineSteps.put(AwsCdkDiffStep.STEP_TYPE, AwsCdkDiffStep.class);
+    engineSteps.put(AwsCdkDeployStep.STEP_TYPE, AwsCdkDeployStep.class);
+    engineSteps.put(AwsCdkDestroyStep.STEP_TYPE, AwsCdkDestroyStep.class);
+
     return engineSteps;
   }
 }

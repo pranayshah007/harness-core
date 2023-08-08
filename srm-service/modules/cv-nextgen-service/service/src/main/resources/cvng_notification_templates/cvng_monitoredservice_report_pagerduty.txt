@@ -1,0 +1,4 @@
+summary: "Notification: ${HEADER_MESSAGE}. Started ${ANALYSIS_STARTED_AT}. Ended ${ANALYSIS_ENDED_AT}. Account Name ${ACCOUNT_NAME}, Organization Name ${ORG_NAME}, Project Name ${PROJECT_NAME}, Monitored Service ${MONITORED_SERVICE_NAME}. View Service Health details ${URL}"
+link:
+    href: harness.io
+    text: Harness

@@ -7,8 +7,11 @@
 
 package io.harness.pms.yaml;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.CastedField;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
@@ -22,6 +25,7 @@ import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 @Slf4j
@@ -61,6 +65,11 @@ public class ParameterDocumentFieldMapper {
 
     ParameterFieldValueWrapper<?> parameterFieldValueWrapper =
         RecastOrchestrationUtils.fromMap(documentField.getValueDoc(), ParameterFieldValueWrapper.class);
+    if (parameterFieldValueWrapper != null) {
+      parameterFieldValueWrapper =
+          new ParameterFieldValueWrapper<>(ParameterFieldUtils.getCastedFinalValueForPrimitiveTypesAndWrappers(
+              parameterFieldValueWrapper.getValue(), documentField));
+    }
     checkValueClass(documentField, parameterFieldValueWrapper);
     return ParameterField.builder()
         .expression(documentField.isExpression())
@@ -94,12 +103,17 @@ public class ParameterDocumentFieldMapper {
          We need to check if enum class has any field with the given value. No error should be thrown in that case.
          Apart from this case, the code will continue behaving as it was.
        */
-      try {
-        cls.getField((String) parameterFieldValueWrapper.getValue());
-      } catch (Exception e) {
-        log.error(String.format("Expected value of type: %s, got: %s", cls.getSimpleName(),
-            parameterFieldValueWrapper.getValue().getClass().getSimpleName()));
+      if (cls.isEnum() && parameterFieldValueWrapper.getValue().getClass().isAssignableFrom(String.class)) {
+        for (Object object : cls.getEnumConstants()) {
+          if (((Enum) object).name().equalsIgnoreCase((String) parameterFieldValueWrapper.getValue())
+              || object.toString().equalsIgnoreCase((String) parameterFieldValueWrapper.getValue())) {
+            return;
+          }
+        }
       }
+      // TODO(Shalini): throw error instead of just logging after handling the case of parameterField<Timeout>
+      log.error(String.format("The field should be of type [%s] but got: [%s] with value [%s]", cls.getSimpleName(),
+          parameterFieldValueWrapper.getValue().getClass().getSimpleName(), parameterFieldValueWrapper.getValue()));
     }
   }
 

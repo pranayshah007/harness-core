@@ -12,8 +12,11 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
@@ -25,6 +28,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(HarnessTeam.CDP)
 public abstract class AbstractTasRegistrySettingsProvider implements TasRegistrySettingsProvider {
   protected void validateSettings(

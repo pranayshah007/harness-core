@@ -240,6 +240,7 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
         delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, owner, DelegateTokenStatus.ACTIVE, true);
     assertThat(result).hasSize(2);
     result.forEach(tokenDetail -> assertThat(tokenDetail.getValue()).isNotEmpty());
+    result.forEach(tokenDetail -> assertThat(tokenDetail.getValue()).contains("="));
   }
 
   @Test

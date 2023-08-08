@@ -8,6 +8,7 @@
 # --global.imagePullSecrets Global Docker registry secret names as an array
 # --global.storageClass Global StorageClass for Persistent Volume(s)
 global:
+  kubeVersion: ""
   loadbalancerURL: ""
   stackDriverLoggingEnabled: false
   database:
@@ -46,6 +47,8 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+      certName: ""
+      certKey: ""
   ha: false
   imagePullSecrets: []
 # --replicaCount Number of pods
@@ -80,7 +83,7 @@ image:
   repository: harness/cdcdata-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "78900"
+  tag: "79819"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
@@ -102,7 +105,6 @@ waitForInitContainer:
     imagePullSecrets: []
   resources:
     limits:
-      cpu: 128m
       memory: 128Mi
     requests:
       cpu: 128m
@@ -266,6 +268,11 @@ autoscaling:
 extraEnvVars: []
 # -- extraEnvVarsCM ConfigMap with extra environment variables
 ##
+# extraEnvVars:
+# - name: POD_NAME
+#   valueFrom:
+#     fieldRef:
+#       fieldPath: metadata.name
 extraEnvVarsCM: ""
 # -- extraEnvVarsSecret Secret with extra environment variables
 ##

@@ -31,6 +31,7 @@ public class ChangeEventDTODeserializer extends JsonDeserializer<ChangeEventDTO>
     deserializationMapper.put(ChangeSourceType.CUSTOM_INFRA, CustomChangeEventMetadata.class);
     deserializationMapper.put(ChangeSourceType.CUSTOM_INCIDENT, CustomChangeEventMetadata.class);
     deserializationMapper.put(ChangeSourceType.CUSTOM_FF, CustomChangeEventMetadata.class);
+    deserializationMapper.put(ChangeSourceType.SRM_STEP_ANALYSIS, HarnessSRMAnalysisEventMetadata.class);
   }
 
   @Override

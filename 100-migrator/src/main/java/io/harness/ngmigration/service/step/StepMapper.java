@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service.step;
-
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
@@ -63,6 +65,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public abstract class StepMapper {
   @Inject MigrationTemplateUtils migrationTemplateUtils;

@@ -11,13 +11,18 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @UtilityClass
 @Slf4j
 @OwnedBy(DX)
@@ -32,5 +37,17 @@ public class URLDecoderUtility {
       }
     }
     return decodedString;
+  }
+
+  public String getEncodedString(String str) {
+    String encoded = null;
+    if (isNotBlank(str)) {
+      try {
+        encoded = java.net.URLEncoder.encode(str, StandardCharsets.UTF_8.name());
+      } catch (UnsupportedEncodingException e) {
+        log.info("Encountered exception while encoding {}", str);
+      }
+    }
+    return encoded;
   }
 }

@@ -15,6 +15,8 @@ import static io.harness.rule.OwnerRule.PRASHANT;
 import static software.wings.api.InstanceElement.Builder.anInstanceElement;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -96,7 +98,8 @@ public class RepeatStateHelperTest extends WingsBaseTest {
                             .executionArgs(executionArgs)
                             .artifacts(Collections.singletonList(artifact))
                             .build();
-    when(workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId)).thenReturn(workflowExecution);
+    when(workflowExecutionService.getWorkflowExecution(eq(appId), eq(workflowExecutionId), any(String[].class)))
+        .thenReturn(workflowExecution);
   }
 
   @Test

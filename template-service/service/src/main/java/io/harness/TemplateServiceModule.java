@@ -6,7 +6,6 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -23,7 +22,10 @@ import static io.harness.ng.core.template.TemplateEntityConstants.STEP_GROUP;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.account.AccountClientModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.callback.DelegateCallback;
@@ -71,6 +73,8 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ServiceResourceClientModule;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.event.OrgEntityCrudStreamListener;
 import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
@@ -135,6 +139,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import javax.validation.Validation;
@@ -144,6 +149,8 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Slf4j
 @OwnedBy(CDC)
 public class TemplateServiceModule extends AbstractModule {
@@ -225,6 +232,13 @@ public class TemplateServiceModule extends AbstractModule {
         TEMPLATE_SERVICE.getServiceId()));
     install(new OpaClientModule(templateServiceConfiguration.getOpaClientConfig(),
         templateServiceConfiguration.getPolicyManagerSecret(), TEMPLATE_SERVICE.getServiceId()));
+
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return templateServiceConfiguration.getSegmentConfiguration();
+      }
+    });
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
@@ -409,6 +423,18 @@ public class TemplateServiceModule extends AbstractModule {
             templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getIdleTime(),
             templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getTimeUnit(),
             new ThreadFactoryBuilder().setNameFormat("TemplateAsyncSetupUsageExecutorService-%d").build()));
+  }
+
+  @Provides
+  @Singleton
+  @Named("TemplateServiceHelperExecutorService")
+  public ExecutorService templateServiceHelperExecutorService() {
+    return new ManagedExecutorService(
+        ThreadPool.create(templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getCorePoolSize(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getMaxPoolSize(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getIdleTime(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("TemplateServiceHelperExecutorService-%d").build()));
   }
 
   private ValidatorFactory getValidatorFactory() {

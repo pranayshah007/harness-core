@@ -6,14 +6,17 @@
  */
 
 package io.harness.k8s.releasehistory;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate.IsEmpty;
 
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 public interface IK8sReleaseHistory extends IsEmpty {
   int getAndIncrementLastReleaseNumber();
@@ -25,7 +28,7 @@ public interface IK8sReleaseHistory extends IsEmpty {
 
   List<IK8sRelease> getReleasesMatchingColor(String color, int currentReleaseNumber);
   IK8sRelease getLatestSuccessfulReleaseMatchingColor(String color);
-  IK8sRelease getLatestSuccessfulBlueGreenRelease();
+  IK8sRelease getBlueGreenStageRelease();
 
   default int getNextReleaseNumber(boolean inCanaryWorkflow) {
     if (!inCanaryWorkflow) {

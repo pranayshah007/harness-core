@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.RAFAEL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -45,6 +47,7 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.servicenow.ServiceNowFieldValueNG;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
@@ -153,6 +156,37 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     // To throw exception while casting the response to ResponseData and catch the exception
     doReturn(null).when(kryoSerializer).asInflatedObject(any());
     jiraApprovalCallback.push(response);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testPushWhenReceiveInflatedObject() {
+    // Test fallback when already inflated response is received from delegate
+    aStatic.when(() -> CriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
+    on(jiraApprovalCallback).set("approvalInstanceId", approvalInstanceId);
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", accountId)
+                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                            .build();
+    JiraApprovalInstance instance = getJiraApprovalInstance(ambiance);
+    instance.setDeadline(Long.MAX_VALUE);
+    Map<String, ServiceNowFieldValueNG> fields = new HashMap<>();
+    fields.put("dummyField", ServiceNowFieldValueNG.builder().build());
+    Map<String, ResponseData> inflatedResponse = new HashMap<>();
+    inflatedResponse.put("data", JiraTaskNGResponse.builder().issue(new JiraIssueNG()).build());
+
+    doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
+    doReturn(instance).when(approvalInstanceService).get(approvalInstanceId);
+    jiraApprovalCallback.push(inflatedResponse);
+    verifyNoInteractions(kryoSerializer);
+
+    inflatedResponse.clear();
+    inflatedResponse.put("data", ErrorNotifyResponseData.builder().build());
+    jiraApprovalCallback.push(inflatedResponse);
+    verifyNoInteractions(kryoSerializer);
   }
 
   @Test

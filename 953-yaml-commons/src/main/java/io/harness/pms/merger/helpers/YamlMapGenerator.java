@@ -6,23 +6,23 @@
  */
 
 package io.harness.pms.merger.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YamlNode.UUID_FIELD_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -33,6 +33,7 @@ import java.util.Set;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @UtilityClass
 @Slf4j
@@ -64,13 +65,7 @@ public class YamlMapGenerator {
     Map<String, Object> tempMap = new LinkedHashMap<>();
     generateYamlMap(YamlSubMapExtractor.getFQNToObjectSubMap(fqnMap, currentFQN), currentFQN, originalYaml.get(topKey),
         tempMap, topKey, isSanitiseFlow);
-    try {
-      // TODO(Shalini): Use JsonPipelineUtils to convert map to jsonNode
-      return YamlUtils.readTree(YamlUtils.writeYamlString(tempMap)).getNode().getCurrJsonNode();
-    } catch (IOException e) {
-      log.error("Could not generate JsonNode from FQN Map.", e);
-      throw new InvalidRequestException("Could not generate JsonNode from FQN Map: " + e.getMessage());
-    }
+    return JsonPipelineUtils.asTreeUsingDefaultObjectMapper(tempMap);
   }
 
   private void generateYamlMap(Map<FQN, Object> fqnMap, FQN baseFQN, JsonNode originalYaml, Map<String, Object> res,

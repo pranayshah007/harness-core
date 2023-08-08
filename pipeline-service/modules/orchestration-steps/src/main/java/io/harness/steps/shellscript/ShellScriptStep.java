@@ -11,13 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
-import io.harness.delegate.task.shell.WinRmShellScriptTaskNG;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
@@ -47,11 +48,10 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Slf4j
 public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskResponseNG> {
@@ -87,7 +87,8 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   private TaskRequest obtainBashTask(Ambiance ambiance, StepElementParameters stepParameters,
       ShellScriptStepParameters shellScriptStepParameters, TaskParameters taskParameters) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-    logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
+    final List<String> units = shellScriptStepParameters.getAllCommandUnits();
+    units.forEach(logStreamingStepClient::openStream);
     TaskData taskData =
         TaskData.builder()
             .async(true)
@@ -96,8 +97,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
             .build();
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
-        CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
-            StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
+        CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), units)),
         null, null, TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
@@ -106,10 +106,8 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
       ShellScriptStepParameters shellScriptStepParameters, TaskParameters taskParameters) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
 
-    List<String> units = Arrays.asList(WinRmShellScriptTaskNG.INIT_UNIT, WinRmShellScriptTaskNG.COMMAND_UNIT);
-    for (String unit : units) {
-      logStreamingStepClient.openStream(unit);
-    }
+    final List<String> units = shellScriptStepParameters.getAllCommandUnits();
+    units.forEach(logStreamingStepClient::openStream);
 
     TaskData taskData =
         TaskData.builder()
@@ -159,17 +157,23 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
       }
       return stepResponseBuilder.build();
     } finally {
-      closeLogStream(ambiance);
+      closeLogStream(ambiance, stepParameters);
     }
   }
 
   @Override
   public void handleAbort(
       Ambiance ambiance, StepElementParameters stepParameters, TaskExecutableResponse executableResponse) {
-    closeLogStream(ambiance);
+    closeLogStream(ambiance, stepParameters);
   }
 
-  private void closeLogStream(Ambiance ambiance) {
+  @Override
+  public void handleExpire(
+      Ambiance ambiance, StepElementParameters stepParameters, TaskExecutableResponse executableResponse) {
+    closeLogStream(ambiance, stepParameters);
+  }
+
+  private void closeLogStream(Ambiance ambiance, StepElementParameters stepParameters) {
     try {
       Thread.sleep(500, 0);
     } catch (InterruptedException e) {
@@ -177,7 +181,11 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
     } finally {
       ILogStreamingStepClient logStreamingStepClient =
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
+      // Once log-service provide the API to pass list of log-keys as parameter. Then only one call will be enough to
+      // close all log-stream. Right now we are doing forEach.
+      ((ShellScriptStepParameters) stepParameters.getSpec())
+          .getAllCommandUnits()
+          .forEach(logStreamingStepClient::closeStream);
     }
   }
 }

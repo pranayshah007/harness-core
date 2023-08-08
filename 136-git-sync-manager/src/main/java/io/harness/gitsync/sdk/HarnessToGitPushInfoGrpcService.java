@@ -47,6 +47,8 @@ import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.UpdateFileResponse;
 import io.harness.gitsync.UserDetailsResponse;
+import io.harness.gitsync.ValidateRepoRequest;
+import io.harness.gitsync.ValidateRepoResponse;
 import io.harness.gitsync.common.beans.GitOperation;
 import io.harness.gitsync.common.helper.GitSyncLogContextHelper;
 import io.harness.gitsync.common.helper.ScopeIdentifierMapper;
@@ -80,6 +82,7 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   private final String GIT_SERVICE = "Git Service";
   private final String OPERATION_INFO_LOG_FORMAT = "%s %s ops response : %s";
   private final String EMPTY_STRING = "";
+  public static final int INTERNAL_SERVER_ERROR_CODE = 500;
 
   @Override
   public void pushFromHarness(PushInfo request, StreamObserver<PushResponse> responseObserver) {
@@ -403,6 +406,31 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
       final String errorMessage = ExceptionUtils.getMessage(ex);
       responseObserver.onError(Status.fromThrowable(ex).withDescription(errorMessage).asRuntimeException());
     }
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void validateRepo(ValidateRepoRequest request, StreamObserver<ValidateRepoResponse> responseObserver) {
+    log.info(String.format("%s Grpc request received for validateRepo ops %s", GIT_SERVICE, request));
+    long startTime = currentTimeMillis();
+    ValidateRepoResponse validateRepoResponse;
+
+    try {
+      validateRepoResponse = harnessToGitHelperService.validateRepo(request);
+      log.info(String.format("%s validateRepo ops response : %s", GIT_SERVICE, validateRepoResponse));
+    } catch (Exception ex) {
+      final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.VALIDATE_REPO);
+      log.error(errorMessage, ex);
+      validateRepoResponse = ValidateRepoResponse.newBuilder()
+                                 .setIsValid(false)
+                                 .setStatusCode(INTERNAL_SERVER_ERROR_CODE)
+                                 .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
+                                 .build();
+    } finally {
+      logResponseTime(startTime, GitOperation.VALIDATE_REPO);
+    }
+
+    responseObserver.onNext(validateRepoResponse);
     responseObserver.onCompleted();
   }
 

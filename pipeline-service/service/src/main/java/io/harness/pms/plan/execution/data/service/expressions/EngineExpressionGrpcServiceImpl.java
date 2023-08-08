@@ -6,22 +6,25 @@
  */
 
 package io.harness.pms.plan.execution.data.service.expressions;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
-import io.harness.plan.ExpressionModeMapper;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.service.EngineExpressionProtoServiceGrpc.EngineExpressionProtoServiceImplBase;
 import io.harness.pms.contracts.service.ExpressionEvaluateBlobRequest;
 import io.harness.pms.contracts.service.ExpressionEvaluateBlobResponse;
 import io.harness.pms.contracts.service.ExpressionRenderBlobRequest;
 import io.harness.pms.contracts.service.ExpressionRenderBlobResponse;
+import io.harness.pms.expression.ExpressionModeMapper;
 
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class EngineExpressionGrpcServiceImpl extends EngineExpressionProtoServiceImplBase {

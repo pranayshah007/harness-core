@@ -1,0 +1,60 @@
+global:
+  ingress:
+    enabled: false
+    loadBalancerIP: '0.0.0.0'
+    loadBalancerEnabled: false
+    className: "harness"
+    hosts:
+      - 'myhost.example.com'
+    tls:
+      enabled: true
+      secretName: harness-cert
+
+    # -- Section to provide configuration on an NGINX ingress controller.
+    nginx:
+      # -- Create Nginx Controller.  True will deploy a controller into your cluster
+      create: false
+      controller:
+        # -- annotations to be addded to ingress Controller
+        annotations: { }
+      objects:
+        # -- annotations to be added to ingress Objects
+        annotations: { }
+      image:
+        registry: us.gcr.io
+        repository: k8s-artifacts-prod/ingress-nginx/controller
+        pullPolicy: IfNotPresent
+        # Overrides the image tag whose default is the chart appVersion.
+        tag: "v1.0.0-alpha.2"
+        digest: ""
+
+    defaultbackend:
+      # -- Create will deploy a default backend into your cluster
+      create: false
+      image:
+        registry: registry.k8s.io
+        repository: defaultbackend-amd64
+        pullPolicy: IfNotPresent
+        # Overrides the image tag whose default is the chart appVersion.
+        tag: "1.5"
+        digest: ""
+
+  # -- Istio Ingress Settings
+  istio:
+    enabled: false
+    strict: false
+    gateway:
+      create: true
+      port: 443
+      protocol: HTTPS
+      selector: "ingressgateway"
+      namespace: "istio-system"
+    hosts:
+      - '*'
+    tls:
+      credentialName: harness-cert
+      minProtocolVersion: TLSV1_2
+      mode: SIMPLE
+    virtualService:
+      hosts:
+        - "myhostname.example.com"

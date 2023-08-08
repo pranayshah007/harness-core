@@ -6,7 +6,9 @@
  */
 
 package io.harness.ng.core.serviceoverridev2.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
@@ -24,6 +26,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 public interface ServiceOverridesServiceV2 {
   Optional<NGServiceOverridesEntity> get(@NonNull String accountId, String orgIdentifier, String projectIdentifier,
       @NonNull String serviceOverridesIdentifier);

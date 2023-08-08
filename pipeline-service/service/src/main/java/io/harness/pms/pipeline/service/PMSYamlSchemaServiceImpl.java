@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.pipeline.service;
-
 import static io.harness.beans.FeatureName.PIE_STATIC_YAML_SCHEMA;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.APPROVAL_NAMESPACE;
 import static io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper.FLATTENED_PARALLEL_STEP_ELEMENT_CONFIG_SCHEMA;
@@ -25,8 +24,11 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceConfiguration;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -86,6 +88,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
@@ -109,7 +113,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   Integer allowedParallelStages;
 
   private final String PIPELINE_JSON = "pipeline.json";
-  private final String TEMPLATE_JSON = "template.json";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
@@ -131,39 +134,13 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope) {
     try {
       return getPipelineYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, scope);
+    } catch (NullPointerException npe) {
+      log.error("[PMS] Failed to get pipeline yaml schema due to NPE", npe);
+      throw npe;
     } catch (Exception e) {
       log.error("[PMS] Failed to get pipeline yaml schema");
       throw new JsonSchemaException(e.getMessage());
     }
-  }
-
-  @Override
-  public boolean validateYamlSchema(String accountId, String orgId, String projectId, String yaml) {
-    // Keeping pipeline yaml schema validation behind ff. If ff is disabled then schema validation will happen. Will
-    // remove after finding the root cause of invalid schema generation and fixing it.
-    if (!pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, accountId)) {
-      Future<Boolean> future =
-          yamlSchemaExecutor.submit(() -> validateYamlSchemaInternal(accountId, orgId, projectId, yaml));
-      try (AutoLogContext accountLogContext =
-               new AccountLogContext(accountId, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
-        return future.get(SCHEMA_TIMEOUT, TimeUnit.SECONDS);
-      } catch (ExecutionException e) {
-        // If e.getCause() instance of InvalidYamlException then it means we got some legit schema-validation errors and
-        // it has error info according to the schema-error-experience.
-        if (e.getCause() != null && e.getCause() instanceof io.harness.yaml.validator.InvalidYamlException) {
-          throw(io.harness.yaml.validator.InvalidYamlException) e.getCause();
-        }
-        throw new RuntimeException(e.getCause());
-      } catch (TimeoutException | InterruptedException e) {
-        log.error(format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s", accountId,
-                      orgId, projectId),
-            e);
-        // if validation does not happen before timeout, we will skip the validation and allow the operations(Pipeline
-        // save/execute).
-        return true;
-      }
-    }
-    return true;
   }
 
   @Override
@@ -196,45 +173,17 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @VisibleForTesting
-  boolean validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, String yaml) {
+  boolean validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, JsonNode jsonNode) {
     long start = System.currentTimeMillis();
     try {
       JsonNode schema = null;
 
       // If static schema ff is on, fetch schema from fetcher
       if (pmsFeatureFlagService.isEnabled(accountIdentifier, PIE_STATIC_YAML_SCHEMA)) {
-        schema = schemaFetcher.fetchStaticYamlSchema(accountIdentifier);
+        schema = schemaFetcher.fetchStaticYamlSchema();
       } else {
         schema = getPipelineYamlSchema(accountIdentifier, projectId, orgId, Scope.PROJECT);
       }
-
-      String schemaString = JsonPipelineUtils.writeJsonString(schema);
-      yamlSchemaValidator.validate(yaml, schemaString,
-          pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, accountIdentifier),
-          allowedParallelStages, PIPELINE_NODE + "/" + STAGES_NODE);
-      return true;
-    } catch (io.harness.yaml.validator.InvalidYamlException e) {
-      log.info("[PMS_SCHEMA] Schema validation took total time {}ms", System.currentTimeMillis() - start);
-      throw e;
-    } catch (Exception ex) {
-      if (ex instanceof NullPointerException
-          || ex.getCause() != null && ex.getCause() instanceof NullPointerException) {
-        log.error(format(
-            "Schema validation thrown NullPointerException. Please check the generated schema for account: %s, org: %s, project: %s",
-            accountIdentifier, orgId, projectId));
-        return false;
-      }
-      log.error(ex.getMessage(), ex);
-      throw new JsonSchemaValidationException(ex.getMessage(), ex);
-    }
-  }
-
-  // TODO(shalini): remove older methods with yaml string once all are moved to jsonNode
-  @VisibleForTesting
-  boolean validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, JsonNode jsonNode) {
-    long start = System.currentTimeMillis();
-    try {
-      JsonNode schema = getPipelineYamlSchema(accountIdentifier, projectId, orgId, Scope.PROJECT);
       String schemaString = JsonPipelineUtils.writeJsonString(schema);
       yamlSchemaValidator.validate(jsonNode, schemaString,
           pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, accountIdentifier),
@@ -569,9 +518,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     switch (entityType) {
       case PIPELINES:
         entityTypeJson = PIPELINE_JSON;
-        break;
-      case TEMPLATE:
-        entityTypeJson = TEMPLATE_JSON;
         break;
       default:
         entityTypeJson = PIPELINE_JSON;

@@ -58,4 +58,9 @@ public class AuditSettingsServiceImpl implements AuditSettingsService {
     auditRetentionRepository.findAll().iterator().forEachRemaining(auditSettingsList::add);
     return auditSettingsList;
   }
+
+  @Override
+  public void deleteByAccountIdentifier(String accountIdentifier) {
+    auditRetentionRepository.deleteByAccountIdentifier(accountIdentifier);
+  }
 }

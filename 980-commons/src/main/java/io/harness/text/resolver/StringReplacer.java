@@ -6,13 +6,17 @@
  */
 
 package io.harness.text.resolver;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class StringReplacer {
   private static final char ESCAPE_CHAR = '\\';
@@ -162,10 +166,19 @@ public class StringReplacer {
     expressionStartPos--;
     while (expressionStartPos >= 0) {
       char c = buf.charAt(expressionStartPos);
-      if (c == '(') {
+      if (c == '(' || c == ',') {
         // expression is inside a method invocation, thus don't take decision of concatenate from left substring
+        // , denotes it could be part of parameter in method, example <+json.list("$", <+var1>)>, then var1 shouldn't be
+        // concatenated
         break;
-      } else if (checkIfStringMathematicalOperator(c)) {
+      } else if (c == ':') {
+        // Checking : belongs to ternary operator or not, if not concatenate it
+        if (!buf.toString().contains("?")) {
+          return true;
+        } else {
+          return false;
+        }
+      } else if (checkIfStringMathematicalOperator(c) || checkBooleanOperators(buf, expressionStartPos, true)) {
         return false;
       } else if (!skipNonCriticalCharacters(c)) {
         return true;
@@ -176,10 +189,19 @@ public class StringReplacer {
     // Check on right if any first string mathematical operator found or not
     while (expressionEndPos <= buf.length() - 1) {
       char c = buf.charAt(expressionEndPos);
-      if (c == ')') {
+      if (c == ')' || c == ',') {
         // expression is inside a method invocation, thus don't take decision of concatenate from right substring
+        // , denotes it could be part of parameter in method, example <+json.list("$", <+var1>)>, then var1 shouldn't be
+        // concatenated
         break;
-      } else if (checkIfStringMathematicalOperator(c)) {
+      } else if (c == ':') {
+        // Checking : belongs to ternary operator or not, if not concatenate it
+        if (!buf.toString().contains("?")) {
+          return true;
+        } else {
+          return false;
+        }
+      } else if (checkIfStringMathematicalOperator(c) || checkBooleanOperators(buf, expressionEndPos, false)) {
         return false;
       } else if (!skipNonCriticalCharacters(c)) {
         return true;
@@ -198,6 +220,45 @@ public class StringReplacer {
     return matcher.find();
   }
 
+  private boolean checkBooleanOperators(StringBuffer s, int currentPos, boolean leftSubString) {
+    if (!Character.isLowerCase(s.charAt(currentPos))) {
+      return false;
+    }
+
+    if (leftSubString) {
+      if ((currentPos - 2 < 0) || (currentPos + 1 >= s.length())) {
+        return false;
+      }
+
+      // check for and / not operator - https://commons.apache.org/proper/commons-jexl/reference/syntax.html
+      String substring = s.substring(currentPos - 2, currentPos + 1).trim();
+      if (substring.equals("and") || substring.equals("not")) {
+        return true;
+      }
+      // check for or operator
+      String orSubString = s.substring(currentPos - 1, currentPos + 1);
+      if (orSubString.equals("or")) {
+        return true;
+      }
+      return false;
+    }
+
+    if (currentPos + 3 >= s.length()) {
+      return false;
+    }
+    // check for and / not operator - https://commons.apache.org/proper/commons-jexl/reference/syntax.html
+    String substring = s.substring(currentPos, currentPos + 3).trim();
+    if (substring.equals("and") || substring.equals("not")) {
+      return true;
+    }
+    // check for or operator
+    String orSubString = s.substring(currentPos, currentPos + 2);
+    if (orSubString.equals("or")) {
+      return true;
+    }
+    return false;
+  }
+
   private boolean checkIfStringMathematicalOperator(char c) {
     // + operator for string addition
     // = -> for == comparison operation
@@ -205,7 +266,11 @@ public class StringReplacer {
     // & -> && AND operation
     // | -> || OR operator
     // ! -> != operator
-    return c == '+' || c == '=' || c == '?' || c == ':' || c == '&' || c == '|' || c == '!';
+    // =~ and !~ regex match and its negate jexl operators
+    // =^ and !^ startsWith and its negate operator
+    // =$ and !$ endsWith and its negate operator
+    return c == '+' || c == '=' || c == '?' || c == ':' || c == '&' || c == '|' || c == '!' || c == '~' || c == '^'
+        || c == '$';
   }
 
   private boolean skipNonCriticalCharacters(char c) {

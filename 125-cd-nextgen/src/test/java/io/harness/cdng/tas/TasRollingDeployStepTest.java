@@ -199,7 +199,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
     List<String> routeMaps = Arrays.asList(additionalRoute);
     doReturn(routeMaps)
         .when(tasStepHelper)
-        .getRouteMaps(tasExecutionPassThroughData.getTasManifestsPackage().getManifestYml(),
+        .getRouteMaps(tasExecutionPassThroughData.getTasManifestsPackage(),
             getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
 
     Mockito.mockStatic(TaskRequestsUtils.class);
@@ -253,7 +253,7 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
     List<String> routeMaps = Arrays.asList(additionalRoute);
     doReturn(routeMaps)
         .when(tasStepHelper)
-        .getRouteMaps(tasExecutionPassThroughData.getTasManifestsPackage().getManifestYml(),
+        .getRouteMaps(tasExecutionPassThroughData.getTasManifestsPackage(),
             getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
 
     Mockito.mockStatic(TaskRequestsUtils.class);

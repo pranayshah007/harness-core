@@ -108,7 +108,7 @@ public class K8sScaleStep extends CdTaskExecutable<K8sDeployResponse> {
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier)
       throws Exception {
     K8sDeployResponse k8sTaskExecutionResponse = responseSupplier.get();

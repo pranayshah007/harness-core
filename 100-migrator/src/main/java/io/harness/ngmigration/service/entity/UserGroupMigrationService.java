@@ -9,8 +9,11 @@ package io.harness.ngmigration.service.entity;
 
 import static software.wings.ngmigration.NGMigrationEntityType.USER_GROUP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -29,11 +32,15 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.UserGroupYamlDTO;
+import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
+import io.harness.usergroups.UserGroupClient;
 
 import software.wings.beans.security.UserGroup;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -51,14 +58,30 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class UserGroupMigrationService extends NgMigrationService {
   @Inject private UserGroupService userGroupService;
+  @Inject private UserGroupClient userGroupClient;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
-    return null;
+    CgBasicInfo basicInfo = yamlFile.getCgBasicInfo();
+    UserGroupDTO userGroupDTO = ((UserGroupYamlDTO) yamlFile.getYaml()).getUserGroupDTO();
+    return MigratedEntityMapping.builder()
+        .appId(basicInfo.getAppId())
+        .accountId(basicInfo.getAccountId())
+        .cgEntityId(basicInfo.getId())
+        .entityType(USER_GROUP.name())
+        .accountIdentifier(basicInfo.getAccountId())
+        .orgIdentifier(userGroupDTO.getOrgIdentifier())
+        .projectIdentifier(userGroupDTO.getProjectIdentifier())
+        .identifier(userGroupDTO.getIdentifier())
+        .scope(MigratorMappingService.getScope(userGroupDTO.getOrgIdentifier(), userGroupDTO.getProjectIdentifier()))
+        .fullyQualifiedIdentifier(MigratorMappingService.getFullyQualifiedIdentifier(basicInfo.getAccountId(),
+            userGroupDTO.getOrgIdentifier(), userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier()))
+        .build();
   }
 
   @Override
@@ -136,7 +159,7 @@ public class UserGroupMigrationService extends NgMigrationService {
     UserGroupYamlDTO yamlDTO = UserGroupYamlDTO.builder()
                                    .userGroupDTO(UserGroupDTO.builder()
                                                      .identifier(identifier)
-                                                     .name(userGroup.getName())
+                                                     .name(name)
                                                      .description(userGroup.getDescription())
                                                      .users(userGroup.getMemberIds())
                                                      .accountIdentifier(userGroup.getAccountId())
@@ -160,6 +183,13 @@ public class UserGroupMigrationService extends NgMigrationService {
   @Override
   protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+    try {
+      UserGroupDTO response = NGRestUtils.getResponse(userGroupClient.getUserGroup(ngEntityDetail.getIdentifier(),
+          accountIdentifier, ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
+      return UserGroupYamlDTO.builder().userGroupDTO(response).build();
+    } catch (Exception ex) {
+      log.warn("Error when getting user group - ", ex);
+    }
     return null;
   }
 

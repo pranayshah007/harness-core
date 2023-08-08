@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.pipeline.resources;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStrategyType;
 import io.harness.cdng.infra.beans.ProvisionerType;
 import io.harness.cdng.pipeline.StepCategory;
@@ -47,6 +49,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.http.Body;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDP)
 @Api("pipelines")
 @Path("pipelines/configuration")

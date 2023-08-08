@@ -8,6 +8,7 @@
 package io.harness.impl.scm;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -64,10 +65,9 @@ public class ScmGitProviderHelper {
     return ownerName + "/" + repoName;
   }
 
+  // An unclean method which might change/mature with time but we need to maintain bg compatibilty.
   private String getSlugFromHarnessUrl(String url) {
-    String repoName = gitClientHelper.getGitRepo(url);
-    String ownerName = gitClientHelper.getGitOwner(url, true);
-    return ownerName + "/" + repoName + "/+";
+    return gitClientHelper.getHarnessRepoName(url);
   }
 
   private String getSlugFromUrlForGitlab(GitlabConnectorDTO gitlabConnectorDTO) {
@@ -128,5 +128,13 @@ public class ScmGitProviderHelper {
           "The Personal Access Token is not set. Please set the Personal Access Token in the Git Connector which has permissions to use providers API's");
     }
     return String.valueOf(tokenRef.getDecryptedValue());
+  }
+
+  public String getRepoOwner(ScmConnector scmConnector) {
+    String slug = getSlug(scmConnector);
+    if (isEmpty(slug)) {
+      return "";
+    }
+    return slug.split("/")[0];
   }
 }

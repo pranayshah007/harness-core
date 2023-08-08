@@ -11,6 +11,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
@@ -74,13 +75,20 @@ import io.harness.idp.provision.ProvisionModuleConfig;
 import io.harness.idp.provision.resource.ProvisionApiImpl;
 import io.harness.idp.provision.service.ProvisionService;
 import io.harness.idp.provision.service.ProvisionServiceImpl;
+import io.harness.idp.proxy.config.ProxyAllowListConfig;
 import io.harness.idp.proxy.delegate.DelegateProxyApi;
 import io.harness.idp.proxy.delegate.DelegateProxyApiImpl;
 import io.harness.idp.proxy.layout.LayoutProxyApiImpl;
-import io.harness.idp.proxy.ngmanager.ManagerProxyApi;
-import io.harness.idp.proxy.ngmanager.ManagerProxyApiImpl;
-import io.harness.idp.proxy.ngmanager.NgManagerProxyApi;
-import io.harness.idp.proxy.ngmanager.NgManagerProxyApiImpl;
+import io.harness.idp.proxy.services.ProxyApi;
+import io.harness.idp.proxy.services.ProxyApiImpl;
+import io.harness.idp.scorecard.checks.resources.ChecksApiImpl;
+import io.harness.idp.scorecard.checks.service.CheckService;
+import io.harness.idp.scorecard.checks.service.CheckServiceImpl;
+import io.harness.idp.scorecard.datasources.resources.DataSourceApiImpl;
+import io.harness.idp.scorecard.scorecards.resources.ScorecardsApiImpl;
+import io.harness.idp.scorecard.scorecards.service.ScorecardService;
+import io.harness.idp.scorecard.scorecards.service.ScorecardServiceImpl;
+import io.harness.idp.scorecard.scores.resources.ScoreApiImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
 import io.harness.idp.settings.resources.BackstagePermissionsApiImpl;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -94,13 +102,13 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
-import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.organization.OrganizationClientModule;
+import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -119,13 +127,17 @@ import io.harness.spec.server.idp.v1.AppConfigApi;
 import io.harness.spec.server.idp.v1.AuthInfoApi;
 import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
+import io.harness.spec.server.idp.v1.ChecksApi;
 import io.harness.spec.server.idp.v1.ConnectorInfoApi;
+import io.harness.spec.server.idp.v1.DataSourceApi;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
 import io.harness.spec.server.idp.v1.MergedPluginsConfigApi;
 import io.harness.spec.server.idp.v1.NamespaceApi;
 import io.harness.spec.server.idp.v1.OnboardingResourceApi;
 import io.harness.spec.server.idp.v1.PluginInfoApi;
 import io.harness.spec.server.idp.v1.ProvisionApi;
+import io.harness.spec.server.idp.v1.ScorecardsApi;
+import io.harness.spec.server.idp.v1.ScoresApi;
 import io.harness.spec.server.idp.v1.StatusInfoApi;
 import io.harness.threading.ThreadPool;
 import io.harness.time.TimeModule;
@@ -146,6 +158,7 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -225,7 +238,6 @@ public class IdpModule extends AbstractModule {
             .build();
       }
     });
-    install(new MetricsModule());
     install(new EventsFrameworkModule(appConfig.getEventsFrameworkConfiguration()));
     install(new AbstractModule() {
       @Override
@@ -261,6 +273,7 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ServiceResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, IDP_SERVICE.getServiceId(), false));
     install(new BackstageResourceClientModule());
     install(DelegateServiceDriverModule.getInstance(false, false));
     install(ExceptionModule.getInstance());
@@ -308,8 +321,7 @@ public class IdpModule extends AbstractModule {
     bind(OnboardingService.class).to(OnboardingServiceImpl.class);
     bind(GitClientV2.class).to(GitClientV2Impl.class);
     bind(LayoutProxyApi.class).to(LayoutProxyApiImpl.class);
-    bind(NgManagerProxyApi.class).to(NgManagerProxyApiImpl.class);
-    bind(ManagerProxyApi.class).to(ManagerProxyApiImpl.class);
+    bind(ProxyApi.class).to(ProxyApiImpl.class);
     bind(PluginInfoApi.class).to(PluginInfoApiImpl.class);
     bind(DelegateProxyApi.class).to(DelegateProxyApiImpl.class);
     bind(PluginInfoService.class).to(PluginInfoServiceImpl.class);
@@ -321,6 +333,12 @@ public class IdpModule extends AbstractModule {
     bind(AllowListApi.class).to(AllowListApiImpl.class);
     bind(AllowListService.class).to(AllowListServiceImpl.class);
     bind(PluginsProxyInfoService.class).to(PluginsProxyInfoServiceImpl.class);
+    bind(ScorecardsApi.class).to(ScorecardsApiImpl.class);
+    bind(ScorecardService.class).to(ScorecardServiceImpl.class);
+    bind(ChecksApi.class).to(ChecksApiImpl.class);
+    bind(CheckService.class).to(CheckServiceImpl.class);
+    bind(ScoresApi.class).to(ScoreApiImpl.class);
+    bind(DataSourceApi.class).to(DataSourceApiImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));
@@ -485,6 +503,13 @@ public class IdpModule extends AbstractModule {
     return this.appConfig.getBackstagePostgresHost();
   }
 
+  @Provides
+  @Singleton
+  @Named("idpEncryptionSecret")
+  public String idpEncryptionSecret() {
+    return this.appConfig.getIdpEncryptionSecret();
+  }
+
   private DelegateCallbackToken getDelegateCallbackToken(DelegateServiceGrpcClient delegateServiceClient) {
     log.info("Generating Delegate callback token");
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(
@@ -503,5 +528,19 @@ public class IdpModule extends AbstractModule {
   @Named("backstageHttpClientConfig")
   public ServiceHttpClientConfig backstageHttpClientConfig() {
     return this.appConfig.getBackstageHttpClientConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("proxyAllowList")
+  public ProxyAllowListConfig proxyAllowList() {
+    return this.appConfig.getProxyAllowList();
+  }
+
+  @Provides
+  @Singleton
+  @Named("notificationConfigs")
+  public HashMap<String, String> notificationConfigs() {
+    return this.appConfig.getNotificationConfigs();
   }
 }

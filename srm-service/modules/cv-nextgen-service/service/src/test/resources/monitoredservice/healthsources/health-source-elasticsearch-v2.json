@@ -1,0 +1,25 @@
+{
+  "name": "elk-test",
+  "identifier": "elktest",
+  "type": "ElasticSearch",
+  "spec": {
+    "connectorRef": "org.ELK_Org_Level_Connector",
+    "queryDefinitions": [
+      {
+        "identifier": "Q",
+        "name": "Q",
+        "groupName": "Logs Group",
+        "queryParams": {
+          "serviceInstanceField": "['_source'].['hostname']",
+          "index": "integration-test",
+          "timeStampIdentifier": "['_source'].@timestamp",
+          "timeStampFormat": "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+          "messageIdentifier": "['_source'].['message']"
+        },
+        "query": "error",
+        "metricThresholds": []
+      }
+    ],
+    "healthSourceParams": {}
+  }
+}

@@ -186,6 +186,7 @@ public class ForLoopStrategyConfigServiceTest extends NGCommonUtilitiesTestBase 
     List<ChildrenExecutableResponse.Child> children =
         forLoopStrategyConfigService.fetchChildren(strategyConfig, "childNodeId");
     assertThat(children.size()).isEqualTo(4);
+    assertThat(children.get(0).getStrategyMetadata().getTotalIterations()).isEqualTo(4);
   }
 
   @Test

@@ -12,6 +12,7 @@ import static io.harness.ng.core.common.beans.Generation.NG;
 import static io.harness.ng.core.common.beans.UserSource.MANUAL;
 import static io.harness.ng.core.user.NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.SHASHANK;
 
 import static software.wings.beans.Account.Builder.anAccount;
@@ -338,6 +339,19 @@ public class UserServiceHelperTest extends WingsBaseTest {
     MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
     userServiceHelper.deleteUserFromNG(user.getUuid(), ACCOUNT_ID, ACCOUNT_LAST_ADMIN_CHECK);
+    mockRestStatic.close();
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testDeleteUserMetaDataFromNG() {
+    Account account = getAccountWithUUID(ACCOUNT_ID);
+    User user = getUserWithAccount(account);
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
+    boolean result = userServiceHelper.deleteUserMetadata(user.getUuid());
+    assertThat(result).isEqualTo(false);
     mockRestStatic.close();
   }
 

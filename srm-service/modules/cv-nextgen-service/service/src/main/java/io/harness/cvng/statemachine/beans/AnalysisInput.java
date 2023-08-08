@@ -33,7 +33,7 @@ public class AnalysisInput {
   private Set<String> testHosts;
   // Used in DeploymentTimeSeriesAnalysisState
   private LearningEngineTaskType learningEngineTaskType;
-
+  private String accountId;
   @Builder.Default private boolean isSLORestoreTask = false;
 
   public TimeRange getTimeRange() {

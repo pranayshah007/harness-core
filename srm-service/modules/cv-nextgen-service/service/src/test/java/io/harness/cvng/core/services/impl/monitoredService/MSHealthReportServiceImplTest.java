@@ -9,9 +9,22 @@ package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
 import static io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution.FIVE_MIN;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ANALYSIS_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ANALYSIS_ENDED_AT;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ANALYSIS_PIPELINE_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ANALYSIS_STARTED_AT;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.MS_HEALTH_REPORT;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_ID;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.PLAN_EXECUTION_ID;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.STAGE_STEP_ID;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.offset;
@@ -27,10 +40,12 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.beans.CVMonitoringCategory;
-import io.harness.cvng.beans.MSHealthReport;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.client.FakeNotificationClient;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.core.beans.change.MSHealthReport;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
@@ -39,6 +54,10 @@ import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
+import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.entities.FireHydrantReportNotificationCondition;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceDeploymentImpactReportCondition;
+import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
@@ -55,9 +74,12 @@ import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,11 +103,13 @@ public class MSHealthReportServiceImplTest extends CvNextGenTestBase {
   BuilderFactory builderFactory;
   FeatureFlagService featureFlagService;
 
+  MonitoredServiceResponse monitoredServiceResponse;
+
   @Before
   public void before() throws IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
     clock = FIXED_TIME_FOR_TESTS;
-    monitoredServiceService.createDefault(builderFactory.getProjectParams(),
+    monitoredServiceResponse = monitoredServiceService.createDefault(builderFactory.getProjectParams(),
         builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
     MockitoAnnotations.initMocks(this);
     featureFlagService = mock(FeatureFlagService.class);
@@ -136,13 +160,15 @@ public class MSHealthReportServiceImplTest extends CvNextGenTestBase {
     createHeatMaps(eventTime.plus(Duration.ofMinutes(10)));
 
     MSHealthReport msHealthReport = msHealthReportService.getMSHealthReport(builderFactory.getProjectParams(),
-        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier(),
+        clock.instant().minus(1, ChronoUnit.HOURS));
     assertThat(msHealthReport.getChangeSummary().getTotal()).isEqualTo(changeSummaryDTO.getTotal());
     MSHealthReport.AssociatedSLOsDetails associatedSLODetails = msHealthReport.getAssociatedSLOsDetails().get(0);
     assertThat(associatedSLODetails.getIdentifier()).isEqualTo(simpleServiceLevelObjective.getIdentifier());
     assertThat(associatedSLODetails.getCurrentSLOPerformance()).isEqualTo(50);
-    assertThat(associatedSLODetails.getErrorBudgetBurnRate()).isEqualTo(10.41, offset(0.01));
-    assertThat(msHealthReport.getCurrentHealthScore()).isEqualTo(52);
+    assertThat(associatedSLODetails.getErrorBudgetBurned()).isEqualTo(30, offset(0.01));
+    assertThat(msHealthReport.getCurrentHealthScore().getHealthScore()).isEqualTo(52);
+    assertThat(msHealthReport.getCurrentHealthScore().getRiskStatus()).isEqualTo(Risk.OBSERVE);
   }
 
   @Test
@@ -150,10 +176,11 @@ public class MSHealthReportServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetMSHealthReport_WithNoData() {
     MSHealthReport msHealthReport = msHealthReportService.getMSHealthReport(builderFactory.getProjectParams(),
-        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier(),
+        clock.instant().minus(1, ChronoUnit.HOURS));
     assertThat(msHealthReport.getChangeSummary().getTotal().getCount()).isEqualTo(0);
     assertThat(msHealthReport.getAssociatedSLOsDetails().size()).isEqualTo(0);
-    assertThat(msHealthReport.getCurrentHealthScore()).isEqualTo(0);
+    assertThat(msHealthReport.getCurrentHealthScore().getHealthScore()).isEqualTo(null);
   }
 
   @Test
@@ -161,11 +188,46 @@ public class MSHealthReportServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testHandleNotification() {
     MSHealthReport msHealthReport = msHealthReportService.getMSHealthReport(builderFactory.getProjectParams(),
-        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier(),
+        clock.instant().minus(1, ChronoUnit.HOURS));
     when(notificationClient.sendNotificationAsync(any()))
         .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+    Map<String, Object> entityDetails = Map.of(ENTITY_IDENTIFIER,
+        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier(), ENTITY_NAME,
+        monitoredServiceResponse.getMonitoredServiceDTO().getName(), SERVICE_IDENTIFIER,
+        monitoredServiceResponse.getMonitoredServiceDTO().getServiceRef(), MS_HEALTH_REPORT, msHealthReport);
+    msHealthReportService.sendReportNotification(builderFactory.getProjectParams(), entityDetails,
+        NotificationRuleType.FIRE_HYDRANT, FireHydrantReportNotificationCondition.builder().build(),
+        new NotificationRule.CVNGSlackChannel(null, "webhookUrl"),
+        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
 
-    msHealthReportService.handleNotification(builderFactory.getProjectParams(), msHealthReport, "webhookUrl",
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testHandleNotificationForDeploymentImpact() {
+    MSHealthReport msHealthReport = msHealthReportService.getMSHealthReport(builderFactory.getProjectParams(),
+        builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier(),
+        clock.instant().minus(2, ChronoUnit.DAYS));
+    when(notificationClient.sendNotificationAsync(any()))
+        .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+    Map<String, Object> entityDetails = new HashMap<>();
+    entityDetails.put(
+        ENTITY_IDENTIFIER, builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+    entityDetails.put(ENTITY_NAME, monitoredServiceResponse.getMonitoredServiceDTO().getName());
+    entityDetails.put(SERVICE_IDENTIFIER, monitoredServiceResponse.getMonitoredServiceDTO().getServiceRef());
+    entityDetails.put(MS_HEALTH_REPORT, msHealthReport);
+    entityDetails.put(PIPELINE_ID, generateUuid());
+    entityDetails.put(PLAN_EXECUTION_ID, generateUuid());
+    entityDetails.put(STAGE_STEP_ID, generateUuid());
+    entityDetails.put(ANALYSIS_ENDED_AT, "18 Jul at 2:10 AM GMT");
+    entityDetails.put(ANALYSIS_STARTED_AT, "16 Jul at 2:10 AM GMT");
+    entityDetails.put(ANALYSIS_DURATION, "2 days");
+    entityDetails.put(ANALYSIS_PIPELINE_NAME, "pipeline_name");
+    msHealthReportService.sendReportNotification(builderFactory.getProjectParams(), entityDetails,
+        NotificationRuleType.MONITORED_SERVICE, MonitoredServiceDeploymentImpactReportCondition.builder().build(),
+        new NotificationRule.CVNGSlackChannel(null, "webhookUrl"),
         builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
     verify(notificationClient, times(1)).sendNotificationAsync(any());
   }

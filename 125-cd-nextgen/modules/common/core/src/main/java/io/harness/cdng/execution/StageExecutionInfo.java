@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.execution;
-
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -38,6 +40,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Data
 @Builder
 @ToString
@@ -54,7 +57,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
     table = "cd_stage_execution", dataStore = "ng-harness", fields = {}, handler = "CDStageExecutionHandler")
 @ChangeDataCapture(
     table = "execution_tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "StageTagsInfoNGCD")
+@ChangeDataCapture(table = "cd_stage_helm_manifest_info", dataStore = "ng-harness", fields = {},
+    handler = "CDStageHelmManifestInfoHandler")
 public class StageExecutionInfo implements PersistentEntity, UuidAware {
+  // This class is used for saving only CD/GitOps Stage data
   @org.springframework.data.annotation.Id @Id String uuid;
   @CreatedDate private long createdAt;
   @LastModifiedDate private long lastModifiedAt;

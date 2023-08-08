@@ -6,14 +6,16 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
@@ -23,6 +25,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
+import io.harness.hsqs.client.beans.HsqsDequeueConfig;
 import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
@@ -85,6 +88,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 // Todo: Streamline this
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -175,6 +180,9 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("podCleanUpThreadPoolConfig") private ThreadPoolConfig podCleanUpThreadPoolConfig;
 
   @JsonProperty("staticSchemaFileURL") private String staticSchemaFileURL;
+  @JsonProperty("timeoutIteratorMode") private String timeoutIteratorMode;
+  @JsonProperty("webhookEventHsqsDequeueConfig") private HsqsDequeueConfig webhookEventHsqsDequeueConfig;
+  private boolean useQueueServiceForWebhookTriggers;
 
   private String managerServiceSecret;
   private String managerTarget;

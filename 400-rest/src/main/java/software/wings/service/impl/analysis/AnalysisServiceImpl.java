@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.analysis;
-
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -26,6 +25,9 @@ import static software.wings.common.VerificationConstants.DEMO_SUCCESS_LOG_STATE
 import static software.wings.common.VerificationConstants.IGNORED_ERRORS_METRIC_NAME;
 import static software.wings.delegatetasks.ElkLogzDataCollectionTask.parseElkResponse;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
@@ -133,6 +135,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 /**
  * Created by rsingh on 4/17/17.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @ValidateOnExecution
 @Slf4j
 public class AnalysisServiceImpl implements AnalysisService {
@@ -428,7 +432,8 @@ public class AnalysisServiceImpl implements AnalysisService {
   }
 
   private String getEnvIdForStateExecutionId(String appId, String workflowExecutionId) {
-    WorkflowExecution execution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    WorkflowExecution execution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, WorkflowExecutionKeys.envId);
     Preconditions.checkNotNull(execution, "This stateExecutionId does not correspond to a valid workflow");
     return execution.getEnvId();
   }
@@ -498,8 +503,8 @@ public class AnalysisServiceImpl implements AnalysisService {
       if (isNotEmpty(stateExecutionInstances) && stateExecutionInstances.size() == 1) {
         StateExecutionInstance instance = stateExecutionInstances.get(0);
         serviceId = getServiceIdFromStateExecutionInstance(instance);
-        WorkflowExecution execution =
-            workflowExecutionService.getWorkflowExecution(instance.getAppId(), instance.getExecutionUuid());
+        WorkflowExecution execution = workflowExecutionService.getWorkflowExecution(
+            instance.getAppId(), instance.getExecutionUuid(), WorkflowExecutionKeys.envId);
         envId = execution.getEnvId();
       }
     } else {
@@ -587,7 +592,9 @@ public class AnalysisServiceImpl implements AnalysisService {
       while (cvMetaDateIterator.hasNext()) {
         ContinuousVerificationExecutionMetaData cvMetaData = cvMetaDateIterator.next();
         String workflowExecutionId = cvMetaData.getWorkflowExecutionId();
-        WorkflowExecution execution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+        String[] fields = {WorkflowExecutionKeys.envId, WorkflowExecutionKeys.infraMappingIds,
+            WorkflowExecutionKeys.serviceIds, WorkflowExecutionKeys.uuid};
+        WorkflowExecution execution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
         if (execution != null) {
           if (!execution.getInfraMappingIds().contains(infraMappingId) || !execution.getEnvId().equals(envId)
               || !execution.getServiceIds().contains(serviceId)) {

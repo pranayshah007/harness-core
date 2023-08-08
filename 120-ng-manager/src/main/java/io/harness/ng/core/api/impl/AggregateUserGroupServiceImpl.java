@@ -158,6 +158,9 @@ public class AggregateUserGroupServiceImpl implements AggregateUserGroupService 
   }
 
   public static <T> List<T> getLastNElementsReversed(List<T> list, int n) {
+    if (n < 0) {
+      n = list.size();
+    }
     List<T> result = list.subList(Math.max(list.size() - n, 0), list.size());
     return Lists.reverse(result);
   }

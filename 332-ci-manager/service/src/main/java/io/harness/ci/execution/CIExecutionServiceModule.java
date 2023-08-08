@@ -6,10 +6,12 @@
  */
 
 package io.harness.ci;
-
 import io.harness.CIBeansModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.nodes.ActionStepNode;
@@ -65,6 +67,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CI)
 public class CIExecutionServiceModule extends AbstractModule {
   private CIExecutionServiceConfig ciExecutionServiceConfig;

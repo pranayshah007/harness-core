@@ -6,11 +6,13 @@
  */
 
 package io.harness.k8s.releasehistory;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 
 import java.util.Comparator;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 @Builder
 @OwnedBy(CDP)
@@ -86,9 +89,9 @@ public class K8SLegacyReleaseHistory implements IK8sReleaseHistory {
   }
 
   @Override
-  public IK8sRelease getLatestSuccessfulBlueGreenRelease() {
+  public IK8sRelease getBlueGreenStageRelease() {
     if (isNotEmpty(releaseHistory.getReleases())) {
-      return releaseHistory.getLatestSuccessfulBlueGreenRelease();
+      return releaseHistory.getBlueGreenStageRelease();
     }
     return null;
   }

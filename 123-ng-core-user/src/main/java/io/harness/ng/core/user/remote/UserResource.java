@@ -649,6 +649,17 @@ public class UserResource {
         ngUserService.removeUserFromScope(userId, scope, UserMembershipUpdateSource.USER, removeUserFilter)));
   }
 
+  @DELETE
+  @Hidden
+  @Path("/remove-user-metadata/{userId}")
+  @Produces("application/json")
+  @Consumes()
+  @InternalApi
+  @ApiOperation(value = "delete User Metadata", nickname = "deleteUserMetadata", hidden = true)
+  public ResponseDTO<Boolean> deleteUserMetadata(@NotNull @PathParam("userId") String userId) {
+    return ResponseDTO.newResponse(TRUE.equals(ngUserService.deleteUserMetadata(userId)));
+  }
+
   @GET
   @Hidden
   @Path("internal/{userId}")

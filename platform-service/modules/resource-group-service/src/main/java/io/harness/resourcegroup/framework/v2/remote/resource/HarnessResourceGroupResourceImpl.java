@@ -13,6 +13,7 @@ import static io.harness.resourcegroup.ResourceGroupPermissions.DELETE_RESOURCEG
 import static io.harness.resourcegroup.ResourceGroupPermissions.EDIT_RESOURCEGROUP_PERMISSION;
 import static io.harness.resourcegroup.ResourceGroupPermissions.VIEW_RESOURCEGROUP_PERMISSION;
 import static io.harness.resourcegroup.ResourceGroupResourceTypes.RESOURCE_GROUP;
+import static io.harness.resourcegroup.beans.ScopeFilterType.EXCLUDING_CHILD_SCOPES;
 import static io.harness.resourcegroup.v1.remote.dto.ManagedFilter.NO_FILTER;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
@@ -37,6 +38,7 @@ import io.harness.resourcegroup.framework.v2.service.ResourceGroupService;
 import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupValidatorImpl;
 import io.harness.resourcegroup.v1.remote.dto.ManagedFilter;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
+import io.harness.resourcegroup.v2.model.ScopeSelector;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupRequest;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 import io.harness.resourcegroup.v2.remote.resource.HarnessResourceGroupResource;
@@ -45,6 +47,8 @@ import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -108,6 +112,18 @@ public class HarnessResourceGroupResourceImpl implements HarnessResourceGroupRes
       ResourceGroupRequest resourceGroupRequest) {
     resourceGroupRequest.getResourceGroup().setAllowedScopeLevels(
         Sets.newHashSet(ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier).toString().toLowerCase()));
+    if (isEmpty(resourceGroupRequest.getResourceGroup().getIncludedScopes())) {
+      List<ScopeSelector> includedScopes = new ArrayList<>();
+      ScopeSelector scopeSelector = ScopeSelector.builder()
+                                        .accountIdentifier(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .filter(EXCLUDING_CHILD_SCOPES)
+                                        .build();
+      includedScopes.add(scopeSelector);
+      resourceGroupRequest.getResourceGroup().setIncludedScopes(includedScopes);
+    }
+
     resourceGroupValidator.validateResourceGroup(resourceGroupRequest);
     ResourceGroupResponse resourceGroupResponse =
         resourceGroupService.create(resourceGroupRequest.getResourceGroup(), false);

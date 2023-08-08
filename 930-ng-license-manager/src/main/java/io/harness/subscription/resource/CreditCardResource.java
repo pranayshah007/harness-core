@@ -92,7 +92,7 @@ public class CreditCardResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<CardDTO>
-  getPrimaryCreditCard(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+  getDefaultCreditCard(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
     return ResponseDTO.newResponse(creditCardService.getDefaultCreditCard(accountIdentifier));
   }

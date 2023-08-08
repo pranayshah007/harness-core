@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.instance.util;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static java.util.Objects.nonNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStep;
 import io.harness.cdng.aws.asg.AsgBlueGreenRollbackStep;
 import io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStep;
@@ -62,6 +64,7 @@ import java.util.Collections;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(CDP)
 @UtilityClass
 public class InstanceSyncStepResolver {

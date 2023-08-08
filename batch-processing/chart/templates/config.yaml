@@ -40,8 +40,8 @@ data:
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   NEXT_GEN_MANAGER_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   CE_NG_SERVICE_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-  CLICKHOUSE_ENABLED: {{ .Values.clickhouse.enabled | quote }}
-  {{- if .Values.clickhouse.enabled }}
+  CLICKHOUSE_ENABLED: {{ .Values.global.database.clickhouse.installed | quote }}
+  {{- if .Values.global.database.clickhouse.installed }}
   CLICKHOUSE_URL: "jdbc:ch://clickhouse.{{ .Release.Namespace }}.svc.cluster.local:8123"
   {{- end }}
   USE_WORKLOAD_IDENTITY: {{ .Values.workloadIdentity.enabled | quote }}

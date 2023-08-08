@@ -23,6 +23,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -81,7 +82,8 @@ public class ServiceNowImportSetStep extends PipelineTaskExecutable<ServiceNowTa
     try {
       return serviceNowStepHelperService.prepareTaskRequest(getServiceNowTaskNGFromSpecParameters(specParameters),
           ambiance, specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(),
-          String.format("ServiceNow Task: %s", ServiceNowActionNG.IMPORT_SET));
+          String.format("ServiceNow Task: %s", ServiceNowActionNG.IMPORT_SET),
+          TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
     } catch (InvalidRequestException ex) {
       closeLogStream(ambiance);
       throw ex;

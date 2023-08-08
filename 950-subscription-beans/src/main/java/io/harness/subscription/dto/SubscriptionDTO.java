@@ -6,10 +6,12 @@
  */
 
 package io.harness.subscription.dto;
-
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.subscription.enums.PaymentFrequency;
 import io.harness.subscription.params.StripeItemRequest;
 
@@ -21,6 +23,7 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import org.jvnet.hk2.annotations.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(HarnessTeam.GTM)
 @Data
 @Builder

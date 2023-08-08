@@ -842,7 +842,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
     List<Node> identityPlanNodes =
         updatedNodes.stream().filter(o -> o instanceof IdentityPlanNode).collect(Collectors.toList());
     assertThat(updatedNodes.size()).isEqualTo(3);
-    assertThat(updatedNodes.get(0).getNodeType()).isEqualTo(NodeType.PLAN_NODE);
+    assertThat(updatedNodes.get(1).getNodeType()).isEqualTo(NodeType.PLAN_NODE);
     assertEquals(identityPlanNodes.size(), 1);
     assertThat(((IdentityPlanNode) identityPlanNodes.get(0)).getOriginalNodeExecutionId()).isEqualTo("nodeUuid");
     assertThat(identityPlanNodes.get(0).getIdentifier()).isEqualTo("test");
@@ -896,6 +896,126 @@ public class RetryExecuteHelperTest extends CategoryTest {
     assertThat(strategyNodes.get(0).getAdviserObtainments()).isEqualTo(planNode3.getAdviserObtainments());
   }
 
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testTransformPlanWithSameStrategyNodeIdentifierAtStageAndStep() {
+    StepType TEST_STEP_TYPE =
+        StepType.newBuilder().setType("TEST_STEP_PLAN").setStepCategory(StepCategory.STEP).build();
+    String uuid = "uuid1";
+    List<String> identifierOfSkipStages = Collections.singletonList(uuid);
+    List<String> stageIdentifierToRetryWith = Collections.singletonList("stage3");
+
+    PlanNode planNode1 =
+        PlanNode.builder()
+            .name("Test Node")
+            .uuid(uuid)
+            .identifier("test")
+            .stageFqn("pipeline.stages.pip1")
+            .stepType(TEST_STEP_TYPE)
+            .adviserObtainment(
+                AdviserObtainment.newBuilder().setType(AdviserType.newBuilder().setType("NEXT_STEP").build()).build())
+            .build();
+
+    Map<String, Node> uuidMapper = new HashMap<>();
+    uuidMapper.put("nodeUuid", planNode1);
+    when(nodeExecutionService.mapNodeExecutionIdWithPlanNodeForGivenStageFQN(any(), any())).thenReturn(uuidMapper);
+
+    // Returning emptyList. So strategy node should not get converted to IdentityNode.
+    doReturn(Collections.emptyList()).when(nodeExecutionService).fetchStrategyNodeExecutions(any(), any());
+    PlanNode planNode2 =
+        PlanNode.builder()
+            .name("Test Node2")
+            .uuid("uuid2")
+            .identifier("test2")
+            .stepType(TEST_STEP_TYPE)
+            .adviserObtainment(
+                AdviserObtainment.newBuilder().setType(AdviserType.newBuilder().setType("NEXT_STEP").build()).build())
+            .build();
+
+    PlanNode planNode3 =
+        PlanNode.builder()
+            .name("Test Node3")
+            .uuid("uuid3")
+            .identifier("test3")
+            .stageFqn("pipeline.stages.stage3")
+            .stepType(StrategyStep.STEP_TYPE)
+            .adviserObtainment(
+                AdviserObtainment.newBuilder().setType(AdviserType.newBuilder().setType("NEXT_STEP").build()).build())
+            .build();
+
+    // PlanNode.identifier is same. But UUID will be different. Only the strategy node of stage level should be
+    // converted into the IdentityPlanNode.
+    PlanNode planNode4 =
+        PlanNode.builder()
+            .name("Test Node3")
+            .uuid("uuid4")
+            .identifier("test3")
+            .stageFqn("pipeline.stages.stage3")
+            .stepType(StrategyStep.STEP_TYPE)
+            .adviserObtainment(
+                AdviserObtainment.newBuilder().setType(AdviserType.newBuilder().setType("NEXT_STEP").build()).build())
+            .build();
+
+    doReturn(Collections.singletonList("pipeline.stages.stage3"))
+        .when(nodeExecutionService)
+        .fetchStageFqnFromStageIdentifiers(any(), eq(stageIdentifierToRetryWith));
+    // StrategyNode should get converted to IdentityNode now.
+    doReturn(Arrays.asList(NodeExecution.builder()
+                               .uuid("stageStrategyNodeExecutionUUID")
+                               .ambiance(Ambiance.newBuilder()
+                                             .addLevels(Level.newBuilder().setGroup("STAGES").build())
+                                             .addLevels(Level.newBuilder().build())
+                                             .build())
+                               .stageFqn("pipeline.stages.stage3")
+                               .planNode(planNode3)
+                               .build(),
+                 NodeExecution.builder()
+                     .uuid("stepStrategyNodeExecutionUUID")
+                     .ambiance(Ambiance.newBuilder()
+                                   .addLevels(Level.newBuilder().setGroup("STAGES").build())
+                                   .addLevels(Level.newBuilder().setGroup("STRATEGY").build())
+                                   .addLevels(Level.newBuilder().setGroup("STAGE").build())
+                                   .addLevels(Level.newBuilder().setGroup("STRATEGY").build())
+                                   .build())
+                     .stageFqn("pipeline.stages.stage3")
+                     .planNode(planNode4)
+                     .build()))
+        .when(nodeExecutionService)
+        .fetchStrategyNodeExecutions(any(), any());
+
+    Plan newPlan = retryExecuteHelper.transformPlan(
+        Plan.builder().planNodes(Arrays.asList(planNode1, planNode2, planNode3, planNode4)).build(),
+        identifierOfSkipStages, "abc", stageIdentifierToRetryWith);
+
+    List<Node> updatedNodes = newPlan.getPlanNodes();
+    List<Node> identityPlanNodes =
+        updatedNodes.stream().filter(o -> o instanceof IdentityPlanNode).collect(Collectors.toList());
+
+    assertEquals(identityPlanNodes.size(), 2);
+    List<Node> strategyIdentityNodes = identityPlanNodes.stream()
+                                           .filter(o -> o.getStepType().equals(StrategyStep.STEP_TYPE))
+                                           .collect(Collectors.toList());
+    assertEquals(strategyIdentityNodes.size(), 1);
+    assertEquals(strategyIdentityNodes.get(0).getNodeType(), NodeType.IDENTITY_PLAN_NODE);
+    IdentityPlanNode strategyIdentityNode = (IdentityPlanNode) strategyIdentityNodes.get(0);
+    assertThat(strategyIdentityNode.getOriginalNodeExecutionId()).isEqualTo("stageStrategyNodeExecutionUUID");
+    assertThat(strategyIdentityNode.getIdentifier()).isEqualTo(planNode3.getIdentifier());
+    assertThat(strategyIdentityNode.getName()).isEqualTo(planNode3.getName());
+    assertThat(strategyIdentityNode.getUuid()).isEqualTo(planNode3.getUuid());
+    assertThat(strategyIdentityNode.getUseAdviserObtainments()).isTrue();
+    assertThat(strategyIdentityNode.getAdviserObtainments()).isEqualTo(planNode3.getAdviserObtainments());
+
+    List<Node> strategyPlanNodes =
+        updatedNodes.stream()
+            .filter(o -> o.getStepType().equals(StrategyStep.STEP_TYPE) && o.getNodeType() == NodeType.PLAN_NODE)
+            .collect(Collectors.toList());
+    assertEquals(strategyIdentityNodes.size(), 1);
+    // The identifier was same. But this will not be converted into the IdentityNode becaue now we check the
+    // nodeExecution.nodeId(Equivalent to nodeExecution.planNode.uid) so the exact node will match even though same
+    // identifier for multiple planNodes.
+    assertEquals(strategyIdentityNodes.get(0).getIdentifier(), strategyIdentityNode.getIdentifier());
+  }
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)

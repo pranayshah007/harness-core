@@ -2,8 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  kubeVersion: ""
   loadbalancerURL: ""
-  stackDriverLoggingEnabled: false
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -40,25 +40,46 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
-  ha: false
+      certName: ""
+      certKey: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis:6379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
+      extraArgs: ""
   ingress:
+    # -- create ingress objects
     enabled: false
+    # -- set ingress object classname
     className: harness
+    # -- set host of ingressObjects
     hosts:
       - my-host.example.org
+    # -- set tls for ingress objects
     tls:
       enabled: true
       secretName: ''
+    # -- add annotations to ingress objects
     objects:
-      annotations: {}
+      annotations: { }
   istio:
+    # -- create virtualServices objects
     enabled: false
+    # -- create gateway and use in virtualservice
     gateway:
       create: false
+    # -- if gateway not created, use specified gateway and host
     virtualService:
       gateways:
       hosts:
+  ha: false
   imagePullSecrets: []
+  stackDriverLoggingEnabled: false
 
 replicaCount: 1
 maxSurge: 1
@@ -84,7 +105,6 @@ config:
   CACHE_CONFIG_SENTINEL_MASTER_NAME: harness-redis
   CACHE_CONFIG_USE_SENTINEL: true
   MOCK_ACCESS_CONTROL_SERVICE: false
-  ACCESS_CONTROL_BASE_URL:  http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/
   ACCESS_CONTROL_ENABLED: true
 
 image:
@@ -92,7 +112,7 @@ image:
   repository: harness/cv-nextgen-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "78900"
+  tag: "79819"
   digest: ""
   imagePullSecrets: []
 
@@ -103,6 +123,11 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
+
+timescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
 
 waitForInitContainer:
   image:
@@ -158,12 +183,11 @@ resources:
     memory: 6144Mi
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
+  targetCPU: ""
+  targetMemory: ""
 nodeSelector: {}
 
 tolerations: []
@@ -171,3 +195,29 @@ tolerations: []
 affinity: {}
 
 additionalConfigs: {}
+
+# extraVolumes:
+# - name: volume-test
+#   configMap:
+#     name: test-config
+#     readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: test-volume-mount
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:
+# extraEnvVars:
+# - name: POD_NAME
+#   valueFrom:
+#     fieldRef:
+#       fieldPath: metadata.name
+extraEnvVars: []

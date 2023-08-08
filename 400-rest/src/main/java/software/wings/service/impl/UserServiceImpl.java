@@ -6,13 +6,14 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.HAS;
 import static io.harness.beans.SearchFilter.Operator.IN;
+import static io.harness.configuration.DeployMode.DEPLOY_MODE;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -67,7 +68,10 @@ import static org.springframework.security.crypto.bcrypt.BCrypt.checkpw;
 import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.LogoutResponse;
 import io.harness.beans.FeatureName;
@@ -76,6 +80,8 @@ import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.cd.CDLicenseType;
+import io.harness.configuration.DeployMode;
+import io.harness.configuration.DeployVariant;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.eraro.ErrorCode;
 import io.harness.event.handler.impl.EventPublishHelper;
@@ -104,6 +110,7 @@ import io.harness.invites.remote.NgInviteClient;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
@@ -135,6 +142,10 @@ import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.UserAccountLevelData.UserAccountLevelDataKeys;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
+import io.harness.notification.Team;
+import io.harness.notification.channeldetails.EmailChannel;
+import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
+import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
@@ -282,6 +293,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -318,6 +330,9 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 /**
  * Created by anubhaw on 3/9/16.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_AMI_ASG, HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(PL)
 @ValidateOnExecution
 @Singleton
@@ -404,6 +419,8 @@ public class UserServiceImpl implements UserService {
   @Inject private AdminLicenseHttpClient adminLicenseHttpClient;
 
   @Inject private AwsMarketPlaceApiHandler awsMarketPlaceApiHandler;
+
+  @Inject private NotificationClient notificationClient;
 
   private final ScheduledExecutorService scheduledExecutor = new ScheduledThreadPoolExecutor(1,
       new ThreadFactoryBuilder().setNameFormat("invite-executor-thread-%d").setPriority(Thread.NORM_PRIORITY).build());
@@ -586,12 +603,36 @@ public class UserServiceImpl implements UserService {
   @Override
   public List<Account> getUserAccounts(String userId, int pageIndex, int pageSize, String searchTerm) {
     Query<Account> query = getUserAccountsQuery(userId, searchTerm);
-    return query.asList(new FindOptions().limit(pageSize).skip(pageIndex));
+
+    List<Account> accounts = query.asList(new FindOptions().limit(pageSize).skip(pageIndex));
+
+    List<Account> accountsWithNullLicenseInfo =
+        accounts.stream()
+            .filter(account
+                -> account.getLicenseInfo() == null || "FREE".equals(account.getLicenseInfo().getAccountType())
+                    || "TRIAL".equals(account.getLicenseInfo().getAccountType()))
+            .collect(Collectors.toList());
+
+    if (!accountsWithNullLicenseInfo.isEmpty()) {
+      for (Account account : accountsWithNullLicenseInfo) {
+        if (!"Global".equals(account.getAccountName())) {
+          String ngLicense = getHighestEditionNgLicense(account.getUuid());
+          if (ngLicense != null && StringUtils.isNotEmpty(ngLicense)) {
+            account.getLicenseInfo().setAccountType(ngLicense);
+          }
+        }
+      }
+      accounts.removeAll(accountsWithNullLicenseInfo);
+      accounts.addAll(accountsWithNullLicenseInfo);
+    }
+
+    return accounts;
   }
 
   private Query<Account> getUserAccountsQuery(String userId, String searchTerm) {
     Query<Account> query = wingsPersistence.createQuery(Account.class);
     List<String> accountIds = getUserAccountIds(userId);
+
     if (harnessUserGroupService.isHarnessSupportUser(userId)) {
       accountIds.addAll(accessRequestService.getAccountsHavingActiveAccessRequestForUser(userId));
       query.or(query.criteria(AccountKeys.isHarnessSupportAccessAllowed).equal(true),
@@ -602,9 +643,44 @@ public class UserServiceImpl implements UserService {
     }
     query.and(getSearchCriterion(query, AccountKeys.accountName, searchTerm));
     query.order(Sort.ascending(AccountKeys.accountName));
+
     return query;
   }
 
+  public String getHighestEditionNgLicense(String accountId) {
+    try {
+      AccountLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.getAccountLicense(accountId));
+      Map<ModuleType, List<ModuleLicenseDTO>> allModuleLicenses = response.getAllModuleLicenses();
+
+      Optional<ModuleLicenseDTO> highestEditionLicense = allModuleLicenses.values()
+                                                             .stream()
+                                                             .flatMap(Collection::stream)
+                                                             .max(Comparator.comparing(ModuleLicenseDTO::getEdition));
+
+      if (!highestEditionLicense.isPresent()) {
+        Edition edition = Edition.FREE;
+        if (DeployMode.isOnPrem(System.getenv().get(DEPLOY_MODE))) {
+          if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
+            edition = Edition.COMMUNITY;
+          } else {
+            edition = Edition.ENTERPRISE;
+          }
+        }
+        log.warn("Account {} has no highest edition license, fallback to {}", accountId, edition);
+        return edition.name();
+      }
+
+      if (highestEditionLicense.get().getEdition() == Edition.ENTERPRISE
+          || highestEditionLicense.get().getEdition() == Edition.TEAM) {
+        return "PAID";
+      } else {
+        return "FREE";
+      }
+    } catch (InvalidRequestException e) {
+      log.warn("Exception occurred while fetching NG licenseInfo {}", e.getMessage());
+      throw new InvalidRequestException("Error while fetching NG Licenses");
+    }
+  }
   public List<String> getUserAccountIds(String userId) {
     User user = wingsPersistence.createQuery(User.class).filter("uuid", userId).project(UserKeys.accounts, true).get();
     return user.getAccounts().stream().map(Account::getUuid).collect(toList());
@@ -2539,7 +2615,6 @@ public class UserServiceImpl implements UserService {
   public boolean resetPassword(UserResource.ResetPasswordRequest resetPasswordRequest) {
     String email = resetPasswordRequest.getEmail();
     User user = getUserByEmail(email);
-
     if (user == null) {
       return true;
     }
@@ -2721,7 +2796,6 @@ public class UserServiceImpl implements UserService {
     log.info("Enabling 2FA for user {}", user.getEmail());
     TwoFactorAuthenticationSettings twoFactorAuthenticationSettings =
         totpAuthHandler.createTwoFactorAuthenticationSettings(user, account);
-    twoFactorAuthenticationSettings.setTwoFactorAuthenticationEnabled(true);
     User updatedUser = updateTwoFactorAuthenticationSettings(user, twoFactorAuthenticationSettings);
     publishUserEvent(user, updatedUser);
     return updatedUser;
@@ -2746,6 +2820,7 @@ public class UserServiceImpl implements UserService {
     if (defaultAccountId.equals(account.getUuid()) && account.isTwoFactorAdminEnforced()
         && !user.isTwoFactorAuthenticationEnabled()) {
       user = enableTwoFactorAuthenticationForUser(user, account);
+      user.setTwoFactorAuthenticationEnabled(true);
     }
     return user;
   }
@@ -2753,21 +2828,31 @@ public class UserServiceImpl implements UserService {
   private void sendResetPasswordEmail(User user, String token, boolean isNGRequest) {
     try {
       String resetPasswordUrl = getResetPasswordUrl(token, user, isNGRequest);
-
       Map<String, String> templateModel = getTemplateModel(user.getName(), resetPasswordUrl);
       List<String> toList = new ArrayList<>();
       toList.add(user.getEmail());
       String templateName = isNGRequest ? "ng_reset_password" : "reset_password";
-      EmailData emailData = EmailData.builder()
-                                .to(toList)
-                                .templateName(templateName)
-                                .templateModel(templateModel)
-                                .accountId(getPrimaryAccount(user).getUuid())
-                                .build();
-      emailData.setCc(Collections.emptyList());
-      emailData.setRetries(2);
-
-      emailNotificationService.send(emailData);
+      if (isNGRequest) {
+        EmailChannelBuilder emailChannel = EmailChannel.builder()
+                                               .recipients(toList)
+                                               .accountId(getPrimaryAccount(user).getUuid())
+                                               .templateId(templateName)
+                                               .templateData(templateModel)
+                                               .team(Team.OTHER)
+                                               .userGroups(Collections.emptyList());
+        log.info("sending reset password email through ng: {} ", emailChannel.toString());
+        notificationClient.sendNotificationAsync(emailChannel.build());
+      } else {
+        EmailData emailData = EmailData.builder()
+                                  .to(toList)
+                                  .templateName(templateName)
+                                  .templateModel(templateModel)
+                                  .accountId(getPrimaryAccount(user).getUuid())
+                                  .build();
+        emailData.setCc(Collections.emptyList());
+        emailData.setRetries(2);
+        emailNotificationService.send(emailData);
+      }
     } catch (URISyntaxException e) {
       log.error(RESET_ERROR, e);
     }
@@ -2949,6 +3034,9 @@ public class UserServiceImpl implements UserService {
       updateOperations.set(UserKeys.externalUserId, user.getExternalUserId());
     }
 
+    if (isNotEmpty(user.getEmail())) {
+      updateOperations.set(UserKeys.email, user.getEmail());
+    }
     return updateUser(user.getUuid(), updateOperations);
   }
 
@@ -3188,7 +3276,7 @@ public class UserServiceImpl implements UserService {
       List<Account> updatedActiveAccounts = userServiceHelper.updatedActiveAccounts(user, accountId);
       List<Account> updatedPendingAccounts = userServiceHelper.updatedPendingAccount(user, accountId);
 
-      if (isUserPartOfAccountInNG.get()) {
+      if (isUserPartOfAccountInNG.get() && removeUserFilter.equals(NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK)) {
         userServiceHelper.deleteUserFromNG(userId, accountId, removeUserFilter);
       }
 
@@ -3198,6 +3286,7 @@ public class UserServiceImpl implements UserService {
 
       if (updatedActiveAccounts.isEmpty() && updatedPendingAccounts.isEmpty()) {
         deleteUser(user);
+        userServiceHelper.deleteUserMetadata(userId);
         return;
       }
 

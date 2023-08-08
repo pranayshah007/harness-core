@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -78,7 +79,7 @@ public class JenkinsArtifactStreamMapper implements ArtifactStreamMapper {
         .jobName(jobName)
         .eventConditions(Collections.emptyList())
         .artifactPath(artifactPath)
-        .build(PLEASE_FIX_ME)
+        .build(TRIGGER_TAG_VALUE_DEFAULT)
         .build();
   }
 }

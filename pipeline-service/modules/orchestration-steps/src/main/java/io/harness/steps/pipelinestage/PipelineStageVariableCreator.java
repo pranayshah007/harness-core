@@ -6,7 +6,10 @@
  */
 
 package io.harness.steps.pipelinestage;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
@@ -21,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class PipelineStageVariableCreator extends AbstractStageVariableCreator<PipelineStageNode> {
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
@@ -30,11 +34,12 @@ public class PipelineStageVariableCreator extends AbstractStageVariableCreator<P
     if (specField != null && specField.getNode().getField(YAMLFieldNameConstants.OUTPUTS) != null) {
       YamlField outputsField = specField.getNode().getField(YAMLFieldNameConstants.OUTPUTS);
 
-      HashMap<String, YamlField> outputs = new HashMap<>();
-      outputs.put(outputsField.getUuid(), outputsField);
-
-      variableResponseMap.put(config.getUuid(),
-          VariableCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(outputs)).build());
+      if (outputsField != null && EmptyPredicate.isNotEmpty(outputsField.getNode().asArray())) {
+        HashMap<String, YamlField> outputs = new HashMap<>();
+        outputs.put(outputsField.getUuid(), outputsField);
+        variableResponseMap.put(config.getUuid(),
+            VariableCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(outputs)).build());
+      }
     }
     return variableResponseMap;
   }

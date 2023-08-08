@@ -72,6 +72,7 @@ message PluginDetails {
   repeated int32 portUsed = 7;
   repeated SecretVariable secretVariable = 8;
   repeated ConnectorDetails connectors_for_step = 9;
+  google.protobuf.BoolValue isHarnessManaged = 10;
 }
 
 message PluginContainerResources {

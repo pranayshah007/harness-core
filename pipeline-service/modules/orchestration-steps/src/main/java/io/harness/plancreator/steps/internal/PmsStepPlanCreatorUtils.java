@@ -6,7 +6,6 @@
  */
 
 package io.harness.plancreator.steps.internal;
-
 import static io.harness.plancreator.strategy.StrategyUtils.getPipelineRollbackStageId;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
@@ -24,6 +23,9 @@ import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
@@ -69,14 +71,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @UtilityClass
 public class PmsStepPlanCreatorUtils {
   public List<AdviserObtainment> getAdviserObtainmentFromMetaData(
       KryoSerializer kryoSerializer, YamlField currentField, boolean isPipelineStage) {
-    boolean isStepInsideRollback = false;
-    if (YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null) {
-      isStepInsideRollback = true;
-    }
+    final boolean isStepInsideRollback = YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null;
 
     // Adding adviser obtainment list from the failure strategy.
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>(
@@ -172,7 +173,16 @@ public class PmsStepPlanCreatorUtils {
 
   public List<AdviserObtainment> getAdviserObtainmentForFailureStrategy(
       KryoSerializer kryoSerializer, YamlField currentField, boolean isStepInsideRollback, boolean isPipelineStage) {
+    Map<FailureStrategyActionConfig, Collection<FailureType>> actionMap =
+        getPriorityMergedFailureStrategies(currentField, isStepInsideRollback);
+
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>();
+    return getAdviserObtainments(
+        kryoSerializer, currentField, isStepInsideRollback, adviserObtainmentList, actionMap, isPipelineStage);
+  }
+
+  public Map<FailureStrategyActionConfig, Collection<FailureType>> getPriorityMergedFailureStrategies(
+      YamlField currentField, boolean isStepInsideRollback) {
     List<FailureStrategyConfig> stageFailureStrategies =
         PlanCreatorUtilsCommon.getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
     List<FailureStrategyConfig> stepGroupFailureStrategies =
@@ -181,15 +191,8 @@ public class PmsStepPlanCreatorUtils {
     List<FailureStrategyConfig> stepFailureStrategies =
         PlanCreatorUtilsCommon.getFailureStrategies(currentField.getNode());
 
-    Map<FailureStrategyActionConfig, Collection<FailureType>> actionMap;
-    FailureStrategiesUtils.priorityMergeFailureStrategies(
+    return FailureStrategiesUtils.priorityMergeFailureStrategies(
         stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
-
-    actionMap = FailureStrategiesUtils.priorityMergeFailureStrategies(
-        stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
-
-    return getAdviserObtainments(
-        kryoSerializer, currentField, isStepInsideRollback, adviserObtainmentList, actionMap, isPipelineStage);
   }
 
   private List<AdviserObtainment> getAdviserObtainments(KryoSerializer kryoSerializer, YamlField currentField,
@@ -208,7 +211,7 @@ public class PmsStepPlanCreatorUtils {
         siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       }
 
-      // Check if step is in parallel section then dont have nextNodeUUid set.
+      // Check if step is in parallel section then don't have nextNodeUUid set.
       if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
           && !StrategyUtils.isWrappedUnderStrategy(currentField)) {
         nextNodeUuid = siblingField.getNode().getUuid();
@@ -225,6 +228,13 @@ public class PmsStepPlanCreatorUtils {
           nextNodeUuid, adviserObtainmentBuilder);
     }
     return adviserObtainmentList;
+  }
+
+  public void adviserForActionTypeWithNoNextNode(KryoSerializer kryoSerializer, YamlField currentField,
+      List<AdviserObtainment> adviserObtainmentList, FailureStrategyActionConfig action, Set<FailureType> failureTypes,
+      NGFailureActionType actionType, AdviserObtainment.Builder adviserObtainmentBuilder) {
+    adviserForActionType(kryoSerializer, currentField, adviserObtainmentList, action, failureTypes, actionType, null,
+        adviserObtainmentBuilder);
   }
 
   private void adviserForActionType(KryoSerializer kryoSerializer, YamlField currentField,
@@ -329,6 +339,7 @@ public class PmsStepPlanCreatorUtils {
                 .applicableFailureTypes(failureTypes)
                 .nextNodeId(nextNodeUuid)
                 .repairActionCodeAfterRetry(GenericPlanCreatorUtils.toRepairAction(actionUnderRetry))
+                .retryActionConfig(actionUnderRetry)
                 .retryCount(retryCount.getValue())
                 .strategyToUuid(PlanCreatorUtilsCommon.getRollbackStrategyMap(currentField))
                 .waitIntervalList(retryAction.getSpecConfig()

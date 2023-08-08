@@ -6,16 +6,19 @@
  */
 
 package io.harness.pms.execution.utils;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class NodeProjectionUtils {
@@ -77,10 +80,10 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.module, NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.stepType);
 
   // NodeId is added to resolve expression within same step
-  public static final Set<String> fieldsForExpressionEngine =
-      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.ambiance, NodeExecutionKeys.mode,
-          NodeExecutionKeys.startTs, NodeExecutionKeys.endTs, NodeExecutionKeys.parentId,
-          NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry, NodeExecutionKeys.nodeId);
+  public static final Set<String> fieldsForExpressionEngine = Sets.newHashSet(NodeExecutionKeys.status,
+      NodeExecutionKeys.ambiance, NodeExecutionKeys.mode, NodeExecutionKeys.startTs, NodeExecutionKeys.endTs,
+      NodeExecutionKeys.parentId, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry,
+      NodeExecutionKeys.nodeId, NodeExecutionKeys.retryIds);
 
   public static final Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
       NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.module, NodeExecutionKeys.resolvedParams);

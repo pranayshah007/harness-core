@@ -12,7 +12,6 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -56,9 +55,7 @@ public class EcsGitFetchRunTaskRequest implements ActivityAccess, TaskParameters
       GitStoreDelegateConfig taskDefinitionGitStoreDelegateConfig =
           taskDefinitionEcsGitFetchRunTaskFileConfig.getGitStoreDelegateConfig();
       capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ScmConnectorMapper.toGitConfigDTO(taskDefinitionGitStoreDelegateConfig.getGitConfigDTO()),
-          taskDefinitionGitStoreDelegateConfig.getEncryptedDataDetails(),
-          taskDefinitionGitStoreDelegateConfig.getSshKeySpecDTO()));
+          taskDefinitionGitStoreDelegateConfig, taskDefinitionGitStoreDelegateConfig.getEncryptedDataDetails()));
 
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           taskDefinitionGitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
@@ -67,10 +64,9 @@ public class EcsGitFetchRunTaskRequest implements ActivityAccess, TaskParameters
     if (ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig != null) {
       GitStoreDelegateConfig ecsRunTaskRequestDefinitionGitStoreDelegateConfig =
           ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig.getGitStoreDelegateConfig();
-      capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ScmConnectorMapper.toGitConfigDTO(ecsRunTaskRequestDefinitionGitStoreDelegateConfig.getGitConfigDTO()),
-          ecsRunTaskRequestDefinitionGitStoreDelegateConfig.getEncryptedDataDetails(),
-          ecsRunTaskRequestDefinitionGitStoreDelegateConfig.getSshKeySpecDTO()));
+      capabilities.addAll(
+          GitCapabilityHelper.fetchRequiredExecutionCapabilities(ecsRunTaskRequestDefinitionGitStoreDelegateConfig,
+              ecsRunTaskRequestDefinitionGitStoreDelegateConfig.getEncryptedDataDetails()));
 
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           ecsRunTaskRequestDefinitionGitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));

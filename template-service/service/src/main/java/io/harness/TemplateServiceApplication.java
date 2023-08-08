@@ -6,7 +6,6 @@
  */
 
 package io.harness;
-
 import static io.harness.TemplateServiceConfiguration.getResourceClasses;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
@@ -16,7 +15,10 @@ import static com.google.common.collect.ImmutableMap.of;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.cf.AbstractCfModule;
@@ -62,6 +64,11 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.jackson.TemplateServiceJacksonModule;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
+import io.harness.telemetry.TelemetryReporter;
+import io.harness.telemetry.filter.APIAuthTelemetryFilter;
+import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
+import io.harness.telemetry.filter.APIErrorsTelemetrySenderFilter;
+import io.harness.telemetry.filter.TerraformTelemetryFilter;
 import io.harness.template.GenerateOpenApiSpecCommand;
 import io.harness.template.InspectCommand;
 import io.harness.template.entity.TemplateEntity;
@@ -119,6 +126,8 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Slf4j
 @OwnedBy(CDC)
 public class TemplateServiceApplication extends Application<TemplateServiceConfiguration> {
@@ -248,6 +257,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     registerAuthFilters(templateServiceConfiguration, environment, injector);
     registerCorrelationFilter(environment, injector);
     registerApiResponseFilter(environment, injector);
+    registerAPIAuthTelemetryFilters(templateServiceConfiguration, environment, injector);
 
     if (isTrue(templateServiceConfiguration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -404,5 +414,32 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
                                                     .requireValidatorInit(false)
                                                     .build();
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
+  }
+
+  private void registerAPIAuthTelemetryFilters(
+      TemplateServiceConfiguration configuration, Environment environment, Injector injector) {
+    if (configuration.getSegmentConfiguration() != null && configuration.getSegmentConfiguration().isEnabled()) {
+      registerAPIAuthTelemetryFilter(environment, injector);
+      registerTerraformTelemetryFilter(environment, injector);
+      registerAPIAuthTelemetryResponseFilter(environment, injector);
+      registerAPIErrorsTelemetrySenderFilter(environment, injector);
+    }
+  }
+  private void registerAPIAuthTelemetryFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new APIAuthTelemetryFilter(telemetryReporter));
+  }
+  private void registerTerraformTelemetryFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new TerraformTelemetryFilter(telemetryReporter));
+  }
+  private void registerAPIAuthTelemetryResponseFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new APIAuthTelemetryResponseFilter(telemetryReporter));
+  }
+  private void registerAPIErrorsTelemetrySenderFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(
+        new APIErrorsTelemetrySenderFilter(telemetryReporter, TEMPLATE_SERVICE.getServiceId()));
   }
 }

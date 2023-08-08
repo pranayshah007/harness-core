@@ -31,8 +31,10 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.SRINIVAS;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS;
@@ -52,6 +54,7 @@ import static software.wings.utils.WingsTestConstants.PORTAL_URL;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -521,7 +524,12 @@ public class AccountServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldUpdateUserAfterDeletingAccount() {
     String accountId = generateUuid();
-    Account account = anAccount().withUuid(accountId).withCompanyName(HARNESS_NAME).build();
+    Account account =
+        anAccount()
+            .withUuid(accountId)
+            .withCompanyName(HARNESS_NAME)
+            .withLicenseInfo(LicenseInfo.builder().accountType("PAID").expiryTime(100000).licenseUnits(100).build())
+            .build();
     wingsPersistence.save(account);
 
     String accountId2 = generateUuid();
@@ -1792,5 +1800,50 @@ public class AccountServiceTest extends WingsBaseTest {
     SessionTimeoutSettings sessionTimeoutSettings = new SessionTimeoutSettings(4321);
     assertThatExceptionOfType(ConstraintViolationException.class)
         .isThrownBy(() -> accountService.setSessionTimeoutInMinutes(account.getUuid(), sessionTimeoutSettings));
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testIsSSOEnabledForOAuth() {
+    Account account = accountService.save(anAccount()
+                                              .withCompanyName("CompanyName 1")
+                                              .withAccountName("Account Name 1")
+                                              .withAccountKey("ACCOUNT_KEY")
+                                              .withAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD)
+                                              .withOauthEnabled(true)
+                                              .withLicenseInfo(getLicenseInfo())
+                                              .withWhitelistedDomains(new HashSet<>())
+                                              .build(),
+        false);
+    Boolean result = accountService.isSSOEnabled(account);
+    assertThat(result).isTrue();
+
+    Account onlyUserPassAccount =
+        accountService.save(anAccount()
+                                .withCompanyName("CompanyName 1")
+                                .withAccountName("Account Name 2")
+                                .withAccountKey("ACCOUNT_KEY")
+                                .withAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD)
+                                .withOauthEnabled(false)
+                                .withLicenseInfo(getLicenseInfo())
+                                .withWhitelistedDomains(new HashSet<>())
+                                .build(),
+            false);
+    Boolean isSSO = accountService.isSSOEnabled(onlyUserPassAccount);
+    assertThat(isSSO).isFalse();
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testSetPublicAccess() {
+    Account account = saveAccount("Harness");
+
+    accountService.setPublicAccessEnabled(account.getUuid(), true);
+    assertTrue(accountService.getPublicAccessEnabled(account.getUuid()));
+
+    accountService.setPublicAccessEnabled(account.getUuid(), false);
+    assertFalse(accountService.getPublicAccessEnabled(account.getUuid()));
   }
 }

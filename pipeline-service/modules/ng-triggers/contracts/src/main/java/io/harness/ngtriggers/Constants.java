@@ -6,11 +6,14 @@
  */
 
 package io.harness.ngtriggers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 public interface Constants {
   int COMMIT_SHA_STRING_LENGTH = 7;
@@ -87,6 +90,7 @@ public interface Constants {
   String ARTIFACT_METADATA_EXPR = "metadata";
   String SOURCE_EVENT_ID = "sourceEventId";
   String SOURCE_EVENT_LINK = "sourceEventLink";
+  String EMAIL = "email";
 
   String WEBHOOK_TYPE = "Webhook";
   String SCHEDULED_TYPE = "Scheduled";

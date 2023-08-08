@@ -17,6 +17,7 @@ package io.harness.steps.servicenow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -24,10 +25,12 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.supplier.ThrowingSupplier;
 
+import java.util.List;
+
 @OwnedBy(CDC)
 public interface ServiceNowStepHelperService {
   TaskRequest prepareTaskRequest(ServiceNowTaskNGParametersBuilder paramsBuilder, Ambiance ambiance,
-      String connectorRef, String timeStr, String taskName);
+      String connectorRef, String timeStr, String taskName, List<TaskSelector> delegateSelectors);
   StepResponse prepareStepResponse(ThrowingSupplier<ServiceNowTaskNGResponse> responseSupplier) throws Exception;
   StepResponse prepareImportSetStepResponse(ThrowingSupplier<ServiceNowTaskNGResponse> responseSupplier)
       throws Exception;

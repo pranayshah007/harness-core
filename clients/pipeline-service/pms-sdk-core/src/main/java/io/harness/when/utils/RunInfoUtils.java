@@ -6,11 +6,13 @@
  */
 
 package io.harness.when.utils;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.plan.ExecutionMode.NORMAL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -25,6 +27,8 @@ import io.harness.when.beans.WhenConditionStatus;
 import java.io.IOException;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class RunInfoUtils {

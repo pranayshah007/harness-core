@@ -13,8 +13,10 @@
  */
 
 package io.harness.delegate.beans;
-
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.security.encryption.EncryptionConfig;
@@ -32,6 +34,8 @@ import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Value
 @Builder
 @AllArgsConstructor

@@ -135,4 +135,8 @@ public final class MonitoredService implements PersistentEntity, UuidAware, Acco
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
+
+  public static String getIdentifier(String serviceIdentifier, String envIdentifier) {
+    return serviceIdentifier + "_" + envIdentifier;
+  }
 }

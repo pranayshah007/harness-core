@@ -15,6 +15,7 @@ import_run_configurations:
   project/run-configurations/CENextGenApp.xml
   project/run-configurations/CIManagerApplication.xml
   project/run-configurations/STOManagerApplication.xml
+  project/run-configurations/SSCAManagerApplication.xml
   project/run-configurations/ChangeDataCaptureApp.xml
   project/run-configurations/CommandServiceLibraryApp.xml
   project/run-configurations/CVNGApp.xml

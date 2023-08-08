@@ -369,12 +369,13 @@ func TestGetGetUserRepos(t *testing.T) {
 			},
 			Endpoint: ts.URL,
 		},
+		Version: 2,
 	}
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
 	got, err := GetUserRepos(context.Background(), in, log.Sugar())
 
-	fmt.Println(got)
+	fmt.Println(got)	
 	fmt.Println(err)
 
 	assert.Nil(t, err, "no errors")
@@ -407,7 +408,7 @@ func TestGetGetUserRepo(t *testing.T) {
 
 	log, _ := logs.GetObservedLogger(zap.InfoLevel)
 	got, err := GetUserRepo(context.Background(), in, log.Sugar())
-
+	
 	assert.Nil(t, err, "no errors")
 	assert.Equal(t, got.GetRepo().GetId(), "12345", "1 repo")
 }

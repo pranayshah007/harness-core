@@ -6,8 +6,10 @@
  */
 
 package io.harness.subscription.helpers.impl;
-
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.subscription.dto.AddressDto;
 import io.harness.subscription.dto.CardDTO;
@@ -67,6 +69,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Singleton
 public class StripeHelperImpl implements StripeHelper {
   private StripeHandlerImpl stripeHandler;
@@ -423,8 +426,8 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
-  public void deleteCard(String customerIdentifier, String creditCardIdentifier) {
-    stripeHandler.deleteCard(customerIdentifier, creditCardIdentifier);
+  public void detachPaymentMethod(String customerIdentifier, String paymentMethodIdentifier) {
+    stripeHandler.detachPaymentMethod(paymentMethodIdentifier);
   }
 
   @Override
@@ -523,8 +526,7 @@ public class StripeHelperImpl implements StripeHelper {
         .address(address)
         .billingEmail(customer.getEmail())
         .companyName(customer.getName())
-        .defaultSource(customer.getDefaultSource() != null ? customer.getDefaultSource()
-                                                           : customer.getInvoiceSettings().getDefaultPaymentMethod());
+        .defaultSource(customer.getInvoiceSettings().getDefaultPaymentMethod());
 
     return builder.build();
   }

@@ -124,6 +124,10 @@ func getBazelTestRules(ctx context.Context, tests []types.RunnableTest, b *bazel
 	return testList
 }
 
+func (b *bazelRunner) ReadPackages(files []types.File) []types.File {
+	return ReadPkgs(b.log, b.fs, files)
+}
+
 func (b *bazelRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	agentArg := fmt.Sprintf(javaAgentArg, agentConfigPath)
 	instrArg := fmt.Sprintf("--define=HARNESS_ARGS=%s", agentArg)

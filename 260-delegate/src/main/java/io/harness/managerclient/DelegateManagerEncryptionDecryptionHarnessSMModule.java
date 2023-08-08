@@ -6,7 +6,9 @@
  */
 
 package io.harness.managerclient;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.security.TokenGenerator;
 
@@ -15,6 +17,8 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @RequiredArgsConstructor
 public class DelegateManagerEncryptionDecryptionHarnessSMModule extends AbstractModule {
   private final DelegateConfiguration delegateConfiguration;

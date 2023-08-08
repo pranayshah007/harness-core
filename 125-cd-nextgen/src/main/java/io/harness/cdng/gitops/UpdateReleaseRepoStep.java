@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.gitops;
-
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -17,10 +16,13 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.k8s.K8sStepHelper;
@@ -38,14 +40,13 @@ import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -76,6 +77,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(GITOPS)
 @Slf4j
 public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
@@ -85,6 +87,8 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
                                                .build();
 
   @Inject private EngineExpressionService engineExpressionService;
+
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private StepHelper stepHelper;
@@ -97,8 +101,8 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
 
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
@@ -213,13 +217,11 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
         List<String> files = new ArrayList<>();
         files.add(file);
         // Resolve any other expressions in the filepaths. eg. service variables
-        ExpressionEvaluatorUtils.updateExpressions(
-            files, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+        cdExpressionResolver.updateExpressions(ambiance, files);
 
         file = files.get(0);
 
-        ExpressionEvaluatorUtils.updateExpressions(
-            cluster.getVariables(), new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+        cdExpressionResolver.updateExpressions(ambiance, cluster.getVariables());
 
         Map<String, String> flattennedVariables = new HashMap<>();
         // Convert variables map from Map<String, Object> to Map<String, String>
@@ -262,9 +264,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
             }
           }
 
-          ExpressionEvaluatorUtils.updateExpressions(copyParameter,
-              new CDExpressionResolveFunctor(
-                  engineExpressionService, ambiance, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED));
+          cdExpressionResolver.updateExpressions(ambiance, copyParameter, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
 
           if (copyParameter.getValue() != null) {
             populateVariables(

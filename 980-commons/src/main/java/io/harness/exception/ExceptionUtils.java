@@ -6,13 +6,15 @@
  */
 
 package io.harness.exception;
-
 import static io.harness.exception.WingsException.ReportTarget.REST_API;
 
 import static java.util.stream.Collectors.joining;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
@@ -24,6 +26,7 @@ import javax.validation.ConstraintViolationException;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
@@ -110,6 +113,8 @@ public class ExceptionUtils {
       }
     } else if (t instanceof HashiCorpVaultRuntimeException) {
       return "After 3 tries, encryption for vault secret failed with the error " + t.getMessage();
+    } else if (t instanceof CastedFieldException) {
+      return t.getMessage();
     } else {
       StringBuilder result = new StringBuilder();
       result.append(t.getClass().getSimpleName());

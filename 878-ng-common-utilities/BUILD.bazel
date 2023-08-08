@@ -36,6 +36,7 @@ java_library(
         "//clients/access-control/sdk:module",
         "//clients/pipeline-service/pms-sdk-core:module",
         "//clients/ngsettings:module",
+        "//clients/queue-service/java-client:module",
         "@maven//:com_squareup_retrofit2_converter_gson",
         "//:lombok",
     ],

@@ -34,6 +34,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.beans.steps.CiStepParametersUtils;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.output.CIStageOutput;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
@@ -132,6 +133,9 @@ public class RunStepTest extends CIExecutionTestBase {
   @Mock CILogServiceUtils logServiceUtils;
   @Mock WaitNotifyEngine waitNotifyEngine;
   @Mock SerializedResponseDataHelper serializedResponseDataHelper;
+
+  @Mock CiStepParametersUtils ciStepParametersUtils;
+
   @Mock protected CIFeatureFlagService featureFlagService;
   @Mock protected CIStageOutputRepository ciStageOutputRepository;
   @Inject private ExceptionManager exceptionManager;
@@ -249,7 +253,7 @@ public class RunStepTest extends CIExecutionTestBase {
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     when(runStepProtobufSerializer.serializeStepWithStepParameters(
-             any(), any(), any(), any(), any(), any(), any(), any(), any()))
+             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(UnitStep.newBuilder().build());
 
     AsyncExecutableResponse asyncExecutableResponse =

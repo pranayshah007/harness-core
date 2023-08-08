@@ -19,6 +19,7 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -26,6 +27,7 @@ import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoH
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -53,11 +55,16 @@ public class GitResourceServiceHelperTest extends CategoryTest {
   @Mock private ConnectorService connectorService;
   @Mock private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   private GitResourceServiceHelper gitResourceServiceHelper;
+  @Mock private CDStepHelper cdStepHelper;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    gitResourceServiceHelper = spy(new GitResourceServiceHelper(connectorService, gitConfigAuthenticationInfoHelper));
+    gitResourceServiceHelper =
+        spy(new GitResourceServiceHelper(connectorService, gitConfigAuthenticationInfoHelper, cdStepHelper));
+    doReturn(GitConfigDTO.builder().url("url/reponame").build())
+        .when(cdStepHelper)
+        .getScmConnector(any(), any(), any());
   }
 
   @Test

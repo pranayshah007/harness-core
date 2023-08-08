@@ -17,7 +17,6 @@ data:
   BACKGROUND_SCHEDULER_CLUSTERED: "true"
   CACHE_BACKEND: REDIS
   CAPSULE_JAR: rest-capsule.jar
-  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   DELEGATE_DOCKER_IMAGE: {{ include "harness-manager.delegate_docker_image" . }}
   IMMUTABLE_DELEGATE_ENABLED: '{{ .Values.global.useImmutableDelegate }}'
   IMMUTABLE_DELEGATE_DOCKER_IMAGE: {{ include "harness-manager.immutable_delegate_docker_image" . }}
@@ -35,19 +34,21 @@ data:
   HZ_CLUSTER_NAME: harness-manager
   LOGGING_LEVEL: '{{ .Values.appLogLevel }}'
   MEMORY: {{ .Values.java.memory | quote }}
-  REDIS_SENTINEL: "true"
-  REDIS_URL: 'redis://localhost:6379'
+  REDIS_SENTINEL: {{ .Values.global.database.redis.installed  | quote }}
+  REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   REDIS_MASTER_NAME: 'harness-redis'
-  REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
+  REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  REDIS_NETTY_THREADS: {{ .Values.redisConfig.nettyThreads | quote }}
   SERVER_PORT: "9090"
   SERVICE_ACC: /opt/harness/svc/service_acc.json
   VERSION: {{ .Values.version }}
   LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{  .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_FRAMEWORK_USE_SENTINEL: "true"
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed  | quote }}
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: "true"
-  EVENTS_FRAMEWORK_REDIS_URL: 'redis://localhost:6379'
   HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
   {{- if .Values.global.mongoSSL }}
   MONGO_SSL_CONFIG: "true"
@@ -64,11 +65,11 @@ data:
   ACCESS_CONTROL_BASE_URL: 'http://access-control:9006/api/'
   ENABLE_AUDIT: 'true'
   AUDIT_CLIENT_BASEURL: 'http://platform-service:9005/api/'
- {{- end }}
- {{- if .Values.additionalConfigs }}
- {{- toYaml .Values.additionalConfigs | nindent 2 }}
- {{- end }}
- {{- include "harnesscommon.monitoring.config" . | nindent 2 }}
+  {{- end }}
+  {{- if .Values.additionalConfigs }}
+  {{- toYaml .Values.additionalConfigs | nindent 2 }}
+  {{- end }}
+  {{- include "harnesscommon.monitoring.config" . | nindent 2 }}
 
 ---
 apiVersion: v1

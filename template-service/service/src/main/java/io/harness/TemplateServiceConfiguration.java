@@ -6,13 +6,15 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
@@ -26,6 +28,7 @@ import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
@@ -65,6 +68,8 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Slf4j
@@ -100,10 +105,12 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("templateAsyncSetupUsagePoolConfig") private ThreadPoolConfig templateAsyncSetupUsagePoolConfig;
+  @JsonProperty("templateServiceHelperPoolConfig") private ThreadPoolConfig templateServiceHelperPoolConfig;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("staticSchemaFileURL") private String staticSchemaFileURL;
   @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
+  @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
   private ServiceHttpClientConfig opaClientConfig;
   private String policyManagerSecret;
 

@@ -6,11 +6,14 @@
  */
 
 package io.harness.notification.templates;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PL)
 public enum PredefinedTemplate {
   EMAIL_TEST("templates/email_test.txt", "email_test"),
@@ -22,6 +25,7 @@ public enum PredefinedTemplate {
   MSTEAMS_TEST("templates/msteams_test.txt", "msteams_test"),
   EMAIL_INVITE("templates/email_invite.txt", "email_invite"),
   EMAIL_NOTIFY("templates/email_notify.txt", "email_notify"),
+  NG_RESET_PASSWORD("templates/ng_reset_password.txt", "ng_reset_password"),
   EMAIL_VERIFY("templates/email_verify.txt", "default_email_verify"),
   SIGNUP_CONFIRMATION("templates/signup_confirmation.txt", "default_signup_confirmation"),
   EMAIL_TEST_WITH_USER("templates/email_test2.txt", "email_test2"),
@@ -79,6 +83,16 @@ public enum PredefinedTemplate {
       "cvng_notification_templates/cvng_monitoredservice_slack.txt", "cvng_monitoredservice_slack"),
   CVNG_MONITOREDSERVICE_ET_SLACK(
       "cvng_notification_templates/cvng_monitoredservice_et_slack.txt", "cvng_monitoredservice_et_slack"),
+
+  CVNG_MONITOREDSERVICE_REPORT_SLACK(
+      "cvng_notification_templates/cvng_monitoredservice_report_slack.txt", "cvng_monitoredservice_report_slack"),
+  CVNG_MONITOREDSERVICE_REPORT_EMAIL(
+      "cvng_notification_templates/cvng_monitoredservice_report_email.txt", "cvng_monitoredservice_report_email"),
+  CVNG_MONITOREDSERVICE_REPORT_PAGERDUTY("cvng_notification_templates/cvng_monitoredservice_report_pagerduty.txt",
+      "cvng_monitoredservice_report_pagerduty"),
+
+  CVNG_MONITOREDSERVICE_REPORT_MSTEAMS(
+      "cvng_notification_templates/cvng_monitoredservice_report_msteams.txt", "cvng_monitoredservice_report_msteams"),
   CVNG_MONITOREDSERVICE_EMAIL(
       "cvng_notification_templates/cvng_monitoredservice_email.txt", "cvng_monitoredservice_email"),
   CVNG_MONITOREDSERVICE_ET_EMAIL(
@@ -124,7 +138,9 @@ public enum PredefinedTemplate {
   HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_MSTEAMS(
       "notification_templates/approval/msteams/plain_text_action_execution.txt",
       "harness_approval_action_execution_msteams"),
-  SLACK_CCM_BUDGET_GROUP_ALERT("templates/slack_ccm_budget_group_alert.txt", "slack_ccm_budget_group_alert");
+  SLACK_CCM_BUDGET_GROUP_ALERT("templates/slack_ccm_budget_group_alert.txt", "slack_ccm_budget_group_alert"),
+  IDP_PLUGIN_REQUESTS_NOTIFICATION_SLACK(
+      "notification_templates/slack/plugin_requests.txt", "idp_plugin_requests_notification_slack");
 
   private String path;
   private String identifier;

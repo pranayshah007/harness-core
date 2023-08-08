@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CfClientModule extends AbstractModule {
+  public static final String BATCH_PROCESSING_ON_PREM = "BATCH_PROCESSING_ON_PREM";
   private static volatile CfClientModule instance;
 
   public static CfClientModule getInstance() {
@@ -39,6 +40,10 @@ public class CfClientModule extends AbstractModule {
     log.info("Using CF API key {}", apiKey);
     if (isEmpty(apiKey)) {
       apiKey = "fake";
+    }
+    // Passing ApiKey as BATCH_PROCESSING_ON_PREM for Batch-Processing service on SMP env
+    if (apiKey.equals(BATCH_PROCESSING_ON_PREM)) {
+      return CfClient.getInstance();
     }
 
     log.info("Creating Feature Flag Client");

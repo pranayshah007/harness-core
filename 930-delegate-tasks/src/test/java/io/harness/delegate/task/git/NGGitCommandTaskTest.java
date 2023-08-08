@@ -27,6 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitCommandTaskHandler;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -55,6 +56,7 @@ public class NGGitCommandTaskTest extends CategoryTest {
   @Mock private NGGitService gitService;
   @Mock private GitCommandTaskHandler gitCommandTaskHandler;
   @Mock private GitDecryptionHelper gitDecryptionHelper;
+  @Mock private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
   @InjectMocks
   NGGitCommandTask ngGitCommandTask = new NGGitCommandTask(
       DelegateTaskPackage.builder()
@@ -70,6 +72,7 @@ public class NGGitCommandTaskTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doNothing().when(gitDecryptionHelper).decryptGitConfig(any(GitConfigDTO.class), anyList());
     doNothing().when(gitDecryptionHelper).decryptApiAccessConfig(any(ScmConnector.class), anyList());
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
   }
 
   @Test

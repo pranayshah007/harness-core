@@ -242,14 +242,14 @@ public class GitAwarePersistenceNewImplTest extends GitSdkTestBase {
     }
     try (GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {
       GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(newBranch).build());
-      final List<SampleBean> sampleBeans = gitAwarePersistence.find(
-          new Criteria(), Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier, SampleBean.class);
+      final List<SampleBean> sampleBeans = gitAwarePersistence.find(new Criteria(), Pageable.unpaged(),
+          projectIdentifier, orgIdentifier, accountIdentifier, SampleBean.class, false);
       assertThat(sampleBeans.size()).isEqualTo(2);
     }
     try (GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {
       GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branch_1).build());
-      final List<SampleBean> sampleBeans = gitAwarePersistence.find(
-          new Criteria(), Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier, SampleBean.class);
+      final List<SampleBean> sampleBeans = gitAwarePersistence.find(new Criteria(), Pageable.unpaged(),
+          projectIdentifier, orgIdentifier, accountIdentifier, SampleBean.class, false);
       assertThat(sampleBeans.size()).isEqualTo(1);
     }
   }
@@ -295,8 +295,8 @@ public class GitAwarePersistenceNewImplTest extends GitSdkTestBase {
       final GitEntityInfo finalBranch =
           GitEntityInfo.builder().branch("branch").yamlGitConfigId("ygs").findDefaultFromOtherRepos(true).build();
       GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(finalBranch).build());
-      final List<SampleBean> sampleBeans = gitAwarePersistence.find(
-          new Criteria(), Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier, SampleBean.class);
+      final List<SampleBean> sampleBeans = gitAwarePersistence.find(new Criteria(), Pageable.unpaged(),
+          projectIdentifier, orgIdentifier, accountIdentifier, SampleBean.class, false);
       assertThat(sampleBeans.size()).isEqualTo(2);
     }
   }

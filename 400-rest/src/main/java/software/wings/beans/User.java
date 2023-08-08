@@ -321,7 +321,7 @@ public class User extends Base implements Principal {
    * @return the email
    */
   public String getEmail() {
-    return email;
+    return isEmpty(email) ? email : email.toLowerCase();
   }
 
   /**
@@ -330,7 +330,7 @@ public class User extends Base implements Principal {
    * @param email the email
    */
   public void setEmail(String email) {
-    this.email = email;
+    this.email = isEmpty(email) ? email : email.toLowerCase();
   }
 
   public String getExternalUserId() {

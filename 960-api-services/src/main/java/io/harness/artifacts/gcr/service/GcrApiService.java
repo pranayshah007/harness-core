@@ -6,10 +6,12 @@
  */
 
 package io.harness.artifacts.gcr.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 
@@ -18,6 +20,8 @@ import java.util.List;
 /**
  * Created by brett on 8/2/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface GcrApiService {
   int MAX_NO_OF_TAGS_PER_IMAGE = 10000;

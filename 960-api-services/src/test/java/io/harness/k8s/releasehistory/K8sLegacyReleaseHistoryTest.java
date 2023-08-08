@@ -123,82 +123,62 @@ public class K8sLegacyReleaseHistoryTest extends CategoryTest {
   @Test
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
-  public void getLatestSuccessfulBlueGreenReleaseTest() {
+  public void getBlueGreenStageReleaseTest() {
+    // Non BG Workload
     ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-
-    K8sLegacyRelease release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    K8sLegacyRelease release = releaseHistory.getBlueGreenStageRelease();
     assertThat(release).isNull();
 
+    // BG Workload but bgEnv not set
     releaseHistory = createNewRelease(ImmutableList.of(
         KubernetesResourceId.builder().kind("Deployment").name("nginx-blue").namespace("default").build()));
-
-    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    release = releaseHistory.getBlueGreenStageRelease();
     assertThat(release).isNull();
 
-    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
-    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    // Release is not dependent on status of stage environment
+    releaseHistory = createNewBGRelease();
+    release = releaseHistory.getBlueGreenStageRelease();
     assertThat(release).isNotNull();
-    assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
+    assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.InProgress);
 
-    releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
-    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
-    assertThat(release).isNull();
-
-    releaseHistory = createNewRelease(ImmutableList.of(
-        KubernetesResourceId.builder().kind("Deployment").name("nginx-green").namespace("default").build()));
-    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
-    assertThat(release).isNull();
-
+    // Status set of primary env does not affect outcome of stage env
     releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
-    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    release = releaseHistory.getBlueGreenStageRelease();
     assertThat(release).isNotNull();
-    assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
-
-    releaseHistory = createNewRelease(
-        ImmutableList.of(KubernetesResourceId.builder().kind("Deployment").name("nginx").namespace("default").build()));
-    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
-    assertThat(release).isNull();
-
-    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
-    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
-    assertThat(release).isNull();
+    assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.InProgress);
   }
 
   @Test
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
   public void testSetReleaseToReleaseHistory() {
-    ReleaseHistory releaseHistory = createNewRelease(ImmutableList.of(
-        KubernetesResourceId.builder().kind("Deployment").name("nginx-blue").namespace("default").build()));
-
+    ReleaseHistory releaseHistory = createNewBGRelease();
     releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
-    K8sLegacyRelease k8sLegacyRelease = K8sLegacyRelease.builder().status(IK8sRelease.Status.Failed).build();
-    releaseHistory.addReleaseToReleaseHistory(k8sLegacyRelease);
-    K8sLegacyRelease release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
-    release.setBgEnvironment(HarnessLabelValues.bgStageEnv);
+    K8sLegacyRelease release = releaseHistory.getBlueGreenStageRelease();
     release.setManifestHash("sampleManifestHash");
     assertThat(release).isNotNull();
-    assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
+    assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.InProgress);
     assertThat(release.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgStageEnv);
     assertThat(release.getManifestHash()).isEqualTo("sampleManifestHash");
-    release.setBgEnvironment(HarnessLabelValues.bgPrimaryEnv);
-    release.setManifestHash("differentManifestHash");
-    assertThat(releaseHistory.getReleases().size()).isEqualTo(2);
-    assertThat(releaseHistory.getReleases().get(1)).isEqualTo(release);
+    K8sLegacyRelease k8sLegacyRelease = K8sLegacyRelease.builder()
+                                            .bgEnvironment(HarnessLabelValues.bgStageEnv)
+                                            .manifestHash("differentManifestHash")
+                                            .build();
+    releaseHistory.addReleaseToReleaseHistory(k8sLegacyRelease);
+    assertThat(releaseHistory.getReleases().size()).isEqualTo(3);
+    assertThat(releaseHistory.getReleases().get(2)).isEqualTo(release);
     assertThat(releaseHistory.getReleases().get(1).getBgEnvironment()).isEqualTo(HarnessLabelValues.bgPrimaryEnv);
     assertThat(releaseHistory.getReleases().get(0)).isEqualTo(k8sLegacyRelease);
-    assertThat(releaseHistory.getReleases().get(1).getManifestHash()).isEqualTo("differentManifestHash");
+    assertThat(releaseHistory.getReleases().get(0).getManifestHash()).isEqualTo("differentManifestHash");
   }
 
   @Test
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
   public void testSetReleaseToReleaseHistoryInsertionOrder() {
-    ReleaseHistory releaseHistory = createNewRelease(ImmutableList.of(
-        KubernetesResourceId.builder().kind("Deployment").name("nginx-blue").namespace("default").build()));
-
+    ReleaseHistory releaseHistory = createNewBGRelease();
     releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
-    K8sLegacyRelease release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    K8sLegacyRelease release = releaseHistory.getBlueGreenStageRelease();
     K8sLegacyRelease newk8sLegacyRelease =
         K8sLegacyRelease.builder()
             .managedWorkload(
@@ -210,11 +190,11 @@ public class K8sLegacyReleaseHistoryTest extends CategoryTest {
     assertThat(newk8sLegacyRelease).isNotNull();
     assertThat(newk8sLegacyRelease.getStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
     assertThat(newk8sLegacyRelease.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgStageEnv);
-    newk8sLegacyRelease.setBgEnvironment(HarnessLabelValues.bgPrimaryEnv);
+    assertThat(releaseHistory.getBlueGreenStageRelease()).isEqualTo(newk8sLegacyRelease);
 
-    assertThat(releaseHistory.getReleases().size()).isEqualTo(2);
-    assertThat(releaseHistory.getReleases().get(1)).isEqualTo(release);
-    assertThat(releaseHistory.getReleases().get(0)).isEqualTo(releaseHistory.getLatestSuccessfulBlueGreenRelease());
+    newk8sLegacyRelease.setBgEnvironment(HarnessLabelValues.bgPrimaryEnv);
+    assertThat(releaseHistory.getReleases().size()).isEqualTo(3);
+    assertThat(releaseHistory.getBlueGreenStageRelease()).isEqualTo(release);
     assertThat(releaseHistory.getReleases().get(0).getBgEnvironment()).isEqualTo(HarnessLabelValues.bgPrimaryEnv);
   }
 
@@ -222,6 +202,25 @@ public class K8sLegacyReleaseHistoryTest extends CategoryTest {
     List<K8sLegacyRelease> k8sLegacyReleases = new ArrayList<>();
     k8sLegacyReleases.add(
         0, K8sLegacyRelease.builder().status(IK8sRelease.Status.InProgress).managedWorkload(resources.get(0)).build());
+    return ReleaseHistory.builder().releases(k8sLegacyReleases).build();
+  }
+
+  private ReleaseHistory createNewBGRelease() {
+    List<K8sLegacyRelease> k8sLegacyReleases = new ArrayList<>();
+    k8sLegacyReleases.add(0,
+        K8sLegacyRelease.builder()
+            .status(IK8sRelease.Status.InProgress)
+            .managedWorkload(
+                KubernetesResourceId.builder().kind("Deployment").name("nginx-blue").namespace("default").build())
+            .bgEnvironment(HarnessLabelValues.bgPrimaryEnv)
+            .build());
+    k8sLegacyReleases.add(1,
+        K8sLegacyRelease.builder()
+            .status(IK8sRelease.Status.InProgress)
+            .managedWorkload(
+                KubernetesResourceId.builder().kind("Deployment").name("nginx-green").namespace("default").build())
+            .bgEnvironment(HarnessLabelValues.bgStageEnv)
+            .build());
     return ReleaseHistory.builder().releases(k8sLegacyReleases).build();
   }
 }

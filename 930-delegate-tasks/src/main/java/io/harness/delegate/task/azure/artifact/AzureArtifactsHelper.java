@@ -6,15 +6,18 @@
  */
 
 package io.harness.delegate.task.azure.artifact;
-
 import static io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig.toInternalConfig;
 import static io.harness.delegate.utils.AzureArtifactsUtils.getDecryptedToken;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
+import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsDownloadHelper;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
@@ -31,6 +34,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class AzureArtifactsHelper {
@@ -38,17 +43,22 @@ public class AzureArtifactsHelper {
   @Inject private SecretDecryptionService secretDecryptionService;
 
   public String getArtifactFileName(AzureArtifactDelegateConfig azureArtifactDelegateConfig) {
-    AzureArtifactsInternalConfig azureArtifactsInternalConfig = toInternalConfig(
-        azureArtifactDelegateConfig, getDecryptedToken(azureArtifactDelegateConfig, secretDecryptionService));
-    List<AzureArtifactsPackageFileInfo> files = azureArtifactsRegistryService.listPackageFiles(
-        azureArtifactsInternalConfig, azureArtifactDelegateConfig.getProject(), azureArtifactDelegateConfig.getFeed(),
-        azureArtifactDelegateConfig.getPackageType(), azureArtifactDelegateConfig.getPackageName(),
-        azureArtifactDelegateConfig.getVersion());
-    String artifactFileName = files.stream()
-                                  .map(AzureArtifactsPackageFileInfo::getName)
-                                  .filter(AzureArtifactsDownloadHelper::shouldDownloadFile)
-                                  .findFirst()
-                                  .orElse(null);
+    String artifactFileName;
+    if (AzureArtifactsProtocolType.upack.name().equals(azureArtifactDelegateConfig.getPackageType())) {
+      artifactFileName = azureArtifactDelegateConfig.getPackageName();
+    } else {
+      AzureArtifactsInternalConfig azureArtifactsInternalConfig = toInternalConfig(
+          azureArtifactDelegateConfig, getDecryptedToken(azureArtifactDelegateConfig, secretDecryptionService));
+      List<AzureArtifactsPackageFileInfo> files = azureArtifactsRegistryService.listPackageFiles(
+          azureArtifactsInternalConfig, azureArtifactDelegateConfig.getProject(), azureArtifactDelegateConfig.getFeed(),
+          azureArtifactDelegateConfig.getPackageType(), azureArtifactDelegateConfig.getPackageName(),
+          azureArtifactDelegateConfig.getVersion());
+      artifactFileName = files.stream()
+                             .map(AzureArtifactsPackageFileInfo::getName)
+                             .filter(AzureArtifactsDownloadHelper::shouldDownloadFile)
+                             .findFirst()
+                             .orElse(null);
+    }
 
     if (isBlank(artifactFileName)) {
       String message = "No file available for downloading the package " + azureArtifactDelegateConfig.getPackageName();

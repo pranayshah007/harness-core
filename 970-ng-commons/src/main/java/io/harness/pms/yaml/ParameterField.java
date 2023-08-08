@@ -133,6 +133,10 @@ public class ParameterField<T> {
     value = (T) newValue;
   }
 
+  public void updateValueOnly(Object newValue) {
+    value = (T) newValue;
+  }
+
   @JsonIgnore
   public Object getJsonFieldValue() {
     if (expression) {

@@ -6,16 +6,22 @@
  */
 
 package io.harness.cdng.provision.terraform;
-
+import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.cdng.provision.terraform.TerraformInlineVarFileConfig")
 public class TerraformInlineVarFileConfig implements TerraformVarFileConfig {
   String identifier;
   String varFileContent;

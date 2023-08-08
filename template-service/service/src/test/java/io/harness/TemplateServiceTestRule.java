@@ -6,7 +6,6 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
@@ -15,7 +14,10 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static org.mockito.Mockito.mock;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
@@ -34,6 +36,7 @@ import io.harness.gitsync.persistance.testing.NoOpGitAwarePersistenceImpl;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
@@ -73,6 +76,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import io.dropwizard.jackson.Jackson;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -84,6 +88,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
@@ -94,6 +100,8 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Slf4j
 @OwnedBy(CDC)
 public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMixin {
@@ -204,6 +212,9 @@ public class TemplateServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
         bind(CustomDeploymentResourceClient.class).toInstance(mock(CustomDeploymentResourceClient.class));
         bind(NGTemplateFeatureFlagHelperService.class).toInstance(mock(NGTemplateFeatureFlagHelperService.class));
+        bind(ExecutorService.class)
+            .annotatedWith(Names.named("TemplateServiceHelperExecutorService"))
+            .toInstance(new ManagedExecutorService(Executors.newFixedThreadPool(5)));
       }
     });
 

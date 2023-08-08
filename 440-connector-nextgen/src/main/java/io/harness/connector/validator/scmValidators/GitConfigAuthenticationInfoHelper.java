@@ -10,15 +10,22 @@ package io.harness.connector.validator.scmValidators;
 import static io.harness.connector.helper.GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity;
 import static io.harness.connector.helper.GitApiAccessDecryptionHelper.hasApiAccess;
 import static io.harness.delegate.beans.connector.scm.GitAuthType.SSH;
+import static io.harness.remote.client.CGRestUtils.getResponse;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.account.AccountClient;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.connector.helper.EncryptionHelper;
+import io.harness.connector.task.git.GitAuthenticationDecryptionHelper;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitSSHAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
@@ -34,6 +41,7 @@ import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,17 +50,23 @@ public class GitConfigAuthenticationInfoHelper {
   @Inject EncryptionHelper encryptionHelper;
   @Inject SshKeySpecDTOHelper sshKeySpecDTOHelper;
   @Inject SecretCrudService secretCrudService;
+  @Inject AccountClient accountClient;
 
   public List<EncryptedDataDetail> getEncryptedDataDetails(
-      GitConfigDTO gitConfig, SSHKeySpecDTO sshKeySpecDTO, NGAccess ngAccess) {
-    switch (gitConfig.getGitAuthType()) {
-      case HTTP:
-        return getEncryptionDetail(gitConfig.getGitAuth(), ngAccess);
-      case SSH:
-        return sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDTO, ngAccess);
-      default:
-        throw new UnknownEnumTypeException("Git Authentication Type",
-            gitConfig.getGitAuthType() == null ? null : gitConfig.getGitAuthType().getDisplayName());
+      ScmConnector scmConnector, SSHKeySpecDTO sshKeySpecDTO, NGAccess ngAccess) {
+    if (GitAuthenticationDecryptionHelper.isGitHubAppAuthentication(scmConnector)) {
+      return getGithubAppEncryptedDataDetail(scmConnector, ngAccess);
+    } else {
+      GitConfigDTO gitConfig = ScmConnectorMapper.toGitConfigDTO(scmConnector);
+      switch (gitConfig.getGitAuthType()) {
+        case HTTP:
+          return getEncryptionDetail(gitConfig.getGitAuth(), ngAccess);
+        case SSH:
+          return sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(sshKeySpecDTO, ngAccess);
+        default:
+          throw new UnknownEnumTypeException("Git Authentication Type",
+              gitConfig.getGitAuthType() == null ? null : gitConfig.getGitAuthType().getDisplayName());
+      }
     }
   }
   public List<EncryptedDataDetail> getApiAccessEncryptedDataDetail(ScmConnector scmConnector, NGAccess ngAccess) {
@@ -60,6 +74,21 @@ public class GitConfigAuthenticationInfoHelper {
       return getEncryptionDetail(getAPIAccessDecryptableEntity(scmConnector), ngAccess);
     }
     return emptyList();
+  }
+
+  public List<EncryptedDataDetail> getGithubAppEncryptedDataDetail(ScmConnector scmConnector, NGAccess ngAccess) {
+    if (scmConnector instanceof GitConfigDTO) {
+      return Collections.emptyList();
+    }
+    GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
+    if (getResponse(accountClient.isFeatureFlagEnabled(
+            FeatureName.CDS_GITHUB_APP_AUTHENTICATION.name(), ngAccess.getAccountIdentifier()))) {
+      return getEncryptionDetail(
+          ((GithubHttpCredentialsDTO) githubConnectorDTO.getAuthentication().getCredentials()).getHttpCredentialsSpec(),
+          ngAccess);
+    } else {
+      return Collections.emptyList();
+    }
   }
 
   private List<EncryptedDataDetail> getEncryptionDetail(DecryptableEntity decryptableEntity, NGAccess ngAccess) {

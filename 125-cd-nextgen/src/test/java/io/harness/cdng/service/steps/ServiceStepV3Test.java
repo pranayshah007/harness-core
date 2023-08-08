@@ -319,7 +319,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
@@ -365,7 +365,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
@@ -399,7 +399,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
@@ -432,7 +432,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
@@ -465,7 +465,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
   }
 
   @Test
@@ -668,7 +668,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
@@ -723,7 +723,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
     ArgumentCaptor<List> secretVariablesCaptor = ArgumentCaptor.forClass(List.class);
     verify(serviceStepsHelper).checkForAccessOrThrow(any(Ambiance.class), secretVariablesCaptor.capture());
     List<NGVariable> variables = secretVariablesCaptor.getValue();
@@ -761,7 +761,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
     ArgumentCaptor<EnvironmentOutcome> envOutcomeCaptor = ArgumentCaptor.forClass(EnvironmentOutcome.class);
     verify(sweepingOutputService).consume(any(Ambiance.class), anyString(), envOutcomeCaptor.capture(), anyString());
     EnvironmentOutcome envOutcome = envOutcomeCaptor.getValue();
@@ -813,7 +813,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<VariablesSweepingOutput> varOutputCaptor = ArgumentCaptor.forClass(VariablesSweepingOutput.class);
     verify(sweepingOutputService).consume(any(Ambiance.class), anyString(), varOutputCaptor.capture(), anyString());
@@ -867,7 +867,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);

@@ -199,7 +199,7 @@ public class CILicenseUsageTest extends CategoryTest {
                                     .timestamp(time)
                                     .build();
     Pageable pageRequest = PageableUtils.getPageRequest(
-        1, 30, List.of("lastBuild,ASC", "projectIdentifier,DESC"), Sort.by(Sort.Direction.DESC, "identifier"));
+        0, 30, List.of("lastBuild,ASC", "projectIdentifier,DESC"), Sort.by(Sort.Direction.DESC, "identifier"));
     DefaultPageableUsageRequestParams requestParams =
         DefaultPageableUsageRequestParams.builder().pageRequest(pageRequest).build();
 

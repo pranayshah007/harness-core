@@ -8,15 +8,19 @@
 package io.harness.artifactory;
 
 import static io.harness.artifactory.ArtifactoryClientImpl.getArtifactoryClient;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toList;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.docker;
 import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.maven;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.NestedExceptionUtils;
 
@@ -27,10 +31,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -38,11 +44,13 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jfrog.artifactory.client.model.impl.PackageTypeImpl;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_AMI_ASG})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
-  private static String ARTIFACT_PATH_FILTER_SEARCH_WILDCARD_TERM = "*";
+  private static final String ARTIFACT_PATH_FILTER_SEARCH_WILDCARD_TERM = "*";
   @Inject ArtifactoryClientImpl artifactoryClient;
 
   @Override
@@ -52,12 +60,16 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
   }
 
   @Override
-  public List<BuildDetails> getArtifactList(
-      ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String artifactPath, int maxVersions) {
+  public List<BuildDetails> getArtifactList(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
+      String artifactPath, int maxVersions, String artifactPathFilter, String artifactDirectory) {
+    if (isNotEmpty(artifactPathFilter)) {
+      return getArtifactListWithPathFilter(
+          artifactoryConfig, repositoryName, artifactDirectory, artifactPathFilter, maxVersions);
+    }
     return artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, artifactPath, maxVersions);
   }
 
-  private List<BuildDetails> getLatestArtifactForArtifactPath(ArtifactoryConfigRequest artifactoryConfig,
+  private List<BuildDetails> getArtifactListWithArtifactPath(ArtifactoryConfigRequest artifactoryConfig,
       String repositoryName, String artifactDirectory, String artifactPath, int maxVersions) {
     String filePath = Paths.get(artifactDirectory, artifactPath).toString();
     List<BuildDetails> buildDetails =
@@ -71,9 +83,28 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
     return buildDetails;
   }
 
-  private List<BuildDetails> getLatestArtifactForArtifactPathFilter(ArtifactoryConfigRequest artifactoryConfig,
+  private Optional<BuildDetails> getLatestArtifactUsingExactPath(ArtifactoryConfigRequest artifactoryConfig,
+      String repositoryName, String artifactDirectory, String artifactPath, int maxVersions) {
+    // convert A/*/* -> A/
+    String[] directoryElements = artifactDirectory.split("/");
+    List<String> regexRemovedDirectory = new ArrayList<>();
+    for (String directoryElement : directoryElements) {
+      if (!directoryElement.contains("*")) {
+        regexRemovedDirectory.add(directoryElement);
+      }
+    }
+    String finalDirectory = String.join("/", regexRemovedDirectory);
+    String finalFilePath = Paths.get(finalDirectory, artifactPath).toString();
+
+    List<BuildDetails> artifactList =
+        artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, finalFilePath, maxVersions);
+
+    return isNotEmpty(artifactList) ? Optional.ofNullable(artifactList.get(0)) : Optional.empty();
+  }
+
+  private List<BuildDetails> getArtifactListWithPathFilter(ArtifactoryConfigRequest artifactoryConfig,
       String repositoryName, String artifactDirectory, String artifactPathFilter, int maxVersions) {
-    Pattern artifactPathRegexPattern = null;
+    final Pattern artifactPathRegexPattern;
     try {
       artifactPathRegexPattern = Pattern.compile(artifactPathFilter);
     } catch (PatternSyntaxException e) {
@@ -86,7 +117,7 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
         artifactoryClient.getArtifactList(artifactoryConfig, repositoryName, filePath, maxVersions);
 
     Pattern finalArtifactPathRegexPattern = artifactPathRegexPattern;
-    int directoryPathLength = EmptyPredicate.isNotEmpty(artifactDirectory)
+    int directoryPathLength = isNotEmpty(artifactDirectory)
         ? filePath.equalsIgnoreCase("/*") ? 0 : filePath.length() - ARTIFACT_PATH_FILTER_SEARCH_WILDCARD_TERM.length()
         : 0;
     return buildDetails.stream()
@@ -102,22 +133,30 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
   @Override
   public BuildDetails getLatestArtifact(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
       String artifactDirectory, String artifactPathFilter, String artifactPath, int maxVersions) {
-    List<BuildDetails> buildDetails = null;
-    if (EmptyPredicate.isEmpty(artifactPath) && EmptyPredicate.isEmpty(artifactPathFilter)) {
+    final BuildDetails build;
+    if (isEmpty(artifactPath) && isEmpty(artifactPathFilter)) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Please check ArtifactPath/ArtifactPathFilter field in Artifactory artifact configuration.",
           "Both Artifact Path and Artifact Path Filter cannot be empty",
           new ArtifactoryRegistryException("Could not find an artifact"));
-    } else if (EmptyPredicate.isEmpty(artifactPathFilter)) {
-      buildDetails = getLatestArtifactForArtifactPath(
+    } else if (isEmpty(artifactPathFilter)) {
+      List<BuildDetails> builds = getArtifactListWithArtifactPath(
           artifactoryConfig, repositoryName, artifactDirectory, artifactPath, maxVersions);
+      if (isNotEmpty(builds)) {
+        build = builds.get(0);
+      } else {
+        Optional<BuildDetails> buildDetail = getLatestArtifactUsingExactPath(
+            artifactoryConfig, repositoryName, artifactDirectory, artifactPath, maxVersions);
+        build = buildDetail.orElse(null);
+      }
     } else {
-      buildDetails = getLatestArtifactForArtifactPathFilter(
+      List<BuildDetails> builds = getArtifactListWithPathFilter(
           artifactoryConfig, repositoryName, artifactDirectory, artifactPathFilter, maxVersions);
+      build = isNotEmpty(builds) ? builds.get(0) : null;
     }
 
-    if (buildDetails.isEmpty()) {
-      if (EmptyPredicate.isEmpty(artifactPath)) {
+    if (build == null) {
+      if (isEmpty(artifactPath)) {
         throw NestedExceptionUtils.hintWithExplanationException(
             "Please check artifactPathFilter or artifactDirectory or repository field in Artifactory artifact .",
             String.format("Could not find any Artifact that match artifactPathFilter [%s] for Artifactory repository"
@@ -136,7 +175,7 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
       }
     }
 
-    return buildDetails.get(0);
+    return build;
   }
 
   @Override
@@ -159,7 +198,7 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
   @Override
   public List<ArtifactoryImagePath> getImagePaths(ArtifactoryConfigRequest artifactoryConfig, String repoKey) {
     List<String> repos = artifactoryClient.listDockerImages(getArtifactoryClient(artifactoryConfig), repoKey);
-    if (EmptyPredicate.isEmpty(repos)) {
+    if (isEmpty(repos)) {
       return Collections.emptyList();
     }
     return repos.stream().map(repo -> ArtifactoryImagePath.builder().imagePath(repo).build()).collect(toList());

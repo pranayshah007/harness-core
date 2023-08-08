@@ -6,11 +6,13 @@
  */
 
 package io.harness.ci.plugin;
-
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIAbstractStepNode;
@@ -37,6 +39,7 @@ import io.harness.pms.sdk.core.plugin.SecretNgVariableUtils;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
+import com.google.protobuf.BoolValue;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -44,6 +47,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class CiPluginStepInfoProvider implements PluginInfoProvider {
   @Inject K8InitializeStepUtils k8InitializeStepUtils;
@@ -73,6 +78,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     PluginDetails.Builder pluginDetailsBuilder =
         PluginDetails.newBuilder()
             .putAllEnvVariables(containerDefinitionInfo.getEnvVars())
+            .setIsHarnessManaged(BoolValue.of(containerDefinitionInfo.isHarnessManagedImage()))
             .setImageDetails(
                 ImageDetails.newBuilder()
                     .setImageInformation(ImageDetailsUtils.getImageDetails(

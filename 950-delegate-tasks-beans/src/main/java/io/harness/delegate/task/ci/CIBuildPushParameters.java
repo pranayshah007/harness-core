@@ -33,6 +33,7 @@ public abstract class CIBuildPushParameters implements TaskParameters, Execution
   private String repo;
   private String owner;
   private String sha;
+  private String prNumber;
   private String identifier;
   private String target_url;
   private String key; // TODO it will come via github app connector with encrypted details
@@ -46,13 +47,14 @@ public abstract class CIBuildPushParameters implements TaskParameters, Execution
   public enum CIBuildPushTaskType { STATUS, CHECKS }
 
   public CIBuildPushParameters(String buildNumber, String detailsUrl, String repo, String owner, String sha,
-      String identifier, String target_url, String key, String installId, String appId, String token, String userName,
-      GitSCMType gitSCMType, ConnectorDetails connectorDetails) {
+      String prNumber, String identifier, String target_url, String key, String installId, String appId, String token,
+      String userName, GitSCMType gitSCMType, ConnectorDetails connectorDetails) {
     this.buildNumber = buildNumber;
     this.detailsUrl = detailsUrl;
     this.repo = repo;
     this.owner = owner;
     this.sha = sha;
+    this.prNumber = prNumber;
     this.identifier = identifier;
     this.target_url = target_url;
     this.key = key;

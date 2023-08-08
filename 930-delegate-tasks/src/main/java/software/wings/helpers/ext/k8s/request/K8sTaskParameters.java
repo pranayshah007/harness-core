@@ -6,18 +6,21 @@
  */
 
 package software.wings.helpers.ext.k8s.request;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.Expression.DISALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.KustomizeCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
+import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sTaskType;
@@ -34,6 +37,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Data
 @AllArgsConstructor
 @OwnedBy(CDP)
@@ -85,6 +89,19 @@ public class K8sTaskParameters implements TaskParameters, ActivityAccess, Execut
     }
     if (isNotEmpty(delegateSelectors)) {
       executionCapabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());
+    }
+
+    return executionCapabilities;
+  }
+
+  protected List<ExecutionCapability> getSecretManagerExecutionCapabilities(
+      ExpressionEvaluator maskingEvaluator, K8sDelegateManifestConfig manifestConfig) {
+    final List<ExecutionCapability> executionCapabilities = new ArrayList<>();
+
+    if (manifestConfig != null && manifestConfig.isSecretManagerCapabilitiesEnabled()) {
+      executionCapabilities.addAll(
+          EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+              manifestConfig.getEncryptedDataDetails(), maskingEvaluator));
     }
 
     return executionCapabilities;

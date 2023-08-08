@@ -6,12 +6,15 @@
  */
 
 package io.harness.servicenow.auth.refreshtoken;
-
 import static io.harness.servicenow.auth.refreshtoken.RefreshTokenConstants.INVALID_CREDENTIALS;
 import static io.harness.servicenow.auth.refreshtoken.RefreshTokenConstants.NOT_FOUND;
 import static io.harness.servicenow.auth.refreshtoken.RefreshTokenExceptionUtils.throwRefreshTokenException;
 
 import static java.util.Objects.isNull;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +23,7 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @UtilityClass
 @Slf4j
 public class RefreshTokenResponseHandler {

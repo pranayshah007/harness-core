@@ -160,6 +160,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
         validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
       }
       validationUtils.validateStage(integrationStageConfig.getExecution(), infrastructure);
+      validationUtils.validateCacheIntel(integrationStageConfig.getCaching(), infrastructure);
     }
   }
 

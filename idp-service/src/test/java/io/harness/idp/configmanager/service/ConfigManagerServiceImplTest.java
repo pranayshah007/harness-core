@@ -182,13 +182,13 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testSaveConfigForAccount() throws Exception {
+  public void testSaveConfigForAccount() {
     BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();
     backstageEnvSecretVariable.setHarnessSecretIdentifier(TEST_SECRET_ID);
     backstageEnvSecretVariable.envName(TEST_SECRET_ENV_NAME);
     when(configEnvVariablesService.insertConfigEnvVariables(any(AppConfig.class), any(String.class)))
         .thenReturn(Arrays.asList(backstageEnvSecretVariable));
-    when(pluginsProxyInfoService.insertProxyHostDetailsForPlugin(any(), any()))
+    when(pluginsProxyInfoService.insertProxyHostDetailsForPlugin(any(), any(), any()))
         .thenReturn(Collections.singletonList(new ProxyHostDetail()));
     when(appConfigRepository.save(any(AppConfigEntity.class))).thenReturn(getTestAppConfigEntity());
     AppConfig appConfig = new AppConfig();
@@ -225,13 +225,13 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testUpdateConfigForAccount() throws Exception {
+  public void testUpdateConfigForAccount() {
     BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();
     backstageEnvSecretVariable.setHarnessSecretIdentifier(TEST_SECRET_ID);
     backstageEnvSecretVariable.envName(TEST_SECRET_ENV_NAME);
     when(configEnvVariablesService.updateConfigEnvVariables(any(AppConfig.class), any(String.class)))
         .thenReturn(Arrays.asList(backstageEnvSecretVariable));
-    when(pluginsProxyInfoService.updateProxyHostDetailsForPlugin(any(), any()))
+    when(pluginsProxyInfoService.updateProxyHostDetailsForPlugin(any(), any(), any()))
         .thenReturn(Collections.singletonList(new ProxyHostDetail()));
     when(appConfigRepository.updateConfig(any(AppConfigEntity.class), any(ConfigType.class))).thenReturn(null);
     AppConfig appConfig = new AppConfig();

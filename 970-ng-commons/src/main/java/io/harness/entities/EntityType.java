@@ -7,8 +7,11 @@
 
 package io.harness;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.InputSetReference;
@@ -26,6 +29,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.DX)
 // todo(abhinav): refactor/adapt this according to needs later depending on how service registration comes in
 // one more enum might come in here for product types.
@@ -406,12 +411,14 @@ public enum EntityType {
       EntityYamlRootNames.SHELL_SCRIPT_PROVISION_STEP),
   @JsonProperty(EntityTypeConstants.FREEZE)
   FREEZE(ModuleType.CD, EntityTypeConstants.FREEZE, IdentifierRef.class, EntityYamlRootNames.FREEZE),
+
   @JsonProperty(EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO(ModuleType.CD, EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO, IdentifierRef.class,
       EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO),
   @JsonProperty(EntityTypeConstants.GITOPS_FETCH_LINKED_APPS)
   GITOPS_FETCH_LINKED_APPS(ModuleType.CD, EntityTypeConstants.GITOPS_FETCH_LINKED_APPS, IdentifierRef.class,
       EntityYamlRootNames.GITOPS_FETCH_LINKED_APPS),
+
   @JsonProperty(EntityTypeConstants.ECS_RUN_TASK)
   ECS_RUN_TASK_STEP(
       ModuleType.CD, EntityTypeConstants.ECS_RUN_TASK, IdentifierRef.class, EntityYamlRootNames.ECS_RUN_TASK),
@@ -618,7 +625,24 @@ public enum EntityType {
       EntityYamlRootNames.ANALYZE_DEPLOYMENT_IMPACT),
   @JsonProperty(EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)
   SERVERLESS_AWS_LAMBDA_PACKAGE_V2(ModuleType.CD, EntityTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2,
-      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PACKAGE_V2);
+      IdentifierRef.class, EntityYamlRootNames.SERVERLESS_AWS_LAMBDA_PACKAGE_V2),
+  @JsonProperty(EntityTypeConstants.GITOPS_REVERT_PR)
+  GITOPS_REVERT_PR(
+      ModuleType.CD, EntityTypeConstants.GITOPS_REVERT_PR, IdentifierRef.class, EntityYamlRootNames.GITOPS_REVERT_PR),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_BOOTSTRAP)
+  AWS_CDK_BOOTSTRAP(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_BOOTSTRAP, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_BOOTSTRAP),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_SYNTH)
+  AWS_CDK_SYNTH(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_SYNTH, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_SYNTH),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_DIFF)
+  AWS_CDK_DIFF(ModuleType.CD, EntityTypeConstants.AWS_CDK_DIFF, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DIFF),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_DEPLOY)
+  AWS_CDK_DEPLOY(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DEPLOY),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_DESTROY)
+  AWS_CDK_DESTROY(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_DESTROY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DESTROY);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.envGroup.mappers;
-
 import static io.harness.NGConstants.HARNESS_BLUE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,7 +13,10 @@ import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
@@ -38,6 +40,8 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @UtilityClass
 @Slf4j
@@ -58,6 +62,7 @@ public class EnvironmentGroupMapper {
         .envIdentifiers(envGroup.getEnvIdentifiers())
         .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(envGroup))
         .envResponse(CollectionUtils.emptyIfNull(envResponseList))
+        .yaml(envGroup.getYaml())
         .build();
   }
 

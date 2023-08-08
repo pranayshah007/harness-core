@@ -44,6 +44,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
+import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.AccountOrgProjectHelper;
@@ -119,6 +120,7 @@ public class InviteServiceImplTest extends CategoryTest {
   @Mock private AccountOrgProjectHelper accountOrgProjectHelper;
   @Mock private TelemetryReporter telemetryReporter;
   @Mock private ScheduledExecutorService executorService;
+  @Mock private EnforcementClientService enforcementClientService;
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Captor private ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor;
 
@@ -130,7 +132,8 @@ public class InviteServiceImplTest extends CategoryTest {
     MongoConfig mongoConfig = MongoConfig.builder().uri("mongodb://localhost:27017/ng-harness").build();
     inviteService = new InviteServiceImpl(USER_VERIFICATION_SECRET, mongoConfig, jwtGeneratorUtils, ngUserService,
         transactionTemplate, inviteRepository, notificationClient, accountClient, outboxService, accessControlClient,
-        userClient, accountOrgProjectHelper, false, telemetryReporter, ngFeatureFlagHelperService, executorService);
+        userClient, accountOrgProjectHelper, false, telemetryReporter, ngFeatureFlagHelperService, executorService,
+        enforcementClientService);
 
     when(accountClient.getAccountDTO(any()).execute())
         .thenReturn(Response.success(new RestResponse(AccountDTO.builder()

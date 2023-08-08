@@ -6,14 +6,15 @@
  */
 
 package io.harness.pms.pipelinestage.step;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.OrchestrationStepTypes;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -32,6 +33,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
+import io.harness.pms.pipelinestage.outcome.PipelineStageOutcome;
 import io.harness.pms.pipelinestage.output.PipelineStageSweepingOutput;
 import io.harness.pms.plan.execution.PipelineExecutor;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
@@ -57,6 +59,7 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageStepParameters> {
@@ -127,18 +130,11 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
 
     PipelineStageInfo info = prepareParentStageInfo(ambiance, stepParameters);
     try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("[PMS_PIPELINE_STAGE_STEP]")) {
-      if (!isEmpty(stepParameters.getPipelineInputsJsonNode())) {
-        responseDto =
-            pipelineExecutor.runPipelineAsChildPipelineWithJsonNode(ambiance.getSetupAbstractions().get("accountId"),
-                stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
-                ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputsJsonNode(), false, false,
-                stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
-      } else {
-        responseDto = pipelineExecutor.runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"),
-            stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
-            ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputs(), false, false,
-            stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
-      }
+      responseDto =
+          pipelineExecutor.runPipelineAsChildPipelineWithJsonNode(ambiance.getSetupAbstractions().get("accountId"),
+              stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
+              ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputsJsonNode(), false, false,
+              stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
     }
 
     if (responseDto == null) {
@@ -183,21 +179,24 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     Optional<NodeExecution> nodeExecutionOptional = nodeExecutionService.getPipelineNodeExecutionWithProjections(
         pipelineStageSweepingOutput.getChildExecutionId(), Collections.singleton(NodeExecutionKeys.ambiance));
 
+    PipelineStageOutcome resolvedOutcome;
     // NodeExecutionOptional can be empty when no node was executed in child execution
     if (nodeExecutionOptional.isPresent()) {
       nodeExecution = nodeExecutionOptional.get();
       childNodeAmbiance = nodeExecution.getAmbiance();
+      resolvedOutcome =
+          pipelineStageHelper.resolveOutputVariables(stepParameters.getOutputs().getValue(), childNodeAmbiance);
+    } else {
+      resolvedOutcome =
+          new PipelineStageOutcome(pipelineStageHelper.resolveOutputVariables(stepParameters.getOutputs().getValue()));
     }
 
     PipelineStageResponseData pipelineStageResponseData =
         (PipelineStageResponseData) responseDataMap.get(pipelineStageSweepingOutput.getChildExecutionId());
     return StepResponse.builder()
         .status(pipelineStageResponseData.getStatus())
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(OutputExpressionConstants.OUTPUT)
-                         .outcome(pipelineStageHelper.resolveOutputVariables(
-                             stepParameters.getOutputs().getValue(), childNodeAmbiance))
-                         .build())
+        .stepOutcome(
+            StepResponse.StepOutcome.builder().name(OutputExpressionConstants.OUTPUT).outcome(resolvedOutcome).build())
         .build();
   }
 }

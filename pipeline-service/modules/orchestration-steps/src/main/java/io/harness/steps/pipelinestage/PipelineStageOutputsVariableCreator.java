@@ -6,7 +6,9 @@
  */
 
 package io.harness.steps.pipelinestage;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.YamlProperties;
@@ -29,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class PipelineStageOutputsVariableCreator extends ChildrenVariableCreator<YamlField> {
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodes(
@@ -53,7 +56,7 @@ public class PipelineStageOutputsVariableCreator extends ChildrenVariableCreator
     List<YamlNode> variableNodes = variablesField.getNode().asArray();
     variableNodes.forEach(variableNode -> {
       YamlField uuidNode = variableNode.getField(YAMLFieldNameConstants.UUID);
-      if (uuidNode != null) {
+      if (uuidNode != null && variableNode.getField(YAMLFieldNameConstants.VALUE) != null) {
         YamlField valueNode = variableNode.getField(YAMLFieldNameConstants.VALUE);
         valueNode.getNode().setCurrJsonNode(
             TextNode.valueOf(UUIDGenerator.generateUuid()), valueNode.getNode().getFieldName());

@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.artifact.resources.acr.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistriesDTO;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRepositoriesDTO;
@@ -16,6 +18,7 @@ import io.harness.cdng.artifact.resources.acr.dtos.AcrRequestDTO;
 import io.harness.delegate.beans.azure.AcrBuildDetailsDTO;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDP)
 public interface AcrResourceService {
   AcrRegistriesDTO getRegistries(

@@ -6,6 +6,8 @@
  */
 
 package io.harness.delegate.beans.connector.awsconnector;
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -27,6 +29,7 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("AwsCredential")
 @JsonDeserialize(using = AwsCredentialDTODeserializer.class)
 @Schema(name = "AwsCredential", description = "This contains details of the AWS connector credential")
+@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO")
 public class AwsCredentialDTO {
   @Valid CrossAccountAccessDTO crossAccountAccess;
   @NotNull @JsonProperty("type") AwsCredentialType awsCredentialType;

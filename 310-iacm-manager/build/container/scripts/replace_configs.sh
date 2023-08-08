@@ -222,6 +222,10 @@ if [[ "" != "$IACM_TERRAFORM_IMAGE" ]]; then
   export IACM_TERRAFORM_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.iacmTerraform=env(IACM_TERRAFORM_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$IACM_TERRAFORM_IMAGE" ]]; then
+  export IACM_TERRAFORM_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.iacmTerraform.image=env(IACM_TERRAFORM_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
   export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi

@@ -25,6 +25,7 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.GitStoreDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -84,6 +85,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
 
   @Mock private KryoSerializer kryoSerializer;
   @Mock private TerragruntStepHelper terragruntStepHelper;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private StepHelper stepHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;

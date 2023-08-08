@@ -18,6 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
@@ -38,7 +39,7 @@ public class TerraformConfigDALTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private HPersistence persistence;
-
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @InjectMocks private TerraformConfigDAL terraformConfigDAL;
 
   @Test

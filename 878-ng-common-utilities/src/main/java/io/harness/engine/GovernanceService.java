@@ -6,11 +6,15 @@
  */
 
 package io.harness.engine;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.governance.GovernanceMetadata;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface GovernanceService {
   GovernanceMetadata evaluateGovernancePolicies(String expandedJson, String accountId, String orgIdentifier,

@@ -9,7 +9,10 @@ package io.harness.common;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
@@ -20,11 +23,15 @@ import lombok.experimental.UtilityClass;
  * </p>
  * In this the top element is <b>connector</b>
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @UtilityClass
 @OwnedBy(PL)
 public class EntityYamlRootNames {
   public static final String GITOPS_CREATE_PR = "CreatePR";
   public static final String GITOPS_MERGE_PR = "MergePR";
+  public static final String GITOPS_REVERT_PR = "RevertPR";
   public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   public static final String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   public static final String GITOPS_SYNC = "GitOpsSync";
@@ -250,4 +257,9 @@ public class EntityYamlRootNames {
   public static final String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
   public static final String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = "ServerlessAwsLambdaDeployV2";
   public static final String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
+  public static final String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
+  public static final String AWS_CDK_SYNTH = "AwsCdkSynth";
+  public static final String AWS_CDK_DIFF = "AwsCdkDiff";
+  public static final String AWS_CDK_DEPLOY = "AwsCdkDeploy";
+  public static final String AWS_CDK_DESTROY = "AwsCdkDestroy";
 }

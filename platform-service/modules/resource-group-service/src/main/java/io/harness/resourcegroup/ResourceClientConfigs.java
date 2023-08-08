@@ -31,6 +31,8 @@ public class ResourceClientConfigs {
   @JsonProperty("gitops-service") @ConfigSecret ServiceConfig gitopsService;
   @JsonProperty("ce-nextgen") @ConfigSecret ServiceConfig ceNextGen;
 
+  @JsonProperty("code") @ConfigSecret ServiceConfig code;
+
   @Value
   @Builder
   @FieldDefaults(level = AccessLevel.PRIVATE)

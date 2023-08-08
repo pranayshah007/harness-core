@@ -6,7 +6,6 @@
  */
 
 package software.wings.helpers.ext.account;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -17,7 +16,10 @@ import static software.wings.beans.Base.ACCOUNT_ID_KEY2;
 import static java.lang.reflect.Modifier.isAbstract;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.event.timeseries.processor.TimescaleDataCleanup;
@@ -67,6 +69,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_GITX,
+        HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 @Slf4j
 public class DeleteAccountHelper {
@@ -248,7 +253,7 @@ public class DeleteAccountHelper {
   }
 
   /** With any change of deletion logic CURRENT_DELETION_ALGO_NUM value should be incremented **/
-  public boolean deleteAccount(String accountId) {
+  public boolean deleteAccount(String accountId, boolean deleteAccountFromAccountsCollection) {
     log.info("Deleting data for account {}. Deletion algo version: {}", accountId, CURRENT_DELETION_ALGO_NUM);
     deleteQuartzJobsForAccount(accountId);
     deletePerpetualTasksForAccount(accountId);
@@ -259,19 +264,24 @@ public class DeleteAccountHelper {
     churnedConfigFilesAndChunksCleanup.deleteConfigFilesAndChunks(accountId);
     timescaleDataCleanup.cleanupChurnedAccountData(accountId);
     if (isEmpty(entitiesRemainingForDeletion)) {
-      log.info("Deleting account entry {}", accountId);
-      hPersistence.delete(Account.class, accountId);
-      upsertDeletedEntity(accountId, CURRENT_DELETION_ALGO_NUM);
-      return true;
+      if (deleteAccountFromAccountsCollection) {
+        deleteAccountFromAccountsCollection(accountId);
+      }
     } else {
-      log.info("Not all entities are deleted for account {}", accountId);
-      return false;
+      log.info("Entities Remaining For Deletion for accountID: " + accountId
+          + "are: " + entitiesRemainingForDeletion.toString());
     }
+    return true;
+  }
+
+  public void deleteAccountFromAccountsCollection(String accountId) {
+    hPersistence.delete(Account.class, accountId);
+    upsertDeletedEntity(accountId, CURRENT_DELETION_ALGO_NUM);
   }
 
   public void handleDeletedAccount(DeletedEntity deletedAccount) {
     if (CURRENT_DELETION_ALGO_NUM > deletedAccount.getDeletionAlgoNum()) {
-      deleteAccount(deletedAccount.getEntityId());
+      deleteAccount(deletedAccount.getEntityId(), true);
     }
   }
 

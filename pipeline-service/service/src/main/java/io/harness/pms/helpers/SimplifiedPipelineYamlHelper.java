@@ -6,13 +6,16 @@
  */
 
 package io.harness.pms.helpers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.pipeline.yaml.SimplifiedPipelineYaml;
 import io.harness.pms.yaml.YamlUtils;
 
 import java.io.IOException;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 public class SimplifiedPipelineYamlHelper {
   public SimplifiedPipelineYaml getSimplifiedPipelineYaml(String yaml) throws IOException {

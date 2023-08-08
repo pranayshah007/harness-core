@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.customDeployment;
-
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import static software.wings.beans.TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG;
@@ -15,12 +14,15 @@ import static software.wings.sm.states.customdeploymentng.InstanceMapperUtils.ge
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -45,7 +47,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -57,7 +58,6 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -87,6 +87,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScriptTaskNGResponse> {
@@ -104,7 +106,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   static Function<InstanceMapperUtils.HostProperties, CustomDeploymentServerInstanceInfo> instanceElementMapper =
@@ -150,9 +152,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
         }
       }
     }
-
-    return (String) ExpressionEvaluatorUtils.updateExpressions(
-        fetchInstanceScript, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    return (String) cdExpressionResolver.updateExpressions(ambiance, fetchInstanceScript);
   }
 
   @Override
@@ -188,8 +188,9 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepElementParameters stepParameters, ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier)
+      throws Exception {
     try {
       FetchInstanceScriptTaskNGResponse response;
       try {

@@ -6,7 +6,6 @@
  */
 
 package software.wings.delegatetasks.azure;
-
 import static io.harness.azure.model.AzureConstants.AZURE_AUTH_PLUGIN_INSTALL_HINT;
 import static io.harness.azure.model.AzureConstants.AZURE_CONFIG_DIR;
 import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
@@ -30,8 +29,11 @@ import static io.harness.k8s.model.kubeconfig.KubeConfigAuthPluginHelper.isExecA
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
@@ -123,6 +125,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 @Singleton

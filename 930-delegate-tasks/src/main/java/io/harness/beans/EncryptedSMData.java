@@ -6,9 +6,11 @@
  */
 
 package io.harness.beans;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.security.encryption.EncryptionType;
@@ -18,6 +20,8 @@ import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Value
 @Builder
 @JsonTypeName("encryptedSMData")

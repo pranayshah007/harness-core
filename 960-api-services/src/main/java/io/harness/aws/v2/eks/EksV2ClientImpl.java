@@ -54,8 +54,7 @@ public class EksV2ClientImpl extends AwsClientHelper implements EksV2Client {
       DescribeClusterRequest describeClusterRequest =
           (DescribeClusterRequest) DescribeClusterRequest.builder().name(clusterName).build();
       EksClient eksClient = (EksClient) getClient(awsConfig, region);
-      DescribeClusterResponse describeClusterResponse = eksClient.describeCluster(describeClusterRequest);
-      return describeClusterResponse;
+      return eksClient.describeCluster(describeClusterRequest);
     } catch (Exception exception) {
       super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
       super.handleException(exception);

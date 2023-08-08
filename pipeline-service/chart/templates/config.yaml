@@ -5,14 +5,17 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   CACHE_BACKEND: "REDIS"
-  CACHE_CONFIG_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
+  CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
-  CACHE_CONFIG_USE_SENTINEL: "true"
+  CACHE_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   DEPLOY_MODE: KUBERNETES_ONPREM
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
-  LOCK_CONFIG_REDIS_SENTINELS: redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis
-  LOCK_CONFIG_USE_SENTINEL: "true"
+  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   MEMORY: {{ .Values.java.memory | quote }}
   MANAGER_TARGET: harness-manager:9879
   MANAGER_AUTHORITY: harness-manager:9879
@@ -24,10 +27,10 @@ data:
   CI_MANAGER_TARGET: ci-manager:9979
   CI_MANAGER_AUTHORITY: ci-manager:9979
   SCM_SERVICE_URI: "scm-service:8091"
-  EVENTS_FRAMEWORK_REDIS_URL: 'redis://localhost:6379'
-  EVENTS_FRAMEWORK_USE_SENTINEL: "true"
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   PIPELINE_SERVICE_BASE_URL: '{{ .Values.global.loadbalancerURL }}/ng/#'
   PMS_API_BASE_URL: '{{ .Values.global.loadbalancerURL }}/gateway/pipeline/api/'
   LOG_STREAMING_SERVICE_BASEURL: 'http://log-service.{{ .Release.Namespace }}.svc.cluster.local:8079/'
@@ -60,7 +63,6 @@ data:
   {{- end }}
   ENABLE_AUDIT : 'true'
   AUDIT_SERVICE_BASE_URL: http://platform-service:9005/api/
-  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   LOG_STREAMING_CONTAINER_STEP_BASE_URL: '{{ .Values.global.loadbalancerURL }}/log-service/'
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   {{- if .Values.additionalConfigs }}

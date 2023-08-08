@@ -6,18 +6,21 @@
  */
 
 package io.harness.filestore.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.filestore.dto.mapper.FileDTOMapper;
 import io.harness.filestore.entities.NGFile;
 import io.harness.filestore.events.FileCreateEvent;
 import io.harness.filestore.events.FileDeleteEvent;
+import io.harness.filestore.events.FileForceDeleteEvent;
 import io.harness.filestore.events.FileUpdateEvent;
 import io.harness.filestore.service.FileActivityService;
 import io.harness.filestore.service.FileFailsafeService;
@@ -36,6 +39,7 @@ import net.jodah.failsafe.RetryPolicy;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -95,15 +99,21 @@ public class FileFailsafeServiceImpl implements FileFailsafeService {
   }
 
   @Override
-  public boolean deleteAndPublish(NGFile ngFile) {
+  public boolean deleteAndPublish(NGFile ngFile, boolean forceDelete) {
     try {
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         fileStoreRepository.delete(ngFile);
 
         deleteActivities(ngFile.getAccountIdentifier(), ngFile.getOrgIdentifier(), ngFile.getProjectIdentifier(),
             ngFile.getIdentifier());
-        outboxService.save(
-            new FileDeleteEvent(ngFile.getAccountIdentifier(), FileDTOMapper.getFileDTOFromNGFile(ngFile)));
+
+        if (forceDelete) {
+          outboxService.save(
+              new FileForceDeleteEvent(ngFile.getAccountIdentifier(), FileDTOMapper.getFileDTOFromNGFile(ngFile)));
+        } else {
+          outboxService.save(
+              new FileDeleteEvent(ngFile.getAccountIdentifier(), FileDTOMapper.getFileDTOFromNGFile(ngFile)));
+        }
         log.info("{} [{}] deleted.", ngFile.isFile() ? "File" : "Folder", ngFile.getName());
         return true;
       }));

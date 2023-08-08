@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.workflow;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
@@ -35,6 +34,7 @@ import static io.harness.expression.ExpressionEvaluator.DEFAULT_HELMCHART_VARIAB
 import static io.harness.expression.ExpressionEvaluator.matchesVariablePattern;
 import static io.harness.govern.Switch.noop;
 import static io.harness.govern.Switch.unhandled;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.provision.TerraformConstants.INHERIT_APPROVED_PLAN;
@@ -60,7 +60,7 @@ import static software.wings.beans.EntityType.SERVICE;
 import static software.wings.beans.EntityType.WORKFLOW;
 import static software.wings.beans.NotificationRule.NotificationRuleBuilder.aNotificationRule;
 import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
-import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_WORKFLOWID;
+import static software.wings.beans.WorkflowExecution.ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS;
 import static software.wings.common.InfrastructureConstants.INFRA_ID_EXPRESSION;
 import static software.wings.common.ProvisionerConstants.GENERIC_ROLLBACK_NAME_FORMAT;
 import static software.wings.common.WorkflowConstants.WORKFLOW_INFRAMAPPING_VALIDATION_MESSAGE;
@@ -120,8 +120,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.atteo.evo.inflector.English.plural;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
@@ -342,6 +345,8 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
  *
  * @author Rishi
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @ValidateOnExecution
@@ -475,6 +480,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (isNotEmpty(queryHint)) {
       findOptions.hint(BasicDBUtils.getIndexObject(Workflow.mongoIndexes(), queryHint));
     }
+    findOptions.limit(NO_LIMIT);
     return emptyIfNull(workflowQuery.asList(findOptions));
   }
 
@@ -700,8 +706,8 @@ public class WorkflowServiceImpl implements WorkflowService {
           List<WorkflowExecution> workflowExecutions;
 
           FindOptions findOptions = new FindOptions();
-          findOptions.hint(
-              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
+          findOptions.hint(BasicDBUtils.getIndexObject(
+              WorkflowExecution.mongoIndexes(), ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS));
           findOptions.limit(previousExecutionsCount);
           workflowExecutions = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class)
                                    .filter(WorkflowExecutionKeys.workflowId, workflow.getUuid())
@@ -4320,6 +4326,19 @@ public class WorkflowServiceImpl implements WorkflowService {
       }
     }
     return workflowExecutionIds;
+  }
+
+  public WorkflowExecution getLastSuccessfulWorkflowExecution(String accountId, String appId, String serviceId) {
+    if (isEmpty(serviceId)) {
+      return null;
+    }
+    return wingsPersistence.createQuery(WorkflowExecution.class)
+        .filter(WorkflowExecutionKeys.accountId, accountId)
+        .filter(WorkflowExecutionKeys.appId, appId)
+        .filter(WorkflowExecutionKeys.serviceIds, serviceId)
+        .filter(WorkflowExecutionKeys.status, SUCCESS)
+        .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+        .get();
   }
 
   @Override

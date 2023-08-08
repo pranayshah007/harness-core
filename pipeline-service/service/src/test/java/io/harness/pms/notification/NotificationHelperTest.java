@@ -273,7 +273,7 @@ public class NotificationHelperTest extends CategoryTest {
     nodeExecutionBuilder.status(Status.FAILED);
     assertEquals(notificationHelper.getEventTypeForStage(nodeExecutionBuilder.build()), Optional.of(STAGE_FAILED));
     nodeExecutionBuilder.status(Status.ABORTED);
-    assertEquals(notificationHelper.getEventTypeForStage(nodeExecutionBuilder.build()), Optional.empty());
+    assertEquals(notificationHelper.getEventTypeForStage(nodeExecutionBuilder.build()), Optional.of(STAGE_FAILED));
   }
 
   // TODO: Add ut for webhookNotification once PL PR is merged.

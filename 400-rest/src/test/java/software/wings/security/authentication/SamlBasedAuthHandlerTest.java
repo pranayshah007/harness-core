@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RUSHABH;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,6 +76,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.opensaml.core.config.InitializationException;
 import org.opensaml.core.config.InitializationService;
 import org.opensaml.core.xml.config.GlobalParserPoolInitializer;
@@ -724,7 +727,95 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
     }
     verify(userService, times(0)).completeUserCreationOrAdditionViaJitAndSignIn(any(), any());
   }
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testSamlAuthenticationWithSameExternalIdHavingEntriesWithDifferentEmails()
+      throws IOException, SamlException, URISyntaxException, XMLParserException, InitializationException,
+             UnmarshallingException {
+    User userByEmail = new User();
+    userByEmail.setDefaultAccountId("kmpySmUISimoRrJL6NL73w");
+    userByEmail.setUuid("kmpySmUISimoRrJL6NL73w");
+    userByEmail.setEmail("abc@harness.io");
+    Account account = new Account();
+    account.setUuid("AC1");
+    userByEmail.setAccounts(Arrays.asList(account));
+    User userByExternalID = new User();
+    userByExternalID.setUuid("kmpySmUISimoRrJL6NL73wd");
+    userByExternalID.setExternalUserId("external123");
+    userByExternalID.setEmail("123@harness.io");
+    String samlResponseString =
+        IOUtils.toString(getClass().getResourceAsStream("/SamlResponse.txt"), Charset.defaultCharset());
+    account.setAuthenticationMechanism(io.harness.ng.core.account.AuthenticationMechanism.SAML);
+    when(userService.getUserByEmail(any(), any())).thenReturn(userByEmail);
+    when(userService.getUserByUserId(any(), any())).thenReturn(userByExternalID);
+    when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(account);
+    when(mockFeatureFlagService.isNotEnabled(FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT, account.getUuid()))
+        .thenReturn(true);
+    when(mockFeatureFlagService.isEnabled(FeatureName.EXTERNAL_USERID_BASED_LOGIN, account.getUuid())).thenReturn(true);
+    SamlResponse samlResponse = mock(SamlResponse.class);
+    when(samlResponse.getNameID()).thenReturn("abc@harness.io");
+    SamlClient samlClient = mock(SamlClient.class);
+    final SamlSettings samlSettings = SamlSettings.builder().accountId("AC1").jitEnabled(false).build();
+    final List<SamlSettings> samlSettingsList = Arrays.asList(samlSettings);
+    when(samlClientService.getSamlSettingsFromOrigin(any(), any())).thenAnswer(new Answer<Iterator<SamlSettings>>() {
+      @Override
+      public Iterator<SamlSettings> answer(final InvocationOnMock invocation) throws Throwable {
+        return samlSettingsList.iterator();
+      }
+    });
 
+    doReturn(samlClient).when(samlClientService).getSamlClient(samlSettings);
+    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+    when(samlResponse.getAssertion()).thenReturn(this.getSamlAssertion(samlResponseString));
+    doNothing().when(samlUserGroupSync).syncUserGroup(any(SamlUserAuthorization.class), any(), any());
+    User returnedUser = authHandler.authenticate(oktaIdpUrl, samlResponseString, account.getUuid()).getUser();
+    assertThat(returnedUser).isEqualTo(userByEmail);
+  }
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void testSamlAuthenticationWithExternalIdAndNoUserWithGivenEmail()
+      throws IOException, SamlException, URISyntaxException, XMLParserException, InitializationException,
+             UnmarshallingException {
+    Account account = new Account();
+    account.setUuid("AC1");
+    User userByExternalID = new User();
+    userByExternalID.setUuid("kmpySmUISimoRrJL6NL73wd");
+    userByExternalID.setExternalUserId("external123");
+    userByExternalID.setEmail("123@harness.io");
+    User userExpected = new User();
+    userExpected.setExternalUserId("external123");
+    userExpected.setEmail("abc@harness.io");
+    userExpected.setUuid("kmpySmUISimoRrJL6NL73wd");
+    userExpected.setAccounts(Arrays.asList(account));
+    String samlResponseString =
+        IOUtils.toString(getClass().getResourceAsStream("/SamlResponse.txt"), Charset.defaultCharset());
+    account.setAuthenticationMechanism(io.harness.ng.core.account.AuthenticationMechanism.SAML);
+    when(userService.getUserByUserId(any(), any())).thenReturn(userByExternalID);
+    when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(account);
+    when(mockFeatureFlagService.isNotEnabled(FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT, account.getUuid()))
+        .thenReturn(true);
+    when(mockFeatureFlagService.isEnabled(FeatureName.EXTERNAL_USERID_BASED_LOGIN, account.getUuid())).thenReturn(true);
+    SamlResponse samlResponse = mock(SamlResponse.class);
+    when(samlResponse.getNameID()).thenReturn("abc@harness.io");
+    SamlClient samlClient = mock(SamlClient.class);
+    final SamlSettings samlSettings = SamlSettings.builder().accountId("AC1").jitEnabled(false).build();
+    final List<SamlSettings> samlSettingsList = Arrays.asList(samlSettings);
+    when(samlClientService.getSamlSettingsFromOrigin(any(), any())).thenAnswer(new Answer<Iterator<SamlSettings>>() {
+      @Override
+      public Iterator<SamlSettings> answer(final InvocationOnMock invocation) throws Throwable {
+        return samlSettingsList.iterator();
+      }
+    });
+    when(ssoSettingService.getSamlSettingsByAccountId(anyString())).thenReturn(samlSettings);
+    doReturn(samlClient).when(samlClientService).getSamlClient(samlSettings);
+    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+    when(samlResponse.getAssertion()).thenReturn(this.getSamlAssertion(samlResponseString));
+    doNothing().when(samlUserGroupSync).syncUserGroup(any(SamlUserAuthorization.class), any(), any());
+    User returnedUser = authHandler.authenticate(oktaIdpUrl, samlResponseString, account.getUuid()).getUser();
+    assertThat(returnedUser).isEqualTo(userExpected);
+  }
   private Assertion getSamlAssertion(String samlResponse) throws IOException, XMLParserException, UnmarshallingException
                                                                  ,
                                                                  InitializationException, IllegalArgumentException {

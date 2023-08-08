@@ -6,14 +6,16 @@
  */
 
 package io.harness.ngtriggers.beans.response;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NEW_ARTIFACT_EVENT_PROCESSED;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NEW_MANIFEST_EVENT_PROCESSED;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TARGET_EXECUTION_REQUESTED;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_CONFIRMATION_SUCCESSFUL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 
 import java.util.Arrays;
@@ -22,6 +24,7 @@ import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Data
 @Builder
 @OwnedBy(PIPELINE)
@@ -29,6 +32,9 @@ public class TriggerEventResponse {
   public enum FinalStatus {
     SCM_SERVICE_CONNECTION_FAILED("Scm service connection failed"),
     INVALID_PAYLOAD("Invalid payload"),
+    TRIGGER_DID_NOT_MATCH_EVENT_CONDITION("Trigger did not match event condition"),
+    TRIGGER_DID_NOT_MATCH_METADATA_CONDITION("Trigger did not match metadata condition"),
+    TRIGGER_DID_NOT_MATCH_ARTIFACT_JEXL_CONDITION("Trigger did not match artifact jexl condition"),
     NO_MATCHING_TRIGGER_FOR_REPO("No matching trigger for repo"),
     NO_MATCHING_TRIGGER_FOR_EVENT_ACTION("No matching trigger for event action"),
     NO_MATCHING_TRIGGER_FOR_METADATA_CONDITIONS("No matching trigger for metadata conditions"),

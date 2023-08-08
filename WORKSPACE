@@ -1297,8 +1297,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:p35onfFNfSQTKLC15sb76sESs+bj+Rb/pMqDtsgKsU4=",
-    version = "v1.29.2-0.20230515092809-5877f3846131",
+    sum = "h1:hYVPr8hqlVaacPVo6vJVQASwbGqlWa90kxokyVxWoBE=",
+    version = "v1.30.0",
 )
 
 go_repository(
@@ -3931,6 +3931,20 @@ go_repository(
     version = "v5.0.0",
 )
 
+go_repository(
+    name = "com_github_redis_go_redis_v9",
+    importpath = "github.com/redis/go-redis/v9",
+    sum = "h1:CuQcn5HIEeK7BgElubPP8CGtE0KakrnbBSTLjathl5o=",
+    version = "v9.0.5",
+)
+
+go_repository(
+    name = "com_github_go_redis_redismock_v9",
+    importpath = "github.com/go-redis/redismock/v9",
+    sum = "h1:mtHQi2l51lCmXIbTRTqb1EiHYe9tL5Yk5oorlSJJqR0=",
+    version = "v9.0.3",
+)
+
 rust_repositories(
     edition = "2018",
     version = "1.49.0",
@@ -4608,8 +4622,8 @@ go_repository(
 go_repository(
     name = "com_github_harness_ti_client",
     importpath = "github.com/harness/ti-client",
-    sum = "h1:5bAthnUBEV3zE9utLY4b6AKs/ZQ5y188uv2GkVJeetI=",
-    version = "v0.0.0-20230628234729-894f996b3046",
+    sum = "h1:XXOg2PARWL1s4lpy4WXPcWqt8fXfV9e9KjDozeefzdk=",
+    version = "v0.0.0-20230720204407-c0e24ffb7964",
 )
 
 go_rules_dependencies()
@@ -4843,7 +4857,7 @@ plain_artifacts = [
     "com.jakewharton.retrofit:retrofit1-okhttp3-client:1.1.0",
     "com.jakewharton.retrofit:retrofit2-reactor-adapter:2.1.0",
     "com.jayway.jsonpath:json-path:2.2.0",
-    "com.jcraft.harness:jsch-0-1-54-harness-patch:1.1",
+    "com.github.mwiede:jsch:0.2.8",
     "com.jcraft:jzlib:1.1.3",
     "com.lmax:disruptor:jar:3.4.2",
     "com.mashape.unirest:unirest-java:1.4.9",
@@ -5000,7 +5014,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.62-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.64-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:18.0.0",
@@ -5078,11 +5092,11 @@ plain_artifacts = [
     "net.minidev:accessors-smart:1.2",
     "net.minidev:json-smart:2.4.10",
     "net.openhft:affinity:3.2.2",
-    "net.openhft:chronicle-bytes:2.19.0",
-    "net.openhft:chronicle-core:2.19.0",
-    "net.openhft:chronicle-queue:5.19.2",
-    "net.openhft:chronicle-threads:2.17.27",
-    "net.openhft:chronicle-wire:2.17.71",
+    "net.openhft:chronicle-bytes:2.22.28",
+    "net.openhft:chronicle-core:2.22.35",
+    "net.openhft:chronicle-queue:5.22.28",
+    "net.openhft:chronicle-threads:2.22.16",
+    "net.openhft:chronicle-wire:2.22.22",
     "net.openhft:compiler:2.3.4",
     "net.rcarz:jira-client:0.9-SNAPSHOT",
     "net.redhogs.cronparser:cron-parser:2.6",
@@ -5413,7 +5427,7 @@ amazon_v2_artifacts = [
             "commons-logging:commons-logging",
         ],
         group = "software.amazon.awssdk",
-        version = "2.17.220",
+        version = "2.20.109",
     )
     for x in [
         "ecs",
@@ -5560,7 +5574,7 @@ maven_install(
     maven_install_json = "//project:main_maven_install.json",
     override_targets = {
         "org.apache.commons:commons-io": "@maven//:commons_io_commons_io",
-        "com.jcraft:jsch": "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
+        "com.jcraft:jsch": "@maven//:com_github_mwiede_jsch",
         "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongodb_driver_core",
     },
     repositories = [
@@ -5594,14 +5608,15 @@ maven_install(
 maven_install(
     name = "batch",
     artifacts = [
-        "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",
+        "com.fasterxml.jackson.core:jackson-databind:2.15.1",
+        "com.google.guava:guava:32.0.1-jre",
         "com.azure:azure-core:1.29.1",
         "com.azure:azure-identity:1.5.0",
         "com.azure:azure-storage-blob:12.16.0",
         "com.azure:azure-storage-common:12.15.1",
         "com.azure.resourcemanager:azure-resourcemanager-advisor:1.0.0-beta.2",
         "com.azure.resourcemanager:azure-resourcemanager-compute:2.26.0",
-        "software.amazon.awssdk:account:2.20.74",
+        "software.amazon.awssdk:account:2.20.109",
     ],
     repositories = [
         "https://harness-artifactory.harness.io/artifactory/portal-maven",
@@ -5615,6 +5630,7 @@ maven_install(
 maven_install(
     name = "ce-nextgen",
     artifacts = [
+        "com.google.guava:guava:32.0.1-jre",
         "com.azure:azure-core:1.29.1",
         "com.azure:azure-core-management:1.6.2",
         "com.azure:azure-identity:1.5.0",
@@ -5651,15 +5667,15 @@ maven_install(
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (2.1.3.Final) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.3.1.Final) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:2.1.3.Final",
-        "io.debezium:debezium-connector-mongodb:2.1.3.Final",
-        "io.debezium:debezium-core:2.1.3.Final",
+        "io.debezium:debezium-api:2.3.1.Final",
+        "io.debezium:debezium-connector-mongodb:2.3.1.Final",
+        "io.debezium:debezium-core:2.3.1.Final",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5667,7 +5683,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "2.1.3.Final",
+            version = "2.3.1.Final",
         ),
     ],
     repositories = [

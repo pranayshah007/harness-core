@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.shell;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_EXPLANATION;
@@ -29,7 +28,10 @@ import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.artifact.AzureArtifactsHelper;
@@ -61,6 +63,8 @@ import com.google.inject.Singleton;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_AMI_ASG, HarnessModuleComponent.CDS_TRADITIONAL})
 @Slf4j
 @OwnedBy(CDP)
 @Singleton
@@ -79,16 +83,16 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
     BaseScriptExecutor executor =
         getExecutor(parameters, commandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext);
     LogCallback logCallback = executor.getLogCallback();
-    CommandExecutionStatus commandExecutionStatus = downloadArtifact(parameters, logCallback, commandUnit, executor);
 
-    if (FAILURE == commandExecutionStatus) {
-      logCallback.saveExecutionLog("Failed to download artifact.", ERROR, commandExecutionStatus);
+    try {
+      CommandExecutionStatus commandExecutionStatus = downloadArtifact(parameters, logCallback, commandUnit, executor);
+      closeLogStreamEmptyMsg(logCallback, commandExecutionStatus);
+      log.info("Download artifact command execution returned status: {}", commandExecutionStatus);
+      return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
+    } catch (Exception e) {
+      closeLogStreamWithError(logCallback);
+      throw e;
     }
-    logCallback.saveExecutionLog(
-        "Command execution finished with status " + commandExecutionStatus, INFO, commandExecutionStatus);
-
-    log.info("Download artifact command execution returned status: {}", commandExecutionStatus);
-    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 
   private CommandExecutionStatus downloadArtifact(CommandTaskParameters commandTaskParameters, LogCallback logCallback,

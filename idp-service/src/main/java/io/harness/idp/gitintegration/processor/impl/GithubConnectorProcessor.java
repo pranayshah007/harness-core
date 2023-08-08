@@ -53,7 +53,6 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
   public Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
-    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.GITHUB_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not github connector ", connectorIdentifier));
@@ -70,8 +69,6 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
     if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
-      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
-
       GithubAppSpecDTO apiAccessSpec = (GithubAppSpecDTO) apiAccess.getSpec();
 
       if (apiAccessSpec.getApplicationIdRef() == null) {
@@ -109,13 +106,25 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     secrets.put(Constants.GITHUB_TOKEN,
         GitIntegrationUtils.getBackstageEnvSecretVariable(tokenSecretIdentifier, Constants.GITHUB_TOKEN));
 
+    return secrets;
+  }
+
+  @Override
+  public void createOrUpdateIntegrationConfig(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
+    GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    GithubApiAccessDTO apiAccess = config.getApiAccess();
+    String connectorTypeAsString = connectorInfoDTO.getConnectorType().toString();
+
+    if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
+    }
+
     // config for github connector git integration
     String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
     integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG_FOR_GITHUB_API_BASE_URL,
         getGithubApiBaseUrlFromHost(GitIntegrationUtils.getHostForConnector(connectorInfoDTO)));
     configManagerService.createOrUpdateAppConfigForGitIntegrations(
         accountIdentifier, connectorInfoDTO, integrationConfigs, connectorTypeAsString);
-    return secrets;
   }
 
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,

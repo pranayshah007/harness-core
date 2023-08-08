@@ -14,7 +14,6 @@ public class HandlersException extends RuntimeException {
   public HandlersException(String message, Throwable e) {
     super(message, e);
   }
-
   public HandlersException(String message) {
     super(message);
   }

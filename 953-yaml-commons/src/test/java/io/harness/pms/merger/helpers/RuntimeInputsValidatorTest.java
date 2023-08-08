@@ -9,6 +9,7 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.pms.merger.helpers.RuntimeInputsValidator.areInputsValidAgainstSourceNode;
 import static io.harness.pms.merger.helpers.RuntimeInputsValidator.validateInputsAgainstSourceNode;
+import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -121,6 +122,22 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
         .isFalse();
     assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(a).allowedValues(a,b,c)"),
                    convertYamlToJsonNode("field: <+input>.default(b).allowedValues(a,b,c)")))
+        .isFalse();
+    assertThat(
+        areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(true).allowedValues(a,b,c)"),
+            convertYamlToJsonNode("field: <+input>.default(true).allowedValues(a,b,c)")))
+        .isTrue();
+    assertThat(
+        areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(123).allowedValues(a,b,c)"),
+            convertYamlToJsonNode("field: <+input>.default(123).allowedValues(a,b,c)")))
+        .isTrue();
+    assertThat(
+        areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(true).allowedValues(a,b,c)"),
+            convertYamlToJsonNode("field: <+input>.default(false).allowedValues(a,b,c)")))
+        .isFalse();
+    assertThat(
+        areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(123).allowedValues(a,b,c)"),
+            convertYamlToJsonNode("field: <+input>.default(234).allowedValues(a,b,c)")))
         .isFalse();
     assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.default(a).allowedValues(a,b,c)"),
                    convertYamlToJsonNode("field: <+input>.allowedValues(a,b,c)")))
@@ -238,6 +255,29 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
 
     yamlToValidate = "service:\n"
         + "  serviceRef: \"service-prod\"";
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testValidateEnvironmentInputsWithUseFromStage() throws IOException {
+    Set<String> KEYS_TO_IGNORE = Set.of("service.serviceInputs", "environment.environmentInputs",
+        "environment.serviceOverrideInputs", "codebase.repoName");
+    String yamlToValidate = "environment:\n"
+        + "  useFromStage:\n"
+        + "    stage: s1";
+
+    String sourceEntityYaml = "environment:\n"
+        + "  environmentRef: \"<+input>\"\n"
+        + "  environmentInputs: \"<+input>\"";
+
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
+        .isTrue();
+
+    yamlToValidate = "environment:\n"
+        + "  environmentRef: \"env-prod\"";
     assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
         .isTrue();
   }

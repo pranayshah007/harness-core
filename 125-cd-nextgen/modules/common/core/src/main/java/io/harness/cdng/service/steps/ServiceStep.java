@@ -12,7 +12,6 @@ import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.service.steps.constants.ServiceStepConstants;
@@ -109,10 +108,7 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
                              .group(StepOutcomeGroup.STAGE.name())
                              .build())
             .build();
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
-    }
+    serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
     return stepResponse;
   }
 

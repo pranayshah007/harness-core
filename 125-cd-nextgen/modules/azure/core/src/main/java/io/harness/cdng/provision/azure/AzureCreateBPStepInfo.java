@@ -6,14 +6,18 @@
  */
 
 package io.harness.cdng.provision.azure;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
+import io.harness.filters.WithFileRefs;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
@@ -36,6 +40,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -45,7 +50,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.azure.AzureCreateBPStepInfo")
 public class AzureCreateBPStepInfo
-    extends AzureCreateBPBaseStepInfo implements CDAbstractStepInfo, Visitable, WithConnectorRef {
+    extends AzureCreateBPBaseStepInfo implements CDAbstractStepInfo, Visitable, WithConnectorRef, WithFileRefs {
   @NotNull @JsonProperty("configuration") AzureCreateBPStepConfiguration createStepBPConfiguration;
 
   @Builder(builderMethodName = "infoBuilder")
@@ -99,5 +104,16 @@ public class AzureCreateBPStepInfo
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();
+  }
+
+  @Override
+  public Map<String, ParameterField<List<String>>> extractFileRefs() {
+    Map<String, ParameterField<List<String>>> fileRefMap = new HashMap<>();
+    if (createStepBPConfiguration.getTemplate().getStore().getSpec() instanceof HarnessStore) {
+      HarnessStore harnessStore = (HarnessStore) createStepBPConfiguration.getTemplate().getStore().getSpec();
+      ParameterField<List<String>> files = harnessStore.getFiles();
+      fileRefMap.put("configuration.template.store.spec.files", files);
+    }
+    return fileRefMap;
   }
 }

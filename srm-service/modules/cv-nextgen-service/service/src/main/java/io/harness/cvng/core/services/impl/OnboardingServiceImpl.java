@@ -20,8 +20,12 @@ import io.harness.serializer.JsonUtils;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import javax.ws.rs.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+
 @Slf4j
 public class OnboardingServiceImpl implements OnboardingService {
   @Inject private VerificationManagerService verificationManagerService;
@@ -30,8 +34,12 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   @Override
   public OnboardingResponseDTO getOnboardingResponse(String accountId, OnboardingRequestDTO onboardingRequestDTO) {
-    Preconditions.checkNotNull(onboardingRequestDTO, "OnboardingRequestDTO cannot be null");
-    Preconditions.checkNotNull(onboardingRequestDTO.getTracingId(), "Missing tracingId/requestGuid in request");
+    if (Objects.isNull(onboardingRequestDTO)) {
+      throw new BadRequestException("OnboardingRequestDTO cannot be null");
+    }
+    if (StringUtils.isEmpty(onboardingRequestDTO.getTracingId())) {
+      throw new BadRequestException("Missing tracingId/requestGuid in request");
+    }
     ConnectorInfoDTO connectorInfoDTO = getConnectorConfigDTO(accountId, onboardingRequestDTO.getConnectorIdentifier(),
         onboardingRequestDTO.getOrgIdentifier(), onboardingRequestDTO.getProjectIdentifier());
     onboardingRequestDTO.getDataCollectionRequest().setConnectorInfoDTO(connectorInfoDTO);
@@ -53,8 +61,9 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Override
   public void checkConnectivity(String accountId, String orgIdentifier, String projectIdentifier,
       String connectorIdentifier, String tracingId, DataSourceType dataSourceType) {
-    Preconditions.checkNotNull(dataSourceType);
-    Preconditions.checkNotNull(dataSourceTypeToServiceMapBinder.containsKey(dataSourceType));
+    if (Objects.isNull(dataSourceType)) {
+      throw new BadRequestException("dataSourceType cannot be null");
+    }
     dataSourceTypeToServiceMapBinder.get(dataSourceType)
         .checkConnectivity(accountId, orgIdentifier, projectIdentifier, connectorIdentifier, tracingId);
   }

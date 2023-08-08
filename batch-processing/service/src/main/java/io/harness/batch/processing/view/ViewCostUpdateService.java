@@ -30,11 +30,11 @@ public class ViewCostUpdateService {
     accountIds.forEach(accountId -> {
       List<CEView> views = ceViewService.getViewByState(accountId, ViewState.COMPLETED);
       views.forEach(view -> {
-        log.info("Updating view {}", view.getUuid());
+        log.info("Updating view {} in account {}", view.getUuid(), accountId);
         try {
           ceViewService.updateTotalCost(view);
         } catch (Exception ex) {
-          log.error("Exception while updating cost", ex);
+          log.error("Exception while updating cost for view {} in account {}", view.getUuid(), accountId, ex);
         }
       });
     });

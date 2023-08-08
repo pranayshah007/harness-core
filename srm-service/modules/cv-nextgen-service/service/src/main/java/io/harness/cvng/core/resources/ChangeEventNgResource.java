@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.ng.beans.PageRequest;
@@ -52,7 +52,6 @@ public interface ChangeEventNgResource {
       @QueryParam("scopedMonitoredServiceIdentifiers") List<String> scopedMonitoredServiceIdentifiers,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
-      @QueryParam("searchText") String searchText,
       @ApiParam(required = true) @NotNull @QueryParam("st"
           + "artTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime, @BeanParam PageRequest pageRequest);
@@ -69,7 +68,6 @@ public interface ChangeEventNgResource {
       @QueryParam("scopedMonitoredServiceIdentifiers") List<String> scopedMonitoredServiceIdentifiers,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
-      @QueryParam("searchText") String searchText,
       @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime,
       @ApiParam @QueryParam("pointCount") @DefaultValue("48") Integer pointCount);

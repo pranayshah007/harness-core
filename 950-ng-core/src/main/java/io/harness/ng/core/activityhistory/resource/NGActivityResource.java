@@ -7,13 +7,17 @@
 
 package io.harness.ng.core.activityhistory.resource;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.ng.core.activityhistory.NGActivityStatus;
+import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckSummaryDTO;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;
 import io.harness.ng.core.activityhistory.dto.NGActivitySummaryDTO;
+import io.harness.ng.core.activityhistory.dto.NGEntityListDTO;
 import io.harness.ng.core.activityhistory.dto.TimeGroupType;
 import io.harness.ng.core.activityhistory.service.NGActivityService;
 import io.harness.ng.core.activityhistory.service.NGActivitySummaryService;
@@ -23,6 +27,10 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Hidden;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -63,10 +71,15 @@ public class NGActivityResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime,
       @QueryParam(NGCommonEntityConstants.STATUS) NGActivityStatus status,
       @NotNull @QueryParam(NGCommonEntityConstants.REFERRED_ENTITY_TYPE) EntityType referredEntityType,
-      @QueryParam(NGCommonEntityConstants.REFERRED_BY_ENTITY_TYPE) EntityType referredByEntityType) {
-    return ResponseDTO.newResponse(
-        activityHistoryService.list(page, size, accountIdentifier, orgIdentifier, projectIdentifier,
-            referredEntityIdentifier, startTime, endTime, status, referredEntityType, referredByEntityType));
+      @QueryParam(NGCommonEntityConstants.REFERRED_BY_ENTITY_TYPE) EntityType referredByEntityType,
+      @QueryParam(NGCommonEntityConstants.ACTIVITY_TYPES) Set<NGActivityType> ngActivityTypes) {
+    if (isEmpty(ngActivityTypes)) {
+      ngActivityTypes = new HashSet<>(List.of(NGActivityType.values()));
+      ngActivityTypes.remove(NGActivityType.CONNECTIVITY_CHECK);
+    }
+    return ResponseDTO.newResponse(activityHistoryService.list(page, size, accountIdentifier, orgIdentifier,
+        projectIdentifier, referredEntityIdentifier, startTime, endTime, status, referredEntityType,
+        referredByEntityType, ngActivityTypes));
   }
 
   @GET
@@ -105,5 +118,17 @@ public class NGActivityResource {
     return ResponseDTO.newResponse(
         ngActivitySummaryService.listActivitySummary(accountIdentifier, orgIdentifier, projectIdentifier,
             referredEntityIdentifier, timeGroupType, startTime, endTime, referredEntityType, referredByEntityType));
+  }
+
+  @GET
+  @Path("/referred-by-entity-types")
+  @Hidden
+  @ApiOperation(value = "Get List Of Referred By Entity Types", nickname = "getUniqueReferredByEntities")
+  public ResponseDTO<NGEntityListDTO> getUniqueReferredByEntityTypes(
+      @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.REFERRED_ENTITY_TYPE) EntityType referredEntityType,
+      @QueryParam(NGCommonEntityConstants.ACTIVITY_TYPES) Set<NGActivityType> ngActivityTypes) {
+    return ResponseDTO.newResponse(
+        activityHistoryService.listReferredByEntityTypes(referredEntityType, ngActivityTypes));
   }
 }
