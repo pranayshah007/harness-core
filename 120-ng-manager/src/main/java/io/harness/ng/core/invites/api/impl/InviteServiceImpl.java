@@ -9,8 +9,6 @@ package io.harness.ng.core.invites.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
-import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.eraro.ErrorMessageConstants.INVALID_JWT_TOKEN;
 import static io.harness.eraro.ErrorMessageConstants.TOKEN_EXPIRED;
 import static io.harness.exception.WingsException.USER_SRE;
