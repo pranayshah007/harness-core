@@ -91,8 +91,9 @@ public class GraphVertexConverter {
         .stepType(level.getStepType().getType())
         .status(nodeExecution.getStatus())
         .failureInfo(nodeExecution.getFailureInfo())
-        .stepParameters(
-            nodeExecutionsInfo == null ? nodeExecution.getPmsStepParameters() : nodeExecutionsInfo.getResolvedInputs())
+        .stepParameters(nodeExecutionsInfo != null && nodeExecutionsInfo.getResolvedInputs() != null
+                ? nodeExecutionsInfo.getResolvedInputs()
+                : nodeExecution.getResolvedStepParameters())
         .nodeRunInfo(nodeExecution.getNodeRunInfo())
         .mode(nodeExecution.getMode())
         .executableResponses(CollectionUtils.emptyIfNull(nodeExecution.getExecutableResponses()))
