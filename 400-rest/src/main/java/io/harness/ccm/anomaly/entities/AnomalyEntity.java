@@ -56,6 +56,7 @@ public class AnomalyEntity {
   String workloadName;
   String workloadType;
   String namespace;
+  String service;
 
   String gcpProject;
   String gcpSKUId;
@@ -86,6 +87,9 @@ public class AnomalyEntity {
     }
     if (clusterId != null) {
       return EntityType.CLUSTER;
+    }
+    if (service != null) {
+      return EntityType.SERVICE;
     }
     if (gcpSKUId != null) {
       return EntityType.GCP_SKU_ID;
@@ -130,6 +134,9 @@ public class AnomalyEntity {
     }
     if (clusterId != null) {
       return clusterId;
+    }
+    if (service != null) {
+      return service;
     }
     if (gcpSKUId != null) {
       return gcpSKUId;
@@ -185,6 +192,7 @@ public class AnomalyEntity {
       NAMESPACE("namespace", DataType.STRING),
       WORKLOAD_TYPE("workloadtype", DataType.STRING),
       WORKLOAD_NAME("workloadname", DataType.STRING),
+      SERVICE("service", DataType.STRING),
       GCP_PROJECT("gcpproject", DataType.STRING),
       GCP_PRODUCT("gcpproduct", DataType.STRING),
       GCP_SKU_ID("gcpskuid", DataType.STRING),
@@ -244,6 +252,7 @@ public class AnomalyEntity {
     public static final DbColumn workloadType;
 
     public static final DbColumn namespace;
+    public static final DbColumn service;
 
     public static final DbColumn region;
 
@@ -295,6 +304,7 @@ public class AnomalyEntity {
       namespace = table.addColumn("namespace");
       workloadType = table.addColumn("workloadtype");
       workloadName = table.addColumn("workloadname");
+      service = table.addColumn("service");
 
       gcpProject = table.addColumn("gcpproject");
       gcpProduct = table.addColumn("gcpproduct");

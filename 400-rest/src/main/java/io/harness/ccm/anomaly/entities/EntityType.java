@@ -19,6 +19,7 @@ public enum EntityType {
   CLUSTER,
   NAMESPACE,
   WORKLOAD,
+  SERVICE,
   GCP_PRODUCT,
   GCP_SKU_ID,
   GCP_PROJECT,
