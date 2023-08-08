@@ -23,6 +23,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -139,5 +140,39 @@ public class PmsExecutionSummaryRepositoryCustomImplTest extends OrchestrationVi
     assertThat(entity).isNotNull();
     assertThat(entity.getStatus()).isNull();
     assertThat(entity.getPlanExecutionId()).isEqualTo(planExecutionId);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testFindListOfBranches() {
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+        PipelineExecutionSummaryEntity.builder()
+            .pipelineIdentifier("test")
+            .accountId("account")
+            .orgIdentifier("orgIdentifier")
+            .projectIdentifier("projectIdentifier")
+            .retryExecutionMetadata(RetryExecutionMetadata.builder().rootExecutionId("root").build())
+            .entityGitDetails(EntityGitDetails.builder().branch("main").repoName("test-repo").build())
+            .status(ExecutionStatus.SKIPPED)
+            .build();
+    mongoTemplate.save(pipelineExecutionSummaryEntity);
+
+    Criteria criteria = new Criteria();
+    criteria.and(PlanExecutionSummaryKeys.accountId).is("account");
+    criteria.and(PlanExecutionSummaryKeys.orgIdentifier).is("orgIdentifier");
+    criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is("projectIdentifier");
+    criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is("test");
+    criteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is("test-repo");
+
+    try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
+             pmsExecutionSummaryRepositoryCustom.findListOfBranches(criteria)) {
+      int count = 0;
+      while (iterator.hasNext()) {
+        count++;
+        iterator.next();
+      }
+      assertEquals(count, 1);
+    }
   }
 }
