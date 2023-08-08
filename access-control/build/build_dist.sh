@@ -24,7 +24,7 @@ if [ ! -z ${PURPOSE} ]
 then
     echo ${PURPOSE} > purpose.txt
 fi
-
+/app/dist/accesscontrol-service
 cp ${HOME}/.bazel-dirs/bin/access-control/service/module_deploy.jar accesscontrol-service-capsule.jar
 cp ../../access-control/config/config.yml .
 cp ../../access-control/config/keystore.jks .
@@ -36,10 +36,7 @@ cp ../../access-control/config/jfr/default.jfc .
 cp ../../access-control/config/jfr/profile.jfc .
 java -jar accesscontrol-service-capsule.jar scan-classpath-metadata
 
+ls ../../access-control/build/container/scripts/
 pwd
-ls /app
 cd ../..
 pwd
-ls
-ls /app
-ls /app/scripts/
