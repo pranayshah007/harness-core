@@ -30,11 +30,6 @@ import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 public class RetrofitUtilsTest extends CategoryTest {
-  @Before
-  public void before() {
-    MockitoAnnotations.initMocks(this);
-  }
-
   @Test
   @Owner(developers = SARTHAK_KASAT)
   @Category(UnitTests.class)
