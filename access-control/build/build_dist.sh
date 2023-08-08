@@ -36,7 +36,4 @@ cp ../../access-control/config/jfr/default.jfc .
 cp ../../access-control/config/jfr/profile.jfc .
 java -jar accesscontrol-service-capsule.jar scan-classpath-metadata
 
-ls ../../access-control/build/container/scripts/
-pwd
 cd ../..
-pwd
