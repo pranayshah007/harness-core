@@ -185,6 +185,7 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     StringBuilder content = new StringBuilder();
     for (NameValuePair valuePair : valuePairs) {
       String val = valuePair.getValue();
+      val = wrapInlineVariablesWithDoubleQuotes(val);
       if ("ENCRYPTED_TEXT".equals(valuePair.getValueType())) {
         String secretIdentifier =
             MigratorUtility.getIdentifierWithScopeDefaults(migratedEntities, valuePair.getValue(), SECRET);
@@ -194,6 +195,19 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     }
 
     return content.toString();
+  }
+
+  private String wrapInlineVariablesWithDoubleQuotes(String val) {
+    boolean wrappedWithDoubleQuotes = !val.isEmpty() && val.charAt(0) == '"' && val.endsWith("\"");
+    boolean wrappedWithBrackets = !val.isEmpty() && val.charAt(0) == '[' && val.endsWith("]");
+    boolean wrappedWithParenthesis = !val.isEmpty() && val.charAt(0) == '(' && val.endsWith(")");
+    boolean wrappedWithCurlyBraces = !val.isEmpty() && val.charAt(0) == '{' && val.endsWith("}");
+    boolean alreadyWrapped =
+        wrappedWithParenthesis || wrappedWithBrackets || wrappedWithCurlyBraces || wrappedWithDoubleQuotes;
+    if (!alreadyWrapped) {
+      return "\"" + val + "\"";
+    }
+    return val;
   }
 
   private TerraformBackendConfig toInlineBackendConfig(
