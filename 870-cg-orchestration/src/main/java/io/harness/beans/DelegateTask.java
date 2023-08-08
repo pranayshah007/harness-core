@@ -213,7 +213,7 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
 
   @Transient Map<String, List<String>> nonAssignableDelegates;
 
-  @FdTtlIndex @Default private Date validUntil = Date.from(OffsetDateTime.now().plusDays(2).toInstant());
+  @FdTtlIndex @Default private Date validUntil = Date.from(OffsetDateTime.now().plusDays(4).toInstant());
   @FdIndex private long delegateTaskFailIteration;
 
   @Override

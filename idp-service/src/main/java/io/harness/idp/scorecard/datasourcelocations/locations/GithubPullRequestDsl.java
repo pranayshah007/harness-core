@@ -9,25 +9,32 @@ package io.harness.idp.scorecard.datasourcelocations.locations;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.http.HttpHeaderConfig;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
+import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
+import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.core.Response;
+import lombok.AllArgsConstructor;
 
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
 public class GithubPullRequestDsl implements DataSourceLocation {
   DataPointParserFactory dataPointParserFactory;
+  DslClientFactory dslClientFactory;
 
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
       DataSourceLocationEntity dataSourceLocationEntity, List<DataPointEntity> dataPointsToFetch) {
-    //  delegateSelectorsCache.get(accountIdentifier, entity.getGithubHost())
-    //  based on that we need to either hit the API or create a delegate task
-
     for (DataPointEntity dataPoint : dataPointsToFetch) { // isBranchProtected(main), isBranchProtected(develop)
       DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPoint.getIdentifier());
       if (dataPoint.isConditional()) {
@@ -42,17 +49,22 @@ public class GithubPullRequestDsl implements DataSourceLocation {
     // catalog entity -> https://github.com/harness/harness-idp -> repo details
     // backstage env variables -> GITHUB_TOKEN, APP -> Authorization Header
 
-    // common okhttpclient
+    // --------------------------------
+    // Testing code. To be removed when we have actual code here later.
+    String host = "github.com"; // get this from catalog yaml
+    String url = "https://api.github.com/repos/vikyathharekal/order-service/contents/README.md";
+    String body = "";
+    String method = "GET";
+    List<HttpHeaderConfig> headers = new ArrayList<>();
+    headers.add(HttpHeaderConfig.builder().key("Authorization").value("Bearer xxx").build());
+    headers.add(HttpHeaderConfig.builder().key("X-GitHub-Api-Version").value("2022-11-28").build());
+    headers.add(HttpHeaderConfig.builder().key("Accept").value("application/vnd.github.v3.raw").build());
+    // --------------------------------
 
-    /*
-custom logic
+    DslClient client = dslClientFactory.getClient(accountIdentifier, host);
+    Response response = client.call(accountIdentifier, url, headers, body, method);
 
-dataPointsToFetch[0] -> github_mttm
-
-{
-    github_mttm: 48
-}
-* */
+    // convert response to Map
     return null;
   }
 }

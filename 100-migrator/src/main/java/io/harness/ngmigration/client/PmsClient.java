@@ -34,7 +34,7 @@ public interface PmsClient {
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId, @Body RequestBody yaml,
       @Query(GitSyncApiConstants.STORE_TYPE) StoreType storeType);
 
-  @POST("triggers")
+  @POST("triggers?withServiceV2=true")
   Call<ResponseDTO<NGTriggerResponseDTO>> createTrigger(@Header(X_API_KEY) String auth,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgId,

@@ -65,9 +65,11 @@ public class ParameterDocumentFieldMapper {
 
     ParameterFieldValueWrapper<?> parameterFieldValueWrapper =
         RecastOrchestrationUtils.fromMap(documentField.getValueDoc(), ParameterFieldValueWrapper.class);
-    parameterFieldValueWrapper =
-        new ParameterFieldValueWrapper<>(ParameterFieldUtils.getCastedFinalValueForPrimitiveTypesAndWrappers(
-            parameterFieldValueWrapper.getValue(), documentField));
+    if (parameterFieldValueWrapper != null) {
+      parameterFieldValueWrapper =
+          new ParameterFieldValueWrapper<>(ParameterFieldUtils.getCastedFinalValueForPrimitiveTypesAndWrappers(
+              parameterFieldValueWrapper.getValue(), documentField));
+    }
     checkValueClass(documentField, parameterFieldValueWrapper);
     return ParameterField.builder()
         .expression(documentField.isExpression())

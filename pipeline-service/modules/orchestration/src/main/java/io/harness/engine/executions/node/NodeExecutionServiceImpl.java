@@ -571,6 +571,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         ops.set(NodeExecutionKeys.status, status).set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
     addFinalStatusOps(updateOps, status);
 
+    List<String> timeoutInstanceIds = getTimeoutInstanceIds(status, nodeExecutionId);
     NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
       NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
       if (updated == null) {
@@ -586,7 +587,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     });
     if (updatedNodeExecution != null) {
       nodeStatusUpdateSubject.fireInform(NodeStatusUpdateObserver::onNodeStatusUpdate,
-          NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
+          NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).timeoutInstanceIds(timeoutInstanceIds).build());
     }
     return updatedNodeExecution;
   }
@@ -600,6 +601,18 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         updateOps.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
       }
     }
+  }
+
+  private List<String> getTimeoutInstanceIds(Status toBeUpdatedNodeStatus, String curretNodeExecutionId) {
+    List<String> timeoutInstanceIds = new LinkedList<>();
+    if (StatusUtils.isFinalStatus(toBeUpdatedNodeStatus)) {
+      Query getCurrentNodeQuery = query(where(NodeExecutionKeys.uuid).is(curretNodeExecutionId));
+      getCurrentNodeQuery.fields().include(NodeExecutionKeys.uuid).include(NodeExecutionKeys.timeoutInstanceIds);
+      NodeExecution oldNodeExecution =
+          nodeExecutionReadHelper.fetchNodeExecutionsFromSecondaryTemplate(getCurrentNodeQuery);
+      timeoutInstanceIds = oldNodeExecution.getTimeoutInstanceIds();
+    }
+    return timeoutInstanceIds;
   }
 
   @Override

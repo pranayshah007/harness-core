@@ -39,12 +39,14 @@ spec:
           - "pod"
           - "-lapp=mongodb-replicaset"
       {{- end }}
+      {{- if .Values.global.database.timescaledb.installed }}
       - name: wait-for-timescale
         image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
         imagePullPolicy: IfNotPresent
         args:
           - "pod"
           - "-lapp=timescaledb-single-chart"
+      {{- end }}
       containers:
         - name: event-service
           securityContext:

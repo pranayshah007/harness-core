@@ -7,7 +7,7 @@
 
 package io.harness.idp.proxy.delegate;
 
-import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.annotations.dev.HarnessTeam.IDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
@@ -17,7 +17,6 @@ import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.service.DelegateGrpcClientWrapper;
-import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.TaskType;
 
@@ -26,14 +25,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.UriBuilder;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
-@OwnedBy(CI)
+@OwnedBy(IDP)
 public class DelegateProxyRequestForwarder {
   private static final long EXECUTION_TIMEOUT_IN_SECONDS = 60;
   private static final int SOCKET_TIMEOUT_IN_MILLISECONDS = 20000;

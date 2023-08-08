@@ -13,6 +13,8 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
+import static software.wings.beans.LogHelper.color;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AWSCloudformationClient;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -24,6 +26,8 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
 
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
@@ -74,7 +78,8 @@ public abstract class CloudformationAbstractTaskHandler {
       AwsInternalConfig awsInternalConfig, String stackId, String stackName) {
     try {
       long stackEventsTs = System.currentTimeMillis();
-      logCallback.saveExecutionLog(String.format("# Starting to delete stack: %s", stackName));
+      logCallback.saveExecutionLog(
+          color(String.format("# Starting to delete stack: %s", stackName), LogColor.Cyan, LogWeight.Bold));
       DeleteStackRequest deleteStackRequest = new DeleteStackRequest().withStackName(stackId);
       if (EmptyPredicate.isNotEmpty(taskNGParameters.getCloudFormationRoleArn())) {
         deleteStackRequest.withRoleARN(taskNGParameters.getCloudFormationRoleArn());

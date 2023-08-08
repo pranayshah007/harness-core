@@ -68,7 +68,8 @@ public enum ResourceType {
   NETWORK_MAP(ResourceTypeConstants.NETWORK_MAP),
   CET_AGENT_TOKEN(ResourceTypeConstants.CET_AGENT_TOKEN),
   CET_CRITICAL_EVENT(ResourceTypeConstants.CET_CRITICAL_EVENT),
-  CHAOS_SECURITY_GOVERNANCE(ResourceTypeConstants.CHAOS_SECURITY_GOVERNANCE);
+  CHAOS_SECURITY_GOVERNANCE(ResourceTypeConstants.CHAOS_SECURITY_GOVERNANCE),
+  END_LEVEL_USER_AGREEMENT(ResourceTypeConstants.EULA);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

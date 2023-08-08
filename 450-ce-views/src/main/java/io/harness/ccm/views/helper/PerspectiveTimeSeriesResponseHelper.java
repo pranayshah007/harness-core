@@ -25,7 +25,6 @@ import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 
 import com.google.cloud.Timestamp;
 import com.google.inject.Inject;
-import io.fabric8.utils.Maps;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -123,25 +122,7 @@ public class PerspectiveTimeSeriesResponseHelper {
       updatedDataPointsMap.put(
           entry.getKey(), addSharedCostsToDataPoint(entry.getValue(), sharedCostsFromRulesAndFilters, entry.getKey()));
     }
-    if (Maps.isNullOrEmpty(costDataPointsMap)) {
-      updatedDataPointsMap = getDataPointsFromSharedCosts(sharedCostsFromRulesAndFilters);
-    }
 
-    return updatedDataPointsMap;
-  }
-
-  private Map<Timestamp, List<DataPoint>> getDataPointsFromSharedCosts(
-      Map<String, Map<Timestamp, Double>> sharedCostsFromRulesAndFilters) {
-    Map<Timestamp, List<DataPoint>> updatedDataPointsMap = new TreeMap<>();
-    for (Map.Entry<String, Map<Timestamp, Double>> entry1 : sharedCostsFromRulesAndFilters.entrySet()) {
-      String name = entry1.getKey();
-      String id = getUpdatedId(DEFAULT_STRING_VALUE, name);
-      for (Map.Entry<Timestamp, Double> entry2 : entry1.getValue().entrySet()) {
-        List<DataPoint> dataPoints = updatedDataPointsMap.getOrDefault(entry2.getKey(), new ArrayList<>());
-        dataPoints.add(getDataPoint(id, name, DEFAULT_STRING_VALUE, entry2.getValue()));
-        updatedDataPointsMap.put(entry2.getKey(), dataPoints);
-      }
-    }
     return updatedDataPointsMap;
   }
 
@@ -157,11 +138,9 @@ public class PerspectiveTimeSeriesResponseHelper {
   private List<DataPoint> addSharedCostsToDataPoint(List<DataPoint> dataPoints,
       Map<String, Map<Timestamp, Double>> sharedCostsFromRulesAndFilters, Timestamp timestamp) {
     List<DataPoint> updatedDataPoints = new ArrayList<>();
-    Map<String, Boolean> entityDataPointAdded = new HashMap<>();
 
     dataPoints.forEach(dataPoint -> {
       String name = dataPoint.getKey().getName();
-      entityDataPointAdded.put(name, true);
       double updatedCost = dataPoint.getValue().doubleValue();
       if (sharedCostsFromRulesAndFilters.containsKey(name)) {
         updatedCost += sharedCostsFromRulesAndFilters.get(name).getOrDefault(timestamp, 0.0);
@@ -170,15 +149,6 @@ public class PerspectiveTimeSeriesResponseHelper {
                                 .value(getRoundedDoubleValue(updatedCost))
                                 .key(getReference(dataPoint.getKey().getId(), name, dataPoint.getKey().getType()))
                                 .build());
-    });
-
-    sharedCostsFromRulesAndFilters.keySet().forEach(entity -> {
-      if (!entityDataPointAdded.containsKey(entity)) {
-        entityDataPointAdded.put(entity, true);
-        double cost = sharedCostsFromRulesAndFilters.get(entity).getOrDefault(timestamp, 0.0);
-        updatedDataPoints.add(
-            DataPoint.builder().value(getRoundedDoubleValue(cost)).key(getReference(entity, entity, "")).build());
-      }
     });
 
     return updatedDataPoints;

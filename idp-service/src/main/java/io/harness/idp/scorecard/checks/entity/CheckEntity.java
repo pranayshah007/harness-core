@@ -14,6 +14,8 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
+import io.harness.spec.server.idp.v1.model.CheckDetails;
+import io.harness.spec.server.idp.v1.model.Rule;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -51,7 +53,7 @@ public class CheckEntity implements PersistentEntity {
   private String name;
   private String description;
 
-  private RuleStrategy ruleStrategy;
+  private CheckDetails.RuleStrategyEnum ruleStrategy;
   private List<Rule> rules;
 
   // ALL OF -> github.isBranchProtected=true && catalog.spec.owner!=null
@@ -68,18 +70,9 @@ public class CheckEntity implements PersistentEntity {
   private boolean isCustom; // for the purpose of UI
 
   private List<String> tags;
-  private DefaultBehaviour defaultBehaviour;
+  private List<String> labels;
+  private CheckDetails.DefaultBehaviourEnum defaultBehaviour;
   private String failMessage;
-
-  @Data
-  @Builder
-  public static class Rule {
-    private String dataSourceIdentifier;
-    private String dataPointIdentifier;
-    private String operator;
-    private String value;
-  }
-
-  public enum RuleStrategy { ALL_OF, ANY_OF }
-  public enum DefaultBehaviour { PASS, FAIL }
+  private boolean isDeleted;
+  private long deletedAt;
 }

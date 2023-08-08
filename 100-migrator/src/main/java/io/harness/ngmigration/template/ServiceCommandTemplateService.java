@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.template;
+import static io.harness.data.structure.CollectionUtils.distinctByKey;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_BOOLEAN_INPUT;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_DELEGATE_INPUT;
 
@@ -276,6 +277,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
     }
     Map<String, Object> customExpressions =
         variables.stream()
+            .filter(distinctByKey(NGVariable::getName))
             .map(NGVariable::getName)
             .filter(StringUtils::isNotBlank)
             .collect(Collectors.toMap(s -> s, s -> String.format("<+spec.environmentVariables.%s>", s)));

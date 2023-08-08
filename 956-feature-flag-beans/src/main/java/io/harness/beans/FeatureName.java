@@ -200,6 +200,9 @@ public enum FeatureName {
   CDS_TERRAFORM_CONFIG_INSPECT_V1_2(
       "Enables usage of terraform-config-inspect v1.2 built from commit 7c9946b1df498f1b0634c7b33257790f01c819f3 of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
       HarnessTeam.CDP),
+  CDS_TERRAFORM_CONFIG_INSPECT_V1_3(
+      "Enables usage of terraform-config-inspect v1.2 built from commit f32df32a01cd687715ed165ac5d202009eba9b2f of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
+      HarnessTeam.CDP),
   CDS_TERRAFORM_S3_SUPPORT(
       "Enable support for AWS S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP),
   CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG(
@@ -857,7 +860,9 @@ public enum FeatureName {
   CDS_MERGED_RUN_AND_RETRY_PIPELINE_COMPONENT(
       "When enabled RunPipelineForm component will be used for Retry From (Failed) Stage", HarnessTeam.CDP),
   CDS_SUPPORT_SERVICE_INPUTS_AS_EXECUTION_INPUTS(
-      "Service Inputs will be marked as execution inputs if service is an expression", HarnessTeam.CDC);
+      "Service Inputs will be marked as execution inputs if service is an expression", HarnessTeam.CDC),
+  CDS_STORE_INSTANCE_STATS_ITERATOR_RUN_TIME(
+      "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated

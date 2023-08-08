@@ -14,6 +14,8 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
+import io.harness.spec.server.idp.v1.model.ScorecardDetails;
+import io.harness.spec.server.idp.v1.model.ScorecardFilters;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -29,8 +31,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @FieldNameConstants(innerTypeName = "ScorecardKeys")
 @StoreIn(DbAliases.IDP)
-@Entity(value = "Scorecards", noClassnameStored = true)
-@Document("Scorecards")
+@Entity(value = "scorecards", noClassnameStored = true)
+@Document("scorecards")
 @Persistent
 @OwnedBy(HarnessTeam.IDP)
 public class ScorecardEntity implements PersistentEntity {
@@ -50,8 +52,8 @@ public class ScorecardEntity implements PersistentEntity {
   private String identifier;
   private String name;
   private String description;
-  private List<Filter> filter;
-  private WeightageStrategy weightageStrategy;
+  private List<ScorecardFilters> filters;
+  private ScorecardDetails.WeightageStrategyEnum weightageStrategy;
   private List<Check> checks;
   private boolean published;
   private boolean isDeleted;
@@ -63,16 +65,4 @@ public class ScorecardEntity implements PersistentEntity {
     private String identifier;
     private double weightage;
   }
-
-  @Data
-  @Builder
-  public static class Filter {
-    private String component;
-    private String kind;
-    private List<String> owner;
-    private List<String> tags;
-    private List<String> lifecycle;
-  }
-
-  public enum WeightageStrategy { EQUAL_WEIGHTS, CUSTOM }
 }

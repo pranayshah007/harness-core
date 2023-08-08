@@ -1,6 +1,6 @@
 # batch-processing
 
-![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80001](https://img.shields.io/badge/AppVersion-0.0.80001-informational?style=flat-square)
+![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80002](https://img.shields.io/badge/AppVersion-0.0.80002-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -76,13 +76,13 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"Always"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/batch-processing-signed"` |  |
-| image.tag | string | `"80001-000"` |  |
+| image.tag | string | `"80002-000"` |  |
 | imageClickhouseEnabled.digest | string | `""` |  |
 | imageClickhouseEnabled.imagePullSecrets | list | `[]` |  |
 | imageClickhouseEnabled.pullPolicy | string | `"Always"` |  |
 | imageClickhouseEnabled.registry | string | `"docker.io"` |  |
 | imageClickhouseEnabled.repository | string | `"harness/batch-processing-signed"` |  |
-| imageClickhouseEnabled.tag | string | `"80001-000"` |  |
+| imageClickhouseEnabled.tag | string | `"80002-000"` |  |
 | isolatedReplica | int | `0` |  |
 | java.memory | string | `"7168"` |  |
 | lifecycleHooks | object | `{}` |  |

@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -77,7 +78,7 @@ public class AzureArtifactsArtifactStreamMapper implements ArtifactStreamMapper 
     String feed = PLEASE_FIX_ME;
     String packageName = PLEASE_FIX_ME;
     String packageType = PLEASE_FIX_ME;
-    String version = PLEASE_FIX_ME;
+    String version = TRIGGER_TAG_VALUE_DEFAULT;
     if (artifactStream != null) {
       AzureArtifactsArtifactStream stream = (AzureArtifactsArtifactStream) artifactStream;
       project = stream.getProject();

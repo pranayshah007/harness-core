@@ -111,6 +111,24 @@ public class VerificationJobInstanceDataCollectionUtilTest extends CvNextGenTest
   @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
+  public void shouldCollectPreDeploymentData_autoWithValidCanaryButShouldUseNodesFromCDAsFalse() {
+    VerificationJobInstance verificationJobInstance =
+        builderFactory.verificationJobInstanceBuilder()
+            .resolvedJob(builderFactory.autoVerificationJobBuilder().build())
+            .serviceInstanceDetails(ServiceInstanceDetails.builder()
+                                        .shouldUseNodesFromCD(false)
+                                        .deployedServiceInstances(Arrays.asList("c1", "c2"))
+                                        .serviceInstancesBeforeDeployment(Arrays.asList("p1", "p2", "p3"))
+                                        .serviceInstancesAfterDeployment(Arrays.asList("p1", "p2", "c1", "c2"))
+                                        .build())
+            .build();
+    assertThat(VerificationJobInstanceDataCollectionUtils.shouldCollectPreDeploymentData(verificationJobInstance))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
   public void shouldCollectPreDeploymentData_autoWithValidRollingServiceInstance() {
     VerificationJobInstance verificationJobInstance =
         builderFactory.verificationJobInstanceBuilder()

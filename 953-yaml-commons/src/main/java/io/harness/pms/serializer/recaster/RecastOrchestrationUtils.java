@@ -72,7 +72,11 @@ public class RecastOrchestrationUtils {
   }
 
   public <T> String toJson(T entity) {
-    Map<String, Object> map = recast.toMap(entity);
+    return toJson(entity, false);
+  }
+
+  public <T> String toJson(T entity, boolean newRecastFlow) {
+    Map<String, Object> map = recast.toMap(entity, newRecastFlow);
     return toJson(map);
   }
 
@@ -96,12 +100,20 @@ public class RecastOrchestrationUtils {
     return recast.fromMap(map, entityClass);
   }
 
+  public <T> T fromMap(Map<String, Object> map, Class<T> entityClass, boolean newRecastFlow) {
+    return recast.fromMap(map, entityClass, newRecastFlow);
+  }
+
   public <T> T fromJson(String json, Class<T> entityClass) {
+    return fromJson(json, entityClass, false);
+  }
+
+  public <T> T fromJson(String json, Class<T> entityClass, boolean newRecastFlow) {
     if (EmptyPredicate.isEmpty(json)) {
       return null;
     }
 
-    return fromMap(fromJson(json), entityClass);
+    return fromMap(fromJson(json), entityClass, newRecastFlow);
   }
 
   public Object getEncodedValue(Map<String, Object> map) {

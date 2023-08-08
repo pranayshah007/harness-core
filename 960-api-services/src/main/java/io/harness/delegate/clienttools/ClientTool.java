@@ -45,7 +45,7 @@ public enum ClientTool {
       "public/shared/tools/terraform-config-inspect/%s/%s/%s/terraform-config-inspect",
       "./client-tools/tf-config-inspect", "",
       "storage/harness-download/harness-terraform-config-inspect/%s/%s/%s/terraform-config-inspect",
-      ImmutableList.copyOf(TerraformConfigInspectVersion.values()), TerraformConfigInspectVersion.V1_1),
+      ImmutableList.copyOf(TerraformConfigInspectVersion.values()), TerraformConfigInspectVersion.V1_3),
   GO_TEMPLATE("go-template", "public/shared/tools/go-template/release/%s/bin/%s/%s/go-template",
       "./client-tools/go-template/", "-v",
       "storage/harness-download/snapshot-go-template/release/%s/bin/%s/%s/go-template",

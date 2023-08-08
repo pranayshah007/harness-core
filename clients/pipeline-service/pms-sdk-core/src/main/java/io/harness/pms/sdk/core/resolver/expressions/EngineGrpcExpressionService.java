@@ -77,7 +77,8 @@ public class EngineGrpcExpressionService implements EngineExpressionService {
                 .setAmbiance(ambiance)
                 .setExpression(expression)
                 .setExpressionMode(mode)
+                .setNewRecastFlow(true)
                 .build());
-    return RecastOrchestrationUtils.fromJson(expressionEvaluateBlobResponse.getValue(), Object.class);
+    return RecastOrchestrationUtils.fromJson(expressionEvaluateBlobResponse.getValue(), Object.class, true);
   }
 }

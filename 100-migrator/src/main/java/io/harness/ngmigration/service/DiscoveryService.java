@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.VIZ_FILE_NAME;
@@ -317,16 +318,7 @@ public class DiscoveryService {
         if (!file.isExists()) {
           MigrationImportSummaryDTO importSummaryDTO =
               ngMigration.migrate(ngClient, pmsClient, templateClient, inputDTO, file);
-          if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
-            summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
-            summaryDTO.getSuccessfullyMigratedDetails().add(MigratedDetails.builder()
-                                                                .cgEntityDetail(file.getCgBasicInfo())
-                                                                .ngEntityDetail(file.getNgEntityDetail())
-                                                                .build());
-          }
-          if (importSummaryDTO != null && EmptyPredicate.isNotEmpty(importSummaryDTO.getErrors())) {
-            summaryDTO.getErrors().addAll(importSummaryDTO.getErrors());
-          }
+          addToSummary(summaryDTO, file, importSummaryDTO);
         } else {
           summaryDTO.getStats().get(file.getType()).incrementAlreadyMigrated();
           summaryDTO.getAlreadyMigratedDetails().add(MigratedDetails.builder()
@@ -343,6 +335,21 @@ public class DiscoveryService {
     }
     summaryDTO.setNgYamlFiles(ngYamlFiles);
     return summaryDTO;
+  }
+
+  public static void addToSummary(
+      SaveSummaryDTO summaryDTO, NGYamlFile file, MigrationImportSummaryDTO importSummaryDTO) {
+    summaryDTO.getStats().putIfAbsent(file.getType(), new EntityMigratedStats());
+    if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
+      summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
+      summaryDTO.getSuccessfullyMigratedDetails().add(MigratedDetails.builder()
+                                                          .cgEntityDetail(file.getCgBasicInfo())
+                                                          .ngEntityDetail(file.getNgEntityDetail())
+                                                          .build());
+    }
+    if (importSummaryDTO != null && EmptyPredicate.isNotEmpty(importSummaryDTO.getErrors())) {
+      summaryDTO.getErrors().addAll(importSummaryDTO.getErrors());
+    }
   }
 
   private void exportZip(List<NGYamlFile> ngYamlFiles, String dirName) {

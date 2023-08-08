@@ -63,6 +63,91 @@ public class RecastOrchestrationUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
+  public void shouldTestForString() {
+    String s = "abc";
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo("abc");
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForInteger() {
+    Integer s = new Integer(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    int s1 = 2;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForBoolean() {
+    boolean s = true;
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(true);
+
+    Boolean s1 = new Boolean(false);
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForLong() {
+    Long s = new Long(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    long s1 = 2l;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForDouble() {
+    Double s = new Double(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    double s1 = 2;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForFloat() {
+    Float s = new Float(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    float s1 = 2;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
   public void shouldTestForStringArray() {
     String[] s = new String[] {"a", "b"};
     String json = RecastOrchestrationUtils.toJson(s);
@@ -467,6 +552,24 @@ public class RecastOrchestrationUtilsTest extends CategoryTest {
     assertEquals(d.getTimeoutParameterField().getValue(), "100");
     assertEquals(d.getDoubleParameterField().getValue(), "double");
     assertEquals(d.getIntegerParameterField().getValue(), "one");
+    assertEquals(d.getStringParameterField().getValue(), "abc");
+    // valueDoc is null in integerParameterField
+    d = RecastOrchestrationUtils.fromJson(
+        "{\"__recast\":\"io.harness.pms.serializer.recaster.RecastOrchestrationUtilsTest$DummyD\",\"timeoutParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"100\"},\"valueClass\":\"io.harness.yaml.core.timeout.Timeout\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"integerParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueClass\":\"java.lang.Integer\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"booleanParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"right\"},\"valueClass\":\"java.lang.Boolean\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"doubleParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"double\"},\"valueClass\":\"java.lang.Double\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"stringParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"abc\"},\"valueClass\":\"java.lang.String\",\"typeString\":true,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}}}",
+        DummyD.class);
+    assertEquals(d.getBooleanParameterField().getValue(), "right");
+    assertEquals(d.getTimeoutParameterField().getValue(), "100");
+    assertEquals(d.getDoubleParameterField().getValue(), "double");
+    assertEquals(d.getIntegerParameterField().getValue(), null);
+    assertEquals(d.getStringParameterField().getValue(), "abc");
+    // value in valueDoc is null in integerParameterField
+    d = RecastOrchestrationUtils.fromJson(
+        "{\"__recast\":\"io.harness.pms.serializer.recaster.RecastOrchestrationUtilsTest$DummyD\",\"timeoutParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"100\"},\"valueClass\":\"io.harness.yaml.core.timeout.Timeout\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"integerParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\"},\"valueClass\":\"java.lang.Integer\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"booleanParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"right\"},\"valueClass\":\"java.lang.Boolean\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"doubleParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"double\"},\"valueClass\":\"java.lang.Double\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"stringParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"abc\"},\"valueClass\":\"java.lang.String\",\"typeString\":true,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}}}",
+        DummyD.class);
+    assertEquals(d.getBooleanParameterField().getValue(), "right");
+    assertEquals(d.getTimeoutParameterField().getValue(), "100");
+    assertEquals(d.getDoubleParameterField().getValue(), "double");
+    assertEquals(d.getIntegerParameterField().getValue(), null);
     assertEquals(d.getStringParameterField().getValue(), "abc");
   }
 
