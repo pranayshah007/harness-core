@@ -8,8 +8,11 @@
 package io.harness.ng.core.invites.api;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eraro.ErrorMessageConstants.INVALID_JWT_TOKEN;
+import static io.harness.eraro.ErrorMessageConstants.TOKEN_EXPIRED;
 import static io.harness.ng.core.invites.InviteType.ADMIN_INITIATED_INVITE;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED;
+import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_EXPIRED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.INVITE_INVALID;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_ADDED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_ALREADY_INVITED;
@@ -18,6 +21,7 @@ import static io.harness.ng.core.invites.dto.InviteOperationResponse.USER_INVITE
 import static io.harness.rule.OwnerRule.ANKUSH;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.VIKAS_M;
@@ -45,6 +49,8 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.enforcement.client.services.EnforcementClientService;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.mongo.MongoConfig;
 import io.harness.ng.core.AccountOrgProjectHelper;
@@ -74,6 +80,7 @@ import io.harness.telemetry.TelemetryReporter;
 import io.harness.user.remote.UserClient;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
+import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.Claim;
 import java.io.IOException;
 import java.net.URI;
@@ -419,7 +426,45 @@ public class InviteServiceImplTest extends CategoryTest {
     verify(inviteRepository, times(1)).updateInvite(idCapture.capture(), any());
     assertThat(idCapture.getValue()).isEqualTo(inviteId);
   }
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void acceptInvite_InvalidToken() {
+    String dummyJWTToken = "dummy invite token";
+    Claim claim = mock(Claim.class);
+    Invite invite = getDummyInvite();
+    invite.setInviteToken(dummyJWTToken);
+    UserMetadataDTO user = UserMetadataDTO.builder().name(randomAlphabetic(7)).email(emailId).uuid(userId).build();
+    ArgumentCaptor<String> idCapture = ArgumentCaptor.forClass(String.class);
+    when(claim.asString()).thenReturn(inviteId);
+    when(jwtGeneratorUtils.verifyJWTToken(any(), any()))
+        .thenThrow(new InvalidRequestException(INVALID_JWT_TOKEN))
+        .thenReturn(Collections.emptyMap());
+    when(inviteRepository.findById(any())).thenReturn(Optional.of(invite));
+    when(ngUserService.getUserByEmail(any(), anyBoolean())).thenReturn(Optional.of(user));
+    InviteAcceptResponse inviteAcceptResponse = inviteService.acceptInvite(dummyJWTToken);
+    assertThat(inviteAcceptResponse.getResponse()).isEqualTo(INVITE_INVALID);
+  }
 
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void acceptInvite_ExpiredToken() {
+    String dummyJWTToken = "dummy invite token";
+    Claim claim = mock(Claim.class);
+    Invite invite = getDummyInvite();
+    invite.setInviteToken(dummyJWTToken);
+    UserMetadataDTO user = UserMetadataDTO.builder().name(randomAlphabetic(7)).email(emailId).uuid(userId).build();
+    ArgumentCaptor<String> idCapture = ArgumentCaptor.forClass(String.class);
+    when(claim.asString()).thenReturn(inviteId);
+    when(jwtGeneratorUtils.verifyJWTToken(any(), any()))
+        .thenThrow(new InvalidRequestException(TOKEN_EXPIRED))
+        .thenReturn(Collections.emptyMap());
+    when(inviteRepository.findById(any())).thenReturn(Optional.of(invite));
+    when(ngUserService.getUserByEmail(any(), anyBoolean())).thenReturn(Optional.of(user));
+    InviteAcceptResponse inviteAcceptResponse = inviteService.acceptInvite(dummyJWTToken);
+    assertThat(inviteAcceptResponse.getResponse()).isEqualTo(INVITE_EXPIRED);
+  }
   @Test
   @Owner(developers = ANKUSH)
   @Category(UnitTests.class)

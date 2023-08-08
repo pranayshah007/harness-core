@@ -564,9 +564,9 @@ public class InviteServiceImpl implements InviteService {
     try {
       inviteIdOptional = getInviteIdFromToken(jwtToken);
     } catch (InvalidRequestException e) {
-      if (e.getMessage().equals(INVALID_JWT_TOKEN)) {
+      if (INVALID_JWT_TOKEN.equals(e.getMessage())) {
         throw new JWTDecodeException(INVALID_JWT_TOKEN);
-      } else if (e.getMessage().equals(TOKEN_EXPIRED)) {
+      } else if (TOKEN_EXPIRED.equals(e.getMessage())) {
         throw new InvalidClaimException(TOKEN_EXPIRED);
       }
     }
