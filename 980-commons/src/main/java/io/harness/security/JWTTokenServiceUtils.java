@@ -13,6 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
+import static io.harness.eraro.ErrorMessageConstants.INVALID_JWT_TOKEN;
+import static io.harness.eraro.ErrorMessageConstants.TOKEN_EXPIRED;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -71,10 +73,9 @@ public class JWTTokenServiceUtils {
       verifier.verify(jwtToken);
       return JWT.decode(jwtToken).getClaims();
     } catch (UnsupportedEncodingException | JWTDecodeException | SignatureVerificationException e) {
-      throw new InvalidRequestException(
-          "Invalid JWTToken received, failed to decode the token", e, INVALID_TOKEN, USER);
+      throw new InvalidRequestException(INVALID_JWT_TOKEN, e, INVALID_TOKEN, USER);
     } catch (InvalidClaimException e) {
-      throw new InvalidRequestException("Token expired", e, EXPIRED_TOKEN, USER);
+      throw new InvalidRequestException(TOKEN_EXPIRED, e, EXPIRED_TOKEN, USER);
     }
   }
 

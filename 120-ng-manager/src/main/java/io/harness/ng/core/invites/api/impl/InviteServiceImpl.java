@@ -9,6 +9,10 @@ package io.harness.ng.core.invites.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
+import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
+import static io.harness.eraro.ErrorMessageConstants.INVALID_JWT_TOKEN;
+import static io.harness.eraro.ErrorMessageConstants.TOKEN_EXPIRED;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.accesscontrol.PlatformPermissions.INVITE_PERMISSION_IDENTIFIER;
@@ -96,6 +100,9 @@ import io.harness.utils.PageUtils;
 import io.harness.utils.UserUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
+import com.auth0.jwt.exceptions.InvalidClaimException;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -503,7 +510,14 @@ public class InviteServiceImpl implements InviteService {
   }
 
   public InviteAcceptResponse acceptInvite(String jwtToken) {
-    Optional<Invite> inviteOptional = getInviteFromToken(jwtToken, true);
+    Optional<Invite> inviteOptional = null;
+    try {
+      inviteOptional = getInviteFromToken(jwtToken, true);
+    } catch (JWTDecodeException e) {
+      return InviteAcceptResponse.builder().response(INVITE_INVALID).build();
+    } catch (InvalidClaimException e) {
+      return InviteAcceptResponse.builder().response(INVITE_EXPIRED).build();
+    }
     if (!inviteOptional.isPresent() || !inviteOptional.get().getInviteToken().equals(jwtToken)) {
       log.warn("Invite token {} is invalid", jwtToken);
       return InviteAcceptResponse.builder().response(INVITE_INVALID).build();
@@ -550,7 +564,11 @@ public class InviteServiceImpl implements InviteService {
     try {
       inviteIdOptional = getInviteIdFromToken(jwtToken);
     } catch (InvalidRequestException e) {
-      log.error("Invalid invite JWT token", e);
+      if (e.getMessage().equals(INVALID_JWT_TOKEN)) {
+        throw new JWTDecodeException(INVALID_JWT_TOKEN);
+      } else if (e.getMessage().equals(TOKEN_EXPIRED)) {
+        throw new InvalidClaimException(TOKEN_EXPIRED);
+      }
     }
     if (!inviteIdOptional.isPresent()) {
       log.warn("Invalid token. verification failed");
