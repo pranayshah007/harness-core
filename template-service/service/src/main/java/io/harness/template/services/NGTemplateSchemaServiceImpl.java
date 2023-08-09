@@ -7,12 +7,11 @@
 
 package io.harness.template.services;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.SPEC_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.STAGES_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.TEMPLATE_NODE;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.io.Resources;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.harness.EntityType;
 import io.harness.TemplateServiceConfiguration;
 import io.harness.account.AccountClient;
@@ -39,19 +38,20 @@ import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.client.YamlSchemaClient;
 import io.harness.yaml.utils.JsonPipelineUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
+import lombok.extern.slf4j.Slf4j;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.io.Resources;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SchemaConstants.PIPELINE_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.SPEC_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.STAGES_NODE;
+import static io.harness.yaml.schema.beans.SchemaConstants.TEMPLATE_NODE;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_PIPELINE})
@@ -172,57 +172,6 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
         templateEntity.getChildType(), templateEntity.getTemplateEntityType());
   }
 
-  public void validateYamlSchemaInternal(GlobalTemplateEntity templateEntity) {
-    String accountIdentifier = templateEntity.getAccountIdentifier();
-    String projectIdentifier = templateEntity.getProjectIdentifier();
-    String orgIdentifier = templateEntity.getOrgIdentifier();
-    String templateYaml = templateEntity.getYaml();
-    long start = System.currentTimeMillis();
-    if (TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
-            FeatureName.DISABLE_TEMPLATE_SCHEMA_VALIDATION, accountIdentifier, accountClient)) {
-      return;
-    }
-    try {
-      Scope scope = templateEntity.getTemplateScope() != null ? templateEntity.getTemplateScope()
-          : projectIdentifier != null                         ? Scope.PROJECT
-          : orgIdentifier != null                             ? Scope.ORG
-                                                              : Scope.ACCOUNT;
-
-      JsonNode schema;
-      // Use Static schema if ff is enabled.
-      if (TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
-              FeatureName.PIE_STATIC_YAML_SCHEMA, accountIdentifier, accountClient)) {
-        schema = getStaticYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, templateEntity.getChildType(),
-            templateEntity.getTemplateEntityType(), scope, "v0");
-      } else {
-        // Use traditional way of generating schema if ff is off
-        schema = getTemplateSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope,
-            templateEntity.getChildType(), templateEntity.getTemplateEntityType());
-      }
-      String schemaString = JsonPipelineUtils.writeJsonString(schema);
-      if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.PIPELINE_TEMPLATE)) {
-        String pathToJsonNode = TEMPLATE_NODE + "/" + SPEC_NODE + "/" + STAGES_NODE;
-        yamlSchemaValidator.validate(templateYaml, schemaString,
-            TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
-                FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, accountIdentifier, accountClient),
-            allowedParallelStages, pathToJsonNode);
-      } else {
-        yamlSchemaValidator.validate(
-            templateYaml, schemaString, true, allowedParallelStages, PIPELINE_NODE + "/" + STAGES_NODE);
-      }
-    } catch (io.harness.yaml.validator.InvalidYamlException e) {
-      log.info("[TEMPLATE_SCHEMA] Schema validation took total time {}ms", System.currentTimeMillis() - start);
-      throw e;
-    } catch (Exception ex) {
-      log.error(ex.getMessage(), ex);
-      YamlSchemaErrorWrapperDTO errorWrapperDTO =
-          YamlSchemaErrorWrapperDTO.builder()
-              .schemaErrors(Collections.singletonList(
-                  YamlSchemaErrorDTO.builder().message(ex.getMessage()).fqn("$.pipeline").build()))
-              .build();
-      throw new io.harness.yaml.validator.InvalidYamlException(ex.getMessage(), ex, errorWrapperDTO, templateYaml);
-    }
-  }
 
   public JsonNode getStaticYamlSchema(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateChildType, TemplateEntityType entityType, Scope scope, String version) {

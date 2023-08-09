@@ -7,8 +7,11 @@
 
 package io.harness.template.entity;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.reinert.jjschema.SchemaIgnore;
+import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
@@ -30,16 +33,6 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.github.reinert.jjschema.SchemaIgnore;
-import com.google.common.collect.ImmutableList;
-import dev.morphia.annotations.Entity;
-import java.util.List;
-import java.util.Set;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Setter;
 import lombok.Singular;
@@ -54,6 +47,13 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import java.util.List;
+import java.util.Set;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 @OwnedBy(CDC)
 @Value
@@ -158,4 +158,3 @@ public class GlobalTemplateEntity
   }
 
 }
-

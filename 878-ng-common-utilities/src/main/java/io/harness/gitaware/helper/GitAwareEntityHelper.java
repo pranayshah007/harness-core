@@ -7,6 +7,7 @@
 
 package io.harness.gitaware.helper;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import groovy.lang.Singleton;
