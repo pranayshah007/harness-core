@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.plancreator.steps.http;
+package io.harness.plancreator.steps.http.v1;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -21,13 +21,13 @@ import io.harness.http.HttpHeaderConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.StepParametersUtils;
-import io.harness.plancreator.steps.internal.PmsAbstractStepNodeV1;
+import io.harness.plancreator.steps.http.HttpStepInfo;
+import io.harness.plancreator.steps.internal.v1.PmsAbstractStepNodeV1;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.http.HttpStepParameters;
-import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -35,7 +35,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Collections;
 import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -48,23 +47,13 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.HTTP)
 @TypeAlias("HttpStepNodeV1")
 @OwnedBy(PIPELINE)
-@RecasterAlias("io.harness.plancreator.steps.http.HttpStepNodeV1")
+@RecasterAlias("io.harness.plancreator.steps.http.v1.HttpStepNodeV1")
 public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
-  @JsonProperty("type") @NotNull StepType type = StepType.Http;
-  @NotNull
+  StepType type = StepType.Http;
+
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   HttpStepInfo httpStepInfo;
-
-  @Override
-  public String getType() {
-    return StepSpecTypeConstants.HTTP;
-  }
-
-  @Override
-  public StepSpecType getStepSpecType() {
-    return httpStepInfo;
-  }
 
   // will re-iterate
   enum StepType {
@@ -79,8 +68,9 @@ public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
       OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {
     StepElementParameters.StepElementParametersBuilder stepBuilder = StepParametersUtils.getStepParametersV1(this);
     stepBuilder.spec(getSpecParameters(getHttpStepInfo()));
+    stepBuilder.type(StepSpecTypeConstants.HTTP);
     stepBuilder.rollbackParameters(failRollbackParameters);
-    StepUtils.appendDelegateSelectorsToSpecParameters(getStepSpecType(), ctx);
+    StepUtils.appendDelegateSelectorsToSpecParameters(httpStepInfo, ctx);
     return stepBuilder.build();
   }
 

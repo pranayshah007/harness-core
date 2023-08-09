@@ -12,7 +12,6 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.plancreator.steps.http.HttpStepNodeV1;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;

@@ -5,10 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.plancreator.steps;
+package io.harness.plancreator.steps.v1;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXISTING_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -17,28 +16,17 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.SwaggerConstants;
-import io.harness.data.validator.EntityIdentifier;
-import io.harness.data.validator.EntityName;
 import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.plancreator.strategy.v1.StrategyConfigV1;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.validator.NGRegexValidatorConstants;
-import io.harness.yaml.YamlSchemaTypes;
-import io.harness.yaml.core.StepSpecType;
-import io.harness.yaml.core.VariableExpression;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
-import javax.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
@@ -47,34 +35,15 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@OwnedBy(CDC)
+@OwnedBy(PIPELINE)
 @JsonTypeInfo(use = NAME, property = "type", include = EXISTING_PROPERTY, visible = true)
 public abstract class AbstractStepNodeV1 {
-  @JsonProperty(YamlNode.UUID_FIELD_NAME)
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
-  String uuid;
-
-  @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String id;
-  @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME) String uuid;
+  String id;
+  String name;
   String description;
-
-  @ApiModelProperty(dataType = SwaggerConstants.STEP_WHEN_CLASSPATH)
-  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<String> when;
-
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
   ParameterField<List<String>> delegateSelectors;
-
-  @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)
-  @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
-  @VariableExpression(skipVariableExpression = true)
-  @JsonProperty("strategy")
   ParameterField<StrategyConfigV1> strategy;
-  @VariableExpression(skipVariableExpression = true) PolicyConfig enforce;
-
-  @JsonIgnore public abstract String getType();
-
-  @JsonIgnore public abstract StepSpecType getStepSpecType();
+  PolicyConfig enforce;
 }

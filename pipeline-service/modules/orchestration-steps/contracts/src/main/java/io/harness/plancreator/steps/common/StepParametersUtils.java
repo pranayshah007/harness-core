@@ -16,7 +16,7 @@ import io.harness.plancreator.stages.PmsAbstractStageNode;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
-import io.harness.plancreator.steps.internal.PmsAbstractStepNodeV1;
+import io.harness.plancreator.steps.internal.v1.PmsAbstractStepNodeV1;
 import io.harness.pms.tags.TagUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.SdkCoreStepUtils;
@@ -87,7 +87,6 @@ public class StepParametersUtils {
     stepBuilder.when(stepElementConfig.getWhen() != null
             ? StepWhenCondition.builder().condition(stepElementConfig.getWhen()).build()
             : null);
-    stepBuilder.type(stepElementConfig.getType());
     stepBuilder.uuid(stepElementConfig.getUuid());
     stepBuilder.enforce(stepElementConfig.getEnforce());
 
