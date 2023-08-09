@@ -153,7 +153,7 @@ public class K8sRollingStep extends CdTaskChainExecutable implements K8sStepExec
     }
 
     Map<String, String> k8sCommandFlag =
-        k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingStepParameters.getCommandFlags());
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingStepParameters.getCommandFlags(), ambiance);
     rollingRequestBuilder.k8sCommandFlags(k8sCommandFlag);
     K8sRollingDeployRequest k8sRollingDeployRequest = rollingRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

@@ -120,7 +120,7 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
     InfrastructureOutcome infrastructure = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     Map<String, String> k8sCommandFlag =
-        k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingRollbackStepParameters.getCommandFlags());
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingRollbackStepParameters.getCommandFlags(), ambiance);
     rollbackRequestBuilder.k8sCommandFlags(k8sCommandFlag);
     if (k8sRollingOptionalOutput.isFound()) {
       K8sRollingOutcome k8sRollingOutcome = (K8sRollingOutcome) k8sRollingOptionalOutput.getOutput();
