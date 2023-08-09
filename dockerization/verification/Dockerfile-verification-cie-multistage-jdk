@@ -32,7 +32,7 @@ COPY --chown=65534:65534 --from=builder \
  /app/dist/270-verification/scripts /opt/harness \
  /app/dockerization/base-images/apm/*.sh \
  /opt/harness/
-
+RUN ls /opt/harness/
 RUN chmod +x /opt/harness/*.sh
 CMD [ "/opt/harness/run.sh" ]
 
