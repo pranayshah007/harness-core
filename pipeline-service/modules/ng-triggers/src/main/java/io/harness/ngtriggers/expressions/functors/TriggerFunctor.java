@@ -55,10 +55,6 @@ public class TriggerFunctor implements LateBindingValue {
       jsonObject.put(CONNECTOR_REF, metadata.getTriggerPayload().getConnectorRef());
     }
 
-    if (EmptyPredicate.isNotEmpty(metadata.getTriggerPayload().getConnectorRef())) {
-      jsonObject.put(CONNECTOR_REF, metadata.getTriggerPayload().getConnectorRef());
-    }
-
     if (EmptyPredicate.isNotEmpty(metadata.getTriggerHeader())) {
       jsonObject.put(HEADER, new TriggerHeaderBindingMap(metadata.getTriggerHeader()));
     }

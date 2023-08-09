@@ -8,9 +8,7 @@
 package io.harness.gitaware.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
-import groovy.lang.Singleton;
+
 import io.harness.EntityType;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -37,13 +35,14 @@ import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
 import io.harness.persistence.gitaware.GitAware;
-import lombok.extern.log4j.Log4j;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
+import groovy.lang.Singleton;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import lombok.extern.log4j.Log4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PL)

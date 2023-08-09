@@ -487,18 +487,26 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private void validateTemplateTypeAndChildTypeOfTemplate(
-      GlobalTemplateEntity templateEntity, List<TemplateEntity> templates) {
+      GlobalTemplateEntity newTemplateEntity, List<TemplateEntity> templates) {
     if (EmptyPredicate.isNotEmpty(templates)) {
-      TemplateEntityType templateEntityType = templates.get(0).getTemplateEntityType();
-      String childType = templates.get(0).getChildType();
-      if (!Objects.equals(templateEntityType, templateEntity.getTemplateEntityType())) {
-        throw new InvalidRequestException(String.format(
-            "Template should have same template entity type %s as other template versions", templateEntityType));
-      }
-      if (!Objects.equals(childType, templateEntity.getChildType())) {
-        throw new InvalidRequestException(
-            String.format("Template should have same child type %s as other template versions", childType));
-      }
+      templates.forEach(existingTemplateEntity -> {
+        if (!Objects.equals(
+                existingTemplateEntity.getTemplateEntityType(), newTemplateEntity.getTemplateEntityType())) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              String.format(
+                  "Failed to save the template [%s] because an existing template of different type has the same identifier",
+                  newTemplateEntity.getIdentifier(), newTemplateEntity.getVersionLabel()),
+              String.format(
+                  "Template identifier [%s] exists. You cannot save a template of different type with the same identifier.",
+                  newTemplateEntity.getIdentifier(), newTemplateEntity.getName()),
+              new InvalidRequestException("Failed to save the template."));
+        }
+        if (!Objects.equals(existingTemplateEntity.getChildType(), newTemplateEntity.getChildType())) {
+          throw new InvalidRequestException(
+              String.format("Template should have same child type %s as other template versions",
+                  existingTemplateEntity.getChildType()));
+        }
+      });
     }
   }
 
