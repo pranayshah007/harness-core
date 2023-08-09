@@ -39,6 +39,7 @@ public class SscaOrchestrationStepPluginUtils {
   public static final String DOCKER_PASSW = "DOCKER_PASSWORD";
   public static final String DOCKER_REGISTRY = "DOCKER_REGISTRY";
   public static final String COSIGN_PRIVATE_KEY = "COSIGN_PRIVATE_KEY";
+  public static final String SSCA_MANAGER_ENABLED = "SSCA_MANAGER_ENABLED";
 
   public Map<String, String> getSScaOrchestrationStepEnvVariables(OrchestrationStepEnvVariables envVariables) {
     Map<String, String> envMap = new HashMap<>();
@@ -49,6 +50,7 @@ public class SscaOrchestrationStepPluginUtils {
     envMap.put(PLUGIN_SBOMDESTINATION, "harness/sbom");
     envMap.put(SKIP_NORMALISATION, "true");
     envMap.put(SSCA_CORE_URL, envVariables.getSscaCoreUrl());
+    envMap.put(SSCA_MANAGER_ENABLED, String.valueOf(envVariables.isSscaManagerEnabled()));
     envMap.put(STEP_EXECUTION_ID, envVariables.getStepExecutionId());
     envMap.put(STEP_ID, envVariables.getStepIdentifier());
     return envMap;
