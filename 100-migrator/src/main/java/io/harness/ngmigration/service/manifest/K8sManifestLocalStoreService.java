@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.manifest;
 
+import static io.harness.beans.FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK;
 import static io.harness.ngmigration.utils.CaseFormat.SNAKE_CASE;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,6 +19,7 @@ import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -43,6 +45,7 @@ import org.apache.commons.collections4.CollectionUtils;
 public class K8sManifestLocalStoreService implements NgManifestService {
   @Inject ManifestMigrationService manifestMigrationService;
   @Inject ApplicationManifestService applicationManifestService;
+  @Inject FeatureFlagService featureFlagService;
 
   @Override
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
@@ -67,6 +70,8 @@ public class K8sManifestLocalStoreService implements NgManifestService {
 
     K8sManifest k8sManifest =
         K8sManifest.builder()
+            .enableDeclarativeRollback(ParameterField.createValueField(
+                featureFlagService.isEnabled(CDP_USE_K8S_DECLARATIVE_ROLLBACK, applicationManifest.getAccountId())))
             .identifier(MigratorUtility.generateManifestIdentifier(applicationManifest.getUuid(), identifierCaseFormat))
             .skipResourceVersioning(ParameterField.createValueField(
                 Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
