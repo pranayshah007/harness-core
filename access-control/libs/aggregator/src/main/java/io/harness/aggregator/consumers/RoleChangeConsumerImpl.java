@@ -11,6 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
+import io.harness.accesscontrol.common.filter.ManagedFilter;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceGroup;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
@@ -49,9 +52,10 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
   private final RoleRepository roleRepository;
   private final ExecutorService executorService;
   private final ACLGeneratorService aclGeneratorService;
+  private final ResourceGroupService resourceGroupService;
 
   public RoleChangeConsumerImpl(ACLRepository aclRepository, RoleAssignmentRepository roleAssignmentRepository,
-      RoleRepository roleRepository, String executorServiceSuffix, ACLGeneratorService aclGeneratorService) {
+      RoleRepository roleRepository, String executorServiceSuffix, ACLGeneratorService aclGeneratorService, ResourceGroupService resourceGroupService) {
     this.aclRepository = aclRepository;
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.roleRepository = roleRepository;
@@ -60,6 +64,7 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
     this.executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2,
         new ThreadFactoryBuilder().setNameFormat(changeConsumerThreadFactory).build());
     this.aclGeneratorService = aclGeneratorService;
+    this.resourceGroupService = resourceGroupService;
   }
 
   @Override
@@ -133,13 +138,15 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
     private final RoleAssignmentDBO roleAssignmentDBO;
     private final RoleDBO updatedRole;
     private final ACLGeneratorService aclGeneratorService;
-
+    private final ResourceGroupService resourceGroupService;
     private ReProcessRoleAssignmentOnRoleUpdateTask(ACLRepository aclRepository,
-        ACLGeneratorService aclGeneratorService, RoleAssignmentDBO roleAssignment, RoleDBO updatedRole) {
+        ACLGeneratorService aclGeneratorService, RoleAssignmentDBO roleAssignment, RoleDBO updatedRole,
+                                                    ResourceGroupService resourceGroupService) {
       this.aclRepository = aclRepository;
       this.aclGeneratorService = aclGeneratorService;
       this.roleAssignmentDBO = roleAssignment;
       this.updatedRole = updatedRole;
+      this.resourceGroupService = resourceGroupService;
     }
 
     @Override
@@ -155,8 +162,11 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
       long numberOfACLsDeleted =
           aclRepository.deleteByRoleAssignmentIdAndPermissions(roleAssignmentDBO.getId(), permissionsRemovedFromRole);
 
-      Set<ResourceSelector> existingResourceSelectors =
-          aclRepository.getDistinctResourceSelectorsInACLs(roleAssignmentDBO.getId());
+      Optional<ResourceGroup> resourceGroupOptional = resourceGroupService.get(roleAssignmentDBO.getResourceGroupIdentifier(), roleAssignmentDBO.getScopeIdentifier(), ManagedFilter.NO_FILTER);
+      Set<ResourceSelector> existingResourceSelectors = Collections.emptySet();
+      if (resourceGroupOptional.isPresent()) {
+        existingResourceSelectors = resourceGroupOptional.get().getResourceSelectorsV2();
+      }
       Set<String> existingPrincipals =
           Sets.newHashSet(aclRepository.getDistinctPrincipalsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
 
