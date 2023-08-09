@@ -862,6 +862,7 @@ public enum FeatureName {
       "Service Inputs will be marked as execution inputs if service is an expression", HarnessTeam.CDC),
   CDS_STORE_INSTANCE_STATS_ITERATOR_RUN_TIME(
       "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP),
+  CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL("For removing usage of retry interval field for ", HarnessTeam.CDC),
   CDS_NG_FETCH_FILES_REFACTOR(
       "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP);
   // keep-sorted end

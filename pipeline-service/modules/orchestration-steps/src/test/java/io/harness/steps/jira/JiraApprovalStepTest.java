@@ -41,6 +41,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalOutcome;
@@ -48,6 +49,7 @@ import io.harness.steps.approval.step.jira.JiraApprovalSpecParameters;
 import io.harness.steps.approval.step.jira.JiraApprovalStep;
 import io.harness.steps.approval.step.jira.beans.JiraApprovalResponseData;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
+import io.harness.yaml.core.timeout.Timeout;
 
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
@@ -70,7 +72,10 @@ public class JiraApprovalStepTest extends CategoryTest {
   @Mock LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock ExecutorService dashboardExecutorService;
   @Mock JiraApprovalHelperService jiraApprovalHelperService;
+  @Mock IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
+  @Mock Ambiance ambiance;
   @InjectMocks private JiraApprovalStep jiraApprovalStep;
+  @Mock JiraApprovalInstance jiraApprovalInstance;
   private ILogStreamingStepClient logStreamingStepClient;
 
   @Before
@@ -103,6 +108,32 @@ public class JiraApprovalStepTest extends CategoryTest {
     JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceArgumentCaptor.getValue();
     assertThat(instance.getIssueKey()).isEqualTo(TICKET_NUMBER);
     assertThat(instance.getConnectorRef()).isEqualTo(CONNECTOR);
+    verify(logStreamingStepClient, times(1)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testExecuteAsyncWithRetryInterval() {
+    Ambiance ambiance = buildAmbiance();
+    StepElementParameters parameters = getStepElementParametersWithRetryInterval();
+    doAnswer(invocationOnMock -> {
+      JiraApprovalInstance instance = invocationOnMock.getArgument(0, JiraApprovalInstance.class);
+      instance.setId(INSTANCE_ID);
+      return instance;
+    })
+        .when(approvalInstanceService)
+        .save(any());
+    assertThat(jiraApprovalStep.executeAsync(ambiance, parameters, null, null).getCallbackIds(0))
+        .isEqualTo(INSTANCE_ID);
+    ArgumentCaptor<ApprovalInstance> approvalInstanceArgumentCaptor = ArgumentCaptor.forClass(ApprovalInstance.class);
+    verify(approvalInstanceService).save(approvalInstanceArgumentCaptor.capture());
+    assertThat(approvalInstanceArgumentCaptor.getValue().getStatus()).isEqualTo(ApprovalStatus.WAITING);
+    assertThat(approvalInstanceArgumentCaptor.getValue().getAmbiance()).isEqualTo(ambiance);
+    JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceArgumentCaptor.getValue();
+    assertThat(instance.getIssueKey()).isEqualTo(TICKET_NUMBER);
+    assertThat(instance.getConnectorRef()).isEqualTo(CONNECTOR);
+    verify(irregularApprovalInstanceHandler, times(1)).wakeup();
     verify(logStreamingStepClient, times(1)).openStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 
@@ -201,12 +232,57 @@ public class JiraApprovalStepTest extends CategoryTest {
     assertThat(jiraApprovalStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
   }
 
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetJiraRetryIntervalInstance() {
+    StepElementParameters stepElementParameters = getStepElementParametersWithRetryInterval();
+    assertThat(jiraApprovalInstance.fromStepParameters(ambiance, stepElementParameters)
+                   .getRetryInterval()
+                   .getValue()
+                   .getTimeoutInMillis())
+        .isEqualTo(60000L);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetJiraRetryIntervalInstanceWithRetryIntervalLessThan5s() {
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .type("JIRA_APPROVAL")
+            .spec(JiraApprovalSpecParameters.builder()
+                      .issueKey(ParameterField.<String>builder().value(TICKET_NUMBER).build())
+                      .connectorRef(ParameterField.<String>builder().value(CONNECTOR).build())
+                      .retryInterval(ParameterField.createValueField(Timeout.fromString("5s")))
+                      .build())
+            .build();
+    assertThatThrownBy(()
+                           -> jiraApprovalInstance.fromStepParameters(ambiance, stepElementParameters)
+                                  .getRetryInterval()
+                                  .getValue()
+                                  .getTimeoutInMillis())
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("retry interval field for Jira approval cannot be less than 10s");
+  }
+
   private StepElementParameters getStepElementParameters() {
     return StepElementParameters.builder()
         .type("JIRA_APPROVAL")
         .spec(JiraApprovalSpecParameters.builder()
                   .issueKey(ParameterField.<String>builder().value(TICKET_NUMBER).build())
                   .connectorRef(ParameterField.<String>builder().value(CONNECTOR).build())
+                  .build())
+        .build();
+  }
+
+  private StepElementParameters getStepElementParametersWithRetryInterval() {
+    return StepElementParameters.builder()
+        .type("JIRA_APPROVAL")
+        .spec(JiraApprovalSpecParameters.builder()
+                  .issueKey(ParameterField.<String>builder().value(TICKET_NUMBER).build())
+                  .connectorRef(ParameterField.<String>builder().value(CONNECTOR).build())
+                  .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
                   .build())
         .build();
   }
