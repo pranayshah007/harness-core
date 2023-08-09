@@ -77,6 +77,7 @@ public class PluginsProxyInfoServiceImpl implements PluginsProxyInfoService {
     for (PluginsProxyInfoEntity pluginsProxyInfoEntity : pluginsProxyInfoEntities) {
       if (pluginsProxyInfoEntity.getProxy()) {
         hostProxyMap.put(pluginsProxyInfoEntity.getHost(), true);
+        log.info("Delegate Selectors: {}", pluginsProxyInfoEntity.getDelegateSelectors().toString());
         delegateSelectorsCache.put(accountIdentifier, pluginsProxyInfoEntity.getHost(),
             new HashSet<>(pluginsProxyInfoEntity.getDelegateSelectors()));
       }
