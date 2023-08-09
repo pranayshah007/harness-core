@@ -21,7 +21,6 @@ import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
-import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.template.TemplateEntityType;
@@ -125,25 +124,15 @@ public class GlobalTemplateEntity
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("unique_identifier_label_repo_branch")
+                 .name("unique_identifier_label")
                  .unique(true)
                  .field(GlobalTemplateEntityKeys.identifier)
                  .field(GlobalTemplateEntityKeys.versionLabel)
-                 .field(GlobalTemplateEntityKeys.yamlGitConfigRef)
-                 .field(GlobalTemplateEntityKeys.branch)
                  .build())
-        .add(CompoundMongoIndex.builder().name("identifier").field(GlobalTemplateEntityKeys.identifier).build())
         .add(CompoundMongoIndex.builder()
-                 .name("lastUpdatedAt_idx")
-                 .field(GlobalTemplateEntityKeys.lastUpdatedAt)
-                 .build())
-        // for git sync indexes
-        .add(SortCompoundMongoIndex.builder()
-                 .name("identifier_label_isDefault")
+                 .name("unique_identifier")
+                 .unique(true)
                  .field(GlobalTemplateEntityKeys.identifier)
-                 .field(GlobalTemplateEntityKeys.versionLabel)
-                 .field(GlobalTemplateEntityKeys.isFromDefaultBranch)
-                 .descSortField(GlobalTemplateEntityKeys.createdAt)
                  .build())
         .build();
   }
