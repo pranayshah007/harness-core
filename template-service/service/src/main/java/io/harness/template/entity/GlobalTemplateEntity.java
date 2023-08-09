@@ -130,7 +130,7 @@ public class GlobalTemplateEntity
                  .field(GlobalTemplateEntityKeys.versionLabel)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("unique_identifier")
+                 .name("identifier")
                  .unique(true)
                  .field(GlobalTemplateEntityKeys.identifier)
                  .build())
