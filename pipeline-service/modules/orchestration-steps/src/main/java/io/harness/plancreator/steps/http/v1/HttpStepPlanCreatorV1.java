@@ -7,12 +7,11 @@
 
 package io.harness.plancreator.steps.http.v1;
 
-import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.http.HttpStepNodeV1;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -20,6 +19,8 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExpressionMode;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
@@ -30,7 +31,6 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -38,6 +38,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
+import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
 import io.harness.when.utils.RunInfoUtils;
 
@@ -68,8 +69,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
   @SneakyThrows
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
-    final boolean isStepInsideRollback =
-        YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
+    final boolean isStepInsideRollback = isStepInsideRollback(ctx.getDependency());
     HttpStepNodeV1 stepNode = YamlUtils.read(field.getNode().toString(), HttpStepNodeV1.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
@@ -77,24 +77,20 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
     StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
         kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, buildAdviser(ctx.getDependency()));
 
-    StepElementParameters parameters =
-        StepElementParameters.builder()
-            .timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepNode.getTimeout())))
-            .spec(stepNode.getHttpStepInfo().getSpecParameters())
-            .build();
-
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepNode.getUuid()))
             .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getNodeName()))
             .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getId()))
-            .stepType(stepNode.getStepSpecType().getStepType())
+            .stepType(StepSpecTypeConstants.HTTP_STEP_TYPE)
             .group(StepOutcomeGroup.STEP.name())
-            .stepParameters(parameters)
+            .stepParameters(
+                stepNode.getStepParameters(PlanCreatorUtilsCommon.getRollbackParameters(
+                                               ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN),
+                    ctx))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
-                    .setType(
-                        FacilitatorType.newBuilder().setType(stepNode.getStepSpecType().getFacilitatorType()).build())
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
                     .build())
             .whenCondition(RunInfoUtils.getStepWhenCondition(stepNode.getWhen(), isStepInsideRollback))
             .timeoutObtainment(
@@ -104,8 +100,8 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
                                     .timeout(TimeoutUtils.getTimeoutParameterFieldString(stepNode.getTimeout()))
                                     .build())
                     .build())
-            .skipUnresolvedExpressionsCheck(stepNode.getStepSpecType().skipUnresolvedExpressionsCheck())
-            .expressionMode(stepNode.getStepSpecType().getExpressionMode());
+            .skipUnresolvedExpressionsCheck(true)
+            .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
 
     if (field.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField("strategy") == null) {
       builder.adviserObtainments(buildAdviser(ctx.getDependency()));
@@ -141,5 +137,13 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
                 kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
             .build());
     return adviserObtainments;
+  }
+
+  private boolean isStepInsideRollback(Dependency dependency) {
+    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
+        || !dependency.getMetadataMap().containsKey("isStepInsideRollback")) {
+      return false;
+    }
+    return (boolean) kryoSerializer.asObject(dependency.getMetadataMap().get("isStepInsideRollback").toByteArray());
   }
 }

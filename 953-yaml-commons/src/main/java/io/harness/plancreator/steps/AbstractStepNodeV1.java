@@ -21,11 +21,10 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.plancreator.policy.PolicyConfig;
-import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.plancreator.strategy.v1.StrategyConfigV1;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
-import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.core.VariableExpression;
@@ -36,7 +35,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -57,17 +55,13 @@ public abstract class AbstractStepNodeV1 {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @NotNull @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier;
-  @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
+  @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String id;
+  @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
   String description;
 
   @ApiModelProperty(dataType = SwaggerConstants.STEP_WHEN_CLASSPATH)
   @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   ParameterField<String> when;
-
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
-  ParameterField<String> skipCondition;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -77,7 +71,7 @@ public abstract class AbstractStepNodeV1 {
   @YamlSchemaTypes(value = {onlyRuntimeInputAllowed})
   @VariableExpression(skipVariableExpression = true)
   @JsonProperty("strategy")
-  ParameterField<StrategyConfig> strategy;
+  ParameterField<StrategyConfigV1> strategy;
   @VariableExpression(skipVariableExpression = true) PolicyConfig enforce;
 
   @JsonIgnore public abstract String getType();

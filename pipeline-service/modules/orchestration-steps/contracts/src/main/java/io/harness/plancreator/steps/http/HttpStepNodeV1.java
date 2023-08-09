@@ -12,15 +12,29 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
+import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.http.HttpHeaderConfig;
+import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.StepParametersUtils;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNodeV1;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.StepUtils;
+import io.harness.steps.http.HttpStepParameters;
 import io.harness.yaml.core.StepSpecType;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Collections;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -59,5 +73,33 @@ public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
     StepType(String name) {
       this.name = name;
     }
+  }
+
+  public StepElementParameters getStepParameters(
+      OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {
+    StepElementParameters.StepElementParametersBuilder stepBuilder = StepParametersUtils.getStepParametersV1(this);
+    stepBuilder.spec(getSpecParameters(getHttpStepInfo()));
+    stepBuilder.rollbackParameters(failRollbackParameters);
+    StepUtils.appendDelegateSelectorsToSpecParameters(getStepSpecType(), ctx);
+    return stepBuilder.build();
+  }
+
+  public SpecParameters getSpecParameters(HttpStepInfo httpStepInfo) {
+    return HttpStepParameters.infoBuilder()
+        .assertion(httpStepInfo.getAssertion())
+        .headers(EmptyPredicate.isEmpty(httpStepInfo.getHeaders())
+                ? Collections.emptyMap()
+                : httpStepInfo.getHeaders().stream().collect(
+                    Collectors.toMap(HttpHeaderConfig::getKey, HttpHeaderConfig::getValue)))
+        .certificate(httpStepInfo.getCertificate())
+        .certificateKey(httpStepInfo.getCertificateKey())
+        .method(httpStepInfo.getMethod())
+        .outputVariables(NGVariablesUtils.getMapOfVariables(httpStepInfo.getOutputVariables(), 0L))
+        .inputVariables(NGVariablesUtils.getMapOfVariables(httpStepInfo.getInputVariables(), 0L))
+        .requestBody(httpStepInfo.getRequestBody())
+        .delegateSelectors(ParameterField.createValueField(CollectionUtils.emptyIfNull(
+            httpStepInfo.getDelegateSelectors() != null ? httpStepInfo.getDelegateSelectors().getValue() : null)))
+        .url(httpStepInfo.getUrl())
+        .build();
   }
 }

@@ -16,10 +16,12 @@ import io.harness.plancreator.stages.PmsAbstractStageNode;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
+import io.harness.plancreator.steps.internal.PmsAbstractStepNodeV1;
 import io.harness.pms.tags.TagUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.SdkCoreStepUtils;
 import io.harness.utils.TimeoutUtils;
+import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import lombok.experimental.UtilityClass;
@@ -69,6 +71,26 @@ public class StepParametersUtils {
       PmsAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters) {
     StepElementParametersBuilder stepBuilder = getStepParameters(stepElementConfig);
     stepBuilder.rollbackParameters(failRollbackParameters);
+    return stepBuilder;
+  }
+
+  public StepElementParametersBuilder getStepParametersV1(PmsAbstractStepNodeV1 stepElementConfig) {
+    StepElementParametersBuilder stepBuilder = StepElementParameters.builder();
+    stepBuilder.name(stepElementConfig.getName());
+    stepBuilder.identifier(stepElementConfig.getId());
+    stepBuilder.delegateSelectors(stepElementConfig.getDelegateSelectors());
+    stepBuilder.description(stepElementConfig.getDescription());
+    stepBuilder.failureStrategies(
+        stepElementConfig.getFailureStrategies() != null ? stepElementConfig.getFailureStrategies().getValue() : null);
+    stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepElementConfig.getTimeout())));
+    // TODO: when needs to be converted to ParameterField<String> for V1
+    stepBuilder.when(stepElementConfig.getWhen() != null
+            ? StepWhenCondition.builder().condition(stepElementConfig.getWhen()).build()
+            : null);
+    stepBuilder.type(stepElementConfig.getType());
+    stepBuilder.uuid(stepElementConfig.getUuid());
+    stepBuilder.enforce(stepElementConfig.getEnforce());
+
     return stepBuilder;
   }
 }
