@@ -40,7 +40,7 @@ COPY --chown=65534:65534--from=builder \
 WORKDIR /opt/harness
 RUN ls /opt/harness/
 RUN chmod +x /opt/harness/*.sh
-CMD [ "/opt/harness/run.sh" ]
+CMD [ "./run.sh" ]
 USER root
 RUN microdnf install -y yum
 RUN yum -y install fontconfig dejavu-sans-fonts wget
