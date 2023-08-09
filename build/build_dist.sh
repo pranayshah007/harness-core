@@ -186,8 +186,13 @@ function copy_verification_service_jars(){
   cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -R ../../dockerization/verification/scripts/ .
+  ls ../../dockerization/verification/scripts/
   copy_common_files
+  pwd
+  ls
   cd ../..
+  pwd 
+  ls
 
 }
 
