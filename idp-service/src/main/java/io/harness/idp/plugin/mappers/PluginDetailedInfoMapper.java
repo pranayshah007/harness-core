@@ -57,7 +57,7 @@ public class PluginDetailedInfoMapper {
       }
       exports.setExportDetails(exportDetailsList);
     }
-    pluginDetailedInfo.setSaved(isConfigSaved);
+    pluginDetailedInfo.setSaved(isEnabled);
     pluginDetailedInfo.setExports(exports);
     pluginDetailedInfo.setConfig(config);
     pluginDetailedInfo.setEnvVariables(backstageEnvSecretVariables);
