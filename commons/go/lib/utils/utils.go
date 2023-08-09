@@ -32,6 +32,7 @@ const (
 	LangType_CSHARP  LangType = 1
 	LangType_PYTHON  LangType = 2
 	LangType_UNKNOWN LangType = 3
+	LangType_RUBY    LangType = 4
 )
 
 const (
@@ -124,10 +125,11 @@ func ParseCsharpNode(file types.File, testGlobs []string) (*Node, error) {
 	return &node, nil
 }
 
-// ParsePythonNode extracts the file name from a Python file path
+// ParseFileNameBasedNode extracts the file name from a file path
+// Use this for Python and Ruby. Can extend to all languages where file names are primary ID
 // e.g., src/abc/def/A.py
-// will return class = A
-func ParsePythonNode(file types.File, testGlobs []string) (*Node, error) {
+// will return class = src/abc/def/A.py
+func ParseFileNameBasedNode(file types.File, testGlobs []string) (*Node, error) {
 	var node Node
 	node.Pkg = ""
 	node.Class = ""
@@ -135,11 +137,16 @@ func ParsePythonNode(file types.File, testGlobs []string) (*Node, error) {
 	node.Type = NodeType_OTHER
 
 	filename := strings.TrimSpace(file.Name)
-	if !strings.HasSuffix(filename, ".py") {
-		return &node, nil
+	if strings.HasSuffix(filename, ".py") {
+		node.Lang = LangType_PYTHON
+		node.Type = NodeType_SOURCE
+	} else if strings.HasSuffix(filename, ".rb") {
+        node.Lang = LangType_RUBY
+        node.Type = NodeType_SOURCE
+    } else {
+    // Reject unknown language for now. Remove if we want to make agent pluggable
+	    return &node, nil
 	}
-	node.Lang = LangType_PYTHON
-	node.Type = NodeType_SOURCE
 
 	for _, glob := range testGlobs {
 		if matched, _ := zglob.Match(glob, filename); !matched {
@@ -284,9 +291,12 @@ func ParseFileNames(files []types.File) ([]Node, error) {
 			node, _ := ParseCsharpNode(file, []string{})
 			nodes = append(nodes, *node)
 		} else if strings.HasSuffix(path, ".py") {
-			node, _ := ParsePythonNode(file, PYTHON_TEST_PATTERN)
+			node, _ := ParseFileNameBasedNode(file, PYTHON_TEST_PATTERN)
 			nodes = append(nodes, *node)
-		} else {
+		} else if strings.HasSuffix(path, ".rb") {
+            node, _ := ParseFileNameBasedNode(file, PYTHON_TEST_PATTERN)
+            nodes = append(nodes, *node)
+        } else {
 			node, _ := ParseJavaNode(file)
 			nodes = append(nodes, *node)
 		}

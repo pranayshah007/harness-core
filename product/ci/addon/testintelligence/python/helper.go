@@ -37,7 +37,7 @@ func GetPythonTests(testGlobs []string) ([]types.RunnableTest, error) {
 			continue
 		}
 		f := types.File{Name: path}
-		node, _ := utils.ParsePythonNode(f, testGlobs)
+		node, _ := utils.ParseFileNameBasedNode(f, testGlobs)
 		if node.Type != utils.NodeType_TEST {
 			continue
 		}
