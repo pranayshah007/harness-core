@@ -33,6 +33,6 @@ public class ELKConnectorValidationInfo extends ConnectorValidationInfo<ELKConne
 
   @Override
   public Map<String, String> collectionHeaders() {
-    return elkUtils.collectionHeaders(connectorConfigDTO);
+    return ElkUtils.collectionHeaders(connectorConfigDTO);
   }
 }
