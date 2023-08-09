@@ -837,7 +837,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/DatapointResponse'
-      operationId: get-datapoints-for-dataource
+      operationId: get-data-points-for-data-source
       x-stoplight:
         id: o1fkdu4i4o7s1
       description: Get DataPoints Present in DataSources
@@ -2188,6 +2188,7 @@ components:
       required:
         - identifier
         - name
+      x-internal: true
     CheckListItem:
       title: CheckListItem
       x-stoplight:
@@ -2209,6 +2210,7 @@ components:
                 type: string
           required:
             - data_source
+      x-internal: true
     CheckResponse:
       title: CheckResponse
       x-stoplight:
@@ -2217,6 +2219,7 @@ components:
       properties:
         check:
           $ref: '#/components/schemas/CheckListItem'
+      x-internal: true
     CheckDetails:
       title: CheckDetails
       x-stoplight:
@@ -2268,6 +2271,7 @@ components:
             - rules
             - custom
             - default_behaviour
+      x-internal: true
     CheckDetailsRequest:
       title: CheckDetailsRequest
       x-stoplight:
@@ -2276,6 +2280,7 @@ components:
       properties:
         check_details:
           $ref: '#/components/schemas/CheckDetails'
+      x-internal: true
     CheckDetailsResponse:
       title: CheckDetailsResponse
       x-stoplight:
@@ -2286,6 +2291,7 @@ components:
           $ref: '#/components/schemas/CheckDetails'
       required:
         - check_details
+      x-internal: true
     Rule:
       title: Rule
       x-stoplight:
@@ -2308,11 +2314,17 @@ components:
           type: string
           x-stoplight:
             id: fw6ab4ouzxyh2
+        conditional_input_value:
+          type: string
+          x-stoplight:
+            id: 5me3hbs6ppy4m
       required:
         - data_source_identifier
         - data_point_identifier
         - operator
         - value
+        - conditional_input_value
+      x-internal: true
     ScorecardChecks:
       title: ScorecardChecks
       x-stoplight:
@@ -2498,6 +2510,7 @@ components:
         id: hgthx1pgb86ws
       type: object
       description: Contains Details for Single Data source
+      x-internal: true
       properties:
         identifier:
           type: string
@@ -2514,7 +2527,7 @@ components:
       required:
         - identifier
         - name
-      x-internal: true
+        - description
     DataSourcesResponse:
       title: DataSourcesResponse
       x-stoplight:
@@ -2555,11 +2568,7 @@ components:
           type: boolean
           x-stoplight:
             id: z8zaipngqim52
-        input_value:
-          type: string
-          x-stoplight:
-            id: xpc15s11ka0e7
-        input_description:
+        conditional_input_description:
           type: string
           x-stoplight:
             id: 9kth5poytqeum
@@ -2567,6 +2576,8 @@ components:
         - type
         - name
         - description
+        - is_conditional
+        - conditional_input_description
     DataPointsResponse:
       title: DataPointResponse
       x-stoplight:
