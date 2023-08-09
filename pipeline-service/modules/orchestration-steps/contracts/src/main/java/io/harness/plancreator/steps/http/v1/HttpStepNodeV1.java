@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
-import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
@@ -64,12 +63,11 @@ public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
     }
   }
 
-  public StepElementParameters getStepParameters(
-      OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {
+  // TODO: set rollback parameters
+  public StepElementParameters getStepParameters(PlanCreationContext ctx) {
     StepElementParameters.StepElementParametersBuilder stepBuilder = StepParametersUtils.getStepParametersV1(this);
     stepBuilder.spec(getSpecParameters(getHttpStepInfo()));
     stepBuilder.type(StepSpecTypeConstants.HTTP);
-    stepBuilder.rollbackParameters(failRollbackParameters);
     StepUtils.appendDelegateSelectorsToSpecParameters(httpStepInfo, ctx);
     return stepBuilder.build();
   }

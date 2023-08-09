@@ -10,7 +10,6 @@ package io.harness.plancreator.steps.http.v1;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
-import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -37,7 +36,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
-import io.harness.utils.PlanCreatorUtilsCommon;
 import io.harness.utils.TimeoutUtils;
 import io.harness.when.utils.RunInfoUtils;
 
@@ -83,10 +81,8 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
             .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getId()))
             .stepType(StepSpecTypeConstants.HTTP_STEP_TYPE)
             .group(StepOutcomeGroup.STEP.name())
-            .stepParameters(
-                stepNode.getStepParameters(PlanCreatorUtilsCommon.getRollbackParameters(
-                                               ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN),
-                    ctx))
+            // TODO: send rollback parameters to this method which can be extracted from dependency
+            .stepParameters(stepNode.getStepParameters(ctx))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
@@ -138,11 +134,8 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
     return adviserObtainments;
   }
 
+  // TODO: Get isStepInsideRollback from dependency metadata map
   private boolean isStepInsideRollback(Dependency dependency) {
-    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
-        || !dependency.getMetadataMap().containsKey("isStepInsideRollback")) {
-      return false;
-    }
-    return (boolean) kryoSerializer.asObject(dependency.getMetadataMap().get("isStepInsideRollback").toByteArray());
+    return false;
   }
 }
