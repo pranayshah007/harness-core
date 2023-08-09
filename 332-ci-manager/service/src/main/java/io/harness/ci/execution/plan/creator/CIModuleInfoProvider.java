@@ -52,6 +52,7 @@ import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.git.GitClientHelper;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.steps.common.StageElementParameters;
@@ -80,14 +81,11 @@ import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -152,13 +150,8 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
               try {
                 ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(
                     baseNGAccess, initializeStepInfo.getCiCodebase().getConnectorRef().getValue(), true);
-                if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
-                  url = IntegrationStageUtils.getGitURLFromConnector(
-                      connectorDetails, initializeStepInfo.getCiCodebase());
-                }
-                if (url == null) {
-                  url = connectorUtils.retrieveURL(connectorDetails);
-                }
+                url =
+                    IntegrationStageUtils.getGitURLFromConnector(connectorDetails, initializeStepInfo.getCiCodebase());
                 if (isEmpty(repoName) || repoName.equals(NULL_STR)) {
                   repoName = getGitRepo(url);
                 }
@@ -174,7 +167,14 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
           imageDetailsList = IntegrationStageUtils.getCiImageDetails(initializeStepInfo);
           tiBuildDetailsList = IntegrationStageUtils.getTiBuildDetails(initializeStepInfo);
 
-          isPrivateRepo = isPrivateRepo(url);
+          if (isNotEmpty(url)) {
+            if (GitClientHelper.isHTTPProtocol(url)) {
+              isPrivateRepo = GitClientHelper.isGitUrlPrivate(url);
+            } else {
+              isPrivateRepo = true;
+            }
+          }
+
           Build build = RunTimeInputHandler.resolveBuild(buildParameterField);
           if (build != null) {
             buildType = build.getType().toString();
@@ -521,21 +521,5 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .build();
-  }
-
-  private boolean isPrivateRepo(String urlString) {
-    try {
-      URL url = new URL(urlString);
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestMethod("GET");
-      connection.setConnectTimeout(5000);
-      connection.connect();
-      int code = connection.getResponseCode();
-      return (!Response.Status.Family.familyOf(code).equals(Response.Status.Family.SUCCESSFUL))
-          || code == HttpURLConnection.HTTP_NOT_AUTHORITATIVE;
-    } catch (Exception e) {
-      log.warn("Failed to get repo info, assuming private. url", e);
-      return true;
-    }
   }
 }
