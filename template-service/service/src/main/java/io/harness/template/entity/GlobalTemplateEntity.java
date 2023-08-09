@@ -129,11 +129,7 @@ public class GlobalTemplateEntity
                  .field(GlobalTemplateEntityKeys.identifier)
                  .field(GlobalTemplateEntityKeys.versionLabel)
                  .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("identifier")
-                 .unique(true)
-                 .field(GlobalTemplateEntityKeys.identifier)
-                 .build())
+        .add(CompoundMongoIndex.builder().name("identifier").field(GlobalTemplateEntityKeys.identifier).build())
         .build();
   }
   @Override
