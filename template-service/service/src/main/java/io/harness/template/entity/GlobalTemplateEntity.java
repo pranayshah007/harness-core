@@ -136,7 +136,6 @@ public class GlobalTemplateEntity
                  .build())
         .build();
   }
-
   @Override
   public boolean isEntityInvalid() {
     return Boolean.TRUE.equals(isEntityInvalid);
