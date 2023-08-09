@@ -96,6 +96,7 @@ notificationServiceConfig:
     indexManagerMode: AUTO
     aliasDBName: notification
     maxDocumentsToBeFetched: 2147483647
+    maxOperationTimeInMillis: 900000
 
   smtp:
     type: SMTP
@@ -133,6 +134,7 @@ auditServiceConfig:
     aliasDBName: ng-audits
     transactionsEnabled: false
     maxDocumentsToBeFetched: 2147483647
+    maxOperationTimeInMillis: 900000
 
   enableAuditService: true
   hostname: ${HOSTNAME:-localhost}
@@ -227,6 +229,7 @@ resourceGroupServiceConfig:
     indexManagerMode: AUTO
     aliasDBName: resourcegroup
     maxDocumentsToBeFetched: 2147483647
+    maxOperationTimeInMillis: 900000
   enableAudit: false
   auditClientConfig:
     baseUrl: http://localhost:9005/api/
