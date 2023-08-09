@@ -129,8 +129,10 @@ function copy_migrator_jars(){
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -r ../../dockerization/migrator/scripts/ .
   mv scripts/start_process_bazel.sh scripts/start_process.sh
-
+  ls ../../dockerization/migrator/scripts/
   copy_common_files
+  pwd 
+  ls
 
   java -jar migrator-capsule.jar scan-classpath-metadata
 
