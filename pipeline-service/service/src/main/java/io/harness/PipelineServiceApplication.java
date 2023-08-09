@@ -58,6 +58,7 @@ import io.harness.event.OrchestrationStartEventHandler;
 import io.harness.event.PipelineExecutionSummaryDeleteObserver;
 import io.harness.event.PipelineResourceRestraintInstanceDeleteObserver;
 import io.harness.event.PlanExecutionMetadataDeleteObserver;
+import io.harness.event.handlers.SpawnChildrenRequestProcessor;
 import io.harness.exception.GeneralException;
 import io.harness.execution.consumers.InitiateNodeEventRedisConsumer;
 import io.harness.execution.consumers.SdkResponseEventRedisConsumer;
@@ -181,6 +182,7 @@ import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.barriers.BarrierInitializer;
 import io.harness.steps.barriers.event.BarrierDropper;
 import io.harness.steps.barriers.event.BarrierPositionHelperEventHandler;
+import io.harness.steps.barriers.event.BarrierWithinStrategyInitializer;
 import io.harness.steps.barriers.service.BarrierServiceImpl;
 import io.harness.steps.common.NodeExecutionMetadataDeleteObserver;
 import io.harness.steps.resourcerestraint.ResourceRestraintInitializer;
@@ -603,6 +605,9 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(PipelineStatusUpdateEventHandler.class)));
     planExecutionStrategy.getOrchestrationEndSubject().register(
         injector.getInstance(Key.get(ResourceRestraintObserver.class)));
+
+    SpawnChildrenRequestProcessor spawnChildrenRequestProcessor = injector.getInstance(Key.get(SpawnChildrenRequestProcessor.class));
+    spawnChildrenRequestProcessor.getBarrierInitializer().register(injector.getInstance(Key.get(BarrierWithinStrategyInitializer.class)));
 
     HMongoTemplate mongoTemplate = (HMongoTemplate) injector.getInstance(MongoTemplate.class);
     mongoTemplate.getTracerSubject().register(injector.getInstance(MongoRedisTracer.class));

@@ -43,14 +43,17 @@ import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.BarrierNodeRepository;
 import io.harness.springdata.HMongoTemplate;
 import io.harness.springdata.PersistenceUtils;
+import io.harness.steps.barriers.BarrierSpecParameters;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance.BarrierExecutionInstanceKeys;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
@@ -157,6 +160,36 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
     if (barrierExecutionInstance.getBarrierState() != STANDING) {
       return barrierExecutionInstance;
     }
+
+//    if (Boolean.TRUE.equals(barrierExecutionInstance.getSetupInfo().getIsWithinMatrix())) {
+//      barrierExecutionInstance.getPositionInfo().setBarrierPositionList(new ArrayList<>());
+//      // maybe need to update barrier position list
+//      List<NodeExecution> barrierNodes = nodeExecutionService.getAllBarriersNodes(barrierExecutionInstance.getPlanExecutionId());
+//      for (NodeExecution barrierNode : barrierNodes) {
+//        StepElementParameters stepElementParameters =
+//                RecastOrchestrationUtils.fromMap(barrierNode.getResolvedStepParameters(), StepElementParameters.class);
+//        BarrierSpecParameters barrierSpecParameters = (BarrierSpecParameters) stepElementParameters.getSpec();
+//        if (barrierExecutionInstance.getIdentifier().equals(barrierSpecParameters.getBarrierRef())) {
+//          BarrierPositionInfo.BarrierPosition.BarrierPositionBuilder  barrierPositionBuilder =  BarrierPositionInfo.BarrierPosition.builder();
+//          for (io.harness.pms.contracts.ambiance.Level level : barrierNode.getAmbiance().getLevelsList()) {
+//            if ("STAGE".equals(level.getStepType().getStepCategory().toString())) {
+//              barrierPositionBuilder.stageSetupId(level.getSetupId());
+//              barrierPositionBuilder.stageRuntimeId(level.getRuntimeId());
+//              barrierPositionBuilder.stepGroupRollback(false);
+//            }
+//            if ("STEP_GROUP".equals(level.getStepType().getType())) {
+//              barrierPositionBuilder.stepGroupSetupId(level.getSetupId());
+//              barrierPositionBuilder.stepGroupRuntimeId(level.getRuntimeId());
+//            }
+//            if ("Barrier".equals(level.getStepType().getType())) {
+//              barrierPositionBuilder.stepSetupId(level.getSetupId());
+//              barrierPositionBuilder.stepRuntimeId(level.getRuntimeId());
+//            }
+//          }
+//          barrierExecutionInstance.getPositionInfo().getBarrierPositionList().add(barrierPositionBuilder.build());
+//        }
+//      }
+//    }
 
     Forcer forcer = buildForcer(barrierExecutionInstance);
 
@@ -378,12 +411,13 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   }
 
   @Override
-  public List<BarrierSetupInfo> getBarrierSetupInfoList(String yaml) {
+  public BarrierVisitor getBarrierInfo(String yaml) {
     try {
       YamlNode yamlNode = YamlUtils.extractPipelineField(yaml).getNode();
       BarrierVisitor barrierVisitor = new BarrierVisitor(injector);
       barrierVisitor.walkElementTree(yamlNode);
-      return new ArrayList<>(barrierVisitor.getBarrierIdentifierMap().values());
+      return barrierVisitor;
+//      return new ArrayList<>(barrierVisitor.getBarrierIdentifierMap().values());
     } catch (IOException e) {
       log.error("Error while extracting yaml");
       throw new InvalidRequestException("Error while extracting yaml");
@@ -393,21 +427,21 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
     }
   }
 
-  @Override
-  public Map<String, List<BarrierPositionInfo.BarrierPosition>> getBarrierPositionInfoList(String yaml) {
-    try {
-      YamlNode yamlNode = YamlUtils.extractPipelineField(yaml).getNode();
-      BarrierVisitor barrierVisitor = new BarrierVisitor(injector);
-      barrierVisitor.walkElementTree(yamlNode);
-      return barrierVisitor.getBarrierPositionInfoMap();
-    } catch (IOException e) {
-      log.error("Error while extracting yaml");
-      throw new InvalidRequestException("Error while extracting yaml");
-    } catch (InvalidRequestException e) {
-      log.error("Error while processing yaml");
-      throw e;
-    }
-  }
+//  @Override
+//  public Map<String, List<BarrierPositionInfo.BarrierPosition>> getBarrierPositionInfoList(String yaml) {
+//    try {
+//      YamlNode yamlNode = YamlUtils.extractPipelineField(yaml).getNode();
+//      BarrierVisitor barrierVisitor = new BarrierVisitor(injector);
+//      barrierVisitor.walkElementTree(yamlNode);
+//      return barrierVisitor.getBarrierPositionInfoMap();
+//    } catch (IOException e) {
+//      log.error("Error while extracting yaml");
+//      throw new InvalidRequestException("Error while extracting yaml");
+//    } catch (InvalidRequestException e) {
+//      log.error("Error while processing yaml");
+//      throw e;
+//    }
+//  }
 
   @Override
   public void deleteAllForGivenPlanExecutionId(Set<String> planExecutionIds) {

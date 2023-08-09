@@ -14,6 +14,7 @@ import io.harness.distribution.barrier.Barrier.State;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
+import io.harness.steps.barriers.service.visitor.BarrierVisitor;
 
 import java.util.List;
 import java.util.Map;
@@ -33,8 +34,8 @@ public interface BarrierService {
   BarrierExecutionInstance findByPlanNodeIdAndPlanExecutionId(String planNodeId, String planExecutionId);
   List<BarrierExecutionInstance> findByStageIdentifierAndPlanExecutionIdAnsStateIn(
       String stageIdentifier, String planExecutionId, Set<State> stateSet);
-  List<BarrierSetupInfo> getBarrierSetupInfoList(String yaml);
-  Map<String, List<BarrierPositionInfo.BarrierPosition>> getBarrierPositionInfoList(String yaml);
+  BarrierVisitor getBarrierInfo(String yaml);
+//  Map<String, List<BarrierPositionInfo.BarrierPosition>> getBarrierPositionInfoList(String yaml);
 
   /**
    * Deletes barrierInstances for given planExecutionIds

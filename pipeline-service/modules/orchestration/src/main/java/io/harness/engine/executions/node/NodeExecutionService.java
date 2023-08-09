@@ -42,6 +42,7 @@ public interface NodeExecutionService {
    * @return
    */
   NodeExecution get(String nodeExecutionId);
+  List<NodeExecution> getAllBarriersNodes(String planExecutionId);
 
   CloseableIterator<NodeExecution> get(List<String> nodeExecutionIds);
 

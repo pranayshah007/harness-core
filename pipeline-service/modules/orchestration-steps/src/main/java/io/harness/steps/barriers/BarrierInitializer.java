@@ -23,10 +23,14 @@ import io.harness.steps.barriers.beans.BarrierSetupInfo;
 import io.harness.steps.barriers.service.BarrierService;
 
 import com.google.inject.Inject;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import io.harness.steps.barriers.service.visitor.BarrierVisitor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,18 +49,19 @@ public class BarrierInitializer implements OrchestrationStartObserver {
           // TODO: Barrier support
           break;
         case PipelineVersion.V0:
-          Map<String, BarrierSetupInfo> barrierIdentifierSetupInfoMap =
-              barrierService.getBarrierSetupInfoList(planExecutionMetadata.getProcessedYaml())
+          BarrierVisitor barriersInfo = barrierService.getBarrierInfo(planExecutionMetadata.getProcessedYaml());
+          Map<String, BarrierSetupInfo> barrierIdentifierSetupInfoMap = new ArrayList<>(barriersInfo.getBarrierIdentifierMap().values())
                   .stream()
                   .collect(Collectors.toMap(BarrierSetupInfo::getIdentifier, Function.identity()));
 
-          Map<String, List<BarrierPositionInfo.BarrierPosition>> barrierPositionInfoMap =
-              barrierService.getBarrierPositionInfoList(planExecutionMetadata.getProcessedYaml());
+          Map<String, List<BarrierPositionInfo.BarrierPosition>> barrierPositionInfoMap = barriersInfo.getBarrierPositionInfoMap();
 
           List<BarrierExecutionInstance> barriers =
               barrierPositionInfoMap.entrySet()
                   .stream()
                   .filter(entry -> !entry.getValue().isEmpty())
+                  // Filter out barriers that are within a "strategy" node.
+                  .filter(entry -> barrierIdentifierSetupInfoMap.get(entry.getKey()).getStrategySetupId() == null)
                   .map(entry
                       -> BarrierExecutionInstance.builder()
                              .uuid(generateUuid())

@@ -28,6 +28,7 @@ import io.harness.timeout.TimeoutInstance;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -45,7 +46,7 @@ public class PMSBarrierServiceImpl implements PMSBarrierService {
 
   @Override
   public List<BarrierSetupInfo> getBarrierSetupInfoList(String yaml) {
-    return barrierService.getBarrierSetupInfoList(yaml);
+    return new ArrayList<>(barrierService.getBarrierInfo(yaml).getBarrierIdentifierMap().values());
   }
 
   @Override

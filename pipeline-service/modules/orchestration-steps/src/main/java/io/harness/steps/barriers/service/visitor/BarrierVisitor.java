@@ -50,6 +50,7 @@ public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {
 
   private final Map<String, BarrierSetupInfo> barrierIdentifierMap;
   @Getter private final Map<String, List<BarrierPositionInfo.BarrierPosition>> barrierPositionInfoMap;
+  @Getter private String strategySetupId;
 
   // state variable
   private String stageName; // this field will be changed each time we encounter a stage
@@ -63,6 +64,7 @@ public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {
     this.barrierPositionInfoMap = new HashMap<>();
     this.stageName = null;
     this.stageIdentifier = null;
+    this.strategySetupId = null;
   }
 
   @Override
@@ -76,6 +78,7 @@ public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {
 
     addMetadataIfFlowControlNode(element);
     addMetadataIfStageNode(element);
+    addMetadataIfStrategy(element);
     addMetadataIfBarrierStep(element);
 
     return VisitElementResult.CONTINUE;
@@ -114,6 +117,14 @@ public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {
       stageName = element.getName();
       stageIdentifier = element.getIdentifier();
       stageSetupId = element.getUuid();
+      strategySetupId = null;
+    }
+  }
+
+  private void addMetadataIfStrategy(YamlNode element) {
+    // TODO: Add comment here
+    if (element.getField("strategy") != null) {
+        strategySetupId = element.getUuid();
     }
   }
 
@@ -135,6 +146,7 @@ public class BarrierVisitor extends SimpleVisitor<DummyVisitableElement> {
                    .name(Preconditions.checkNotNull(stageName, "Stage name should not be null"))
                    .identifier(Preconditions.checkNotNull(stageIdentifier, "Stage identifier should not be null"))
                    .build());
+      barrierIdentifierMap.get(identifier).setStrategySetupId(strategySetupId);
 
       barrierPositionInfoMap.get(identifier)
           .add(BarrierPositionInfo.BarrierPosition.builder()

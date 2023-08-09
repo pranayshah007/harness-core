@@ -61,6 +61,7 @@ public final class BarrierExecutionInstance implements PersistentEntity, UuidAwa
   @NotNull private String planExecutionId;
   @NotNull private State barrierState;
   @NotNull private BarrierSetupInfo setupInfo;
+  private String strategyExecutionId;
   private BarrierPositionInfo positionInfo;
 
   private Long nextIteration;
@@ -104,9 +105,10 @@ public final class BarrierExecutionInstance implements PersistentEntity, UuidAwa
                  .field(BarrierExecutionInstanceKeys.stagesIdentifier)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("unique_identifier_planExecutionId_idx")
+                 .name("unique_identifier_planExecutionId_strategyExecutionId_idx")
                  .field(BarrierExecutionInstanceKeys.identifier)
                  .field(BarrierExecutionInstanceKeys.planExecutionId)
+                 .field(BarrierExecutionInstanceKeys.strategyExecutionId)
                  .unique(true)
                  .build())
         .add(CompoundMongoIndex.builder()

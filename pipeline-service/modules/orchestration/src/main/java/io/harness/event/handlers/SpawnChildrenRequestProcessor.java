@@ -18,11 +18,14 @@ import io.harness.concurrency.MaxConcurrentChildCallback;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
+import io.harness.engine.observers.BarrierInitializeRequest;
+import io.harness.engine.observers.BarrierInitializeWithinStrategyObserver;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.logging.AutoLogContext;
+import io.harness.observer.Subject;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
 import io.harness.pms.contracts.execution.ExecutableResponse;
@@ -46,6 +49,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -61,13 +65,16 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private PipelineSettingsService pipelineSettingsService;
   @Inject private PlanService planService;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
+  @Inject @Getter private final Subject<BarrierInitializeWithinStrategyObserver> barrierInitializer = new Subject<>();
 
   @Override
   public void handleEvent(SdkResponseEventProto event) {
     SpawnChildrenRequest request = event.getSpawnChildrenRequest();
     Ambiance ambiance = event.getAmbiance();
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    String nodeSetupId = Objects.requireNonNull(AmbianceUtils.obtainCurrentSetupId(ambiance));
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+      initializeBarriersWithinStrategyNode(nodeExecutionId, nodeSetupId, ambiance);
       List<String> childrenIds = new ArrayList<>();
       List<String> callbackIds = new ArrayList<>();
       int currentChild = 0;
@@ -187,5 +194,10 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
 
   private boolean shouldCreateAndStart(int maxConcurrency, int currentChild) {
     return currentChild < maxConcurrency;
+  }
+
+  private void initializeBarriersWithinStrategyNode(String strategyExecutionId, String strategySetupId, Ambiance ambiance) {
+    barrierInitializer.fireInform(BarrierInitializeWithinStrategyObserver::onInitializeRequest,
+            BarrierInitializeRequest.builder().strategyExecutionId(strategyExecutionId).strategySetupId(strategySetupId).ambiance(ambiance).build());
   }
 }

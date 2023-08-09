@@ -193,6 +193,13 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
+  public List<NodeExecution> getAllBarriersNodes(String planExecutionId) {
+    // Uses - id index
+    Query query = query(where("ambiance.planExecutionId").is(planExecutionId).and("planNode.stepType.type").is("Barrier"));
+    return nodeExecutionReadHelper.fetchNodeExecutionsWithoutProjections(query);
+  }
+
+  @Override
   public List<NodeExecution> getAllWithFieldIncluded(Set<String> nodeExecutionIds, Set<String> fieldsToInclude) {
     if (EmptyPredicate.isEmpty(nodeExecutionIds)) {
       return new ArrayList<>();
