@@ -9,7 +9,6 @@ package io.harness.ng.core.invites.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorMessageConstants.INVALID_JWT_TOKEN;
 import static io.harness.eraro.ErrorMessageConstants.TOKEN_EXPIRED;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -45,10 +44,10 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.ExpiredTokenException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.InvalidTokenException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.invites.remote.InviteAcceptResponse;
@@ -511,8 +510,6 @@ public class InviteServiceImpl implements InviteService {
     Optional<Invite> inviteOptional = null;
     try {
       inviteOptional = getInviteFromToken(jwtToken, true);
-    } catch (InvalidTokenException e) {
-      return InviteAcceptResponse.builder().response(INVITE_INVALID).build();
     } catch (ExpiredTokenException e) {
       return InviteAcceptResponse.builder().response(INVITE_EXPIRED).build();
     }
@@ -562,9 +559,8 @@ public class InviteServiceImpl implements InviteService {
     try {
       inviteIdOptional = getInviteIdFromToken(jwtToken);
     } catch (InvalidRequestException e) {
-      if (INVALID_JWT_TOKEN.equals(e.getMessage())) {
-        throw new InvalidTokenException(INVALID_JWT_TOKEN, WingsException.USER);
-      } else if (TOKEN_EXPIRED.equals(e.getMessage())) {
+      log.error("Invalid invite JWT token", e);
+      if (TOKEN_EXPIRED.equals(e.getMessage()) && ErrorCode.EXPIRED_TOKEN.equals(e.getCode())) {
         throw new ExpiredTokenException(TOKEN_EXPIRED, WingsException.USER);
       }
     }
