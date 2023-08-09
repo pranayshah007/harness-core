@@ -12,6 +12,7 @@ package io.harness.signup.services;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.rule.OwnerRule.NATHAN;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.XIN;
 import static io.harness.rule.OwnerRule.ZHUO;
 import static io.harness.signup.services.impl.SignupServiceImpl.FAILED_EVENT_NAME;
@@ -100,6 +101,7 @@ public class SignupServiceImplTest extends CategoryTest {
   private static final String TOKEN = "token";
   private static final String EMAIL = "test@test.com";
   private static final String INVALID_EMAIL = "test";
+  private static final String NON_LOWERCASE_EMAIL = "TEST@test.Com";
   private static final String PASSWORD = "admin12345";
   private static final String ACCOUNT_ID = "account1";
   private static final String ACCOUNT_NAME = "accountName1";
@@ -343,5 +345,45 @@ public class SignupServiceImplTest extends CategoryTest {
     VerifyTokenResponseDTO verifyTokenResponseDTO = signupServiceImpl.verifyToken("2");
 
     assertThat(verifyTokenResponseDTO.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testSignupOAuthWithNonLowerCaseEmail() throws IOException {
+    final String name = "name";
+    OAuthSignupDTO oAuthSignupDTO =
+        OAuthSignupDTO.builder().email(NON_LOWERCASE_EMAIL).name(name).intent(ModuleType.CD).build();
+    AccountDTO accountDTO = AccountDTO.builder().identifier(ACCOUNT_ID).build();
+    UserInfo newUser = UserInfo.builder().email(NON_LOWERCASE_EMAIL.toLowerCase()).name(name).build();
+
+    doNothing().when(signupValidator).validateEmail(eq(NON_LOWERCASE_EMAIL));
+
+    when(accountService.createAccount(any(SignupDTO.class))).thenReturn(accountDTO);
+
+    Call<RestResponse<UserInfo>> createUserCall = mock(Call.class);
+    when(createUserCall.execute()).thenReturn(Response.success(new RestResponse<>(newUser)));
+
+    when(userClient.createNewOAuthUser(any(UserRequestDTO.class))).thenReturn(createUserCall);
+
+    Call<RestResponse<Optional<UserInfo>>> getUserByIdCall = mock(Call.class);
+    when(createUserCall.execute()).thenReturn(Response.success(new RestResponse<>(newUser)));
+    when(userClient.getUserById(any())).thenReturn(getUserByIdCall);
+    when(accessControlClient.hasAccess(any(), any(), any(), any())).thenReturn(true);
+    when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
+
+    UserInfo returnedUser = signupServiceImpl.oAuthSignup(oAuthSignupDTO);
+
+    verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(NON_LOWERCASE_EMAIL.toLowerCase()), any(), any());
+    verify(telemetryReporter, times(1))
+
+        .sendIdentifyEvent(eq(TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + ACCOUNT_ID), any(), any());
+    verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_ID), eq(EMAIL.toLowerCase()), any(), any());
+
+    verify(licenseService, times(1)).startFreeLicense(eq(ACCOUNT_ID), eq(ModuleType.CD), isNull(), isNull());
+    verify(executorService, times(1));
+    assertThat(returnedUser.getEmail()).isEqualTo(newUser.getEmail());
+    assertThat(returnedUser.getEmail()).isEqualTo(NON_LOWERCASE_EMAIL.toLowerCase());
+    assertThat(returnedUser.getName()).isEqualTo(name);
   }
 }
