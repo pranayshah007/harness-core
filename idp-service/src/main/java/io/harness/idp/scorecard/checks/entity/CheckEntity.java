@@ -44,6 +44,12 @@ public class CheckEntity implements PersistentEntity {
                  .field(CheckKeys.accountIdentifier)
                  .field(CheckKeys.identifier)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("account_custom_deleted")
+                 .field(CheckKeys.accountIdentifier)
+                 .field(CheckKeys.isCustom)
+                 .field(CheckKeys.isDeleted)
+                 .build())
         .build();
   }
 

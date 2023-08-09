@@ -1008,6 +1008,24 @@ paths:
         - $ref: '#/components/parameters/CheckIdentifier'
       requestBody:
         $ref: '#/components/schemas/CheckDetailsRequest'
+    delete:
+      summary: Delete check details for given checkId
+      operationId: delete-check
+      description: Delete check details for given checkId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CheckIdentifier'
+        - $ref: '#/components/parameters/ForceDelete'
+      x-internal: true
+      responses:
+        '204':
+          description: No Content
+      tags:
+        - Checks
+      x-stoplight:
+        id: 2dpwyqgwwzjvd
   /v1/scorecards:
     get:
       summary: Get all scorecards available
@@ -1086,6 +1104,23 @@ paths:
             schema:
               $ref: '#/components/schemas/ScorecardDetailsRequest'
       x-internal: true
+    delete:
+      summary: Delete scorecard details for given scorecardId
+      operationId: delete-scorecard
+      description: Delete scorecard details for given scorecardId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ScorecardIdentifier'
+      x-internal: true
+      responses:
+        '204':
+          description: No Content
+      tags:
+        - Scorecards
+      x-stoplight:
+        id: o1dppys5mqejp
 components:
   schemas:
     BackstageEnvVariable:
@@ -2944,6 +2979,13 @@ components:
       schema:
         type: string
       description: 'Identifier for entity to get the scores for score card '
+    ForceDelete:
+      name: force_delete
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: This is used if an entity need to be force deleted
   requestBodies:
     BackstageEnvVariableRequest:
       content:

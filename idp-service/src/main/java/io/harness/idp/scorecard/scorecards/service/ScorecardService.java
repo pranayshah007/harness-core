@@ -23,4 +23,5 @@ public interface ScorecardService {
   void saveScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier);
   void updateScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier);
   ScorecardDetailsResponse getScorecardDetails(String accountIdentifier, String identifier);
+  void deleteScorecard(String accountIdentifier, String identifier);
 }

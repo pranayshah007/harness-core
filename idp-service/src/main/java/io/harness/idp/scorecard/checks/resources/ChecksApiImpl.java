@@ -80,7 +80,24 @@ public class ChecksApiImpl implements ChecksApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response updateCheck(String checkId, @Valid CheckDetailsRequest body, String harnessAccount) {
+  public Response deleteCheck(String checkId, @AccountIdentifier String harnessAccount, Boolean forceDelete) {
+    try {
+      checkService.deleteCustomCheck(harnessAccount, checkId, forceDelete);
+      return Response.status(Response.Status.NO_CONTENT).build();
+    } catch (Exception e) {
+      String errorMessage = String.format(
+          "Error occurred while deleting check for accountId: [%s], checkId: [%s]", harnessAccount, checkId);
+      log.error(errorMessage, e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response updateCheck(
+      String checkId, @Valid CheckDetailsRequest body, @AccountIdentifier String harnessAccount) {
     try {
       checkService.updateCheck(body.getCheckDetails(), harnessAccount);
       return Response.status(Response.Status.OK).build();

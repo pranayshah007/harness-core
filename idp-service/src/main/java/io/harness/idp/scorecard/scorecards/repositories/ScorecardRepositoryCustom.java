@@ -11,7 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 
+import com.mongodb.client.result.DeleteResult;
+
 @OwnedBy(HarnessTeam.IDP)
 public interface ScorecardRepositoryCustom {
   ScorecardEntity update(ScorecardEntity scorecardEntity);
+  DeleteResult delete(String accountIdentifier, String identifier);
 }

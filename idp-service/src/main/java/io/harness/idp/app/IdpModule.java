@@ -26,6 +26,7 @@ import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
@@ -112,7 +113,9 @@ import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
@@ -192,6 +195,7 @@ public class IdpModule extends AbstractModule {
     install(VersionModule.getInstance());
     install(new IdpPersistenceModule());
     install(IdpGrpcModule.getInstance());
+    install(EntitySetupUsageModule.getInstance());
     install(new AbstractMongoModule() {
       @Provides
       @Singleton
@@ -279,6 +283,10 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ServiceResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new NGSettingsClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new EntitySetupUsageClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, IDP_SERVICE.getServiceId(), false));
     install(new BackstageResourceClientModule());
     install(DelegateServiceDriverModule.getInstance(false, false));
