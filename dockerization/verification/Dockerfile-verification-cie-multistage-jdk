@@ -25,11 +25,11 @@ FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534 --from=builder \
- /app/dist/270-verification/verification-capsule.jar \
- /app/dist/270-verification/keystore.jks \
- /app/dist/270-verification/verification-config.yml \
- /app/dist/270-verification/protocol.info \
- /app/dist/270-verification/scripts /opt/harness \
+/app/dist/verification-service/verification-capsule.jar \
+/app/dist/verification-service/keystore.jks \
+/app/dist/verification-service/verification-config.yml \
+/app/dist/verification-service/protocol.info \
+/app/dist/verification-service/scripts /opt/harness \
  /app/dockerization/base-images/apm/*.sh \
  /opt/harness/
 RUN ls /opt/harness/
