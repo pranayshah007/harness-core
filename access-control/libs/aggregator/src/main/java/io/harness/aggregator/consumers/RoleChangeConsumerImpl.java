@@ -55,7 +55,8 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
   private final ResourceGroupService resourceGroupService;
 
   public RoleChangeConsumerImpl(ACLRepository aclRepository, RoleAssignmentRepository roleAssignmentRepository,
-      RoleRepository roleRepository, String executorServiceSuffix, ACLGeneratorService aclGeneratorService, ResourceGroupService resourceGroupService) {
+      RoleRepository roleRepository, String executorServiceSuffix, ACLGeneratorService aclGeneratorService,
+      ResourceGroupService resourceGroupService) {
     this.aclRepository = aclRepository;
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.roleRepository = roleRepository;
@@ -141,7 +142,7 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
     private final ResourceGroupService resourceGroupService;
     private ReProcessRoleAssignmentOnRoleUpdateTask(ACLRepository aclRepository,
         ACLGeneratorService aclGeneratorService, RoleAssignmentDBO roleAssignment, RoleDBO updatedRole,
-                                                    ResourceGroupService resourceGroupService) {
+        ResourceGroupService resourceGroupService) {
       this.aclRepository = aclRepository;
       this.aclGeneratorService = aclGeneratorService;
       this.roleAssignmentDBO = roleAssignment;
@@ -162,7 +163,9 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
       long numberOfACLsDeleted =
           aclRepository.deleteByRoleAssignmentIdAndPermissions(roleAssignmentDBO.getId(), permissionsRemovedFromRole);
 
-      Optional<ResourceGroup> resourceGroupOptional = resourceGroupService.get(roleAssignmentDBO.getResourceGroupIdentifier(), roleAssignmentDBO.getScopeIdentifier(), ManagedFilter.NO_FILTER);
+      Optional<ResourceGroup> resourceGroupOptional =
+          resourceGroupService.get(roleAssignmentDBO.getResourceGroupIdentifier(),
+              roleAssignmentDBO.getScopeIdentifier(), ManagedFilter.NO_FILTER);
       Set<ResourceSelector> existingResourceSelectors = Collections.emptySet();
       if (resourceGroupOptional.isPresent()) {
         existingResourceSelectors = resourceGroupOptional.get().getResourceSelectorsV2();
