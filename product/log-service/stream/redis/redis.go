@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -351,10 +352,14 @@ func (r *Redis) expiryWatcher(expiry time.Duration, scanBatch int64) {
 			return
 		}
 		for _, k := range keys {
-			if err := r.setExpiry(k, expiry); err == nil {
-				logrus.Infof("set an expiry %s on non-volatile key: %s", expiry, k)
-				cnt++
+			//Expire only log keys
+			if strings.Contains(k, "/accountId:") && strings.Contains(k, "/orgId:") {
+				if err := r.setExpiry(k, expiry); err == nil {
+					logrus.Infof("set an expiry %s on non-volatile key: %s", expiry, k)
+					cnt++
+				}
 			}
+
 		}
 		if cursor == 0 {
 			break
