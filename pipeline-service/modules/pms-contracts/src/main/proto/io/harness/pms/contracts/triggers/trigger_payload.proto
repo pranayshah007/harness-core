@@ -21,6 +21,7 @@ message TriggerPayload {
     ManifestData manifestData = 7;
   }
   int64 version = 8;
+  string connectorRef = 9;
 }
 
 message ArtifactData {

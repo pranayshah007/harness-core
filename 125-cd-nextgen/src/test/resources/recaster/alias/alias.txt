@@ -203,7 +203,6 @@ io.harness.cdng.provision.cloudformation.InlineCloudformationTagsFileSpec
 io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig
 io.harness.cdng.tas.TasCommandStepParameters
 io.harness.plancreator.strategy.ExpressionAxisConfig
-io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml
 io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome
 io.harness.ng.core.envGroup.EnvironmentGroupOutcome
 io.harness.cdng.provision.azure.AzureCreateBPStepConfigurationParameters

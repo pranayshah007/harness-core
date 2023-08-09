@@ -63643,8 +63643,6 @@
                 }, {
                   "$ref" : "#/definitions/pipeline/steps/common/K8sDirectInfraYaml"
                 }, {
-                  "$ref" : "#/definitions/pipeline/steps/common/K8sHostedInfraYaml"
-                }, {
                   "$ref" : "#/definitions/pipeline/steps/common/UseFromStageInfraYaml"
                 }, {
                   "$ref" : "#/definitions/pipeline/steps/common/VmInfraYaml"
@@ -64743,8 +64741,6 @@
                 }, {
                   "$ref" : "#/definitions/pipeline/steps/common/K8sDirectInfraYaml"
                 }, {
-                  "$ref" : "#/definitions/pipeline/steps/common/K8sHostedInfraYaml"
-                }, {
                   "$ref" : "#/definitions/pipeline/steps/common/UseFromStageInfraYaml"
                 }, {
                   "$ref" : "#/definitions/pipeline/steps/common/VmInfraYaml"
@@ -65186,8 +65182,6 @@
                   "$ref" : "#/definitions/pipeline/steps/common/HostedVmInfraYaml"
                 }, {
                   "$ref" : "#/definitions/pipeline/steps/common/K8sDirectInfraYaml"
-                }, {
-                  "$ref" : "#/definitions/pipeline/steps/common/K8sHostedInfraYaml"
                 }, {
                   "$ref" : "#/definitions/pipeline/steps/common/UseFromStageInfraYaml"
                 }, {

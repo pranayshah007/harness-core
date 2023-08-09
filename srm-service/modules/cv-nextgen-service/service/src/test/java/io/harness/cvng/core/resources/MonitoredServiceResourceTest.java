@@ -38,6 +38,7 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHea
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SplunkMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -47,6 +48,7 @@ import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
@@ -89,7 +91,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private CVConfigService cvConfigService;
   @Inject NotificationRuleService notificationRuleService;
-
+  @Inject private HPersistence hPersistence;
   private MonitoredServiceDTO monitoredServiceDTO;
 
   @ClassRule
@@ -404,6 +406,38 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     assertThat(monitoredServiceDTO.getServiceRef()).isEqualTo("cvng_service_UxrHvd7oNa");
     assertThat(monitoredServiceDTO.getEnvironmentRefList())
         .isEqualTo(Collections.singletonList("org.cvng_env_prod_NWceMzD9XM"));
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testSaveMonitoredService_defaultEnabled() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-default-enabled.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse = response.readEntity(new GenericType<>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getIdentifier()).isEqualTo("cvng_service_UxrHvd7oNa_cvng_env_prod_NWceMzD9XM");
+    assertThat(monitoredServiceDTO.getServiceRef()).isEqualTo("cvng_service_UxrHvd7oNa");
+    assertThat(monitoredServiceDTO.getEnvironmentRefList())
+        .isEqualTo(Collections.singletonList("cvng_env_prod_NWceMzD9XM"));
+    assertThat(monitoredServiceDTO.isEnabled()).isFalse();
+    assertThat(hPersistence.createQuery(MonitoredService.class).asList().get(0).isEnabled()).isFalse();
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/" + monitoredServiceDTO.getIdentifier())
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .put(Entity.json(convertToJson(monitoredServiceYaml)));
+    restResponse = response.readEntity(new GenericType<>() {});
+    monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.isEnabled()).isFalse();
   }
 
   @Test

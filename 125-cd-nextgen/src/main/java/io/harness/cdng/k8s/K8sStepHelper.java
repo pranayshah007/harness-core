@@ -994,14 +994,19 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     return Collections.emptyList();
   }
 
-  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags) {
+  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags, Ambiance ambiance) {
     if (commandFlags == null) {
       return new HashMap<>();
     }
 
     Map<String, String> commandsValueMap = new HashMap<>();
     for (K8sStepCommandFlag commandFlag : commandFlags) {
-      commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), commandFlag.getFlag().getValue());
+      if (ParameterField.isNotNull(commandFlag.getFlag())) {
+        String flagValue = commandFlag.getFlag().isExpression()
+            ? cdExpressionResolver.renderExpression(ambiance, commandFlag.getFlag().getExpressionValue())
+            : commandFlag.getFlag().getValue();
+        commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), flagValue);
+      }
     }
 
     return commandsValueMap;

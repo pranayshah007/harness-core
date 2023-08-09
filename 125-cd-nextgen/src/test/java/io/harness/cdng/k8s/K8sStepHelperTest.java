@@ -27,6 +27,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
@@ -4567,9 +4568,25 @@ public class K8sStepHelperTest extends CDNGTestBase {
                                       .flag(ParameterField.createValueField("--server-side"))
                                       .build());
     Map<String, String> k8sCommandFlagExpected = ImmutableMap.of("Apply", "--server-side");
-    Map<String, String> k8sCommandFlag = k8sStepHelper.getDelegateK8sCommandFlag(commandFlags);
+    Map<String, String> k8sCommandFlag = k8sStepHelper.getDelegateK8sCommandFlag(commandFlags, ambiance);
     assertThat(k8sCommandFlag).isEqualTo(k8sCommandFlagExpected);
   }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetDelegateK8sCommandFlagFromExpression() {
+    List<K8sStepCommandFlag> commandFlags = Collections.singletonList(
+        K8sStepCommandFlag.builder()
+            .commandType(K8sCommandFlagType.Apply)
+            .flag(ParameterField.createExpressionField(true, "<+pipeline.variables.output>", null, true))
+            .build());
+    doReturn("--output=json").when(engineExpressionService).renderExpression(ambiance, "<+pipeline.variables.output>");
+    Map<String, String> k8sCommandFlagExpected = ImmutableMap.of("Apply", "--output=json");
+    Map<String, String> k8sCommandFlag = k8sStepHelper.getDelegateK8sCommandFlag(commandFlags, ambiance);
+    assertThat(k8sCommandFlag).isEqualTo(k8sCommandFlagExpected);
+  }
+
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)

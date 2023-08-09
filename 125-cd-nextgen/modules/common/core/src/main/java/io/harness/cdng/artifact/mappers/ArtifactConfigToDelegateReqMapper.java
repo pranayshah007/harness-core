@@ -108,6 +108,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactConfigToDelegateReqMapper {
   private final String ACCEPT_ALL_REGEX = "\\*";
+  private static final String ALL_REGEX = ".*?";
   private final String LAST_PUBLISHED_EXPRESSION = "<+lastPublished.tag>";
   private final long TIME_OUT = 600000L;
 
@@ -154,7 +155,7 @@ public class ArtifactConfigToDelegateReqMapper {
   }
 
   public String getTagRegex(String tag) {
-    return tag.equals(LAST_PUBLISHED_EXPRESSION) ? ".*?" : tag;
+    return tag.equals(LAST_PUBLISHED_EXPRESSION) ? ALL_REGEX : tag;
   }
 
   public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,
@@ -792,7 +793,7 @@ public class ArtifactConfigToDelegateReqMapper {
         : (String) artifactConfig.getArtifactDirectory().fetchFinalValue();
 
     if (isLastPublishedExpression(artifactPath)) {
-      artifactPathFilter = "*";
+      artifactPathFilter = ALL_REGEX;
     }
 
     if (ParameterField.isNotNull(artifactConfig.getArtifactPath())

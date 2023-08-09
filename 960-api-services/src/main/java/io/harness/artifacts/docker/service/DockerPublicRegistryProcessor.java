@@ -22,6 +22,7 @@ import io.harness.artifacts.docker.DockerRegistryToken;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.artifacts.docker.beans.DockerPublicImageTagResponse;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
+import io.harness.artifacts.utils.RetrofitUtils;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
@@ -55,6 +56,7 @@ import retrofit2.Response;
 public class DockerPublicRegistryProcessor {
   @Inject private DockerRestClientFactory dockerRestClientFactory;
   @Inject private DockerRegistryUtils dockerRegistryUtils;
+  private final String ERROR_MESSAGE_KEY = "message";
 
   private ExpiringMap<String, String> cachedBearerTokens = ExpiringMap.builder().variableExpiration().build();
 
@@ -69,7 +71,7 @@ public class DockerPublicRegistryProcessor {
     if (!isSuccessful(response)) {
       throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the given tag for the image",
           "The tag provided for the image may be incorrect.",
-          new InvalidArtifactServerException(response.message(), USER));
+          new InvalidArtifactServerException(RetrofitUtils.getErrorBodyDetails(response, ERROR_MESSAGE_KEY), USER));
     }
     return processSingleResultResponse(response.body(), imageName, dockerConfig);
   }
@@ -117,7 +119,7 @@ public class DockerPublicRegistryProcessor {
     if (!isSuccessful(response)) {
       throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the tags for the image",
           "Check if the image exists and if the permissions are scoped for the authenticated user",
-          new InvalidArtifactServerException(response.message(), USER));
+          new InvalidArtifactServerException(RetrofitUtils.getErrorBodyDetails(response, ERROR_MESSAGE_KEY), USER));
     }
 
     return paginate(response.body(), dockerConfig, imageName, registryRestClient, maxNumberOfBuilds);
@@ -155,7 +157,8 @@ public class DockerPublicRegistryProcessor {
       if (!isSuccessful(pageResponse)) {
         throw NestedExceptionUtils.hintWithExplanationException("Unable to fetch the tags for the image",
             "Check if the image exists and if the permissions are scoped for the authenticated user",
-            new InvalidArtifactServerException(pageResponse.message(), USER));
+            new InvalidArtifactServerException(
+                RetrofitUtils.getErrorBodyDetails(pageResponse, ERROR_MESSAGE_KEY), USER));
       }
 
       DockerPublicImageTagResponse page = pageResponse.body();

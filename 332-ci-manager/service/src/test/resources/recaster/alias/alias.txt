@@ -339,7 +339,6 @@ io.harness.beans.steps.stepinfo.RunStepInfo
 io.harness.beans.steps.nodes.V1.ScriptStepNode
 io.harness.beans.steps.nodes.security.CustomIngestScanNode
 io.harness.plancreator.strategy.ExpressionAxisConfig
-io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml
 io.harness.beans.dependencies.DependencyElement
 io.harness.ci.pipeline.executions.beans.CIImageDetails
 io.harness.yaml.sto.variables.STOYamlMetasploitConfig

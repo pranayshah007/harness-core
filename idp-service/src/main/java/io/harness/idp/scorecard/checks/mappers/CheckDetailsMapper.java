@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
+import io.harness.spec.server.idp.v1.model.Rule;
 
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -40,9 +41,7 @@ public class CheckDetailsMapper {
   public CheckEntity fromDTO(CheckDetails checkDetails, String accountIdentifier) {
     String expression = checkDetails.getRules()
                             .stream()
-                            .map(rule
-                                -> rule.getDataSourceIdentifier() + DOT_SEPARATOR + rule.getDataPointIdentifier()
-                                    + rule.getOperator() + rule.getValue())
+                            .map(rule -> getExpression(rule))
                             .collect(Collectors.joining(SPACE_SEPARATOR
                                 + (checkDetails.getRuleStrategy() == CheckDetails.RuleStrategyEnum.ALL_OF ? "&&" : "||")
                                 + SPACE_SEPARATOR));
@@ -60,5 +59,15 @@ public class CheckDetailsMapper {
         .tags(checkDetails.getTags())
         .labels(checkDetails.getLabels())
         .build();
+  }
+
+  String getExpression(Rule rule) {
+    if (!rule.getConditionalInputValue().isEmpty()) {
+      return rule.getDataSourceIdentifier() + DOT_SEPARATOR + rule.getDataPointIdentifier() + DOT_SEPARATOR
+          + rule.getConditionalInputValue() + rule.getOperator() + rule.getValue();
+    } else {
+      return rule.getDataSourceIdentifier() + DOT_SEPARATOR + rule.getDataPointIdentifier() + rule.getOperator()
+          + rule.getValue();
+    }
   }
 }

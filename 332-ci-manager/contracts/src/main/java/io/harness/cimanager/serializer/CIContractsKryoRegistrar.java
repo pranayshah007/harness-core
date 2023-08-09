@@ -7,7 +7,6 @@
 
 package io.harness.cimanager.serializer;
 
-import static io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml.K8sHostedInfraYamlSpec;
 import static io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
 
 import io.harness.beans.dependencies.CIServiceInfo;
@@ -44,7 +43,6 @@ import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmI
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
@@ -122,8 +120,6 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(VmInfraSpec.Type.class, 110102);
     kryo.register(VmPoolYaml.class, 110103);
     kryo.register(VmPoolYamlSpec.class, 110104);
-    kryo.register(K8sHostedInfraYaml.class, 110106);
-    kryo.register(K8sHostedInfraYamlSpec.class, 110107);
     kryo.register(HostedVmInfraYaml.class, 110112);
     kryo.register(Runtime.Type.class, 110113);
     kryo.register(CloudRuntime.class, 110114);

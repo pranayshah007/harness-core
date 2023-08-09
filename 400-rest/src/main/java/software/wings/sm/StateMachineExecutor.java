@@ -31,7 +31,6 @@ import static io.harness.beans.ExecutionStatus.brokeStatuses;
 import static io.harness.beans.ExecutionStatus.isBrokeStatus;
 import static io.harness.beans.ExecutionStatus.isFinalStatus;
 import static io.harness.beans.ExecutionStatus.isPositiveStatus;
-import static io.harness.beans.FeatureName.SPG_FIX_APPROVAL_WAITING_FOR_INPUTS;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -1861,11 +1860,8 @@ public class StateMachineExecutor implements StateInspectionListener {
    */
   private StateExecutionInstance clone(StateExecutionInstance stateExecutionInstance, State nextState) {
     StateExecutionInstance cloned = kryoSerializer.clone(stateExecutionInstance);
-    if (featureFlagService.isEnabled(SPG_FIX_APPROVAL_WAITING_FOR_INPUTS, stateExecutionInstance.getAccountId())) {
-      cloned.setWaitingForInputs(false);
-      cloned.setActionOnTimeout(null);
-    }
-
+    cloned.setWaitingForInputs(false);
+    cloned.setActionOnTimeout(null);
     cloned.setContinued(false);
     cloned.setInterruptHistory(null);
     cloned.setStateExecutionDataHistory(null);

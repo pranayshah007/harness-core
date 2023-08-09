@@ -36,7 +36,6 @@ public class BuildSetupUtils {
       InitializeStepInfo initializeStepInfo, Ambiance ambiance, String logPrefix) {
     switch (initializeStepInfo.getInfrastructure().getType()) {
       case KUBERNETES_DIRECT:
-      case KUBERNETES_HOSTED:
         return k8InitializeTaskParamsBuilder.getK8InitializeTaskParams(initializeStepInfo, ambiance, logPrefix);
       case VM:
         return vmInitializeTaskParamsBuilder.getDirectVmInitializeTaskParams(initializeStepInfo, ambiance);

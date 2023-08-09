@@ -84,7 +84,13 @@ import io.harness.idp.proxy.services.ProxyApiImpl;
 import io.harness.idp.scorecard.checks.resources.ChecksApiImpl;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.idp.scorecard.checks.service.CheckServiceImpl;
+import io.harness.idp.scorecard.datapoints.service.DataPointService;
+import io.harness.idp.scorecard.datapoints.service.DataPointServiceImpl;
+import io.harness.idp.scorecard.datasourcelocations.service.DataSourceLocationService;
+import io.harness.idp.scorecard.datasourcelocations.service.DataSourceLocationServiceImpl;
 import io.harness.idp.scorecard.datasources.resources.DataSourceApiImpl;
+import io.harness.idp.scorecard.datasources.service.DataSourceService;
+import io.harness.idp.scorecard.datasources.service.DataSourceServiceImpl;
 import io.harness.idp.scorecard.scorecards.resources.ScorecardsApiImpl;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
 import io.harness.idp.scorecard.scorecards.service.ScorecardServiceImpl;
@@ -339,6 +345,9 @@ public class IdpModule extends AbstractModule {
     bind(CheckService.class).to(CheckServiceImpl.class);
     bind(ScoresApi.class).to(ScoreApiImpl.class);
     bind(DataSourceApi.class).to(DataSourceApiImpl.class);
+    bind(DataSourceService.class).to(DataSourceServiceImpl.class);
+    bind(DataPointService.class).to(DataPointServiceImpl.class);
+    bind(DataSourceLocationService.class).to(DataSourceLocationServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));

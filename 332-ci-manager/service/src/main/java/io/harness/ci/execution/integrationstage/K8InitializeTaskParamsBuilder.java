@@ -17,10 +17,8 @@ import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DET
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STEP_NAME;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STEP_NUMBER;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
-import static io.harness.ci.commonconstants.CIExecutionConstants.POD_MAX_WAIT_UNTIL_READY_SECS;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
@@ -48,7 +46,6 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
@@ -121,8 +118,7 @@ public class K8InitializeTaskParamsBuilder {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
-    if (infrastructure.getType() != Infrastructure.Type.KUBERNETES_DIRECT
-        && infrastructure.getType() != Infrastructure.Type.KUBERNETES_HOSTED) {
+    if (infrastructure.getType() != Infrastructure.Type.KUBERNETES_DIRECT) {
       throw new CIStageExecutionException(format("Invalid infrastructure type: %s", infrastructure.getType()));
     }
 
@@ -131,23 +127,8 @@ public class K8InitializeTaskParamsBuilder {
     if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
       return buildK8DirectTaskParams(
           initializeStepInfo, k8PodDetails, (K8sDirectInfraYaml) infrastructure, ambiance, logPrefix);
-    } else if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-      return buildK8HostedTaskParams(
-          initializeStepInfo, k8PodDetails, (K8sHostedInfraYaml) infrastructure, ambiance, logPrefix);
     }
     return null;
-  }
-
-  private CIK8InitializeTaskParams buildK8HostedTaskParams(InitializeStepInfo initializeStepInfo,
-      K8PodDetails k8PodDetails, K8sHostedInfraYaml k8sHostedInfraYaml, Ambiance ambiance, String logPrefix) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    String k8Identifier = "account.Harness_Kubernetes_Cluster";
-    ConnectorDetails k8sConnector = connectorUtils.getConnectorDetails(ngAccess, k8Identifier);
-    return CIK8InitializeTaskParams.builder()
-        .k8sConnector(k8sConnector)
-        .cik8PodParams(getK8HostedPodParams(initializeStepInfo, k8PodDetails, k8sHostedInfraYaml, ambiance, logPrefix))
-        .podMaxWaitUntilReadySecs(POD_MAX_WAIT_UNTIL_READY_SECS)
-        .build();
   }
 
   private CIK8InitializeTaskParams buildK8DirectTaskParams(InitializeStepInfo initializeStepInfo,
@@ -159,34 +140,6 @@ public class K8InitializeTaskParamsBuilder {
         .k8sConnector(k8sConnector)
         .cik8PodParams(getK8DirectPodParams(initializeStepInfo, k8PodDetails, k8sDirectInfraYaml, ambiance, logPrefix))
         .podMaxWaitUntilReadySecs(k8InitializeTaskUtils.getPodWaitUntilReadTimeout(k8sDirectInfraYaml))
-        .build();
-  }
-
-  private CIK8PodParams<CIK8ContainerParams> getK8HostedPodParams(InitializeStepInfo initializeStepInfo,
-      K8PodDetails k8PodDetails, K8sHostedInfraYaml k8sHostedInfraYaml, Ambiance ambiance, String logPrefix) {
-    String podName = getPodName(ambiance, initializeStepInfo.getStageIdentifier());
-    Map<String, String> buildLabels = k8InitializeTaskUtils.getBuildLabels(ambiance, k8PodDetails);
-    List<PodVolume> volumes = new ArrayList<>();
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    String namespace = "account-" + getAccountIdentifier(ngAccess.getAccountIdentifier());
-
-    ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
-        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone(), ambiance);
-    Pair<CIK8ContainerParams, List<CIK8ContainerParams>> podContainers = getStageContainers(
-        initializeStepInfo, k8PodDetails, k8sHostedInfraYaml, ambiance, volumes, logPrefix, gitConnector);
-    saveSweepingOutput(podName, k8sHostedInfraYaml, podContainers, ambiance);
-    return CIK8PodParams.<CIK8ContainerParams>builder()
-        .name(podName)
-        .namespace(namespace)
-        .labels(buildLabels)
-        .gitConnector(gitConnector)
-        .containerParamsList(podContainers.getRight())
-        //.pvcParamList(pvcParamsList)
-        .initContainerParamsList(singletonList(podContainers.getLeft()))
-        .volumes(volumes)
-        .runtime(RUNTIME_CLASS_NAME)
-        .activeDeadLineSeconds(
-            IntegrationStageUtils.getStageTtl(ciLicenseService, ngAccess.getAccountIdentifier(), k8sHostedInfraYaml))
         .build();
   }
 
