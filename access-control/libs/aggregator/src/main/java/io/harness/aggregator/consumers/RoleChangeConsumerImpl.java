@@ -90,7 +90,7 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
             .stream()
             .map((RoleAssignmentDBO roleAssignment)
                      -> new ReProcessRoleAssignmentOnRoleUpdateTask(
-                         aclRepository, aclGeneratorService, roleAssignment, role.get()))
+                         aclRepository, aclGeneratorService, roleAssignment, role.get(), resourceGroupService))
             .collect(Collectors.toList());
 
     long numberOfACLsCreated = 0;
