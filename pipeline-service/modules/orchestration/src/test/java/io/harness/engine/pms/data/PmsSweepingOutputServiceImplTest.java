@@ -185,6 +185,26 @@ public class PmsSweepingOutputServiceImplTest extends OrchestrationTestBase {
   }
 
   @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestUpdateTTLSweepingOutputInstances() {
+    Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
+    String outputName = "outcomeName";
+    DummySweepingOutput output1 = DummySweepingOutput.builder().test("test").build();
+    pmsSweepingOutputService.consume(ambiance, outputName, RecastOrchestrationUtils.toJson(output1), null);
+    validateResult(resolve(ambiance, outputName), "test");
+
+    String outputName2 = "outcomeName2";
+    pmsSweepingOutputService.consume(ambiance, outputName2, RecastOrchestrationUtils.toJson(output1), null);
+    validateResult(resolve(ambiance, outputName2), "test");
+
+    pmsSweepingOutputService.deleteAllSweepingOutputInstances(Set.of(AmbianceTestUtils.PLAN_EXECUTION_ID));
+    // As output don't exist anymore
+    assertThatThrownBy(() -> resolve(ambiance, outputName)).isInstanceOf(SweepingOutputException.class);
+    assertThatThrownBy(() -> resolve(ambiance, outputName2)).isInstanceOf(SweepingOutputException.class);
+  }
+
+  @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testFetchOutcomeInstanceByRuntimeId() {

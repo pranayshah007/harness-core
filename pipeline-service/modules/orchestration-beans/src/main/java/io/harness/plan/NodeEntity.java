@@ -11,14 +11,18 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
+import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
 
+import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -40,6 +44,14 @@ public class NodeEntity implements PersistentEntity, UuidAccess {
   Node node;
   String planId;
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
+
+  public static List<MongoIndex> mongoIndexes() {
+    return ImmutableList
+        .<MongoIndex>builder()
+        // used by updateTTL
+        .add(CompoundMongoIndex.builder().name("planId_idx").field(NodeEntityKeys.planId).build())
+        .build();
+  }
 
   public static NodeEntity fromNode(Node node, String planId) {
     return NodeEntity.builder().node(node).uuid(node.getUuid()).planId(planId).build();

@@ -69,6 +69,7 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -714,6 +715,18 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       // Uses - id index
       Query query = query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds));
       mongoTemplate.remove(query, NodeExecution.class);
+      return true;
+    });
+  }
+
+  @Override
+  public void updateTTLForNodeExecution(String planExecutionId, Date ttlExpiryDate) {
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // Uses - planExecutionId_nodeId_idx index
+      Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId));
+      Update ops = new Update();
+      ops.set(NodeExecutionKeys.validUntil, ttlExpiryDate);
+      mongoTemplate.updateMulti(query, ops, NodeExecution.class);
       return true;
     });
   }

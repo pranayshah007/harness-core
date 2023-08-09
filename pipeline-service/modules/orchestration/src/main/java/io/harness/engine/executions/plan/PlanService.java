@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -50,9 +51,23 @@ public interface PlanService {
   void deleteNodesForGivenIds(Set<String> nodeEntityIds);
 
   /**
+   * Updates all nodeEntity for given planId with ttlExpiry
+   * Uses - planId_idx index
+   * @param planId
+   */
+  void updateTTLForNodesForGivenPlanId(String planId, Date ttlDate);
+
+  /**
    * Delete all Plans for given uuids
    * Uses - id index
    * @param planIds
    */
   void deletePlansForGivenIds(Set<String> planIds);
+
+  /**
+   * Updates TTL for all Plans for given uuids
+   * Uses - id index
+   * @param planIds
+   */
+  void updateTTLForPlans(Set<String> planIds, Date ttlDate);
 }
