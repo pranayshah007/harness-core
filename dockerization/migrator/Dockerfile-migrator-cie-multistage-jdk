@@ -39,13 +39,13 @@ COPY --chown=65534:65534--from=builder \
   /app/dockerization/base-images/apm/*.sh \
   /opt/harness/
 
+RUN ls /opt/harness/
+RUN chmod +x /opt/harness/*.sh
+CMD [ "/opt/harness/run.sh" ]
 USER root
 RUN microdnf install -y yum
 RUN yum -y install fontconfig dejavu-sans-fonts wget
 RUN chmod +x /usr/bin/yq
-
-RUN chmod +x /opt/harness/*.sh
-CMD [ "/opt/harness/run.sh" ]
 
 ############################ON PREM#########################
 FROM base as onprem
