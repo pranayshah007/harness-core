@@ -34,10 +34,11 @@ cp ../../srm-service/build/container/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-
 
 cp -R ../../srm-service/build/container/scripts/ .
 cp ../../protocol.info .
-
+ls ../../srm-service/build/container/scripts/
 cp ../../srm-service/config/jfr/default.jfc .
 cp ../../srm-service/config/jfr/profile.jfc .
-
+pwd 
+ls
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt
 if [ ! -z ${PURPOSE} ]
