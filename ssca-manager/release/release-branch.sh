@@ -59,27 +59,27 @@ echo "INFO: Step 5: Setting shell condition - exit on error TRUE."
 set -e
 echo "INFO: Step 6: Setting shell condition - debug TRUE."
 set -x
-echo "INFO: Step 7: Fetching develop"
-git fetch origin refs/heads/develop; git checkout develop && git branch
-check_branch_name "develop"
-echo "INFO: Step 8: Checking for Not Merged SRM Hot Fixes in develop."
+echo "INFO: Step 7: Fetching SSCA-344-2"
+git fetch origin refs/heads/SSCA-344-2; git checkout SSCA-344-2 && git branch
+check_branch_name "SSCA-344-2"
+echo "INFO: Step 8: Checking for Not Merged SRM Hot Fixes in SSCA-344-2."
 
 PROJFILE="jira-projects.txt"
 check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
 
 git log --remotes=origin/release/${PURPOSE}/* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > release.txt
-git log --remotes=origin/[d]evelop --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > develop.txt
+git log --remotes=origin/[d]evelop --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > SSCA-344-2.txt
 
-NOT_MERGED=`comm -23 release.txt develop.txt`
+NOT_MERGED=`comm -23 release.txt SSCA-344-2.txt`
 
 if [ ! -z "$NOT_MERGED" ]
 then
-    echo "ERROR: There are jira issues in template-service release branches that are not reflected in develop."
+    echo "ERROR: There are jira issues in template-service release branches that are not reflected in SSCA-344-2."
     exit 1
 fi
 
-echo "INFO: Get Previous Tag and Tagging Develop Branch according to type of release."
+echo "INFO: Get Previous Tag and Tagging SSCA-344-2 Branch according to type of release."
 if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     export SHA=`git rev-parse HEAD`
     export VERSION_FILE=template-service/build.properties
@@ -130,7 +130,7 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     newBranch="${major}_${minor}"
     echo ${newBranch}
     git commit -m "Branching to release/${PURPOSE}/${newBranch}. New version ${NEW_VERSION}"
-    git push origin develop
+    git push origin SSCA-344-2
 
     echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"
 
