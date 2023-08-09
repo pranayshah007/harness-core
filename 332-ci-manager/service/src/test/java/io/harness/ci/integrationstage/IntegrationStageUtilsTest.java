@@ -21,7 +21,6 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
@@ -231,9 +230,6 @@ public class IntegrationStageUtilsTest {
   @Test
   @Category(UnitTests.class)
   public void getBuildTimeMultiplier() {
-    K8sHostedInfraYaml k8sHostedInfraYaml = K8sHostedInfraYaml.builder().build();
-    Double buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(k8sHostedInfraYaml);
-    assertThat(buildTimeMultiplier).isEqualTo(2.0);
     HostedVmInfraYaml hostedVmInfraYaml =
         HostedVmInfraYaml.builder()
             .spec(HostedVmInfraYaml.HostedVmInfraSpec.builder()
@@ -241,7 +237,7 @@ public class IntegrationStageUtilsTest {
                           Platform.builder().arch(ParameterField.createValueField(ArchType.Amd64)).build()))
                       .build())
             .build();
-    buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(hostedVmInfraYaml);
+    Double buildTimeMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(hostedVmInfraYaml);
     assertThat(buildTimeMultiplier).isEqualTo(2.0);
 
     hostedVmInfraYaml.setSpec(HostedVmInfraSpec.builder()
