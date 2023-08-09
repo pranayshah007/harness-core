@@ -35,7 +35,13 @@ function check_branch_name(){
     fi
 }
 
-
+function check_file_present(){
+     local_file=$1
+     if [ ! -f "$local_file" ]; then
+        echo "ERROR: Line $LINENO: File $local_file not found. Exiting..."
+        exit 1
+     fi
+}
 
 echo "INFO: Step 0: Setting values for env variables PURPOSE and STATUS_ID_TO_MOVE."
 export PURPOSE=ssca
