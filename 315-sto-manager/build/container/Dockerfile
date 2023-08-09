@@ -5,7 +5,7 @@
 
 # To be used when building in CIE
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
+FROM us.gcr.io/platform-205701/harness/ubi8/java11:11.0.19_7 as base
 
 ARG INCLUDE_SAAS_APM
 
