@@ -1,3 +1,2 @@
-DOCKER_FILE_PATH: /harness/harness-core/platform-service/build/container/Dockerfile-platform-service-multistage
-CONTEXT_PATH: /harness/harness-core
+DOCKER_FILE_PATH: /harness/harness-core/dist/platform-service/Dockerfile-cie-jdk
 HELM_CHART_SOURCE_DIRECTORY: harness-core/platform-service/chart
