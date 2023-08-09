@@ -64,7 +64,6 @@ import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.TransactionHelper;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -72,14 +71,12 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -107,12 +104,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private PmsOutcomeService outcomeService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private PlanExpansionService planExpansionService;
-
-  @Inject @Named("EngineExecutorService") ExecutorService executorService;
   @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
   @Inject PlanExecutionService planExecutionService;
   @Inject TransactionHelper transactionHelper;
-  @Inject PmsFeatureFlagService pmsFeatureFlagService;
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
@@ -270,11 +264,22 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     }
   }
 
+  /**
+   *
+   * Concludes the nodeExecution. If the advisers are present on the node then it invokes the advisers by queueing
+   * an advising event. If it doesn't contain the advisers then it ends the nodeExecution
+   *
+   * @param ambiance Ambiance for current Node
+   * @param toStatus The status this nodeExecution Need to be transitioned into
+   * @param fromStatus The status this nodeExecution is transitioned from
+   * @param overrideStatusSet It provides a set of statuses where the node can transition from if empty default allowed
+   *     start statues are picked
+   */
   @Override
   public void concludeExecution(
       Ambiance ambiance, Status toStatus, Status fromStatus, EnumSet<Status> overrideStatusSet) {
     Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(ambiance));
-    PlanNode node = planService.fetchNode(ambiance.getPlanId(), level.getSetupId());
+    PlanNode node = planService.fetchNode(level.getSetupId());
     if (isEmpty(node.getAdviserObtainments())) {
       NodeExecution updatedNodeExecution =
           nodeExecutionService.updateStatusWithOps(level.getRuntimeId(), toStatus, null, overrideStatusSet);
@@ -323,6 +328,14 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     }
   }
 
+  /**
+   * ends the nodeExecution. If it contains the notifyId then it informs the parent that it has completed
+   * <p>
+   * If it doesn't then it transfers control back to orchestration engine, this is primarily when we reach the pipeline
+   * node this is no longer applicable as we have changed each node to have notifyId
+   *
+   * @param ambiance Ambiance for current nodeExecution
+   */
   @Override
   public void endNodeExecution(Ambiance ambiance) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
@@ -344,7 +357,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
       } else {
         // TODO: This should never happen any more this is here just for backward compatibility, should be removed after
-        // a month when this makes to prod
+        // Remove after 3 month when this makes to prod, We can never be sure when to remove this 3 months looks like a
+        // good time frame where all the actively running executions would complete
         log.info("Ending Execution");
         orchestrationEngine.endNodeExecution(AmbianceUtils.cloneForFinish(ambiance));
       }

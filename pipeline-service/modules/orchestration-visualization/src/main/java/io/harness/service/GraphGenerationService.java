@@ -29,7 +29,6 @@ public interface GraphGenerationService {
 
   OrchestrationGraphDTO generatePartialOrchestrationGraphFromSetupNodeIdAndExecutionId(
       String startingSetupNodeId, String planExecutionId, String startingExecutionId);
-
   void sendUpdateEventIfAny(PipelineExecutionSummaryEntity executionSummaryEntity);
   OrchestrationGraph buildOrchestrationGraph(String planExecutionId);
 

@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -29,11 +30,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.GovernanceService;
-import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.observers.OrchestrationStartObserver;
+import io.harness.engine.pms.execution.strategy.plannode.PlanNodeExecutionStrategy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
@@ -48,6 +49,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.TriggeredBy;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
 import io.harness.waiter.WaitNotifyEngine;
@@ -79,13 +81,13 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
       TriggeredBy.newBuilder().putExtraInfo("email", PRASHANT).setIdentifier(PRASHANT).setUuid(generateUuid()).build();
 
   @Mock @Named("EngineExecutorService") ExecutorService executorService;
-  @Mock OrchestrationEngine orchestrationEngine;
   @Mock PlanService planService;
   @Mock PipelineSettingsService pipelineSettingsService;
   @Mock WaitNotifyEngine waitNotifyEngine;
   @Mock Subject<OrchestrationStartObserver> orchestrationStartSubject;
   @Mock GovernanceService governanceService;
   @Mock private OrchestrationEventEmitter eventEmitter;
+  @Mock private PlanNodeExecutionStrategy planNodeExecutionStrategy;
   @Spy @Inject PlanExecutionService planExecutionService;
   @Inject @InjectMocks PlanExecutionStrategy executionStrategy;
 
@@ -94,6 +96,36 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
     MockitoAnnotations.initMocks(this);
   }
 
+  @Test
+  @Owner(developers = PRASHANT)
+  @Category(UnitTests.class)
+  public void shouldTestStartPlanExecutionForPlanNode() throws Exception {
+    String planId = generateUuid();
+    String startingNodeId = generateUuid();
+    Plan plan = Plan.builder().uuid(planId).startingNodeId(startingNodeId).build();
+    Ambiance ambiance = Ambiance.newBuilder().setPlanId(planId).build();
+
+    PlanNode planNode =
+        PlanNode.builder()
+            .identifier("id")
+            .uuid(startingNodeId)
+            .stepType(StepType.newBuilder().setType("STEP_TYPE").setStepCategory(StepCategory.PIPELINE).build())
+            .build();
+    when(planService.fetchNode(startingNodeId)).thenReturn(planNode);
+    boolean result = executionStrategy.startPlanExecution(plan, ambiance);
+    // Assert
+    assertThat(result).isTrue();
+
+    ArgumentCaptor<PlanExecutionFinishCallback> callbackCaptor =
+        ArgumentCaptor.forClass(PlanExecutionFinishCallback.class);
+    verify(waitNotifyEngine).waitForAllOn(anyString(), callbackCaptor.capture(), anyString());
+    assertThat(callbackCaptor.getValue().ambiance).isEqualTo(ambiance);
+
+    ArgumentCaptor<Callable> runnableCaptor = ArgumentCaptor.forClass(Callable.class);
+    verify(executorService).submit(runnableCaptor.capture());
+    runnableCaptor.getValue().call();
+    verify(planNodeExecutionStrategy).runNode(any(), eq(planNode), eq(null));
+  }
   @Test
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
