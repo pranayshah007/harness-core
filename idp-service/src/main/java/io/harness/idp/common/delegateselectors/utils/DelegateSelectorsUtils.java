@@ -16,9 +16,11 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.IDP)
+@Slf4j
 public class DelegateSelectorsUtils {
   public static Set<String> extractDelegateSelectors(ConnectorInfoDTO connectorInfoDTO) {
     Set<String> delegateSelectors = new HashSet<>();
@@ -26,6 +28,7 @@ public class DelegateSelectorsUtils {
     if (connectorConfig instanceof DelegateSelectable) {
       delegateSelectors = ((DelegateSelectable) connectorConfig).getDelegateSelectors();
     }
+    log.info("Delegate Selectors: {}", delegateSelectors.toString());
     return delegateSelectors;
   }
 }

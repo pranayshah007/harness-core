@@ -81,6 +81,7 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
       log.info("Parsed request body headers: {}", headerString);
 
       Set<String> delegateSelectors = getDelegateSelectors(backstageProxyRequest.getUrl(), accountIdentifier);
+      log.info("Delegate Selectors: {}", delegateSelectors.toString());
       List<HttpHeaderConfig> headerList =
           delegateProxyRequestForwarder.createHeaderConfig(backstageProxyRequest.getHeaders());
 
