@@ -12,6 +12,9 @@ import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.EN
 import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_GLOBAL_OVERRIDE;
 import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.INFRA_SERVICE_OVERRIDE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -19,9 +22,12 @@ import io.harness.pms.contracts.steps.StepType;
 
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_DASHBOARD})
 public class ServiceStepConstants {
   public static final String SERVICE = "service";
   public static final String SERVICE_OVERRIDES = "service overrides";
+  public static final String ENVIRONMENT = "Environment";
   public static final String ENVIRONMENT_GLOBAL_OVERRIDES = "environment global overrides";
 
   public static final StepType STEP_TYPE =

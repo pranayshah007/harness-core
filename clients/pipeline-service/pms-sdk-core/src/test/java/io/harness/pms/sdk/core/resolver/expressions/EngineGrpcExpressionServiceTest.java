@@ -81,9 +81,10 @@ public class EngineGrpcExpressionServiceTest extends PmsSdkCoreTestBase {
                                                                               .setAmbiance(ambiance)
                                                                               .setExpressionMode(expressionMode)
                                                                               .setExpression(expression1)
+                                                                              .setNewRecastFlow(true)
                                                                               .build()))
         .thenReturn(expressionRenderBlobResponse);
     assertThat(engineGrpcExpressionService.evaluateExpression(ambiance, expression1, expressionMode))
-        .isEqualTo(RecastOrchestrationUtils.fromJson(null, Object.class));
+        .isEqualTo(RecastOrchestrationUtils.fromJson(null, Object.class, true));
   }
 }

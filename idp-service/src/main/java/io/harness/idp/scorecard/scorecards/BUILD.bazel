@@ -12,14 +12,6 @@ java_library(
     visibility = ["//idp-service:__subpackages__"],
     deps = [
         "//:lombok",
-        "//960-persistence/src/main/java/io/harness/mongo/index:module",
-        "//960-persistence/src/main/java/io/harness/mongo/index/annotation:module",
-        "//960-persistence/src/main/java/io/harness/ng:module",
-        "//960-persistence/src/main/java/io/harness/persistence/api:module",
-        "//980-commons/src/main/java/io/harness/morphia:module",
-        "//999-annotations:module",
-        "@maven//:org_mongodb_morphia_morphia",
-        "@maven//:org_springframework_data_spring_data_commons",
-        "@maven//:org_springframework_data_spring_data_mongodb",
+        "//idp-service/src/main/java/io/harness/idp/scorecard/checks:module",
     ],
 )

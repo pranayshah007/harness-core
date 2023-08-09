@@ -62,6 +62,7 @@ public class SscaOrchestrationPluginUtils {
             .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getHttpClientConfig().getBaseUrl())
             .stepExecutionId(runtimeId)
             .stepIdentifier(identifier)
+            .sscaManagerEnabled(sscaServiceUtils.getSscaServiceConfig().isSscaManagerEnabled())
             .build();
     Map<String, String> envMap = SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
     if (type == Type.VM) {

@@ -244,6 +244,11 @@ public class GovernanceRuleEnforcementResource {
     if (ruleEnforcementService.listName(accountId, ruleEnforcement.getName(), true) != null) {
       throw new InvalidRequestException("Rule Enforcement with given name already exits");
     }
+    List<String> targetRegions = ruleEnforcement.getTargetRegions();
+    if (targetRegions != null) {
+      targetRegions.removeAll(Collections.singleton(null));
+    }
+    ruleEnforcement.setTargetRegions(targetRegions);
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
     ruleEnforcementService.save(ruleEnforcement);

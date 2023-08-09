@@ -1469,6 +1469,43 @@ paths:
       tags:
         - Account Services
       x-internal: true
+  '/v1/eula/sign':
+    post:
+      summary: Sign an End Level User Agreement
+      operationId: sign-eula
+      responses:
+        '200':
+          $ref: '#/components/responses/EulaSignResponse'
+      description: Sign an End Level User Agreement.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/EulaSignRequest'
+      tags:
+        - EULA
+      x-internal: false
+  'v1/eula/validate-sign':
+    get:
+      summary: Validate specified agreement is signed or not
+      operationId: validate-eula-sign
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            $ref: '#/components/schemas/AgreementType'
+          name: agreement-type
+          in: query
+          required: true
+      description: Check whether End Level User Agreement has been signed for specified agreement type.
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/EulaSignResponse'
+      tags:
+        - EULA
+      x-internal: false
 components:
   schemas:
     Service:
@@ -2345,6 +2382,31 @@ components:
         message:
           type: string
           description: Secret reference path validation result
+    EulaSignRequest:
+      title: EulaSignRequest
+      type: object
+      description: Details of an Agreement to be Signed
+      properties:
+        agreement_type:
+          $ref: '#/components/schemas/AgreementType'
+          description: Type of Agreement
+      required:
+        - agreement_type
+    AgreementType:
+      type: string
+      description: Type of Agreement
+      enum:
+        - AIDA
+    EulaSignResponse:
+      title: EulaSignResponse
+      type: object
+      description: Response of signing an End Level User Agreement
+      properties:
+        signed:
+          type: boolean
+        message:
+          type: string
+          description: Signing an End Level User Agreement result
     IPAllowlistConfig:
       title: IPAllowlistConfig
       x-stoplight:
@@ -2970,6 +3032,12 @@ components:
               value:
                 success: true
                 message: 'Validation is Successful, Secret can be referenced'
+    EulaSignResponse:
+      description: Response of signing End Level User Agreement
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EulaSignResponse'
     IPAllowlistConfigResponse:
       description: Example response
       content:
@@ -3602,6 +3670,11 @@ components:
                 module: CD
                 resource_type: CONNECTOR
                 resource_id: resource_id
+    EulaSignRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EulaSignRequest'
   parameters:
     Page:
       name: page
@@ -3626,8 +3699,7 @@ components:
       required: false
       schema:
         type: boolean
-      description: >-
-        Enable this field to fetch only the entities that are marked as favorites.
+      description: Enable this field to fetch only the entities that are marked as favorites.
     SearchTerm:
       name: search_term
       in: query

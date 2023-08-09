@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -70,7 +71,7 @@ public class ACRArtifactStreamMapper implements ArtifactStreamMapper {
     String registry = PLEASE_FIX_ME;
     String repository = PLEASE_FIX_ME;
     String subscriptionId = PLEASE_FIX_ME;
-    String tag = PLEASE_FIX_ME;
+    String tag = TRIGGER_TAG_VALUE_DEFAULT;
 
     if (artifactStream != null) {
       AcrArtifactStream acrArtifactStream = (AcrArtifactStream) artifactStream;

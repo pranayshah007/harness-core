@@ -26,7 +26,8 @@ public class VerificationJobInstanceDataCollectionUtils {
             || VerificationJobInstanceServiceInstanceUtils.isNodeRegExEnabled(verificationJobInstance))) {
       return false;
     }
-    if (verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.AUTO)) {
+    if (verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.AUTO)
+        && VerificationJobInstanceServiceInstanceUtils.canUseNodesFromCD(verificationJobInstance)) {
       return !VerificationJobInstanceServiceInstanceUtils.isValidCanaryDeployment(
           verificationJobInstance.getServiceInstanceDetails());
     }

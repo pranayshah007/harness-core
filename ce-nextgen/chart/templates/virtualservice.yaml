@@ -1,9 +1,9 @@
 {{- if .Values.global.istio.enabled }}
-{{- $fullName := include "ce-nextgen.fullname" . -}}
+{{- $fullName := include "nextgen-ce.fullname" . -}}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: ce-nextgen
+  name: nextgen-ce
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -21,7 +21,7 @@ spec:
     - {{ . }}
     {{- end }}
   http:
-  - name: ce-nextgen
+  - name: nextgen-ce
     match:
     - uri:
         prefix: /ccm/api
@@ -33,5 +33,5 @@ spec:
     - destination:
         port:
           number: {{ .Values.service.port }}
-        host: ce-nextgen
+        host: nextgen-ce
 {{ end }}

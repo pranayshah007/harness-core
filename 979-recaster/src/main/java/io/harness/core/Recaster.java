@@ -89,14 +89,18 @@ public class Recaster {
   }
 
   public <T> T fromMap(final Map<String, Object> map, final Class<T> entityClazz) {
+    return fromMap(map, entityClazz, false);
+  }
+
+  public <T> T fromMap(final Map<String, Object> map, final Class<T> entityClazz, boolean newRecastFlow) {
     if (map == null) {
       return null;
     }
 
-    return fromMap(new RecasterMap(map), entityClazz);
+    return fromMap(new RecasterMap(map), entityClazz, newRecastFlow);
   }
 
-  public <T> T fromMap(final RecasterMap recasterMap, final Class<T> entityClazz) {
+  public <T> T fromMap(final RecasterMap recasterMap, final Class<T> entityClazz, boolean newRecastFlow) {
     if (recasterMap == null) {
       return null;
     }
@@ -124,18 +128,24 @@ public class Recaster {
       throw new RecasterException(format("%s class cannot be mapped to %s", classIdentifier, entityClazz.getName()));
     }
 
-    entity = fromMap(recasterMap, entity);
+    entity = fromMap(recasterMap, entity, newRecastFlow);
     return entity;
   }
 
-  @SuppressWarnings("unchecked")
   public <T> T fromMap(final RecasterMap recasterMap, T entity) {
+    return fromMap(recasterMap, entity, false);
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> T fromMap(final RecasterMap recasterMap, T entity, boolean newRecastFlow) {
     if (transformer.hasCustomTransformer(entity.getClass())) {
       entity = (T) transformer.decode(entity.getClass(), recasterMap, null);
     } else if (entity instanceof Map) {
       populateMapInternal(recasterMap, entity);
     } else if (entity instanceof Collection) {
       populateCollectionInternal(recasterMap, entity);
+    } else if (newRecastFlow && transformer.hasSimpleValueTransformer(entity.getClass())) {
+      entity = (T) transformer.decode(entity.getClass(), recasterMap, null);
     } else {
       final CastedClass castedClass = getCastedClass(entity);
       for (final CastedField cf : castedClass.getPersistenceFields()) {
@@ -222,6 +232,10 @@ public class Recaster {
   }
 
   public Map<String, Object> toMap(Object entity) {
+    return toMap(entity, false);
+  }
+
+  public Map<String, Object> toMap(Object entity, boolean newRecastFlow) {
     if (entity == null) {
       return null;
     }
@@ -246,6 +260,15 @@ public class Recaster {
 
     if (entity.getClass().isArray()) {
       return writeArrayInternal(recasterMap, entity);
+    }
+
+    if (transformer.hasSimpleValueTransformer(entity.getClass())) {
+      if (!newRecastFlow) {
+        log.warn("[RECAST_NEW_FLOW]: Inside Simple Transformer for entity class: " + entity.getClass());
+      } else {
+        Object encode = transformer.encode(entity);
+        return recasterMap.append(ENCODED_VALUE, encode);
+      }
     }
 
     for (final CastedField cf : cc.getPersistenceFields()) {

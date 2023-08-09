@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.importer;
+
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import io.harness.annotations.dev.CodePulse;
@@ -53,10 +54,12 @@ import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -114,16 +117,24 @@ public class WorkflowImportService implements ImportService {
     if (!shouldCreateWorkflowAsPipeline(importDTO)) {
       return;
     }
-    createWorkflowsAsPipeline(authToken, importDTO, discoveryResult, summaryDTO);
+    createWorkflowsAsPipeline(authToken, importDTO, discoveryResult, summaryDTO, new HashSet<>());
   }
 
-  public void createWorkflowsAsPipeline(
-      String authToken, ImportDTO importDTO, DiscoveryResult discoveryResult, SaveSummaryDTO summaryDTO) {
+  public void createWorkflowsAsPipeline(String authToken, ImportDTO importDTO, DiscoveryResult discoveryResult,
+      SaveSummaryDTO summaryDTO, Set<String> workflowIds) {
     MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(authToken, importDTO);
     List<MigratedDetails> stageTemplates = new ArrayList<>();
     stageTemplates.addAll(extractStageTemplates(summaryDTO.getNgYamlFiles(), summaryDTO.getAlreadyMigratedDetails()));
     stageTemplates.addAll(
         extractStageTemplates(summaryDTO.getNgYamlFiles(), summaryDTO.getSuccessfullyMigratedDetails()));
+
+    // If workflowIds are passed we want to create only those workflows as pipelines else we create all workflows as
+    // pipelines
+    if (EmptyPredicate.isNotEmpty(workflowIds)) {
+      stageTemplates = stageTemplates.stream()
+                           .filter(stageTemplate -> workflowIds.contains(stageTemplate.getCgEntityDetail().getId()))
+                           .collect(Collectors.toList());
+    }
 
     for (MigratedDetails migratedDetails : stageTemplates) {
       CgEntityId cgEntityId =
@@ -208,9 +219,12 @@ public class WorkflowImportService implements ImportService {
 
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail));
-    templateLinkConfig.setTemplateInputs(
-        migrationTemplateUtils.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier()));
+    JsonNode templateInputs =
+        migrationTemplateUtils.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier());
 
+    // TODO: Here we need to set the runtime inputs that are set in the workflow
+
+    templateLinkConfig.setTemplateInputs(templateInputs);
     TemplateStageNode templateStageNode = new TemplateStageNode();
     templateStageNode.setName(name);
     templateStageNode.setIdentifier(identifier);

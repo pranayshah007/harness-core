@@ -132,6 +132,7 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
     RestResponse<SRMAnalysisStepDetailDTO> restResponse =
         response.readEntity(new GenericType<RestResponse<SRMAnalysisStepDetailDTO>>() {});
     SRMAnalysisStepDetailDTO stepDetailDTO = restResponse.getResource();
+    assertThat(stepDetailDTO.getStepName()).isEqualTo(stepName);
     assertThat(stepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(stepDetailDTO.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
     assertThat(stepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
@@ -151,6 +152,7 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
     RestResponse<SRMAnalysisStepDetailDTO> restResponse =
         response.readEntity(new GenericType<RestResponse<SRMAnalysisStepDetailDTO>>() {});
     SRMAnalysisStepDetailDTO stepDetailDTO = restResponse.getResource();
+    assertThat(stepDetailDTO.getStepName()).isEqualTo(stepName);
     assertThat(stepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(stepDetailDTO.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.ABORTED);
     assertThat(stepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);

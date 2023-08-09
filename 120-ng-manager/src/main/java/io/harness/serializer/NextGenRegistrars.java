@@ -83,6 +83,7 @@ public class NextGenRegistrars {
           .addAll(NGVariableRegistrars.morphiaRegistrars)
           .addAll(NGSettingRegistrar.morphiaRegistrars)
           .addAll(IpAllowlistRegistrars.morphiaRegistrars)
+          .addAll(EulaRegistrar.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =

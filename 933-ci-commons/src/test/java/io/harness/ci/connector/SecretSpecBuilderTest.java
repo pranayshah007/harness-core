@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cistatus.service.GithubService;
 import io.harness.connector.ConnectorEnvVariablesHelper;
 import io.harness.connector.ImageSecretBuilder;
 import io.harness.connector.SecretSpecBuilder;
@@ -37,6 +38,7 @@ import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
@@ -50,6 +52,11 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
@@ -73,6 +80,7 @@ public class SecretSpecBuilderTest extends CategoryTest {
   @Mock private SecretDecryptor secretDecryptor;
   @Mock private ConnectorEnvVariablesHelper connectorEnvVariablesHelper;
   @Mock private ImageSecretBuilder imageSecretBuilder;
+  @Mock private GithubService githubService;
   @InjectMocks private SecretSpecBuilder secretSpecBuilder;
 
   private static final String secretName = "foo";
@@ -367,5 +375,54 @@ public class SecretSpecBuilderTest extends CategoryTest {
                        .value(encodeBase64("S3CR3TKEYEXAMPLE"))
                        .type(TEXT)
                        .build());
+  }
+
+  @Test()
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldDecryptGitSecretVariablesForGithubAPP() {
+    GithubAppDTO githubAppDTO = GithubAppDTO.builder()
+                                    .installationId("id")
+                                    .applicationId("app")
+                                    .privateKeyRef(SecretRefData.builder().decryptedValue("key".toCharArray()).build())
+                                    .build();
+    GithubHttpCredentialsDTO credentials = GithubHttpCredentialsDTO.builder()
+                                               .type(GithubHttpAuthenticationType.GITHUB_APP)
+                                               .httpCredentialsSpec(githubAppDTO)
+                                               .build();
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .url("https://github.com/account/repo")
+            .connectionType(GitConnectionType.REPO)
+            .authentication(
+                GithubAuthenticationDTO.builder().credentials(credentials).authType(GitAuthType.HTTP).build())
+            .build();
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder().connectorType(ConnectorType.GITHUB).connectorConfig(githubConnectorDTO).build();
+    when(secretDecryptor.decrypt(any(), any())).thenReturn(githubAppDTO);
+    when(githubService.getToken(any())).thenReturn("token");
+    Map<String, SecretParams> gitSecretVariables = secretSpecBuilder.decryptGitSecretVariables(connectorDetails);
+    assertThat(gitSecretVariables).containsOnlyKeys("DRONE_NETRC_USERNAME", "DRONE_NETRC_PASSWORD");
+
+    final SecretParams droneNetrcUsername = gitSecretVariables.get("DRONE_NETRC_USERNAME");
+    final String usernameSecretKey = droneNetrcUsername.getSecretKey();
+    final String usernamePrefix = "DRONE_NETRC_USERNAME_";
+    assertThat(usernameSecretKey.startsWith(usernamePrefix));
+    assertThat(usernameSecretKey.length()).isEqualTo(usernamePrefix.length() + RANDOM_LENGTH);
+
+    final SecretParams droneNetrcPassword = gitSecretVariables.get("DRONE_NETRC_PASSWORD");
+    final String passwordSecretKey = droneNetrcPassword.getSecretKey();
+    final String passwordPrefix = "DRONE_NETRC_PASSWORD_";
+    assertThat(passwordSecretKey.startsWith(passwordPrefix));
+    assertThat(passwordSecretKey.length()).isEqualTo(passwordPrefix.length() + RANDOM_LENGTH);
+
+    assertThat(droneNetrcUsername)
+        .isEqualTo(SecretParams.builder()
+                       .secretKey(usernameSecretKey)
+                       .value(encodeBase64(GithubAppDTO.username))
+                       .type(TEXT)
+                       .build());
+    assertThat(droneNetrcPassword)
+        .isEqualTo(SecretParams.builder().secretKey(passwordSecretKey).value(encodeBase64("token")).type(TEXT).build());
   }
 }

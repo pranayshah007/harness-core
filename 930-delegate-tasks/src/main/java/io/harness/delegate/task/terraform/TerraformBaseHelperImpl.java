@@ -1005,8 +1005,9 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   }
 
   public TerraformConfigInspectVersion getTerraformConfigInspectVersion(TerraformProvisionParameters parameters) {
-    if (parameters.getTerraformConfigInspectVersion() != null
-        && TfConfigInspectVersion.V1_2.equals(parameters.getTerraformConfigInspectVersion())) {
+    if (TfConfigInspectVersion.V1_3.equals(parameters.getTerraformConfigInspectVersion())) {
+      return TerraformConfigInspectVersion.V1_3;
+    } else if (TfConfigInspectVersion.V1_2.equals(parameters.getTerraformConfigInspectVersion())) {
       return TerraformConfigInspectVersion.V1_2;
     } else if (parameters.isUseTfConfigInspectLatestVersion()) {
       return TerraformConfigInspectVersion.V1_1;

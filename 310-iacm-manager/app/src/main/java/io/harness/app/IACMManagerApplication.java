@@ -8,6 +8,7 @@
 package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.IACM;
+import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
@@ -20,6 +21,7 @@ import io.harness.SCMGrpcClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.functors.IacmFunctor;
 import io.harness.cache.CacheModule;
+import io.harness.ci.execution.ObserverEventConsumer;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
@@ -90,6 +92,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -119,6 +122,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -282,6 +287,8 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
 
     modules.add(new IACMPersistenceModule());
     addGuiceValidationModule(modules);
+    String mongoUri = configuration.getHarnessIACMMongo().getUri();
+
     modules.add(new IACMManagerServiceModule(configuration));
     modules.add(new CacheModule(configuration.getCacheConfig())); // TODO: ??
 
@@ -306,12 +313,18 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
     scheduleJobs(injector, configuration);
     registerQueueListener(injector);
     registerPmsSdkEvents(injector);
+    registerEventConsumers(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
     LogManager.shutdown();
   }
 
+  private void registerEventConsumers(final Injector injector) {
+    final ExecutorService observerEventConsumerExecutor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(OBSERVER_EVENT_CHANNEL).build());
+    observerEventConsumerExecutor.execute(injector.getInstance(ObserverEventConsumer.class));
+  }
   private void registerOasResource(IACMManagerConfiguration appConfig, Environment environment, Injector injector) {
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
     openApiResource.setOpenApiConfiguration(appConfig.getOasConfig());

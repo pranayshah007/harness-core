@@ -23,6 +23,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.persistence.PersistentEntity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
@@ -62,7 +63,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("roles")
 @TypeAlias("roles")
 public class RoleDBO implements PersistentEntity, AccessControlEntity {
-  @Setter @Id @dev.morphia.annotations.Id String id;
+  @JsonProperty("_id") @Setter @Id @dev.morphia.annotations.Id String id;
   @EntityIdentifier final String identifier;
   final String scopeIdentifier;
   @NGEntityName final String name;

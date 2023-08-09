@@ -72,8 +72,8 @@ public class MigrationTemplateUtils {
         getClient(inputDTO, pipelineServiceClientConfig, this.pipelineServiceClient, PipelineServiceClient.class);
     try {
       InputSetTemplateResponseDTOPMS response =
-          NGRestUtils.getResponse(client.getTemplateFromPipeline(accountIdentifier, ngEntityDetail.getOrgIdentifier(),
-              ngEntityDetail.getProjectIdentifier(), ngEntityDetail.getIdentifier(),
+          NGRestUtils.getResponse(client.getTemplateFromPipeline(accountIdentifier, inputDTO.getOrgIdentifier(),
+              inputDTO.getProjectIdentifier(), ngEntityDetail.getIdentifier(),
               InputSetTemplateRequestDTO.builder().stageIdentifiers(Collections.emptyList()).build()));
       if (response == null) {
         return null;

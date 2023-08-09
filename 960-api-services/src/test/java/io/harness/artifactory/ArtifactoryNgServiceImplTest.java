@@ -188,14 +188,14 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     buildDetails = Collections.emptyList();
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
     assertThatThrownBy(()
-                           -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
-                               artifactDirectory, artifactPathFilter, "artifactpath", 10))
+                           -> artifactoryNgService.getLatestArtifact(
+                               artifactoryConfigRequest, "repoName", artifactDirectory, "", "artifactpath", 10))
         .hasMessage(
             "Please check artifactPath or artifactDirectory or repository field in Artifactory artifact configuration.");
 
     assertThatThrownBy(()
-                           -> artifactoryNgService.getLatestArtifact(
-                               artifactoryConfigRequest, "repoName", artifactDirectory, artifactPathFilter, "", 10))
+                           -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
+                               artifactDirectory, artifactPathFilter, "artifact", 10))
         .hasMessage(
             "Please check artifactPathFilter or artifactDirectory or repository field in Artifactory artifact .");
   }

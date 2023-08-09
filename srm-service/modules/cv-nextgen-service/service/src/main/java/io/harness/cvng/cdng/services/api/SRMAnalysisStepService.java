@@ -30,7 +30,7 @@ public interface SRMAnalysisStepService {
 
   void completeSrmAnalysisStep(SRMAnalysisStepExecutionDetail stepExecutionDetail);
 
-  SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String activityId);
+  SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String executionDetailId);
 
   void handleReportNotification(SRMAnalysisStepExecutionDetail stepExecutionDetail);
 }

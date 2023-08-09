@@ -6,6 +6,7 @@
  */
 
 package io.harness.repositories.executions;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -40,9 +41,9 @@ public interface PmsExecutionSummaryRepositoryCustom {
   long getCountOfExecutionSummary(Criteria criteria);
   String fetchRootRetryExecutionId(String planExecutionId);
 
-  List<String> findListOfUniqueBranches(Criteria criteria);
+  CloseableIterator<PipelineExecutionSummaryEntity> findListOfBranches(Criteria criteria);
 
-  List<String> findListOfUniqueRepositories(Criteria criteria);
+  CloseableIterator<PipelineExecutionSummaryEntity> findListOfRepositories(Criteria criteria);
 
   /**
    * Returns iterator on PipelineExecutionSummaryEntity for given query having projection fields else throws exception
