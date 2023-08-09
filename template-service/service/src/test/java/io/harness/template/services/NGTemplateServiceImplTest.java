@@ -56,6 +56,7 @@ import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ScmException;
@@ -1493,9 +1494,9 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     TemplateEntity stageTemplate =
         entity.withVersionLabel("v2").withTemplateEntityType(TemplateEntityType.STAGE_TEMPLATE);
     assertThatThrownBy(() -> templateService.create(stageTemplate, false, "", false))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(HintException.class)
         .hasMessage(
-            "Error while saving template [template1] of versionLabel [v2]: Template should have same template entity type Step as other template versions");
+            "Failed to save the template [template1] because an existing template of different type has the same identifier");
 
     TemplateEntity httpStepTemplate = shellStepTemplate.withVersionLabel("v3").withChildType("Http");
     assertThatThrownBy(() -> templateService.create(httpStepTemplate, false, "", false))

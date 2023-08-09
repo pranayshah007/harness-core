@@ -7,13 +7,7 @@
 
 package io.harness.template.mappers;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.utils.NGUtils.validate;
-
-import static java.lang.Double.compare;
-
+import com.google.common.annotations.VisibleForTesting;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -46,13 +40,18 @@ import io.harness.template.resources.beans.TemplateFilterProperties;
 import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
-
-import com.google.common.annotations.VisibleForTesting;
-import java.io.IOException;
-import java.util.List;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+
+import java.io.IOException;
+import java.util.List;
+
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.utils.NGUtils.validate;
+import static java.lang.Double.compare;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_PIPELINE})
@@ -63,34 +62,6 @@ public class NGTemplateDtoMapper {
   public static final String BOOLEAN_TRUE_VALUE = "true";
 
   public TemplateResponseDTO writeTemplateResponseDto(TemplateEntity templateEntity) {
-    return TemplateResponseDTO.builder()
-        .accountId(templateEntity.getAccountId())
-        .orgIdentifier(templateEntity.getOrgIdentifier())
-        .projectIdentifier(templateEntity.getProjectIdentifier())
-        .yaml(templateEntity.getYaml())
-        .identifier(templateEntity.getIdentifier())
-        .description(templateEntity.getDescription())
-        .name(templateEntity.getName())
-        .isStableTemplate(templateEntity.isStableTemplate())
-        .childType(templateEntity.getChildType())
-        .templateEntityType(templateEntity.getTemplateEntityType())
-        .templateScope(templateEntity.getTemplateScope())
-        .versionLabel(templateEntity.getVersionLabel())
-        .tags(TagMapper.convertToMap(templateEntity.getTags()))
-        .version(templateEntity.getVersion())
-        .icon(templateEntity.getIcon())
-        .gitDetails(getEntityGitDetails(templateEntity))
-        .lastUpdatedAt(templateEntity.getLastUpdatedAt())
-        .entityValidityDetails(templateEntity.isEntityInvalid()
-                ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
-                : EntityValidityDetails.builder().valid(true).build())
-        .storeType(templateEntity.getStoreType())
-        .connectorRef(templateEntity.getConnectorRef())
-        .cacheResponseMetadata(getCacheResponse(templateEntity))
-        .build();
-  }
-
-  public TemplateResponseDTO writeTemplateResponseDto(GlobalTemplateEntity templateEntity) {
     return TemplateResponseDTO.builder()
         .accountId(templateEntity.getAccountId())
         .orgIdentifier(templateEntity.getOrgIdentifier())
@@ -146,12 +117,6 @@ public class NGTemplateDtoMapper {
   }
 
   public EntityGitDetails getEntityGitDetails(TemplateEntity templateEntity) {
-    return templateEntity.getStoreType() == null ? EntityGitDetailsMapper.mapEntityGitDetails(templateEntity)
-        : templateEntity.getStoreType() == StoreType.REMOTE
-        ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
-        : EntityGitDetails.builder().build();
-  }
-  public EntityGitDetails getEntityGitDetails(GlobalTemplateEntity templateEntity) {
     return templateEntity.getStoreType() == null ? EntityGitDetailsMapper.mapEntityGitDetails(templateEntity)
         : templateEntity.getStoreType() == StoreType.REMOTE
         ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
@@ -321,13 +286,6 @@ public class NGTemplateDtoMapper {
   }
 
   public CacheResponseMetadataDTO getCacheResponse(TemplateEntity templateEntity) {
-    if (templateEntity.getStoreType() == StoreType.REMOTE) {
-      return getCacheResponse();
-    }
-    return null;
-  }
-
-  public CacheResponseMetadataDTO getCacheResponse(GlobalTemplateEntity templateEntity) {
     if (templateEntity.getStoreType() == StoreType.REMOTE) {
       return getCacheResponse();
     }

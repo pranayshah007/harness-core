@@ -7,8 +7,9 @@
 
 package io.harness.gitaware.helper;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
+import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
+import groovy.lang.Singleton;
 import io.harness.EntityType;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -35,14 +36,13 @@ import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
 import io.harness.persistence.gitaware.GitAware;
+import lombok.extern.log4j.Log4j;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
-import groovy.lang.Singleton;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.extern.log4j.Log4j;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PL)
@@ -92,39 +92,6 @@ public class GitAwareEntityHelper {
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;
-  }
-
-  public String fetchReadMeFileFromRemote(
-      GitAware entity, Scope scope, GitContextRequestParams gitContextRequestParams, Map<String, String> contextMap) {
-    String repoName = gitContextRequestParams.getRepoName();
-    // if branch is empty, then git sdk will figure out the default branch for the repo by itself
-    String branch =
-        isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
-    String commitId =
-        isNullOrDefault(gitContextRequestParams.getCommitId()) ? "" : gitContextRequestParams.getCommitId();
-
-    GitAwareContextHelper.setIsDefaultBranchInGitEntityInfoWithParameter(branch);
-
-    String filePath = gitContextRequestParams.getFilePath();
-    if (isNullOrDefault(filePath)) {
-      throw new InvalidRequestException("No file path provided.");
-    }
-    validateReamMeFilePathHasCorrectExtension(filePath);
-    String connectorRef = gitContextRequestParams.getConnectorRef();
-    boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
-    EntityType entityType = gitContextRequestParams.getEntityType();
-    boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
-
-    log.info(String.format("Fetching Remote Entity : %s , %s , %s , %s", entityType, repoName, branch, filePath));
-    ScmGetFileResponse scmGetFileResponse =
-        scmGitSyncHelper.getFileByBranch(Scope.builder()
-                                             .accountIdentifier(scope.getAccountIdentifier())
-                                             .orgIdentifier(scope.getOrgIdentifier())
-                                             .projectIdentifier(scope.getProjectIdentifier())
-                                             .build(),
-            repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap,
-            getFileContentOnly, gitContextRequestParams.isApplyRepoAllowListFilter());
-    return scmGetFileResponse.getFileContent();
   }
 
   // todo: make pipeline import call this method too
