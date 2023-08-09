@@ -16,12 +16,16 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.MS_HE
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.NO_METRIC_ASSIGNED_TO_MONITORED_SERVICE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_ID;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_NAME;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_URL;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_URL_FORMAT;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PLAN_EXECUTION_ID;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_HEALTH_SUMMARY;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE_EMAIL;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT_EMAIL;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT_PAGERDUTY;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT_SLACK;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_PERFORMANCE_SLACK;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.SLO_SUMMARY;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.STAGE_STEP_ID;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.TOTAL_CE_COUNT;
 
@@ -42,6 +46,7 @@ public class DeploymentImpactReportTemplateDataGenerator extends MonitoredServic
   public Map<String, String> getTemplateData(ProjectParams projectParams, Map<String, Object> entityDetails,
       MonitoredServiceNotificationRule.MonitoredServiceDeploymentImpactReportCondition condition,
       Map<String, String> notificationDataMap) {
+    notificationDataMap.put(PIPELINE_NAME, String.valueOf(entityDetails.get(ANALYSIS_PIPELINE_NAME)));
     final Map<String, String> templateDataMap =
         super.getTemplateData(projectParams, entityDetails, condition, notificationDataMap);
     String baseUrl = NotificationRuleTemplateDataGenerator.getBaseUrl(
@@ -52,17 +57,23 @@ public class DeploymentImpactReportTemplateDataGenerator extends MonitoredServic
     templateDataMap.put(TOTAL_CE_COUNT, String.valueOf(changeSummary.getTotal().getCount()));
     templateDataMap.put(ANALYSIS_DURATION, String.valueOf(entityDetails.get(ANALYSIS_DURATION)));
     templateDataMap.put(ANALYSIS_PIPELINE_NAME, String.valueOf(entityDetails.get(ANALYSIS_PIPELINE_NAME)));
-    templateDataMap.put(PIPELINE_URL, String.valueOf(getPipelineUrl(baseUrl, projectParams, entityDetails)));
     templateDataMap.put(ANALYSIS_STARTED_AT, String.valueOf(entityDetails.get(ANALYSIS_STARTED_AT)));
     templateDataMap.put(ANALYSIS_ENDED_AT, String.valueOf(entityDetails.get(ANALYSIS_ENDED_AT)));
     changeSummary.getCategoryCountMap().forEach((k, v) -> templateDataMap.put(k.name(), String.valueOf(v.getCount())));
     templateDataMap.put(CURRENT_HEALTH_SCORE, String.valueOf(msHealthReport.getCurrentHealthScore().getHealthScore()));
     templateDataMap.put(SERVICE_HEALTH_SUMMARY,
         NotificationRuleCommonUtils.getServiceHealthMessageForReport(msHealthReport.getCurrentHealthScore()));
-
+    templateDataMap.put(
+        SLO_SUMMARY, NotificationRuleCommonUtils.getSLOSummaryForReport(msHealthReport.getAssociatedSLOsDetails()));
+    templateDataMap.put(SLO_PERFORMANCE_SLACK,
+        NotificationRuleCommonUtils.getSloPerformanceSectionForReport(msHealthReport.getAssociatedSLOsDetails(),
+            clock.instant(), baseUrl, SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT_SLACK));
+    templateDataMap.put(SLO_PERFORMANCE_EMAIL,
+        NotificationRuleCommonUtils.getSloPerformanceSectionForReport(msHealthReport.getAssociatedSLOsDetails(),
+            clock.instant(), baseUrl, SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT_EMAIL));
     templateDataMap.put(SLO_PERFORMANCE,
         NotificationRuleCommonUtils.getSloPerformanceSectionForReport(msHealthReport.getAssociatedSLOsDetails(),
-            clock.instant(), baseUrl, SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT));
+            clock.instant(), baseUrl, SLO_PERFORMANCE_SECTION_FOR_ANALYSIS_REPORT_PAGERDUTY));
 
     return templateDataMap;
   }
@@ -75,13 +86,13 @@ public class DeploymentImpactReportTemplateDataGenerator extends MonitoredServic
   }
   @Override
   protected String getHeaderMessage(Map<String, String> notificationDataMap) {
-    return "Deployment Impact Analysis Report for the pipeline " + notificationDataMap.get(PIPELINE_NAME);
+    return "Deployment Impact Analysis Report For The Pipeline " + notificationDataMap.get(PIPELINE_NAME);
   }
 
   @Override
   protected String getTriggerMessage(
       MonitoredServiceNotificationRule.MonitoredServiceDeploymentImpactReportCondition condition) {
-    return "No Trigger Message";
+    return "Deployment Impact Analysis Completed.";
   }
 
   @Override

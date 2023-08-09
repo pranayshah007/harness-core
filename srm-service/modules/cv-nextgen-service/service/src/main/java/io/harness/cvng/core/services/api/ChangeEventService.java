@@ -31,18 +31,18 @@ public interface ChangeEventService {
 
   PageResponse<ChangeEventDTO> getChangeEvents(ProjectParams projectParams, List<String> serviceIdentifiers,
       List<String> environmentIdentifier, List<String> monitoredServiceIdentifiers,
-      boolean isMonitoredServiceIdentifierScoped, String searchText, List<ChangeCategory> changeCategories,
+      boolean isMonitoredServiceIdentifierScoped, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, PageRequest pageRequest);
 
   PageResponse<ChangeEventDTO> getChangeEvents(ProjectParams projectParams, List<String> serviceIdentifiers,
-      List<String> environmentIdentifier, String searchText, List<ChangeCategory> changeCategories,
+      List<String> environmentIdentifier, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, PageRequest pageRequest);
 
   ChangeTimeline getTimeline(ProjectParams projectParams, List<String> serviceIdentifiers,
       List<String> environmentIdentifier, List<String> monitoredServiceIdentifiers,
-      boolean isMonitoredServiceIdentifierScoped, String searchText, List<ChangeCategory> changeCategories,
+      boolean isMonitoredServiceIdentifierScoped, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, Integer pointCount);
-  ChangeTimeline getMonitoredServiceChangeTimeline(MonitoredServiceParams monitoredServiceParams, String searchText,
+  ChangeTimeline getMonitoredServiceChangeTimeline(MonitoredServiceParams monitoredServiceParams,
       List<ChangeSourceType> changeSourceTypes, DurationDTO duration, Instant endTime);
   ChangeSummaryDTO getChangeSummary(ProjectParams projectParams, List<String> serviceIdentifiers,
       List<String> environmentIdentifier, List<ChangeCategory> changeCategories,

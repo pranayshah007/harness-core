@@ -51,7 +51,6 @@ import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.pipeline.observer.PipelineActionObserver;
 import io.harness.pms.pipeline.references.FilterCreationGitMetadata;
 import io.harness.pms.pipeline.references.FilterCreationParams;
-import io.harness.pms.rbac.InternalReferredEntityExtractor;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.remote.client.NGRestUtils;
@@ -79,7 +78,6 @@ import lombok.extern.slf4j.Slf4j;
 public class PipelineSetupUsageHelper implements PipelineActionObserver {
   @Inject @Named(EventsFrameworkConstants.SETUP_USAGE) private Producer eventProducer;
   @Inject private EntitySetupUsageClient entitySetupUsageClient;
-  @Inject private InternalReferredEntityExtractor internalReferredEntityExtractor;
   @Inject private GitSyncSdkService gitSyncSdkService;
   private static final int PAGE = 0;
   private static final int SIZE = 100;
@@ -113,7 +111,6 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
             "Could not extract setup usage of pipeline with id " + pipelineId + " after {} attempts.");
     List<EntityDetail> entityDetails = PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineYamlWithUnresolvedTemplates, allReferredUsages);
-    entityDetails.addAll(internalReferredEntityExtractor.extractInternalEntities(accountIdentifier, entityDetails));
     return entityDetails;
   }
 
@@ -128,7 +125,6 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
             "Could not extract setup usage of pipeline with id " + pipelineId + " after {} attempts.");
     List<EntityDetail> entityDetails = PipelineSetupUsageUtils.extractInputReferredEntityFromYaml(accountIdentifier,
         orgIdentifier, projectIdentifier, pipelineJsonNodeWithUnresolvedTemplates, allReferredUsages);
-    entityDetails.addAll(internalReferredEntityExtractor.extractInternalEntities(accountIdentifier, entityDetails));
     return entityDetails;
   }
 

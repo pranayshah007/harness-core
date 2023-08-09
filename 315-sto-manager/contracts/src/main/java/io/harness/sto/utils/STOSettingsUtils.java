@@ -177,9 +177,8 @@ public final class STOSettingsUtils {
 
     if (authData != null) {
       STOYamlAuthType authType = authData.getType();
-
-      map.put(getSTOKey("product_auth_type"),
-          authType != null ? authType.getYamlName() : STOYamlAuthType.API_KEY.getYamlName());
+      map.put(
+          getSTOKey("product_auth_type"), authType != null ? authType.toString() : STOYamlAuthType.API_KEY.toString());
 
       Boolean authSsl = resolveBooleanParameter(authData.getSsl(), Boolean.TRUE);
 
@@ -212,10 +211,9 @@ public final class STOSettingsUtils {
       Boolean sbomGenerate = resolveBooleanParameter(sbom.getGenerate(), Boolean.FALSE);
       map.put(getSTOKey("generate_sbom"), String.valueOf(sbomGenerate));
 
-      String sbomFormat = (String) sbom.getFormat().fetchFinalValue();
-      sbomFormat = STOYamlSBOMFormat.getValue(sbomFormat).toString();
-
-      map.put(getSTOKey("sbom_type"), sbomFormat != null ? sbomFormat : STOYamlSBOMFormat.SPDX_JSON.toString());
+      STOYamlSBOMFormat sbomFormat = sbom.getFormat();
+      map.put(
+          getSTOKey("sbom_type"), sbomFormat != null ? sbomFormat.toString() : STOYamlSBOMFormat.SPDX_JSON.toString());
     }
     return map;
   }
@@ -225,9 +223,8 @@ public final class STOSettingsUtils {
 
     if (imageData != null) {
       STOYamlImageType imageType = imageData.getType();
-
       map.put(getSTOKey("container_type"),
-          imageType != null ? imageType.getYamlName() : STOYamlImageType.DOCKER_V2.getYamlName());
+          imageType != null ? imageType.getYamlName() : STOYamlImageType.DOCKER_V2.toString());
       map.put(getSTOKey("container_domain"),
           resolveStringParameter("image.domain", stepType, identifier, imageData.getDomain(), false));
       map.put(getSTOKey("container_region"),
@@ -310,32 +307,33 @@ public final class STOSettingsUtils {
       STOYamlAdvancedSettings advancedSettings, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
-    if (advancedSettings != null) {
-      STOYamlLog logData = advancedSettings.getLog();
-      if (logData != null) {
-        STOYamlLogLevel logLevel = logData.getLevel();
-        STOYamlLogSerializer logSerializer = logData.getSerializer();
-
-        map.put(getSTOKey("log_level"), logLevel != null ? logLevel.getYamlName() : STOYamlLogLevel.INFO.getYamlName());
-        map.put(getSTOKey("log_serializer"),
-            logSerializer != null ? logSerializer.getYamlName() : STOYamlLogSerializer.SIMPLE_ONPREM.getYamlName());
-      }
-
-      STOYamlArgs argsData = advancedSettings.getArgs();
-      if (argsData != null) {
-        map.put(
-            getSTOKey("tool_args"), resolveStringParameter("args.cli", stepType, identifier, argsData.getCli(), false));
-        map.put(getSTOKey("tool_passthrough"),
-            resolveStringParameter("args.passthrough", stepType, identifier, argsData.getPassthrough(), false));
-      }
-
-      STOYamlFailOnSeverity failOnSeverity = advancedSettings.getFailOnSeverity();
-
-      map.put(getSTOKey("fail_on_severity"),
-          failOnSeverity != null ? failOnSeverity.getYamlName() : STOYamlFailOnSeverity.NONE.getYamlName());
-      map.put(getSTOKey("include_raw"),
-          String.valueOf(resolveBooleanParameter(advancedSettings.getIncludeRaw(), Boolean.TRUE)));
+    if (advancedSettings == null) {
+      return map;
     }
+
+    STOYamlLog logData = advancedSettings.getLog();
+
+    if (logData != null) {
+      STOYamlLogSerializer logSerializer = logData.getSerializer();
+      map.put(getSTOKey("log_serializer"),
+          logSerializer != null ? logSerializer.getYamlName() : STOYamlLogSerializer.SIMPLE_ONPREM.getYamlName());
+      STOYamlLogLevel logLevel = logData.getLevel();
+      map.put(getSTOKey("log_level"), logLevel != null ? logLevel.toString() : STOYamlLogLevel.DEBUG.toString());
+    }
+
+    STOYamlArgs argsData = advancedSettings.getArgs();
+    if (argsData != null) {
+      map.put(
+          getSTOKey("tool_args"), resolveStringParameter("args.cli", stepType, identifier, argsData.getCli(), false));
+      map.put(getSTOKey("tool_passthrough"),
+          resolveStringParameter("args.passthrough", stepType, identifier, argsData.getPassthrough(), false));
+    }
+
+    STOYamlFailOnSeverity failOnSeverity = advancedSettings.getFailOnSeverity();
+    map.put(getSTOKey("fail_on_severity"),
+        failOnSeverity != null ? failOnSeverity.getYamlName() : STOYamlFailOnSeverity.NONE.getYamlName());
+    map.put(getSTOKey("include_raw"),
+        String.valueOf(resolveBooleanParameter(advancedSettings.getIncludeRaw(), Boolean.TRUE)));
 
     return map;
   }
@@ -511,6 +509,7 @@ public final class STOSettingsUtils {
 
     return map;
   }
+
   private static Map<String, String> processSTOFossaFields(FossaStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
@@ -599,6 +598,7 @@ public final class STOSettingsUtils {
 
     return map;
   }
+
   private static Map<String, String> processSTOAwsEcrFields(
       AwsEcrStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
@@ -695,23 +695,16 @@ public final class STOSettingsUtils {
     }
   }
 
-  private static String getPolicyType(STOYamlScanMode scanMode) {
-    if (scanMode != null) {
-      return scanMode.getPluginName();
-    }
-    return STOYamlScanMode.ORCHESTRATION.getPluginName();
-  }
-
   public static Map<String, String> getSTOPluginEnvVariables(STOGenericStepInfo stepInfo, String identifier) {
     Map<String, String> map = new HashMap<>();
     String stepType = stepInfo.getStepType().getType();
 
-    STOYamlScanMode scanMode = stepInfo.getMode();
-
     map.put(getSTOKey("product_name"), stepInfo.getProductName());
     map.put(getSTOKey("product_config_name"), getProductConfigName(stepInfo));
-    map.put(getSTOKey("policy_type"), getPolicyType(scanMode));
 
+    STOYamlScanMode mode = stepInfo.getMode();
+    map.put(
+        getSTOKey("policy_type"), mode != null ? mode.getPluginName() : STOYamlScanMode.ORCHESTRATION.getPluginName());
     map.putAll(processSTOTargetFields(stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOAdvancedSettings(stepInfo.getAdvanced(), stepType, identifier));
     map.putAll(processSTOIngestionFields(stepInfo.getIngestion(), stepType, identifier));

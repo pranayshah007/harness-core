@@ -10,7 +10,6 @@ package io.harness.cvng.core.services.impl;
 import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
-import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
@@ -26,7 +25,6 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
-import io.harness.cvng.activity.entities.ActivityBucket;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.activity.ActivityType;
@@ -41,7 +39,6 @@ import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
-import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -54,7 +51,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
-import dev.morphia.query.Query;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -322,10 +318,10 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         builderFactory.getDeploymentActivityBuilder().eventTime(Instant.ofEpochSecond(300)).build();
     hPersistence.save(Arrays.asList(harnessCDActivity_1, harnessCDActivity_2, harnessCDActivity_3));
     PageResponse<ChangeEventDTO> firstPage = changeEventService.getChangeEvents(
-        builderFactory.getContext().getProjectParams(), null, null, null, null, null, Instant.ofEpochSecond(100),
+        builderFactory.getContext().getProjectParams(), null, null, null, null, Instant.ofEpochSecond(100),
         Instant.ofEpochSecond(400), PageRequest.builder().pageIndex(0).pageSize(2).build());
     PageResponse<ChangeEventDTO> secondPage = changeEventService.getChangeEvents(
-        builderFactory.getContext().getProjectParams(), null, null, null, null, null, Instant.ofEpochSecond(100),
+        builderFactory.getContext().getProjectParams(), null, null, null, null, Instant.ofEpochSecond(100),
         Instant.ofEpochSecond(400), PageRequest.builder().pageIndex(1).pageSize(2).build());
 
     assertThat(firstPage.getPageIndex()).isEqualTo(0);
@@ -356,8 +352,8 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     hPersistence.save(Arrays.asList(harnessCDActivity_1, harnessCDActivity_2, harnessCDActivity_3));
     PageResponse<ChangeEventDTO> firstPage = changeEventService.getChangeEvents(
         builderFactory.getContext().getProjectParams(),
-        Arrays.asList(builderFactory.getContext().getServiceIdentifier()), null, null, null, null,
-        Instant.ofEpochSecond(100), Instant.ofEpochSecond(400), PageRequest.builder().pageIndex(0).pageSize(2).build());
+        Arrays.asList(builderFactory.getContext().getServiceIdentifier()), null, null, null, Instant.ofEpochSecond(100),
+        Instant.ofEpochSecond(400), PageRequest.builder().pageIndex(0).pageSize(2).build());
 
     assertThat(firstPage.getPageIndex()).isEqualTo(0);
     assertThat(firstPage.getPageItemCount()).isEqualTo(2);
@@ -389,7 +385,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     activityList.forEach(activity -> activityService.upsert(activity));
     PageResponse<ChangeEventDTO> firstPage =
         changeEventService.getChangeEvents(builderFactory.getContext().getProjectParams(),
-            Arrays.asList(builderFactory.getContext().getServiceIdentifier()), null, null,
+            Arrays.asList(builderFactory.getContext().getServiceIdentifier()), null,
             Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
             Arrays.asList(ChangeSourceType.HARNESS_CD, ChangeSourceType.KUBERNETES), Instant.ofEpochSecond(100),
             Instant.ofEpochSecond(400), PageRequest.builder().pageIndex(0).pageSize(2).build());
@@ -402,28 +398,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(firstPage.getContent().size()).isEqualTo(2);
     assertThat(firstPage.getContent().get(0).getEventTime()).isEqualTo(300000);
     assertThat(firstPage.getContent().get(1).getEventTime()).isEqualTo(100000);
-  }
-
-  @Test
-  @Owner(developers = ABHIJITH)
-  @Category(UnitTests.class)
-  public void testCreateTextSearchQuery() {
-    // testing query as our test MongoServer doesn't support text search:
-    // https://github.com/bwaldvogel/mongo-java-server
-    Query<Activity> activityQuery = changeEventService.createTextSearchQuery(Instant.parse("2023-01-31T00:00:00.00Z"),
-        Instant.parse("2023-01-31T10:00:00.00Z"), "searchText",
-        Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
-        Arrays.asList(ChangeSourceType.HARNESS_CD, ChangeSourceType.KUBERNETES));
-
-    assertThat(activityQuery.toString())
-        .isEqualTo(
-            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"eventTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}]}  }");
-
-    activityQuery = changeEventService.createTextSearchQuery(
-        Instant.parse("2023-01-31T00:00:00.00Z"), Instant.parse("2023-01-31T10:00:00.00Z"), "searchText", null, null);
-    assertThat(activityQuery.toString())
-        .isEqualTo(
-            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"eventTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}]}  }");
   }
 
   @Test
@@ -506,28 +480,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getTotal().getCount()).isEqualTo(0);
     assertThat(changeSummaryDTO.getTotal().getCountInPrecedingWindow()).isEqualTo(0);
     assertThat(changeSummaryDTO.getTotal().getPercentageChange()).isCloseTo(0.0, offset(0.1));
-  }
-
-  @Test
-  @Owner(developers = DEEPAK_CHHIKARA)
-  @Category(UnitTests.class)
-  public void testTextSearchQueryForAggregation() {
-    // testing query as our test MongoServer doesn't support text search:
-    // https://github.com/bwaldvogel/mongo-java-server
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier("acoountId")
-                                      .orgIdentifier("org")
-                                      .projectIdentifier("project")
-                                      .build();
-    Query<ActivityBucket> activityQuery =
-        changeEventService.createQueryForActivityBucket(Instant.parse("2023-01-31T00:00:00.00Z"),
-            Instant.parse("2023-01-31T10:00:00.00Z"), projectParams, Arrays.asList("monitoredServiceIdentifier"),
-            "searchText", Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
-            Arrays.asList(ChangeSourceType.HARNESS_CD, ChangeSourceType.KUBERNETES), false);
-
-    assertThat(activityQuery.toString())
-        .isEqualTo(
-            "{ {\"$text\": {\"$search\": \"searchText\"}, \"$and\": [{\"type\": {\"$in\": [\"DEPLOYMENT\"]}}, {\"bucketTime\": {\"$lt\": {\"$date\": \"2023-01-31T10:00:00Z\"}}}, {\"bucketTime\": {\"$gte\": {\"$date\": \"2023-01-31T00:00:00Z\"}}}], \"accountId\": \"acoountId\", \"orgIdentifier\": \"org\", \"projectIdentifier\": \"project\", \"monitoredServiceIdentifiers\": {\"$in\": [\"monitoredServiceIdentifier\"]}}  }");
   }
 
   @Test
@@ -777,7 +729,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
                 .build());
     activityList.forEach(activity -> activityService.upsert(activity));
     ChangeTimeline changeTimeline = changeEventService.getTimeline(builderFactory.getContext().getProjectParams(), null,
-        null, null, false, null, null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500), 2);
+        null, null, false, null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500), 2);
 
     // to verify that the keys remain in the same order
     assertThat(changeTimeline.getCategoryTimeline().keySet())
@@ -832,7 +784,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     activityList.forEach(activity -> activityService.upsert(activity));
     ChangeTimeline changeTimeline =
         changeEventService.getMonitoredServiceChangeTimeline(builderFactory.getContext().getMonitoredServiceParams(),
-            null, null, DurationDTO.FOUR_HOURS, Instant.ofEpochSecond(14398));
+            null, DurationDTO.FOUR_HOURS, Instant.ofEpochSecond(14398));
 
     List<TimeRangeDetail> deploymentChanges = changeTimeline.getCategoryTimeline().get(ChangeCategory.DEPLOYMENT);
     assertThat(deploymentChanges.size()).isEqualTo(2);
@@ -865,7 +817,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .build());
     activityList.forEach(activity -> activityService.upsert(activity));
     ChangeTimeline changeTimeline = changeEventService.getTimeline(builderFactory.getContext().getProjectParams(), null,
-        null, null, false, null, Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
+        null, null, false, Arrays.asList(ChangeCategory.DEPLOYMENT, ChangeCategory.ALERTS),
         Arrays.asList(ChangeSourceType.HARNESS_CD, ChangeSourceType.KUBERNETES), Instant.ofEpochSecond(100),
         Instant.ofEpochSecond(500), 2);
 
@@ -899,7 +851,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     activityList.forEach(activity -> activityService.upsert(activity));
     Iterator<TimelineObject> changeTimelineObject =
         changeEventService.getTimelineObject(builderFactory.getContext().getProjectParams(), null, null, null, null,
-            null, Instant.ofEpochSecond(0), Instant.ofEpochSecond(600), 2, false);
+            Instant.ofEpochSecond(0), Instant.ofEpochSecond(600), 2, false);
     List<TimelineObject> timelineObjectList = new ArrayList<>();
 
     changeTimelineObject.forEachRemaining(timelineObjectList::add);
@@ -945,7 +897,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
                 .build());
     activityList.forEach(activity -> activityService.upsert(activity));
     ChangeTimeline changeTimeline = changeEventService.getTimeline(builderFactory.getContext().getProjectParams(),
-        Arrays.asList(builderFactory.getContext().getServiceIdentifier()), null, null, false, null, null, null,
+        Arrays.asList(builderFactory.getContext().getServiceIdentifier()), null, null, false, null, null,
         Instant.ofEpochSecond(100), Instant.ofEpochSecond(500), 2);
 
     List<TimeRangeDetail> deploymentChanges = changeTimeline.getCategoryTimeline().get(ChangeCategory.DEPLOYMENT);
@@ -982,7 +934,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     activityList.forEach(activity -> activityService.upsert(activity));
     ChangeTimeline changeTimeline = changeEventService.getTimeline(builderFactory.getContext().getProjectParams(), null,
         null, Arrays.asList(builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier()),
-        false, null, null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500), 2);
+        false, null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500), 2);
 
     List<TimeRangeDetail> deploymentChanges = changeTimeline.getCategoryTimeline().get(ChangeCategory.DEPLOYMENT);
     assertThat(deploymentChanges.size()).isEqualTo(2);
@@ -1024,7 +976,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
                 ScopedInformation.getScopedInformation(builderFactory.getContext().getAccountId(),
                     builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
                     "monitoredServiceV2")),
-            true, null, null, null, Instant.ofEpochSecond(0), Instant.ofEpochSecond(600), 2);
+            true, null, null, Instant.ofEpochSecond(0), Instant.ofEpochSecond(600), 2);
 
     List<TimeRangeDetail> deploymentChanges = changeTimeline.getCategoryTimeline().get(ChangeCategory.DEPLOYMENT);
     assertThat(deploymentChanges.size()).isEqualTo(2);
@@ -1066,7 +1018,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             -> changeEventService.getTimeline(builderFactory.getContext().getProjectParams(),
                 Arrays.asList(builderFactory.getContext().getServiceIdentifier()), null,
                 Arrays.asList(builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier()),
-                false, null, null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500), 2))
+                false, null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500), 2))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("serviceIdentifier, envIdentifier filter can not be used with monitoredServiceIdentifier filter");
   }
@@ -1087,7 +1039,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
                 .build());
     activityList.forEach(activity -> activityService.upsert(activity));
     ChangeTimeline changeTimeline = changeEventService.getTimeline(builderFactory.getContext().getProjectParams(), null,
-        Arrays.asList(builderFactory.getContext().getEnvIdentifier()), null, false, null, null, null,
+        Arrays.asList(builderFactory.getContext().getEnvIdentifier()), null, false, null, null,
         Instant.ofEpochSecond(100), Instant.ofEpochSecond(500), 2);
 
     List<TimeRangeDetail> deploymentChanges = changeTimeline.getCategoryTimeline().get(ChangeCategory.DEPLOYMENT);
@@ -1125,7 +1077,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     activityList.forEach(activity -> activityService.upsert(activity));
     PageResponse<ChangeEventDTO> firstPage =
         changeEventService.getChangeEvents(builderFactory.getContext().getProjectParams(), null,
-            Arrays.asList(builderFactory.getContext().getEnvIdentifier()), null, null, null, Instant.ofEpochSecond(100),
+            Arrays.asList(builderFactory.getContext().getEnvIdentifier()), null, null, Instant.ofEpochSecond(100),
             Instant.ofEpochSecond(400), PageRequest.builder().pageIndex(0).pageSize(2).build());
 
     assertThat(firstPage.getPageIndex()).isEqualTo(0);

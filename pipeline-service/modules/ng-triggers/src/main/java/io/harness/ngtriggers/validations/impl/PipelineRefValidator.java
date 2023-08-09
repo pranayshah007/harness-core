@@ -33,6 +33,7 @@ public class PipelineRefValidator implements TriggerValidator {
   public ValidationResult validate(TriggerDetails triggerDetails) {
     ValidationResultBuilder builder = ValidationResult.builder().success(true);
     if (triggerDetails.getNgTriggerConfigV2() != null
+        && triggerDetails.getNgTriggerConfigV2().getPipelineBranchName() != null
         && TriggerHelper.isBranchExpr(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
       // Impossible to check if pipeline ref is valid in case pipelineBranchName is an expression.
       return builder.build();

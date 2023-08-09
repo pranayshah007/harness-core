@@ -8,6 +8,7 @@
 package io.harness.ci.serializer;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_MACHINE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
@@ -28,6 +29,7 @@ import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.PluginStep;
 import io.harness.product.ci.engine.proto.Report;
@@ -50,10 +52,11 @@ import java.util.function.Supplier;
 @OwnedBy(HarnessTeam.CI)
 public class PluginStepProtobufSerializer implements ProtobufStepSerializer<PluginStepInfo> {
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+  @Inject private SerializerUtils serializerUtils;
 
   public UnitStep serializeStepWithStepParameters(PluginStepInfo pluginStepInfo, Integer port, String callbackId,
       String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout, String accountId,
-      String stepName, ExecutionSource executionSource) {
+      String stepName, ExecutionSource executionSource, String podName, Ambiance ambiance) {
     if (callbackId == null) {
       throw new CIStageExecutionException("CallbackId can not be null");
     }
@@ -78,7 +81,9 @@ public class PluginStepProtobufSerializer implements ProtobufStepSerializer<Plug
         envVarMap.put(key, SerializerUtils.convertJsonNodeToString(entry.getKey(), entry.getValue()));
       }
     }
-
+    envVarMap.put(DRONE_STAGE_MACHINE, podName);
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVarMap.putAll(statusEnvVars);
     PluginStep.Builder builder = PluginStep.newBuilder();
 
     UnitTestReport reports = pluginStepInfo.getReports().getValue();

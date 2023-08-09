@@ -27,6 +27,7 @@ import static io.harness.rule.OwnerRule.NANDAN;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
+import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.UNKNOWN;
@@ -945,9 +946,11 @@ public class UserServiceTest extends WingsBaseTest {
    * Should delete user.
    */
   @Test
-  @Owner(developers = ANUBHAW)
+  @Owner(developers = {ANUBHAW, SAHIBA})
   @Category(UnitTests.class)
   public void shouldDeleteUser() {
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(true);
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(userBuilder.uuid(USER_ID).build());
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
     when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
@@ -958,15 +961,17 @@ public class UserServiceTest extends WingsBaseTest {
     verify(wingsPersistence).findAndDelete(any(), any());
     verify(cache).remove(USER_ID);
     verify(auditServiceHelper, times(1)).reportDeleteForAuditingUsingAccountId(eq(ACCOUNT_ID), any(User.class));
+    mockRestStatic.close();
   }
 
   /**
    * Should delete user flow V2.
    */
   @Test
-  @Owner(developers = {BOOPESH, SHASHANK})
+  @Owner(developers = {BOOPESH, SHASHANK, SAHIBA})
   @Category(UnitTests.class)
   public void shouldDeleteUserV2WithAccountLevelDataFFOff() {
+    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(false);
     when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
     MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
@@ -977,6 +982,7 @@ public class UserServiceTest extends WingsBaseTest {
                           .build();
     User user = userBuilder.uuid(USER_ID).accounts(Arrays.asList(account)).build();
     userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, UserSource.MANUAL);
+    userServiceHelper.deleteUserMetadata(USER_ID);
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
     when(wingsPersistence.findAndDelete(any(), any())).thenReturn(user);
@@ -990,7 +996,7 @@ public class UserServiceTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = SHASHANK)
+  @Owner(developers = {SHASHANK, SAHIBA})
   @Category(UnitTests.class)
   public void shouldDeleteUserV2WithAccountLevelDataFFOn() {
     when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
@@ -1004,6 +1010,7 @@ public class UserServiceTest extends WingsBaseTest {
     User user = userBuilder.uuid(USER_ID).accounts(Arrays.asList(account)).build();
     when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(true);
     userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, UserSource.MANUAL);
+    userServiceHelper.deleteUserMetadata(USER_ID);
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
     when(wingsPersistence.findAndDelete(any(), any())).thenReturn(user);

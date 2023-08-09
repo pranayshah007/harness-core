@@ -41,6 +41,8 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
+import io.harness.enforcement.client.services.EnforcementClientService;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -169,6 +171,7 @@ public class InviteServiceImpl implements InviteService {
   private final TelemetryReporter telemetryReporter;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final ScheduledExecutorService scheduledExecutor;
+  private final EnforcementClientService enforcementClientService;
 
   private final RetryPolicy<Object> transactionRetryPolicy =
       getRetryPolicy("[Retrying]: Failed to mark previous invites as stale; attempt: {}",
@@ -181,7 +184,8 @@ public class InviteServiceImpl implements InviteService {
       OutboxService outboxService, AccessControlClient accessControlClient, UserClient userClient,
       AccountOrgProjectHelper accountOrgProjectHelper, @Named("isNgAuthUIEnabled") boolean isNgAuthUIEnabled,
       TelemetryReporter telemetryReporter, NGFeatureFlagHelperService ngFeatureFlagHelperService,
-      @Named(InviteModule.NG_INVITE_THREAD_EXECUTOR) ScheduledExecutorService scheduledExecutorService) {
+      @Named(InviteModule.NG_INVITE_THREAD_EXECUTOR) ScheduledExecutorService scheduledExecutorService,
+      EnforcementClientService enforcementClientService) {
     this.jwtPasswordSecret = jwtPasswordSecret;
     this.jwtGeneratorUtils = jwtGeneratorUtils;
     this.ngUserService = ngUserService;
@@ -197,6 +201,7 @@ public class InviteServiceImpl implements InviteService {
     this.telemetryReporter = telemetryReporter;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.scheduledExecutor = scheduledExecutorService;
+    this.enforcementClientService = enforcementClientService;
     MongoClientURI uri = new MongoClientURI(mongoConfig.getUri());
     useMongoTransactions = uri.getHosts().size() > 2;
   }
@@ -394,6 +399,10 @@ public class InviteServiceImpl implements InviteService {
     if (limitHasBeenReached) {
       throw new InvalidRequestException("The user count limit has been reached in this account");
     }
+  }
+
+  private void checkNgLimit(String accountId) {
+    enforcementClientService.checkAvailabilityWithIncrement(FeatureRestrictionName.MULTIPLE_USERS, accountId, 1);
   }
 
   private void createAndInviteNonPasswordUser(String accountIdentifier, String jwtToken, String email,
@@ -601,7 +610,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private InviteOperationResponse newInvite(Invite invite, boolean[] scimLdapArray) {
-    checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
+    checkNgLimit(invite.getAccountIdentifier());
     if (isNotEmpty(invite.getName())) {
       UserUtils.validateUserName(invite.getName());
     }

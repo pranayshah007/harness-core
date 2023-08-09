@@ -13,8 +13,11 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.StepDelegateInfo;
@@ -98,6 +101,8 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ConfigFilesStepV2 extends AbstractConfigFileStep
@@ -171,6 +176,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
         fetchConfigFilesMetadataFromSweepingOutput(ambiance);
 
     final List<ConfigFileWrapper> configFiles = configFilesSweepingOutput.getFinalSvcConfigFiles();
+    final Map<String, String> configFileLocation = configFilesSweepingOutput.getConfigFileLocation();
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
@@ -187,8 +193,9 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
       ConfigFileWrapper file = configFiles.get(i);
       ConfigFileAttributes spec = file.getConfigFile().getSpec();
       String identifier = file.getConfigFile().getIdentifier();
+      String fileLocation = configFileLocation != null ? configFileLocation.get(identifier) : null;
       validateConfigFileParametersAtRuntime(logCallback, spec, identifier);
-      verifyConfigFileReference(identifier, spec, ambiance);
+      verifyConfigFileReference(identifier, spec, ambiance, fileLocation);
       ConfigFileOutcome configFileOutcome = ConfigFileOutcomeMapper.toConfigFileOutcome(identifier, i + 1, spec);
       if (ManifestStoreType.isInGitSubset(configFileOutcome.getStore().getKind())) {
         gitConfigFilesOutcome.add(configFileOutcome);

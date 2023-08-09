@@ -43,17 +43,12 @@ public class AwsCdkDiffPluginInfoProvider implements CDPluginInfoProvider {
   public PluginCreationResponseWrapper getPluginInfo(
       PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
-    CdAbstractStepNode cdAbstractStepNode;
-
-    cdAbstractStepNode = getCdAbstractStepNode(request, stepJsonNode);
-
+    CdAbstractStepNode cdAbstractStepNode = getCdAbstractStepNode(request, stepJsonNode);
     AwsCdkDiffStepInfo awsCdkDiffStepInfo = (AwsCdkDiffStepInfo) cdAbstractStepNode.getStepSpecType();
-
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
         awsCdkDiffStepInfo.getResources(), awsCdkDiffStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
-
     if (ParameterField.isNotNull(awsCdkDiffStepInfo.getConnectorRef())
         || isNotEmpty(awsCdkDiffStepInfo.getConnectorRef().getValue())) {
       imageDetails = PluginInfoProviderHelper.getImageDetails(
@@ -61,9 +56,7 @@ public class AwsCdkDiffPluginInfoProvider implements CDPluginInfoProvider {
     }
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
-
     pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(awsCdkDiffStepInfo));
-
     PluginCreationResponse response =
         PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()

@@ -42,6 +42,7 @@ import io.harness.exception.GeneralException;
 import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
+import io.harness.license.STOLicenseNoopServiceImpl;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -279,8 +280,8 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     addGuiceValidationModule(modules);
     String mongoUri = STOManagerConfiguration.getHarnessSTOMongo(configuration.getHarnessCIMongo()).getUri();
     modules.add(new CIManagerServiceModule(configuration,
-        new CIManagerConfigurationOverride(
-            STO_MANAGER, "sto", false, false, mongoUri, STO_ORCHESTRATION_NOTIFY_EVENT)));
+        new CIManagerConfigurationOverride(STO_MANAGER, "sto", false, false, mongoUri, STO_ORCHESTRATION_NOTIFY_EVENT,
+            STOLicenseNoopServiceImpl.class)));
     modules.add(new STOManagerServiceModule());
 
     modules.add(new AbstractModule() {

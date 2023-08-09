@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +34,16 @@ import io.harness.beans.version.Version;
 import io.harness.category.element.UnitTests;
 import io.harness.cli.CliHelper;
 import io.harness.connector.helper.DecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
@@ -41,6 +52,7 @@ import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryption
 import io.harness.delegate.task.terragrunt.files.DownloadResult;
 import io.harness.delegate.task.terragrunt.files.FetchFilesResult;
 import io.harness.delegate.task.terragrunt.files.TerragruntDownloadService;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.runtime.TerragruntFetchFilesRuntimeException;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
@@ -84,6 +96,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
   @Mock private CliHelper cliHelper;
   @Mock private TerraformBaseHelper terraformBaseHelper;
   @Mock private HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNG;
+  @Mock private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @InjectMocks private TerragruntTaskService taskService = new TerragruntTaskService();
 
@@ -270,5 +283,42 @@ public class TerragruntTaskServiceTest extends CategoryTest {
 
     verify(harnessSMEncryptionDecryptionHandlerNG, times(1)).getDecryptedContent(any(), any(), any());
     FileIo.deleteDirectoryAndItsContentIfExists(TG_TEST_BASE_DIR);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testMapGitConfig() throws IOException {
+    TerragruntRunConfiguration runConfiguration =
+        TerragruntRunConfiguration.builder().runType(TerragruntTaskRunType.RUN_MODULE).path(TG_RUN_PATH).build();
+    AbstractTerragruntTaskParameters parameters = TerragruntTestUtils.createPlanTaskParameters(runConfiguration);
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .authentication(
+                GithubAuthenticationDTO.builder()
+                    .authType(GitAuthType.HTTP)
+                    .credentials(GithubHttpCredentialsDTO.builder()
+                                     .type(GithubHttpAuthenticationType.GITHUB_APP)
+                                     .httpCredentialsSpec(GithubAppDTO.builder()
+                                                              .installationId("id")
+                                                              .applicationId("app")
+                                                              .privateKeyRef(SecretRefData.builder().build())
+                                                              .build())
+                                     .build())
+                    .build())
+            .build();
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
+
+    parameters.setConfigFilesStore(GitStoreDelegateConfig.builder()
+                                       .branch("master")
+                                       .connectorName("terraform")
+                                       .gitConfigDTO(githubConnectorDTO)
+                                       .build());
+    taskService.mapGitConfig(parameters);
+    assertThat(parameters.getConfigFilesStore()).isInstanceOf(GitStoreDelegateConfig.class);
+    assertThat(((GitStoreDelegateConfig) parameters.getConfigFilesStore()).getGitConfigDTO())
+        .isInstanceOf(GitConfigDTO.class);
   }
 }

@@ -60,6 +60,7 @@ public class ViewsQueryHelper {
   private static final double DEFAULT_DOUBLE_VALUE = 0;
   private static final String EFFICIENCY_SCORE_LABEL = "Efficiency Score";
   private static final long OBSERVATION_PERIOD = 29 * ONE_DAY_MILLIS;
+  private static final int COST_CATEGORY_MAX_LIMIT_VALUE = 1_000;
 
   public boolean isYearRequired(Instant startInstant, Instant endInstant) {
     LocalDate endDate = LocalDateTime.ofInstant(endInstant, ZoneOffset.UTC).toLocalDate();
@@ -639,5 +640,15 @@ public class ViewsQueryHelper {
         -> Objects.nonNull(filter.getIdFilter()) && Objects.nonNull(filter.getIdFilter().getField())
             && filter.getIdFilter().getField().getIdentifier() == ViewFieldIdentifier.GCP
             && GCP_INVOICE_MONTH_FIELD_ID.equals(filter.getIdFilter().getField().getFieldId()));
+  }
+
+  public int getModifiedBusinessMappingLimit(
+      Integer limit, boolean isGroupByBusinessMapping, boolean isSharedCostBusinessMappingEmpty) {
+    return isGroupByBusinessMapping && !isSharedCostBusinessMappingEmpty ? COST_CATEGORY_MAX_LIMIT_VALUE : limit;
+  }
+
+  public int getModifiedBusinessMappingOffset(
+      Integer offset, boolean isGroupByBusinessMapping, boolean isSharedCostBusinessMappingEmpty) {
+    return isGroupByBusinessMapping && !isSharedCostBusinessMappingEmpty ? 0 : offset;
   }
 }

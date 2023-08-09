@@ -12,6 +12,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.beans.FeatureName.PL_UPDATE_CONNECTOR_HEARTBEAT_PPT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.perpetualtask.PerpetualTaskType.CONNECTOR_TEST_CONNECTION;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.lock.AcquiredLock;
@@ -135,6 +136,7 @@ public class UpdateHeartBeatIntervalAndResetPerpetualTaskJob implements Managed 
       bulkWriteOperation
           .find(persistence.createQuery(PerpetualTaskRecord.class)
                     .filter(PerpetualTaskRecordKeys.accountId, accountId)
+                    .filter(PerpetualTaskRecordKeys.perpetualTaskType, CONNECTOR_TEST_CONNECTION)
                     .getQueryObject())
           .update(new BasicDBObject("$set", updateOperations)
                       .append("$unset",

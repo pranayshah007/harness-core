@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.connector.vaultconnector.outcome;
 
 import static io.harness.SecretManagerDescriptionConstants.AWS_REGION;
+import static io.harness.SecretManagerDescriptionConstants.ENABLE_CACHE;
 import static io.harness.SecretManagerDescriptionConstants.K8S_AUTH_ENDPOINT;
 import static io.harness.SecretManagerDescriptionConstants.RENEW_APPROLE_TOKEN;
 import static io.harness.SecretManagerDescriptionConstants.SERVICE_ACCOUNT_TOKEN_PATH;
@@ -71,5 +72,6 @@ public class VaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implemen
   @Schema(description = SERVICE_ACCOUNT_TOKEN_PATH) private String serviceAccountTokenPath;
   @Schema(description = K8S_AUTH_ENDPOINT) private String k8sAuthEndpoint;
   @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
+  @Schema(description = ENABLE_CACHE) @Builder.Default private boolean enableCache = true;
   private AccessType accessType;
 }

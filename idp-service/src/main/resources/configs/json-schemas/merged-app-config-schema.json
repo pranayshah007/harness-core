@@ -15,7 +15,8 @@
     "integrations",
     "lighthouse",
     "jenkins",
-    "confluence"
+    "confluence",
+    "catalog"
   ],
   "properties": {
     "app": {
@@ -57,6 +58,10 @@
     "confluence": {
       "$id": "#root/confluence",
       "title": "Confluence"
+    },
+    "catalog": {
+      "$id": "#root/catalog",
+      "title": "Catalog"
     }
   }
 }

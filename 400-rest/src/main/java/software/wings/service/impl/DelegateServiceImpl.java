@@ -8,7 +8,6 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.beans.FeatureName.DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST;
 import static io.harness.beans.FeatureName.REDUCE_DELEGATE_MEMORY_SIZE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -1462,9 +1461,7 @@ public class DelegateServiceImpl implements DelegateService {
             .put("delegateGrpcServicePort", String.valueOf(delegateGrpcConfig.getPort()))
             .put("kubernetesAccountLabel", getAccountIdentifier(templateParameters.getAccountId()))
             .put("runAsRoot", String.valueOf(templateParameters.isRunAsRoot()))
-            .put("dynamicHandlingOfRequestEnabled",
-                String.valueOf(featureFlagService.isEnabled(
-                    DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
+            .put("dynamicHandlingOfRequestEnabled", String.valueOf(false));
 
     final boolean isOnPrem = DeployMode.isOnPrem(mainConfiguration.getDeployMode().name());
     params.put("isOnPrem", String.valueOf(isOnPrem));
@@ -2531,14 +2528,20 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateRegisterResponse register(final DelegateParams delegateParams, final boolean isConnectedUsingMtls) {
-    delegateMetricsService.recordDelegateMetrics(
-        Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
+    delegateMetricsService.recordDelegateMetrics(Delegate.builder()
+                                                     .accountId(delegateParams.getAccountId())
+                                                     .version(delegateParams.getVersion())
+                                                     .delegateType(delegateParams.getDelegateType())
+                                                     .build(),
         DELEGATE_REGISTRATION);
     // TODO: remove broadcasts from the flow of this function. Because it's called only in the first registration,
     // which is before the open of websocket connection.
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
-      delegateMetricsService.recordDelegateMetrics(
-          Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
+      delegateMetricsService.recordDelegateMetrics(Delegate.builder()
+                                                       .accountId(delegateParams.getAccountId())
+                                                       .version(delegateParams.getVersion())
+                                                       .delegateType(delegateParams.getDelegateType())
+                                                       .build(),
           DELEGATE_DESTROYED);
       broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true).broadcast(SELF_DESTRUCT);
       log.warn("Sending self destruct command from register delegate parameters because the account is deleted.");
@@ -3205,12 +3208,11 @@ public class DelegateServiceImpl implements DelegateService {
                                      .filter(DelegateGroupKeys.ng, isNg)
                                      .filter(DelegateGroupKeys.name, name);
 
-    DelegateGroup existingEntity = query.get();
-
-    if (existingEntity != null && !matchOwners(existingEntity.getOwner(), owner)) {
-      throw new InvalidRequestException(
-          "Unable to create delegate group. Delegate with same name exists. Delegate name must be unique across account.");
+    if (owner != null) {
+      query.filter(DelegateGroupKeys.owner, owner);
     }
+
+    DelegateGroup existingEntity = query.get();
 
     // this statement is here because of identifier migration where we used normalized uuid for existing groups
     if (existingEntity != null && uuidToIdentifier(existingEntity.getUuid()).equals(existingEntity.getIdentifier())) {
@@ -3232,7 +3234,12 @@ public class DelegateServiceImpl implements DelegateService {
       setUnset(updateOperations, DelegateGroupKeys.k8sConfigDetails, k8sConfigDetails);
     }
 
-    setUnset(updateOperations, DelegateGroupKeys.owner, owner);
+    if (owner != null && existingEntity != null && !matchOwners(existingEntity.getOwner(), owner)) {
+      updateOperations.setOnInsert(DelegateGroupKeys.owner, owner);
+    } else {
+      setUnset(updateOperations, DelegateGroupKeys.owner, owner);
+    }
+
     setUnset(updateOperations, DelegateGroupKeys.description, description);
     setUnset(updateOperations, DelegateGroupKeys.tags, tags);
 

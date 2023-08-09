@@ -18,6 +18,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -44,6 +45,7 @@ public class GitFetchTaskHelper {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private NGGitService ngGitService;
   @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public static String getCompleteFilePath(String folderPath, String fileKey) {
     if (isBlank(folderPath)) {

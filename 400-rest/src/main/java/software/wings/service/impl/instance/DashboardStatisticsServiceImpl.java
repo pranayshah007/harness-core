@@ -29,7 +29,6 @@ import static io.harness.validation.Validator.notNullCheck;
 import static software.wings.beans.Base.CREATED_AT_KEY;
 import static software.wings.beans.EntityType.APPLICATION;
 import static software.wings.beans.EntityType.ARTIFACT;
-import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_SERVICEIDS;
 import static software.wings.beans.infrastructure.instance.Instance.InstanceKeys;
 import static software.wings.features.DeploymentHistoryFeature.FEATURE_NAME;
 import static software.wings.sm.StateType.PHASE;
@@ -1236,16 +1235,13 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     PageRequest<WorkflowExecution> finalPageRequest;
 
     if (pageRequest == null) {
-      PageRequestBuilder pageRequestBuilder =
-          aPageRequest()
-              .addFilter(WorkflowExecutionKeys.accountId, EQ, accountId)
-              .addFilter(WorkflowExecutionKeys.appId, EQ, appId)
-              .addFilter(WorkflowExecutionKeys.workflowType, EQ, ORCHESTRATION)
-              .addFilter(WorkflowExecutionKeys.serviceIds, HAS, serviceId)
-              .addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC)
-              .withIndexHint(
-                  BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_SERVICEIDS))
-              .withLimit("10");
+      PageRequestBuilder pageRequestBuilder = aPageRequest()
+                                                  .addFilter(WorkflowExecutionKeys.accountId, EQ, accountId)
+                                                  .addFilter(WorkflowExecutionKeys.appId, EQ, appId)
+                                                  .addFilter(WorkflowExecutionKeys.workflowType, EQ, ORCHESTRATION)
+                                                  .addFilter(WorkflowExecutionKeys.serviceIds, HAS, serviceId)
+                                                  .addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC)
+                                                  .withLimit("10");
 
       finalPageRequest = pageRequestBuilder.build();
     } else {

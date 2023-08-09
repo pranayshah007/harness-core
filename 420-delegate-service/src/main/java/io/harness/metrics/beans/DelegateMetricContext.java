@@ -17,8 +17,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 public class DelegateMetricContext extends AutoMetricContext {
-  public DelegateMetricContext(String accountId, String version) {
+  public DelegateMetricContext(String accountId, String type, String version) {
     put("accountId", accountId);
+    put("type", type);
     put("version", version);
   }
 }

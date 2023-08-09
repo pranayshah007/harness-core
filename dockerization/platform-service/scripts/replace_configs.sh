@@ -94,6 +94,10 @@ if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
   export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.notificationServiceConfig.mongo.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.notificationServiceConfig.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MANAGER_CLIENT_SECRET" ]]; then
   export MANAGER_CLIENT_SECRET; yq -i '.secrets.managerServiceSecret=env(MANAGER_CLIENT_SECRET)' $CONFIG_FILE
 fi
@@ -197,10 +201,17 @@ if [[ "" != "$AUDIT_MONGO_MAX_DOCUMENT_LIMIT" ]]; then
   export AUDIT_MONGO_MAX_DOCUMENT_LIMIT; yq -i '.auditServiceConfig.mongo.maxDocumentsToBeFetched=env(AUDIT_MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$AUDIT_MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export AUDIT_MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.auditServiceConfig.mongo.maxOperationTimeInMillis=env(AUDIT_MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT" ]]; then
   export RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT; yq -i '.resourceGroupServiceConfig.mongo.maxDocumentsToBeFetched=env(RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$RESOURCEGROUP_MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export RESOURCEGROUP_MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.resourceGroupServiceConfig.mongo.maxOperationTimeInMillis=env(RESOURCEGROUP_MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
 
 if [[ "" != "$AUDIT_MONGO_INDEX_MANAGER_MODE" ]]; then
   export AUDIT_MONGO_INDEX_MANAGER_MODE; yq -i '.auditServiceConfig.mongo.indexManagerMode=env(AUDIT_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE

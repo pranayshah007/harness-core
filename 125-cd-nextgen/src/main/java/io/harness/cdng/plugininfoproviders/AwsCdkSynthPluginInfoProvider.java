@@ -48,17 +48,12 @@ public class AwsCdkSynthPluginInfoProvider implements CDPluginInfoProvider {
   public PluginCreationResponseWrapper getPluginInfo(
       PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
-    CdAbstractStepNode cdAbstractStepNode;
-
-    cdAbstractStepNode = getCdAbstractStepNode(request, stepJsonNode);
-
+    CdAbstractStepNode cdAbstractStepNode = getCdAbstractStepNode(request, stepJsonNode);
     AwsCdkSynthStepInfo awsCdkSynthStepInfo = (AwsCdkSynthStepInfo) cdAbstractStepNode.getStepSpecType();
-
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
         awsCdkSynthStepInfo.getResources(), awsCdkSynthStepInfo.getRunAsUser(), usedPorts);
 
     ImageDetails imageDetails = null;
-
     if (ParameterField.isNotNull(awsCdkSynthStepInfo.getConnectorRef())
         || isNotEmpty(awsCdkSynthStepInfo.getConnectorRef().getValue())) {
       imageDetails = PluginInfoProviderHelper.getImageDetails(awsCdkSynthStepInfo.getConnectorRef(),
@@ -66,9 +61,7 @@ public class AwsCdkSynthPluginInfoProvider implements CDPluginInfoProvider {
     }
 
     pluginDetailsBuilder.setImageDetails(imageDetails);
-
     pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(awsCdkSynthStepInfo));
-
     PluginCreationResponse response =
         PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
     StepInfoProto stepInfoProto = StepInfoProto.newBuilder()

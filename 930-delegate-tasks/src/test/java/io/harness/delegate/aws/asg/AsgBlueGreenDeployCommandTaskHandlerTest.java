@@ -15,9 +15,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
+import io.harness.aws.asg.manifest.request.AsgInstanceCapacity;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
@@ -51,6 +55,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+@OwnedBy(HarnessTeam.CDP)
 public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -87,7 +92,10 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
     doReturn(new LaunchTemplate().withLatestVersionNumber(1L))
         .when(asgSdkManager)
         .createLaunchTemplate(anyString(), any());
-    doReturn(new AutoScalingGroup().withAutoScalingGroupName(ASG_NAME)).when(asgSdkManager).getASG(anyString());
+    doReturn(
+        new AutoScalingGroup().withAutoScalingGroupName(ASG_NAME).withDesiredCapacity(1).withMinSize(1).withMaxSize(3))
+        .when(asgSdkManager)
+        .getASG(anyString());
     doReturn(AutoScalingGroupContainer.builder().autoScalingGroupName(ASG_NAME).build())
         .when(asgTaskHelper)
         .mapToAutoScalingGroupContainer(any());
@@ -98,7 +106,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void executeTaskInternalTestIsFirstDeployment() {
     AsgLoadBalancerConfig lbConfig = getAsgLoadBalancerConfig();
-    AsgBlueGreenDeployRequest request = createRequest(lbConfig, true);
+    AsgBlueGreenDeployRequest request = createRequest(lbConfig, true, false);
 
     AsgBlueGreenDeployResponse response = (AsgBlueGreenDeployResponse) taskHandler.executeTaskInternal(
         request, iLogStreamingTaskClient, commandUnitsProgress);
@@ -115,7 +123,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void executeTaskInternalTestIsNotFirstDeployment() {
     AsgLoadBalancerConfig lbConfig = getAsgLoadBalancerConfig();
-    AsgBlueGreenDeployRequest request = createRequest(lbConfig, false);
+    AsgBlueGreenDeployRequest request = createRequest(lbConfig, false, false);
 
     AsgBlueGreenDeployResponse response = (AsgBlueGreenDeployResponse) taskHandler.executeTaskInternal(
         request, iLogStreamingTaskClient, commandUnitsProgress);
@@ -125,6 +133,50 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
     AsgBlueGreenDeployResult result = response.getAsgBlueGreenDeployResult();
 
     assertThat(result.getProdAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void executeTaskInternalUseAlreadyRunningInstances() {
+    AsgLoadBalancerConfig lbConfig = getAsgLoadBalancerConfig();
+    AsgBlueGreenDeployRequest request = createRequest(lbConfig, false, true);
+
+    AsgBlueGreenDeployResponse response = (AsgBlueGreenDeployResponse) taskHandler.executeTaskInternal(
+        request, iLogStreamingTaskClient, commandUnitsProgress);
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    AsgBlueGreenDeployResult result = response.getAsgBlueGreenDeployResult();
+
+    assertThat(result.getProdAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getNrOfAlreadyRunningInstancesTest() {
+    AsgSdkManager asgSdkManager = mock(AsgSdkManager.class);
+    doReturn(
+        new AutoScalingGroup().withAutoScalingGroupName(ASG_NAME).withDesiredCapacity(2).withMinSize(1).withMaxSize(3))
+        .when(asgSdkManager)
+        .getASG(anyString());
+
+    AsgInstanceCapacity ret = taskHandler.getRunningInstanceCapacity(asgSdkManager, true, false, "test");
+    assertThat(ret.getMinCapacity()).isEqualTo(1);
+    assertThat(ret.getDesiredCapacity()).isEqualTo(2);
+    assertThat(ret.getMaxCapacity()).isEqualTo(3);
+
+    ret = taskHandler.getRunningInstanceCapacity(asgSdkManager, false, false, "test");
+    assertThat(ret.getDesiredCapacity()).isNull();
+
+    ret = taskHandler.getRunningInstanceCapacity(asgSdkManager, true, true, "test");
+    assertThat(ret.getDesiredCapacity()).isNull();
+
+    asgSdkManager = mock(AsgSdkManager.class);
+    doReturn(null).when(asgSdkManager).getASG(anyString());
+    ret = taskHandler.getRunningInstanceCapacity(asgSdkManager, true, false, "test");
+    assertThat(ret.getDesiredCapacity()).isNull();
   }
 
   private AsgLoadBalancerConfig getAsgLoadBalancerConfig() {
@@ -140,7 +192,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
   }
 
   private AsgBlueGreenDeployRequest createRequest(
-      AsgLoadBalancerConfig asgLoadBalancerConfig, boolean isFirstDeployment) {
+      AsgLoadBalancerConfig asgLoadBalancerConfig, boolean isFirstDeployment, boolean useAlreadyRunningInstances) {
     return AsgBlueGreenDeployRequest.builder()
         .commandUnitsProgress(commandUnitsProgress)
         .timeoutIntervalInMin(1)
@@ -150,6 +202,7 @@ public class AsgBlueGreenDeployCommandTaskHandlerTest extends CategoryTest {
         .asgName(ASG_NAME)
         .amiImageId("ami-1234")
         .firstDeployment(isFirstDeployment)
+        .useAlreadyRunningInstances(useAlreadyRunningInstances)
         .build();
   }
 }

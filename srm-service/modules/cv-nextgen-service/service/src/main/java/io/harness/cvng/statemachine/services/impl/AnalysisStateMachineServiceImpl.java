@@ -235,6 +235,8 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
     }
     if (AnalysisStatus.getFinalStates().contains(analysisStateMachine.getStatus())
         && analysisStateMachine.getFirstPickedAt() != null) {
+      cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+          CVNGTaskMetadataConstants.TASK_TYPE, String.valueOf(analysisStateMachine.getCurrentState().getType())));
       Duration waitDuration = Duration.between(
           Instant.ofEpochMilli(analysisStateMachine.getCreatedAt()), analysisStateMachine.getFirstPickedAt());
       cvngLogTags.addAll(

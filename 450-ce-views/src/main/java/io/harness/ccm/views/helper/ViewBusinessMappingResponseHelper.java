@@ -44,7 +44,8 @@ public class ViewBusinessMappingResponseHelper {
   @Inject private ViewsQueryBuilder viewsQueryBuilder;
 
   public QLCEViewGridData costCategoriesPostFetchResponseUpdate(QLCEViewGridData response, String businessMappingId,
-      List<BusinessMapping> sharedCostBusinessMappings, Map<String, Double> sharedCosts) {
+      List<BusinessMapping> sharedCostBusinessMappings, Map<String, Double> sharedCosts, Integer limit,
+      Integer offset) {
     List<QLCEViewEntityStatsDataPoint> updatedDataPoints = new ArrayList<>();
     if (businessMappingId != null) {
       BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
@@ -93,6 +94,12 @@ public class ViewBusinessMappingResponseHelper {
       updatedDataPoints.sort(
           (dataPoints1,
               dataPoints2) -> Double.compare(dataPoints2.getCost().doubleValue(), dataPoints1.getCost().doubleValue()));
+    }
+
+    if (businessMappingId != null && !sharedCostBusinessMappings.isEmpty()) {
+      int startIndex = Math.min(offset, updatedDataPoints.size());
+      int endIndex = Math.min(offset + limit, updatedDataPoints.size());
+      updatedDataPoints = updatedDataPoints.subList(startIndex, endIndex);
     }
 
     return QLCEViewGridData.builder().data(updatedDataPoints).fields(response.getFields()).build();
@@ -221,40 +228,6 @@ public class ViewBusinessMappingResponseHelper {
       sharedCostDetailsPerEntity.put(entity, entitySharedCostDetails);
     });
     return sharedCostDetailsPerEntity;
-  }
-
-  public List<String> costCategoriesPostFetchResponseUpdate(List<String> response, String businessMappingId) {
-    if (businessMappingId != null) {
-      BusinessMapping businessMapping = businessMappingService.get(businessMappingId);
-      if (businessMapping.getUnallocatedCost() != null) {
-        List<String> updatedResponse = new ArrayList<>();
-        UnallocatedCostStrategy strategy = businessMapping.getUnallocatedCost().getStrategy();
-        switch (strategy) {
-          case DISPLAY_NAME:
-            response.forEach(value -> {
-              if (value.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
-                updatedResponse.add(businessMapping.getUnallocatedCost().getLabel());
-              } else {
-                updatedResponse.add(value);
-              }
-            });
-            break;
-          case HIDE:
-            response.forEach(value -> {
-              if (!value.equals(ViewFieldUtils.getBusinessMappingUnallocatedCostDefaultName())) {
-                updatedResponse.add(value);
-              }
-            });
-            break;
-          case SHARE:
-          default:
-            throw new InvalidRequestException(
-                "Invalid Unallocated Cost Strategy / Unallocated Cost Strategy not supported");
-        }
-        return updatedResponse;
-      }
-    }
-    return response;
   }
 
   public double calculateSharedCostForTimestamp(Map<String, Map<Timestamp, Double>> sharedCosts, Timestamp timestamp,

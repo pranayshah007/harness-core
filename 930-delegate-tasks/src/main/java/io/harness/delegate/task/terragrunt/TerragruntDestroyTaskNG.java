@@ -114,6 +114,7 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
       CommandUnitsProgress commandUnitsProgress, LogCallback destroyLogCallback, String baseDir)
       throws IOException, InterruptedException {
     try {
+      taskService.mapGitConfig(destroyTaskParameters);
       taskService.decryptTaskParameters(destroyTaskParameters);
       LogCallback fetchFilesLogCallback =
           taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);

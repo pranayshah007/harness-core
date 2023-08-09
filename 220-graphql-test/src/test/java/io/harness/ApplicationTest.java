@@ -131,7 +131,7 @@ public class ApplicationTest extends GraphQLTest {
     assertThat(result.getErrors().size()).isEqualTo(1);
 
     assertThat(result.getErrors().get(0).getMessage())
-        .isEqualTo("Exception while fetching data (/application) : User not authorized.");
+        .isEqualTo("Exception while fetching data (/application) : User not authorized: ACCESS_DENIED");
   }
 
   @Test

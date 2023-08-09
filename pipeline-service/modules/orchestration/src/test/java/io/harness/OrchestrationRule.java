@@ -245,12 +245,14 @@ public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRu
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
     modules.add(new OrchestrationPersistenceTestModule());
-    modules.add(
-        OrchestrationModule.getInstance(OrchestrationModuleConfig.builder()
-                                            .serviceName("ORCHESTRATION_TEST")
-                                            .expressionEvaluatorProvider(new AmbianceExpressionEvaluatorProvider())
-                                            .isPipelineService(true)
-                                            .build()));
+    modules.add(OrchestrationModule.getInstance(
+        OrchestrationModuleConfig.builder()
+            .orchestrationRestrictionConfiguration(
+                OrchestrationRestrictionConfiguration.builder().maxNestedLevelsCount(25).build())
+            .serviceName("ORCHESTRATION_TEST")
+            .expressionEvaluatorProvider(new AmbianceExpressionEvaluatorProvider())
+            .isPipelineService(true)
+            .build()));
     CacheConfigBuilder cacheConfigBuilder =
         CacheConfig.builder().disabledCaches(new HashSet<>()).cacheNamespace("harness-cache");
     if (annotations.stream().anyMatch(annotation -> annotation instanceof Cache)) {

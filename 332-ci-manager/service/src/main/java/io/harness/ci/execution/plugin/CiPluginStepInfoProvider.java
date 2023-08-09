@@ -39,6 +39,7 @@ import io.harness.pms.sdk.core.plugin.SecretNgVariableUtils;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
+import com.google.protobuf.BoolValue;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -77,6 +78,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     PluginDetails.Builder pluginDetailsBuilder =
         PluginDetails.newBuilder()
             .putAllEnvVariables(containerDefinitionInfo.getEnvVars())
+            .setIsHarnessManaged(BoolValue.of(containerDefinitionInfo.isHarnessManagedImage()))
             .setImageDetails(
                 ImageDetails.newBuilder()
                     .setImageInformation(ImageDetailsUtils.getImageDetails(

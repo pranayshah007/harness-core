@@ -37,6 +37,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Optional;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
@@ -66,6 +67,7 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
   private String analysisExecutionDetailsId;
 
   private String activityId;
+  private String stepName;
 
   private static SRMAnalysisStepResource srmAnalysisStepResource = new SRMAnalysisStepResource();
 
@@ -78,6 +80,7 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
     injector.injectMembers(srmAnalysisStepResource);
     builderFactory = BuilderFactory.getDefault();
     monitoredServiceIdentifier = "service1_env1";
+    stepName = "Mocked step name";
     serviceEnvironmentParams = ServiceEnvironmentParams.builderWithProjectParams(builderFactory.getProjectParams())
                                    .serviceIdentifier("service1")
                                    .environmentIdentifier("env1")
@@ -92,8 +95,8 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
     when(pipelineSummaryCall.execute()).thenReturn(retrofit2.Response.success(ResponseDTO.newResponse(mockResponse)));
     FieldUtils.writeField(srmAnalysisStepService, "pipelineServiceClient", pipelineServiceClient, true);
     analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
-        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier,
-        serviceEnvironmentParams, Duration.ofDays(1));
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, stepName,
+        serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
     SRMStepAnalysisActivity stepAnalysisActivity = builderFactory.getSRMStepAnalysisActivityBuilder()
                                                        .executionNotificationDetailsId(analysisExecutionDetailsId)
                                                        .build();
@@ -129,6 +132,7 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
     RestResponse<SRMAnalysisStepDetailDTO> restResponse =
         response.readEntity(new GenericType<RestResponse<SRMAnalysisStepDetailDTO>>() {});
     SRMAnalysisStepDetailDTO stepDetailDTO = restResponse.getResource();
+    assertThat(stepDetailDTO.getStepName()).isEqualTo(stepName);
     assertThat(stepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(stepDetailDTO.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
     assertThat(stepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
@@ -148,6 +152,7 @@ public class SRMAnalysisStepResourceTest extends CvNextGenTestBase {
     RestResponse<SRMAnalysisStepDetailDTO> restResponse =
         response.readEntity(new GenericType<RestResponse<SRMAnalysisStepDetailDTO>>() {});
     SRMAnalysisStepDetailDTO stepDetailDTO = restResponse.getResource();
+    assertThat(stepDetailDTO.getStepName()).isEqualTo(stepName);
     assertThat(stepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(stepDetailDTO.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.ABORTED);
     assertThat(stepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);

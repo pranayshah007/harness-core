@@ -168,7 +168,7 @@ public class HostValidationServiceImpl implements HostValidationService {
                                           .withStatus(ExecutionStatus.SUCCESS.name())
                                           .build();
     try {
-      if (sshSessionConfig.isUseSshClient()) {
+      if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
         SshClientManager.test(sshSessionConfig);
       } else {
         Session sshSession = SshSessionFactory.getSSHSession(sshSessionConfig);

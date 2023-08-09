@@ -11,6 +11,7 @@ import static io.harness.cvng.beans.cvnglog.ApiCallLogDTO.FieldType.TEXT;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.KANHAIYA;
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,6 +33,7 @@ public class ApiCallLogDTOTest extends CategoryTest {
   private String accountId;
   private String name;
   private String value;
+  String demoUrl = "https://www.example.com/";
 
   @Before
   public void setup() {
@@ -70,13 +72,38 @@ public class ApiCallLogDTOTest extends CategoryTest {
     ApiCallLogDTOField field = ApiCallLogDTOField.builder().name(name).value(value).build();
     apiCallLogDTO.addFieldToRequest(field);
     RequestBody formBody = new FormBody.Builder().add("message", "YourMessage").build();
-    Request request = new Request.Builder().url("https://www.example.com/").post(formBody).build();
+    Request request = new Request.Builder().url(demoUrl).post(formBody).build();
     apiCallLogDTO.addCallDetailsBodyFieldToRequest(request);
     assertThat(apiCallLogDTO.getRequests()).hasSize(2);
     assertThat(apiCallLogDTO.getRequests().get(0).getName()).isEqualTo(name);
     assertThat(apiCallLogDTO.getRequests().get(0).getValue()).isEqualTo(value);
     assertThat(apiCallLogDTO.getRequests().get(1).getName()).isEqualTo("Request Body");
     assertThat(apiCallLogDTO.getRequests().get(1).getValue()).isEqualTo("message=YourMessage");
+    assertThat(apiCallLogDTO.getRequests().get(1).getType()).isEqualTo(TEXT);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testAddFieldToRequestWithoutSensitiveKeys_WithTextBody() {
+    ApiCallLogDTO apiCallLogDTO = ApiCallLogDTO.builder().accountId(accountId).build();
+    ApiCallLogDTOField field = ApiCallLogDTOField.builder().name(name).value(value).build();
+    apiCallLogDTO.addFieldToRequest(field);
+    RequestBody formBody =
+        new FormBody.Builder().add("message", "YourMessage").add("client_secret", "dummy_client_secret").build();
+    Request request = new Request.Builder()
+                          .url(demoUrl)
+                          .post(formBody)
+                          .addHeader("Connection", "keep-alive")
+                          .addHeader("Content-Type", "application/json")
+                          .build();
+    apiCallLogDTO.addCallDetailsBodyFieldToRequest(request);
+    assertThat(apiCallLogDTO.getRequests()).hasSize(2);
+    assertThat(request.headers().size()).isEqualTo(2);
+    assertThat(apiCallLogDTO.getRequests().get(0).getName()).isEqualTo(name);
+    assertThat(apiCallLogDTO.getRequests().get(0).getValue()).isEqualTo(value);
+    assertThat(apiCallLogDTO.getRequests().get(1).getName()).isEqualTo("Request Body");
+    assertThat(apiCallLogDTO.getRequests().get(1).getValue()).isEqualTo("message=YourMessage&client_secret=****");
     assertThat(apiCallLogDTO.getRequests().get(1).getType()).isEqualTo(TEXT);
   }
 
@@ -89,7 +116,7 @@ public class ApiCallLogDTOTest extends CategoryTest {
     apiCallLogDTO.addFieldToRequest(field);
     MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     RequestBody body = RequestBody.create(JSON, "{\"jsonExample\":\"value\"}");
-    Request request = new Request.Builder().url("https://www.example.com/").post(body).build();
+    Request request = new Request.Builder().url(demoUrl).post(body).build();
     apiCallLogDTO.addCallDetailsBodyFieldToRequest(request);
     assertThat(apiCallLogDTO.getRequests()).hasSize(2);
     assertThat(apiCallLogDTO.getRequests().get(0).getName()).isEqualTo(name);
@@ -108,7 +135,7 @@ public class ApiCallLogDTOTest extends CategoryTest {
     apiCallLogDTO.addFieldToRequest(field);
     MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     RequestBody body = RequestBody.create(JSON, "{\"jsonExample\":\"\"valu\\e\"\"}");
-    Request request = new Request.Builder().url("https://www.example.com/").post(body).build();
+    Request request = new Request.Builder().url(demoUrl).post(body).build();
     apiCallLogDTO.addCallDetailsBodyFieldToRequest(request);
     assertThat(apiCallLogDTO.getRequests()).hasSize(2);
     assertThat(apiCallLogDTO.getRequests().get(0).getName()).isEqualTo(name);
@@ -128,7 +155,7 @@ public class ApiCallLogDTOTest extends CategoryTest {
     MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded");
     RequestBody body = RequestBody.create(mediaType,
         "search=search%20index%3D_internal%20%22%20error%20%22%20NOT%20debug%20source%3D*splunkd.log*&earliest_time=1688700000&latest_time=1688700300");
-    Request request = new Request.Builder().url("https://www.example.com/").post(body).build();
+    Request request = new Request.Builder().url(demoUrl).post(body).build();
     apiCallLogDTO.addCallDetailsBodyFieldToRequest(request);
     assertThat(apiCallLogDTO.getRequests()).hasSize(2);
     assertThat(apiCallLogDTO.getRequests().get(0).getName()).isEqualTo(name);

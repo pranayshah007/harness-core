@@ -1228,7 +1228,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
         PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
         PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS,
         PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_ET_EMAIL,
-        PredefinedTemplate.CVNG_MONITOREDSERVICE_REPORT_SLACK));
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_REPORT_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_REPORT_EMAIL,
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_REPORT_PAGERDUTY,
+        PredefinedTemplate.CVNG_MONITOREDSERVICE_REPORT_MSTEAMS));
 
     if (configuration.getShouldConfigureWithNotification()) {
       for (PredefinedTemplate template : templates) {

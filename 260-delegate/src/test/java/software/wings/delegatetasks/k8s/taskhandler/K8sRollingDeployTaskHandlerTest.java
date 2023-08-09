@@ -58,6 +58,7 @@ import io.harness.delegate.k8s.beans.K8sHandlerConfig;
 import io.harness.delegate.k8s.beans.K8sRollingHandlerConfig;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.istio.IstioTaskHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.KubernetesYamlException;
@@ -66,6 +67,7 @@ import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -114,6 +116,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
   @Mock private KubernetesContainerService kubernetesContainerService;
   @Mock private K8sTaskHelper k8sTaskHelper;
   @Mock private K8sTaskHelperBase k8sTaskHelperBase;
+  @Mock private IstioTaskHelper istioTaskHelper;
   @Mock private K8sRollingBaseHandler k8sRollingBaseHandler;
   @Mock private ExecutionLogCallback executionLogCallback;
   @Mock private K8sReleaseHandler releaseHandler;
@@ -165,8 +168,8 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
 
     k8sRollingDeployTaskHandler.init(rollingDeployTaskParams, delegateTaskParams, executionLogCallback);
     verify(k8sTaskHelperBase, times(0)).dryRunManifests(any(), any(), any(), any());
-    verify(k8sTaskHelperBase, times(0)).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
-    verify(k8sTaskHelperBase, times(0)).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
+    verify(istioTaskHelper, times(0)).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
+    verify(istioTaskHelper, times(0)).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).readManifestAndOverrideLocalSecrets(any(), any(), anyBoolean());
     verify(k8sTaskHelper, times(1)).renderTemplate(any(), any(), any(), any(), any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).setNamespaceToKubernetesResourcesIfRequired(any(), any());
@@ -190,8 +193,8 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
 
     k8sRollingDeployTaskHandler.init(rollingDeployTaskParams, delegateTaskParams, executionLogCallback);
     verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any());
-    verify(k8sTaskHelperBase, times(0)).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
-    verify(k8sTaskHelperBase, times(0)).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
+    verify(istioTaskHelper, times(0)).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
+    verify(istioTaskHelper, times(0)).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).setNamespaceToKubernetesResourcesIfRequired(any(), any());
     verify(k8sTaskHelperBase, times(1)).readManifestAndOverrideLocalSecrets(any(), any(), anyBoolean());
     verify(k8sTaskHelper, times(1)).renderTemplate(any(), any(), any(), any(), any(), any(), any(), any());
@@ -709,13 +712,16 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
     doAnswer(invocation -> {
       Object[] args = invocation.getArguments();
       K8sHandlerConfig k8sRollingHandlerConfig = (K8sHandlerConfig) args[3];
+      K8sRequestHandlerContext requestHandlerContext = (K8sRequestHandlerContext) args[4];
       k8sRollingHandlerConfig.setKubernetesConfig(KubernetesConfig.builder().build());
       k8sRollingHandlerConfig.setClient(Kubectl.client("", ""));
       k8sRollingHandlerConfig.setResources(inheritedKubernetesResources);
+      requestHandlerContext.setResources(inheritedKubernetesResources);
+
       return true;
     })
         .when(k8sTaskHelper)
-        .restore(any(), any(), any(), any(), any());
+        .restore(any(), any(), any(), any(), eq(k8sRollingDeployTaskHandler.getK8sRequestHandlerContext()), any());
     handler.executeTaskInternal(K8sRollingDeployTaskParameters.builder()
                                     .releaseName("releaseName")
                                     .isInCanaryWorkflow(false)
@@ -728,7 +734,7 @@ public class K8sRollingDeployTaskHandlerTest extends WingsBaseTest {
 
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(handler, times(0)).init(any(), any(), any());
-    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
+    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any(), any());
     verify(releaseHandler).getReleaseHistory(any(), any());
     verify(k8sTaskHelperBase, times(1))
         .applyManifests(any(Kubectl.class), captor.capture(), any(K8sDelegateTaskParams.class),

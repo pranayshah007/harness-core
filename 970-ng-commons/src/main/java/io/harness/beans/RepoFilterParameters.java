@@ -20,4 +20,5 @@ import lombok.Data;
 public class RepoFilterParameters {
   String repoName;
   String userName;
+  boolean applyGitXRepoAllowListFilter;
 }

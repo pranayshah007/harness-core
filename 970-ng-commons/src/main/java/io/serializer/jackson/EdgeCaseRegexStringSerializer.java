@@ -6,6 +6,7 @@
  */
 
 package io.serializer.jackson;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -31,6 +32,11 @@ public class EdgeCaseRegexStringSerializer extends StdSerializer<String> {
   // When string is of type +1234.23, it also needs to be wrapped around quotes, else, it'll be considered a number and
   // user won't be able to save a string variable with this value
   private Pattern positiveNumberRegex = Pattern.compile("[+][0-9]*(\\.[0-9]*)?");
+
+  // When string is of type 123_321, it also needs to be wrapped around quotes, else, it'll be considered a number and
+  // user will be able to save that value but, upon reloading UI will remove underscores from it. The string should
+  // start with a number and have at-least 1 underscore in it.
+  private Pattern numbersWithUnderscoresRegex = Pattern.compile("^[0-9][0-9_]*_[0-9_]*$");
   public EdgeCaseRegexStringSerializer() {
     super(String.class);
   }
@@ -38,7 +44,8 @@ public class EdgeCaseRegexStringSerializer extends StdSerializer<String> {
   @Override
   public void serialize(String value, JsonGenerator gen, SerializerProvider provider) throws IOException {
     if (value != null) {
-      if (shaRegex.matcher(value).matches() || positiveNumberRegex.matcher(value).matches()) {
+      if (shaRegex.matcher(value).matches() || positiveNumberRegex.matcher(value).matches()
+          || numbersWithUnderscoresRegex.matcher(value).matches()) {
         YAMLGenerator yamlGenerator = (YAMLGenerator) gen;
         yamlGenerator.disable(YAMLGenerator.Feature.MINIMIZE_QUOTES);
         yamlGenerator.writeString(value);

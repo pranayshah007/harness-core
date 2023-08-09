@@ -100,7 +100,7 @@ public class PipelineVariableCreatorTest extends CategoryTest {
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.identifier", "pipeline.sequenceId", "pipeline.executionId", "pipeline.startTs",
             "pipeline.endTs", "pipeline.properties", "pipeline.triggerType", "pipeline.triggeredBy.name",
-            "pipeline.triggeredBy.email", "pipeline.triggeredBy.triggerName");
+            "pipeline.triggeredBy.email", "pipeline.triggeredBy.triggerIdentifier");
   }
 
   @Test

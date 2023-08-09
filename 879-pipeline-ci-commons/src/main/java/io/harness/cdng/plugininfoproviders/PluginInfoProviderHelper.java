@@ -28,6 +28,7 @@ import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
+import com.google.protobuf.BoolValue;
 import com.google.protobuf.StringValue;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
@@ -84,6 +85,7 @@ public class PluginInfoProviderHelper {
     if (runAsUser != null && runAsUser.getValue() != null) {
       pluginDetailsBuilder.setRunAsUser(runAsUser.getValue());
     }
+    pluginDetailsBuilder.setIsHarnessManaged(BoolValue.of(true));
 
     // Set used port and available port information
     PluginInfoProviderHelper.setPortDetails(usedPorts, pluginDetailsBuilder);

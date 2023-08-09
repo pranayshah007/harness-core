@@ -245,6 +245,23 @@ public class TriggerValidationHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testPipelineRefValidatorWhenPipelineBranchNameIsNull() {
+    TriggerDetails triggerDetails1 = TriggerDetails.builder()
+                                         .ngTriggerEntity(ngTriggerEntity)
+                                         .ngTriggerConfigV2(NGTriggerConfigV2.builder().build())
+                                         .build();
+    doReturn(Optional.of("placeholder_for_actual_pipeline_yml"))
+        .when(buildTriggerHelper)
+        .fetchPipelineYamlForTrigger(triggerDetails1);
+
+    PipelineRefValidator pipelineRefValidator = new PipelineRefValidator(buildTriggerHelper);
+    ValidationResult validate = pipelineRefValidator.validate(triggerDetails1);
+    assertThat(validate.isSuccess()).isTrue();
+  }
+
+  @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testTriggerIdentifierRefValidator() {

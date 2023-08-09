@@ -35,6 +35,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.cli.CliResponse;
 import io.harness.connector.helper.DecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
@@ -110,6 +111,7 @@ public class TerragruntTaskService {
   @Inject private EncryptDecryptHelper encryptDecryptHelper;
   @Inject TerraformBaseHelper terraformBaseHelper;
   @Inject private HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandler;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public void decryptTaskParameters(AbstractTerragruntTaskParameters taskParameters) {
     List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails =
@@ -258,6 +260,26 @@ public class TerragruntTaskService {
         .varFilesSourceReference(varFilesSourceReference)
         .client(terragruntClient)
         .build();
+  }
+
+  public void mapGitConfig(AbstractTerragruntTaskParameters taskParameters) {
+    taskParameters.setConfigFilesStore(mapGitConfigFromGitFileStore(taskParameters.getConfigFilesStore()));
+    List<StoreDelegateConfig> storeDelegateConfigs = new ArrayList<>();
+    taskParameters.getVarFiles().forEach(
+        storeDelegateConfig -> storeDelegateConfigs.add(mapGitConfigFromGitFileStore(storeDelegateConfig)));
+    taskParameters.setVarFiles(storeDelegateConfigs);
+    taskParameters.setBackendFilesStore(mapGitConfigFromGitFileStore(taskParameters.getBackendFilesStore()));
+  }
+
+  private StoreDelegateConfig mapGitConfigFromGitFileStore(StoreDelegateConfig storeDelegateConfig) {
+    if (storeDelegateConfig instanceof GitStoreDelegateConfig) {
+      GitStoreDelegateConfig gitStoreDelegateConfig = (GitStoreDelegateConfig) storeDelegateConfig;
+      return gitStoreDelegateConfig.toBuilder()
+          .gitConfigDTO(scmConnectorMapperDelegate.toGitConfigDTO(
+              gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails()))
+          .build();
+    }
+    return storeDelegateConfig;
   }
 
   private void cleanupTerragruntLocalFiles(String scriptDirectory) {

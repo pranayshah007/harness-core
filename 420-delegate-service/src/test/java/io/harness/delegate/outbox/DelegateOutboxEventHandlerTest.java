@@ -59,11 +59,8 @@ public class DelegateOutboxEventHandlerTest extends CategoryTest {
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
   public void testDelegateRegisterAuditEvent() throws Exception {
-    DelegateSetupDetails delegateSetupDetails = DelegateSetupDetails.builder()
-                                                    .tags(Set.of("tag1", "tag2"))
-                                                    .identifier("_iden2")
-                                                    .delegateType(KUBERNETES)
-                                                    .build();
+    DelegateSetupDetails delegateSetupDetails =
+        DelegateSetupDetails.builder().tags(Set.of("tag2")).identifier("_iden2").delegateType(KUBERNETES).build();
     DelegateRegisterEvent delegateRegisterEvent =
         DelegateRegisterEvent.builder()
             .accountIdentifier(accountIdentifier)

@@ -15,6 +15,16 @@ data:
   LOG_SERVICE_DISABLE_AUTH: "true"
   LOG_SERVICE_GLOBAL_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
   LOG_SERVICE_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  # Disable redis integration with log-service CI-9000
+  {{- if false -}}
+  # Protocol needs to be set to empty because ti-service uses go-redis library which doesn't accept protocol based strings
+  {{- $dbContext := deepCopy .Values.global.database.redis }}
+  {{- $_ := set $dbContext "protocol" "" }}
+  LOG_SERVICE_REDIS_MASTER_NAME: "harness-redis"
+  LOG_SERVICE_REDIS_SENTINEL_ADDRS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" $dbContext) }}
+  LOG_SERVICE_REDIS_USE_SENTINEL: {{ .Values.global.database.redis.installed  | quote }}
+  LOG_SERVICE_REDIS_ENDPOINT: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" $dbContext) }}
+  {{- end -}}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}

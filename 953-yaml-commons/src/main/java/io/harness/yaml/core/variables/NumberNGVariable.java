@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.numberString;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.common.NGExpressionUtils;
@@ -43,6 +44,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = NumberVariableVisitorHelper.class)
 @TypeAlias("io.harness.yaml.core.variables.NumberNGVariable")
 @OwnedBy(CDC)
+@RecasterAlias("io.harness.yaml.core.variables.NumberNGVariable")
 public class NumberNGVariable implements NGVariable {
   @NGVariableName
   @Pattern(regexp = NGRegexValidatorConstants.VARIABLE_NAME_PATTERN)

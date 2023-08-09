@@ -47,7 +47,7 @@ import org.apache.commons.lang3.tuple.Pair;
     components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @OwnedBy(CDP)
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public abstract class AbstractTerragruntTaskParameters
     implements TaskParameters, ExecutionCapabilityDemander, NestedAnnotationResolver {

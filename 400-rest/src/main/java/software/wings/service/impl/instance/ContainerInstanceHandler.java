@@ -13,8 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.perpetualtask.PerpetualTaskState.TASK_INVALID;
-import static io.harness.perpetualtask.PerpetualTaskType.CONTAINER_INSTANCE_SYNC;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.container.Label.Builder.aLabel;
@@ -51,7 +49,6 @@ import io.harness.exception.runtime.NoInstancesException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.k8s.model.K8sPod;
-import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 
 import software.wings.api.CommandStepExecutionSummary;
 import software.wings.api.ContainerDeploymentInfoWithLabels;
@@ -1600,17 +1597,6 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
         (ContainerInfrastructureMapping) infrastructureMapping;
     syncInstancesInternal(
         containerInfrastructureMapping, ArrayListMultimap.create(), null, false, response, PERPETUAL_TASK);
-  }
-
-  public void cleanupInvalidV1PerpetualTask(String accountId) {
-    List<PerpetualTaskRecord> perpetualTaskRecordList = perpetualTaskService.listAllTasksForAccount(accountId);
-    for (PerpetualTaskRecord perpetualTaskRecord : perpetualTaskRecordList) {
-      if (Objects.equals(perpetualTaskRecord.getPerpetualTaskType(), CONTAINER_INSTANCE_SYNC)
-          && Objects.equals(perpetualTaskRecord.getState(), TASK_INVALID)) {
-        perpetualTaskService.deleteTask(accountId, perpetualTaskRecord.getUuid());
-        log.info("Deleted Instance Sync V1 Perpetual task: [{}] .", perpetualTaskRecord.getUuid());
-      }
-    }
   }
 
   @Override

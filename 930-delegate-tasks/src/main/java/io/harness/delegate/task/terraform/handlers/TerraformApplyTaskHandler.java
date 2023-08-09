@@ -27,6 +27,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -67,6 +68,7 @@ import org.apache.commons.io.FilenameUtils;
 @OwnedBy(CDP)
 public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
   @Inject TerraformBaseHelper terraformBaseHelper;
+  @Inject ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Override
   public TerraformTaskNGResponse executeTaskInternal(
@@ -79,6 +81,9 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
 
     if (taskParameters.getConfigFile() != null) {
       GitStoreDelegateConfig conFileFileGitStore = taskParameters.getConfigFile().getGitStoreDelegateConfig();
+      GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+          conFileFileGitStore.getGitConfigDTO(), conFileFileGitStore.getEncryptedDataDetails());
+      conFileFileGitStore = conFileFileGitStore.toBuilder().gitConfigDTO(gitConfigDTO).build();
       String scriptPath = FilenameUtils.normalize(conFileFileGitStore.getPaths().get(0));
 
       if (isNotEmpty(conFileFileGitStore.getBranch())) {

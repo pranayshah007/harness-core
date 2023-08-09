@@ -52,7 +52,6 @@ public interface ChangeEventNgResource {
       @QueryParam("scopedMonitoredServiceIdentifiers") List<String> scopedMonitoredServiceIdentifiers,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
-      @QueryParam("searchText") String searchText,
       @ApiParam(required = true) @NotNull @QueryParam("st"
           + "artTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime, @BeanParam PageRequest pageRequest);
@@ -69,7 +68,6 @@ public interface ChangeEventNgResource {
       @QueryParam("scopedMonitoredServiceIdentifiers") List<String> scopedMonitoredServiceIdentifiers,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
-      @QueryParam("searchText") String searchText,
       @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime,
       @ApiParam @QueryParam("pointCount") @DefaultValue("48") Integer pointCount);

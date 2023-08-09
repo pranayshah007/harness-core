@@ -20,4 +20,5 @@ public class EnforcementStepEnvVariables {
   String sbomSource;
   String harnessPolicyFileId;
   String stepExecutionId;
+  boolean sscaManagerEnabled;
 }

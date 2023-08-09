@@ -20,6 +20,7 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.anomaly.url.HarnessNgUrl;
+import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.cluster.entities.CEUserInfo;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
@@ -52,6 +53,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +77,8 @@ import retrofit2.Response;
 @Singleton
 @Slf4j
 public class CEMetaDataRecordUpdateService {
+  public static final String CLOUD_PROVIDER = "cloudProvider";
+  public static final String COUNT = "count";
   @Autowired private AccountShardService accountShardService;
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private ConnectorResourceClient connectorResourceClient;
@@ -83,6 +91,8 @@ public class CEMetaDataRecordUpdateService {
   @Autowired private NGConnectorHelper ngConnectorHelper;
   @Autowired private NotificationResourceClient notificationResourceClient;
   @Autowired private BatchMainConfig mainConfiguration;
+  @Autowired private ClickHouseService clickHouseService;
+
   public static final String CONNECTOR_TYPE = "CONNECTOR_TYPE";
   public static final String CONNECTOR_NAME = "CONNECTOR_NAME";
   public static final String CCM_URL = "CCM_URL";
@@ -125,7 +135,11 @@ public class CEMetaDataRecordUpdateService {
               false);
 
       if (isAwsConnectorPresent || isGCPConnectorPresent || isAzureConnectorPresent) {
-        bigQueryHelperService.updateCloudProviderMetaData(accountId, ceMetadataRecordBuilder);
+        if (mainConfiguration.isClickHouseEnabled()) {
+          updateCloudProviderMetadataForClickhouse(ceMetadataRecordBuilder);
+        } else {
+          bigQueryHelperService.updateCloudProviderMetaData(accountId, ceMetadataRecordBuilder);
+        }
       }
 
       CEMetadataRecord ceMetadataRecord = ceMetadataRecordBuilder.awsConnectorConfigured(isAwsConnectorPresent)
@@ -171,6 +185,34 @@ public class CEMetaDataRecordUpdateService {
 
     } catch (Exception ex) {
       log.error("Exception while updateCloudProviderMetadata for accountId: {}", accountId, ex);
+    }
+  }
+
+  private void updateCloudProviderMetadataForClickhouse(CEMetadataRecordBuilder ceMetadataRecordBuilder)
+      throws SQLException {
+    Connection connection = clickHouseService.getConnection(mainConfiguration.getClickHouseConfig(), new Properties());
+    try (Statement statement = connection.createStatement()) {
+      try (ResultSet resultSet = statement.executeQuery(
+               "SELECT count(*) AS count, cloudProvider FROM ccm.preAggregated GROUP BY cloudProvider")) {
+        while (resultSet.next()) {
+          String cloudProvider = resultSet.getString(CLOUD_PROVIDER);
+          double count = resultSet.getDouble(COUNT);
+          log.info("For clickhouse: cloudProvider: {} and count: {}", cloudProvider, count);
+          switch (cloudProvider.toUpperCase()) {
+            case "AWS":
+              ceMetadataRecordBuilder.awsDataPresent(count > 0);
+              break;
+            case "GCP":
+              ceMetadataRecordBuilder.gcpDataPresent(count > 0);
+              break;
+            case "AZURE":
+              ceMetadataRecordBuilder.azureDataPresent(count > 0);
+              break;
+            default:
+              break;
+          }
+        }
+      }
     }
   }
 

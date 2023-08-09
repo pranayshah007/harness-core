@@ -88,6 +88,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private boolean useRefactorSteadyStateCheck;
   private boolean skipSteadyStateCheck;
   private boolean sendTaskProgressEvents;
+  private boolean disableFabric8;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

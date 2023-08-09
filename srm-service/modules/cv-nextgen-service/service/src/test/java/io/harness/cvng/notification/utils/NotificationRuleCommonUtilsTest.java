@@ -98,7 +98,7 @@ public class NotificationRuleCommonUtilsTest extends CvNextGenTestBase {
     Instant instantMock = mock(Instant.class);
     String result = NotificationRuleCommonUtils.getSloPerformanceSectionForReport(
         mSHealthReportAssociatedSLOsDetailsList, instantMock, "baseUrl1", "SLOPerformanceSection1");
-    assertThat(result).isEqualTo("No SLO has been associated with this monitored service.\n");
+    assertThat(result).isEqualTo("");
   }
 
   @Test

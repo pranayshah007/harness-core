@@ -2079,6 +2079,15 @@ public class ViewsQueryBuilder {
           }
         }
       }
+      if (caseStatement.isEmpty()) {
+        for (CostTarget costTarget : businessMapping.getCostTargets()) {
+          Condition condition =
+              getConsolidatedRuleCondition(costTarget.getRules(), tableIdentifier, viewLabelsFlattened);
+          if (!condition.isEmpty()) {
+            caseStatement.addWhen(condition, costTarget.getName());
+          }
+        }
+      }
       if (Objects.nonNull(businessMapping.getUnallocatedCost())
           && businessMapping.getUnallocatedCost().getStrategy() == UnallocatedCostStrategy.DISPLAY_NAME) {
         caseStatement.addElse(businessMapping.getUnallocatedCost().getLabel());

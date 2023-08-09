@@ -169,22 +169,25 @@ public class NGActivitySummaryServiceImplTest extends NGCoreTestBase {
 
       for (long i = 0; i < numberOfSuccessfulEntityUsage; i++) {
         long activityTime = getRandomNumberUsingNextInt(time, time + timeUnit);
-        NGActivityDTO activity = createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier,
-            referredEntityIdentifier, NGActivityStatus.SUCCESS, activityTime, NGActivityType.ENTITY_USAGE);
+        NGActivityDTO activity =
+            createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier,
+                NGActivityStatus.SUCCESS, activityTime, NGActivityType.ENTITY_USAGE, EntityType.PIPELINES);
         ngActivityService.save(activity);
       }
 
       for (long i = 0; i < numberOfFailedEntityUsage; i++) {
         long activityTime = getRandomNumberUsingNextInt(time, time + timeUnit);
-        NGActivityDTO activity = createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier,
-            referredEntityIdentifier, NGActivityStatus.FAILED, activityTime, NGActivityType.ENTITY_USAGE);
+        NGActivityDTO activity =
+            createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier,
+                NGActivityStatus.FAILED, activityTime, NGActivityType.ENTITY_USAGE, EntityType.PIPELINES);
         ngActivityService.save(activity);
       }
 
       for (long i = 0; i < numberOfHeartBeatFailures; i++) {
         long activityTime = getRandomNumberUsingNextInt(time, time + timeUnit);
-        NGActivityDTO activity = createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier,
-            referredEntityIdentifier, NGActivityStatus.FAILED, activityTime, NGActivityType.CONNECTIVITY_CHECK);
+        NGActivityDTO activity =
+            createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier,
+                NGActivityStatus.FAILED, activityTime, NGActivityType.CONNECTIVITY_CHECK, EntityType.PIPELINES);
         ngActivityService.save(activity);
       }
     }

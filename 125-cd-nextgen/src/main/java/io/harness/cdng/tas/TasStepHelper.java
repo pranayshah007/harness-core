@@ -226,9 +226,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_FIRST_GEN,
-        HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_PCF, HarnessModuleComponent.CDS_PIPELINE})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Slf4j
 public class TasStepHelper {
   @Inject protected OutcomeService outcomeService;

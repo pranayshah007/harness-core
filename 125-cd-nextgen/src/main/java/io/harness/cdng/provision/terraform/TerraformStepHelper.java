@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.provision.terraform;
+
 import static io.harness.beans.FeatureName.CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
@@ -323,8 +324,6 @@ public class TerraformStepHelper {
     SSHKeySpecDTO sshKeySpecDTO =
         gitConfigAuthenticationInfoHelper.getSSHKey(gitConfigDTO, AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-    List<EncryptedDataDetail> encryptedDataDetails =
-        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
     String repoName = gitStoreConfig.getRepoName() != null ? gitStoreConfig.getRepoName().getValue() : null;
     if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
       String repoUrl = getGitRepoUrl(gitConfigDTO, repoName);
@@ -337,8 +336,12 @@ public class TerraformStepHelper {
     } else {
       paths.addAll(getParameterFieldValue(gitStoreConfig.getPaths()));
     }
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(
+        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
+    List<EncryptedDataDetail> encryptedDataDetails =
+        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
-                                                        .gitConfigDTO(gitConfigDTO)
+                                                        .gitConfigDTO(scmConnector)
                                                         .sshKeySpecDTO(sshKeySpecDTO)
                                                         .encryptedDataDetails(encryptedDataDetails)
                                                         .fetchType(gitStoreConfig.getGitFetchType())
@@ -583,11 +586,13 @@ public class TerraformStepHelper {
       outputKeys.put(TF_CONFIG_FILES, commitIdForConfigFilesMap.get(TF_CONFIG_FILES));
       outputKeys.put(TF_BACKEND_CONFIG_FILE, commitIdForConfigFilesMap.get(TF_BACKEND_CONFIG_FILE));
       int i = 0;
-      for (TerraformVarFileConfig file : varFileConfigs) {
-        if (file instanceof TerraformRemoteVarFileConfig && isNotEmpty(file.getIdentifier())) {
-          i++;
-          if (((TerraformRemoteVarFileConfig) file).getGitStoreConfigDTO() != null) {
-            outputKeys.put(file.getIdentifier(), commitIdForConfigFilesMap.get(format(TF_VAR_FILES, i)));
+      if (isNotEmpty(varFileConfigs)) {
+        for (TerraformVarFileConfig file : varFileConfigs) {
+          if (file instanceof TerraformRemoteVarFileConfig && isNotEmpty(file.getIdentifier())) {
+            i++;
+            if (((TerraformRemoteVarFileConfig) file).getGitStoreConfigDTO() != null) {
+              outputKeys.put(file.getIdentifier(), commitIdForConfigFilesMap.get(format(TF_VAR_FILES, i)));
+            }
           }
         }
       }
@@ -1096,6 +1101,7 @@ public class TerraformStepHelper {
             .fileStoreConfig(rollbackConfig.getFileStoreConfig())
             .varFileConfigs(rollbackConfig.getVarFileConfigs())
             .backendConfig(rollbackConfig.getBackendConfig())
+            .backendConfigFileConfig(rollbackConfig.getBackendConfigFileConfig())
             .environmentVariables(rollbackConfig.getEnvironmentVariables())
             .workspace(rollbackConfig.getWorkspace())
             .targets(rollbackConfig.getTargets())

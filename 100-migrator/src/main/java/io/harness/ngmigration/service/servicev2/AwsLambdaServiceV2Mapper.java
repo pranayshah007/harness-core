@@ -31,6 +31,7 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import software.wings.beans.LambdaSpecification;
 import software.wings.beans.LambdaSpecification.FunctionSpecification;
 import software.wings.beans.Service;
+import software.wings.service.intfc.WorkflowService;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -47,8 +48,8 @@ public class AwsLambdaServiceV2Mapper implements ServiceV2Mapper {
       + "}";
 
   @Override
-  public ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
-      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
+  public ServiceDefinition getServiceDefinition(WorkflowService workflowService, MigrationContext migrationContext,
+      Service service, List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations) {
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(migrationContext.getInputDTO(),
         migrationContext.getEntities(), migrationContext.getGraph(), service, migrationContext.getMigratedEntities());

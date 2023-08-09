@@ -123,8 +123,7 @@ public class CIStepGroupUtils {
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
     Caching caching = integrationStageConfig.getCaching();
     boolean saveCache = caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false);
-    boolean isHosted = infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM)
-        || infrastructure.getType().equals(Infrastructure.Type.KUBERNETES_HOSTED);
+    boolean isHosted = infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM);
     if (gitClone) {
       initializeExecutionSections.add(getGitCloneStep(ciExecutionArgs, ciCodebase, accountId, infrastructure));
     }

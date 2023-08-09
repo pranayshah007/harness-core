@@ -279,6 +279,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
 
     boolean isGroupByBusinessMapping = viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy);
+    int modifiedLimit = viewsQueryHelper.getModifiedBusinessMappingLimit(
+        limit, isGroupByBusinessMapping, sharedCostBusinessMappings.isEmpty());
+    int modifiedOffset = viewsQueryHelper.getModifiedBusinessMappingOffset(
+        offset, isGroupByBusinessMapping, sharedCostBusinessMappings.isEmpty());
 
     Map<String, ViewCostData> costTrendData = new HashMap<>();
     long startTimeForTrendData = 0L;
@@ -297,20 +301,20 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           viewPreferences);
     } else {
       sharedCostsFromRulesAndFilters = getSharedCostFromFilters(bigQuery, filters, groupBy, aggregateFunction, sort,
-          cloudProviderTableName, queryParams, sharedCostBusinessMappings, limit, offset, queryParams.isSkipRoundOff(),
-          viewRules, labelsKeyAndColumnMapping, viewPreferences);
+          cloudProviderTableName, queryParams, sharedCostBusinessMappings, modifiedLimit, modifiedOffset,
+          queryParams.isSkipRoundOff(), viewRules, labelsKeyAndColumnMapping, viewPreferences);
     }
 
     SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, sort,
         cloudProviderTableName, queryParams, sharedCostBusinessMappings, labelsKeyAndColumnMapping, viewPreferences);
-    query.addCustomization(new PgLimitClause(limit));
-    query.addCustomization(new PgOffsetClause(offset));
+    query.addCustomization(new PgLimitClause(modifiedLimit));
+    query.addCustomization(new PgOffsetClause(modifiedOffset));
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
-    log.info("Query for grid (with limit as {}): {}", limit, query);
+    log.info("Query for grid (with limit as {}): {}", modifiedLimit, query);
     TableResult result;
     try {
       Job job = bigQuery.create(JobInfo.newBuilder(queryConfig).build());
-      log.info("Job id {} for grid query (with limit as {}): {}", job.getJobId(), limit, query);
+      log.info("Job id {} for grid query (with limit as {}): {}", job.getJobId(), modifiedLimit, query);
       result = job.getQueryResults();
     } catch (InterruptedException e) {
       log.error("Failed to getEntityStatsDataPoints for query {}", query, e);
@@ -324,7 +328,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         convertToEntityStatsData(result, costTrendData, startTimeForTrendData, isClusterPerspective,
             queryParams.isUsedByTimeSeriesStats(), queryParams.isSkipRoundOff(), conversionField,
             queryParams.getAccountId(), groupBy, businessMapping, addSharedCostFromGroupBy),
-        businessMappingId, sharedCostBusinessMappings, sharedCostsFromRulesAndFilters);
+        businessMappingId, sharedCostBusinessMappings, sharedCostsFromRulesAndFilters, limit, offset);
   }
 
   @Nullable
@@ -344,8 +348,13 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       costTrendData =
           convertToEntityStatsCostTrendData(result, isClusterPerspective, queryParams.isSkipRoundOff(), groupBy);
     } else {
-      costTrendData = getEntityStatsDataForCostTrend(bigQuery, filters, groupBy, aggregateFunction, sort,
-          cloudProviderTableName, limit, offset, queryParams, labelsKeyAndColumnMapping, viewPreferences);
+      final int modifiedLimit = viewsQueryHelper.getModifiedBusinessMappingLimit(
+          limit, isGroupByBusinessMapping, sharedCostBusinessMappings.isEmpty());
+      final int modifiedOffset = viewsQueryHelper.getModifiedBusinessMappingOffset(
+          offset, isGroupByBusinessMapping, sharedCostBusinessMappings.isEmpty());
+      costTrendData =
+          getEntityStatsDataForCostTrend(bigQuery, filters, groupBy, aggregateFunction, sort, cloudProviderTableName,
+              modifiedLimit, modifiedOffset, queryParams, labelsKeyAndColumnMapping, viewPreferences);
     }
     return costTrendData;
   }

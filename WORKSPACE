@@ -1297,8 +1297,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:p35onfFNfSQTKLC15sb76sESs+bj+Rb/pMqDtsgKsU4=",
-    version = "v1.29.2-0.20230515092809-5877f3846131",
+    sum = "h1:hYVPr8hqlVaacPVo6vJVQASwbGqlWa90kxokyVxWoBE=",
+    version = "v1.30.0",
 )
 
 go_repository(
@@ -4622,8 +4622,8 @@ go_repository(
 go_repository(
     name = "com_github_harness_ti_client",
     importpath = "github.com/harness/ti-client",
-    sum = "h1:5bAthnUBEV3zE9utLY4b6AKs/ZQ5y188uv2GkVJeetI=",
-    version = "v0.0.0-20230628234729-894f996b3046",
+    sum = "h1:XXOg2PARWL1s4lpy4WXPcWqt8fXfV9e9KjDozeefzdk=",
+    version = "v0.0.0-20230720204407-c0e24ffb7964",
 )
 
 go_rules_dependencies()
@@ -4857,7 +4857,7 @@ plain_artifacts = [
     "com.jakewharton.retrofit:retrofit1-okhttp3-client:1.1.0",
     "com.jakewharton.retrofit:retrofit2-reactor-adapter:2.1.0",
     "com.jayway.jsonpath:json-path:2.2.0",
-    "com.jcraft.harness:jsch-0-1-54-harness-patch:1.1",
+    "com.github.mwiede:jsch:0.2.8",
     "com.jcraft:jzlib:1.1.3",
     "com.lmax:disruptor:jar:3.4.2",
     "com.mashape.unirest:unirest-java:1.4.9",
@@ -4946,9 +4946,9 @@ plain_artifacts = [
     "io.confluent:kafka-schema-registry-client:5.5.1",
     "io.confluent:kafka-schema-serializer:5.5.1",
     "io.confluent:kafka-schema-serializer:5.5.1",
-    "io.debezium:debezium-api:1.7.2.Final",
-    "io.debezium:debezium-connector-mongodb:1.7.2.Final",
-    "io.debezium:debezium-core:1.7.2.Final",
+    "io.debezium:debezium-api:1.9.7.Final",
+    "io.debezium:debezium-connector-mongodb:1.9.7.Final",
+    "io.debezium:debezium-core:1.9.7.Final",
     "io.dropwizard-bundles:dropwizard-configurable-assets-bundle:1.3.5",
     "io.dropwizard.metrics:metrics-annotation:4.1.19",
     "io.dropwizard.metrics:metrics-core:4.1.19",
@@ -5014,7 +5014,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.63-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.64-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:18.0.0",
@@ -5517,7 +5517,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "1.7.2.Final",
+            version = "1.9.7.Final",
         ),
         maven.artifact(
             artifact = "connect-runtime",
@@ -5574,7 +5574,7 @@ maven_install(
     maven_install_json = "//project:main_maven_install.json",
     override_targets = {
         "org.apache.commons:commons-io": "@maven//:commons_io_commons_io",
-        "com.jcraft:jsch": "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
+        "com.jcraft:jsch": "@maven//:com_github_mwiede_jsch",
         "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongodb_driver_core",
     },
     repositories = [
@@ -5667,15 +5667,15 @@ maven_install(
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (2.1.3.Final) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.3.1.Final) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:2.1.3.Final",
-        "io.debezium:debezium-connector-mongodb:2.1.3.Final",
-        "io.debezium:debezium-core:2.1.3.Final",
+        "io.debezium:debezium-api:2.3.1.Final",
+        "io.debezium:debezium-connector-mongodb:2.3.1.Final",
+        "io.debezium:debezium-core:2.3.1.Final",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5683,7 +5683,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "2.1.3.Final",
+            version = "2.3.1.Final",
         ),
     ],
     repositories = [

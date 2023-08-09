@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -141,6 +142,11 @@ func downloadZipUploadRoutine(ctx context.Context, s store.Store, zipPrefix stri
 	// zip
 	gErrGroup.Go(func() error {
 		for _, key := range out {
+			// skip download logs.zip in the new zip
+			if strings.Contains(key, "logs.zip") {
+				continue
+			}
+
 			fileDownloaded, err := s.Download(ctx, key)
 			if err != nil {
 				return fmt.Errorf("zipfile: failed to download: %w", err)

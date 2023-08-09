@@ -243,6 +243,10 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
     }
 
     boolean isGroupByBusinessMapping = viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy);
+    int modifiedLimit = viewsQueryHelper.getModifiedBusinessMappingLimit(
+        limit, isGroupByBusinessMapping, sharedCostBusinessMappings.isEmpty());
+    int modifiedOffset = viewsQueryHelper.getModifiedBusinessMappingOffset(
+        offset, isGroupByBusinessMapping, sharedCostBusinessMappings.isEmpty());
 
     Map<String, ViewCostData> costTrendData = new HashMap<>();
     long startTimeForTrendData = 0L;
@@ -260,15 +264,15 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
           conversionField, costTrendData, startTimeForTrendData, labelsKeyAndColumnMapping, viewPreferences);
     } else {
       sharedCostsFromRulesAndFilters = getSharedCostFromFilters(filters, groupBy, aggregateFunction, sort,
-          cloudProviderTableName, queryParams, sharedCostBusinessMappings, limit, offset, queryParams.isSkipRoundOff(),
-          viewRules, labelsKeyAndColumnMapping, viewPreferences);
+          cloudProviderTableName, queryParams, sharedCostBusinessMappings, modifiedLimit, modifiedOffset,
+          queryParams.isSkipRoundOff(), viewRules, labelsKeyAndColumnMapping, viewPreferences);
     }
 
     SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, sort,
         cloudProviderTableName, queryParams, sharedCostBusinessMappings, labelsKeyAndColumnMapping, viewPreferences);
-    query.addCustomization(new PgLimitClause(limit));
-    query.addCustomization(new PgOffsetClause(offset));
-    log.info("Query for grid (with limit as {}): {}", limit, query);
+    query.addCustomization(new PgLimitClause(modifiedLimit));
+    query.addCustomization(new PgOffsetClause(modifiedOffset));
+    log.info("Query for grid (with limit as {}): {}", modifiedLimit, query);
     ResultSet resultSet = null;
     try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
          Statement statement = connection.createStatement()) {
@@ -280,7 +284,7 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
               startTimeForTrendData, isClusterPerspective, queryParams.isUsedByTimeSeriesStats(),
               queryParams.isSkipRoundOff(), conversionField, queryParams.getAccountId(), groupBy, businessMapping,
               addSharedCostFromGroupBy),
-          businessMappingId, sharedCostBusinessMappings, sharedCostsFromRulesAndFilters);
+          businessMappingId, sharedCostBusinessMappings, sharedCostsFromRulesAndFilters, limit, offset);
 
     } catch (SQLException e) {
       log.error("Failed to getEntityStatsDataPoints for query {}", query, e);
@@ -317,8 +321,12 @@ public class ClickHouseViewsBillingServiceImpl implements ViewsBillingService {
         DBUtils.close(resultSet);
       }
     } else {
+      int modifiedLimit = viewsQueryHelper.getModifiedBusinessMappingLimit(
+          limit, isGroupByBusinessMapping, sharedCostBusinessMappings.isEmpty());
+      int modifiedOffset = viewsQueryHelper.getModifiedBusinessMappingOffset(
+          offset, isGroupByBusinessMapping, sharedCostBusinessMappings.isEmpty());
       costTrendData = getEntityStatsDataForCostTrend(filters, groupBy, aggregateFunction, sort, cloudProviderTableName,
-          limit, offset, queryParams, labelsKeyAndColumnMapping, viewPreferences);
+          modifiedLimit, modifiedOffset, queryParams, labelsKeyAndColumnMapping, viewPreferences);
     }
     return costTrendData;
   }

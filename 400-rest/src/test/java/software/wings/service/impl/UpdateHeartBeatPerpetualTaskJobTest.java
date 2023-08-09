@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_UPDATE_CONNECTOR_HEARTBEAT_PPT;
+import static io.harness.perpetualtask.PerpetualTaskType.CONNECTOR_TEST_CONNECTION;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static junit.framework.TestCase.assertEquals;
@@ -57,6 +58,7 @@ public class UpdateHeartBeatPerpetualTaskJobTest extends WingsBaseTest {
     taskRecord.setUuid(UUID1);
     taskRecord.setAccountId(ACCOUNT_ID1);
     taskRecord.setState(PerpetualTaskState.TASK_ASSIGNED);
+    taskRecord.setPerpetualTaskType(CONNECTOR_TEST_CONNECTION);
     taskRecord.setIntervalSeconds(600);
     taskRecord.setDelegateId(DELEGATE_ID1);
     mongoPersistence.save(taskRecord);
@@ -76,6 +78,7 @@ public class UpdateHeartBeatPerpetualTaskJobTest extends WingsBaseTest {
     taskRecord1.setUuid(UUID1);
     taskRecord1.setAccountId(ACCOUNT_ID1);
     taskRecord1.setState(PerpetualTaskState.TASK_ASSIGNED);
+    taskRecord1.setPerpetualTaskType(CONNECTOR_TEST_CONNECTION);
     taskRecord1.setIntervalSeconds(600);
     taskRecord1.setDelegateId(DELEGATE_ID1);
     mongoPersistence.save(taskRecord1);
@@ -83,6 +86,7 @@ public class UpdateHeartBeatPerpetualTaskJobTest extends WingsBaseTest {
     taskRecord2.setUuid(UUID2);
     taskRecord2.setAccountId(ACCOUNT_ID2);
     taskRecord2.setState(PerpetualTaskState.TASK_ASSIGNED);
+    taskRecord2.setPerpetualTaskType(CONNECTOR_TEST_CONNECTION);
     taskRecord2.setIntervalSeconds(600);
     taskRecord2.setDelegateId(DELEGATE_ID2);
     mongoPersistence.save(taskRecord2);

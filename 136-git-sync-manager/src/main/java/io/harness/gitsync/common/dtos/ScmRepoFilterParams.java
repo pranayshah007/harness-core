@@ -15,6 +15,7 @@ import io.harness.gitsync.sdk.GitSyncApiConstants;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,4 +36,9 @@ public class ScmRepoFilterParams {
   @Parameter(description = GitSyncApiConstants.USER_NAME_SEARCH_TERM_PARAM_MESSAGE)
   @QueryParam(NGCommonEntityConstants.USER_NAME_SEARCH_TERM)
   String userName;
+
+  @Parameter(description = GitSyncApiConstants.APPLY_GITX_REPO_ALLOW_LIST_FILTER_PARAM_MESSAGE)
+  @QueryParam(NGCommonEntityConstants.APPLY_GITX_REPO_ALLOW_LIST_FILTER)
+  @DefaultValue("false")
+  boolean applyGitXRepoAllowListFilter;
 }

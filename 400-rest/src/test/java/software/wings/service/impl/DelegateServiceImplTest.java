@@ -36,7 +36,6 @@ import static software.wings.utils.WingsTestConstants.HOST_NAME;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -144,6 +143,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.atmosphere.cpr.Broadcaster;
@@ -1139,6 +1139,9 @@ public class DelegateServiceImplTest extends WingsBaseTest {
         delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails2);
 
     assertThat(delegateGroup1.getUuid()).isEqualTo(delegateGroup2.getUuid());
+    assertThat(delegateGroup1.getName()).isEqualTo(delegateGroup2.getName());
+    assertThat(delegateGroup1.getDelegateType()).isEqualTo(delegateGroup2.getDelegateType());
+    assertThat(delegateGroup1.getIdentifier()).isEqualTo(delegateGroup2.getIdentifier());
   }
 
   @Test
@@ -1247,11 +1250,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                                                      .build();
 
     delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails1);
-    assertThatThrownBy(
-        () -> delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails2))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(
-            "Unable to create delegate group. Delegate with same name exists. Delegate name must be unique across account.");
+    delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails2);
   }
 
   @Test
@@ -1279,6 +1278,35 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     assertThat(delegateGroup1.getIdentifier()).isEqualTo(delegateGroup2.getIdentifier());
     assertThat(delegateGroup1.getName()).isEqualTo(delegateGroup2.getName());
     assertThat(delegateGroup1.getOwner()).isEqualTo(delegateGroup2.getOwner());
+    assertThat(delegateGroup1.getIdentifier()).isEqualTo(delegateGroup2.getIdentifier());
+  }
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testShouldUpsertDelegateGroupWithDifferentOwner_SameName() {
+    DelegateSetupDetails delegateSetupDetails1 = createDelegateSetupDetails()
+                                                     .name(TEST_DELEGATE_GROUP_NAME)
+                                                     .orgIdentifier("orgId1")
+                                                     .projectIdentifier("projId1")
+                                                     .build();
+    DelegateSetupDetails delegateSetupDetails2 = createDelegateSetupDetails()
+                                                     .name(TEST_DELEGATE_GROUP_NAME)
+                                                     .orgIdentifier("orgId2")
+                                                     .projectIdentifier("projId2")
+                                                     .build();
+
+    DelegateGroup delegateGroup1 =
+        delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails1);
+    DelegateGroup delegateGroup2 =
+        delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails2);
+
+    assertThat(delegateGroup1.getIdentifier()).isEqualTo(delegateGroup2.getIdentifier());
+    assertThat(delegateGroup1.getName()).isEqualTo(delegateGroup2.getName());
+    assertThat(delegateGroup1.getOwner()).isNotEqualTo(delegateGroup2.getOwner());
+
+    assertThat(delegateGroup1.getIdentifier()).isEqualTo(delegateGroup2.getIdentifier());
+    assertThat(delegateGroup1.getOwner().getIdentifier()).isEqualTo("orgId1/projId1");
+    assertThat(delegateGroup2.getOwner().getIdentifier()).isEqualTo("orgId2/projId2");
   }
 
   @Test
@@ -1309,6 +1337,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                                                      .identifier(identifier)
                                                      .name(delegateGroupName)
                                                      .delegateType(DelegateType.KUBERNETES)
+                                                     .tags(Set.of("tag1", "tag2"))
                                                      .build();
     DelegateSetupDetails delegateSetupDetails2 =
         createDelegateSetupDetails().orgIdentifier(ORG_IDENTIFIER).projectIdentifier(PROJECT_IDENTIFIER).build();
@@ -1319,6 +1348,11 @@ public class DelegateServiceImplTest extends WingsBaseTest {
         delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails2);
 
     assertThat(delegateGroup1.getUuid()).isNotEqualTo(delegateGroup2.getUuid());
+    assertThat(delegateGroup1.getOwner()).isNull();
+    assertThat(delegateGroup2.getOwner()).isNotNull();
+    assertThat(delegateGroup2.getOwner().getIdentifier()).isEqualTo("orgId/projectId");
+    assertThat(delegateGroup1.getTags()).hasSize(2);
+    assertThat(delegateGroup2.getTags()).isNullOrEmpty();
   }
 
   @Test

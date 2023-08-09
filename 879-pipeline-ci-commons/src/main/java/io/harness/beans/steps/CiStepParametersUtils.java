@@ -10,13 +10,22 @@ package io.harness.beans.steps;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.repositories.CIStepStatusRepository;
 import io.harness.utils.TimeoutUtils;
+
+import com.google.inject.Inject;
+import java.util.Arrays;
+import java.util.List;
 
 @OwnedBy(HarnessTeam.CI)
 public class CiStepParametersUtils {
+  @Inject protected CIStepStatusRepository ciStepStatusRepository;
+
   public static StepElementParametersBuilder getStepParameters(CIAbstractStepNode stepNode) {
     StepElementParametersBuilder stepBuilder = StepElementParameters.builder();
     stepBuilder.name(stepNode.getName());
@@ -38,5 +47,25 @@ public class CiStepParametersUtils {
     StepElementParametersBuilder stepBuilder = getStepParameters(stepNode);
     stepBuilder.rollbackParameters(failRollbackParameters);
     return stepBuilder;
+  }
+
+  public void saveCIStepStatusInfo(Ambiance ambiance, StepExecutionStatus status, String stepIdentifier) {
+    // Add the failed steps and status in doc when there is Step Status Failure,
+    StepStatusMetadata stepStatusMetadata =
+        ciStepStatusRepository.findByStageExecutionId(ambiance.getStageExecutionId());
+    List<String> failedSteps;
+    if (stepStatusMetadata == null) {
+      failedSteps = Arrays.asList(stepIdentifier);
+      stepStatusMetadata = StepStatusMetadata.builder()
+                               .stageExecutionId(ambiance.getStageExecutionId())
+                               .status(status)
+                               .failedSteps(failedSteps)
+                               .build();
+    } else {
+      failedSteps = stepStatusMetadata.getFailedSteps();
+      failedSteps.add(stepIdentifier);
+      stepStatusMetadata.setFailedSteps(failedSteps);
+    }
+    ciStepStatusRepository.save(stepStatusMetadata);
   }
 }

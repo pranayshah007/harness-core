@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static software.wings.ngmigration.NGMigrationEntityType.USER_GROUP;
 
 import io.harness.annotations.dev.CodePulse;
@@ -20,6 +22,10 @@ import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.ng.core.notification.MicrosoftTeamsConfigDTO;
+import io.harness.ng.core.notification.NotificationSettingConfigDTO;
+import io.harness.ng.core.notification.PagerDutyConfigDTO;
+import io.harness.ng.core.notification.SlackConfigDTO;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -39,6 +45,8 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.usergroups.UserGroupClient;
 
+import software.wings.beans.notification.NotificationSettings;
+import software.wings.beans.notification.SlackNotificationSetting;
 import software.wings.beans.security.UserGroup;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
@@ -50,6 +58,7 @@ import software.wings.service.intfc.UserGroupService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -156,6 +165,26 @@ public class UserGroupMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
+    List<NotificationSettingConfigDTO> notificationSettingConfigDTOList = new ArrayList<>();
+    NotificationSettings notificationSettings = userGroup.getNotificationSettings();
+    if (notificationSettings != null) {
+      SlackNotificationSetting slackCGConfig = notificationSettings.getSlackConfig();
+      if (slackCGConfig != null && slackCGConfig.getOutgoingWebhookUrl() != null) {
+        notificationSettingConfigDTOList.add(
+            SlackConfigDTO.builder().slackWebhookUrl(slackCGConfig.getOutgoingWebhookUrl()).build());
+      }
+      if (isNotEmpty(notificationSettings.getMicrosoftTeamsWebhookUrl())) {
+        notificationSettingConfigDTOList.add(
+            MicrosoftTeamsConfigDTO.builder()
+                .microsoftTeamsWebhookUrl(notificationSettings.getMicrosoftTeamsWebhookUrl())
+                .build());
+      }
+      if (isNotEmpty(notificationSettings.getPagerDutyIntegrationKey())) {
+        notificationSettingConfigDTOList.add(
+            PagerDutyConfigDTO.builder().pagerDutyKey(notificationSettings.getPagerDutyIntegrationKey()).build());
+      }
+    }
+
     UserGroupYamlDTO yamlDTO = UserGroupYamlDTO.builder()
                                    .userGroupDTO(UserGroupDTO.builder()
                                                      .identifier(identifier)
@@ -165,6 +194,7 @@ public class UserGroupMigrationService extends NgMigrationService {
                                                      .accountIdentifier(userGroup.getAccountId())
                                                      .orgIdentifier(orgIdentifier)
                                                      .projectIdentifier(projectIdentifier)
+                                                     .notificationConfigs(notificationSettingConfigDTOList)
                                                      .build())
                                    .build();
 

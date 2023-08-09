@@ -777,11 +777,17 @@ message GetAuthenticatedUserResponse {
   string error = 2;
 }
 
+/*
+  In the GetUserReposRequest,
+  If no version is passed by the client, by default the ListV1 apis are called
+  If the version is passed as 2, we route to the ListV2 apis
+*/
 message GetUserReposRequest {
   PageRequest pagination = 1;
   Provider provider = 2;
   bool fetchAllRepos = 3;
   RepoFilterParams repoFilterParams = 4;
+  int32 version = 5;
 }
 
 message RepoFilterParams {

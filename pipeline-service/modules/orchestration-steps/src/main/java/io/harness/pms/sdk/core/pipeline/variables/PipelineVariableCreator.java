@@ -201,8 +201,8 @@ public class PipelineVariableCreator extends ChildrenVariableCreator<PipelineInf
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".triggeredBy.name").build();
     YamlProperties triggeredByEmailProperty =
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".triggeredBy.email").build();
-    YamlProperties triggeredByTriggerNameProperty =
-        YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".triggeredBy.triggerName").build();
+    YamlProperties triggeredByTriggerIdentifierProperty =
+        YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".triggeredBy.triggerIdentifier").build();
 
     YamlProperties startTsProperty =
         YamlProperties.newBuilder().setFqn(YAMLFieldNameConstants.PIPELINE + ".startTs").build();
@@ -227,7 +227,7 @@ public class PipelineVariableCreator extends ChildrenVariableCreator<PipelineInf
         .addProperties(triggerTypeProperty)
         .addProperties(triggeredByNameProperty)
         .addProperties(triggeredByEmailProperty)
-        .addProperties(triggeredByTriggerNameProperty)
+        .addProperties(triggeredByTriggerIdentifierProperty)
         .build();
   }
 }

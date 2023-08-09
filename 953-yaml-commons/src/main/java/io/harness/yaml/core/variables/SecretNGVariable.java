@@ -10,6 +10,7 @@ package io.harness.yaml.core.variables;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.common.NGExpressionUtils;
@@ -42,6 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = SecretVariableVisitorHelper.class)
 @TypeAlias("io.harness.yaml.core.variables.SecretNGVariable")
 @OwnedBy(CDC)
+@RecasterAlias("io.harness.yaml.core.variables.SecretNGVariable")
 public class SecretNGVariable implements NGVariable {
   @NGVariableName
   @Pattern(regexp = NGRegexValidatorConstants.VARIABLE_NAME_PATTERN)

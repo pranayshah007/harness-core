@@ -15,6 +15,7 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.remote.client.NGRestUtils;
@@ -48,6 +49,18 @@ public class ModuleLicenseHelper {
     return accountLicenseDTO;
   }
 
+  private LicensesWithSummaryDTO getLicenseSummary(@NonNull final String accountId) {
+    LicensesWithSummaryDTO license = null;
+    try {
+      final Call<ResponseDTO<LicensesWithSummaryDTO>> licenseCall =
+          ngLicenseHttpClient.getLicenseSummary(accountId, ModuleType.CE.toString());
+      license = NGRestUtils.getResponse(licenseCall);
+    } catch (final Exception exception) {
+      log.error("Failed to fetch License data for account: {}", accountId);
+    }
+    return license;
+  }
+
   public boolean isFreeEditionModuleLicense(@NonNull final String accountId) {
     boolean isFreeEditionModuleLicense = false;
     final AccountLicenseDTO accountLicenseDTO = getAccountLicensesDTO(accountId);
@@ -71,5 +84,10 @@ public class ModuleLicenseHelper {
       }
     }
     return isFreeEditionModuleLicense;
+  }
+
+  public boolean isEnterpriseEditionModuleLicense(@NonNull final String accountId) {
+    final LicensesWithSummaryDTO license = getLicenseSummary(accountId);
+    return Objects.nonNull(license) && license.getEdition().equals(Edition.ENTERPRISE);
   }
 }

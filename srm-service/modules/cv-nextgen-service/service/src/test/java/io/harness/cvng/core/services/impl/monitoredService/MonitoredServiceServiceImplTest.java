@@ -3440,7 +3440,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceDTO savedMonitoredServiceDTO =
         monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO)
             .getMonitoredServiceDTO();
-    assertThat(savedMonitoredServiceDTO.isEnabled()).isTrue();
+    assertThat(savedMonitoredServiceDTO.isEnabled()).isFalse();
   }
 
   @Test

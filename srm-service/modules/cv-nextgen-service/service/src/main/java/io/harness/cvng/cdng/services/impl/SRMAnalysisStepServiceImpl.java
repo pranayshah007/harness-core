@@ -20,12 +20,13 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.PLAN_
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.STAGE_STEP_ID;
 
-import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail.SRMAnalysisStepExecutionDetailsKeys;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
+import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.change.MSHealthReport;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -37,6 +38,8 @@ import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
+import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
+import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -59,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
@@ -69,17 +73,18 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
 
   @Inject PipelineServiceClient pipelineServiceClient;
 
-  @Inject Clock clock;
+  @Inject NextGenService nextGenService;
 
-  @Inject ActivityService activityService;
+  @Inject Clock clock;
 
   @Inject MonitoredServiceService monitoredServiceService;
 
   @Inject MSHealthReportService msHealthReportService;
 
   @Override
-  public String createSRMAnalysisStepExecution(Ambiance ambiance, String monitoredServiceIdentifier,
-      ServiceEnvironmentParams serviceEnvironmentParams, Duration duration) {
+  public String createSRMAnalysisStepExecution(Ambiance ambiance, String monitoredServiceIdentifier, String stepName,
+      ServiceEnvironmentParams serviceEnvironmentParams, Duration duration,
+      Optional<ArtifactsOutcome> optionalArtifactsOutcome) {
     String pipelineName = ambiance.getMetadata().getPipelineIdentifier();
     try {
       Object pmsExecutionSummary = NGRestUtils.getResponse(pipelineServiceClient.getExecutionDetailV2(
@@ -99,10 +104,12 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
             .stageStepId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getSetupId())
             .pipelineId(ambiance.getMetadata().getPipelineIdentifier())
             .planExecutionId(ambiance.getPlanExecutionId())
+            .stepName(stepName)
+            .serviceIdentifier(serviceEnvironmentParams.getServiceIdentifier())
+            .envIdentifier(serviceEnvironmentParams.getEnvironmentIdentifier())
             .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
-            .monitoredServiceIdentifier(monitoredServiceIdentifier)
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
             .analysisStartTime(instant.toEpochMilli())
             .analysisStatus(SRMAnalysisStatus.RUNNING)
@@ -110,6 +117,10 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
             .analysisDuration(duration)
             .pipelineName(pipelineName)
             .build();
+    if (optionalArtifactsOutcome.isPresent()) {
+      executionDetails.setArtifactType(optionalArtifactsOutcome.get().getPrimary().getArtifactType());
+      executionDetails.setArtifactTag(optionalArtifactsOutcome.get().getPrimary().getTag());
+    }
     return hPersistence.save(executionDetails);
   }
 
@@ -178,11 +189,21 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService {
   }
 
   @Override
-  public SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String activityId) {
-    SRMAnalysisStepExecutionDetail stepExecutionDetail = getSRMAnalysisStepExecutionDetail(activityId);
-    Preconditions.checkArgument(
-        !stepExecutionDetail.equals(null), String.format("Step Execution Details %s is not present.", activityId));
-    return SRMAnalysisStepDetailDTO.getDTOFromEntity(stepExecutionDetail);
+  public SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String executionDetailId) {
+    SRMAnalysisStepExecutionDetail stepExecutionDetail = getSRMAnalysisStepExecutionDetail(executionDetailId);
+    Preconditions.checkArgument(!stepExecutionDetail.equals(null),
+        String.format("Step Execution Details %s is not present.", executionDetailId));
+    ServiceResponseDTO serviceResponseDTO =
+        nextGenService.getService(stepExecutionDetail.getAccountId(), stepExecutionDetail.getOrgIdentifier(),
+            stepExecutionDetail.getProjectIdentifier(), stepExecutionDetail.getServiceIdentifier());
+    EnvironmentResponseDTO environmentResponseDTO =
+        nextGenService.getEnvironment(stepExecutionDetail.getAccountId(), stepExecutionDetail.getOrgIdentifier(),
+            stepExecutionDetail.getProjectIdentifier(), stepExecutionDetail.getEnvIdentifier());
+    SRMAnalysisStepDetailDTO srmAnalysisStepDetailDTO = SRMAnalysisStepDetailDTO.getDTOFromEntity(stepExecutionDetail);
+    srmAnalysisStepDetailDTO.setServiceName(serviceResponseDTO != null ? serviceResponseDTO.getName() : null);
+    srmAnalysisStepDetailDTO.setEnvironmentName(
+        environmentResponseDTO != null ? environmentResponseDTO.getName() : null);
+    return srmAnalysisStepDetailDTO;
   }
 
   @Override

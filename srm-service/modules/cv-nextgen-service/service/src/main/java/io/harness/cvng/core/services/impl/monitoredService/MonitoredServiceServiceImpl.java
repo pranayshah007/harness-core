@@ -284,6 +284,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                      .build(),
           monitoredServiceDTO.getSources().getChangeSources());
     }
+    monitoredServiceDTO.setEnabled(false);
     saveMonitoredServiceEntity(environmentParams, monitoredServiceDTO);
     outboxService.save(MonitoredServiceCreateEvent.builder()
                            .resourceName(monitoredServiceDTO.getName())

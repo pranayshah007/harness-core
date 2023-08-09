@@ -61,9 +61,8 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_ECS,
-        HarnessModuleComponent.CDS_SERVERLESS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_SERVERLESS})
 @Slf4j
 public class ServerlessDownloadManifestsStepHelper {
   @Inject private OutcomeService outcomeService;

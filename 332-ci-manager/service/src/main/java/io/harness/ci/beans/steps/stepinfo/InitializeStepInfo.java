@@ -149,11 +149,6 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef, WithDel
           YAMLFieldNameConstants.CONNECTOR_REF, ((K8sDirectInfraYaml) infrastructure).getSpec().getConnectorRef());
     }
 
-    if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-      connectorRefMap.put(
-          YAMLFieldNameConstants.CONNECTOR_REF, ParameterField.createValueField("account.Harness_Kubernetes_Cluster"));
-    }
-
     if (!skipGitClone) {
       connectorRefMap.put(YAMLFieldNameConstants.CODEBASE_CONNECTOR_REF,
           ParameterField.createValueField(ciCodebase.getConnectorRef().getValue()));

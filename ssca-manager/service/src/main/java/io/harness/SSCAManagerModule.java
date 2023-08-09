@@ -8,6 +8,7 @@
 package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.SSCA;
+import static io.harness.authorization.AuthorizationServiceHeader.SSCA_SERVICE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.AbstractMongoModule;
@@ -17,14 +18,26 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.SSCAManagerModuleRegistrars;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
 import io.harness.ssca.api.SbomProcessorApiImpl;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
-import io.harness.ssca.services.SbomProcessorService;
-import io.harness.ssca.services.SbomProcessorServiceImpl;
+import io.harness.ssca.services.EnforceSBOMWorkflowService;
+import io.harness.ssca.services.EnforceSBOMWorkflowServiceImpl;
+import io.harness.ssca.services.EnforcementResultService;
+import io.harness.ssca.services.EnforcementResultServiceImpl;
+import io.harness.ssca.services.EnforcementSummaryService;
+import io.harness.ssca.services.EnforcementSummaryServiceImpl;
+import io.harness.ssca.services.NextGenService;
+import io.harness.ssca.services.NextGenServiceImpl;
+import io.harness.ssca.services.ProcessSbomWorkflowService;
+import io.harness.ssca.services.ProcessSbomWorkflowServiceImpl;
+import io.harness.ssca.services.RuleEngineService;
+import io.harness.ssca.services.RuleEngineServiceImpl;
+import io.harness.token.TokenClientModule;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -62,7 +75,27 @@ public class SSCAManagerModule extends AbstractModule {
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(SbomProcessorApi.class).to(SbomProcessorApiImpl.class);
     bind(ArtifactService.class).to(ArtifactServiceImpl.class);
-    bind(SbomProcessorService.class).to(SbomProcessorServiceImpl.class);
+    bind(ProcessSbomWorkflowService.class).to(ProcessSbomWorkflowServiceImpl.class);
+    bind(EnforceSBOMWorkflowService.class).to(EnforceSBOMWorkflowServiceImpl.class);
+    bind(RuleEngineService.class).to(RuleEngineServiceImpl.class);
+    bind(EnforcementResultService.class).to(EnforcementResultServiceImpl.class);
+    bind(EnforcementSummaryService.class).to(EnforcementSummaryServiceImpl.class);
+    bind(NextGenService.class).to(NextGenServiceImpl.class);
+    install(new TokenClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
+        this.configuration.getNgManagerServiceSecret(), SSCA_SERVICE.getServiceId()));
+  }
+
+  @Provides
+  @Singleton
+  @Named("ngManagerServiceHttpClientConfig")
+  public ServiceHttpClientConfig ngManagerServiceHttpClientConfig() {
+    return this.configuration.getNgManagerServiceHttpClientConfig();
+  }
+  @Provides
+  @Singleton
+  @Named("ngManagerServiceSecret")
+  public String ngManagerServiceSecret() {
+    return this.configuration.getNgManagerServiceSecret();
   }
 
   @Provides

@@ -6,6 +6,7 @@
  */
 
 package io.harness.expression;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
@@ -239,12 +240,12 @@ public class EngineExpressionEvaluator {
         ctx.removeFeatureFlag(PIE_EXPRESSION_CONCATENATION);
         resolver = new RenderExpressionResolver(this, ctx, depth, expressionMode);
         String finalExpression = runStringReplacer(expression, resolver);
-        log.warn("[EXPRESSION_CONCATENATE]: Failed to render expression in new flow for - " + expression
-            + " whose value is - " + finalExpression);
         if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
             && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
           throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
         }
+        log.warn("[EXPRESSION_CONCATENATE]: Failed to render expression in new flow for - " + expression
+            + " whose value is - " + finalExpression);
         return finalExpression;
       }
       throw e;
@@ -278,7 +279,7 @@ public class EngineExpressionEvaluator {
       if (engineJexlContext.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
         engineJexlContext.removeFeatureFlag(PIE_EXPRESSION_CONCATENATION);
         Object expressionValue = evaluateExpressionInternal(expression, engineJexlContext, MAX_DEPTH, expressionMode);
-        log.warn("[EXPRESSION_CONCATENATE]: Failed to evaluate expression in new flow for - " + expression
+        log.warn("[EXPRESSION_EVALUATE_CONCATENATE]: Failed to evaluate expression in new flow for - " + expression
             + " whose value is - " + expressionValue);
         return expressionValue;
       }

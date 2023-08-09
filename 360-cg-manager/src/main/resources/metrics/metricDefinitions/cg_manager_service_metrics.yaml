@@ -114,7 +114,7 @@ metrics:
     metricDefinition: Jetty - P95 Response Time
     type: LastValue
     unit: count
-  - metricName: org_eclipse_jetty_server_HttpConnectionFactory_7090_connections_count
+  - metricName: org_eclipse_jetty_server_HttpConnectionFactory_9090_connections_count
     metricDefinition: Jetty - Connection Count
     type: LastValue
     unit: count

@@ -6,7 +6,7 @@
  */
 
 package io.harness.ngtriggers.featureflagfilter;
-import static io.harness.beans.FeatureName.BAMBOO_ARTIFACT_NG;
+
 import static io.harness.beans.FeatureName.CD_TRIGGER_V2;
 import static io.harness.beans.FeatureName.NG_SVC_ENV_REDESIGN;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -37,7 +37,6 @@ public class TriggerCatalogFilter {
         Sets.newHashSet(TriggerCatalogType.JENKINS, TriggerCatalogType.AZURE_ARTIFACTS, TriggerCatalogType.NEXUS3,
             TriggerCatalogType.NEXUS2, TriggerCatalogType.AMI));
     enumTypeFeatureFlagMap.put(NG_SVC_ENV_REDESIGN, Sets.newHashSet(TriggerCatalogType.GOOGLE_CLOUD_STORAGE));
-    enumTypeFeatureFlagMap.put(BAMBOO_ARTIFACT_NG, Sets.newHashSet(TriggerCatalogType.BAMBOO));
   }
 
   public Predicate<TriggerCatalogType> filter(String accountId, FeatureName featureName) {

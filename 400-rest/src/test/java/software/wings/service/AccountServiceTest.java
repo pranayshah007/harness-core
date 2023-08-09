@@ -34,6 +34,7 @@ import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SAHIBA;
 import static io.harness.rule.OwnerRule.SHASHANK;
 import static io.harness.rule.OwnerRule.SRINIVAS;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS;
@@ -53,6 +54,7 @@ import static software.wings.utils.WingsTestConstants.PORTAL_URL;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -1830,5 +1832,18 @@ public class AccountServiceTest extends WingsBaseTest {
             false);
     Boolean isSSO = accountService.isSSOEnabled(onlyUserPassAccount);
     assertThat(isSSO).isFalse();
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testSetPublicAccess() {
+    Account account = saveAccount("Harness");
+
+    accountService.setPublicAccessEnabled(account.getUuid(), true);
+    assertTrue(accountService.getPublicAccessEnabled(account.getUuid()));
+
+    accountService.setPublicAccessEnabled(account.getUuid(), false);
+    assertFalse(accountService.getPublicAccessEnabled(account.getUuid()));
   }
 }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.repositories.executions;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static org.springframework.data.domain.Sort.by;
@@ -37,7 +38,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -76,7 +76,6 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   public Page<PipelineExecutionSummaryEntity> findAll(Criteria criteria, Pageable pageable) {
     try {
       Query query = new Query(criteria).with(pageable);
-      query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
       // Do not add directly the read helper inside the lambda, as secondary mongo reads were not going through if used
       // inside lambda in PageableExecutionUtils
       long count = pmsExecutionSummaryReadHelper.findCount(query);
@@ -189,15 +188,17 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   }
 
   @Override
-  public List<String> findListOfUniqueBranches(Criteria criteria) {
+  public CloseableIterator<PipelineExecutionSummaryEntity> findListOfBranches(Criteria criteria) {
     Query query = new Query(criteria);
-    return pmsExecutionSummaryReadHelper.findListOfUniqueBranches(query);
+    query.fields().include(PlanExecutionSummaryKeys.entityGitDetailsBranch);
+    return pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromSecondary(query);
   }
 
   @Override
-  public List<String> findListOfUniqueRepositories(Criteria criteria) {
+  public CloseableIterator<PipelineExecutionSummaryEntity> findListOfRepositories(Criteria criteria) {
     Query query = new Query(criteria);
-    return pmsExecutionSummaryReadHelper.findListOfUniqueRepositories(query);
+    query.fields().include(PlanExecutionSummaryKeys.entityGitDetailsRepoName);
+    return pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromSecondary(query);
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

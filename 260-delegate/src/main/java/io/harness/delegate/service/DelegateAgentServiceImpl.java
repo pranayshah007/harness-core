@@ -70,7 +70,6 @@ import static io.harness.network.Localhost.getLocalHostAddress;
 import static io.harness.network.Localhost.getLocalHostName;
 import static io.harness.network.SafeHttpCall.execute;
 import static io.harness.threading.Morpheus.sleep;
-import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
 import static io.harness.utils.SecretUtils.isBase64SecretIdentifier;
 
 import static software.wings.beans.TaskType.SCRIPT;
@@ -104,7 +103,6 @@ import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.DelegateServiceAgentClient;
-import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateParams.DelegateParamsBuilder;
@@ -190,20 +188,19 @@ import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.sun.management.OperatingSystemMXBean;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -225,6 +222,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -279,6 +277,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final long UPGRADE_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
   private static final long HEARTBEAT_SOCKET_TIMEOUT = TimeUnit.MINUTES.toMillis(5);
+  private static final long HEARTBEAT_CONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(20);
   private static final long FROZEN_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long WATCHER_HEARTBEAT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
   private static final long WATCHER_VERSION_MATCH_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
@@ -329,6 +328,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private static final String DEFAULT_PATCH_VERSION = "000";
 
   private final boolean BLOCK_SHELL_TASK = Boolean.parseBoolean(System.getenv().get("BLOCK_SHELL_TASK"));
+  private static final String DEFAULT_JRE_VERSION = "11.0.19+7";
 
   private static volatile String delegateId;
   private static final String delegateInstanceId = generateUuid();
@@ -373,6 +373,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @Inject AcquireTaskHelper acquireTaskHelper;
   @Inject Context context;
 
+  private static final LogPerformanceImpl logPerformanceImpl = new LogPerformanceImpl();
   private final AtomicBoolean waiter = new AtomicBoolean(true);
 
   private final Set<String> currentlyAcquiringTasks = ConcurrentHashMap.newKeySet();
@@ -396,15 +397,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
   private final AtomicBoolean multiVersionWatcherStarted = new AtomicBoolean(false);
   private final AtomicBoolean switchStorage = new AtomicBoolean(false);
-  private final AtomicBoolean closingSocket = new AtomicBoolean(false);
   private final AtomicBoolean sentFirstHeartbeat = new AtomicBoolean(false);
   private final Set<String> supportedTaskTypes = new HashSet<>();
+  private final ScheduledExecutorService topProcessLogThread = Executors.newSingleThreadScheduledExecutor(
+      new ThreadFactoryBuilder().setNameFormat("TopProcessLogThread").build());
 
   private Client client;
   private Socket socket;
   private String migrateTo;
   private long startTime;
-  private long upgradeStartedAt;
   private long stoppedAcquiringAt;
   private String accountId;
   private long watcherVersionMatchedAt = System.currentTimeMillis();
@@ -414,7 +415,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private final String delegateConnectionId = generateTimeBasedUuid();
   private volatile boolean switchStorageMsgSent;
-  private DelegateConnectionHeartbeat connectionHeartbeat;
   private String migrateToJreVersion = System.getProperty(JAVA_VERSION);
   private boolean sendJreInformationToWatcher;
 
@@ -425,8 +425,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private double maxProcessRSSThresholdMB;
   private double maxPodRSSThresholdMB;
   private final AtomicBoolean rejectRequest = new AtomicBoolean(false);
-
-  private final String defaultJREVersion = "11.0.19+7";
 
   public static Optional<String> getDelegateId() {
     return Optional.ofNullable(delegateId);
@@ -442,6 +440,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   @Override
   public void shutdown(final boolean shouldUnregister) throws InterruptedException {
+    // Log the top processes before shutting down.
+    logTopProcessesByCpuAndMemory();
     shutdownExecutors();
     if (shouldUnregister) {
       unregisterDelegate();
@@ -536,11 +536,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       logProxyConfiguration();
 
-      connectionHeartbeat = DelegateConnectionHeartbeat.builder()
-                                .delegateConnectionId(delegateConnectionId)
-                                .version(getVersion())
-                                .location(Paths.get("").toAbsolutePath().toString())
-                                .build();
+      // Start a thread to log the top processes in the environment every 10 minutes.
+      topProcessLogThread.scheduleAtFixedRate(
+          DelegateAgentServiceImpl::logTopProcessesByCpuAndMemory, 0, 10, TimeUnit.MINUTES);
 
       if (watched) {
         log.info("[New] Delegate process started. Sending confirmation");
@@ -652,7 +650,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       if (isPollingForTasksEnabled()) {
         log.info("Polling is enabled for Delegate");
-        startHeartbeat(builder);
+        startHttpHeartbeat(builder);
         startTaskPolling();
       } else {
         client = org.atmosphere.wasync.ClientFactory.getDefault().newClient();
@@ -710,7 +708,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
         socket.open(requestBuilder.build());
 
-        startHeartbeat(builder, socket);
+        startHeartbeat(builder);
         // TODO(Abhinav): Check if we can avoid separate call for ECS delegates.
         if (isEcsDelegate()) {
           startKeepAlivePacket(builder);
@@ -895,7 +893,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void finalizeSocket() {
-    closingSocket.set(true);
+    log.info("Closing websocket with previous status {}", socket.status());
     socket.close();
   }
 
@@ -1046,19 +1044,19 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private void closeAndReconnectSocket() {
     try {
       finalizeSocket();
-      if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
-        log.error("Unable to close socket");
-        closingSocket.set(false);
+      if (isSocketHealthy()) {
+        log.error("Unable to close the socket, status {}", socket.status());
         return;
       }
-      RequestBuilder requestBuilder = prepareRequestBuilder();
-      socket.open(requestBuilder.build());
-      if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
+      var requestBuilder = prepareRequestBuilder();
+      socket.open(requestBuilder.build(), HEARTBEAT_CONNECTION_TIMEOUT, TimeUnit.SECONDS);
+      if (isSocketHealthy()) {
         log.info("Socket reopened, status {}", socket.status());
-        closingSocket.set(false);
+      } else {
+        log.info("Socket is not healthy after manual reconnect attempt {}", socket.status());
       }
     } catch (RuntimeException | IOException e) {
-      log.error("Exception while opening web socket connection delegate", e);
+      log.error("Exception while re-opening web socket connection. Socket status {}", socket.status(), e);
     }
   }
 
@@ -1407,6 +1405,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     log.info("Stopping executors");
     taskExecutor.shutdown();
     taskPollExecutor.shutdown();
+    topProcessLogThread.shutdown();
 
     final boolean terminatedTaskExec = taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
     final boolean terminatedPoll = taskPollExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -1538,11 +1537,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
   }
 
-  private void startHeartbeat(DelegateParamsBuilder builder, Socket socket) {
+  private void startHeartbeat(final DelegateParamsBuilder builder) {
     log.debug("Starting heartbeat at interval {} ms", delegateConfiguration.getHeartbeatIntervalMs());
     healthMonitorExecutor.scheduleAtFixedRate(() -> {
       try {
-        sendHeartbeat(builder, socket);
+        sendHeartbeat(builder);
         if (heartbeatSuccessCalls.incrementAndGet() > 100) {
           log.info("Sent {} heartbeat calls to manager", heartbeatSuccessCalls.getAndSet(0));
         }
@@ -1554,10 +1553,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }, 0, delegateConfiguration.getHeartbeatIntervalMs(), TimeUnit.MILLISECONDS);
   }
 
-  private void startHeartbeat(DelegateParamsBuilder builder) {
+  private void startHttpHeartbeat(final DelegateParamsBuilder builder) {
     healthMonitorExecutor.scheduleAtFixedRate(() -> {
       try {
-        sendHeartbeat(builder);
+        sendHttpHeartbeat(builder);
         if (heartbeatSuccessCalls.incrementAndGet() > 100) {
           log.info("Sent {} calls to manager", heartbeatSuccessCalls.getAndSet(0));
         }
@@ -1674,7 +1673,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       try {
         // Download watcher script before restarting watcher.
         if (!downloadRunScriptsForWatcher(expectedVersion) && heartbeatTimedOut) {
-          // If hearbeat for watcher has been timedout means. watcher is either stuck or is dead and we failed to
+          // If heartbeat for watcher has been timedout means. watcher is either stuck or is dead and we failed to
           // download watcher start script. Hence we will not be able to start watcher with latest version.
           // Hence return early so that pod's liveliness check will fail and delegate will restart.
           log.error("Watcher heartbeat timed out and Delegate unable to download run script, skip starting watcher");
@@ -1722,7 +1721,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn("Failed to fetch jre version from Manager ", ex);
     }
     // for smp it will return empty and take default value defined above
-    return defaultJREVersion;
+    return DEFAULT_JRE_VERSION;
   }
 
   private boolean downloadRunScriptsForWatcher(String version) {
@@ -1845,21 +1844,21 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
   }
 
-  private void sendHeartbeat(DelegateParamsBuilder builder, Socket socket) {
+  private void sendHeartbeat(final DelegateParamsBuilder builder) {
     if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
       return;
     }
     log.info("Last heartbeat received at {} and sent to manager at {}", lastHeartbeatReceivedAt.get(),
         lastHeartbeatSentAt.get());
-    long now = clock.millis();
-    boolean heartbeatReceivedTimeExpired = lastHeartbeatReceivedAt.get() != 0
-        && (now - lastHeartbeatReceivedAt.get()) > HEARTBEAT_SOCKET_TIMEOUT && !closingSocket.get();
-    if (heartbeatReceivedTimeExpired) {
-      log.info("Reconnecting delegate - web socket connection: lastHeartbeatReceivedAt:[{}], lastHeartbeatSentAt:[{}]",
-          lastHeartbeatReceivedAt.get(), lastHeartbeatSentAt.get());
+    final boolean heartbeatReceivedTimeout = lastHeartbeatReceivedAt.get() != 0
+        && (clock.millis() - lastHeartbeatReceivedAt.get()) > HEARTBEAT_SOCKET_TIMEOUT;
+    if (heartbeatReceivedTimeout) {
+      log.info(
+          "Reconnecting delegate - web socket connection: lastHeartbeatReceivedAt:[{}], lastHeartbeatSentAt:[{}], socket: {}",
+          lastHeartbeatReceivedAt.get(), lastHeartbeatSentAt.get(), socket.status());
       closeAndReconnectSocket();
     }
-    if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
+    if (isSocketHealthy()) {
       log.debug("Sending heartbeat...");
 
       // This will Add ECS delegate specific fields if DELEGATE_TYPE = "ECS"
@@ -1901,7 +1900,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
   }
 
-  private void sendHeartbeat(DelegateParamsBuilder builder) {
+  private void sendHttpHeartbeat(DelegateParamsBuilder builder) {
     if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
       return;
     }
@@ -1997,22 +1996,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     builder.put("maxExecutingTasksCount", Integer.toString(maxExecutingTasksCount.getAndSet(0)));
     builder.put("maxExecutingFuturesCount", Integer.toString(maxExecutingFuturesCount.getAndSet(0)));
 
-    OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
-    builder.put("cpu-process",
-        BigDecimal.valueOf(osBean.getProcessCpuLoad() * 100).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
-    builder.put("cpu-system",
-        BigDecimal.valueOf(osBean.getSystemCpuLoad() * 100).setScale(2, BigDecimal.ROUND_HALF_UP).toString());
-
     for (Entry<String, ThreadPoolExecutor> executorEntry : getLogExecutors().entrySet()) {
       builder.put(executorEntry.getKey(), Integer.toString(executorEntry.getValue().getActiveCount()));
     }
-    MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
 
-    memoryUsage(builder, "heap-", memoryMXBean.getHeapMemoryUsage());
-
-    memoryUsage(builder, "non-heap-", memoryMXBean.getNonHeapMemoryUsage());
-
-    return builder.build();
+    return logPerformanceImpl.obtainDelegateCpuMemoryPerformance(builder);
   }
 
   public double getCPULoadAverage() {
@@ -2025,6 +2013,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     try (AutoLogContext ignore = new AutoLogContext(obtainPerformance(), OVERRIDE_NESTS)) {
       log.info("Current performance");
     }
+  }
+
+  private static void logTopProcessesByCpuAndMemory() {
+    logPerformanceImpl.logTopCpuMemoryProcesses();
   }
 
   private void abortDelegateTask(DelegateTaskAbortEvent delegateTaskEvent) {

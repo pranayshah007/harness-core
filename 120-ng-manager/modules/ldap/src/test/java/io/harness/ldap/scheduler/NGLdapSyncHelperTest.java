@@ -8,6 +8,7 @@
 package io.harness.ldap.scheduler;
 
 import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -347,6 +348,53 @@ public class NGLdapSyncHelperTest extends CategoryTest {
     verify(ngUserService, times(1))
         .listCurrentGenUsers(ACCOUNT_ID, UserFilterNG.builder().userIds(userGrp.getUsers()).build());
     verify(userGroupService, times(1)).update(any());
+    verify(userClient, times(1)).updateUser(any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testReconcileAllUserGroups_withoutSsoGroupNameChange_shouldNotCreateAudit() throws IOException {
+    int totalMembers = 1;
+
+    final String groupDn = "testGrpDn";
+    final String testUserEmail = "test123@hn.io";
+    final String testUserName = "test 123";
+    final String userGrpId = "UG1";
+    final String userGroupName = "testLdapGroup";
+    LdapUserResponse usrResponse = LdapUserResponse.builder().email(testUserEmail).name(testUserName).build();
+    LdapGroupResponse response = LdapGroupResponse.builder()
+                                     .name(userGroupName)
+                                     .description("desc")
+                                     .dn(groupDn)
+                                     .totalMembers(totalMembers)
+                                     .users(Collections.singletonList(usrResponse))
+                                     .build();
+    UserGroup userGrp = UserGroup.builder()
+                            .identifier(userGrpId)
+                            .accountIdentifier(ACCOUNT_ID)
+                            .orgIdentifier(ORG_ID)
+                            .projectIdentifier(PROJECT_ID)
+                            .ssoGroupId(groupDn)
+                            .ssoGroupName(userGroupName)
+                            .users(Collections.singletonList(testUserEmail))
+                            .notificationConfigs(new ArrayList<>())
+                            .build();
+    UserInfo userInfo = UserInfo.builder().name(testUserName).email(testUserEmail).uuid(testUserName).build();
+
+    Map<UserGroup, LdapGroupResponse> usrGroupToLdapGroupMap = new HashMap<>();
+    usrGroupToLdapGroupMap.put(userGrp, response);
+    when(ngUserService.listCurrentGenUsers(anyString(), any())).thenReturn(Collections.singletonList(userInfo));
+
+    Call<RestResponse<Optional<UserInfo>>> request = mock(Call.class);
+    RestResponse<Optional<UserInfo>> mockResponse = new RestResponse<>(Optional.of(userInfo));
+    doReturn(request).when(userClient).updateUser(any());
+    doReturn(Response.success(mockResponse)).when(request).execute();
+
+    ldapGroupSyncHelper.reconcileAllUserGroups(usrGroupToLdapGroupMap, LDAP_SETTINGS_ID, ACCOUNT_ID);
+    verify(ngUserService, times(1))
+        .listCurrentGenUsers(ACCOUNT_ID, UserFilterNG.builder().userIds(userGrp.getUsers()).build());
+    verify(userGroupService, times(0)).update(any());
     verify(userClient, times(1)).updateUser(any());
   }
 }

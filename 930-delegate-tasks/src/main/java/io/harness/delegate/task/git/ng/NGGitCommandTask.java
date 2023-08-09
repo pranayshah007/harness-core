@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitCommandTaskHandler;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.GitHubAppAuthenticationHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -48,6 +50,8 @@ public class NGGitCommandTask extends AbstractDelegateRunnableTask {
   @Inject private NGGitService gitService;
   @Inject private GitCommandTaskHandler gitCommandTaskHandler;
   @Inject private GitDecryptionHelper gitDecryptionHelper;
+  @Inject private GitHubAppAuthenticationHelper gitHubAppAuthenticationHelper;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public NGGitCommandTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -62,7 +66,8 @@ public class NGGitCommandTask extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     GitCommandParams gitCommandParams = (GitCommandParams) parameters;
-    GitConfigDTO gitConfig = ScmConnectorMapper.toGitConfigDTO(gitCommandParams.getGitConfig());
+    GitConfigDTO gitConfig = scmConnectorMapperDelegate.toGitConfigDTO(
+        gitCommandParams.getScmConnector(), gitCommandParams.getEncryptionDetails());
     gitDecryptionHelper.decryptGitConfig(gitConfig, gitCommandParams.getEncryptionDetails());
     SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
         gitCommandParams.getSshKeySpecDTO(), gitCommandParams.getEncryptionDetails());

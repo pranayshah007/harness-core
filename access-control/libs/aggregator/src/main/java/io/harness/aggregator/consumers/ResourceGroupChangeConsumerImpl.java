@@ -108,10 +108,14 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
 
     long permissionsChangeTime = System.currentTimeMillis() - startTime;
     try (DelayLogContext ignore = new DelayLogContext(permissionsChangeTime, OVERRIDE_ERROR)) {
-      log.info("ResourceGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for {} Time taken: {}",
-          numberOfACLsCreated, id, permissionsChangeTime);
-      log.info("ResourceGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {} Time taken: {}",
-          numberOfACLsDeleted, id, permissionsChangeTime);
+      log.info(
+          "ResourceGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs created: {} for id: {}, identifier: {}, scope: {} Time taken: {}",
+          numberOfACLsCreated, id, updatedResourceGroup.getIdentifier(), updatedResourceGroup.getScopeIdentifier(),
+          permissionsChangeTime);
+      log.info(
+          "ResourceGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for id: {}, identifier: {}, scope: {} Time taken: {}",
+          numberOfACLsDeleted, id, updatedResourceGroup.getIdentifier(), updatedResourceGroup.getScopeIdentifier(),
+          permissionsChangeTime);
     }
     return true;
   }

@@ -28,13 +28,13 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
-import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.event.OrchestrationLogPublisher;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -107,15 +107,16 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Inject private PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private TransactionHelper transactionHelper;
   @Inject private OrchestrationLogPublisher orchestrationLogPublisher;
-  @Inject private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @Inject private NodeExecutionReadHelper nodeExecutionReadHelper;
-  @Inject private MongoTemplate secondaryMongoTemplate;
 
+  @Inject private PlanService planService;
   @Inject private PlanExpansionService planExpansionService;
 
   @Getter private final Subject<NodeStatusUpdateObserver> nodeStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject = new Subject<>();
+
+  private final int MAX_DEPTH = 15;
 
   @Override
   public NodeExecution get(String nodeExecutionId) {
@@ -291,6 +292,52 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       query.fields().include(field);
     }
     return nodeExecutionReadHelper.fetchNodeExecutions(query);
+  }
+
+  private CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIteratorWithoutProjection(
+      String planExecutionId, List<String> parentIds) {
+    // Uses planExecutionId_parentId_createdAt_idx
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.parentId).in(parentIds))
+                      .with(Sort.by(Direction.ASC, NodeExecutionKeys.createdAt));
+    return nodeExecutionReadHelper.fetchNodeExecutionsIteratorWithoutProjections(query);
+  }
+
+  public List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentIdWithoutOldRetries(
+      String planExecutionId, List<String> parentIds) {
+    return fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, parentIds, MAX_DEPTH);
+  }
+
+  private List<NodeExecution> fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(
+      String planExecutionId, List<String> parentIds, int depth) {
+    if (depth <= 0) {
+      throw new InvalidRequestException(
+          String.format("Exceeded Max Depth level [%s] for the Node SubGraph", MAX_DEPTH));
+    }
+    if (EmptyPredicate.isEmpty(parentIds)) {
+      return new ArrayList<>();
+    }
+    List<NodeExecution> recursiveChildrenNodeExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator =
+             fetchChildrenNodeExecutionsIteratorWithoutProjection(planExecutionId, parentIds)) {
+      while (iterator.hasNext()) {
+        recursiveChildrenNodeExecutions.add(iterator.next());
+      }
+    }
+    List<String> childParentIds = new LinkedList<>();
+    if (EmptyPredicate.isEmpty(recursiveChildrenNodeExecutions)) {
+      return new ArrayList<>();
+    }
+    recursiveChildrenNodeExecutions = recursiveChildrenNodeExecutions.stream()
+                                          .filter(o -> o.getOldRetry().equals(false))
+                                          .collect(Collectors.toList());
+    for (NodeExecution nodeExecution : recursiveChildrenNodeExecutions) {
+      childParentIds.add(nodeExecution.getUuid());
+    }
+    List<NodeExecution> childNodeExecutions =
+        fetchChildrenNodeExecutionsRecursivelyFromGivenParentId(planExecutionId, childParentIds, depth - 1);
+    recursiveChildrenNodeExecutions.addAll(childNodeExecutions);
+    return recursiveChildrenNodeExecutions;
   }
 
   @Override
@@ -524,6 +571,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         ops.set(NodeExecutionKeys.status, status).set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
     addFinalStatusOps(updateOps, status);
 
+    List<String> timeoutInstanceIds = getTimeoutInstanceIds(status, nodeExecutionId);
     NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
       NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
       if (updated == null) {
@@ -539,7 +587,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     });
     if (updatedNodeExecution != null) {
       nodeStatusUpdateSubject.fireInform(NodeStatusUpdateObserver::onNodeStatusUpdate,
-          NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
+          NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).timeoutInstanceIds(timeoutInstanceIds).build());
     }
     return updatedNodeExecution;
   }
@@ -553,6 +601,18 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         updateOps.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
       }
     }
+  }
+
+  private List<String> getTimeoutInstanceIds(Status toBeUpdatedNodeStatus, String curretNodeExecutionId) {
+    List<String> timeoutInstanceIds = new LinkedList<>();
+    if (StatusUtils.isFinalStatus(toBeUpdatedNodeStatus)) {
+      Query getCurrentNodeQuery = query(where(NodeExecutionKeys.uuid).is(curretNodeExecutionId));
+      getCurrentNodeQuery.fields().include(NodeExecutionKeys.uuid).include(NodeExecutionKeys.timeoutInstanceIds);
+      NodeExecution oldNodeExecution =
+          nodeExecutionReadHelper.fetchNodeExecutionsFromSecondaryTemplate(getCurrentNodeQuery);
+      timeoutInstanceIds = oldNodeExecution.getTimeoutInstanceIds();
+    }
+    return timeoutInstanceIds;
   }
 
   @Override
@@ -881,9 +941,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     List<NodeExecution> nodeExecutions = mongoTemplate.find(query, NodeExecution.class);
 
     // fetching stageFqn of stage Nodes
-    return nodeExecutions.stream()
-        .map(nodeExecution -> nodeExecution.getNode().getStageFqn())
-        .collect(Collectors.toList());
+    return nodeExecutions.stream().map(NodeExecution::getStageFqn).collect(Collectors.toList());
   }
 
   @Override
@@ -915,8 +973,14 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     Map<String, NodeExecution> nodeExecutionMap = getUniqueNodeExecutionForNodes(nodeExecutions);
     // fetching stageFqn of stage Nodes
     Map<String, Node> nodeExecutionIdToPlanNode = new HashMap<>();
+
+    Set<String> nodeIds = nodeExecutionMap.values().stream().map(NodeExecution::getNodeId).collect(Collectors.toSet());
+    Set<Node> nodes = planService.fetchAllNodes(nodeIds);
+    Map<String, Node> nodeMap = nodes.stream().collect(Collectors.toMap(Node::getUuid, node -> node));
+
     nodeExecutionMap.forEach(
-        (uuid, nodeExecution) -> nodeExecutionIdToPlanNode.put(nodeExecution.getUuid(), nodeExecution.getNode()));
+        (uuid, nodeExecution)
+            -> nodeExecutionIdToPlanNode.put(nodeExecution.getUuid(), nodeMap.get(nodeExecution.getNodeId())));
     return nodeExecutionIdToPlanNode;
   }
 
@@ -930,8 +994,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   private Map<String, NodeExecution> getUniqueNodeExecutionForNodes(List<NodeExecution> nodeExecutions) {
     Map<String, NodeExecution> nodeExecutionMap = new HashMap<>();
     for (NodeExecution nodeExecution : nodeExecutions) {
-      if (!nodeExecutionMap.containsKey(nodeExecution.getNode().getUuid()) && !nodeExecution.getOldRetry()) {
-        nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
+      if (!nodeExecutionMap.containsKey(nodeExecution.getNodeId()) && !nodeExecution.getOldRetry()) {
+        nodeExecutionMap.put(nodeExecution.getNodeId(), nodeExecution);
       }
     }
     return nodeExecutionMap;

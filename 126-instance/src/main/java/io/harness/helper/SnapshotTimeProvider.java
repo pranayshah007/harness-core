@@ -43,6 +43,10 @@ public class SnapshotTimeProvider {
     return null;
   }
 
+  public Instant currentlyAt() {
+    return currentlyAt;
+  }
+
   // doesn't modify state
   public boolean hasNext() {
     return currentlyAt.plus(intervalInMinutes, ChronoUnit.MINUTES).isBefore(creationTime);

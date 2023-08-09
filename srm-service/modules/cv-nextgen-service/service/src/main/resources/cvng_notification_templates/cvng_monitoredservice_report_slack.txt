@@ -110,6 +110,13 @@
 			}
 		},
 		{
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "${SLO_SUMMARY}"
+            }
+        },
+		{
 			"type": "section",
 			"text": {
 				"type": "mrkdwn",

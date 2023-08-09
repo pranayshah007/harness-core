@@ -273,6 +273,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
     return resolvedParams;
   }
 
+  @Deprecated
   public <T extends Node> T getNode() {
     return (T) planNode;
   }
