@@ -160,7 +160,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
       taskResponse.response(delegateExceptionManager.getResponseData(
           throwable, errorNotifyResponseDataBuilder, isSupportingErrorFramework()));
       taskResponse.responseCode(ResponseCode.FAILED);
-      metricRegistry.recordCounterInc(TASK_FAILED, DELEGATE_NAME);
+      metricRegistry.recordCounterInc(TASK_FAILED, new String[] {DELEGATE_NAME, taskType});
     } finally {
       GlobalContextManager.unset();
       if (consumer != null) {
