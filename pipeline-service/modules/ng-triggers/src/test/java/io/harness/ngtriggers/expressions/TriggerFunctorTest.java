@@ -122,6 +122,7 @@ public class TriggerFunctorTest extends CategoryTest {
                                     .setParsedPayload(ParsedPayload.newBuilder().setPr(prEvent.getPr()).build())
                                     .setType(Type.WEBHOOK)
                                     .setSourceType(SourceType.GITHUB_REPO)
+                                    .setConnectorRef("gitConnector")
                                     .build())
                 .build()));
     SampleEvaluator expressionEvaluator = new SampleEvaluator(
@@ -139,6 +140,7 @@ public class TriggerFunctorTest extends CategoryTest {
     assertThat(expressionEvaluator.renderExpression("<+trigger.repoUrl>")).isEqualTo("https://github.com");
     assertThat(expressionEvaluator.renderExpression("<+trigger.gitUser>")).isEqualTo("user");
     assertThat(expressionEvaluator.renderExpression("<+trigger.prTitle>")).isEqualTo("This is Title");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.connectorRef>")).isEqualTo("gitConnector");
 
     // keys inside header expression are case insensitive for eg: <+trigger.header['Host']> and
     // <+trigger.header['host']> both will work

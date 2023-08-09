@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.triggers.webhook.helpers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.constants.Constants.X_HUB_SIGNATURE_256;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -201,46 +202,50 @@ public class TriggerEventExecutionHelper {
   }
 
   public void updateWebhookRegistrationStatusAndTriggerPipelineExecution(ParseWebhookResponse parseWebhookResponse,
-      TriggerWebhookEvent triggerWebhookEvent, List<TriggerEventResponse> eventResponses,
-      TriggerDetails triggerDetails) {
+                                                                         TriggerWebhookEvent triggerWebhookEvent, List<TriggerEventResponse> eventResponses,
+                                                                         TriggerDetails triggerDetails) {
     long yamlVersion = triggerDetails.getNgTriggerEntity().getYmlVersion() == null
-        ? 3
-        : triggerDetails.getNgTriggerEntity().getYmlVersion();
+            ? 3
+            : triggerDetails.getNgTriggerEntity().getYmlVersion();
     NGTriggerEntity triggerEntity = triggerDetails.getNgTriggerEntity();
     Criteria criteria = Criteria.where(NGTriggerEntityKeys.accountId)
-                            .is(triggerEntity.getAccountId())
-                            .and(NGTriggerEntityKeys.orgIdentifier)
-                            .is(triggerEntity.getOrgIdentifier())
-                            .and(NGTriggerEntityKeys.projectIdentifier)
-                            .is(triggerEntity.getProjectIdentifier())
-                            .and(NGTriggerEntityKeys.targetIdentifier)
-                            .is(triggerEntity.getTargetIdentifier())
-                            .and(NGTriggerEntityKeys.identifier)
-                            .is(triggerEntity.getIdentifier())
-                            .and(NGTriggerEntityKeys.deleted)
-                            .is(false);
+            .is(triggerEntity.getAccountId())
+            .and(NGTriggerEntityKeys.orgIdentifier)
+            .is(triggerEntity.getOrgIdentifier())
+            .and(NGTriggerEntityKeys.projectIdentifier)
+            .is(triggerEntity.getProjectIdentifier())
+            .and(NGTriggerEntityKeys.targetIdentifier)
+            .is(triggerEntity.getTargetIdentifier())
+            .and(NGTriggerEntityKeys.identifier)
+            .is(triggerEntity.getIdentifier())
+            .and(NGTriggerEntityKeys.deleted)
+            .is(false);
     if (triggerEntity.getVersion() != null) {
       criteria.and(NGTriggerEntityKeys.version).is(triggerEntity.getVersion());
     }
     try {
       TriggerHelper.stampWebhookRegistrationInfo(triggerEntity,
-          WebhookAutoRegistrationStatus.builder().registrationResult(WebhookRegistrationStatus.SUCCESS).build());
+              WebhookAutoRegistrationStatus.builder().registrationResult(WebhookRegistrationStatus.SUCCESS).build());
     } catch (Exception ex) {
       log.error("Webhook registration status update failed", ex);
     }
     ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
     List<HeaderConfig> headerConfigList = triggerWebhookEvent.getHeaders();
+    WebhookTriggerConfigV2 webhookTriggerConfigV2 = WebhookTriggerConfigV2.builder().build();
 
-    WebhookTriggerConfigV2 webhookTriggerConfigV2 =
-        (WebhookTriggerConfigV2) triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
+    if (null != triggerDetails.getNgTriggerConfigV2() && null != triggerDetails.getNgTriggerConfigV2().getSource()
+            && null != triggerDetails.getNgTriggerConfigV2().getSource().getSpec()) {
+      webhookTriggerConfigV2 = (WebhookTriggerConfigV2) triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
+    }
+
     String connectorRef = null;
-    if (webhookTriggerConfigV2.getSpec().fetchGitAware() != null
-        && webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef() != null) {
+    if (webhookTriggerConfigV2.getSpec() != null && webhookTriggerConfigV2.getSpec().fetchGitAware() != null
+            && webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef() != null) {
       connectorRef = webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef();
     }
     eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
-        getTriggerPayloadForWebhookTrigger(parseWebhookResponse, triggerWebhookEvent, yamlVersion, connectorRef),
-        triggerWebhookEvent.getPayload(), headerConfigList));
+            getTriggerPayloadForWebhookTrigger(parseWebhookResponse, triggerWebhookEvent, yamlVersion, connectorRef),
+            triggerWebhookEvent.getPayload(), headerConfigList));
   }
 
   @VisibleForTesting
@@ -275,8 +280,10 @@ public class TriggerEventExecutionHelper {
       }
     }
     builder.setVersion(version);
-    builder.setConnectorRef(connectorRef);
 
+    if (isNotEmpty(connectorRef)) {
+      builder.setConnectorRef(connectorRef);
+    }
     return builder.setType(WEBHOOK).build();
   }
 

@@ -51,6 +51,9 @@ public class TriggerFunctor implements LateBindingValue {
                              -> new IllegalStateException(
                                  "No Metadata present for planExecution :" + ambiance.getPlanExecutionId()));
     Map<String, Object> jsonObject = TriggerHelper.buildJsonObjectFromAmbiance(metadata.getTriggerPayload());
+    if (EmptyPredicate.isNotEmpty(metadata.getTriggerPayload().getConnectorRef())) {
+      jsonObject.put(CONNECTOR_REF, metadata.getTriggerPayload().getConnectorRef());
+    }
 
     if (EmptyPredicate.isNotEmpty(metadata.getTriggerPayload().getConnectorRef())) {
       jsonObject.put(CONNECTOR_REF, metadata.getTriggerPayload().getConnectorRef());
