@@ -26,16 +26,16 @@ FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 # Add the capsule JAR and config.yml
 
 COPY --chown=65534:65534 --from=builder \
-    /app/dist/srm-service/cv-nextgen-capsule.jar \
-    /app/dist/srm-service/keystore.jks \
-    /app/dist/srm-service/cv-nextgen-config.yml \
-    /app/dist/srm-service/redisson-jcache.yaml \
-    /app/dist/srm-service/enterprise-redisson-jcache.yaml \
-    /app/dist/srm-service/classpath_metadata.json \
-    /app/dist/srm-service/protocol.info \
-    /app/dist/srm-service/default.jfc \
-    /app/dist/srm-service/profile.jfc \
-    /app/dist/srm-service/scripts \
+    /app/dist/cv-nextgen/cv-nextgen-capsule.jar \
+    /app/dist/cv-nextgen/keystore.jks \
+    /app/dist/cv-nextgen/cv-nextgen-config.yml \
+    /app/dist/cv-nextgen/redisson-jcache.yaml \
+    /app/dist/cv-nextgen/enterprise-redisson-jcache.yaml \
+    /app/dist/cv-nextgen/classpath_metadata.json \
+    /app/dist/cv-nextgen/protocol.info \
+    /app/dist/cv-nextgen/default.jfc \
+    /app/dist/cv-nextgen/profile.jfc \
+    /app/dist/cv-nextgen/scripts \
     /app/dockerization/base-images/apm/*.sh \
     /opt/harness/
 RUN ls /opt/harness/
