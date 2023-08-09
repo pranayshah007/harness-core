@@ -108,7 +108,6 @@ import com.google.inject.name.Named;
 import com.j256.twofactorauth.TimeBasedOneTimePasswordUtil;
 import com.mongodb.MongoClientURI;
 import java.io.UnsupportedEncodingException;
-import java.lang.UnsupportedOperationException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;

@@ -8,6 +8,7 @@
 package io.harness.ng.core.invites.api;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorMessageConstants.INVALID_JWT_TOKEN;
 import static io.harness.eraro.ErrorMessageConstants.TOKEN_EXPIRED;
 import static io.harness.ng.core.invites.InviteType.ADMIN_INITIATED_INVITE;
@@ -456,7 +457,7 @@ public class InviteServiceImplTest extends CategoryTest {
     ArgumentCaptor<String> idCapture = ArgumentCaptor.forClass(String.class);
     when(claim.asString()).thenReturn(inviteId);
     when(jwtGeneratorUtils.verifyJWTToken(any(), any()))
-        .thenThrow(new InvalidRequestException(TOKEN_EXPIRED))
+        .thenThrow(new InvalidRequestException(TOKEN_EXPIRED, null, EXPIRED_TOKEN))
         .thenReturn(Collections.emptyMap());
     when(inviteRepository.findById(any())).thenReturn(Optional.of(invite));
     when(ngUserService.getUserByEmail(any(), anyBoolean())).thenReturn(Optional.of(user));
