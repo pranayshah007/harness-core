@@ -143,7 +143,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
                                   .errorMessage(errorMessage)
                                   .build());
         taskResponse.responseCode(ResponseCode.FAILED);
-        metricRegistry.recordCounterInc(TASK_FAILED, DELEGATE_NAME);
+        metricRegistry.recordCounterInc(TASK_FAILED, new String[] {DELEGATE_NAME, taskType});
       }
       log.debug("Completed executing task {}", taskId);
     } catch (DelegateRetryableException exception) {

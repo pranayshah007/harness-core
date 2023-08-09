@@ -758,7 +758,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       metricRegistry.recordGaugeValue(
           RESOURCE_CONSUMPTION_ABOVE_THRESHOLD.getMetricName(), new String[] {DELEGATE_NAME}, 1.0);
       metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), new String[] {DELEGATE_NAME});
-      metricRegistry.recordCounterInc(TASK_REJECTED.getMetricName(), DELEGATE_NAME);
       return;
     }
 
