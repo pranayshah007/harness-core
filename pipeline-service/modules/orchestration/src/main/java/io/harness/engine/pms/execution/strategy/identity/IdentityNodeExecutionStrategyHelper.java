@@ -125,7 +125,7 @@ public class IdentityNodeExecutionStrategyHelper {
   // method.
   NodeExecutionBuilder cloneNodeExecutionForRetries(NodeExecution originalNodeExecution, Ambiance ambiance) {
     String uuid = UUIDGenerator.generateUuid();
-    Node node = planService.fetchNode(originalNodeExecution.getNodeId());
+    Node node = planService.fetchNode(originalNodeExecution.getPlanId(), originalNodeExecution.getNodeId());
     Ambiance finalAmbiance = AmbianceUtils.cloneForFinish(ambiance)
                                  .toBuilder()
                                  .addLevels(PmsLevelUtils.buildLevelFromNode(uuid, node))

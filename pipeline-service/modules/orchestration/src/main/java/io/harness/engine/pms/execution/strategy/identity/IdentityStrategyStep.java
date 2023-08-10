@@ -96,7 +96,7 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
       // If we see a failed step that isn't part of the retry stage, it should be added as an identity stage.
       // This allows us to create an identity node for all such executions and not just use the same IdentityPlanNode
       // pointing to one of the executions (hence copying the status).
-      Node node = planService.fetchNode(nodeExecution.getNodeId());
+      Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
       if ((ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())
               || !(node instanceof IdentityPlanNode))
           && StatusUtils.brokeAndAbortedStatuses().contains(nodeExecution.getStatus())) {

@@ -75,9 +75,36 @@ public class PlanServiceImpl implements PlanService {
     });
   }
 
+  /**
+   * Older Record
+   *   uuid = "abc"
+   *   planId="p1"
+   *   nodeId=null
+   *
+   *
+   * Newer Record
+   *  uuid = "dsabgdkn"
+   *  planId="p1"
+   *  nodeId="abc"
+   *
+   *
+   *
+   *
+   *
+   *
+   * @param planId
+   * @param nodeId
+   * @return
+   */
+
   @Override
   public Node fetchNode(String planId, String nodeId) {
-    Optional<NodeEntity> nodeEntity = nodeEntityRepository.findById(nodeId);
+    Optional<NodeEntity> nodeEntity = nodeEntityRepository.findByPlanIdAndNodeId(planId, nodeId);
+    if (nodeEntity.isPresent()) {
+      return nodeEntity.get().getNode();
+    }
+    // This is a fallback mechanism added.
+    nodeEntity = nodeEntityRepository.findById(nodeId);
     if (nodeEntity.isPresent()) {
       return nodeEntity.get().getNode();
     }
@@ -102,7 +129,7 @@ public class PlanServiceImpl implements PlanService {
       return;
     }
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
-      nodeEntityRepository.deleteAllByUuidIn(nodeEntityIds);
+      nodeEntityRepository.deleteAllByNodeIdIn(nodeEntityIds);
       return true;
     });
   }

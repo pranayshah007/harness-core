@@ -27,7 +27,7 @@ public interface PlanService {
    * Please use th signature without the planId. Its just redundant to pass planId now
    * This method was appropriate earlier when nodes were stored along with the plan
    */
-  @Deprecated<T extends Node> T fetchNode(String planId, String nodeId);
+  <T extends Node> T fetchNode(String planId, String nodeId);
   <T extends Node> T fetchNode(String nodeId);
 
   <T extends Node> Set<T> fetchAllNodes(Set<String> nodeIds);

@@ -152,7 +152,7 @@ public class IdentityStrategyInternalStep
     List<Node> identityNodesToBeCreated = new ArrayList<>();
     for (NodeExecution nodeExecution : childrenNodeExecutions) {
       if (nodeExecution.getNodeType() == NodeType.PLAN_NODE) {
-        Node originalNode = planService.fetchNode(nodeExecution.getNodeId());
+        Node originalNode = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
         Node node = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), originalNode,
             nodeExecution.getIdentifier(), nodeExecution.getName(), nodeExecution.getStepType(),
             nodeExecution.getUuid());
@@ -176,7 +176,7 @@ public class IdentityStrategyInternalStep
 
   private ChildExecutableResponse getChildFromNodeExecutions(
       NodeExecution childNodeExecution, NodeExecution originalNodeExecution, String planId) {
-    Node node = planService.fetchNode(childNodeExecution.getNodeId());
+    Node node = planService.fetchNode(childNodeExecution.getPlanId(), childNodeExecution.getNodeId());
     if (node.getNodeType() == NodeType.PLAN_NODE) {
       IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), node,
           childNodeExecution.getIdentifier(), childNodeExecution.getName(), node.getStepType(),

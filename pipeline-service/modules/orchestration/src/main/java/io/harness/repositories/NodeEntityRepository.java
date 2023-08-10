@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plan.NodeEntity;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.repository.CrudRepository;
 
@@ -24,4 +25,8 @@ public interface NodeEntityRepository extends CrudRepository<NodeEntity, String>
   // Uses - id index
   void deleteAllByUuidIn(Set<String> ids);
   List<NodeEntity> findNodeEntityByPlanId(String planId);
+
+  Optional<NodeEntity> findByPlanIdAndNodeId(String planId, String nodeId);
+
+  Optional<NodeEntity> deleteAllByNodeIdIn(Set<String> ids);
 }
