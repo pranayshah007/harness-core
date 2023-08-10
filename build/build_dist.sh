@@ -138,7 +138,8 @@ function copy_migrator_jars(){
 
   cd ../..
   pwd
-  ls
+  ls -la
+  ls -la /app/dist/migrator
 
 }
 
