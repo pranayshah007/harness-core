@@ -7,7 +7,7 @@
 set -ex
 KEYS=$(git log --pretty=oneline --abbrev-commit |\
       awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
-      grep -o -iE '('CDS')-[0-9]+' | sort | uniq)
+      grep -o -iE '('SSCA')-[0-9]+' | sort | uniq)
 
 echo $KEYS
 
