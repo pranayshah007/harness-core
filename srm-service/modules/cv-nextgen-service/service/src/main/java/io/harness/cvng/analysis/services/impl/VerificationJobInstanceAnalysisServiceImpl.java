@@ -173,17 +173,28 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
 
   private static CanaryBlueGreenAdditionalInfo getBlueGreenAdditionalInfoForAutoVerificationType(
       VerificationJobInstance verificationJobInstance) {
+    AppliedDeploymentAnalysisType appliedDeploymentAnalysisType =
+        getAppliedDeploymentAnalysisTypeForAutoVerificationType(verificationJobInstance);
+    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.CANARY) {
+      return new CanaryAdditionalInfo();
+    } else {
+      return new BlueGreenAdditionalInfo();
+    }
+  }
+
+  public static AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisTypeForAutoVerificationType(
+      VerificationJobInstance verificationJobInstance) {
     Map<String, AppliedDeploymentAnalysisType> appliedDeploymentAnalysisTypeMap =
         verificationJobInstance.getAppliedDeploymentAnalysisTypeMap();
     if (Objects.nonNull(appliedDeploymentAnalysisTypeMap) && appliedDeploymentAnalysisTypeMap.size() > 0) {
       int numberOfCanaryAnalyses = getNumberOfCanaryAnalyses(appliedDeploymentAnalysisTypeMap);
       if (numberOfCanaryAnalyses > appliedDeploymentAnalysisTypeMap.size() / 2) {
-        return new CanaryAdditionalInfo();
+        return AppliedDeploymentAnalysisType.CANARY;
       } else {
-        return new BlueGreenAdditionalInfo();
+        return AppliedDeploymentAnalysisType.ROLLING;
       }
     } else {
-      return new BlueGreenAdditionalInfo();
+      return AppliedDeploymentAnalysisType.ROLLING;
     }
   }
 

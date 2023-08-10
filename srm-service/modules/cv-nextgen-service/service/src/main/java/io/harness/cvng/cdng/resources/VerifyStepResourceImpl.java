@@ -18,6 +18,8 @@ import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
+import io.harness.cvng.analysis.services.api.VerificationJobInstanceAnalysisService;
+import io.harness.cvng.analysis.services.impl.VerificationJobInstanceAnalysisServiceImpl;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
@@ -92,6 +94,7 @@ import org.apache.commons.lang3.StringUtils;
 public class VerifyStepResourceImpl implements VerifyStepResource {
   @Inject private CVNGStepTaskService stepTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
+  @Inject private VerificationJobInstanceAnalysisService verificationJobInstanceAnalysisService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
   @Inject private TelemetryReporter telemetryReporter;
@@ -147,7 +150,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
 
     // Send telemetry event
     AppliedDeploymentAnalysisType appliedDeploymentAnalysisType =
-        getAppliedDeploymentAnalysisType(deploymentVerificationJobInstanceSummary);
+        getFinalAppliedDeploymentAnalysisType(deploymentVerificationJobInstanceSummary, verificationJobInstance);
     if (featureFlagService.isFeatureFlagEnabled(
             verifyStepPathParams.getAccountIdentifier(), FeatureName.SRM_TELEMETRY.toString())) {
       sendTelemetryEvent(deploymentVerificationJobInstanceSummary.getStatus().toString(),
@@ -172,7 +175,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
             verifyStepPathParams.getAccountIdentifier(), verifyStepPathParams.getVerifyStepExecutionId()))
         .baselineOverview(getBaselineOverview(verificationSpec, verifyStepPathParams, appliedDeploymentAnalysisType,
             verificationJobInstance, deploymentVerificationJobInstanceSummary))
-        .controlDataStartTimestamp(getControlDataStartTimestamp(verificationJobInstance, appliedDeploymentAnalysisType))
+        .controlDataStartTimestamp(getControlDataStartTimestamp(verificationJobInstance))
         .testDataStartTimestamp(getTestDataStartTimestamp(verificationJobInstance))
         .build();
   }
@@ -236,14 +239,33 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
     return verificationJobInstanceService.pinOrUnpinBaseline(verifyStepPathParams, isBaseline.isBaseline());
   }
 
-  private static AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisType(
-      DeploymentVerificationJobInstanceSummary summary) {
+  private AppliedDeploymentAnalysisType getFinalAppliedDeploymentAnalysisType(
+      DeploymentVerificationJobInstanceSummary summary, VerificationJobInstance verificationJobInstance) {
     if (summary.getRisk() == Risk.NO_DATA
         || (summary.getRisk() == Risk.NO_ANALYSIS
             && summary.getAdditionalInfo().getType() != VerificationJobType.SIMPLE)) {
       return AppliedDeploymentAnalysisType.NO_ANALYSIS;
     } else {
-      return AppliedDeploymentAnalysisType.fromVerificationJobType(summary.getAdditionalInfo().getType());
+      return getAppliedDeploymentAnalysisTypeFromVerificationJobInstance(verificationJobInstance);
+    }
+  }
+
+  private AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisTypeFromVerificationJobInstance(
+      VerificationJobInstance verificationJobInstance) {
+    switch (verificationJobInstance.getResolvedJob().getType()) {
+      case CANARY:
+      case BLUE_GREEN:
+      case ROLLING:
+      case TEST:
+      case SIMPLE:
+        return AppliedDeploymentAnalysisType.fromVerificationJobType(
+            verificationJobInstance.getResolvedJob().getType());
+      case AUTO:
+        return VerificationJobInstanceAnalysisServiceImpl.getAppliedDeploymentAnalysisTypeForAutoVerificationType(
+            verificationJobInstance);
+      default:
+        throw new IllegalArgumentException(
+            "Unrecognised VerificationJobType " + verificationJobInstance.getResolvedJob().getType());
     }
   }
 
@@ -555,8 +577,9 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
     return testDataStartTimestamp;
   }
 
-  private Long getControlDataStartTimestamp(
-      VerificationJobInstance verificationJobInstance, AppliedDeploymentAnalysisType appliedDeploymentAnalysisType) {
+  private Long getControlDataStartTimestamp(VerificationJobInstance verificationJobInstance) {
+    AppliedDeploymentAnalysisType appliedDeploymentAnalysisType =
+        getAppliedDeploymentAnalysisTypeFromVerificationJobInstance(verificationJobInstance);
     Long controlDataStartTimestamp = null;
     TimeRange controlDataStartTimerange =
         deploymentTimeSeriesAnalysisService
