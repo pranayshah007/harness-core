@@ -7,13 +7,17 @@
 
 package io.harness.ng.core.user.service.impl;
 
+import static io.harness.NGConstants.ACCOUNT_ADMIN_ROLE;
+import static io.harness.NGConstants.PROJECT_ADMIN_ROLE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.createRoleAssignmentDTOs;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.USER;
+import static io.harness.ng.core.user.service.impl.NgUserServiceImpl.DEFAULT_PAGE_SIZE;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.REETIKA;
 
 import static java.util.Collections.singletonList;
@@ -25,8 +29,10 @@ import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -39,14 +45,18 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
+import io.harness.configuration.DeployVariant;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.beans.PageRequest;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.AccountOrgProjectHelper;
 import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.user.AddUserResponse;
@@ -61,6 +71,7 @@ import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.entities.UserMetadata.UserMetadataKeys;
 import io.harness.ng.core.user.exception.InvalidUserRemoveRequestException;
 import io.harness.ng.core.user.remote.dto.UserFilter;
+import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.LastAdminCheckService;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
@@ -78,6 +89,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBList;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -94,11 +106,15 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.TransactionTemplate;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(PL)
 public class NgUserServiceImplTest extends CategoryTest {
@@ -117,6 +133,7 @@ public class NgUserServiceImplTest extends CategoryTest {
   @Mock private DefaultUserGroupService defaultUserGroupService;
   @Mock private AccessControlClient accessControlClient;
   @Spy @Inject @InjectMocks private NgUserServiceImpl ngUserService;
+  @Mock Call call;
   private String accountIdentifier;
   private String orgIdentifier;
   private static final String ACCOUNT_VIEWER = "_account_viewer";
@@ -559,6 +576,89 @@ public class NgUserServiceImplTest extends CategoryTest {
     boolean result = ngUserService.busyPollUntilAccountRBACSetupCompletes(scope, userId, 3, 100);
     assertFalse(result);
     verify(accessControlClient, times(3)).hasAccess(any(), any(), any(), anyString());
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testListUsersHavingRole_community() {
+    String userId = randomAlphabetic(10);
+    List<String> userIds = List.of(userId);
+    List<UserMetadata> userMetadata = singletonList(UserMetadata.builder().userId(userId).build());
+
+    try (MockedStatic<DeployVariant> mockedStatic = Mockito.mockStatic(DeployVariant.class)) {
+      mockedStatic.when(() -> DeployVariant.isCommunity(any())).thenReturn(true);
+      when(userMembershipRepository.findAllUserIds(any(), any())).thenReturn(PageTestUtils.getPage(userIds, 1));
+      when(userMetadataRepository.findAll(any(), any())).thenReturn(PageTestUtils.getPage(userMetadata, 1));
+      List<UserMetadataDTO> result =
+          ngUserService.listUsersHavingRole(Scope.of(accountIdentifier, orgIdentifier, null), PROJECT_ADMIN_ROLE);
+      assertThat(result).isNotNull();
+      verify(userMembershipRepository, times(1)).findAllUserIds(any(), any());
+      verify(userMetadataRepository, times(1)).findAll(any(), any());
+      verify(accessControlAdminClient, times(0))
+          .getFilteredRoleAssignments(anyString(), any(), any(), anyInt(), anyInt(), any());
+    }
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testListUsersHavingRole_non_community() throws IOException {
+    Scope scope = Scope.of(accountIdentifier, orgIdentifier, null);
+    try (MockedStatic<DeployVariant> mockedStatic = Mockito.mockStatic(DeployVariant.class)) {
+      mockedStatic.when(() -> DeployVariant.isCommunity(any())).thenReturn(false);
+      when(call.execute())
+          .thenReturn(Response.success(
+              ResponseDTO.newResponse(PageResponse.getEmptyPageResponse(PageRequest.builder().build()))));
+      when(accessControlAdminClient.getFilteredRoleAssignments(anyString(), any(), any(), anyInt(), anyInt(), any()))
+          .thenReturn(call);
+      when(userMetadataRepository.findAll(any(), any())).thenReturn(PageTestUtils.getPage(Lists.newArrayList(), 0));
+      List<UserMetadataDTO> result = ngUserService.listUsersHavingRole(scope, PROJECT_ADMIN_ROLE);
+      assertThat(result).isNotNull().isEmpty();
+      ArgumentCaptor<RoleAssignmentFilterDTO> argumentCaptor = ArgumentCaptor.forClass(RoleAssignmentFilterDTO.class);
+      verify(accessControlAdminClient, times(1))
+          .getFilteredRoleAssignments(eq(scope.getAccountIdentifier()), eq(scope.getOrgIdentifier()),
+              eq(scope.getProjectIdentifier()), eq(0), eq(DEFAULT_PAGE_SIZE), argumentCaptor.capture());
+      assertThat(argumentCaptor.getValue().getRoleFilter()).hasSize(1).containsExactly(PROJECT_ADMIN_ROLE);
+    }
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testIsAccountAdmin_community() {
+    String userId = randomAlphabetic(10);
+    UserMembership userMembership = UserMembership.builder().userId(userId).build();
+    try (MockedStatic<DeployVariant> mockedStatic = Mockito.mockStatic(DeployVariant.class)) {
+      mockedStatic.when(() -> DeployVariant.isCommunity(any())).thenReturn(true);
+      when(userMembershipRepository.findOne(any())).thenReturn(userMembership);
+      boolean result = ngUserService.isAccountAdmin(userId, accountIdentifier);
+      assertThat(result).isTrue();
+      verify(accessControlAdminClient, times(0))
+          .getFilteredRoleAssignments(anyString(), any(), any(), anyInt(), anyInt(), any());
+    }
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testIsAccountAdmin_non_community() throws IOException {
+    String userId = randomAlphabetic(10);
+    try (MockedStatic<DeployVariant> mockedStatic = Mockito.mockStatic(DeployVariant.class)) {
+      mockedStatic.when(() -> DeployVariant.isCommunity(any())).thenReturn(false);
+      when(call.execute())
+          .thenReturn(Response.success(
+              ResponseDTO.newResponse(PageResponse.getEmptyPageResponse(PageRequest.builder().build()))));
+      when(accessControlAdminClient.getFilteredRoleAssignments(anyString(), any(), any(), anyInt(), anyInt(), any()))
+          .thenReturn(call);
+      boolean result = ngUserService.isAccountAdmin(userId, accountIdentifier);
+      assertThat(result).isFalse();
+      ArgumentCaptor<RoleAssignmentFilterDTO> argumentCaptor = ArgumentCaptor.forClass(RoleAssignmentFilterDTO.class);
+      verify(accessControlAdminClient, times(1))
+          .getFilteredRoleAssignments(
+              eq(accountIdentifier), eq(null), eq(null), eq(0), eq(DEFAULT_PAGE_SIZE), argumentCaptor.capture());
+      assertThat(argumentCaptor.getValue().getRoleFilter()).hasSize(1).containsExactly(ACCOUNT_ADMIN_ROLE);
+    }
   }
 
   private void assertInviteUser(Scope scope, List<String> emailsExpectedToBeInvited, AddUsersDTO addUsersDTO) {
