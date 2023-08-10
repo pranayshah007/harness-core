@@ -29,9 +29,7 @@ function copy_common_files(){
 	fi
 }
 
-pwd
-ls -la
-echo "current director"
+
 mkdir -p dist/$SERVICE_NAME
 cd dist/$SERVICE_NAME
 
@@ -115,7 +113,7 @@ function copy_dms_jars(){
 }
 
 function copy_migrator_jars(){
-dist/migrator
+
   cp ${BAZEL_BIN}/100-migrator/module_deploy.jar migrator-capsule.jar
   cp ../../keystore.jks .
   cp ../../360-cg-manager/key.pem .
@@ -134,14 +132,11 @@ dist/migrator
   mv scripts/start_process_bazel.sh scripts/start_process.sh
   ls ../../dockerization/migrator/scripts/
   copy_common_files
-  pwd 
-  ls
 
   java -jar migrator-capsule.jar scan-classpath-metadata
 
   cd ../..
   pwd
-  ls -la
   ls -la /app/dist/migrator
 
 }
