@@ -325,10 +325,10 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     List<String> manifestOverrideFiles = getManifestOverrideFlies(request, releaseDetails.toContextMap());
     serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
         k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
-    this.resources =
-        k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,
-            this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName, request.isLocalOverrideFeatureFlag(),
-            isErrorFrameworkSupported(), request.isInCanaryWorkflow(), executionLogCallback);
+    this.resources = k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams,
+        manifestOverrideFiles, this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName,
+        request.isLocalOverrideFeatureFlag(), isErrorFrameworkSupported(), request.isInCanaryWorkflow(),
+        request.isDisableFabric8(), executionLogCallback);
     k8sRequestHandlerContext.setResources(resources);
 
     serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,

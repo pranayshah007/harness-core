@@ -238,7 +238,7 @@ public class K8sRollingBaseHandler {
       K8sDelegateTaskParams k8sDelegateTaskParams, List<String> manifestOverrideFiles,
       KubernetesConfig kubernetesConfig, String manifestFilesDirectory, String releaseName,
       boolean isLocalOverrideFeatureFlag, boolean isErrorFrameworkSupported, boolean isInCanaryWorkflow,
-      LogCallback executionLogCallback) throws Exception {
+      boolean shouldDisableFabric8, LogCallback executionLogCallback) throws Exception {
     k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);
 
     List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
@@ -250,8 +250,8 @@ public class K8sRollingBaseHandler {
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());
 
     if (isInCanaryWorkflow) {
-      updateDestinationRuleWithSubsets(executionLogCallback, resources, kubernetesConfig);
-      updateVirtualServiceWithRoutes(executionLogCallback, resources, kubernetesConfig);
+      updateDestinationRuleWithSubsets(executionLogCallback, resources, shouldDisableFabric8 ? null : kubernetesConfig);
+      updateVirtualServiceWithRoutes(executionLogCallback, resources, shouldDisableFabric8 ? null : kubernetesConfig);
     }
 
     executionLogCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));

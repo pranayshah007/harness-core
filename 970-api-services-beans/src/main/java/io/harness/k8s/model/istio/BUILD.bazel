@@ -11,9 +11,8 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//960-api-services/src/main/java/io/harness/k8s:module",
-        "//970-api-services-beans/src/main/java/io/harness/k8s/model/istio:module",
-        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//:lombok",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],
 )
 

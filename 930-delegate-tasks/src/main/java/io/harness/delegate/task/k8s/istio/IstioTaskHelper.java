@@ -33,18 +33,19 @@ import io.harness.k8s.model.IstioDestinationWeight;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
+import io.harness.k8s.model.istio.Destination;
+import io.harness.k8s.model.istio.HttpRouteDestination;
+import io.harness.k8s.model.istio.PortSelector;
+import io.harness.k8s.model.istio.Subset;
 import io.harness.logging.LogCallback;
 import io.harness.serializer.YamlUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.istio.api.networking.v1alpha3.Destination;
 import io.fabric8.istio.api.networking.v1alpha3.DestinationRule;
 import io.fabric8.istio.api.networking.v1alpha3.DestinationRuleList;
 import io.fabric8.istio.api.networking.v1alpha3.HTTPRoute;
 import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestination;
-import io.fabric8.istio.api.networking.v1alpha3.PortSelector;
-import io.fabric8.istio.api.networking.v1alpha3.Subset;
 import io.fabric8.istio.api.networking.v1alpha3.TCPRoute;
 import io.fabric8.istio.api.networking.v1alpha3.TLSRoute;
 import io.fabric8.istio.api.networking.v1alpha3.VirtualService;
@@ -71,31 +72,46 @@ public class IstioTaskHelper {
   public static final String ISTIO_DESTINATION_TEMPLATE = "host: $ISTIO_DESTINATION_HOST_NAME\n"
       + "subset: $ISTIO_DESTINATION_SUBSET_NAME";
 
-  public List<Subset> generateSubsetsForDestinationRule(List<String> subsetNames) {
+  public List<Subset> getSubsets(List<String> subsetNames) {
     List<Subset> subsets = new ArrayList<>();
 
     for (String subsetName : subsetNames) {
       Subset subset = new Subset();
       subset.setName(subsetName);
+      subset.setLabels(getLabelsFromSubsetName(subsetName));
+      subsets.add(subset);
+    }
 
-      if (subsetName.equals(HarnessLabelValues.trackCanary)) {
-        Map<String, String> labels = new HashMap<>();
+    return subsets;
+  }
+
+  private Map<String, String> getLabelsFromSubsetName(String subsetName) {
+    Map<String, String> labels = new HashMap<>();
+    switch (subsetName) {
+      case HarnessLabelValues.trackCanary:
         labels.put(HarnessLabels.track, HarnessLabelValues.trackCanary);
-        subset.setLabels(labels);
-      } else if (subsetName.equals(HarnessLabelValues.trackStable)) {
-        Map<String, String> labels = new HashMap<>();
+        break;
+      case HarnessLabelValues.trackStable:
         labels.put(HarnessLabels.track, HarnessLabelValues.trackStable);
-        subset.setLabels(labels);
-      } else if (subsetName.equals(HarnessLabelValues.colorBlue)) {
-        Map<String, String> labels = new HashMap<>();
+        break;
+      case HarnessLabelValues.colorBlue:
         labels.put(HarnessLabels.color, HarnessLabelValues.colorBlue);
-        subset.setLabels(labels);
-      } else if (subsetName.equals(HarnessLabelValues.colorGreen)) {
-        Map<String, String> labels = new HashMap<>();
+        break;
+      case HarnessLabelValues.colorGreen:
         labels.put(HarnessLabels.color, HarnessLabelValues.colorGreen);
-        subset.setLabels(labels);
-      }
+        break;
+    }
+    return labels;
+  }
 
+  public List<io.fabric8.istio.api.networking.v1alpha3.Subset> generateSubsetsForDestinationRule(
+      List<String> subsetNames) {
+    List<io.fabric8.istio.api.networking.v1alpha3.Subset> subsets = new ArrayList<>();
+
+    for (String subsetName : subsetNames) {
+      io.fabric8.istio.api.networking.v1alpha3.Subset subset = new io.fabric8.istio.api.networking.v1alpha3.Subset();
+      subset.setName(subsetName);
+      subset.setLabels(getLabelsFromSubsetName(subsetName));
       subsets.add(subset);
     }
 
@@ -117,13 +133,14 @@ public class IstioTaskHelper {
     }
   }
 
-  private List<HTTPRouteDestination> generateDestinationWeights(
-      List<IstioDestinationWeight> istioDestinationWeights, String host, PortSelector portSelector) throws IOException {
+  private List<HTTPRouteDestination> generateDestinationWeights(List<IstioDestinationWeight> istioDestinationWeights,
+      String host, io.fabric8.istio.api.networking.v1alpha3.PortSelector portSelector) throws IOException {
     List<HTTPRouteDestination> destinationWeights = new ArrayList<>();
 
     for (IstioDestinationWeight istioDestinationWeight : istioDestinationWeights) {
       String destinationYaml = getDestinationYaml(istioDestinationWeight.getDestination(), host);
-      Destination destination = new YamlUtils().read(destinationYaml, Destination.class);
+      io.fabric8.istio.api.networking.v1alpha3.Destination destination =
+          new YamlUtils().read(destinationYaml, io.fabric8.istio.api.networking.v1alpha3.Destination.class);
       destination.setPort(portSelector);
 
       HTTPRouteDestination destinationWeight = new HTTPRouteDestination();
@@ -152,7 +169,8 @@ public class IstioTaskHelper {
     return routes.get(0).getDestination().getHost();
   }
 
-  private PortSelector getPortSelectorFromRoute(List<HTTPRouteDestination> routes) {
+  private io.fabric8.istio.api.networking.v1alpha3.PortSelector getPortSelectorFromRoute(
+      List<HTTPRouteDestination> routes) {
     return routes.get(0).getDestination().getPort();
   }
 
@@ -184,12 +202,89 @@ public class IstioTaskHelper {
     List<HTTPRoute> http = virtualService.getSpec().getHttp();
     if (isNotEmpty(http)) {
       String host = getHostFromRoute(http.get(0).getRoute());
-      PortSelector portSelector = getPortSelectorFromRoute(http.get(0).getRoute());
+      io.fabric8.istio.api.networking.v1alpha3.PortSelector portSelector =
+          getPortSelectorFromRoute(http.get(0).getRoute());
       http.get(0).setRoute(generateDestinationWeights(istioDestinationWeights, host, portSelector));
     }
   }
 
-  private VirtualService updateVirtualServiceManifestFilesWithRoutes(List<KubernetesResource> resources,
+  private void validateRoutesInVirtualService(KubernetesResource virtualService) {
+    List<Object> http = (List<Object>) virtualService.getField("spec.http");
+    List<Object> tcp = (List<Object>) virtualService.getField("spec.tcp");
+    List<Object> tls = (List<Object>) virtualService.getField("spec.tls");
+
+    if (isEmpty(http)) {
+      throw new InvalidRequestException(
+          "Http route is not present in VirtualService. Only Http routes are allowed", USER);
+    }
+
+    if (isNotEmpty(tcp) || isNotEmpty(tls)) {
+      throw new InvalidRequestException("Only Http routes are allowed in VirtualService for Traffic split", USER);
+    }
+
+    if (http.size() > 1) {
+      throw new InvalidRequestException("Only one route is allowed in VirtualService", USER);
+    }
+  }
+
+  private String getHostFromRoute(KubernetesResource virtualService) {
+    if (isEmpty((List<Object>) virtualService.getField("spec.http[0].route"))) {
+      throw new InvalidRequestException("No routes exist in VirtualService", USER);
+    }
+
+    if (null == virtualService.getField("spec.http[0].route[0].destination")) {
+      throw new InvalidRequestException("No destination exist in VirtualService", USER);
+    }
+
+    if (isBlank((String) virtualService.getField("spec.http[0].route[0].destination.host"))) {
+      throw new InvalidRequestException("No host exist in VirtualService", USER);
+    }
+
+    return (String) virtualService.getField("spec.http[0].route[0].destination.host");
+  }
+
+  private List<HttpRouteDestination> generateDestinationWeights(
+      List<IstioDestinationWeight> istioDestinationWeights, String host, String portNumber) throws IOException {
+    List<HttpRouteDestination> destinationWeights = new ArrayList<>();
+
+    for (IstioDestinationWeight istioDestinationWeight : istioDestinationWeights) {
+      String destinationYaml = getDestinationYaml(istioDestinationWeight.getDestination(), host);
+      Destination destination = new YamlUtils().read(destinationYaml, Destination.class);
+      if (isNotEmpty(portNumber)) {
+        try {
+          destination.setPort(PortSelector.builder().number(Integer.valueOf(portNumber)).build());
+        } catch (NumberFormatException exception) {
+          throw new InvalidRequestException(
+              "Invalid format of port number. String cannot be converted to Integer format", USER);
+        }
+      }
+
+      HttpRouteDestination destinationWeight = new HttpRouteDestination();
+      destinationWeight.setWeight(Integer.parseInt(istioDestinationWeight.getWeight()));
+      destinationWeight.setDestination(destination);
+
+      destinationWeights.add(destinationWeight);
+    }
+
+    return destinationWeights;
+  }
+
+  public void updateVirtualServiceWithDestinationWeights(List<IstioDestinationWeight> istioDestinationWeights,
+      KubernetesResource virtualService, LogCallback executionLogCallback) throws IOException {
+    validateRoutesInVirtualService(virtualService);
+
+    executionLogCallback.saveExecutionLog("\nUpdating VirtualService with destination weights");
+
+    List<Object> http = (List<Object>) virtualService.getField("spec.http");
+    if (isNotEmpty(http)) {
+      String host = getHostFromRoute(virtualService);
+      String portNumber = (String) virtualService.getField("spec.http[0].route[0].destination.port.number");
+      virtualService.setField(
+          "spec.http[0].route", generateDestinationWeights(istioDestinationWeights, host, portNumber));
+    }
+  }
+
+  private void updateVirtualServiceManifestFilesWithRoutes(List<KubernetesResource> resources,
       KubernetesConfig kubernetesConfig, List<IstioDestinationWeight> istioDestinationWeights,
       LogCallback executionLogCallback) throws IOException {
     List<KubernetesResource> virtualServiceResources =
@@ -200,7 +295,7 @@ public class IstioTaskHelper {
             .collect(toList());
 
     if (isEmpty(virtualServiceResources)) {
-      return null;
+      return;
     }
 
     if (virtualServiceResources.size() > 1) {
@@ -210,20 +305,27 @@ public class IstioTaskHelper {
       throw new InvalidRequestException(msg, USER);
     }
 
+    // TODO: remove the kubeconfig field in the method when FF: CDS_DISABLE_FABRIC8_NG is GA.
+    // kubeconfig here is only being used to get fabric8 kubernetes client which convert the resource to VirtualService
+    // format which can be achieved without it as well.
+    KubernetesResource kubernetesResource = virtualServiceResources.get(0);
+    if (kubernetesConfig == null) {
+      updateVirtualServiceWithDestinationWeights(istioDestinationWeights, kubernetesResource, executionLogCallback);
+      kubernetesResource.setSpec(KubernetesHelperService.toYaml(kubernetesResource.getValue()));
+      return;
+    }
+
     try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
       kubernetesClient.resources(VirtualService.class, VirtualServiceList.class);
-      KubernetesResource kubernetesResource = virtualServiceResources.get(0);
       InputStream inputStream = IOUtils.toInputStream(kubernetesResource.getSpec(), UTF_8);
       VirtualService virtualService = (VirtualService) kubernetesClient.load(inputStream).items().get(0);
       updateVirtualServiceWithDestinationWeights(istioDestinationWeights, virtualService, executionLogCallback);
 
       kubernetesResource.setSpec(KubernetesHelper.toYaml(virtualService));
-
-      return virtualService;
     }
   }
 
-  public VirtualService updateVirtualServiceManifestFilesWithRoutesForCanary(List<KubernetesResource> resources,
+  public void updateVirtualServiceManifestFilesWithRoutesForCanary(List<KubernetesResource> resources,
       KubernetesConfig kubernetesConfig, LogCallback executionLogCallback) throws IOException {
     List<IstioDestinationWeight> istioDestinationWeights = new ArrayList<>();
     istioDestinationWeights.add(
@@ -231,12 +333,12 @@ public class IstioTaskHelper {
     istioDestinationWeights.add(
         IstioDestinationWeight.builder().destination(canaryDestinationExpression).weight("0").build());
 
-    return updateVirtualServiceManifestFilesWithRoutes(
+    updateVirtualServiceManifestFilesWithRoutes(
         resources, kubernetesConfig, istioDestinationWeights, executionLogCallback);
   }
 
-  public DestinationRule updateDestinationRuleManifestFilesWithSubsets(List<KubernetesResource> resources,
-      List<String> subsets, KubernetesConfig kubernetesConfig, LogCallback executionLogCallback) throws IOException {
+  public void updateDestinationRuleManifestFilesWithSubsets(List<KubernetesResource> resources, List<String> subsets,
+      KubernetesConfig kubernetesConfig, LogCallback executionLogCallback) throws IOException {
     List<KubernetesResource> destinationRuleResources =
         resources.stream()
             .filter(
@@ -245,7 +347,7 @@ public class IstioTaskHelper {
             .collect(toList());
 
     if (isEmpty(destinationRuleResources)) {
-      return null;
+      return;
     }
 
     if (destinationRuleResources.size() > 1) {
@@ -255,17 +357,24 @@ public class IstioTaskHelper {
       throw new InvalidRequestException(msg, USER);
     }
 
+    // TODO: remove the kubeconfig field in the method when FF: CDS_DISABLE_FABRIC8_NG is GA.
+    // kubeconfig here is only being used to get fabric8 kubernetes client which convert the resource to DestinationRule
+    // format which can be achieved without it as well.
+    KubernetesResource kubernetesResource = destinationRuleResources.get(0);
+    if (kubernetesConfig == null) {
+      kubernetesResource.setField("spec.subsets", getSubsets(subsets));
+      kubernetesResource.setSpec(KubernetesHelperService.toYaml(kubernetesResource.getValue()));
+      return;
+    }
+
     try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
       kubernetesClient.resources(DestinationRule.class, DestinationRuleList.class);
 
-      KubernetesResource kubernetesResource = destinationRuleResources.get(0);
       InputStream inputStream = IOUtils.toInputStream(kubernetesResource.getSpec(), UTF_8);
       DestinationRule destinationRule = (DestinationRule) kubernetesClient.load(inputStream).items().get(0);
       destinationRule.getSpec().setSubsets(generateSubsetsForDestinationRule(subsets));
 
       kubernetesResource.setSpec(KubernetesHelper.toYaml(destinationRule));
-
-      return destinationRule;
     }
   }
 }

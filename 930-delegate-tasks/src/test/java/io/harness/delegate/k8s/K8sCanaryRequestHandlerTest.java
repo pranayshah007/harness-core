@@ -12,6 +12,7 @@ import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -167,8 +168,6 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     String releaseName = "releaseName";
     List<String> valuesYamlList = emptyList();
     List<String> openshiftParamList = singletonList("file");
-    List<FileData> manifestFiles = emptyList();
-    List<KubernetesResource> kubernetesResources = emptyList();
     K8sCanaryDeployRequest k8sCanaryDeployRequest = K8sCanaryDeployRequest.builder()
                                                         .releaseName(releaseName)
                                                         .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
@@ -178,29 +177,91 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                                                         .skipDryRun(skipDryRun)
                                                         .timeoutIntervalInMin(timeoutIntervalInMin)
                                                         .build();
+    List<FileData> manifestFiles = emptyList();
+    List<KubernetesResource> kubernetesResources = emptyList();
     K8sDelegateTaskParams delegateTaskParams =
         K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
 
     when(k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
-             openshiftParamList, releaseName, namespace, logCallback, timeoutIntervalInMin))
+             k8sCanaryDeployRequest.getOpenshiftParamList(), k8sCanaryDeployRequest.getReleaseName(), namespace,
+             logCallback, timeoutIntervalInMin))
         .thenReturn(manifestFiles);
 
     when(k8sTaskHelperBase.readManifests(manifestFiles, logCallback, true)).thenReturn(kubernetesResources);
     doNothing().when(k8sTaskHelperBase).deleteSkippedManifestFiles(null, logCallback);
 
     k8sCanaryRequestHandler.init(k8sCanaryDeployRequest, delegateTaskParams, logCallback, serviceHookHandler);
-    int wantedDryRunInvocations = skipDryRun ? 0 : 1;
+    int wantedDryRunInvocations = k8sCanaryDeployRequest.isSkipDryRun() ? 0 : 1;
     verify(k8sTaskHelperBase, times(wantedDryRunInvocations)).dryRunManifests(any(), any(), any(), any(), eq(true));
     verify(k8sTaskHelperBase, times(1)).readManifests(manifestFiles, logCallback, true);
     verify(k8sTaskHelperBase, times(1))
-        .renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory, openshiftParamList,
-            releaseName, namespace, logCallback, timeoutIntervalInMin);
+        .renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
+            k8sCanaryDeployRequest.getOpenshiftParamList(), k8sCanaryDeployRequest.getReleaseName(), namespace,
+            logCallback, timeoutIntervalInMin);
     verify(k8sTaskHelperBase, times(1)).deleteSkippedManifestFiles(manifestFileDirectory, logCallback);
     verify(releaseHandler, times(1)).getReleaseHistory(any(), any());
     verify(k8sCanaryBaseHandler, times(1))
         .updateDestinationRuleManifestFilesWithSubsets(kubernetesResources, kubernetesConfig, logCallback);
     verify(k8sCanaryBaseHandler, times(1))
         .updateVirtualServiceManifestFilesWithRoutes(kubernetesResources, kubernetesConfig, logCallback);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testDisableFabric8() throws Exception {
+    testDisableFabric8(true);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testNotDisableFabric8() throws Exception {
+    testDisableFabric8(false);
+  }
+
+  private void testDisableFabric8(boolean disableFabric8) throws Exception {
+    String releaseName = "releaseName";
+    List<String> valuesYamlList = emptyList();
+    List<String> openshiftParamList = singletonList("file");
+    K8sCanaryDeployRequest k8sCanaryDeployRequest = K8sCanaryDeployRequest.builder()
+                                                        .releaseName(releaseName)
+                                                        .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
+                                                        .manifestDelegateConfig(manifestDelegateConfig)
+                                                        .valuesYamlList(valuesYamlList)
+                                                        .openshiftParamList(openshiftParamList)
+                                                        .disableFabric8(disableFabric8)
+                                                        .timeoutIntervalInMin(timeoutIntervalInMin)
+                                                        .build();
+    List<FileData> manifestFiles = emptyList();
+    List<KubernetesResource> kubernetesResources = emptyList();
+    K8sDelegateTaskParams delegateTaskParams =
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
+
+    when(k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
+             k8sCanaryDeployRequest.getOpenshiftParamList(), k8sCanaryDeployRequest.getReleaseName(), namespace,
+             logCallback, timeoutIntervalInMin))
+        .thenReturn(manifestFiles);
+
+    when(k8sTaskHelperBase.readManifests(manifestFiles, logCallback, true)).thenReturn(kubernetesResources);
+    doNothing().when(k8sTaskHelperBase).deleteSkippedManifestFiles(null, logCallback);
+
+    k8sCanaryRequestHandler.init(k8sCanaryDeployRequest, delegateTaskParams, logCallback, serviceHookHandler);
+    int wantedDryRunInvocations = 1;
+    verify(k8sTaskHelperBase, times(wantedDryRunInvocations)).dryRunManifests(any(), any(), any(), any(), eq(true));
+    verify(k8sTaskHelperBase, times(1)).readManifests(manifestFiles, logCallback, true);
+    verify(k8sTaskHelperBase, times(1))
+        .renderTemplate(delegateTaskParams, manifestDelegateConfig, manifestFileDirectory,
+            k8sCanaryDeployRequest.getOpenshiftParamList(), k8sCanaryDeployRequest.getReleaseName(), namespace,
+            logCallback, timeoutIntervalInMin);
+    verify(k8sTaskHelperBase, times(1)).deleteSkippedManifestFiles(manifestFileDirectory, logCallback);
+    verify(releaseHandler, times(1)).getReleaseHistory(any(), any());
+    verify(k8sCanaryBaseHandler, times(1))
+        .updateDestinationRuleManifestFilesWithSubsets(
+            kubernetesResources, disableFabric8 ? null : kubernetesConfig, logCallback);
+    verify(k8sCanaryBaseHandler, times(1))
+        .updateVirtualServiceManifestFilesWithRoutes(
+            kubernetesResources, disableFabric8 ? null : kubernetesConfig, logCallback);
   }
 
   @Test
