@@ -8,19 +8,18 @@
 FROM us.gcr.io/platform-205701/cie-agent-harness-core-jdk11:latest as builder
 
 RUN mkdir -p /app
-COPY . /app
 ARG GCP_KEY
 ENV SERVICE_NAME="migrator"
+COPY . /app
 WORKDIR /app
 
 ENV BUILD_PURPOSE=DEVELOPMENT
-ENV PLATFORM="jenkins"
 
 RUN chmod +x \
  /app/build/feature_build.sh \
  /app/scripts/bazel/generate_credentials.sh \
  && /app/scripts/bazel/generate_credentials.sh \
- && /app/build/feature_build.sh $GCP_KEY \
+ && /app/build/feature_build.sh $GCP_KEY
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
 
@@ -31,7 +30,7 @@ COPY --chown=65534:65534--from=builder \
   /app/dist/100-migrator/keystore.jks \
   /app/dist/100-migrator/config.yml \
   /app/dist/100-migrator/redisson-jcache.yaml \
-  /app/dist/100-migrator/ protocol.info \
+  /app/dist/100-migrator/protocol.info \
   /app/dist/100-migrator/default.jfc \
   /app/dist/100-migrator/profile.jfc \
   /app/dist/100-migrator/scripts \
@@ -43,9 +42,6 @@ RUN microdnf install -y yum
 RUN yum -y install fontconfig dejavu-sans-fonts wget
 RUN chmod +x /usr/bin/yq
 USER root
-RUN microdnf install -y yum
-RUN yum -y install fontconfig dejavu-sans-fonts wget
-RUN chmod +x /usr/bin/yq
 
 RUN chmod +x /opt/harness/*.sh
 
