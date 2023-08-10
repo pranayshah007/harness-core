@@ -84,7 +84,7 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
 
   @VisibleForTesting
   void performTest(SshSessionConfig hostConnectionTest) throws Exception {
-    if (hostConnectionTest.isUseSshClient()) {
+    if (hostConnectionTest.isUseSshClient() || hostConnectionTest.isVaultSSH()) {
       SshClientManager.test(hostConnectionTest);
     } else {
       getSSHSession(hostConnectionTest).disconnect();

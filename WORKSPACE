@@ -4857,7 +4857,7 @@ plain_artifacts = [
     "com.jakewharton.retrofit:retrofit1-okhttp3-client:1.1.0",
     "com.jakewharton.retrofit:retrofit2-reactor-adapter:2.1.0",
     "com.jayway.jsonpath:json-path:2.2.0",
-    "com.jcraft.harness:jsch-0-1-54-harness-patch:1.1",
+    "com.github.mwiede:jsch:0.2.8",
     "com.jcraft:jzlib:1.1.3",
     "com.lmax:disruptor:jar:3.4.2",
     "com.mashape.unirest:unirest-java:1.4.9",
@@ -5574,7 +5574,7 @@ maven_install(
     maven_install_json = "//project:main_maven_install.json",
     override_targets = {
         "org.apache.commons:commons-io": "@maven//:commons_io_commons_io",
-        "com.jcraft:jsch": "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
+        "com.jcraft:jsch": "@maven//:com_github_mwiede_jsch",
         "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongodb_driver_core",
     },
     repositories = [
