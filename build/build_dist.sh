@@ -29,6 +29,8 @@ function copy_common_files(){
 	fi
 }
 
+pwd
+echo "current director"
 mkdir -p dist/$SERVICE_NAME
 cd dist/$SERVICE_NAME
 
