@@ -27,6 +27,7 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
+import io.harness.configuration.DeployVariant;
 import io.harness.licensing.Edition;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.core.api.UserGroupService;
@@ -45,6 +46,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 
 @OwnedBy(PL)
@@ -65,18 +68,20 @@ public class LastAdminCheckServiceImplTest extends CategoryTest {
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void doesAdminExistAfterUserDeletionCommunityEdition() {
-    when(licenseService.calculateAccountEdition(accountIdentifier)).thenReturn(Edition.COMMUNITY);
-    String userIdentifier = randomAlphabetic(10);
-    LastAdminCheckFilter lastAdminCheckFilter = new LastAdminCheckFilter(userIdentifier, null);
+    try (MockedStatic<DeployVariant> mockedStatic = Mockito.mockStatic(DeployVariant.class)) {
+      mockedStatic.when(() -> DeployVariant.isCommunity(any())).thenReturn(true);
+      String userIdentifier = randomAlphabetic(10);
+      LastAdminCheckFilter lastAdminCheckFilter = new LastAdminCheckFilter(userIdentifier, null);
 
-    // user found in user membership
-    when(ngUserService.listUserIds(Scope.of(accountIdentifier, null, null)))
-        .thenReturn(Lists.newArrayList(randomAlphabetic(11)));
-    assertTrue(lastAdminCheckService.doesAdminExistAfterRemoval(accountIdentifier, lastAdminCheckFilter));
+      // user found in user membership
+      when(ngUserService.listUserIds(Scope.of(accountIdentifier, null, null)))
+          .thenReturn(Lists.newArrayList(randomAlphabetic(11)));
+      assertTrue(lastAdminCheckService.doesAdminExistAfterRemoval(accountIdentifier, lastAdminCheckFilter));
 
-    // user not found in user membership
-    when(ngUserService.listUserIds(Scope.of(accountIdentifier, null, null))).thenReturn(emptyList());
-    assertFalse(lastAdminCheckService.doesAdminExistAfterRemoval(accountIdentifier, lastAdminCheckFilter));
+      // user not found in user membership
+      when(ngUserService.listUserIds(Scope.of(accountIdentifier, null, null))).thenReturn(emptyList());
+      assertFalse(lastAdminCheckService.doesAdminExistAfterRemoval(accountIdentifier, lastAdminCheckFilter));
+    }
   }
 
   @Test
@@ -120,11 +125,13 @@ public class LastAdminCheckServiceImplTest extends CategoryTest {
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void doesAdminExistAfterUserGroupDeletionCommunityEdition() {
-    when(licenseService.calculateAccountEdition(accountIdentifier)).thenReturn(Edition.COMMUNITY);
-    String userGroupIdentifier = randomAlphabetic(10);
-    LastAdminCheckFilter lastAdminCheckFilter = new LastAdminCheckFilter(null, userGroupIdentifier);
+    try (MockedStatic<DeployVariant> mockedStatic = Mockito.mockStatic(DeployVariant.class)) {
+      mockedStatic.when(() -> DeployVariant.isCommunity(any())).thenReturn(true);
+      String userGroupIdentifier = randomAlphabetic(10);
+      LastAdminCheckFilter lastAdminCheckFilter = new LastAdminCheckFilter(null, userGroupIdentifier);
 
-    assertTrue(lastAdminCheckService.doesAdminExistAfterRemoval(accountIdentifier, lastAdminCheckFilter));
+      assertTrue(lastAdminCheckService.doesAdminExistAfterRemoval(accountIdentifier, lastAdminCheckFilter));
+    }
   }
 
   @Test
@@ -178,12 +185,14 @@ public class LastAdminCheckServiceImplTest extends CategoryTest {
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void doesAdminExistAfterUserRemovalFromUserGroupCommunityEdition() {
-    when(licenseService.calculateAccountEdition(accountIdentifier)).thenReturn(Edition.COMMUNITY);
-    String userIdentifier = randomAlphabetic(10);
-    String userGroupIdentifier = randomAlphabetic(11);
-    LastAdminCheckFilter lastAdminCheckFilter = new LastAdminCheckFilter(userIdentifier, userGroupIdentifier);
+    try (MockedStatic<DeployVariant> mockedStatic = Mockito.mockStatic(DeployVariant.class)) {
+      mockedStatic.when(() -> DeployVariant.isCommunity(any())).thenReturn(true);
+      String userIdentifier = randomAlphabetic(10);
+      String userGroupIdentifier = randomAlphabetic(11);
+      LastAdminCheckFilter lastAdminCheckFilter = new LastAdminCheckFilter(userIdentifier, userGroupIdentifier);
 
-    assertTrue(lastAdminCheckService.doesAdminExistAfterRemoval(accountIdentifier, lastAdminCheckFilter));
+      assertTrue(lastAdminCheckService.doesAdminExistAfterRemoval(accountIdentifier, lastAdminCheckFilter));
+    }
   }
 
   @Test
