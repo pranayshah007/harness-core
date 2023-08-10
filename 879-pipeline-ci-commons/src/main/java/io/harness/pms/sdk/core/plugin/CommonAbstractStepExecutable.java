@@ -205,7 +205,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
   private AsyncExecutableResponse executeK8AsyncAfterRbac(Ambiance ambiance, String stepIdentifier, String runtimeId,
       CIStepInfo ciStepInfo, String stepParametersName, String accountId, String logKey, long timeoutInMillis,
       String stringTimeout, K8StageInfraDetails k8StageInfraDetails, StageDetails stageDetails) {
-    String parkedTaskId = ciDelegateTaskExecutor.queueParkedDelegateTask(ambiance, timeoutInMillis, accountId);
+    String parkedTaskId = ciDelegateTaskExecutor.queueParkedDelegateTask(ambiance, timeoutInMillis, accountId, List.of());
     OSType os = getK8OS(k8StageInfraDetails.getInfrastructure());
     String podName = k8StageInfraDetails.getPodName();
     UnitStep unitStep =
@@ -525,7 +525,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
                                            .build();
     List<TaskSelector> taskSelectors = fetchDelegateSelector(ambiance);
     return queueDelegateTask(ambiance, timeout, accountId, executor, params,
-        taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>());
+        taskSelectors, new ArrayList<>());
   }
 
   protected abstract String getDelegateSvcEndpoint(Ambiance ambiance);
@@ -533,8 +533,8 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
   protected abstract boolean getIsLocal(Ambiance ambiance);
 
   private String queueDelegateTask(Ambiance ambiance, long timeout, String accountId, CIDelegateTaskExecutor executor,
-      CIExecuteStepTaskParams ciExecuteStepTaskParams, List<String> taskSelectors,
-      List<String> eligibleToExecuteDelegateIds) {
+                                   CIExecuteStepTaskParams ciExecuteStepTaskParams, List<TaskSelector> taskSelectors,
+                                   List<String> eligibleToExecuteDelegateIds) {
     String taskType = CI_EXECUTE_STEP;
     boolean executeOnHarnessHostedDelegates = false;
     SerializationFormat serializationFormat = SerializationFormat.KRYO;

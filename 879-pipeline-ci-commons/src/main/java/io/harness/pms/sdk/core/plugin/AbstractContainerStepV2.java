@@ -77,7 +77,7 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
     long timeout = getTimeout(ambiance, stepElementParameters);
     timeout = Math.max(timeout, 100);
 
-    String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId);
+    String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId, List.of());
 
     TaskData runStepTaskData = getStepTask(ambiance, stepElementParameters, AmbianceUtils.getAccountId(ambiance),
         getLogPrefix(ambiance), timeout, parkedTaskId);

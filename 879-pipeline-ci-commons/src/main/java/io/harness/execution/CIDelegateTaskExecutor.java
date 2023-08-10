@@ -58,7 +58,8 @@ public class CIDelegateTaskExecutor {
     this.delegateCallbackTokenSupplier = delegateCallbackTokenSupplier;
   }
 
-  public String queueParkedDelegateTask(Ambiance ambiance, long timeout, String accountId) {
+  public String queueParkedDelegateTask(
+      Ambiance ambiance, long timeout, String accountId, List<TaskSelector> taskSelectors) {
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .parked(true)
@@ -70,7 +71,7 @@ public class CIDelegateTaskExecutor {
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false, ambiance.getStageExecutionId());
+    return queueTask(abstractions, task, taskSelectors, new ArrayList<>(), false, ambiance.getStageExecutionId());
   }
 
   public String queueTask(Ambiance ambiance, TaskData taskData, String accountId) {
@@ -79,7 +80,7 @@ public class CIDelegateTaskExecutor {
     return queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false, ambiance.getStageExecutionId());
   }
 
-  public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
+  public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<TaskSelector> taskSelectors,
       List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates, String stageId) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
@@ -88,7 +89,7 @@ public class CIDelegateTaskExecutor {
             .parked(taskData.isParked())
             .accountId(accountId)
             .serializationFormat(taskData.getSerializationFormat())
-            .taskSelectors(taskSelectors)
+            .selectors(taskSelectors)
             .stageId(stageId)
             .taskType(taskData.getTaskType())
             .taskParameters(extractTaskParameters(taskData))

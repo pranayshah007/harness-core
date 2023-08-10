@@ -14,6 +14,7 @@ import static java.util.Collections.singletonList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
@@ -21,7 +22,9 @@ import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -29,6 +32,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
@@ -83,7 +87,10 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
         - (System.currentTimeMillis() - startTs);
     timeout = Math.max(timeout, 100);
     log.info("Timeout for container step left {}", timeout);
-    String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId);
+
+
+    String parkedTaskId = taskExecutor.queueParkedDelegateTask(
+        ambiance, timeout, accountId, getDelegateSelectors(containerStepInfo));
     TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
         AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeout, parkedTaskId);
     String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId);
@@ -149,5 +156,19 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
             ErrorNotifyResponseData.builder()
                 .errorMessage("Delegate is not able to connect to created build farm")
                 .build()));
+  }
+
+  private List<TaskSelector> getDelegateSelectors(ContainerStepSpec containerStepInfo) {
+    if (containerStepInfo instanceof WithDelegateSelector) {
+      ParameterField<List<TaskSelectorYaml>> selectors =
+          ((WithDelegateSelector) containerStepInfo).fetchDelegateSelectors();
+      if (ParameterField.isNotNull(selectors)) {
+        if (!selectors.isExpression()) {
+          return TaskSelectorYaml.toTaskSelector(selectors.getValue());
+        }
+        log.error("Delegate selector expression {} could not be resolved", selectors.getExpressionValue());
+      }
+    }
+    return List.of();
   }
 }

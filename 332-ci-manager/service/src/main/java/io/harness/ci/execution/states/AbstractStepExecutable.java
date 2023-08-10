@@ -472,7 +472,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
   }
 
   private String queueDelegateTask(Ambiance ambiance, long timeout, String accountId, CIDelegateTaskExecutor executor,
-      CIExecuteStepTaskParams ciExecuteStepTaskParams, List<String> taskSelectors,
+      CIExecuteStepTaskParams ciExecuteStepTaskParams, List<TaskSelector> taskSelectors,
       List<String> eligibleToExecuteDelegateIds) {
     String taskType = CI_EXECUTE_STEP;
     boolean executeOnHarnessHostedDelegates = false;

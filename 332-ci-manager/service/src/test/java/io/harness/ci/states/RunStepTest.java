@@ -249,7 +249,7 @@ public class RunStepTest extends CIExecutionTestBase {
         .thenReturn(liteEnginePodDetailsOutcome);
     when(ciExecutionServiceConfig.isLocal()).thenReturn(false);
 
-    when(ciDelegateTaskExecutor.queueParkedDelegateTask(any(), anyLong(), any())).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueParkedDelegateTask(any(), anyLong(), any(), List.of())).thenReturn(callbackId);
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     when(runStepProtobufSerializer.serializeStepWithStepParameters(
