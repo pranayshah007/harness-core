@@ -60,7 +60,6 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   @Inject private CIDelegateTaskExecutor taskExecutor;
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-  @Inject OutcomeService outcomeService;
   @Inject ContainerPortHelper containerPortHelper;
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
@@ -107,10 +106,10 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
     if (response instanceof K8sTaskExecutionResponse
         && (((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
             || ((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED)) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
     if (response instanceof ErrorNotifyResponseData) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
   }
 
@@ -125,7 +124,7 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
     LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STEP");
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
-  private void abortTasks(List<String> allCallbackIds, String callbackId, Ambiance ambiance) {
+  private void abortTasks(List<String> allCallbackIds, String callbackId) {
     List<String> callBackIds =
         allCallbackIds.stream().filter(cid -> !cid.equals(callbackId)).collect(Collectors.toList());
     callBackIds.forEach(callbackId1

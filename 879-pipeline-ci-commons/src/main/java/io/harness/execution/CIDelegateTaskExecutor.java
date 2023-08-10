@@ -99,9 +99,8 @@ public class CIDelegateTaskExecutor {
             .expressionFunctorToken(taskData.getExpressionFunctorToken())
             .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
             .build();
-    RetryPolicy<Object> retryPolicy =
-        getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),
-            format("Failed to submit delegate task  after retrying {} times"));
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying failed call to submit delegate task attempt: {}",
+        "Failed to submit delegate task  after retrying {} times");
     // Make a call to the log service and get back the token
 
     return Failsafe.with(retryPolicy)
@@ -134,15 +133,14 @@ public class CIDelegateTaskExecutor {
             .stageId(stageExecutionId)
             .selectors(selectors)
             .build();
-    RetryPolicy<Object> retryPolicy =
-        getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),
-            format("Failed to submit delegate task  after retrying {} times"));
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying failed call to submit delegate task attempt: {}",
+        "Failed to submit delegate task  after retrying {} times");
     // Make a call to the log service and get back the token
 
-    return Failsafe.with(retryPolicy).get(() -> {
-      return delegateServiceGrpcClient.submitAsyncTaskV2(
-          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO, selectionTrackingLogEnabled);
-    });
+    return Failsafe.with(retryPolicy)
+        .get(()
+                 -> delegateServiceGrpcClient.submitAsyncTaskV2(delegateTaskRequest,
+                     delegateCallbackTokenSupplier.get(), Duration.ZERO, selectionTrackingLogEnabled));
   }
 
   public void expireTask(Map<String, String> setupAbstractions, String taskId) {

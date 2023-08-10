@@ -54,7 +54,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<StepElementParameters> {
-  @Inject private ContainerStepCleanupHelper containerStepCleanupHelper;
   @Inject private ContainerRunStepHelper containerRunStepHelper;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
@@ -88,9 +87,8 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
     timeout = Math.max(timeout, 100);
     log.info("Timeout for container step left {}", timeout);
 
-
-    String parkedTaskId = taskExecutor.queueParkedDelegateTask(
-        ambiance, timeout, accountId, getDelegateSelectors(containerStepInfo));
+    String parkedTaskId =
+        taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId, getDelegateSelectors(containerStepInfo));
     TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
         AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeout, parkedTaskId);
     String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId);
@@ -126,10 +124,10 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
     if (response instanceof K8sTaskExecutionResponse
         && (((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
             || ((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED)) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
     if (response instanceof ErrorNotifyResponseData) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
   }
 
@@ -148,7 +146,7 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
     LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STEP");
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
-  private void abortTasks(List<String> allCallbackIds, String callbackId, Ambiance ambiance) {
+  private void abortTasks(List<String> allCallbackIds, String callbackId) {
     List<String> callBackIds =
         allCallbackIds.stream().filter(cid -> !cid.equals(callbackId)).collect(Collectors.toList());
     callBackIds.forEach(callbackId1

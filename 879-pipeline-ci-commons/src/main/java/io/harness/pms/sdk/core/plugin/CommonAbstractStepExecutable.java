@@ -274,12 +274,12 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     Optional<CIStageOutput> ciStageOutputResponse =
         ciStageOutputRepository.findFirstByStageExecutionId(stageExecutionId);
     CIStageOutput ciStageOutput =
-        CIStageOutput.builder().outputs(new HashMap<String, String>()).stageExecutionId(stageExecutionId).build();
+        CIStageOutput.builder().outputs(new HashMap<>()).stageExecutionId(stageExecutionId).build();
     if (ciStageOutputResponse.isPresent()) {
       ciStageOutput = ciStageOutputResponse.get();
     }
     Map<String, String> outputs = ciStageOutput.getOutputs();
-    outputVariables.entrySet().stream().forEach(entry -> outputs.put(entry.getKey(), entry.getValue()));
+    outputs.putAll(outputVariables);
     ciStageOutputRepository.save(ciStageOutput);
   }
 
@@ -326,31 +326,29 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       VmTaskExecutionResponse vmTaskExecutionResponse = (VmTaskExecutionResponse) responseData;
       if (vmTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
           || vmTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
-        abortTasks(allCallbackIds, callbackId, ambiance);
+        abortTasks(allCallbackIds, callbackId);
       }
     }
     if (responseData instanceof K8sTaskExecutionResponse) {
       K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
       if (k8sTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
           || k8sTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
-        abortTasks(allCallbackIds, callbackId, ambiance);
+        abortTasks(allCallbackIds, callbackId);
       }
     }
 
     if (responseData instanceof ErrorNotifyResponseData) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
   }
 
-  private void abortTasks(List<String> allCallbackIds, String callbackId, Ambiance ambiance) {
+  private void abortTasks(List<String> allCallbackIds, String callbackId) {
     List<String> callBackIds =
         allCallbackIds.stream().filter(cid -> !cid.equals(callbackId)).collect(Collectors.toList());
-    callBackIds.forEach(callbackId1 -> {
-      waitNotifyEngine.doneWith(callbackId1,
-          ErrorNotifyResponseData.builder()
-              .errorMessage("Delegate is not able to connect to created build farm")
-              .build());
-    });
+    callBackIds.forEach(callbackId1 -> waitNotifyEngine.doneWith(callbackId1,
+        ErrorNotifyResponseData.builder()
+            .errorMessage("Delegate is not able to connect to created build farm")
+            .build()));
   }
 
   @Override
