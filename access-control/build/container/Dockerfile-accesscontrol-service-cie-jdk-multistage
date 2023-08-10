@@ -43,7 +43,7 @@ FROM base as onprem
 
 RUN /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh && rm /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh
 USER root
-RUN microdnf remove tar unzip gzip
+RUN microdnf remove tar
 USER 65534
 
 ############################SAAS#########################
