@@ -940,4 +940,12 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         planExecutionId, stageFQNs, Collections.singletonList("node"));
     assertThat(fetchedIterator).isEqualTo(iterator);
   }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testGetTimeoutInstanceIdsForSkippedNode() {
+    List<String> timeoutInstanceIds = nodeExecutionService.getTimeoutInstanceIds(Status.SKIPPED, generateUuid());
+    assertThat(timeoutInstanceIds).isEmpty();
+  }
 }
