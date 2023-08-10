@@ -8,18 +8,31 @@
 package io.harness.redis;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.redis.RedisReadMode.SLAVE;
 import static io.harness.rule.OwnerRule.JENNY;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.health.HealthService;
+import io.harness.lock.noop.AcquiredNoopLock;
+import io.harness.lock.redis.RedisPersistentLocker;
+import io.harness.maintenance.MaintenanceController;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.service.intfc.DelegateCache;
 
+import org.junit.Before;
+import org.mockito.MockedStatic;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import software.wings.WingsBaseTest;
 
 import com.google.inject.Inject;
@@ -28,13 +41,47 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
+import java.util.concurrent.TimeUnit;
+
 public class DelegateHeartBeatSyncFromRedisTest extends WingsBaseTest {
   @Inject @InjectMocks private DelegateHeartBeatSyncFromRedis delegateHeartBeatSyncFromRedis;
   @Inject private HPersistence persistence;
   @Mock DelegateCache delegateCache;
+  @Mock private RedissonClient client;
+  private MockedStatic<MaintenanceController> aStatic;
+  private RedisPersistentLocker redisPersistentLocker;
 
   private static final long NEW_HEARTBEAT_VALUE = 1691116575000L;
   private static final long HEARTBEAT_VALUE = 1691124412000L;
+
+
+  @Before
+  public void setup() {
+    //aStatic = mockStatic(MaintenanceController.class);
+    initMocks(this);
+    redisPersistentLocker = mock(RedisPersistentLocker.class);
+    mockStatic(RedissonClientFactory.class);
+    RedisConfig config = mock(RedisConfig.class);
+    when(config.isSentinel()).thenReturn(true);
+    when(config.getReadMode()).thenReturn(SLAVE);
+    client = mock(RedissonClient.class);
+    when(RedissonClientFactory.getClient(any())).thenReturn(client);
+    Config mockedRedissonConfig = mock(Config.class);
+    when(client.getConfig()).thenReturn(mockedRedissonConfig);
+  }
+
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testSyncJobLock() throws InterruptedException {
+    RLock rLock = mock(RLock.class);
+    when(client.getLock(anyString())).thenReturn(rLock);
+    when(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).thenReturn(false);
+    //when(MaintenanceController.getMaintenanceFlag()).thenReturn(false);
+    delegateHeartBeatSyncFromRedis.run();
+    verify(delegateHeartBeatSyncFromRedis, times(0)).startSync();
+  }
 
   @Test
   @Owner(developers = JENNY)

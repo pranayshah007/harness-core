@@ -7,8 +7,15 @@
 
 package io.harness.redis;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
+
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
+import io.harness.lock.redis.RedisPersistentLocker;
+import io.harness.maintenance.MaintenanceController;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateCache;
@@ -18,17 +25,29 @@ import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DelegateHeartBeatSyncFromRedis implements Runnable {
   @Inject private DelegateCache delegateCache;
   @Inject private HPersistence persistence;
+  @Inject private RedisPersistentLocker persistentLocker;
   private final int BULK_OPERATION_MAX = 5000;
+  private final String lockId = "DELEGATE_HEARTBEAT_SYNC_";
 
   @Override
   public void run() {
-    startSync();
+    if (!getMaintenanceFlag()) {
+      try (AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(
+               DelegateHeartBeatSyncFromRedis.class, lockId + generateUuid(), Duration.ofMinutes(2))) {
+        if (lock == null) {
+          log.warn("Could not acquire lock for DelegateHeartBeatSyncFromRedis");
+          return;
+        }
+        startSync();
+      }
+    }
   }
 
   @VisibleForTesting
