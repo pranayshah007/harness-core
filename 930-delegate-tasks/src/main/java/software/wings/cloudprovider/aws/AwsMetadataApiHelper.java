@@ -104,7 +104,7 @@ public class AwsMetadataApiHelper {
 
   @VisibleForTesting
   boolean checkConnectivity(String url) {
-    return Http.connectableHttpUrl(url, false);
+    return Http.connectableHttpUrl(url);
   }
 
   public String tryMetadataApiForDockerIdIfAccessble(Instance ec2Instance, Task taskRunningContainer,

@@ -143,10 +143,6 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     }
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
-    boolean isIgnoreResponseCode =
-        pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG);
-    httpTaskParametersNgBuilder.isIgnoreResponseCode(isIgnoreResponseCode);
-
     httpTaskParametersNgBuilder.isCertValidationRequired(
         pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.ENABLE_CERT_VALIDATION));
 

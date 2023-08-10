@@ -195,7 +195,7 @@ public class ArtifactoryBuildServiceImpl implements ArtifactoryBuildService {
 
   @Override
   public boolean validateArtifactServer(ArtifactoryConfig config, List<EncryptedDataDetail> encryptedDataDetails) {
-    if (!connectableHttpUrl(config.getArtifactoryUrl(), false)) {
+    if (!connectableHttpUrl(config.getArtifactoryUrl())) {
       throw new InvalidArtifactServerException(
           "Could not reach Artifactory Server at : " + config.getArtifactoryUrl(), USER);
     }

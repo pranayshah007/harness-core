@@ -264,7 +264,7 @@ public abstract class RemoteStackdriverLogAppender<E> extends AppenderBase<E> {
     }
 
     if (useLogProxy == null) {
-      boolean cannotConnectStackdriver = !connectableHttpUrl("https://" + LoggingSettings.getDefaultEndpoint(), false);
+      boolean cannotConnectStackdriver = !connectableHttpUrl("https://" + LoggingSettings.getDefaultEndpoint());
       if (cannotConnectStackdriver) {
         return;
         // TODO (brett) - Enable log proxy check after verified working with grpc

@@ -37,7 +37,7 @@ public class HttpConnectionExecutionCapability implements ExecutionCapability {
   private String path;
   private String query;
   private boolean ignoreRedirect;
-  private boolean ignoreResponseCode;
+  @Deprecated private boolean ignoreResponseCode;
 
   @Override
   public EvaluationMode evaluationMode() {

@@ -43,7 +43,6 @@ public class HttpHelmRepoConnectionValidator extends AbstractConnectorValidator 
         .helmConnector(helmConnector)
         .encryptionDetails(
             super.getEncryptionDetail(helmAuthCredentials, accountIdentifier, orgIdentifier, projectIdentifier))
-        .ignoreResponseCode(ignoreResponseCode(accountIdentifier))
         .build();
   }
 
@@ -64,17 +63,5 @@ public class HttpHelmRepoConnectionValidator extends AbstractConnectorValidator 
   public ConnectorValidationResult validate(ConnectorResponseDTO connectorResponseDTO, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String identifier) {
     return null;
-  }
-
-  private boolean ignoreResponseCode(String accountIdentifier) {
-    try {
-      return getResponse(accountClient.isFeatureFlagEnabled(
-          FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG.name(), accountIdentifier));
-    } catch (Exception e) {
-      log.warn("Unable to evaluate FF {} for account {}",
-          FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG.name(), accountIdentifier);
-    }
-
-    return false;
   }
 }

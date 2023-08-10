@@ -31,7 +31,7 @@ public class ClusterMasterUrlCapabilityCheck implements CapabilityCheck {
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     ClusterMasterUrlValidationCapability capability = (ClusterMasterUrlValidationCapability) delegateCapability;
     String masterUrl = containerValidationHelper.getK8sMasterUrl(capability.getContainerServiceParams());
-    boolean valid = Http.connectableHttpUrl(masterUrl, false);
+    boolean valid = Http.connectableHttpUrl(masterUrl);
     return CapabilityResponse.builder().delegateCapability(capability).validated(valid).build();
   }
 }

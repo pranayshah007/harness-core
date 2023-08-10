@@ -29,10 +29,9 @@ public class PrometheusCapabilityHelper {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     PrometheusConnectorDTO connectorDTO = (PrometheusConnectorDTO) prometheusConnectorDTO;
     // Every status code is ignored and capability is used to check HTTP connectivity.
-    capabilityList.add(
-        HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
-            connectorDTO.getUrl() + PROMETHEUS_BASIC_QUERY, maskingEvaluator, true,
-            HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY));
+    capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+        connectorDTO.getUrl() + PROMETHEUS_BASIC_QUERY,
+        HttpConnectionExecutionCapabilityGenerator.HttpCapabilityDetailsLevel.QUERY, maskingEvaluator));
     populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
     return capabilityList;
   }

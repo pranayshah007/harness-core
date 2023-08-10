@@ -101,9 +101,8 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
           case HTTP_HELM:
             HttpHelmStoreDelegateConfig httpHelmStoreConfig =
                 (HttpHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-            capabilities.add(
-                HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
-                    httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator, true));
+            capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(

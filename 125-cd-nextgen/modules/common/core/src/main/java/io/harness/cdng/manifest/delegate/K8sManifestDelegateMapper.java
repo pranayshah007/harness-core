@@ -117,8 +117,6 @@ public class K8sManifestDelegateMapper {
             .skipApplyHelmDefaultValues(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_NG))
             .subChartPath(getParameterFieldValue(helmChartManifestOutcome.getSubChartPath()))
-            .ignoreResponseCode(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance),
-                FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG))
             .build();
 
       case ManifestType.Kustomize:

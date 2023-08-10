@@ -43,7 +43,7 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
   boolean useProxy;
   boolean isCertValidationRequired;
   @Deprecated boolean shouldAvoidHeadersInCapability;
-  boolean isIgnoreResponseCode;
+  @Deprecated boolean isIgnoreResponseCode;
   boolean supportNonTextResponse;
 
   // New type for supporting NG secret resolution
@@ -58,14 +58,7 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
         headers.add(KeyValuePair.builder().key(headerConfig.getKey()).value(headerConfig.getValue()).build());
       }
     }
-    if (isIgnoreResponseCode) {
-      return Collections.singletonList(
-          HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
-              url, maskingEvaluator, true, headers, QUERY));
-    } else {
-      return Collections.singletonList(
-          HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-              url, headers, QUERY, maskingEvaluator));
-    }
+    return Collections.singletonList(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+        url, headers, QUERY, maskingEvaluator));
   }
 }

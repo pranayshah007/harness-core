@@ -30,9 +30,8 @@ public class HttpHelmCapabilityHelper extends ConnectorCapabilityBaseHelper {
     HttpHelmConnectorDTO helmConnector = (HttpHelmConnectorDTO) connectorConfigDTO;
     final String helmRepoUrl = helmConnector.getHelmRepoUrl();
     if (ignoreResponseCode) {
-      capabilityList.add(
-          HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
-              helmRepoUrl, maskingEvaluator, true));
+      capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+          helmRepoUrl, maskingEvaluator));
     } else {
       SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(helmRepoUrl, capabilityList);
     }

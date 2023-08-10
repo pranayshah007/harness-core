@@ -478,7 +478,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     if (url == null) {
       throw new UrlNotProvidedException("Url does not exist in the config");
     }
-    final boolean isHostConnectable = connectableHttpUrl(url, false);
+    final boolean isHostConnectable = connectableHttpUrl(url);
     if (!isHostConnectable) {
       throw new UrlNotReachableException("Could not connect to the master url: " + url);
     }

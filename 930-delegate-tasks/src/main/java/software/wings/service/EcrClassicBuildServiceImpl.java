@@ -95,7 +95,7 @@ public class EcrClassicBuildServiceImpl implements EcrClassicBuildService {
 
   @Override
   public boolean validateArtifactServer(EcrConfig config, List<EncryptedDataDetail> encryptedDataDetails) {
-    if (!connectableHttpUrl(config.getEcrUrl(), false)) {
+    if (!connectableHttpUrl(config.getEcrUrl())) {
       throw new WingsException(ErrorCode.INVALID_ARTIFACT_SERVER)
           .addParam("message", "Could not reach Amazon EC2 Container Registry at : " + config.getEcrUrl());
     }

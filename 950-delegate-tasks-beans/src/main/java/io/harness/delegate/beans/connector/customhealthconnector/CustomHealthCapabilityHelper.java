@@ -27,9 +27,8 @@ public class CustomHealthCapabilityHelper {
       ExpressionEvaluator maskingEvaluator, ConnectorConfigDTO customHealthConnectorDTO) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     CustomHealthConnectorDTO connectorDTO = (CustomHealthConnectorDTO) customHealthConnectorDTO;
-    capabilityList.add(
-        HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
-            connectorDTO.getBaseURL(), maskingEvaluator, true));
+    capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+        connectorDTO.getBaseURL(), maskingEvaluator));
     populateDelegateSelectorCapability(capabilityList, connectorDTO.getDelegateSelectors());
     return capabilityList;
   }

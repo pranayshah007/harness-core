@@ -26,8 +26,7 @@ public class SplunkCapabilityHelper extends ConnectorCapabilityBaseHelper {
     SplunkConnectorDTO splunkConnectorDTO = (SplunkConnectorDTO) connectorConfigDTO;
     final String splunkUrl = splunkConnectorDTO.getSplunkUrl() + SERVER_INFO_URL;
     capabilityList.add(
-        HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
-            splunkUrl, maskingEvaluator, true));
+        HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(splunkUrl, maskingEvaluator));
     populateDelegateSelectorCapability(capabilityList, splunkConnectorDTO.getDelegateSelectors());
     return capabilityList;
   }

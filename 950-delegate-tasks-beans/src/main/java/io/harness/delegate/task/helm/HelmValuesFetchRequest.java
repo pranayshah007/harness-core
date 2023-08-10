@@ -75,9 +75,8 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
         HttpHelmStoreDelegateConfig httpHelmStoreConfig = (HttpHelmStoreDelegateConfig) storeDelegateConfig;
         if (httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl() != null) {
           if (ignoreResponseCode) {
-            capabilities.add(
-                HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapabilityWithIgnoreResponseCode(
-                    httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator, true));
+            capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
           } else {
             SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
                 httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);

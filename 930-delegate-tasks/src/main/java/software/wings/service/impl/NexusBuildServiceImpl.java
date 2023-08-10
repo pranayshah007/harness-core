@@ -212,7 +212,7 @@ public class NexusBuildServiceImpl implements NexusBuildService {
 
   @Override
   public boolean validateArtifactServer(NexusConfig nexusConfig, List<EncryptedDataDetail> encryptedDataDetails) {
-    if (!connectableHttpUrl(nexusConfig.getNexusUrl(), false)) {
+    if (!connectableHttpUrl(nexusConfig.getNexusUrl())) {
       throw new InvalidArtifactServerException("Could not reach Nexus Server at : " + nexusConfig.getNexusUrl(), USER);
     }
     NexusRequest nexusRequest =
