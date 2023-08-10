@@ -4,7 +4,8 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-
+set -ex
+export GCP_KEY=$1
 # GCP_KEY, HARNESS_WILD_CERT, KEYSTORE_PASS, JDK, VERSION, PURPOSE, BUILD are externally provided
 # to this script through environment variables.
 
