@@ -19,7 +19,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.StepParametersUtils;
+import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.plancreator.steps.http.HttpStepInfo;
 import io.harness.plancreator.steps.internal.v1.PmsAbstractStepNodeV1;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -65,7 +65,7 @@ public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
 
   // TODO: set rollback parameters
   public StepElementParameters getStepParameters(PlanCreationContext ctx) {
-    StepElementParameters.StepElementParametersBuilder stepBuilder = StepParametersUtils.getStepParametersV1(this);
+    StepElementParameters.StepElementParametersBuilder stepBuilder = StepParametersUtilsV1.getStepParameters(this);
     stepBuilder.spec(getSpecParameters(getHttpStepInfo()));
     stepBuilder.type(StepSpecTypeConstants.HTTP);
     StepUtils.appendDelegateSelectorsToSpecParameters(httpStepInfo, ctx);

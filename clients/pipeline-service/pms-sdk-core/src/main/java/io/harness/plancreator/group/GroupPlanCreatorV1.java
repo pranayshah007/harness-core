@@ -34,7 +34,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.group.GroupStepParametersV1;
 import io.harness.steps.group.GroupStepV1;
-import io.harness.when.utils.RunInfoUtils;
+import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -102,7 +102,7 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(ctx, config))
-        .whenCondition(RunInfoUtils.getStageWhenCondition(config))
+        .whenCondition(RunInfoUtilsV1.getStageWhenCondition(config))
         .skipExpressionChain(true)
         .build();
   }

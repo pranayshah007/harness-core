@@ -41,4 +41,9 @@ public class PlanCreatorUtilsV1 {
             .build());
     return adviserObtainments;
   }
+
+  // TODO: Get isStepInsideRollback from dependency metadata map
+  public boolean isStepInsideRollback(Dependency dependency) {
+    return false;
+  }
 }
