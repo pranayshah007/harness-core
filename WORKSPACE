@@ -4946,9 +4946,9 @@ plain_artifacts = [
     "io.confluent:kafka-schema-registry-client:5.5.1",
     "io.confluent:kafka-schema-serializer:5.5.1",
     "io.confluent:kafka-schema-serializer:5.5.1",
-    "io.debezium:debezium-api:1.7.2.Final",
-    "io.debezium:debezium-connector-mongodb:1.7.2.Final",
-    "io.debezium:debezium-core:1.7.2.Final",
+    "io.debezium:debezium-api:1.9.7.Final",
+    "io.debezium:debezium-connector-mongodb:1.9.7.Final",
+    "io.debezium:debezium-core:1.9.7.Final",
     "io.dropwizard-bundles:dropwizard-configurable-assets-bundle:1.3.5",
     "io.dropwizard.metrics:metrics-annotation:4.1.19",
     "io.dropwizard.metrics:metrics-core:4.1.19",
@@ -5427,7 +5427,7 @@ amazon_v2_artifacts = [
             "commons-logging:commons-logging",
         ],
         group = "software.amazon.awssdk",
-        version = "2.20.109",
+        version = "2.17.220",
     )
     for x in [
         "ecs",
@@ -5517,7 +5517,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "1.7.2.Final",
+            version = "1.9.7.Final",
         ),
         maven.artifact(
             artifact = "connect-runtime",
@@ -5616,7 +5616,7 @@ maven_install(
         "com.azure:azure-storage-common:12.15.1",
         "com.azure.resourcemanager:azure-resourcemanager-advisor:1.0.0-beta.2",
         "com.azure.resourcemanager:azure-resourcemanager-compute:2.26.0",
-        "software.amazon.awssdk:account:2.20.109",
+        "software.amazon.awssdk:account:2.20.74",
     ],
     repositories = [
         "https://harness-artifactory.harness.io/artifactory/portal-maven",
@@ -5667,15 +5667,15 @@ maven_install(
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (2.1.3.Final) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.3.1.Final) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:2.1.3.Final",
-        "io.debezium:debezium-connector-mongodb:2.1.3.Final",
-        "io.debezium:debezium-core:2.1.3.Final",
+        "io.debezium:debezium-api:2.3.1.Final",
+        "io.debezium:debezium-connector-mongodb:2.3.1.Final",
+        "io.debezium:debezium-core:2.3.1.Final",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5683,7 +5683,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "2.1.3.Final",
+            version = "2.3.1.Final",
         ),
     ],
     repositories = [
