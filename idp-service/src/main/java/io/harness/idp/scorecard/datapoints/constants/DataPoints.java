@@ -13,4 +13,5 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.IDP)
 public class DataPoints {
   public static final String GITHUB_PR_MMTM = "github_pr_mmtm";
+  public static final String GITHUB_IS_BRANCH_PROTECTED = "isBranchProtected";
 }

@@ -359,6 +359,7 @@ public class IdpModule extends AbstractModule {
     bind(DataPointService.class).to(DataPointServiceImpl.class);
     bind(DataSourceLocationService.class).to(DataSourceLocationServiceImpl.class);
     bind(ScoreService.class).to(ScoreServiceImpl.class);
+    bind(DataPointService.class).to(DataPointServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));

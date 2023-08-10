@@ -33,7 +33,7 @@ public class ScorecardDetailsMapper {
     details.setIdentifier(scorecardEntity.getIdentifier());
     details.setName(scorecardEntity.getName());
     details.setDescription(scorecardEntity.getDescription());
-    details.setFilters(scorecardEntity.getFilters());
+    details.setFilter(scorecardEntity.getFilter());
     details.setPublished(scorecardEntity.isPublished());
     details.setWeightageStrategy(scorecardEntity.getWeightageStrategy());
     response.setScorecard(details);
@@ -67,7 +67,7 @@ public class ScorecardDetailsMapper {
                                .weightage(scorecardCheck.getWeightage())
                                .build())
                     .collect(Collectors.toList()))
-        .filters(details.getFilters())
+        .filter(details.getFilter())
         .published(details.isPublished())
         .weightageStrategy(details.getWeightageStrategy())
         .build();

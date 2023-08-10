@@ -15,7 +15,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.spec.server.idp.v1.model.ScorecardDetails;
-import io.harness.spec.server.idp.v1.model.ScorecardFilters;
+import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -52,7 +52,7 @@ public class ScorecardEntity implements PersistentEntity {
   private String identifier;
   private String name;
   private String description;
-  private List<ScorecardFilters> filters;
+  private ScorecardFilter filter;
   private ScorecardDetails.WeightageStrategyEnum weightageStrategy;
   private List<Check> checks;
   private boolean published;

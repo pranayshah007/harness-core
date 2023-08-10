@@ -21,6 +21,7 @@ import io.harness.spec.server.idp.v1.model.ScorecardScoreResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryResponse;
 
+import java.util.Collections;
 import java.util.List;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
@@ -53,6 +54,8 @@ public class ScoreApiImpl implements ScoresApi {
   public Response getRecalibratedScoreForScorecard(
       String entityIdentifier, String scorecardIdentifier, String harnessAccount) {
     try {
+      scoreService.computeScores(
+          harnessAccount, Collections.singletonList(entityIdentifier), Collections.singletonList(scorecardIdentifier));
       ScorecardSummaryInfo scorecardSummaryInfo = scoreService.getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
           harnessAccount, entityIdentifier, scorecardIdentifier);
       ScorecardRecalibrateResponse scorecardRecalibrateResponse = new ScorecardRecalibrateResponse();

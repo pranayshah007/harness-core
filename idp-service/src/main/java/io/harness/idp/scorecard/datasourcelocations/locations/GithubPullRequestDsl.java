@@ -16,13 +16,12 @@ import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
-import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 
@@ -34,8 +33,9 @@ public class GithubPullRequestDsl implements DataSourceLocation {
 
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      DataSourceLocationEntity dataSourceLocationEntity, List<DataPointEntity> dataPointsToFetch) {
-    for (DataPointEntity dataPoint : dataPointsToFetch) { // isBranchProtected(main), isBranchProtected(develop)
+      String dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues) {
+    for (DataPointEntity dataPoint :
+        dataPointsAndInputValues.keySet()) { // isBranchProtected(main), isBranchProtected(develop)
       DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPoint.getIdentifier());
       if (dataPoint.isConditional()) {
         String key = dataPointParser.getReplaceKey(dataPoint); // {branch}

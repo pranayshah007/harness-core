@@ -68,6 +68,13 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
+  public List<CheckEntity> getActiveChecks(String accountIdentifier, List<String> checkIdentifiers) {
+    // TODO: include GLOBALACCOUNT as well
+    return checkRepository.findByAccountIdentifierAndIsDeletedAndIdentifierIn(
+        accountIdentifier, false, checkIdentifiers);
+  }
+
+  @Override
   public CheckDetails getCheckDetails(String accountIdentifier, String identifier) {
     CheckEntity checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
     return CheckDetailsMapper.toDTO(checkEntity);

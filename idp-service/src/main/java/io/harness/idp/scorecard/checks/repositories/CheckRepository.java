@@ -22,5 +22,7 @@ public interface CheckRepository extends CrudRepository<CheckEntity, String>, Ch
   List<CheckEntity> findByAccountIdentifierAndIsCustomAndIsDeleted(
       String accountIdentifier, boolean custom, boolean deleted);
   List<CheckEntity> findByAccountIdentifierAndIdentifierIn(String accountIdentifier, List<String> identifier);
+  List<CheckEntity> findByAccountIdentifierAndIsDeletedAndIdentifierIn(
+      String accountIdentifier, boolean isDeleted, List<String> identifier);
   CheckEntity findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
 }

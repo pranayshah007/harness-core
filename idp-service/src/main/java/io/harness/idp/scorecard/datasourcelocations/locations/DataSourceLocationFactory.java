@@ -12,16 +12,17 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
-import java.util.List;
+import com.google.inject.Inject;
+import lombok.AllArgsConstructor;
 
 @OwnedBy(HarnessTeam.IDP)
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class DataSourceLocationFactory {
   private GithubPullRequestDsl githubPullRequestDsl;
   private GithubBaseDsl githubBaseDsl;
 
-  public DataSourceLocation getDataSourceLocation(String identifier, List<DataPointEntity> dataPointsToFetch) {
+  public DataSourceLocation getDataSourceLocation(String identifier) {
     switch (identifier) {
       case GITHUB_PR:
         return githubPullRequestDsl;

@@ -9,6 +9,7 @@ package io.harness.idp.scorecard.scorecards.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.scorecards.beans.ScorecardCheckFullDetails;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 import io.harness.spec.server.idp.v1.model.Scorecard;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
@@ -19,7 +20,9 @@ import java.util.List;
 @OwnedBy(HarnessTeam.IDP)
 public interface ScorecardService {
   List<Scorecard> getAllScorecardsAndChecksDetails(String accountIdentifier);
-  List<ScorecardEntity> getAllScorecards(String accountIdentifier);
+  List<ScorecardCheckFullDetails> getAllScorecardCheckFullDetails(
+      String accountIdentifier, List<String> scorecardIdentifiers);
+
   void saveScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier);
   void updateScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier);
   ScorecardDetailsResponse getScorecardDetails(String accountIdentifier, String identifier);

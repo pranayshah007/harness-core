@@ -2435,12 +2435,8 @@ components:
           type: string
         description:
           type: string
-        filters:
-          x-stoplight:
-            id: f1au4kix9z5hv
-          type: array
-          items:
-            $ref: '#/components/schemas/ScorecardFilters'
+        filter:
+          $ref: '#/components/schemas/ScorecardFilter'
         weightage_strategy:
           type: string
           x-stoplight:
@@ -2458,8 +2454,8 @@ components:
         - identifier
         - filters
         - published
-    ScorecardFilters:
-      title: ScorecardFilters
+    ScorecardFilter:
+      title: ScorecardFilter
       x-stoplight:
         id: 2oxyg4tys853p
       type: object

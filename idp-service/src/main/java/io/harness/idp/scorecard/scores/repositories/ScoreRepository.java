@@ -22,4 +22,6 @@ public interface ScoreRepository extends CrudRepository<ScoreEntity, String>, Sc
 
   List<ScoreEntity> findAllByAccountIdentifierAndEntityIdentifierAndScorecardIdentifier(
       String accountIdentifier, String entityIdentifier, String scorecardIdentifier);
+
+  ScoreEntity save(ScoreEntity scoreEntity);
 }

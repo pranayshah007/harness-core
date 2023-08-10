@@ -19,4 +19,6 @@ import org.springframework.data.repository.CrudRepository;
 public interface DataPointsRepository extends CrudRepository<DataPointEntity, String>, DataPointRepositoryCustom {
   List<DataPointEntity> findAllByAccountIdentifierAndDataSourceIdentifier(
       String accountIdentifier, String dataSourceIdentifier);
+  List<DataPointEntity> findByAccountIdentifierAndDataSourceIdentifierAndIdentifierIn(
+      String accountIdentifier, String dataSourceIdentifier, List<String> identifiers);
 }

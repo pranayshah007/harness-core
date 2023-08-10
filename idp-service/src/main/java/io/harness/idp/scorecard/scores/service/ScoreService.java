@@ -14,11 +14,10 @@ import io.harness.spec.server.idp.v1.model.ScorecardScore;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
 
 import java.util.List;
-import lombok.AllArgsConstructor;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface ScoreService {
-  void computeScores(String accountIdentifier);
+  void computeScores(String accountIdentifier, List<String> scorecardIdentifiers, List<String> entityIdentifiers);
   List<ScorecardSummaryInfo> getScoresSummaryForAnEntity(String accountIdentifier, String entityIdentifier);
 
   List<ScorecardGraphSummaryInfo> getScoresGraphSummaryForAnEntityAndScorecard(

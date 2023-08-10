@@ -20,12 +20,15 @@ import retrofit2.http.GET;
 import retrofit2.http.HTTP;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
+import retrofit2.http.Url;
 
 @OwnedBy(IDP)
 public interface BackstageResourceClient {
   String CATALOG_API = "{accountIdentifier}/idp/api/catalog";
   String LAYOUT_API = "{accountIdentifier}/idp/api/layout";
   String HARNESS_REFRESH_API = "{accountIdentifier}/idp/api/harness/provider";
+
+  @GET Call<Object> getCatalogEntities(@Url String url);
 
   @POST(CATALOG_API + "/locations")
   Call<Object> createCatalogLocation(@Path("accountIdentifier") String accountIdentifier,

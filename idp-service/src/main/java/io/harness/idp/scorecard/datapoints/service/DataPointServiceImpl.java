@@ -13,7 +13,10 @@ import io.harness.idp.scorecard.datapoints.mappers.DataPointMapper;
 import io.harness.idp.scorecard.datapoints.repositories.DataPointsRepository;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -30,8 +33,22 @@ public class DataPointServiceImpl implements DataPointService {
       String accountIdentifier, String dataSourceIdentifier) {
     List<DataPointEntity> dataPointEntities =
         dataPointsRepository.findAllByAccountIdentifierAndDataSourceIdentifier(accountIdentifier, dataSourceIdentifier);
-    return dataPointEntities.stream()
-        .map(dataPointEntity -> DataPointMapper.toDto(dataPointEntity))
-        .collect(Collectors.toList());
+    return dataPointEntities.stream().map(DataPointMapper::toDto).collect(Collectors.toList());
+  }
+
+  @Override
+  public Map<String, List<DataPointEntity>> getDslDataPointsInfo(
+      String accountIdentifier, List<String> identifiers, String dataSourceIdentifier) {
+    List<DataPointEntity> dataPoints =
+        dataPointsRepository.findByAccountIdentifierAndDataSourceIdentifierAndIdentifierIn(
+            accountIdentifier, dataSourceIdentifier, identifiers);
+    Map<String, List<DataPointEntity>> dslDataPointsInfo = new HashMap<>();
+    for (DataPointEntity dataPoint : dataPoints) {
+      List<DataPointEntity> dslDataPoints =
+          dslDataPointsInfo.getOrDefault(dataPoint.getDataSourceLocationIdentifier(), new ArrayList<>());
+      dslDataPoints.add(dataPoint);
+      dslDataPointsInfo.put(dataPoint.getDataSourceLocationIdentifier(), dslDataPoints);
+    }
+    return dslDataPointsInfo;
   }
 }
