@@ -42,6 +42,5 @@ public class CustomHealthCapabilityHelperTest extends CategoryTest {
     assertThat(executionCapabilities.get(0).fetchCapabilityBasis()).isEqualTo(baseURL);
     HttpConnectionExecutionCapability httpCapability = (HttpConnectionExecutionCapability) executionCapabilities.get(0);
     assertThat(httpCapability.getHeaders()).isNull();
-    assertThat(httpCapability.isIgnoreResponseCode()).isTrue();
   }
 }

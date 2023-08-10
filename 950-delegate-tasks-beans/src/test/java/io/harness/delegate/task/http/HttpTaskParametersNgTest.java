@@ -37,36 +37,16 @@ public class HttpTaskParametersNgTest {
   @Test
   @Owner(developers = OwnerRule.HINGER)
   @Category(UnitTests.class)
-  public void testBuildCapabilityWithHeadersWithFFDisabled() {
+  public void testBuildCapabilityWithHeaders() {
     HttpTaskParametersNg httpTaskParametersNg =
         HttpTaskParametersNg.builder()
             .method("GET")
             .url("http://www.abc.xyz")
             .requestHeader(Collections.singletonList(HttpHeaderConfig.builder().key("x-api-key").value("test").build()))
-            .isIgnoreResponseCode(false)
             .build();
 
     List<ExecutionCapability> executionCapabilities = httpTaskParametersNg.fetchRequiredExecutionCapabilities(null);
     HttpConnectionExecutionCapability httpCapability = (HttpConnectionExecutionCapability) executionCapabilities.get(0);
     assertThat(httpCapability.getHeaders()).hasSize(1);
-    assertThat(httpCapability.isIgnoreResponseCode()).isFalse();
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.SARTHAK_KASAT)
-  @Category(UnitTests.class)
-  public void testBuildCapabilityWithHeadersWithFFDisabledWithIgnoreResponseCode() {
-    HttpTaskParametersNg httpTaskParametersNg =
-        HttpTaskParametersNg.builder()
-            .method("GET")
-            .url("http://www.abc.xyz")
-            .requestHeader(Collections.singletonList(HttpHeaderConfig.builder().key("x-api-key").value("test").build()))
-            .isIgnoreResponseCode(true)
-            .build();
-
-    List<ExecutionCapability> executionCapabilities = httpTaskParametersNg.fetchRequiredExecutionCapabilities(null);
-    HttpConnectionExecutionCapability httpCapability = (HttpConnectionExecutionCapability) executionCapabilities.get(0);
-    assertThat(httpCapability.getHeaders()).hasSize(1);
-    assertThat(httpCapability.isIgnoreResponseCode()).isTrue();
   }
 }

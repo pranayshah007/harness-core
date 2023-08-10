@@ -145,13 +145,8 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
           case HTTP_HELM:
             HttpHelmStoreDelegateConfig httpHelmStoreConfig =
                 (HttpHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-            if (helManifestConfig.isIgnoreResponseCode()) {
-              capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-                  httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
-            } else {
-              SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
-                  httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
-            }
+            SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
+                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(

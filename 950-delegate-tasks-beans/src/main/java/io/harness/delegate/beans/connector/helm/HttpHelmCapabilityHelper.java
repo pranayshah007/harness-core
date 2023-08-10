@@ -25,16 +25,11 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class HttpHelmCapabilityHelper extends ConnectorCapabilityBaseHelper {
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(
-      ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode) {
+      ConnectorConfigDTO connectorConfigDTO, ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     HttpHelmConnectorDTO helmConnector = (HttpHelmConnectorDTO) connectorConfigDTO;
     final String helmRepoUrl = helmConnector.getHelmRepoUrl();
-    if (ignoreResponseCode) {
-      capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-          helmRepoUrl, maskingEvaluator));
-    } else {
-      SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(helmRepoUrl, capabilityList);
-    }
+    SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(helmRepoUrl, capabilityList);
     populateDelegateSelectorCapability(capabilityList, helmConnector.getDelegateSelectors());
     return capabilityList;
   }

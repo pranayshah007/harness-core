@@ -37,6 +37,5 @@ public class PrometheusCapabilityHelperTest extends CategoryTest {
         .isEqualTo(prometheusBaseUrl + "/" + prometheusQueryPath);
     HttpConnectionExecutionCapability httpCapability = (HttpConnectionExecutionCapability) executionCapabilities.get(0);
     assertThat(httpCapability.getHeaders()).isNull();
-    assertThat(httpCapability.isIgnoreResponseCode()).isTrue();
   }
 }

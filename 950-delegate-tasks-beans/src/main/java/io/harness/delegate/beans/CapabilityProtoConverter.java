@@ -117,25 +117,21 @@ public class CapabilityProtoConverter {
             (HttpConnectionExecutionCapability) executionCapability;
         if (httpConnectionExecutionCapability.getHeaders() != null) {
           return builder
-              .setHttpConnectionParameters(
-                  HttpConnectionParameters.newBuilder()
-                      .setUrl(httpConnectionExecutionCapability.fetchConnectableUrl())
-                      .addAllHeaders(httpConnectionExecutionCapability.getHeaders()
-                                         .stream()
-                                         .map(entry
-                                             -> HttpConnectionParameters.Header.newBuilder()
-                                                    .setKey(entry.getKey())
-                                                    .setValue(entry.getValue())
-                                                    .build())
-                                         .collect(Collectors.toList()))
-                      .setIgnoreResponseCode(httpConnectionExecutionCapability.isIgnoreResponseCode()))
+              .setHttpConnectionParameters(HttpConnectionParameters.newBuilder()
+                                               .setUrl(httpConnectionExecutionCapability.fetchConnectableUrl())
+                                               .addAllHeaders(httpConnectionExecutionCapability.getHeaders()
+                                                                  .stream()
+                                                                  .map(entry
+                                                                      -> HttpConnectionParameters.Header.newBuilder()
+                                                                             .setKey(entry.getKey())
+                                                                             .setValue(entry.getValue())
+                                                                             .build())
+                                                                  .collect(Collectors.toList())))
               .build();
         } else {
           return builder
-              .setHttpConnectionParameters(
-                  HttpConnectionParameters.newBuilder()
-                      .setUrl(httpConnectionExecutionCapability.fetchCapabilityBasis())
-                      .setIgnoreResponseCode(httpConnectionExecutionCapability.isIgnoreResponseCode()))
+              .setHttpConnectionParameters(HttpConnectionParameters.newBuilder().setUrl(
+                  httpConnectionExecutionCapability.fetchCapabilityBasis()))
               .build();
         }
       case LITE_ENGINE:

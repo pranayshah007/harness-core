@@ -30,7 +30,7 @@ public class HttpHelmValidationParams
   HttpHelmConnectorDTO httpHelmConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
   String connectorName;
-  boolean ignoreResponseCode;
+  @Deprecated boolean ignoreResponseCode;
 
   @Override
   public ConnectorType getConnectorType() {
@@ -44,7 +44,6 @@ public class HttpHelmValidationParams
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return HttpHelmCapabilityHelper.fetchRequiredExecutionCapabilities(
-        httpHelmConnectorDTO, maskingEvaluator, ignoreResponseCode);
+    return HttpHelmCapabilityHelper.fetchRequiredExecutionCapabilities(httpHelmConnectorDTO, maskingEvaluator);
   }
 }

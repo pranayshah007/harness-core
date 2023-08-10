@@ -36,8 +36,7 @@ public class HelmChartManifestDelegateConfig implements ManifestDelegateConfig, 
   private boolean deleteRepoCacheDir;
   private boolean skipApplyHelmDefaultValues;
   String subChartPath;
-  private boolean ignoreResponseCode;
-
+  @Deprecated private boolean ignoreResponseCode;
   @Override
   public ManifestType getManifestType() {
     return ManifestType.HELM_CHART;

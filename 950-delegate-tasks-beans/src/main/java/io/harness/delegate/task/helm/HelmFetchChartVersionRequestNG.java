@@ -60,13 +60,8 @@ public class HelmFetchChartVersionRequestNG implements TaskParameters, Execution
           case HTTP_HELM:
             HttpHelmStoreDelegateConfig httpHelmStoreConfig =
                 (HttpHelmStoreDelegateConfig) helmChartManifestDelegateConfig.getStoreDelegateConfig();
-            if (helmChartManifestDelegateConfig.isIgnoreResponseCode()) {
-              capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-                  httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
-            } else {
-              SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
-                  httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
-            }
+            SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
+                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(

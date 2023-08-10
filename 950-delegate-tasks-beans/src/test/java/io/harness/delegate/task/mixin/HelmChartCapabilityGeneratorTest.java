@@ -89,7 +89,6 @@ public class HelmChartCapabilityGeneratorTest extends CategoryTest {
                         HttpHelmConnectorDTO.builder().helmRepoUrl("https://test.helm.repo/charts").build())
                     .encryptedDataDetails(new ArrayList<>())
                     .build())
-            .ignoreResponseCode(true)
             .build();
 
     List<ExecutionCapability> capabilityList =
@@ -116,7 +115,6 @@ public class HelmChartCapabilityGeneratorTest extends CategoryTest {
                                       .build())
                     .encryptedDataDetails(new ArrayList<>())
                     .build())
-            .ignoreResponseCode(true)
             .build();
 
     List<ExecutionCapability> capabilityList =
@@ -142,7 +140,6 @@ public class HelmChartCapabilityGeneratorTest extends CategoryTest {
                                                       .build())
                                       .build())
                     .build())
-            .ignoreResponseCode(true)
             .build();
 
     List<ExecutionCapability> capabilityList =

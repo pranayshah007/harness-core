@@ -28,11 +28,10 @@ public class HttpHelmConnectivityTaskParams
     extends ConnectorTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   HttpHelmConnectorDTO helmConnector;
   private List<EncryptedDataDetail> encryptionDetails;
-  boolean ignoreResponseCode;
+  @Deprecated boolean ignoreResponseCode;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return HttpHelmCapabilityHelper.fetchRequiredExecutionCapabilities(
-        helmConnector, maskingEvaluator, ignoreResponseCode);
+    return HttpHelmCapabilityHelper.fetchRequiredExecutionCapabilities(helmConnector, maskingEvaluator);
   }
 }
