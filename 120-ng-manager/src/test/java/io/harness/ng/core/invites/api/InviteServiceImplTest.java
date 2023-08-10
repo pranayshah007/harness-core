@@ -436,9 +436,7 @@ public class InviteServiceImplTest extends CategoryTest {
     UserMetadataDTO user = UserMetadataDTO.builder().name(randomAlphabetic(7)).email(emailId).uuid(userId).build();
     ArgumentCaptor<String> idCapture = ArgumentCaptor.forClass(String.class);
     when(claim.asString()).thenReturn(inviteId);
-    when(jwtGeneratorUtils.verifyJWTToken(any(), any()))
-        .thenThrow(new InvalidRequestException(INVALID_JWT_TOKEN))
-        .thenReturn(Collections.emptyMap());
+    when(jwtGeneratorUtils.verifyJWTToken(any(), any())).thenThrow(new InvalidRequestException(INVALID_JWT_TOKEN));
     when(inviteRepository.findById(any())).thenReturn(Optional.of(invite));
     when(ngUserService.getUserByEmail(any(), anyBoolean())).thenReturn(Optional.of(user));
     InviteAcceptResponse inviteAcceptResponse = inviteService.acceptInvite(dummyJWTToken);
@@ -457,8 +455,7 @@ public class InviteServiceImplTest extends CategoryTest {
     ArgumentCaptor<String> idCapture = ArgumentCaptor.forClass(String.class);
     when(claim.asString()).thenReturn(inviteId);
     when(jwtGeneratorUtils.verifyJWTToken(any(), any()))
-        .thenThrow(new InvalidRequestException(TOKEN_EXPIRED, null, EXPIRED_TOKEN))
-        .thenReturn(Collections.emptyMap());
+        .thenThrow(new InvalidRequestException(TOKEN_EXPIRED, null, EXPIRED_TOKEN));
     when(inviteRepository.findById(any())).thenReturn(Optional.of(invite));
     when(ngUserService.getUserByEmail(any(), anyBoolean())).thenReturn(Optional.of(user));
     InviteAcceptResponse inviteAcceptResponse = inviteService.acceptInvite(dummyJWTToken);
