@@ -9,8 +9,23 @@ package io.harness.idp.scorecard.scores.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
+import io.harness.spec.server.idp.v1.model.ScorecardScore;
+import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
+
+import java.util.List;
+import lombok.AllArgsConstructor;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface ScoreService {
   void computeScores(String accountIdentifier);
+  List<ScorecardSummaryInfo> getScoresSummaryForAnEntity(String accountIdentifier, String entityIdentifier);
+
+  List<ScorecardGraphSummaryInfo> getScoresGraphSummaryForAnEntityAndScorecard(
+      String accountIdentifier, String entityIdentifier, String scoreIdentifier);
+
+  List<ScorecardScore> getScorecardScoreOverviewForAnEntity(String accountIdentifier, String entityIdentifier);
+
+  ScorecardSummaryInfo getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
+      String accountIdentifier, String entityIdentifier, String scorecardIdentifier);
 }

@@ -1,0 +1,585 @@
+{
+  "items": [
+    {
+      "id": "c25hcHNob3RzLWFydmluZDo3MWFmZWE1NDBlMjNkZGU1MTllMWMwNTM5MmRkNTc1ZQ",
+      "repository": "snapshots-harness",
+      "format": "maven2",
+      "group": "my.group",
+      "name": "my-app",
+      "version": "5.0.0",
+      "assets": [
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0-dist.ear",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0-dist.ear",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyY2UyODgwYzdlMzhkMjU4YQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "26f33b6007b2542a3b87f0ea35400f03ea01c514",
+            "sha512": "6350fb64b0f80cb087e6bc0783ec4a2b70086c30fcac9ad22a4baac372c2bb1092e21bbd39f18efe1a99a4aad310ab36575346b52d5f3b48736ea935d8f3ced0"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0-dist.ear.md5",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0-dist.ear.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyMGJhMjA2NzljMDNkYzFmNg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "60c9fa46740d6efc87fe7d3e31066e81efd3f979",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0-dist.ear.sha1",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0-dist.ear.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmMzNjYzMyNmJjYjU1ZWY2NQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "b48cea157f9ed2ba27a5e3bd6b488e6bfa707d21",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0-dist.jar",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0-dist.jar",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyYTQ2OTU0NzJiMjQwOGM2NQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "0400a7a94812623c5fcf918a2cab72e01464ecc0",
+            "sha512": "586ef1bffe83570071a2e6a6333232947bd2458ba35543e93d7cb964407e49f39cba965cd215c7cbd15db18f12a261d53d09924820e4869af7a44b92b1d00164"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0-dist.jar.md5",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0-dist.jar.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyYmJiMjc5ZGY0MWRjMzUwMA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "551a482832eb9a78bd5b4b41643af3c3255a3964",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0-dist.jar.sha1",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0-dist.jar.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmOWE0ZGIyM2I2Zjk0YzkzYQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "2d4b9a44b196a22011b62525e22b30520a03c093",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0-dist.zip",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0-dist.zip",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmNWIwZmNhOTI2NTlhZDg0Ng",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "26f33b6007b2542a3b87f0ea35400f03ea01c514",
+            "sha512": "6350fb64b0f80cb087e6bc0783ec4a2b70086c30fcac9ad22a4baac372c2bb1092e21bbd39f18efe1a99a4aad310ab36575346b52d5f3b48736ea935d8f3ced0"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0-dist.zip.md5",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0-dist.zip.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmMTY3MWI5NGM5OTg0Y2ViMQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "60c9fa46740d6efc87fe7d3e31066e81efd3f979",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0-dist.zip.sha1",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0-dist.zip.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyMjRkNTBhNDljMTIyZjA0ZA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "b48cea157f9ed2ba27a5e3bd6b488e6bfa707d21",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0.pom",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0.pom",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmNGQ1YTY0Y2YxOTkxNjAyMg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "41e369207607b5e84a464ce43760a0ad896ad172",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0.pom.md5",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0.pom.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmNjBjMjgxNzJlMDZhZDRlMA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "10b9489138b52fd8db77119ed4f150c72fa6ae81",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/5.0.0/my-app-5.0.0.pom.sha1",
+          "path": "my/group/my-app/5.0.0/my-app-5.0.0.pom.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyNTQyMWVjYTc0YTU1OGY5NQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "f54b5b3fe346f177c85faa15f4a051a6750197c3",
+            "sha512": null
+          },
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "id": "c25hcHNob3RzLWFydmluZDo5M2I5YjllYjlhN2VjYjA2YzNmMTllYTBhZmI1ODNjZA",
+      "repository": "snapshots-harness",
+      "format": "maven2",
+      "group": "my.group",
+      "name": "my-app",
+      "version": "4.0.0",
+      "assets": [
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0-dist.jar",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0-dist.jar",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyNjFjZDEyMTc5ODdjYTQ5MQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "0400a7a94812623c5fcf918a2cab72e01464ecc0",
+            "sha512": "586ef1bffe83570071a2e6a6333232947bd2458ba35543e93d7cb964407e49f39cba965cd215c7cbd15db18f12a261d53d09924820e4869af7a44b92b1d00164"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0-dist.jar.md5",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0-dist.jar.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyZWJiNGNlYWEzZTU2OTdhOQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "551a482832eb9a78bd5b4b41643af3c3255a3964",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0-dist.jar.sha1",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0-dist.jar.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmZjFmNjExN2EyNjQ4ODg3Mw",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "2d4b9a44b196a22011b62525e22b30520a03c093",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0-dist.zip",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0-dist.zip",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmYTI2NWE5YjA3YmExYjliOA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "26f33b6007b2542a3b87f0ea35400f03ea01c514",
+            "sha512": "6350fb64b0f80cb087e6bc0783ec4a2b70086c30fcac9ad22a4baac372c2bb1092e21bbd39f18efe1a99a4aad310ab36575346b52d5f3b48736ea935d8f3ced0"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0-dist.zip.md5",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0-dist.zip.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmM2NkMWZlMzA5ODZhODhiMQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "60c9fa46740d6efc87fe7d3e31066e81efd3f979",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0-dist.zip.sha1",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0-dist.zip.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyMzBmZTA3ZTU1OTVhNjkyOQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "b48cea157f9ed2ba27a5e3bd6b488e6bfa707d21",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0.ear",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0.ear",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyMWUxMmVlNjlhZmE2NTAzYw",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "26f33b6007b2542a3b87f0ea35400f03ea01c514",
+            "sha512": "6350fb64b0f80cb087e6bc0783ec4a2b70086c30fcac9ad22a4baac372c2bb1092e21bbd39f18efe1a99a4aad310ab36575346b52d5f3b48736ea935d8f3ced0"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0.ear.md5",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0.ear.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyMjBkZjQyMDJkOTkxNzE3OA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "60c9fa46740d6efc87fe7d3e31066e81efd3f979",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0.ear.sha1",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0.ear.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmYWJlYmI2MDBkZGJjZjhiNQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "b48cea157f9ed2ba27a5e3bd6b488e6bfa707d21",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0.pom",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0.pom",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmZWNhNTJiZjBkMTI5YjY2Yg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "e1a6cbc8719bea015e6f4323af994a41a79aae00",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0.pom.md5",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0.pom.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmOWJmNGUwYzE5M2ZmOTdiZg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "7f302b0435f3e0e210f4ecbc1e40bb6615fd7f64",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/4.0.0/my-app-4.0.0.pom.sha1",
+          "path": "my/group/my-app/4.0.0/my-app-4.0.0.pom.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyNjg4OTliM2MyYThmYWRiMA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "02118fbf1c97ac6a2c5beb7c63ce413c7d8659ed",
+            "sha512": null
+          },
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "id": "c25hcHNob3RzLWFydmluZDo3MWFmZWE1NDBlMjNkZGU1ZDcxNjM0MjMyN2M1YzkwZA",
+      "repository": "snapshots-harness",
+      "format": "maven2",
+      "group": "my.group",
+      "name": "my-app",
+      "version": "3.0.0",
+      "assets": [
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/3.0.0/my-app-3.0.0-dist.zip",
+          "path": "my/group/my-app/3.0.0/my-app-3.0.0-dist.zip",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyNjBiNjA5NGJlMzE2YmExYw",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "26f33b6007b2542a3b87f0ea35400f03ea01c514",
+            "sha512": "6350fb64b0f80cb087e6bc0783ec4a2b70086c30fcac9ad22a4baac372c2bb1092e21bbd39f18efe1a99a4aad310ab36575346b52d5f3b48736ea935d8f3ced0"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/3.0.0/my-app-3.0.0-dist.zip.md5",
+          "path": "my/group/my-app/3.0.0/my-app-3.0.0-dist.zip.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyMzcyNDBlZmFlMzU3YzZkOA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "60c9fa46740d6efc87fe7d3e31066e81efd3f979",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/3.0.0/my-app-3.0.0-dist.zip.sha1",
+          "path": "my/group/my-app/3.0.0/my-app-3.0.0-dist.zip.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmZTQzZjg4YjA5YThmMzUzMg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "b48cea157f9ed2ba27a5e3bd6b488e6bfa707d21",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/3.0.0/my-app-3.0.0.ear",
+          "path": "my/group/my-app/3.0.0/my-app-3.0.0.ear",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmZDE0NTExOTE0MTJjM2M1OQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "26f33b6007b2542a3b87f0ea35400f03ea01c514",
+            "sha512": "6350fb64b0f80cb087e6bc0783ec4a2b70086c30fcac9ad22a4baac372c2bb1092e21bbd39f18efe1a99a4aad310ab36575346b52d5f3b48736ea935d8f3ced0"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/3.0.0/my-app-3.0.0.ear.md5",
+          "path": "my/group/my-app/3.0.0/my-app-3.0.0.ear.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmODkyMGEwN2JiMmQ3ZWJkNg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "60c9fa46740d6efc87fe7d3e31066e81efd3f979",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/3.0.0/my-app-3.0.0.ear.sha1",
+          "path": "my/group/my-app/3.0.0/my-app-3.0.0.ear.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyYWU2Y2VmODkyODIwMmVjMQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "b48cea157f9ed2ba27a5e3bd6b488e6bfa707d21",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/3.0.0/my-app-3.0.0.pom",
+          "path": "my/group/my-app/3.0.0/my-app-3.0.0.pom",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyOGY0MDE0YTAwN2Q3ZDhjMA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "de8c2cbfebf849b6daab617c6d9102848a10923c",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/3.0.0/my-app-3.0.0.pom.md5",
+          "path": "my/group/my-app/3.0.0/my-app-3.0.0.pom.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyODI2YjE2YWFlYTg4OTg3ZA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "acc1018ed07971e51a2960a93b6cdf6aacbedc56",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/3.0.0/my-app-3.0.0.pom.sha1",
+          "path": "my/group/my-app/3.0.0/my-app-3.0.0.pom.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmODhhZDQwYjFiNmQzNjdhZA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "0f9c25c6153542b5e784ea9481dd4448d21d4834",
+            "sha512": null
+          },
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "id": "c25hcHNob3RzLWFydmluZDo5M2I5YjllYjlhN2VjYjA2NzdjNjE5NzMwZGNiYmQ1Mw",
+      "repository": "snapshots-harness",
+      "format": "maven2",
+      "group": "my.group",
+      "name": "my-app",
+      "version": "2.0.0",
+      "assets": [
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0-dist.ear",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0-dist.ear",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmMmFjMWE5YjJlYjQxNWVjMg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "26f33b6007b2542a3b87f0ea35400f03ea01c514",
+            "sha512": "6350fb64b0f80cb087e6bc0783ec4a2b70086c30fcac9ad22a4baac372c2bb1092e21bbd39f18efe1a99a4aad310ab36575346b52d5f3b48736ea935d8f3ced0"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0-dist.ear.md5",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0-dist.ear.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmZDcyN2NlYzczYjJlNDdkMg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "60c9fa46740d6efc87fe7d3e31066e81efd3f979",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0-dist.ear.sha1",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0-dist.ear.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyZmJjMmU2NzMwZjY4MDE0OQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "b48cea157f9ed2ba27a5e3bd6b488e6bfa707d21",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0-dist.jar",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0-dist.jar",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmZjE4YTc3Zjk4ZThiZjEzZQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "0400a7a94812623c5fcf918a2cab72e01464ecc0",
+            "sha512": "586ef1bffe83570071a2e6a6333232947bd2458ba35543e93d7cb964407e49f39cba965cd215c7cbd15db18f12a261d53d09924820e4869af7a44b92b1d00164"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0-dist.jar.md5",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0-dist.jar.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmYTllNDViZjIwZTg4NmU5NA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "551a482832eb9a78bd5b4b41643af3c3255a3964",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0-dist.jar.sha1",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0-dist.jar.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyMWFiMmE0MzMwNTdjYTU4NQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "2d4b9a44b196a22011b62525e22b30520a03c093",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0-dist.zip",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0-dist.zip",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyNDViZjNhN2FhZjJlZTY5MQ",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "26f33b6007b2542a3b87f0ea35400f03ea01c514",
+            "sha512": "6350fb64b0f80cb087e6bc0783ec4a2b70086c30fcac9ad22a4baac372c2bb1092e21bbd39f18efe1a99a4aad310ab36575346b52d5f3b48736ea935d8f3ced0"
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0-dist.zip.md5",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0-dist.zip.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyNzcxMWI2YWZjODY1Yjk3ZA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "60c9fa46740d6efc87fe7d3e31066e81efd3f979",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0-dist.zip.sha1",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0-dist.zip.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmNTY2ODBkN2EwNmFiODI3Zg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "b48cea157f9ed2ba27a5e3bd6b488e6bfa707d21",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0.pom",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0.pom",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyYTk0OGYwOTM2NjU4MTU5MA",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "2f75e01dc9af4c0708fb596b9a6997d9aea2dc01",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0.pom.md5",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0.pom.md5",
+          "id": "c25hcHNob3RzLWFydmluZDo5MTJkMGZlN2I4MTkyMzkyNWE2NzAzYjJjMWY0ZGEzNg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "f4d389901f2a6443e01495a35ce4ebe8f7b6ce0d",
+            "sha512": null
+          },
+          "lastModified": null
+        },
+        {
+          "downloadUrl": "https://localhost/repository/snapshots-harness/my/group/my-app/2.0.0/my-app-2.0.0.pom.sha1",
+          "path": "my/group/my-app/2.0.0/my-app-2.0.0.pom.sha1",
+          "id": "c25hcHNob3RzLWFydmluZDo3ZjYzNzlkMzJmOGRkNzhmNWY1NWZmNjk4MTI4MzQwYg",
+          "repository": "snapshots-harness",
+          "format": "maven2",
+          "checksum": {
+            "sha1": "430b38904e880fa47642efd6dae9b76aff7e570d",
+            "sha512": null
+          },
+          "lastModified": null
+        }
+      ]
+    }
+  ],
+  "continuationToken": null
+}

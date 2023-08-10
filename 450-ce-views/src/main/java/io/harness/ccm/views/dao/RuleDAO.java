@@ -23,22 +23,42 @@ import com.mongodb.client.model.Collation;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
-import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Slf4j
 @Singleton
 public class RuleDAO {
   @Inject private HPersistence hPersistence;
+  @Inject private MongoTemplate mongoTemplate;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private static final String LOCALE_EN = "en";
 
   public boolean save(Rule rule) {
-    log.info("created: {}", hPersistence.save(rule));
-    return hPersistence.save(rule) != null;
+    Rule savedRule = mongoTemplate.save(rule);
+    log.info("created: {}", savedRule);
+
+    // We are creating a OOTB rule, we explicitly update createdBy, updatedBy
+    if (rule.getAccountId().equals(GLOBAL_ACCOUNT_ID)) {
+      Criteria criteria =
+          Criteria.where(RuleId.accountId).is(savedRule.getAccountId()).and(RuleId.uuid).is(savedRule.getUuid());
+      org.springframework.data.mongodb.core.query.Query query =
+          new org.springframework.data.mongodb.core.query.Query(criteria);
+      Update update = new Update();
+      update.set(RuleId.createdBy, null);
+      update.set(RuleId.lastUpdatedBy, null);
+      FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
+      Rule updatedRule = mongoTemplate.findAndModify(query, update, options, Rule.class);
+      log.info("Updated rule {}", updatedRule);
+      return updatedRule != null;
+    }
+    return savedRule != null;
   }
 
   public boolean delete(String accountId, String uuid) {
@@ -150,37 +170,67 @@ public class RuleDAO {
   }
 
   public Rule update(Rule rule, String accountId) {
-    Query<Rule> query = hPersistence.createQuery(Rule.class)
-                            .field(RuleId.accountId)
-                            .equal(accountId)
-                            .field(RuleId.uuid)
-                            .equal(rule.getUuid());
-    UpdateOperations<Rule> updateOperations = hPersistence.createUpdateOperations(Rule.class);
+    // We are updating a OOTB rule, we don't want to populate createdBy, updatedBy
+    if (accountId.equals(GLOBAL_ACCOUNT_ID)) {
+      Criteria criteria = Criteria.where(RuleId.accountId).is(accountId).and(RuleId.uuid).is(rule.getUuid());
+      org.springframework.data.mongodb.core.query.Query query =
+          new org.springframework.data.mongodb.core.query.Query(criteria);
+      Update update = new Update();
+      update.set(RuleId.createdBy, null);
+      update.set(RuleId.lastUpdatedBy, null);
+      if (rule.getName() != null) {
+        if (fetchByName(accountId, rule.getName(), true) != null) {
+          throw new InvalidRequestException("Rule with given name already exits");
+        }
+        update.set(RuleId.name, rule.getName());
+      }
+      if (rule.getDescription() != null) {
+        update.set(RuleId.description, rule.getDescription());
+      }
+      if (rule.getRulesYaml() != null) {
+        update.set(RuleId.rulesYaml, rule.getRulesYaml());
+      }
+      if (rule.getTags() != null) {
+        update.set(RuleId.tags, rule.getTags());
+      }
+      if (rule.getForRecommendation() != null) {
+        update.set(RuleId.forRecommendation, rule.getForRecommendation());
+      }
+      if (rule.getResourceType() != null) {
+        update.set(RuleId.resourceType, rule.getResourceType());
+      }
 
+      FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
+      Rule updatedRule = mongoTemplate.findAndModify(query, update, options, Rule.class);
+      log.info("Updated rule {}", updatedRule);
+      return updatedRule;
+    }
+
+    Rule existingRule = fetchById(accountId, rule.getUuid(), false);
     if (rule.getName() != null) {
       if (fetchByName(accountId, rule.getName(), true) != null) {
         throw new InvalidRequestException("Rule with given name already exits");
       }
-      updateOperations.set(RuleId.name, rule.getName());
+      existingRule.setName(rule.getName());
     }
     if (rule.getDescription() != null) {
-      updateOperations.set(RuleId.description, rule.getDescription());
+      existingRule.setDescription(rule.getDescription());
     }
     if (rule.getRulesYaml() != null) {
-      updateOperations.set(RuleId.rulesYaml, rule.getRulesYaml());
+      existingRule.setRulesYaml(rule.getRulesYaml());
     }
     if (rule.getTags() != null) {
-      updateOperations.set(RuleId.tags, rule.getTags());
+      existingRule.setTags(rule.getTags());
     }
     if (rule.getForRecommendation() != null) {
-      updateOperations.set(RuleId.forRecommendation, rule.getForRecommendation());
+      existingRule.setForRecommendation(rule.getForRecommendation());
     }
     if (rule.getResourceType() != null) {
-      updateOperations.set(RuleId.resourceType, rule.getResourceType());
+      existingRule.setResourceType(rule.getResourceType());
     }
-    log.info("Updated rule: {} {} {}", rule.getUuid(), hPersistence.update(query, updateOperations), query);
-    hPersistence.update(query, updateOperations);
-    return query.asList().get(0);
+    Rule savedRule = mongoTemplate.save(existingRule);
+    log.info("Updated rule: {} {}", rule.getUuid(), savedRule);
+    return savedRule;
   }
 
   public List<Rule> check(String accountId, List<String> rulesIdentifier) {

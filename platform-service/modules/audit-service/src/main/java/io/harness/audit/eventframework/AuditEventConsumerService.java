@@ -23,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
 @Slf4j
-public class PlatformEventConsumerService implements Managed {
-  @Inject PlatformEntityCRUDStreamConsumer platformEntityCRUDStreamConsumer;
+public class AuditEventConsumerService implements Managed {
+  @Inject AuditEntityCRUDStreamConsumer auditEntityCRUDStreamConsumer;
 
   private ExecutorService entityCRUDConsumerService;
 
@@ -32,7 +32,7 @@ public class PlatformEventConsumerService implements Managed {
   public void start() {
     entityCRUDConsumerService =
         Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(ENTITY_CRUD).build());
-    entityCRUDConsumerService.execute(platformEntityCRUDStreamConsumer);
+    entityCRUDConsumerService.execute(auditEntityCRUDStreamConsumer);
   }
 
   @Override

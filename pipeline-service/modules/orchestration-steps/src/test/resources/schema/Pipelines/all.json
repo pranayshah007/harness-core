@@ -3378,6 +3378,12 @@
             "issueKey": {
               "type": "string"
             },
+            "issueType": {
+              "type": "string"
+            },
+            "projectKey": {
+              "type": "string"
+            },
             "transitionTo": {
               "$ref": "#/definitions/TransitionTo"
             }

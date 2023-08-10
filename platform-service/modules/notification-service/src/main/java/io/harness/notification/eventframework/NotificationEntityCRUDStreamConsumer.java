@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.audit.eventframework;
+package io.harness.notification.eventframework;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.PLATFORM_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NOTIFICATION_ENTITY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Consumer;
@@ -36,25 +36,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 @OwnedBy(PL)
-public class PlatformEntityCRUDStreamConsumer extends RedisTraceConsumer {
+public class NotificationEntityCRUDStreamConsumer extends RedisTraceConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 10;
   private final Consumer redisConsumer;
   private final List<MessageListener> messageListenersList;
   private final QueueController queueController;
 
   @Inject
-  public PlatformEntityCRUDStreamConsumer(@Named(ENTITY_CRUD) Consumer redisConsumer,
-      @Named(ACCOUNT_ENTITY + ENTITY_CRUD) MessageListener accountEntityCrudStreamListener,
+  public NotificationEntityCRUDStreamConsumer(@Named(ENTITY_CRUD + "NOTIFICATION_SERVICE") Consumer redisConsumer,
+      @Named(NOTIFICATION_ENTITY + ENTITY_CRUD) MessageListener notificationEntityCrudStreamListener,
       QueueController queueController) {
     this.redisConsumer = redisConsumer;
     messageListenersList = new ArrayList<>();
-    messageListenersList.add(accountEntityCrudStreamListener);
+    messageListenersList.add(notificationEntityCrudStreamListener);
     this.queueController = queueController;
   }
 
   @Override
   public void run() {
-    log.info("Started the consumer for Platform entity crud stream");
+    log.info("Started the consumer for Notification entity crud stream");
     try {
       SecurityContextBuilder.setContext(new ServicePrincipal(PLATFORM_SERVICE.getServiceId()));
       SourcePrincipalContextBuilder.setSourcePrincipal(new ServicePrincipal(PLATFORM_SERVICE.getServiceId()));
@@ -71,7 +71,7 @@ public class PlatformEntityCRUDStreamConsumer extends RedisTraceConsumer {
       SecurityContextBuilder.unsetCompleteContext();
       Thread.currentThread().interrupt();
     } catch (Exception ex) {
-      log.error("Platform Entity crud stream consumer unexpectedly stopped", ex);
+      log.error("Notification Entity crud stream consumer unexpectedly stopped", ex);
     } finally {
       SecurityContextBuilder.unsetCompleteContext();
     }
@@ -81,7 +81,7 @@ public class PlatformEntityCRUDStreamConsumer extends RedisTraceConsumer {
     try {
       pollAndProcessMessages();
     } catch (EventsFrameworkDownException e) {
-      log.error("Events framework is down for Platform Entity crud stream consumer. Retrying again...", e);
+      log.error("Events framework is down for Notification Entity crud stream consumer. Retrying again...", e);
       TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
     }
   }

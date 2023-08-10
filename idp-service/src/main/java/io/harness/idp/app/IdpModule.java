@@ -96,6 +96,8 @@ import io.harness.idp.scorecard.scorecards.resources.ScorecardsApiImpl;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
 import io.harness.idp.scorecard.scorecards.service.ScorecardServiceImpl;
 import io.harness.idp.scorecard.scores.resources.ScoreApiImpl;
+import io.harness.idp.scorecard.scores.service.ScoreService;
+import io.harness.idp.scorecard.scores.service.ScoreServiceImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
 import io.harness.idp.settings.resources.BackstagePermissionsApiImpl;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -356,6 +358,7 @@ public class IdpModule extends AbstractModule {
     bind(DataSourceService.class).to(DataSourceServiceImpl.class);
     bind(DataPointService.class).to(DataPointServiceImpl.class);
     bind(DataSourceLocationService.class).to(DataSourceLocationServiceImpl.class);
+    bind(ScoreService.class).to(ScoreServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));

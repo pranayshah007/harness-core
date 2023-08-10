@@ -912,7 +912,7 @@ paths:
         - Scores
       responses:
         '200':
-          $ref: '#/components/responses/ScorecardScoreResponse'
+          $ref: '#/components/responses/ScorecardRecalibrateReponse'
       operationId: get-recalibrated-score-for-scorecard
       x-stoplight:
         id: u8zdom1w01hc9
@@ -2659,25 +2659,24 @@ components:
       x-stoplight:
         id: fahygmpnh1e1s
       type: object
+      description: Scorecard score calculation summary info
+      x-internal: true
       properties:
-        name:
-          type: string
-          x-stoplight:
-            id: 6hx55fmh1awhu
-        scorecard_identifier:
+        scorecard_name:
           type: string
           x-stoplight:
             id: 32d7nmanu1qhn
         timestamp:
-          type: number
+          type: integer
           x-stoplight:
             id: 52k4qmnsh5ng9
+          format: int64
         entity_identifier:
           type: string
           x-stoplight:
             id: z9yqnn9ti3i5r
         score:
-          type: number
+          type: integer
           x-stoplight:
             id: 1evhgpxyjq6x2
         checks_statuses:
@@ -2687,14 +2686,11 @@ components:
           items:
             $ref: '#/components/schemas/CheckStatus'
       required:
-        - name
-        - scorecard_identifier
+        - scorecard_name
         - timestamp
         - entity_identifier
         - score
         - checks_statuses
-      description: Scorecard score calculation summary info
-      x-internal: true
     ScorecardSummaryResponse:
       title: ScorecardSummaryResponse
       x-stoplight:
@@ -2720,7 +2716,7 @@ components:
       description: Score info for single score card
       properties:
         score:
-          type: number
+          type: integer
           x-stoplight:
             id: 6hfsa91mogdp2
         description:
@@ -2750,7 +2746,7 @@ components:
           items:
             $ref: '#/components/schemas/ScorecardScore'
         overall_score:
-          type: number
+          type: integer
           x-stoplight:
             id: fee0n1v6e2qkt
       required:
@@ -2769,11 +2765,12 @@ components:
           x-stoplight:
             id: mlz34tcwb51yb
         timestamp:
-          type: number
+          type: integer
           x-stoplight:
             id: bmlwrqk84d6cp
+          format: int64
         score:
-          type: number
+          type: integer
           x-stoplight:
             id: 6pk6i64odslqt
       required:
@@ -2794,30 +2791,6 @@ components:
       required:
         - scorecard_graph_summary
       description: Response for scorecard graph summary
-    ScorecardRecalibrateInfo:
-      title: ScorecardRecalibrateInfo
-      x-stoplight:
-        id: w0rdecfufxsu0
-      type: object
-      properties:
-        score:
-          type: number
-          x-stoplight:
-            id: us1ais0o5n0n0
-        scorecard_name:
-          type: string
-          x-stoplight:
-            id: g4z7rqcsyjbdg
-        checks_statuses:
-          type: array
-          x-stoplight:
-            id: rmuigj08574hw
-          items:
-            $ref: '#/components/schemas/CheckStatus'
-      required:
-        - score
-        - scorecard_name
-        - checks_statuses
     ScorecardRecalibrateResponse:
       title: ScorecardRecalibrateResponse
       x-stoplight:
@@ -2825,11 +2798,7 @@ components:
       type: object
       properties:
         recalibrated_scores:
-          x-stoplight:
-            id: arpq5l5dje8sy
-          type: array
-          items:
-            $ref: '#/components/schemas/ScorecardRecalibrateInfo'
+          $ref: '#/components/schemas/ScorecardSummaryInfo'
       required:
         - recalibrated_scores
   parameters:

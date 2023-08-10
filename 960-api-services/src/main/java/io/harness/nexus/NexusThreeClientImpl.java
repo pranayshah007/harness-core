@@ -6,6 +6,7 @@
  */
 
 package io.harness.nexus;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -261,7 +262,20 @@ public class NexusThreeClientImpl {
                 .map(ArtifactFileMetadataInternal::getUrl)
                 .findFirst()
                 .orElse(null);
+    } else if (StringUtils.isNotEmpty(extension)) {
+      url = artifactFileMetadataInternals.stream()
+                .filter(meta -> meta.getFileName().endsWith(extension))
+                .map(ArtifactFileMetadataInternal::getUrl)
+                .findFirst()
+                .orElse(null);
+    } else if (StringUtils.isNotEmpty(classifier)) {
+      url = artifactFileMetadataInternals.stream()
+                .filter(meta -> meta.getFileName().contains(classifier))
+                .map(ArtifactFileMetadataInternal::getUrl)
+                .findFirst()
+                .orElse(null);
     }
+
     return StringUtils.isNotBlank(url) ? url : defaultUrl;
   }
 
@@ -469,13 +483,22 @@ public class NexusThreeClientImpl {
           if (isNotEmpty(classifier)) {
             metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.classifier, classifier);
           }
+
+          List<ArtifactFileMetadataInternal> artifactFileMetadataList = versionToArtifactDownloadUrls.get(version);
+          String artifactUrl = versionToArtifactUrls.get(version);
+          if (isNotEmpty(artifactFileMetadataList) && versionToArtifactUrls.containsKey(version)
+              && isNotEmpty(artifactUrl)) {
+            artifactFileMetadataList =
+                artifactFileMetadataList.stream().filter(f -> artifactUrl.equals(f.getUrl())).collect(toList());
+          }
+
           return BuildDetailsInternal.builder()
               .number(version)
               .revision(version)
-              .buildUrl(versionToArtifactUrls.get(version))
+              .buildUrl(artifactUrl)
               .metadata(metadata)
               .uiDisplayName("Version# " + version)
-              .artifactFileMetadataList(versionToArtifactDownloadUrls.get(version))
+              .artifactFileMetadataList(artifactFileMetadataList)
               .build();
         })
         .collect(toList());

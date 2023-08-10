@@ -304,16 +304,16 @@ public class TriggerEventExecutionHelper {
       PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
           triggerDetails, triggerPayload, triggerWebhookEvent, payload, header, runtimeInputYaml);
       return generateEventHistoryForSuccess(
-          triggerDetails, runtimeInputYaml, ngTriggerEntity, triggerWebhookEvent, response, null);
+          triggerDetails, runtimeInputYaml, ngTriggerEntity, triggerWebhookEvent, response, null, null);
     } catch (Exception e) {
       return generateEventHistoryForError(
-          triggerWebhookEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e, null);
+          triggerWebhookEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e, null, null);
     }
   }
 
   public TriggerEventResponse generateEventHistoryForError(TriggerWebhookEvent triggerWebhookEvent,
       TriggerDetails triggerDetails, String runtimeInputYaml, NGTriggerEntity ngTriggerEntity, Exception e,
-      String pollingDocId) {
+      String pollingDocId, String build) {
     log.error(new StringBuilder(512)
                   .append("Exception occurred while requesting pipeline execution using Trigger ")
                   .append(TriggerHelper.getTriggerRef(ngTriggerEntity))
@@ -324,8 +324,10 @@ public class TriggerEventExecutionHelper {
 
     TargetExecutionSummary targetExecutionSummary = TriggerEventResponseHelper.prepareTargetExecutionSummary(
         (PlanExecution) null, triggerDetails, runtimeInputYaml);
+
     return TriggerEventResponseHelper.toResponseWithPollingInfo(INVALID_RUNTIME_INPUT_YAML, triggerWebhookEvent, null,
-        ngTriggerEntity, e.getMessage(), targetExecutionSummary, pollingDocId);
+        ngTriggerEntity, triggerDetails.getNgTriggerConfigV2(), e.getMessage(), targetExecutionSummary, pollingDocId,
+        build);
   }
 
   public TriggerEventResponse generateEventHistoryForAuthenticationError(
@@ -355,6 +357,7 @@ public class TriggerEventExecutionHelper {
   public TriggerEventResponse triggerEventPipelineExecution(
       TriggerDetails triggerDetails, PollingResponse pollingResponse) {
     String pollingDocId = null;
+    String build = null;
     String runtimeInputYaml = null;
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     TriggerWebhookEvent pseudoEvent = TriggerWebhookEvent.builder()
@@ -380,7 +383,7 @@ public class TriggerEventExecutionHelper {
       Type buildType = getBuildType(ngTriggerEntity);
       Builder triggerPayloadBuilder = TriggerPayload.newBuilder().setType(buildType);
 
-      String build = pollingResponse.getBuildInfo().getVersions(0);
+      build = pollingResponse.getBuildInfo().getVersions(0);
       log.info(
           "Triggering pipeline execution for pollingDocumentId {}, build {}", pollingResponse.getPollingDocId(), build);
       if (buildType == Type.ARTIFACT) {
@@ -401,15 +404,16 @@ public class TriggerEventExecutionHelper {
         pseudoEvent.setPayload(triggerPayload.toString());
       }
       return generateEventHistoryForSuccess(
-          triggerDetails, runtimeInputYaml, ngTriggerEntity, pseudoEvent, response, pollingDocId);
+          triggerDetails, runtimeInputYaml, ngTriggerEntity, pseudoEvent, response, pollingDocId, build);
     } catch (Exception e) {
       return generateEventHistoryForError(
-          pseudoEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e, pollingDocId);
+          pseudoEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e, pollingDocId, build);
     }
   }
 
   private TriggerEventResponse generateEventHistoryForSuccess(TriggerDetails triggerDetails, String runtimeInputYaml,
-      NGTriggerEntity ngTriggerEntity, TriggerWebhookEvent pseudoEvent, PlanExecution response, String pollingDocId) {
+      NGTriggerEntity ngTriggerEntity, TriggerWebhookEvent pseudoEvent, PlanExecution response, String pollingDocId,
+      String build) {
     try (AutoLogContext ignore1 = new NgAutoLogContext(ngTriggerEntity.getProjectIdentifier(),
              ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getAccountId(), OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AutoLogContext(ImmutableMap.of("planExecutionId", response.getPlanId()),
@@ -421,7 +425,8 @@ public class TriggerEventExecutionHelper {
           + ngTriggerEntity.getTargetIdentifier() + ", using trigger: " + ngTriggerEntity.getIdentifier());
 
       return TriggerEventResponseHelper.toResponseWithPollingInfo(TARGET_EXECUTION_REQUESTED, pseudoEvent,
-          ngTriggerEntity, "Pipeline execution was requested successfully", targetExecutionSummary, pollingDocId);
+          ngTriggerEntity, triggerDetails.getNgTriggerConfigV2(), "Pipeline execution was requested successfully",
+          targetExecutionSummary, pollingDocId, build);
     }
   }
 

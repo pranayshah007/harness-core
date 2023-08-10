@@ -12,9 +12,13 @@ import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.ng.beans.PageRequest;
+import io.harness.ng.beans.PageResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface SRMAnalysisStepService {
@@ -33,4 +37,8 @@ public interface SRMAnalysisStepService {
   SRMAnalysisStepDetailDTO getSRMAnalysisSummary(String executionDetailId);
 
   void handleReportNotification(SRMAnalysisStepExecutionDetail stepExecutionDetail);
+
+  PageResponse<SRMAnalysisStepDetailDTO> getReportList(ProjectParams projectParams, List<String> serviceIdentifiers,
+      List<String> environmentIdentifier, List<String> monitoredServiceIdentifiers,
+      boolean isMonitoredServiceIdentifierScoped, Instant startTime, Instant endTime, PageRequest pageRequest);
 }

@@ -11,1249 +11,333 @@ bq show --format=prettyjson ce-prod-274307:BillingReport_wfhxhd0rrqwoo8tizt5yvw.
 """
 
 aws_cur_table_schema = [
-    {
-        "mode": "NULLABLE",
-        "name": "payeraccountid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "lineitemdescription",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "resourceid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "usageamount",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "usagestartdate",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "productname",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "productfamily",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "servicecode",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "servicename",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "blendedrate",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "blendedcost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "unblendedrate",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "unblendedcost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "region",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "availabilityzone",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "usageaccountid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "instancetype",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "usagetype",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "lineitemtype",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "effectivecost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "billingentity",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "instanceFamily",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "marketOption",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "amortisedCost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "netAmortisedCost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "fxRateSrcToDest",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ccmPreferredCurrency",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "mspMarkupMultiplier",
-        "type": "FLOAT64"
-    },
-    {
-        "fields": [
-            {
-                "mode": "NULLABLE",
-                "name": "key",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "value",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "tags",
-        "type": "RECORD"
+    {"mode": "NULLABLE", "name": "billtype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "usagetype_1", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "description", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "pricingunit", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "publicondemandcost", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "publicondemandrate", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "operation", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "savingsplaneffectivecost", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "storage", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "licensemodel", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gpumemory", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gpu", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "datatransferout", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "billingperiodstartdate", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "billingperiodenddate",  "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "payeraccountid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "lineitemdescription", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "resourceid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "usageamount", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "usagestartdate", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "productname", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "productfamily", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "servicecode", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "servicename", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "blendedrate", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "blendedcost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "unblendedrate", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "unblendedcost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "region", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "availabilityzone", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "usageaccountid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "instancetype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "usagetype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "lineitemtype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "effectivecost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "billingentity", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "instanceFamily", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "marketOption", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "amortisedCost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "netAmortisedCost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "fxRateSrcToDest", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "ccmPreferredCurrency", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "mspMarkupMultiplier", "type": "FLOAT64"},
+    {"fields": [
+        {"mode": "NULLABLE", "name": "key", "type": "STRING"},
+        {"mode": "NULLABLE", "name": "value", "type": "STRING"}],
+        "mode": "REPEATED", "name": "tags", "type": "RECORD"
     }
 ]
 
 
 preAggreagtedTableSchema = [
-    {
-        "mode": "NULLABLE",
-        "name": "cost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpProduct",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpSkuId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpSkuDescription",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "startTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpProjectId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "region",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "zone",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpBillingAccountId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "cloudProvider",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "fxRateSrcToDest",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ccmPreferredCurrency",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "mspMarkupMultiplier",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsBlendedRate",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsBlendedCost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsUnblendedRate",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsUnblendedCost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsServicecode",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsAvailabilityzone",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsUsageaccountid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsInstancetype",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsUsagetype",
-        "type": "STRING"
-    },
-    {
-        "name": "discount",
-        "type": "FLOAT"
-    },
-    {
-        "name": "azureServiceName",
-        "type": "STRING"
-    },
-    {
-        "name": "azureResourceRate",
-        "type": "FLOAT"
-    },
-    {
-        "name": "azureSubscriptionGuid",
-        "type": "STRING"
-    },
-    {
-        "name": "azureTenantId",
-        "type": "STRING"
-    }
+    {"mode": "NULLABLE", "name": "cost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "gcpProduct", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gcpSkuId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gcpSkuDescription", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "startTime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "gcpProjectId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "region", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "zone", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gcpBillingAccountId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "cloudProvider", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "fxRateSrcToDest", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "ccmPreferredCurrency", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "mspMarkupMultiplier", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "awsBlendedRate", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsBlendedCost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "awsUnblendedRate", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsUnblendedCost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "awsServicecode", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsAvailabilityzone", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsUsageaccountid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsInstancetype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsUsagetype", "type": "STRING"},
+    {"name": "discount", "type": "FLOAT"},
+    {"name": "azureServiceName", "type": "STRING"},
+    {"name": "azureResourceRate", "type": "FLOAT"},
+    {"name": "azureSubscriptionGuid", "type": "STRING"},
+    {"name": "azureTenantId", "type": "STRING"}
 ]
 
 awsEc2InventoryCPUSchema = [
-    {
-        "mode": "NULLABLE",
-        "name": "instanceId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "average",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "minimum",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "maximum",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "addedAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "metricStartTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "metricEndTime",
-        "type": "TIMESTAMP"
-    },
+    {"mode": "NULLABLE", "name": "instanceId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "average", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "minimum", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "maximum", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "addedAt", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "metricStartTime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "metricEndTime", "type": "TIMESTAMP"},
 ]
 
 awsEc2InventorySchema = [
-    {
-        "mode": "NULLABLE",
-        "name": "tenancy",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "state",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "region",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "publicIpAddress",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "linkedAccountId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "instanceType",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "instanceId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "availabilityZone",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "lastUpdatedAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "instanceLaunchedAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "fields": [
-            {
-                "name": "key",
-                "type": "STRING"
-            },
-            {
-                "name": "value",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "labels",
-        "type": "RECORD"
-    },
-    {
-        "mode": "REPEATED",
-        "name": "volumeIds",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "instanceLifeCycle",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "reservationId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "stateTransitionReason",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "linkedAccountIdPartition",
-        "type": "INTEGER"
-    },
+    {"mode": "NULLABLE", "name": "tenancy", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "state", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "region", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "publicIpAddress", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "linkedAccountId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "instanceType", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "instanceId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "availabilityZone", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "lastUpdatedAt", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "instanceLaunchedAt", "type": "TIMESTAMP"},
+    {"fields": [
+        {"name": "key","type": "STRING"},
+        {"name": "value","type": "STRING"}
+    ], "mode": "REPEATED", "name": "labels", "type": "RECORD"},
+    {"mode": "REPEATED", "name": "volumeIds", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "instanceLifeCycle", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "reservationId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "stateTransitionReason", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "linkedAccountIdPartition", "type": "INTEGER"},
 ]
 
 awsRdsInventorySchema = [
-    {
-        "mode": "NULLABLE",
-        "name": "linkedAccountId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "region",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "DBInstanceIdentifier",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "DBInstanceClass",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "Engine",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "EngineVersion",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "DBInstanceStatus",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "AllocatedStorage",
-        "type": "INTEGER"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "Iops",
-        "type": "INTEGER"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "AvailabilityZone",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "MultiAZ",
-        "type": "BOOLEAN"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "PubliclyAccessible",
-        "type": "BOOLEAN"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "StorageType",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "DBClusterIdentifier",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "StorageEncrypted",
-        "type": "BOOLEAN"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "KmsKeyId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "DBInstanceArn",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "MaxAllocatedStorage",
-        "type": "INTEGER"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "DeletionProtection",
-        "type": "BOOLEAN"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "InstanceCreateTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "lastUpdatedAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "fields": [
-            {
-                "name": "key",
-                "type": "STRING"
-            },
-            {
-                "name": "value",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "tags",
-        "type": "RECORD"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "linkedAccountIdPartition",
-        "type": "INTEGER"
-    }
+    {"mode": "NULLABLE", "name": "linkedAccountId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "region", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "DBInstanceIdentifier", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "DBInstanceClass", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "Engine", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "EngineVersion", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "DBInstanceStatus", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "AllocatedStorage", "type": "INTEGER"},
+    {"mode": "NULLABLE", "name": "Iops", "type": "INTEGER"},
+    {"mode": "NULLABLE", "name": "AvailabilityZone", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "MultiAZ", "type": "BOOLEAN"},
+    {"mode": "NULLABLE", "name": "PubliclyAccessible", "type": "BOOLEAN"},
+    {"mode": "NULLABLE", "name": "StorageType", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "DBClusterIdentifier", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "StorageEncrypted", "type": "BOOLEAN"},
+    {"mode": "NULLABLE", "name": "KmsKeyId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "DBInstanceArn", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "MaxAllocatedStorage", "type": "INTEGER"},
+    {"mode": "NULLABLE", "name": "DeletionProtection", "type": "BOOLEAN"},
+    {"mode": "NULLABLE", "name": "InstanceCreateTime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "lastUpdatedAt", "type": "TIMESTAMP"},
+    {"fields": [
+        {"name": "key","type": "STRING"},
+        {"name": "value","type": "STRING"}
+    ], "mode": "REPEATED", "name": "tags", "type": "RECORD"},
+    {"mode": "NULLABLE", "name": "linkedAccountIdPartition", "type": "INTEGER"}
 ]
 
 unifiedTableTableSchema = [
-    {
-        "mode": "REQUIRED",
-        "name": "startTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "cost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpProduct",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpSkuId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpSkuDescription",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpProjectId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpInvoiceMonth",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpCostType",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "region",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "zone",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "gcpBillingAccountId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "cloudProvider",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "fxRateSrcToDest",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ccmPreferredCurrency",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "mspMarkupMultiplier",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsBlendedRate",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsBlendedCost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsUnblendedRate",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsUnblendedCost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsEffectiveCost",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsAmortisedCost",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsNetAmortisedCost",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsLineItemType",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsServicecode",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsAvailabilityzone",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsUsageaccountid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsInstancetype",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsUsagetype",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "awsBillingEntity",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "discount",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "endtime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "accountid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "instancetype",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "clusterid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "clustername",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "appid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "serviceid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "envid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "cloudproviderid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "launchtype",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "clustertype",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "workloadname",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "workloadtype",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "namespace",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "cloudservicename",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "taskid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "clustercloudprovider",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "billingamount",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "cpubillingamount",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "memorybillingamount",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "idlecost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "maxcpuutilization",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "avgcpuutilization",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "systemcost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "actualidlecost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "unallocatedcost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "networkcost",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "product",
-        "type": "STRING"
-    },
-    {
-        "fields": [
-            {
-                "name": "key",
-                "type": "STRING"
-            },
-            {
-                "name": "value",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "labels",
-        "type": "RECORD"
-    },
-    {
-        "name": "azureMeterCategory",
-        "type": "STRING"
-    },
-    {
-        "name": "azureMeterSubcategory",
-        "type": "STRING"
-    },
-    {
-        "name": "azureMeterId",
-        "type": "STRING"
-    },
-    {
-        "name": "azureMeterName",
-        "type": "STRING"
-    },
-    {
-        "name": "azureResourceType",
-        "type": "STRING"
-    },
-    {
-        "name": "azureServiceTier",
-        "type": "STRING"
-    },
-    {
-        "name": "azureInstanceId",
-        "type": "STRING"
-    },
-    {
-        "name": "azureResourceGroup",
-        "type": "STRING"
-    },
-    {
-        "name": "azureSubscriptionGuid",
-        "type": "STRING"
-    },
-    {
-        "name": "azureAccountName",
-        "type": "STRING"
-    },
-    {
-        "name": "azureFrequency",
-        "type": "STRING"
-    },
-    {
-        "name": "azurePublisherType",
-        "type": "STRING"
-    },
-    {
-        "name": "azurePublisherName",
-        "type": "STRING"
-    },
-    {
-        "name": "azureServiceName",
-        "type": "STRING"
-    },
-    {
-        "name": "azureSubscriptionName",
-        "type": "STRING"
-    },
-    {
-        "name": "azureReservationId",
-        "type": "STRING"
-    },
-    {
-        "name": "azureReservationName",
-        "type": "STRING"
-    },
-    {
-        "name": "azureResource",
-        "type": "STRING"
-    },
-    {
-        "name": "azureVMProviderId",
-        "type": "STRING"
-    },
-    {
-        "name": "azureTenantId",
-        "type": "STRING"
-    },
-    {
-        "name": "azureBillingCurrency",
-        "type": "STRING"
-    },
-    {
-        "name": "azureCustomerName",
-        "type": "STRING"
-    },
-    {
-        "name": "azureResourceRate",
-        "type": "FLOAT"
-    },
+    {"mode": "REQUIRED", "name": "startTime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "cost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "gcpProduct", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gcpSkuId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gcpSkuDescription", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gcpProjectId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gcpInvoiceMonth", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gcpCostType", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "region", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "zone", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "gcpBillingAccountId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "cloudProvider", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "fxRateSrcToDest", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "ccmPreferredCurrency", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "mspMarkupMultiplier", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "awsBlendedRate", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsBlendedCost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "awsUnblendedRate", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsUnblendedCost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "awsEffectiveCost", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "awsAmortisedCost", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "awsNetAmortisedCost", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "awsLineItemType", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsServicecode", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsAvailabilityzone", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsUsageaccountid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsInstancetype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsUsagetype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsBillingEntity", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsbilltype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsusagetype_1", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsdescription", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awspricingunit", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awspublicondemandcost", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "awspublicondemandrate", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsoperation", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awssavingsplaneffectivecost", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "awsstorage", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awslicensemodel", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsgpumemory", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsgpu", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsdatatransferout", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsbillingperiodstartdate", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "awsbillingperiodenddate",  "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "awspayeraccountid",  "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awslineitemdescription",  "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsresourceid",  "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsinstanceFamily", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsmarketoption", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsservicecode_simplified", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "discount", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "endtime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "accountid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "instancetype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "clusterid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "clustername", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "appid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "serviceid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "envid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "cloudproviderid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "launchtype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "clustertype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "workloadname", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "workloadtype", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "namespace", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "cloudservicename", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "taskid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "clustercloudprovider", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "billingamount", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "cpubillingamount", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "memorybillingamount", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "idlecost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "maxcpuutilization", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "avgcpuutilization", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "systemcost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "actualidlecost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "unallocatedcost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "networkcost", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "product", "type": "STRING"},
+    {"fields": [
+        {"name": "key","type": "STRING"},
+        {"name": "value","type": "STRING"}
+    ], "mode": "REPEATED", "name": "labels", "type": "RECORD"},
+    {"name": "azureMeterCategory", "type": "STRING"},
+    {"name": "azureMeterSubcategory", "type": "STRING"},
+    {"name": "azureMeterId", "type": "STRING"},
+    {"name": "azureMeterName", "type": "STRING"},
+    {"name": "azureResourceType", "type": "STRING"},
+    {"name": "azureServiceTier", "type": "STRING"},
+    {"name": "azureInstanceId", "type": "STRING"},
+    {"name": "azureResourceGroup", "type": "STRING"},
+    {"name": "azureSubscriptionGuid", "type": "STRING"},
+    {"name": "azureAccountName", "type": "STRING"},
+    {"name": "azureFrequency", "type": "STRING"},
+    {"name": "azurePublisherType", "type": "STRING"},
+    {"name": "azurePublisherName", "type": "STRING"},
+    {"name": "azureServiceName", "type": "STRING"},
+    {"name": "azureSubscriptionName", "type": "STRING"},
+    {"name": "azureReservationId", "type": "STRING"},
+    {"name": "azureReservationName", "type": "STRING"},
+    {"name": "azureResource", "type": "STRING"},
+    {"name": "azureVMProviderId", "type": "STRING"},
+    {"name": "azureTenantId", "type": "STRING"},
+    {"name": "azureBillingCurrency", "type": "STRING"},
+    {"name": "azureCustomerName", "type": "STRING"},
+    {"name": "azureResourceRate", "type": "FLOAT"},
     {'mode': 'NULLABLE', 'name': 'orgIdentifier', 'type': 'STRING'},
     {'mode': 'NULLABLE', 'name': 'projectIdentifier', 'type': 'STRING'},
-    {
-        "fields": [
-            {
-                "name": "costCategoryName",
-                "type": "STRING"
-            },
-            {
-                "name": "costBucketName",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "costCategory",
-        "type": "RECORD"
+    {"fields": [
+        {"name": "costCategoryName","type": "STRING"},
+        {"name": "costBucketName","type": "STRING"}
+    ], "mode": "REPEATED", "name": "costCategory", "type": "RECORD"
     }
 ]
 
 currencyConversionFactorUserInputTableTableSchema = [
-    {
-        "mode": "REQUIRED",
-        "name": "createdAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "updatedAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "conversionFactor",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "month",
-        "type": "DATE"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "conversionType",
-        "type": "STRING"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "destinationCurrency",
-        "type": "STRING"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "sourceCurrency",
-        "type": "STRING"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "accountId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "cloudServiceProvider",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "isHistoricalUpdateRequired",
-        "type": "BOOLEAN"
-    }
+    {"mode": "REQUIRED", "name": "createdAt", "type": "TIMESTAMP"},
+    {"mode": "REQUIRED", "name": "updatedAt", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "conversionFactor", "type": "FLOAT"},
+    {"mode": "REQUIRED", "name": "month", "type": "DATE"},
+    {"mode": "REQUIRED", "name": "conversionType", "type": "STRING"},
+    {"mode": "REQUIRED", "name": "destinationCurrency", "type": "STRING"},
+    {"mode": "REQUIRED", "name": "sourceCurrency", "type": "STRING"},
+    {"mode": "REQUIRED", "name": "accountId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "cloudServiceProvider", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "isHistoricalUpdateRequired", "type": "BOOLEAN"}
 ]
 
 labelKeysToColumnMappingTableSchema = [
-    {
-        "mode": "REQUIRED",
-        "name": "labelKey",
-        "type": "STRING"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "columnName",
-        "type": "STRING"
-    }
+    {"mode": "REQUIRED", "name": "labelKey", "type": "STRING"},
+    {"mode": "REQUIRED", "name": "columnName", "type": "STRING"}
 ]
 
 
 awsEbsInventorySchema = [
-    {
-        "mode": "REQUIRED",
-        "name": "lastUpdatedAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "volumeId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "createTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "availabilityZone",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "region",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "encrypted",
-        "type": "BOOLEAN"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "size",
-        "type": "INTEGER"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "state",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "iops",
-        "type": "INTEGER"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "volumeType",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "multiAttachedEnabled",
-        "type": "BOOLEAN"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "detachedAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "deleteTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "snapshotId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "kmsKeyId",
-        "type": "STRING"
-    },
-    {
-        "fields": [
-            {
-                "name": "attachTime",
-                "type": "TIMESTAMP"
-            },
-            {
-                "name": "device",
-                "type": "STRING"
-            },
-            {
-                "name": "instanceId",
-                "type": "STRING"
-            },
-            {
-                "name": "state",
-                "type": "STRING"
-            },
-            {
-                "name": "volumeId",
-                "type": "STRING"
-            },
-            {
-                "name": "deleteOnTermination",
-                "type": "BOOLEAN"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "attachments",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "name": "key",
-                "type": "STRING"
-            },
-            {
-                "name": "value",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "tags",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "name": "createTime",
-                "type": "TIMESTAMP"
-            },
-            {
-                "name": "snapshotId",
-                "type": "STRING"
-            },
-            {
-                "name": "status",
-                "type": "STRING"
-            },
-            {
-                "name": "description",
-                "type": "STRING"
-            },
-            {
-                "name": "encrypted",
-                "type": "BOOLEAN"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "snapshots",
-        "type": "RECORD"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "linkedAccountId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "linkedAccountIdPartition",
-        "type": "INTEGER"
-    }
+    {"mode": "REQUIRED", "name": "lastUpdatedAt", "type": "TIMESTAMP"},
+    {"mode": "REQUIRED", "name": "volumeId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "createTime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "availabilityZone", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "region", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "encrypted", "type": "BOOLEAN"},
+    {"mode": "NULLABLE", "name": "size", "type": "INTEGER"},
+    {"mode": "NULLABLE", "name": "state", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "iops", "type": "INTEGER"},
+    {"mode": "NULLABLE", "name": "volumeType", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "multiAttachedEnabled", "type": "BOOLEAN"},
+    {"mode": "NULLABLE", "name": "detachedAt", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "deleteTime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "snapshotId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "kmsKeyId", "type": "STRING"},
+    {"fields": [
+        {"name": "attachTime","type": "TIMESTAMP"},
+        {"name": "device","type": "STRING"},
+        {"name": "instanceId","type": "STRING"},
+        {"name": "state","type": "STRING"},
+        {"name": "volumeId","type": "STRING"},
+        {"name": "deleteOnTermination","type": "BOOLEAN"}
+    ], "mode": "REPEATED", "name": "attachments", "type": "RECORD"},
+    {"fields": [
+        {"name": "key","type": "STRING"},
+        {"name": "value","type": "STRING"}
+    ], "mode": "REPEATED", "name": "tags", "type": "RECORD"},
+    {"fields": [
+        {"name": "createTime","type": "TIMESTAMP"},
+        {"name": "snapshotId","type": "STRING"},
+        {"name": "status","type": "STRING"},
+        {"name": "description","type": "STRING"},
+        {"name": "encrypted","type": "BOOLEAN"}
+    ], "mode": "REPEATED", "name": "snapshots", "type": "RECORD"},
+    {"mode": "NULLABLE", "name": "linkedAccountId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "linkedAccountIdPartition", "type": "INTEGER"
+     }
 ]
 
 awsEbsInventoryMetricsSchema = [
-    {
-        "mode": "REQUIRED",
-        "name": "volumeId",
-        "type": "STRING"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "addedAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "volumeReadBytes",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "volumeWriteBytes",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "volumeReadOps",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "volumeWriteOps",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "volumeIdleTime",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "metricStartTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "metricEndTime",
-        "type": "TIMESTAMP"
-    }
+    {"mode": "REQUIRED", "name": "volumeId", "type": "STRING"},
+    {"mode": "REQUIRED", "name": "addedAt", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "volumeReadBytes", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "volumeWriteBytes", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "volumeReadOps", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "volumeWriteOps", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "volumeIdleTime", "type": "FLOAT"},
+    {"mode": "REQUIRED", "name": "metricStartTime", "type": "TIMESTAMP"},
+    {"mode": "REQUIRED", "name": "metricEndTime", "type": "TIMESTAMP"}
 ]
 
 # Generated from script via timescale
@@ -1407,990 +491,200 @@ costAggregatedSchema = [{'mode': 'REQUIRED', 'name': 'accountId', 'type': 'STRIN
                         {'mode': 'REQUIRED', 'name': 'cost', 'type': 'FLOAT'},
                         {'mode': 'REQUIRED', 'name': 'day', 'type': 'TIMESTAMP'}
                         ]
-
 gcp_cost_export_table_schema = [
-    {
-        "mode": "NULLABLE",
-        "name": "fxRateSrcToDest",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ccmPreferredCurrency",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "billing_account_id",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "usage_start_time",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "usage_end_time",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "export_time",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "cost",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "currency",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "currency_conversion_rate",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "cost_type",
-        "type": "STRING"
-    },
-    {
-        "fields": [
-            {
-                "mode": "NULLABLE",
-                "name": "month",
-                "type": "STRING"
-            }
-        ],
-        "mode": "NULLABLE",
-        "name": "invoice",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "mode": "NULLABLE",
-                "name": "id",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "description",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "mode",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "type",
-                "type": "STRING"
-            }
-        ],
-        "mode": "NULLABLE",
-        "name": "adjustment_info",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "mode": "NULLABLE",
-                "name": "amount",
-                "type": "FLOAT64"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "unit",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "amount_in_pricing_units",
-                "type": "FLOAT64"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "pricing_unit",
-                "type": "STRING"
-            }
-        ],
-        "mode": "NULLABLE",
-        "name": "usage",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "mode": "NULLABLE",
-                "name": "id",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "description",
-                "type": "STRING"
-            }
-        ],
-        "mode": "NULLABLE",
-        "name": "service",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "mode": "NULLABLE",
-                "name": "id",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "description",
-                "type": "STRING"
-            }
-        ],
-        "mode": "NULLABLE",
-        "name": "sku",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "mode": "NULLABLE",
-                "name": "name",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "global_name",
-                "type": "STRING"
-            }
-        ],
-        "mode": "NULLABLE",
-        "name": "resource",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "mode": "NULLABLE",
-                "name": "location",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "country",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "region",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "zone",
-                "type": "STRING"
-            }
-        ],
-        "mode": "NULLABLE",
-        "name": "location",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "mode": "NULLABLE",
-                "name": "id",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "number",
-                "type": "STRING"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "name",
-                "type": "STRING"
-            },
-            {
-                "fields": [
-                    {
-                        "name": "key",
-                        "mode": "NULLABLE",
-                        "type": "STRING"
-                    },
-                    {
-                        "name": "value",
-                        "mode": "NULLABLE",
-                        "type": "STRING"
-                    }
-                ],
-                "mode": "REPEATED",
-                "name": "labels",
-                "type": "RECORD"
-            },
-            {
-                "mode": "NULLABLE",
-                "name": "ancestry_numbers",
-                "type": "STRING"
-            },
-            {
-                "fields": [
-                    {
-                        "name": "resource_name",
-                        "mode": "NULLABLE",
-                        "type": "STRING"
-                    },
-                    {
-                        "name": "display_name",
-                        "mode": "NULLABLE",
-                        "type": "STRING"
-                    }
-                ],
-                "mode": "REPEATED",
-                "name": "ancestors",
-                "type": "RECORD"
-            }
-        ],
-        "mode": "NULLABLE",
-        "name": "project",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "name": "key",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            },
-            {
-                "name": "value",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "labels",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "name": "key",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            },
-            {
-                "name": "value",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "system_labels",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "name": "key",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            },
-            {
-                "name": "value",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            },
-            {
-                "name": "inherited",
-                "mode": "NULLABLE",
-                "type": "BOOL"
-            },
-            {
-                "name": "namespace",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "tags",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "name": "name",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            },
-            {
-                "name": "amount",
-                "mode": "NULLABLE",
-                "type": "FLOAT64"
-            },
-            {
-                "name": "full_name",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            },
-            {
-                "name": "id",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            },
-            {
-                "name": "type",
-                "mode": "NULLABLE",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "credits",
-        "type": "RECORD"
-    }
+    {"mode": "NULLABLE", "name": "fxRateSrcToDest", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "ccmPreferredCurrency", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "billing_account_id", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "usage_start_time", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "usage_end_time", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "export_time", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "cost", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "currency", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "currency_conversion_rate", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "cost_type", "type": "STRING"},
+    {"fields": [{"mode": "NULLABLE", "name": "month", "type": "STRING"}
+                ], "mode": "NULLABLE", "name": "invoice", "type": "RECORD"},
+    {"fields": [{"mode": "NULLABLE", "name": "id", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "description", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "mode", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "type", "type": "STRING"}
+                ], "mode": "NULLABLE", "name": "adjustment_info", "type": "RECORD"},
+    {"fields": [{"mode": "NULLABLE", "name": "amount", "type": "FLOAT64"},
+                {"mode": "NULLABLE", "name": "unit", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "amount_in_pricing_units", "type": "FLOAT64"},
+                {"mode": "NULLABLE", "name": "pricing_unit", "type": "STRING"}
+                ], "mode": "NULLABLE", "name": "usage", "type": "RECORD"},
+    {"fields": [{"mode": "NULLABLE", "name": "id", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "description", "type": "STRING"}
+                ], "mode": "NULLABLE", "name": "service", "type": "RECORD"},
+    {"fields": [{"mode": "NULLABLE", "name": "id", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "description", "type": "STRING"}
+                ], "mode": "NULLABLE", "name": "sku", "type": "RECORD"},
+    {"fields": [{"mode": "NULLABLE", "name": "name", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "global_name", "type": "STRING"}
+                ], "mode": "NULLABLE", "name": "resource", "type": "RECORD"},
+    {"fields": [{"mode": "NULLABLE", "name": "location", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "country", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "region", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "zone", "type": "STRING"}
+                ], "mode": "NULLABLE", "name": "location", "type": "RECORD"},
+    {"fields": [{"mode": "NULLABLE", "name": "id", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "number", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "name", "type": "STRING"},
+                {"fields": [
+                    {"name": "key", "mode": "NULLABLE", "type": "STRING"},
+                    {"name": "value", "mode": "NULLABLE", "type": "STRING"
+                     }
+                ], "mode": "REPEATED", "name": "labels", "type": "RECORD"},
+                {"mode": "NULLABLE", "name": "ancestry_numbers", "type": "STRING"},
+                {"fields": [
+                    {"name": "resource_name", "mode": "NULLABLE", "type": "STRING"},
+                    {"name": "display_name", "mode": "NULLABLE", "type": "STRING"
+                     }
+                ], "mode": "REPEATED", "name": "ancestors", "type": "RECORD"}
+                ], "mode": "NULLABLE", "name": "project", "type": "RECORD"},
+    {"fields": [{"name": "key", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "value", "mode": "NULLABLE", "type": "STRING"}
+                ], "mode": "REPEATED", "name": "labels", "type": "RECORD"},
+    {"fields": [{"name": "key", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "value", "mode": "NULLABLE", "type": "STRING"}
+                ], "mode": "REPEATED", "name": "system_labels", "type": "RECORD"},
+    {"fields": [{"name": "key", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "value", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "inherited", "mode": "NULLABLE", "type": "BOOL"},
+                {"name": "namespace", "mode": "NULLABLE", "type": "STRING"}
+                ], "mode": "REPEATED", "name": "tags", "type": "RECORD"},
+    {"fields": [{"name": "name", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "amount", "mode": "NULLABLE", "type": "FLOAT64"},
+                {"name": "full_name", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "id", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "type", "mode": "NULLABLE", "type": "STRING"}
+                ], "mode": "REPEATED", "name": "credits", "type": "RECORD"}
 ]
 
 gcpInstanceInventorySchema = [
-    {
-        "mode": "REQUIRED",
-        "name": "instanceId",
-        "type": "STRING"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "name",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "creationTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "zone",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "region",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "machineType",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "projectId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "status",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "canIpForward",
-        "type": "BOOLEAN"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "selfLink",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "startRestricted",
-        "type": "BOOLEAN"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "deletionProtection",
-        "type": "BOOLEAN"
-    },
-    {
-        "fields": [
-            {
-                "name": "networkIP",
-                "type": "STRING"
-            },
-            {
-                "name": "name",
-                "type": "STRING"
-            },
-            {
-                "mode": "REPEATED",
-                "name": "accessConfigs",
-                "type": "RECORD",
-                "fields": [
-                    {
-                        "name": "type",
-                        "type": "STRING"
-                    },
-                    {
-                        "name": "name",
-                        "type": "STRING"
-                    },
-                    {
-                        "name": "natIP",
-                        "type": "STRING"
-                    }
-                ]
-            },
-        ],
-        "mode": "REPEATED",
-        "name": "networkInterfaces",
-        "type": "RECORD"
-    },
-    {
-        "fields": [
-            {
-                "name": "key",
-                "type": "STRING"
-            },
-            {
-                "name": "value",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "labels",
-        "type": "RECORD"
-    },
-    {
-        "mode": "REPEATED",
-        "name": "disks",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "lastStartTimestamp",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "lastUpdatedAt",
-        "type": "TIMESTAMP"
-    }
+    {"mode": "REQUIRED", "name": "instanceId", "type": "STRING"},
+    {"mode": "REQUIRED", "name": "name", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "creationTime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "zone", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "region", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "machineType", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "projectId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "status", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "canIpForward", "type": "BOOLEAN"},
+    {"mode": "NULLABLE", "name": "selfLink", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "startRestricted", "type": "BOOLEAN"},
+    {"mode": "NULLABLE", "name": "deletionProtection", "type": "BOOLEAN"},
+    {"fields": [{"name": "networkIP", "type": "STRING"},{"name": "name", "type": "STRING"},{"mode": "REPEATED", "name": "accessConfigs", "type": "RECORD", "fields": [
+        {"name": "type", "type": "STRING"},{"name": "name", "type": "STRING"},{"name": "natIP", "type": "STRING"
+                                                                               }
+    ]},], "mode": "REPEATED", "name": "networkInterfaces", "type": "RECORD"},
+    {"fields": [{"name": "key", "type": "STRING"},{"name": "value", "type": "STRING"}
+                ], "mode": "REPEATED", "name": "labels", "type": "RECORD"},
+    {"mode": "REPEATED", "name": "disks", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "lastStartTimestamp", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "lastUpdatedAt", "type": "TIMESTAMP"}
 ]
 
 gcpDiskInventorySchema = [
-    {
-        "mode": "REQUIRED",
-        "name": "id",
-        "type": "STRING"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "name",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "creationTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "zone",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "region",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "projectId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "sizeGb",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "status",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "sourceSnapshot",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "sourceSnapshotId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "sourceStorageObject",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "options",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "sourceImage",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "sourceImageId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "selfLink",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "type",
-        "type": "STRING"
-    },
-    {
-        "fields": [
-            {
-                "name": "key",
-                "type": "STRING"
-            },
-            {
-                "name": "value",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "labels",
-        "type": "RECORD"
-    },
-    {
-        "mode": "REPEATED",
-        "name": "users",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "physicalBlockSizeBytes",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "sourceDisk",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "sourceDiskId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "provisionedIops",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "satisfiesPzs",
-        "type": "BOOLEAN"
-    },
-    {
-        "fields": [
-            {
-                "name": "id",
-                "type": "STRING"
-            },
-            {
-                "name": "name",
-                "type": "STRING"
-            },
-            {
-                "name": "creationTime",
-                "type": "TIMESTAMP"
-            },
-            {
-                "name": "diskSizeGb",
-                "type": "STRING"
-            },
-            {
-                "name": "status",
-                "type": "STRING"
-            },
-            {
-                "name": "storageBytes",
-                "type": "STRING"
-            },
-            {
-                "name": "storageBytesStatus",
-                "type": "STRING"
-            },
-            {
-                "name": "sourceStorageObject",
-                "type": "STRING"
-            },
-            {
-                "name": "autoCreated",
-                "type": "BOOLEAN"
-            },
-            {
-                "name": "downloadBytes",
-                "type": "STRING"
-            },
-            {
-                "name": "chainName",
-                "type": "STRING"
-            },
-            {
-                "name": "satisfiesPzs",
-                "type": "BOOLEAN"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "snapshots",
-        "type": "RECORD"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "lastAttachTimestamp",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "lastDetachTimestamp",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "lastUpdatedAt",
-        "type": "TIMESTAMP"
-    }
+    {"mode": "REQUIRED", "name": "id", "type": "STRING"},
+    {"mode": "REQUIRED", "name": "name", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "creationTime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "zone", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "region", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "projectId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "sizeGb", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "status", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "sourceSnapshot", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "sourceSnapshotId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "sourceStorageObject", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "options", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "sourceImage", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "sourceImageId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "selfLink", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "type", "type": "STRING"},
+    {"fields": [{"name": "key", "type": "STRING"},{"name": "value", "type": "STRING"}
+                ], "mode": "REPEATED", "name": "labels", "type": "RECORD"},
+    {"mode": "REPEATED", "name": "users", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "physicalBlockSizeBytes", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "sourceDisk", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "sourceDiskId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "provisionedIops", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "satisfiesPzs", "type": "BOOLEAN"},
+    {"fields": [{"name": "id", "type": "STRING"},{"name": "name", "type": "STRING"},{"name": "creationTime", "type": "TIMESTAMP"},{"name": "diskSizeGb", "type": "STRING"},{"name": "status", "type": "STRING"},{"name": "storageBytes", "type": "STRING"},{"name": "storageBytesStatus", "type": "STRING"},{"name": "sourceStorageObject", "type": "STRING"},{"name": "autoCreated", "type": "BOOLEAN"},{"name": "downloadBytes", "type": "STRING"},{"name": "chainName", "type": "STRING"},{"name": "satisfiesPzs", "type": "BOOLEAN"}
+                ], "mode": "REPEATED", "name": "snapshots", "type": "RECORD"},
+    {"mode": "NULLABLE", "name": "lastAttachTimestamp", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "lastDetachTimestamp", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "lastUpdatedAt", "type": "TIMESTAMP"}
 ]
 
 azureVMInventorySchema = [
-    {
-        "mode": "REQUIRED",
-        "name": "vmId",
-        "type": "STRING"
-    },
-    {
-        "mode": "REQUIRED",
-        "name": "name",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "creationTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "tenantId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "type",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "location",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "resourceGroup",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "subscriptionId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "managedBy",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "lastUpdatedAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "kind",
-        "type": "STRING"
-    },
-    {
-        "fields": [
-            {
-                "name": "key",
-                "type": "STRING"
-            },
-            {
-                "name": "value",
-                "type": "STRING"
-            }
-        ],
-        "mode": "REPEATED",
-        "name": "tags",
-        "type": "RECORD"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "provisioningState",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "networkInterfaces",
-        "type": "INTEGER"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "osType",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "publisher",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "offer",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "sku",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "displayStatus",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "vmSize",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "computerName",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "hyperVGeneration",
-        "type": "STRING"
-    },
-    {
-        "mode": "REPEATED",
-        "name": "publicIps",
-        "type": "STRING"
-    },
-    {
-        "mode": "REPEATED",
-        "name": "privateIps",
-        "type": "STRING"
-    }
+    {"mode": "REQUIRED", "name": "vmId", "type": "STRING"},
+    {"mode": "REQUIRED", "name": "name", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "creationTime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "tenantId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "type", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "location", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "resourceGroup", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "subscriptionId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "managedBy", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "lastUpdatedAt", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "kind", "type": "STRING"},
+    {"fields": [{"name": "key", "type": "STRING"},
+                {"name": "value", "type": "STRING"}
+                ], "mode": "REPEATED", "name": "tags", "type": "RECORD"},
+    {"mode": "NULLABLE", "name": "provisioningState", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "networkInterfaces", "type": "INTEGER"},
+    {"mode": "NULLABLE", "name": "osType", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "publisher", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "offer", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "sku", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "displayStatus", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "vmSize", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "computerName", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "hyperVGeneration", "type": "STRING"},
+    {"mode": "REPEATED", "name": "publicIps", "type": "STRING"},
+    {"mode": "REPEATED", "name": "privateIps", "type": "STRING"}
 ]
 
 azureVMInventoryCPUSchema = [
-    {
-        "mode": "REQUIRED",
-        "name": "vmId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "metricName",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "average",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "minimum",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "maximum",
-        "type": "FLOAT"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "addedAt",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "metricStartTime",
-        "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "metricEndTime",
-        "type": "TIMESTAMP"
-    },
+    {"mode": "REQUIRED", "name": "vmId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "metricName", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "average", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "minimum", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "maximum", "type": "FLOAT"},
+    {"mode": "NULLABLE", "name": "addedAt", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "metricStartTime", "type": "TIMESTAMP"},
+    {"mode": "NULLABLE", "name": "metricEndTime", "type": "TIMESTAMP"},
 ]
 
 # These column names should not be altered without updating the `azure_column_mapping`
 # in pubsub msg sent to azure_cost_bq_main CF
 azure_cost_table_schema = [
-    {
-        "mode": "NULLABLE",
-        "name": "azureSubscriptionGuid",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "azureResourceGroup",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ResourceLocation",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "startTime",
-        "type": "DATE"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "MeterCategory",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "MeterSubcategory",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "MeterId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "MeterName",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "MeterRegion",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "UsageQuantity",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "azureResourceRate",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "fxRateSrcToDest",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ccmPreferredCurrency",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "cost",
-        "type": "FLOAT64"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ConsumedService",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ResourceType",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "azureInstanceId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "Tags",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "OfferId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "AdditionalInfo",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ServiceInfo1",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ServiceInfo2",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ServiceName",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "ServiceTier",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "Currency",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "UnitOfMeasure",
-        "type": "STRING"
-    }
+    {"mode": "NULLABLE", "name": "azureSubscriptionGuid", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "azureResourceGroup", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "ResourceLocation", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "startTime", "type": "DATE"},
+    {"mode": "NULLABLE", "name": "MeterCategory", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "MeterSubcategory", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "MeterId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "MeterName", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "MeterRegion", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "UsageQuantity", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "azureResourceRate", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "fxRateSrcToDest", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "ccmPreferredCurrency", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "cost", "type": "FLOAT64"},
+    {"mode": "NULLABLE", "name": "ConsumedService", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "ResourceType", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "azureInstanceId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "Tags", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "OfferId", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "AdditionalInfo", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "ServiceInfo1", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "ServiceInfo2", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "ServiceName", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "ServiceTier", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "Currency", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "UnitOfMeasure", "type": "STRING"}
 ]
