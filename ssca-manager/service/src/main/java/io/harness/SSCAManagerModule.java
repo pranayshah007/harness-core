@@ -8,6 +8,7 @@
 package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.SSCA;
+import static io.harness.authorization.AuthorizationServiceHeader.SSCA_SERVICE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.AbstractMongoModule;
@@ -36,6 +37,7 @@ import io.harness.ssca.services.ProcessSbomWorkflowService;
 import io.harness.ssca.services.ProcessSbomWorkflowServiceImpl;
 import io.harness.ssca.services.RuleEngineService;
 import io.harness.ssca.services.RuleEngineServiceImpl;
+import io.harness.token.TokenClientModule;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -79,6 +81,8 @@ public class SSCAManagerModule extends AbstractModule {
     bind(EnforcementResultService.class).to(EnforcementResultServiceImpl.class);
     bind(EnforcementSummaryService.class).to(EnforcementSummaryServiceImpl.class);
     bind(NextGenService.class).to(NextGenServiceImpl.class);
+    install(new TokenClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
+        this.configuration.getNgManagerServiceSecret(), SSCA_SERVICE.getServiceId()));
   }
 
   @Provides

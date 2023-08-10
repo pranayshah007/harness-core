@@ -26,8 +26,10 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapper;
 import io.harness.steps.approval.step.beans.ServiceNowChangeWindowSpec;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -36,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -67,6 +70,11 @@ public class ServiceNowApprovalStepInfo implements PMSStepInfo, WithConnectorRef
   @YamlSchemaTypes(value = {expression})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
+  @VariableExpression(skipInnerObjectTraversal = true)
+  ParameterField<Timeout> retryInterval;
+
   @Override
   public StepType getStepType() {
     return StepSpecTypeConstants.SERVICE_NOW_APPROVAL_STEP_TYPE;
@@ -87,6 +95,7 @@ public class ServiceNowApprovalStepInfo implements PMSStepInfo, WithConnectorRef
         .rejectionCriteria(rejectionCriteria)
         .delegateSelectors(delegateSelectors)
         .changeWindowSpec(changeWindow)
+        .retryInterval(retryInterval)
         .build();
   }
 

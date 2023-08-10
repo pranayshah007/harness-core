@@ -8,3 +8,4 @@ auditDbConfig:
   indexManagerMode: AUTO
   aliasDBName: ng-audits
   maxDocumentsToBeFetched: 2147483647
+  maxOperationTimeInMillis: 900000

@@ -53,8 +53,11 @@ import io.harness.utils.OrchestrationVisualisationTestHelper;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -360,6 +363,34 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
             planExecutionId, Sets.newHashSet(PlanExecutionSummaryKeys.accountId));
 
     assertThat(pipelineExecutionSummaryWithProjections).isNull();
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testUpdateTTLAllSummaryForGivenPlanExecutionIds() {
+    String projectId = "projectId";
+    String planExecutionId = "planExecutionId";
+    String accountId = "accountId";
+    String orgId = "orgId";
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                        .planExecutionId(planExecutionId)
+                                                                        .accountId(accountId)
+                                                                        .orgIdentifier(orgId)
+                                                                        .projectIdentifier(projectId)
+                                                                        .build();
+
+    pmsExecutionSummaryRepository.save(pipelineExecutionSummaryEntity);
+    on(pmsExecutionSummaryService).set("pmsExecutionSummaryRepository", pmsExecutionSummaryRepository);
+
+    Date ttlDate = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    pmsExecutionSummaryService.updateTTL(planExecutionId, ttlDate);
+
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryWithProjections =
+        pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(
+            planExecutionId, Sets.newHashSet(PlanExecutionSummaryKeys.accountId, PlanExecutionSummaryKeys.validUntil));
+
+    assertThat(pipelineExecutionSummaryWithProjections.getValidUntil()).isEqualTo(ttlDate);
   }
 
   @Test

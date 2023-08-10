@@ -58,7 +58,10 @@ import io.harness.rule.Owner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -428,5 +431,20 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
 
     verify(planExecutionDeleteObserverSubject, times(2)).fireInform(any(), any());
     verify(planExecutionRepositoryMock, times(1)).deleteAllByUuidIn(any());
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestUpdateTTLForAllPlanExecutionAndMetadata() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(planExecutionService).set("mongoTemplate", mongoTemplateMock);
+    PlanExecutionRepository planExecutionRepositoryMock = Mockito.mock(PlanExecutionRepository.class);
+    Reflect.on(planExecutionService).set("planExecutionRepository", planExecutionRepositoryMock);
+
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    planExecutionService.updateTTL(generateUuid(), ttlExpiry);
+
+    verify(planExecutionRepositoryMock, times(1)).multiUpdatePlanExecution(any(), any());
   }
 }

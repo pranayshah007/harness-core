@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.plan.execution.beans;
-import static java.time.Duration.ofDays;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
@@ -48,7 +47,6 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import dev.morphia.annotations.Entity;
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.HashMap;
@@ -97,7 +95,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ChangeDataCapture(table = "runtime_inputs_info", dataStore = "pms-harness", fields = {}, handler = "RuntimeInputsInfo")
 @ChangeDataCapture(table = "stage_execution", dataStore = "pms-harness", fields = {}, handler = "ApprovalStage")
 public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware {
-  public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;
 
   @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;

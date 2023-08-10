@@ -33,6 +33,7 @@ import software.wings.service.intfc.AccountService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -63,6 +64,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
 
   @Inject private DelegateSetupService delegateSetupService;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 
   public Optional<T> precheck(@NotNull final Delegate existingDelegate, @NotNull final DelegateHeartbeatParams params) {
     if (isNotEmpty(existingDelegate.getDelegateConnectionId())) {
@@ -110,7 +112,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
 
   private Delegate getExistingDelegateExceptionIfNullOrDeleted(
       @NotNull final String accountId, @NotNull final String delegateId) {
-    final Delegate delegate = delegateCache.get(accountId, delegateId, true);
+    final Delegate delegate = delegateCache.get(accountId, delegateId, !enableRedisForDelegateService);
     if (Objects.isNull(delegate) || (delegate.getStatus() == DelegateInstanceStatus.DELETED)) {
       log.warn("Sending self destruct command from register delegate because the existing delegate "
           + (Objects.isNull(delegate) ? "is not found" : "has status deleted."));

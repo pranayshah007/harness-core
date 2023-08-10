@@ -6,6 +6,7 @@
  */
 
 package io.harness.repositories.executions;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static org.springframework.data.domain.Sort.by;
@@ -60,6 +61,15 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
         .get(()
                  -> mongoTemplate.findAndModify(
                      query, update, new FindAndModifyOptions().returnNew(true), PipelineExecutionSummaryEntity.class));
+  }
+
+  @Override
+  public void multiUpdate(Query query, Update update) {
+    RetryPolicy<Object> retryPolicy =
+        getRetryPolicy("[Retrying]: Failed updating PipelineExecutionSummary; attempt: {}",
+            "[Failed]: Failed updating PipelineExecutionSummary; attempt: {}");
+    Failsafe.with(retryPolicy)
+        .get(() -> mongoTemplate.updateMulti(query, update, PipelineExecutionSummaryEntity.class));
   }
 
   @Override
@@ -187,15 +197,17 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   }
 
   @Override
-  public List<String> findListOfUniqueBranches(Criteria criteria) {
+  public CloseableIterator<PipelineExecutionSummaryEntity> findListOfBranches(Criteria criteria) {
     Query query = new Query(criteria);
-    return pmsExecutionSummaryReadHelper.findListOfUniqueBranches(query);
+    query.fields().include(PlanExecutionSummaryKeys.entityGitDetailsBranch);
+    return pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromSecondary(query);
   }
 
   @Override
-  public List<String> findListOfUniqueRepositories(Criteria criteria) {
+  public CloseableIterator<PipelineExecutionSummaryEntity> findListOfRepositories(Criteria criteria) {
     Query query = new Query(criteria);
-    return pmsExecutionSummaryReadHelper.findListOfUniqueRepositories(query);
+    query.fields().include(PlanExecutionSummaryKeys.entityGitDetailsRepoName);
+    return pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromSecondary(query);
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

@@ -576,9 +576,9 @@ def create_dataset_and_tables(jsonData):
         else:
             # Enable these only when needed.
             # if table_ref == aws_cur_table_ref:
-            #     alter_awscur_table(jsonData)
+            #      alter_awscur_table(jsonData)
             # elif table_ref == unified_table_ref:
-            #     alter_unified_table(jsonData)
+            #      alter_unified_table(jsonData)
             print_("%s table exists" % table_ref)
 
     ds = f"{PROJECTID}.{jsonData['datasetName']}"
@@ -760,7 +760,10 @@ def ingest_data_to_awscur(jsonData):
                          "unblendedrate", "unblendedcost", "region", "availabilityzone", "usageaccountid", "instancetype",
                          "usagetype", "lineitemtype", "effectivecost", "billingentity", "instancefamily", "marketoption", "usageamount"]
     if jsonData.get('accountId') in ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE:
-        desirable_columns += ["payeraccountid", "lineitemdescription"]
+        desirable_columns += ["payeraccountid", "lineitemdescription", "billtype", "usagetype_1", "description", "pricingunit",
+                              "publicondemandcost", "publicondemandrate", "operation", "usagehours", "savingsplaneffectivecost",
+                              "storage", "licensemodel", "gpumemory", "gpu", "datatransferout", "billingperiodstartdate",
+                              "billingperiodenddate"]
     available_columns = list(set(desirable_columns) & set(jsonData["available_columns"]))
     select_available_columns = prepare_select_query(jsonData, available_columns)  # passing updated available_columns
     available_columns = ", ".join(f"{w}" for w in available_columns)
@@ -984,7 +987,12 @@ def ingest_data_to_unified(jsonData):
     # supporting additional fields in unifiedTable for Elevance
     if jsonData.get('accountId') in ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE:
         for additionalColumn in ["payeraccountid", "lineitemdescription", "resourceid",
-                                 "instancefamily", "marketoption", "servicecode", "usageamount"]:
+                                 "instancefamily", "marketoption", "servicecode", "usageamount",
+                                 "billtype", "usagetype_1", "description", "pricingunit",
+                                 "publicondemandcost", "publicondemandrate", "operation", "usagehours", "savingsplaneffectivecost",
+                                 "storage", "licensemodel", "gpumemory", "gpu", "datatransferout", "billingperiodstartdate",
+                                 "billingperiodenddate"]:
+
             if additionalColumn.lower() in jsonData["available_columns"]:
                 insert_columns = insert_columns + ", aws%s%s" % (additionalColumn,
                                                                  "" if additionalColumn != "servicecode" else "_simplified")
@@ -1066,7 +1074,30 @@ def alter_unified_table(jsonData):
     ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
     query = "ALTER TABLE `%s.unifiedTable` \
         ADD COLUMN IF NOT EXISTS awsBillingEntity STRING, \
-        ADD COLUMN IF NOT EXISTS costCategory ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>;" % ds
+        ADD COLUMN IF NOT EXISTS costCategory ARRAY<STRUCT<costCategoryName STRING, costBucketName STRING>>, \
+        ADD COLUMN IF NOT EXISTS awsbilltype STRING, \
+        ADD COLUMN IF NOT EXISTS awspayeraccountid STRING, \
+        ADD COLUMN IF NOT EXISTS awslineitemdescription STRING, \
+        ADD COLUMN IF NOT EXISTS awsresourceid STRING, \
+        ADD COLUMN IF NOT EXISTS awsinstanceFamily STRING, \
+        ADD COLUMN IF NOT EXISTS awsmarketoption STRING, \
+        ADD COLUMN IF NOT EXISTS awsservicecode_simplified STRING, \
+        ADD COLUMN IF NOT EXISTS awsusagetype_1 STRING, \
+        ADD COLUMN IF NOT EXISTS awsdescription STRING, \
+        ADD COLUMN IF NOT EXISTS awspricingunit STRING, \
+        ADD COLUMN IF NOT EXISTS awspublicondemandcost FLOAT64, \
+        ADD COLUMN IF NOT EXISTS awspublicondemandrate STRING, \
+        ADD COLUMN IF NOT EXISTS awsoperation STRING, \
+        ADD COLUMN IF NOT EXISTS awsusagehours STRING, \
+        ADD COLUMN IF NOT EXISTS awssavingsplaneffectivecost FLOAT64, \
+        ADD COLUMN IF NOT EXISTS awsstorage STRING, \
+        ADD COLUMN IF NOT EXISTS awslicensemodel STRING, \
+        ADD COLUMN IF NOT EXISTS awsgpumemory STRING, \
+        ADD COLUMN IF NOT EXISTS awsgpu STRING, \
+        ADD COLUMN IF NOT EXISTS awsdatatransferout STRING, \
+        ADD COLUMN IF NOT EXISTS awsbillingperiodstartdate TIMESTAMP, \
+        ADD COLUMN IF NOT EXISTS awsbillingperiodenddate TIMESTAMP, \
+        ADD COLUMN IF NOT EXISTS awsusageamount float64;" % ds
 
     try:
         print_(query)
@@ -1088,7 +1119,23 @@ def alter_awscur_table(jsonData):
         ADD COLUMN IF NOT EXISTS marketOption STRING, \
         ADD COLUMN IF NOT EXISTS amortisedCost FLOAT64, \
         ADD COLUMN IF NOT EXISTS netAmortisedCost FLOAT64, \
-        ADD COLUMN IF NOT EXISTS serviceName STRING;" % (ds, jsonData["awsCurTableSuffix"])
+        ADD COLUMN IF NOT EXISTS serviceName STRING, \
+        ADD COLUMN IF NOT EXISTS billtype STRING, \
+        ADD COLUMN IF NOT EXISTS usagetype_1 STRING, \
+        ADD COLUMN IF NOT EXISTS description STRING, \
+        ADD COLUMN IF NOT EXISTS pricingunit STRING, \
+        ADD COLUMN IF NOT EXISTS publicondemandcost FLOAT64, \
+        ADD COLUMN IF NOT EXISTS publicondemandrate STRING, \
+        ADD COLUMN IF NOT EXISTS operation STRING, \
+        ADD COLUMN IF NOT EXISTS usagehours STRING, \
+        ADD COLUMN IF NOT EXISTS savingsplaneffectivecost FLOAT64, \
+        ADD COLUMN IF NOT EXISTS storage STRING, \
+        ADD COLUMN IF NOT EXISTS licensemodel STRING, \
+        ADD COLUMN IF NOT EXISTS gpumemory STRING, \
+        ADD COLUMN IF NOT EXISTS gpu STRING, \
+        ADD COLUMN IF NOT EXISTS datatransferout STRING, \
+        ADD COLUMN IF NOT EXISTS billingperiodstartdate TIMESTAMP, \
+        ADD COLUMN IF NOT EXISTS billingperiodenddate TIMESTAMP ;" % (ds, jsonData["awsCurTableSuffix"])
 
     try:
         print_(query)

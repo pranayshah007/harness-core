@@ -153,7 +153,7 @@ public class K8sBlueGreenStep extends CdTaskChainExecutable implements K8sStepEx
       bgRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
     }
     Map<String, String> k8sCommandFlag =
-        k8sStepHelper.getDelegateK8sCommandFlag(k8sBlueGreenStepParameters.getCommandFlags());
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sBlueGreenStepParameters.getCommandFlags(), ambiance);
     bgRequestBuilder.k8sCommandFlags(k8sCommandFlag);
     K8sBGDeployRequest k8sBGDeployRequest = bgRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

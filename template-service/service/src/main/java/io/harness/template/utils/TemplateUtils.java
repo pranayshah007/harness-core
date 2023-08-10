@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.utils;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -32,6 +33,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.ThreadOperationContextHelper;
@@ -206,5 +208,10 @@ public class TemplateUtils {
     }
     GlobalContextManager.upsertGlobalContextRecord(
         ThreadOperationContextHelper.getOrInitThreadOperationContext().withUserFlow(userFlow));
+  }
+
+  public Scope buildScope(GlobalTemplateEntity globalTemplateEntity) {
+    return Scope.of(globalTemplateEntity.getAccountIdentifier(), globalTemplateEntity.getOrgIdentifier(),
+        globalTemplateEntity.getProjectIdentifier());
   }
 }

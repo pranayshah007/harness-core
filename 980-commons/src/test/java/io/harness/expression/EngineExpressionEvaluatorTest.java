@@ -363,6 +363,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("f", "abc")
             .put("g", "def")
             .put("h", "v2")
+            .put("i", "v")
             .put("company", "harness")
             .put("nested1", "<+nested2>")
             .put("nested2", "<+nested3>")
@@ -488,6 +489,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // an expression used in path of existing expression
     assertThat(evaluator.resolve("<+variables.<+h>>", true)).isEqualTo("harnessabcdef");
     assertThat(evaluator.evaluateExpression("<+variables.<+h>>")).isEqualTo("harnessabcdef");
+    assertThat(evaluator.resolve("<+variables[<+i> + '5']>", true)).isEqualTo("archit-harness");
+    assertThat(evaluator.resolve("<+variables[<+i> + '2']>", true)).isEqualTo("harnessabcdef");
 
     // Unresolved expressions partially should be resolved
     assertThat(evaluator.resolve("<+nested1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
@@ -523,6 +526,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("f", "abc")
             .put("g", "def")
             .put("h", "v2")
+            .put("i", "v")
             .put("productValues", Arrays.asList(1, 2, 3))
             .put("variableValues", Arrays.asList("v1", "v2", "v3"))
             .put("company", "harness")
@@ -657,6 +661,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // an expression used in path of existing expression
     assertThat(evaluator.resolve("<+variables.<+h>>", true)).isEqualTo("harnessabcdef");
     assertThat(evaluator.evaluateExpression("<+variables.<+h>>")).isEqualTo("harnessabcdef");
+    assertThat(evaluator.resolve("<+variables[<+i> + '5']>", true)).isEqualTo("archit-harness");
+    assertThat(evaluator.resolve("<+variables[<+i> + '2']>", true)).isEqualTo("harnessabcdef");
 
     // Unresolved expressions partially should be resolved
     assertThat(evaluator.resolve("<+nested1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))

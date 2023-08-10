@@ -1380,7 +1380,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("SAM Deploy")
             .setType(StepSpecTypeConstants.AWS_SAM_DEPLOY)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).setFolderPath("AWS SAM").build())
+            .setStepMetaData(
+                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
@@ -1396,7 +1397,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("SAM Build")
             .setType(StepSpecTypeConstants.AWS_SAM_BUILD)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).setFolderPath("AWS SAM").build())
+            .setStepMetaData(
+                StepMetaData.newBuilder().addCategory(AWS_SAM).addCategory(PLUGIN).setFolderPath("AWS SAM").build())
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
@@ -1441,7 +1443,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Serverless Aws Lambda Prepare Rollback V2")
             .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2)
             .setStepMetaData(StepMetaData.newBuilder()
-                                 .addCategory("SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2")
+                                 .addCategory("ServerlessAwsLambda")
                                  .addCategory(PLUGIN)
                                  .setFolderPath("Serverless Lambda")
                                  .build())
@@ -1452,7 +1454,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                  .setName("Serverless Aws Lambda Rollback V2")
                                                  .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2)
                                                  .setStepMetaData(StepMetaData.newBuilder()
-                                                                      .addCategory("SERVERLESS_AWS_LAMBDA_ROLLBACK_V2")
+                                                                      .addCategory("ServerlessAwsLambda")
                                                                       .addCategory(PLUGIN)
                                                                       .setFolderPath("Serverless Lambda")
                                                                       .build())
@@ -1463,7 +1465,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                .setName("Serverless Aws Lambda Deploy V2")
                                                .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
                                                .setStepMetaData(StepMetaData.newBuilder()
-                                                                    .addCategory("SERVERLESS_AWS_LAMBDA_DEPLOY_V2")
+                                                                    .addCategory("ServerlessAwsLambda")
                                                                     .addCategory(PLUGIN)
                                                                     .setFolderPath("Serverless Lambda")
                                                                     .build())
@@ -1474,7 +1476,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                 .setName("Serverless Aws Lambda Package V2")
                                                 .setType(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)
                                                 .setStepMetaData(StepMetaData.newBuilder()
-                                                                     .addCategory("SERVERLESS_AWS_LAMBDA_PACKAGE_V2")
+                                                                     .addCategory("ServerlessAwsLambda")
                                                                      .addCategory(PLUGIN)
                                                                      .setFolderPath("Serverless Lambda")
                                                                      .build())

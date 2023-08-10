@@ -8,23 +8,30 @@ package git
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/url"
+	"os"
 	"strings"
 	"time"
-	"io/ioutil"
-	"os"
+
+	"github.com/harness/harness-core/product/ci/scm/converter"
+	"github.com/harness/harness-core/product/ci/scm/gitclient"
+	pb "github.com/harness/harness-core/product/ci/scm/proto"
 
 	"github.com/drone/go-scm/scm"
 	"github.com/drone/go-scm/scm/driver/github"
 	"github.com/drone/go-scm/scm/transport/oauth2"
 	"github.com/harness/harness-core/commons/go/lib/utils"
-	"github.com/harness/harness-core/product/ci/scm/converter"
-	"github.com/harness/harness-core/product/ci/scm/gitclient"
-	pb "github.com/harness/harness-core/product/ci/scm/proto"
+	"github.com/wings-software/autogen-go/builder"
+	"github.com/wings-software/autogen-go/chroot"
 	"github.com/wings-software/autogen-go/cloner"
-    "github.com/wings-software/autogen-go/builder"
-    "github.com/wings-software/autogen-go/chroot"
 	"go.uber.org/zap"
+)
+
+const (
+	internalServerErrorStatusCode = 500
+	serverErrorRetryCount         = 3
+	serverErrorRetrySleep         = 100 * time.Millisecond
 )
 
 func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap.SugaredLogger) (out *pb.RefreshTokenResponse, err error) {
@@ -62,46 +69,46 @@ func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap
 }
 
 func GenerateStageYamlForCI(ctx context.Context, request *pb.GenerateYamlRequest, log *zap.SugaredLogger) (out *pb.GenerateYamlResponse, err error) {
-    log.Infow("GenerateYaml starting")
-    path := request.Url
-    temp, err := ioutil.TempDir("", "")
-    log.Infow("temp dir" , "dir", temp)
-    if err != nil {
-        return nil, err
-    }
+	log.Infow("GenerateYaml starting")
+	path := request.Url
+	temp, err := ioutil.TempDir("", "")
+	log.Infow("temp dir", "dir", temp)
+	if err != nil {
+		return nil, err
+	}
 
-    params := cloner.Params{
-        Dir:        temp,
-        Repo:       path,
-    }
+	params := cloner.Params{
+		Dir:  temp,
+		Repo: path,
+	}
 
-    cloner := cloner.New(1, os.Stdout) // 1 depth, discard git clone logs
-    cloner.Clone(context.Background(), params)
+	cloner := cloner.New(1, os.Stdout) // 1 depth, discard git clone logs
+	cloner.Clone(context.Background(), params)
 
-    // change the path to the temp directory
-    path = temp
+	// change the path to the temp directory
+	path = temp
 
-    defer os.RemoveAll(temp)
+	defer os.RemoveAll(temp)
 
-    // create a chroot virtual filesystem that we
-    // pass to the builder for isolation purposes.
-    chroot, err := chroot.New(path)
-    if err != nil {
-        return nil, err
-    }
+	// create a chroot virtual filesystem that we
+	// pass to the builder for isolation purposes.
+	chroot, err := chroot.New(path)
+	if err != nil {
+		return nil, err
+	}
 
-    // builds the pipeline configuration based on
-    // the contents of the virtual filesystem.
-    builder := builder.New("harness", request.GetYamlVersion())
-    yml, err := builder.Build(chroot)
-    if err != nil {
-        return nil, err
-    }
+	// builds the pipeline configuration based on
+	// the contents of the virtual filesystem.
+	builder := builder.New("harness", request.GetYamlVersion())
+	yml, err := builder.Build(chroot)
+	if err != nil {
+		return nil, err
+	}
 
 	out = &pb.GenerateYamlResponse{
 		Yaml: string(yml[:]),
 	}
-    return out, nil
+	return out, nil
 }
 
 func CreatePR(ctx context.Context, request *pb.CreatePRRequest, log *zap.SugaredLogger) (out *pb.CreatePRResponse, err error) {
@@ -149,18 +156,21 @@ func CreatePR(ctx context.Context, request *pb.CreatePRRequest, log *zap.Sugared
 
 func FindPR(ctx context.Context, request *pb.FindPRRequest, log *zap.SugaredLogger) (out *pb.FindPRResponse, err error) {
 	start := time.Now()
-	log.Infow("FindPR starting", "slug", request.GetSlug())
+	provider := gitclient.GetProvider(*request.GetProvider())
+	slug := request.GetSlug()
+	number := int(request.GetNumber())
+	log.Infow("FindPR starting", "slug", slug)
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 	if err != nil {
-		log.Errorw("FindPR failure", "bad provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("FindPR failure", "bad provider", provider, "slug", slug, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
 
-	pr, response, err := client.PullRequests.Find(ctx, request.GetSlug(), int(request.GetNumber()))
+	pr, response, err := findPullRequestWithRetry(ctx, log, client, provider, slug, number, serverErrorRetryCount)
 	if err != nil {
-		log.Errorw("FindPR failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "number", request.GetNumber(),
-			"elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("FindPR failure", "provider", provider, "slug", slug, "number", number,
+			"status_code", getStatusCodeFromResponse(response), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 
 		// hard error from git
 		if response == nil {
@@ -172,7 +182,7 @@ func FindPR(ctx context.Context, request *pb.FindPRRequest, log *zap.SugaredLogg
 			Error:  err.Error(),
 		}
 	}
-	log.Infow("FindPR success", "slug", request.GetSlug(), "number", request.GetNumber(), "elapsed_time_ms", utils.TimeSince(start))
+	log.Infow("FindPR success", "provider", provider, "slug", slug, "number", number, "elapsed_time_ms", utils.TimeSince(start))
 
 	protoPR, err := converter.ConvertPR(pr)
 	if err != nil {
@@ -187,20 +197,23 @@ func FindPR(ctx context.Context, request *pb.FindPRRequest, log *zap.SugaredLogg
 
 func FindFilesInPR(ctx context.Context, request *pb.FindFilesInPRRequest, log *zap.SugaredLogger) (out *pb.FindFilesInPRResponse, err error) {
 	start := time.Now()
-	log.Infow("FindFilesInPR starting", "slug", request.GetSlug())
+	provider := gitclient.GetProvider(*request.GetProvider())
+	slug := request.GetSlug()
+	number := int(request.GetNumber())
+	log.Infow("FindFilesInPR starting", "slug", slug)
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 	if err != nil {
-		log.Errorw("FindFilesInPR failure", "bad provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("FindFilesInPR failure", "bad provider", provider, "slug", slug, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
 
-	changes, response, err := client.PullRequests.ListChanges(ctx, request.GetSlug(), int(request.GetNumber()), scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	changes, response, err := listPRChangesWithRetry(ctx, log, client, provider, slug, scm.ListOptions{Page: int(request.GetPagination().GetPage())}, number, serverErrorRetryCount)
 	if err != nil {
-		log.Errorw("FindFilesInPR failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "number", request.GetNumber(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("FindFilesInPR failure", "provider", provider, "slug", slug, "number", number, "status_code", getStatusCodeFromResponse(response), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
-	log.Infow("FindFilesInPR success", "slug", request.GetSlug(), "number", request.GetNumber(), "elapsed_time_ms", utils.TimeSince(start))
+	log.Infow("FindFilesInPR success", "provider", provider, "slug", slug, "number", number, "elapsed_time_ms", utils.TimeSince(start))
 
 	out = &pb.FindFilesInPRResponse{
 		Files: convertChangesList(changes),
@@ -213,20 +226,23 @@ func FindFilesInPR(ctx context.Context, request *pb.FindFilesInPRRequest, log *z
 
 func ListCommitsInPR(ctx context.Context, request *pb.ListCommitsInPRRequest, log *zap.SugaredLogger) (out *pb.ListCommitsInPRResponse, err error) {
 	start := time.Now()
-	log.Infow("ListCommitsInPR starting", "slug", request.GetSlug())
+	provider := gitclient.GetProvider(*request.GetProvider())
+	slug := request.GetSlug()
+	number := int(request.GetNumber())
+	log.Infow("ListCommitsInPR starting", "slug", slug)
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 	if err != nil {
-		log.Errorw("ListCommitsInPR failure", "bad provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("ListCommitsInPR failure", "bad provider", provider, "slug", slug, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
 
-	commits, response, err := client.PullRequests.ListCommits(ctx, request.GetSlug(), int(request.GetNumber()), scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	commits, response, err := listCommitsWithRetry(ctx, log, client, provider, slug, scm.ListOptions{Page: int(request.GetPagination().GetPage())}, number, serverErrorRetryCount)
 	if err != nil {
-		log.Errorw("ListCommitsInPR failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "number", request.GetNumber(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("ListCommitsInPR failure", "provider", provider, "slug", slug, "number", number, "status_code", getStatusCodeFromResponse(response), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
-	log.Infow("ListCommitsInPR success", "slug", request.GetSlug(), "number", request.GetNumber(), "elapsed_time_ms", utils.TimeSince(start))
+	log.Infow("ListCommitsInPR success", "provider", provider, "slug", slug, "number", number, "elapsed_time_ms", utils.TimeSince(start))
 
 	out = &pb.ListCommitsInPRResponse{
 		Commits: convertCommitsList(commits),
@@ -278,11 +294,13 @@ func CreateBranch(ctx context.Context, request *pb.CreateBranchRequest, log *zap
 
 func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, log *zap.SugaredLogger) (out *pb.GetLatestCommitResponse, err error) {
 	start := time.Now()
-	log.Infow("GetLatestCommit starting", "slug", request.GetSlug())
+	provider := gitclient.GetProvider(*request.GetProvider())
+	slug := request.GetSlug()
+	log.Infow("GetLatestCommit starting", "slug", slug)
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 	if err != nil {
-		log.Errorw("GetLatestCommit failure", "bad provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("GetLatestCommit failure", "bad provider", provider, "slug", slug, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
 
@@ -293,7 +311,7 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 
 	ref, err := gitclient.GetValidRef(*request.Provider, request.GetRef(), branch)
 	if err != nil {
-		log.Errorw("GetLatestCommit failure, bad ref/branch", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("GetLatestCommit failure, bad ref/branch", "provider", provider, "slug", slug, "ref", ref, "branch", branch, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
 
@@ -302,23 +320,23 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 		scm.DriverStash:
 		if branch != "" && strings.Contains(ref, "/") {
 			ref = scm.TrimRef(ref)
-			branch, _, err := client.Git.FindBranch(ctx, request.GetSlug(), ref)
+			branch, _, err := findBranchWithRetry(ctx, log, client, provider, slug, ref, serverErrorRetryCount)
 			if err == nil {
 				ref = branch.Sha
 			}
 		}
 	case scm.DriverAzure, scm.DriverHarness:
-		// Azure doesnt support getting a commit by ref/branch name. So we get the latest commit from the branch using the root folder.
+		// Azure doesn't support getting a commit by ref/branch name. So we get the latest commit from the branch using the root folder.
 		// Harness only supports a ref
-		contents, _, err := client.Contents.List(ctx, request.GetSlug(), "", ref, scm.ListOptions{})
+		contents, _, err := listContentsWithRetry(ctx, log, client, provider, slug, "", ref, scm.ListOptions{}, serverErrorRetryCount)
 		if err == nil {
 			ref = contents[0].Sha
 		}
 	}
 
-	refResponse, response, err := client.Git.FindCommit(ctx, request.GetSlug(), ref)
+	refResponse, response, err := findCommitWithRetry(ctx, log, client, provider, slug, ref, serverErrorRetryCount)
 	if err != nil {
-		log.Errorw("GetLatestCommit failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("GetLatestCommit failure", "provider", provider, "slug", slug, "ref", ref, "status_code", getStatusCodeFromResponse(response), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		// this is a hard error with no response
 		if response == nil {
 			return nil, err
@@ -333,16 +351,16 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 
 	// bitbucket onprem API doesn't return commit link, hence populating it manually.
 	if refResponse.Link == "" && request.GetProvider().GetBitbucketServer() != nil {
-		namespace, name := scm.Split(request.GetSlug())
+		namespace, name := scm.Split(slug)
 		refResponse.Link = fmt.Sprintf("%sprojects/%s/repos/%s/commits/%s", client.BaseURL, namespace, name, refResponse.Sha)
 	}
 
 	commit, err := converter.ConvertCommit(refResponse)
 	if err != nil {
-		log.Errorw("GetLatestCommit convert commit failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+		log.Errorw("GetLatestCommit convert commit failure", "provider", provider, "slug", slug, "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
-	log.Infow("GetLatestCommit success", "slug", request.GetSlug(), "ref", ref, "elapsed_time_ms", utils.TimeSince(start))
+	log.Infow("GetLatestCommit success", "provider", provider, "slug", slug, "ref", ref, "elapsed_time_ms", utils.TimeSince(start))
 
 	out = &pb.GetLatestCommitResponse{
 		CommitId: refResponse.Sha,
@@ -591,13 +609,13 @@ func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserR
 	}
 	log.Infow("GetAuthenticatedUser success", "elapsed_time_ms", utils.TimeSince(start))
 
-	if (response.Email == "" && (request.GetProvider().GetBitbucketCloud() != nil || request.GetProvider().GetGithub() != nil)) {
-	    email, _, err := client.Users.FindEmail(ctx)
-	    if err != nil {
-	        log.Errorw("GetAuthenticatedUser email failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
-	        return nil, err
-	    }
-	    response.Email = email
+	if response.Email == "" && (request.GetProvider().GetBitbucketCloud() != nil || request.GetProvider().GetGithub() != nil) {
+		email, _, err := client.Users.FindEmail(ctx)
+		if err != nil {
+			log.Errorw("GetAuthenticatedUser email failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+			return nil, err
+		}
+		response.Email = email
 	}
 	out = &pb.GetAuthenticatedUserResponse{
 		Username:  response.Name,
@@ -782,6 +800,111 @@ func convertChange(from *scm.Change) *pb.PRFile {
 		Renamed:      from.Renamed,
 		PrevFilePath: from.PrevFilePath,
 	}
+}
+
+func getStatusCodeFromResponse(res *scm.Response) int {
+	if res == nil {
+		return -1
+	}
+	return res.Status
+}
+
+func shouldRetryScmApi(response *scm.Response) bool {
+	if response == nil || response.Status >= internalServerErrorStatusCode {
+		return true
+	}
+	return false
+}
+
+func findPullRequestWithRetry(ctx context.Context, log *zap.SugaredLogger, client *scm.Client, provider, slug string, number, retryAttempts int) (pr *scm.PullRequest, res *scm.Response, err error) {
+	retryCount := 0
+	for retryCount < retryAttempts {
+		pr, res, err = client.PullRequests.Find(ctx, slug, number)
+		if shouldRetryScmApi(res) {
+			retryCount += 1
+			log.Errorw("Find Pull Request Git API failed with server side error", "provider", provider,
+				"slug", slug, "number", number, "status_code", getStatusCodeFromResponse(res), "retry_count", retryCount)
+			time.Sleep(serverErrorRetrySleep)
+			continue
+		}
+		break
+	}
+	return pr, res, err
+}
+
+func listPRChangesWithRetry(ctx context.Context, log *zap.SugaredLogger, client *scm.Client, provider, slug string, opts scm.ListOptions, number, retryAttempts int) (changes []*scm.Change, res *scm.Response, err error) {
+	retryCount := 0
+	for retryCount < retryAttempts {
+		changes, res, err = client.PullRequests.ListChanges(ctx, slug, number, opts)
+		if shouldRetryScmApi(res) {
+			retryCount += 1
+			log.Errorw("List Changes in PR Git API failed with server side error", "provider", provider, "slug", slug, "status_code", getStatusCodeFromResponse(res), "retry_count", retryCount)
+			time.Sleep(serverErrorRetrySleep)
+			continue
+		}
+		break
+	}
+	return changes, res, err
+}
+
+func listCommitsWithRetry(ctx context.Context, log *zap.SugaredLogger, client *scm.Client, provider, slug string, opts scm.ListOptions, number, retryAttempts int) (commits []*scm.Commit, res *scm.Response, err error) {
+	retryCount := 0
+	for retryCount < retryAttempts {
+		commits, res, err = client.PullRequests.ListCommits(ctx, slug, number, opts)
+		if shouldRetryScmApi(res) {
+			retryCount += 1
+			log.Errorw("List Commits in PR Git API failed with server side error", "provider", provider, "slug", slug, "status_code", getStatusCodeFromResponse(res), "retry_count", retryCount)
+			time.Sleep(serverErrorRetrySleep)
+			continue
+		}
+		break
+	}
+	return commits, res, err
+}
+
+func findBranchWithRetry(ctx context.Context, log *zap.SugaredLogger, client *scm.Client, provider, slug, ref string, retryAttempts int) (branch *scm.Reference, res *scm.Response, err error) {
+	retryCount := 0
+	for retryCount < retryAttempts {
+		branch, res, err = client.Git.FindBranch(ctx, slug, ref)
+		if shouldRetryScmApi(res) {
+			retryCount += 1
+			log.Errorw("Find Branch Git API failed with server side error", "provider", provider, "slug", slug, "ref", ref, "status_code", getStatusCodeFromResponse(res), "retry_count", retryCount)
+			time.Sleep(serverErrorRetrySleep)
+			continue
+		}
+		break
+	}
+	return branch, res, err
+}
+
+func listContentsWithRetry(ctx context.Context, log *zap.SugaredLogger, client *scm.Client, provider, slug, path, ref string, opts scm.ListOptions, retryAttempts int) (contents []*scm.ContentInfo, res *scm.Response, err error) {
+	retryCount := 0
+	for retryCount < retryAttempts {
+		contents, res, err = client.Contents.List(ctx, slug, path, ref, opts)
+		if shouldRetryScmApi(res) {
+			retryCount += 1
+			log.Errorw("List Contents Git API failed with server side error", "provider", provider, "slug", slug, "ref", ref, "status_code", getStatusCodeFromResponse(res), "retry_count", retryCount)
+			time.Sleep(serverErrorRetrySleep)
+			continue
+		}
+		break
+	}
+	return contents, res, err
+}
+
+func findCommitWithRetry(ctx context.Context, log *zap.SugaredLogger, client *scm.Client, provider, slug, ref string, retryAttempts int) (commit *scm.Commit, res *scm.Response, err error) {
+	retryCount := 0
+	for retryCount < retryAttempts {
+		commit, res, err = client.Git.FindCommit(ctx, slug, ref)
+		if shouldRetryScmApi(res) {
+			retryCount += 1
+			log.Errorw("Find Commit Git API failed with server side error", "provider", provider, "slug", slug, "ref", ref, "status_code", getStatusCodeFromResponse(res), "retry_count", retryCount)
+			time.Sleep(serverErrorRetrySleep)
+			continue
+		}
+		break
+	}
+	return commit, res, err
 }
 
 // Repos returns the full repository list, traversing and

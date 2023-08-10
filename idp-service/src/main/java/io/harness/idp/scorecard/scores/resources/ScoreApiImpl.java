@@ -7,60 +7,108 @@
 
 package io.harness.idp.scorecard.scores.resources;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.eraro.ResponseMessage;
+import io.harness.idp.scorecard.scores.service.ScoreService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.ScoresApi;
+import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
+import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfoResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardScore;
+import io.harness.spec.server.idp.v1.model.ScorecardScoreResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
+import io.harness.spec.server.idp.v1.model.ScorecardSummaryResponse;
 
-import io.swagger.v3.oas.annotations.Parameter;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.QueryParam;
+import java.util.List;
 import javax.ws.rs.core.Response;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@OwnedBy(HarnessTeam.IDP)
+@AllArgsConstructor(onConstructor = @__({ @com.google.inject.Inject }))
+@NextGenManagerAuth
+@Slf4j
 public class ScoreApiImpl implements ScoresApi {
+  private ScoreService scoreService;
   @Override
-  public Response getAllScorecardSummary(
-      @QueryParam("entity_identifier") @Parameter(
-          description = "Identifier for entity to get the scores for score card ") @NotNull String entityIdentifier,
-      @HeaderParam("Harness-Account") @Parameter(
-          description =
-              "Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.")
-      String harnessAccount) {
-    return null;
+  public Response getAllScorecardSummary(String entityIdentifier, String harnessAccount) {
+    try {
+      List<ScorecardSummaryInfo> scorecardSummaryInfoList =
+          scoreService.getScoresSummaryForAnEntity(harnessAccount, entityIdentifier);
+      ScorecardSummaryResponse scorecardSummaryResponse = new ScorecardSummaryResponse();
+      scorecardSummaryResponse.setScorecardsSummary(scorecardSummaryInfoList);
+      return Response.status(Response.Status.OK).entity(scorecardSummaryResponse).build();
+    } catch (Exception e) {
+      log.error("Error in getting score summary for scorecards details for account - {} and entity - {}",
+          harnessAccount, entityIdentifier);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
   }
 
   @Override
   public Response getRecalibratedScoreForScorecard(
-      @QueryParam("entity_identifier") @Parameter(
-          description = "Identifier for entity to get the scores for score card ") @NotNull String entityIdentifier,
-      @QueryParam("scorecard_identifier") @Parameter(
-          description = "Identifier for score card ") @NotNull String scorecardIdentifier,
-      @HeaderParam("Harness-Account") @Parameter(
-          description =
-              "Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.")
-      String harnessAccount) {
-    return null;
+      String entityIdentifier, String scorecardIdentifier, String harnessAccount) {
+    try {
+      ScorecardSummaryInfo scorecardSummaryInfo = scoreService.getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
+          harnessAccount, entityIdentifier, scorecardIdentifier);
+      ScorecardRecalibrateResponse scorecardRecalibrateResponse = new ScorecardRecalibrateResponse();
+      scorecardRecalibrateResponse.setRecalibratedScores(scorecardSummaryInfo);
+      return Response.status(Response.Status.OK).entity(scorecardRecalibrateResponse).build();
+    } catch (Exception e) {
+      log.error(
+          "Error in getting recalibrated score for scorecards details for account - {},  entity - {} and scorecard - {}",
+          harnessAccount, entityIdentifier, scorecardIdentifier);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
   }
 
   @Override
   public Response getScorecardsGraphsScoreSummary(
-      @QueryParam("entity_identifier") @Parameter(
-          description = "Identifier for entity to get the scores for score card ") @NotNull String entityIdentifier,
-      @HeaderParam("Harness-Account") @Parameter(
-          description =
-              "Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.")
-      String harnessAccount,
-      @QueryParam("scorecard_identifier") @Parameter(
-          description = "Identifier for scorecard ") String scorecardIdentifier) {
-    return null;
+      String entityIdentifier, String harnessAccount, String scorecardIdentifier) {
+    try {
+      List<ScorecardGraphSummaryInfo> scorecardGraphSummaryInfos =
+          scoreService.getScoresGraphSummaryForAnEntityAndScorecard(
+              harnessAccount, entityIdentifier, scorecardIdentifier);
+      ScorecardGraphSummaryInfoResponse scorecardGraphSummaryInfoResponse = new ScorecardGraphSummaryInfoResponse();
+      scorecardGraphSummaryInfoResponse.setScorecardGraphSummary(scorecardGraphSummaryInfos);
+      return Response.status(Response.Status.OK).entity(scorecardGraphSummaryInfoResponse).build();
+    } catch (Exception e) {
+      log.error(
+          "Error in getting score graph summary for scorecards details for account - {},  entity - {} and scorecard - {}",
+          harnessAccount, entityIdentifier, scorecardIdentifier);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
   }
 
   @Override
-  public Response getScorecardsScoresOverview(
-      @QueryParam("entity_identifier") @Parameter(
-          description = "Identifier for entity to get the scores for score card ") @NotNull String entityIdentifier,
-      @HeaderParam("Harness-Account") @Parameter(
-          description =
-              "Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.")
-      String harnessAccount) {
-    return null;
+  public Response getScorecardsScoresOverview(String entityIdentifier, String harnessAccount) {
+    try {
+      List<ScorecardScore> scorecardScores =
+          scoreService.getScorecardScoreOverviewForAnEntity(harnessAccount, entityIdentifier);
+      ScorecardScoreResponse scorecardScoreResponse = new ScorecardScoreResponse();
+      int overallScore = 0;
+      for (ScorecardScore scorecardScore : scorecardScores) {
+        overallScore = overallScore + scorecardScore.getScore();
+      }
+      scorecardScoreResponse.setScorecardScores(scorecardScores);
+      if (scorecardScores.size() > 0) {
+        scorecardScoreResponse.setOverallScore(overallScore / scorecardScores.size());
+      }
+      return Response.status(Response.Status.OK).entity(scorecardScoreResponse).build();
+    } catch (Exception e) {
+      log.error("Error in getting scores overview for scorecards details for account - {},  entity - {} }",
+          harnessAccount, entityIdentifier);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
   }
 }

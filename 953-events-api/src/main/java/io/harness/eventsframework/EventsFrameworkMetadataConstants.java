@@ -30,6 +30,7 @@ public final class EventsFrameworkMetadataConstants {
   public static final String DELETE_ACTION = "delete";
   public static final String NG_USER_CLEANUP_ACTION = "ngUserCleanUp";
   public static final String DISABLE_IP_ALLOWLIST = "disableIPAllowlist";
+  public static final String DISABLE_TRIGGERS = "disableTriggers";
   public static final String FLUSH_CREATE_ACTION = "flushCreate";
 
   public static final String PROJECT_ENTITY = "project";
@@ -84,6 +85,8 @@ public final class EventsFrameworkMetadataConstants {
   // deprecated, use setupusage and entityActivity channel.
   public static final String SETUP_USAGE_ENTITY = "setupUsage";
   public static final String ACCOUNT_ENTITY = "account";
+
+  public static final String NOTIFICATION_ENTITY = "notification";
 
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
   public static final String CONNECTOR_ENTITY_TYPE = "connectorType";

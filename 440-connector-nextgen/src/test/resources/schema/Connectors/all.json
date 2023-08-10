@@ -3476,7 +3476,8 @@
               "enum": [
                 "UsernamePassword",
                 "ApiClientToken",
-                "None"
+                "None",
+                "Bearer Token(HTTP Header)"
               ]
             },
             "delegateSelectors": {

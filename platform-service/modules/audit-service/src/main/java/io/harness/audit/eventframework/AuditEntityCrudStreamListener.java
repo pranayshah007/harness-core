@@ -29,11 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 @Slf4j
 @Singleton
-public class AccountEntityCrudStreamListener implements MessageListener {
+public class AuditEntityCrudStreamListener implements MessageListener {
   private final AuditServiceImpl auditServiceImpl;
 
   @Inject
-  public AccountEntityCrudStreamListener(AuditServiceImpl auditServiceImpl) {
+  public AuditEntityCrudStreamListener(AuditServiceImpl auditServiceImpl) {
     this.auditServiceImpl = auditServiceImpl;
   }
 

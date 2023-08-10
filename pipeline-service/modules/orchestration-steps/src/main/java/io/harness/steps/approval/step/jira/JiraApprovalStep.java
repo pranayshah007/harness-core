@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.approval.step.jira;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 import static io.harness.jira.JiraConstantsNG.STATUS_NAME;
@@ -34,10 +35,12 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.jira.beans.JiraApprovalResponseData;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.steps.executables.PipelineAsyncExecutable;
@@ -61,8 +64,8 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
   @Inject private JiraApprovalHelperService jiraApprovalHelperService;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
-
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
@@ -73,6 +76,9 @@ public class JiraApprovalStep extends PipelineAsyncExecutable {
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
         approvalInstance.getConnectorRef());
     approvalInstance = (JiraApprovalInstance) approvalInstanceService.save(approvalInstance);
+    if (ParameterField.isNotNull(approvalInstance.getRetryInterval())) {
+      irregularApprovalInstanceHandler.wakeup();
+    }
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(approvalInstance.getId())
         .addAllLogKeys(CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(

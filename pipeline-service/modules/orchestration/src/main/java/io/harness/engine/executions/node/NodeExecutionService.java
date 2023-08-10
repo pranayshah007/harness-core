@@ -18,6 +18,7 @@ import io.harness.plan.Node;
 import io.harness.pms.contracts.execution.Status;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -323,6 +324,12 @@ public interface NodeExecutionService {
    * @param planExecutionId Id of to be deleted planExecution
    */
   void deleteAllNodeExecutionAndMetadata(String planExecutionId);
+
+  /**
+   * Updates TTL the nodeExecutions and its related metadata
+   * @param planExecutionId Id of to be deleted planExecution
+   */
+  void updateTTLForNodeExecution(String planExecutionId, Date ttlExpiryDate);
 
   /**
    * Update Nodes for which the previousId was failed node execution and replace it with the

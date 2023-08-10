@@ -10,6 +10,8 @@ package io.harness.idp.scorecard.scorecards.service;
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
+import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
@@ -21,6 +23,7 @@ import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,11 +37,14 @@ import lombok.extern.slf4j.Slf4j;
 public class ScorecardServiceImpl implements ScorecardService {
   private final ScorecardRepository scorecardRepository;
   private final CheckService checkService;
+  private final SetupUsageProducer setupUsageProducer;
 
   @Inject
-  public ScorecardServiceImpl(ScorecardRepository scorecardRepository, CheckService checkService) {
+  public ScorecardServiceImpl(
+      ScorecardRepository scorecardRepository, CheckService checkService, SetupUsageProducer setupUsageProducer) {
     this.scorecardRepository = scorecardRepository;
     this.checkService = checkService;
+    this.setupUsageProducer = setupUsageProducer;
   }
 
   @Override
@@ -63,11 +69,15 @@ public class ScorecardServiceImpl implements ScorecardService {
   @Override
   public void saveScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier) {
     scorecardRepository.save(ScorecardDetailsMapper.fromDTO(scorecardDetailsRequest, accountIdentifier));
+    setupUsageProducer.publishScorecardSetupUsage(scorecardDetailsRequest, accountIdentifier);
   }
 
   @Override
   public void updateScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier) {
     scorecardRepository.update(ScorecardDetailsMapper.fromDTO(scorecardDetailsRequest, accountIdentifier));
+    setupUsageProducer.deleteScorecardSetupUsage(
+        accountIdentifier, scorecardDetailsRequest.getScorecard().getIdentifier());
+    setupUsageProducer.publishScorecardSetupUsage(scorecardDetailsRequest, accountIdentifier);
   }
 
   @Override
@@ -81,5 +91,14 @@ public class ScorecardServiceImpl implements ScorecardService {
             .stream()
             .collect(Collectors.toMap(CheckEntity::getIdentifier, Function.identity()));
     return ScorecardDetailsMapper.toDTO(scorecardEntity, checkEntityMap);
+  }
+
+  @Override
+  public void deleteScorecard(String accountIdentifier, String identifier) {
+    DeleteResult deleteResult = scorecardRepository.delete(accountIdentifier, identifier);
+    if (deleteResult.getDeletedCount() == 0) {
+      throw new InvalidRequestException("Could not delete scorecard");
+    }
+    setupUsageProducer.deleteScorecardSetupUsage(accountIdentifier, identifier);
   }
 }

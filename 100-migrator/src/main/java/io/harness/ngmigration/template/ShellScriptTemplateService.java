@@ -133,6 +133,7 @@ public class ShellScriptTemplateService implements NgTemplateService {
         environmentVariables.stream()
             .filter(EmptyPredicate::isNotEmpty)
             .map(map -> map.get("name"))
+            .distinct()
             .filter(StringUtils::isNotBlank)
             .collect(Collectors.toMap(s -> s, s -> String.format("<+spec.environmentVariables.%s>", s)));
 

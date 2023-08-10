@@ -149,6 +149,12 @@ public class AdminAccountResource {
     return Response.status(Response.Status.OK).entity(adminAccountService.disableIpAllowList(accountId)).build();
   }
 
+  @POST
+  @Path("{accountId}/ng/triggers")
+  public RestResponse<String> disableTriggers(@PathParam("accountId") String accountId,
+      @QueryParam("orgIdentifier") String orgIdentifier, @QueryParam("projectIdentifier") String projectIdentifier) {
+    return new RestResponse<>(adminAccountService.disableTriggers(accountId, orgIdentifier, projectIdentifier));
+  }
   @PUT
   @Path("{accountId}/is-product-led")
   public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") String accountId,

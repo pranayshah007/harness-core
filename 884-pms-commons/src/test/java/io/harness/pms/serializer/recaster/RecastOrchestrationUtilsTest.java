@@ -63,6 +63,91 @@ public class RecastOrchestrationUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
+  public void shouldTestForString() {
+    String s = "abc";
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo("abc");
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForInteger() {
+    Integer s = new Integer(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    int s1 = 2;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForBoolean() {
+    boolean s = true;
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(true);
+
+    Boolean s1 = new Boolean(false);
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForLong() {
+    Long s = new Long(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    long s1 = 2l;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForDouble() {
+    Double s = new Double(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    double s1 = 2;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForFloat() {
+    Float s = new Float(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    float s1 = 2;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
   public void shouldTestForStringArray() {
     String[] s = new String[] {"a", "b"};
     String json = RecastOrchestrationUtils.toJson(s);

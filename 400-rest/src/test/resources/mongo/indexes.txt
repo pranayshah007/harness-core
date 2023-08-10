@@ -897,9 +897,6 @@ workflowExecutions {"name": "searchByServiceIds", "background": true} {"appId": 
 workflowExecutions {"name": "serviceIds_1", "background": true} {"serviceIds": 1}
 workflowExecutions {"name": "service_guard", "background": true} {"appId": 1, "startTs": 1}
 workflowExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-workflowExecutions {"name": "wfe_executions_search_envIds", "background": true} {"accountId": 1, "createdAt": -1, "appId": 1, "envIds": 1, "cdPageCandidate": 1, "status": 1}
-workflowExecutions {"name": "wfe_executions_search_serviceIds", "background": true} {"accountId": 1, "createdAt": -1, "appId": 1, "serviceIds": 1, "cdPageCandidate": 1, "status": 1}
-workflowExecutions {"name": "wfe_executions_search_workflowId", "background": true} {"accountId": 1, "createdAt": -1, "appId": 1, "workflowId": 1, "cdPageCandidate": 1, "status": 1}
 workflowExecutions {"name": "workflowExecutionMonitor", "background": true} {"status": 1, "nextIteration": 1}
 workflowVerificationResults {"name": "accountId_1", "background": true} {"accountId": 1}
 workflowVerificationResults {"name": "createdAt_1", "background": true} {"createdAt": 1}

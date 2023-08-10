@@ -41,6 +41,7 @@ import io.harness.pipeline.yamlschema.PipelineYamlSchemaServiceClient;
 import io.harness.pms.yaml.YamlSchemaResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 import io.harness.yaml.schema.YamlSchemaProvider;
@@ -342,6 +343,31 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
                                           .templateEntityType(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE)
                                           .accountId("acc")
                                           .build();
+      ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity);
+    }
+  }
+
+  @Test()
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testCustomDeploymentGlobalTemplateSchemaType() throws IOException {
+    when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+             FeatureName.DISABLE_TEMPLATE_SCHEMA_VALIDATION, ACCOUNT_ID, accountClient))
+        .thenReturn(true);
+    when(yamlSchemaValidator.validate(anyString(), anyString(), anyBoolean(), anyInt(), anyString()))
+        .thenReturn(Collections.emptySet());
+    Call<ResponseDTO<YamlSchemaResponse>> requestCall2 = mock(Call.class);
+    YamlSchemaClient mockClient = mock(YamlSchemaClient.class);
+    when(yamlSchemaClientMapper.get("cd")).thenReturn(mockClient);
+    doReturn(requestCall2).when(mockClient).getEntityYaml(any(), any(), any(), any(), any());
+    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
+      ObjectMapper mapper = new ObjectMapper();
+      JsonNode jsonNode = mapper.createObjectNode();
+      mockStatic.when(() -> NGRestUtils.getResponse(requestCall2)).thenReturn(jsonNode);
+      GlobalTemplateEntity templateEntity = GlobalTemplateEntity.builder()
+                                                .templateEntityType(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE)
+                                                .accountId("acc")
+                                                .build();
       ngTemplateSchemaService.validateYamlSchemaInternal(templateEntity);
     }
   }

@@ -29,7 +29,7 @@ import java.util.List;
 @TargetModule(_955_ACCOUNT_MGMT)
 public interface AdminAccountService {
   LicenseInfo updateLicense(String accountId, LicenseUpdateInfo licenseUpdateInfo);
-
+  String disableTriggers(String accountId, String orgIdentifier, String projectIdentifier);
   CeLicenseInfo updateCeLicense(String accountId, CeLicenseInfo celicenseInfo);
 
   List<AccountSummary> getPaginatedAccountSummaries(String offset, int pageSize);

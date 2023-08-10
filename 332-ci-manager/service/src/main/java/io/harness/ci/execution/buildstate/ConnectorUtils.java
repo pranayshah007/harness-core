@@ -118,8 +118,6 @@ public class ConnectorUtils extends BaseConnectorUtils {
           K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) k8StageInfraDetails.getInfrastructure();
 
           clusterConnectorRef = k8sDirectInfraYaml.getSpec().getConnectorRef().getValue();
-        } else if (k8StageInfraDetails.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-          clusterConnectorRef = "account.Harness_Kubernetes_Cluster";
         } else {
           throw new CIStageExecutionException("Wrong k8s type");
         }

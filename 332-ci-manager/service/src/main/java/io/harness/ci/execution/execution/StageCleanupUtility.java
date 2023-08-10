@@ -9,7 +9,6 @@ package io.harness.ci.execution;
 
 import static io.harness.beans.sweepingoutputs.PodCleanupDetails.CLEANUP_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
-import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -111,9 +110,6 @@ public class StageCleanupUtility {
       K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) infrastructure;
       clusterConnectorRef = k8sDirectInfraYaml.getSpec().getConnectorRef().getValue();
       namespace = (String) k8sDirectInfraYaml.getSpec().getNamespace().fetchFinalValue();
-    } else if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-      namespace = "account-" + getAccountIdentifier(ngAccess.getAccountIdentifier());
-      clusterConnectorRef = "account.Harness_Kubernetes_Cluster";
     } else {
       throw new CIStageExecutionException("Infra type:" + infrastructure.getType().name() + "is not of k8s type");
     }

@@ -69,6 +69,7 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -571,6 +572,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         ops.set(NodeExecutionKeys.status, status).set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
     addFinalStatusOps(updateOps, status);
 
+    List<String> timeoutInstanceIds = getTimeoutInstanceIds(status, nodeExecutionId);
     NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
       NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
       if (updated == null) {
@@ -586,7 +588,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     });
     if (updatedNodeExecution != null) {
       nodeStatusUpdateSubject.fireInform(NodeStatusUpdateObserver::onNodeStatusUpdate,
-          NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
+          NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).timeoutInstanceIds(timeoutInstanceIds).build());
     }
     return updatedNodeExecution;
   }
@@ -600,6 +602,18 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         updateOps.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
       }
     }
+  }
+
+  private List<String> getTimeoutInstanceIds(Status toBeUpdatedNodeStatus, String curretNodeExecutionId) {
+    List<String> timeoutInstanceIds = new LinkedList<>();
+    if (StatusUtils.isFinalStatus(toBeUpdatedNodeStatus)) {
+      Query getCurrentNodeQuery = query(where(NodeExecutionKeys.uuid).is(curretNodeExecutionId));
+      getCurrentNodeQuery.fields().include(NodeExecutionKeys.uuid).include(NodeExecutionKeys.timeoutInstanceIds);
+      NodeExecution oldNodeExecution =
+          nodeExecutionReadHelper.fetchNodeExecutionsFromSecondaryTemplate(getCurrentNodeQuery);
+      timeoutInstanceIds = oldNodeExecution.getTimeoutInstanceIds();
+    }
+    return timeoutInstanceIds;
   }
 
   @Override
@@ -701,6 +715,18 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       // Uses - id index
       Query query = query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds));
       mongoTemplate.remove(query, NodeExecution.class);
+      return true;
+    });
+  }
+
+  @Override
+  public void updateTTLForNodeExecution(String planExecutionId, Date ttlExpiryDate) {
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // Uses - planExecutionId_nodeId_idx index
+      Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId));
+      Update ops = new Update();
+      ops.set(NodeExecutionKeys.validUntil, ttlExpiryDate);
+      mongoTemplate.updateMulti(query, ops, NodeExecution.class);
       return true;
     });
   }

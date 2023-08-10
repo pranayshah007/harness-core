@@ -4,11 +4,12 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-
 package io.harness.idp.scorecard.datasourcelocations.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
+
 @OwnedBy(HarnessTeam.IDP)
-public class DataSourceLocationService {}
+public interface DataSourceLocationService {}

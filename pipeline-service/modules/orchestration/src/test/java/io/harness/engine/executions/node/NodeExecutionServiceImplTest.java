@@ -57,8 +57,11 @@ import io.harness.utils.AmbianceTestUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -894,6 +897,21 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
 
     verify(mongoTemplateMock, times(1))
         .remove(query(where(NodeExecutionKeys.id).in(batchNodeExecutionIds)), NodeExecution.class);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testUpdateTTLForAllNodeExecutionAndMetadata() {
+    MongoTemplate mongoTemplateMock = Mockito.mock(MongoTemplate.class);
+    Reflect.on(nodeExecutionService).set("mongoTemplate", mongoTemplateMock);
+
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    nodeExecutionService.updateTTLForNodeExecution("EXECUTION_1", ttlExpiry);
+    Update ops = new Update();
+    ops.set(NodeExecutionKeys.validUntil, ttlExpiry);
+    verify(mongoTemplateMock, times(1))
+        .updateMulti(query(where(NodeExecutionKeys.planExecutionId).is("EXECUTION_1")), ops, NodeExecution.class);
   }
 
   @Test

@@ -24,6 +24,9 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
+import io.harness.spec.server.idp.v1.model.ScorecardChecks;
+import io.harness.spec.server.idp.v1.model.ScorecardDetails;
+import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -185,6 +188,79 @@ public class SetupUsageProducer {
     } catch (EventsFrameworkDownException e) {
       log.error("Failed to send event to events framework for delete idp connector {}, accountId: {}, error {}",
           idpConnectorIdentifier, accountIdentifier, e.getMessage(), e);
+    }
+  }
+
+  public void publishScorecardSetupUsage(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier) {
+    ScorecardDetails scorecardDetails = scorecardDetailsRequest.getScorecard();
+    String scorecardIdentifier = scorecardDetails.getIdentifier();
+    List<ScorecardChecks> scorecardChecks = scorecardDetailsRequest.getChecks();
+
+    IdentifierRefProtoDTO scorecardReference =
+        IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(accountIdentifier, null, null, scorecardIdentifier);
+    EntityDetailProtoDTO scorecardDetail = EntityDetailProtoDTO.newBuilder()
+                                               .setIdentifierRef(scorecardReference)
+                                               .setType(EntityTypeProtoEnum.IDP_SCORECARD)
+                                               .setName(scorecardDetails.getName())
+                                               .build();
+
+    for (ScorecardChecks scorecardCheck : scorecardChecks) {
+      String checkIdentifier = scorecardCheck.getIdentifier();
+      IdentifierRefProtoDTO checkReference =
+          IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(accountIdentifier, null, null, checkIdentifier);
+      EntityDetailProtoDTO checkDetail = EntityDetailProtoDTO.newBuilder()
+                                             .setIdentifierRef(checkReference)
+                                             .setType(EntityTypeProtoEnum.IDP_CHECK)
+                                             .build();
+
+      EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                           .setAccountIdentifier(accountIdentifier)
+                                                           .setReferredByEntity(scorecardDetail)
+                                                           .addReferredEntities(checkDetail)
+                                                           .setDeleteOldReferredByRecords(false)
+                                                           .build();
+
+      try {
+        String messageId = eventProducer.send(
+            Message.newBuilder()
+                .putAllMetadata(Map.of(ACCOUNT_ID, accountIdentifier,
+                    EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.IDP_CHECK.name(),
+                    EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                .setData(entityReferenceDTO.toByteString())
+                .build());
+        log.info("Emitted scorecard event with id {} for scorecardId {}, checkId {} and accountId {}", messageId,
+            scorecardIdentifier, checkIdentifier, accountIdentifier);
+      } catch (EventsFrameworkDownException e) {
+        log.error("Failed to send event to events framework for scorecardId {}, checkId {} and accountId {}, error {}",
+            scorecardIdentifier, checkIdentifier, accountIdentifier, e.getMessage(), e);
+      }
+    }
+  }
+
+  public void deleteScorecardSetupUsage(String accountIdentifier, String scorecardIdentifier) {
+    EntityDetailProtoDTO entityDetail = EntityDetailProtoDTO.newBuilder()
+                                            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                                                accountIdentifier, null, null, scorecardIdentifier))
+                                            .setType(EntityTypeProtoEnum.IDP_SCORECARD)
+                                            .build();
+
+    EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                         .setAccountIdentifier(accountIdentifier)
+                                                         .setReferredByEntity(entityDetail)
+                                                         .setDeleteOldReferredByRecords(true)
+                                                         .build();
+    try {
+      String messageId = eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(Map.of(ACCOUNT_ID, accountIdentifier, EventsFrameworkMetadataConstants.ACTION,
+                  EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+              .setData(entityReferenceDTO.toByteString())
+              .build());
+      log.info("Emitted delete scorecard event with id {} for scorecardId {} and accountId {}", messageId,
+          scorecardIdentifier, accountIdentifier);
+    } catch (EventsFrameworkDownException e) {
+      log.error("Failed to send event to events framework for delete scorecardId {}, accountId: {}, error {}",
+          scorecardIdentifier, accountIdentifier, e.getMessage(), e);
     }
   }
 }

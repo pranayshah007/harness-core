@@ -60,8 +60,7 @@ public class CIStagePlanCreationUtils {
   }
 
   public static boolean isHostedInfra(Infrastructure infrastructure) {
-    return infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM)
-        || infrastructure.getType().equals(Infrastructure.Type.KUBERNETES_HOSTED);
+    return infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM);
   }
 
   public void validateFreeAccountStageExecutionLimit(String accountId, Infrastructure infrastructure) {

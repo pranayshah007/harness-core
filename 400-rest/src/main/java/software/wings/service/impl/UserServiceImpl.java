@@ -6,6 +6,7 @@
  */
 
 package software.wings.service.impl;
+
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -308,6 +309,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.cache.Cache;
@@ -370,6 +373,7 @@ public class UserServiceImpl implements UserService {
   private static final String CCM = "CCM";
   private static final String STO = "STO";
   private static final String SRM = "SRM";
+  private static final Pattern EMAIL_PATTERN = Pattern.compile("^\\s*?(.+)@(.+?)\\s*$");
 
   /**
    * The Executor service.
@@ -3704,7 +3708,7 @@ public class UserServiceImpl implements UserService {
     HashMap<String, Object> userData = new HashMap<>();
     userData.put(UserKeys.email, user.getEmail());
     userData.put("id", user.getUuid());
-    userData.put(UserKeys.name, user.getName());
+    userData.put(UserKeys.name, removeEmailDomainFromUserName(user.getName()));
     userData.put(UserKeys.companyName, user.getCompanyName());
 
     byte[] jwtCannySecretBytes;
@@ -3721,6 +3725,15 @@ public class UserServiceImpl implements UserService {
         .setClaims(userData)
         .signWith(SignatureAlgorithm.HS256, jwtCannySecretBytes)
         .compact();
+  }
+
+  @VisibleForTesting
+  String removeEmailDomainFromUserName(String userName) {
+    if (!isEmpty(userName)) {
+      Matcher emailMatcher = EMAIL_PATTERN.matcher(userName);
+      userName = emailMatcher.matches() ? emailMatcher.group(1) : userName;
+    }
+    return userName;
   }
 
   private Role ensureRolePresent(String roleId) {
