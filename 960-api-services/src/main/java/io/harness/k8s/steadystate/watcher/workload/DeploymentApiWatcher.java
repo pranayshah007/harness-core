@@ -57,9 +57,10 @@ public class DeploymentApiWatcher extends AbstractWorkloadWatcher {
   }
 
   private boolean processEvent(
-      Watch.Response<V1Deployment> event, KubernetesResourceId workload, LogCallback logCallback) throws Exception {
+      Watch.Response<V1Deployment> event, KubernetesResourceId workload, LogCallback logCallback) {
     V1Deployment deployment = event.object;
     V1ObjectMeta meta = deployment.getMetadata();
+    log.info("Deployment API watch event type {} for workload {}", event.type, workload.getName());
     if (meta == null || workload.getName().equals(meta.getName())) {
       switch (event.type) {
         case "ADDED":

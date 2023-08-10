@@ -97,11 +97,15 @@ public class K8sBlockingWatchClient implements K8sWatchClient {
   private <T extends KubernetesObject> boolean executeWait(
       Type type, ThrowingSupplier<Call> callSupplier, K8sEventPredicate<T> condition) throws Throwable {
     while (!Thread.currentThread().isInterrupted()) {
-      try (Watch<T> watch = Watch.createWatch(apiClient, callSupplier.get(), type)) {
+      Call call = callSupplier.get();
+      log.info("Creating a namespaced event watch {}", call.request().url());
+      try (Watch<T> watch = Watch.createWatch(apiClient, call, type)) {
         for (Watch.Response<T> event : watch) {
           if (condition.test(event)) {
+            log.info("Condition for namespaced event {} was true", event.type);
             return true;
           }
+          log.info("Condition for namespaced event {} was false", event.type);
         }
       } catch (IOException e) {
         IOException ex = ExceptionMessageSanitizer.sanitizeException(e);

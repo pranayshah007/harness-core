@@ -66,6 +66,7 @@ public class K8sApiClient implements K8sClient {
     try {
       k8sClientHelper.logSteadyStateInfo(workloads, namespaces, executionLogCallback);
       for (String ns : namespaces) {
+        log.info("Watching for events for namespace {}", ns);
         Future<?> threadRef = k8sApiEventWatcher.watchForEvents(ns, eventWatchDTO, executionLogCallback);
         futureList.add(threadRef);
       }
@@ -77,6 +78,7 @@ public class K8sApiClient implements K8sClient {
           log.info(String.format("Steady state check for workload %s did not succeed.", workload.kindNameRef()));
           break;
         }
+        log.info(String.format("Steady state check for workload %s succeeded.", workload.kindNameRef()));
       }
 
       return success;

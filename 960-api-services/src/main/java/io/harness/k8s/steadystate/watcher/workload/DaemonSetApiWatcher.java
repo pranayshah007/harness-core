@@ -59,6 +59,7 @@ public class DaemonSetApiWatcher extends AbstractWorkloadWatcher {
       Watch.Response<V1DaemonSet> event, KubernetesResourceId workload, LogCallback logCallback) {
     V1DaemonSet daemonSet = event.object;
     V1ObjectMeta meta = daemonSet.getMetadata();
+    log.info("DeamonSet API watch event type {} for workload {}", event.type, workload.getName());
     if (meta == null || workload.getName().equals(meta.getName())) {
       switch (event.type) {
         case "ADDED":

@@ -59,6 +59,7 @@ public class StatefulSetApiWatcher extends AbstractWorkloadWatcher {
       Watch.Response<V1StatefulSet> event, KubernetesResourceId workload, LogCallback logCallback) {
     V1StatefulSet statefulSet = event.object;
     V1ObjectMeta meta = statefulSet.getMetadata();
+    log.info("StatefulSet API watch event type {} for workload {}", event.type, workload.getName());
     if (meta == null || workload.getName().equals(meta.getName())) {
       switch (event.type) {
         case "ADDED":

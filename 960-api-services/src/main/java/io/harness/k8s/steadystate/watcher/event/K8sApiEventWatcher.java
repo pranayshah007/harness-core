@@ -91,8 +91,10 @@ public class K8sApiEventWatcher {
               continue;
             }
             if ("WARNING".equalsIgnoreCase(event.getType())) {
+              log.warn(format(eventErrorFormat, "Event", event.getMessage()));
               executionLogCallback.saveExecutionLog(format(eventErrorFormat, "Event", event.getMessage()));
             } else {
+              log.info(format(eventInfoFormat, "Event", ref.getName(), event.getMessage()));
               executionLogCallback.saveExecutionLog(
                   format(eventInfoFormat, "Event", ref.getName(), event.getMessage()));
             }
@@ -103,6 +105,7 @@ public class K8sApiEventWatcher {
           } else {
             resourceVersion = null;
           }
+          log.error("Listing of namespaced event failed with code {}", ex.getCode(), ex);
         } catch (IOException e) {
           IOException ex = ExceptionMessageSanitizer.sanitizeException(e);
           String errorMessage = "Failed to close Kubernetes watch." + ExceptionUtils.getMessage(ex);
