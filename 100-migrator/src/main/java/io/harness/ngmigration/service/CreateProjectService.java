@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -16,6 +17,7 @@ import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ProjectRequest;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.dto.BulkCreateProjectsDTO;
 import io.harness.ngmigration.dto.ImportError;
@@ -37,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
@@ -49,7 +52,17 @@ public class CreateProjectService {
   public List<ProjectCreateResultDTO> bulkCreateProjects(
       String accountId, String apiKey, BulkCreateProjectsDTO createRequest) throws IOException {
     List<Application> apps = appService.getAppsByAccountId(accountId);
-    NGClient ngClient = MigratorUtility.getRestClient(null, ngClientConfig, NGClient.class);
+    NGClient ngClient = MigratorUtility.getRestClient(
+        MigrationInputDTO.builder()
+            .destinationAuthToken(StringUtils.defaultIfBlank(createRequest.getDestinationAuthToken(), apiKey))
+            .destinationGatewayUrl(createRequest.getDestinationGatewayUrl())
+            .accountIdentifier(accountId)
+            .destinationAccountIdentifier(
+                StringUtils.defaultIfBlank(createRequest.getDestinationAccountIdentifier(), accountId))
+            .orgIdentifier(createRequest.getOrgIdentifier())
+            .identifierCaseFormat(createRequest.getIdentifierCaseFormat())
+            .build(),
+        ngClientConfig, NGClient.class);
 
     if (EmptyPredicate.isEmpty(apps)) {
       return Collections.emptyList();

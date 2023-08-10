@@ -13,6 +13,9 @@ import lombok.Data;
 
 @Data
 public class BulkCreateProjectsDTO {
+  private String destinationGatewayUrl;
+  private String destinationAuthToken;
+  private String destinationAccountIdentifier;
   private String orgIdentifier;
   private CaseFormat identifierCaseFormat;
 }
