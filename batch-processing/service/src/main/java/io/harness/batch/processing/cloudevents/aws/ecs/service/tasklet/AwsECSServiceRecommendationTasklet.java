@@ -86,6 +86,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
   @Autowired private AwsAccountFieldHelper awsAccountFieldHelper;
 
   private static final int BATCH_SIZE = 20;
+  private static final int NUMBER_OF_BUCKETS = 1000;
   private static final int MAX_UTILIZATION_WEIGHT = 1;
   private static final int RECOMMENDATION_FOR_DAYS = 7;
   private static final Set<Integer> requiredPercentiles = ImmutableSet.of(50, 80, 90, 95, 99, 100);
@@ -375,7 +376,9 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
 
   private static Histogram newHistogram(long maxUnits) {
     // Histogram will have 1000 buckets
-    return new HistogramImpl(new LinearHistogramOptions(maxUnits, maxUnits / 1000.0, EPSILON));
+    int numBuckets = NUMBER_OF_BUCKETS + 1;
+    return new HistogramImpl(
+        new LinearHistogramOptions(numBuckets, (double) maxUnits / (double) NUMBER_OF_BUCKETS, EPSILON));
   }
 
   @Nullable

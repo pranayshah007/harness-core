@@ -154,7 +154,9 @@ public class ECSRecommendationService {
 
   private static Histogram newHistogram(long maxUnits) {
     // Histogram will have 1000 buckets
-    return new HistogramImpl(new LinearHistogramOptions(maxUnits, maxUnits / (double) NUMBER_OF_BUCKETS, EPSILON));
+    int numBuckets = NUMBER_OF_BUCKETS + 1;
+    return new HistogramImpl(
+        new LinearHistogramOptions(numBuckets, (double) maxUnits / (double) NUMBER_OF_BUCKETS, EPSILON));
   }
 
   private double[] getPrecomputedPercentiles(Histogram histogram) {
