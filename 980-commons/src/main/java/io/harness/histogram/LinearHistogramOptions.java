@@ -25,6 +25,13 @@ public class LinearHistogramOptions implements HistogramOptions {
   double bucketSize;
   @Getter double epsilon;
 
+  public LinearHistogramOptions(int numBuckets, double bucketSize, double epsilon) {
+    checkArgument(numBuckets > 0 && bucketSize > 0.0 && epsilon > 0.0, "maxValue, bucketSize & epsilon must be +ve");
+    this.numBuckets = numBuckets;
+    this.bucketSize = bucketSize;
+    this.epsilon = epsilon;
+  }
+
   public LinearHistogramOptions(double maxValue, double bucketSize, double epsilon) {
     checkArgument(maxValue > 0.0 && bucketSize > 0.0 && epsilon > 0.0, "maxValue, bucketSize & epsilon must be +ve");
     this.numBuckets = (int) Math.ceil((maxValue / bucketSize) + 1);
