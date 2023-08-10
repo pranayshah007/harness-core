@@ -55,7 +55,7 @@ import io.harness.accesscontrol.roleassignments.events.RoleAssignmentCreateEvent
 import io.harness.accesscontrol.roleassignments.events.RoleAssignmentDeleteEvent;
 import io.harness.accesscontrol.roleassignments.events.RoleAssignmentUpdateEvent;
 import io.harness.accesscontrol.roles.RoleService;
-import io.harness.accesscontrol.roles.api.RoleDTOMapper;
+import io.harness.accesscontrol.roles.RoleDTOMapper;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
 import io.harness.accesscontrol.scopes.ScopeFilterType;

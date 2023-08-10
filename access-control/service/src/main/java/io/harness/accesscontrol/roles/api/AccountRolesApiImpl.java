@@ -13,7 +13,7 @@ import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ROLE_PERMIS
 import static io.harness.accesscontrol.AccessControlResourceTypes.ROLE;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel.fromString;
-import static io.harness.accesscontrol.roles.api.RoleDTOMapper.fromDTO;
+import static io.harness.accesscontrol.roles.RoleDTOMapper.fromDTO;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
@@ -22,6 +22,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.roles.Role;
+import io.harness.accesscontrol.roles.RoleDTOMapper;
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.RoleUpdateResult;
 import io.harness.accesscontrol.roles.events.RoleCreateEvent;

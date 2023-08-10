@@ -9,8 +9,10 @@ package io.harness.accesscontrol.roles;
 
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_CUSTOM;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_MANAGED;
+import static io.harness.accesscontrol.scopes.core.ScopeMapper.toDTO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import com.google.inject.name.Named;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
@@ -21,8 +23,11 @@ import io.harness.accesscontrol.permissions.PermissionService;
 import io.harness.accesscontrol.permissions.PermissionStatus;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
+import io.harness.accesscontrol.roles.events.RoleCreateEvent;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
 import io.harness.accesscontrol.roles.persistence.RoleDao;
+import io.harness.accesscontrol.scopes.ScopeDTO;
+import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidArgumentsException;
@@ -60,6 +65,7 @@ public class RoleServiceImpl implements RoleService {
   private final TransactionTemplate transactionTemplate;
   private final TransactionTemplate outboxTransactionTemplate;
   private final OutboxService outboxService;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private static final RetryPolicy<Object> removeRoleTransactionPolicy = PersistenceUtils.getRetryPolicy(
       "[Retrying]: Failed to remove role assignments for the role and remove the role; attempt: {}",
       "[Failed]: Failed to remove role assignments for the role and remove the role; attempt: {}");
@@ -86,10 +92,16 @@ public class RoleServiceImpl implements RoleService {
 
   @Override
   public Role create(Role role) {
-    validateScopes(role);
+    Scope scope = scopeService.buildScopeFromScopeIdentifier(role.getScopeIdentifier());
+    validateScopes(role, scope);
     validatePermissions(role);
     addCompulsoryPermissions(role);
-    return roleDao.create(role);
+    ScopeDTO scopeDTO = toDTO(scope);
+    return Failsafe.with(transactionRetryPolicy).get(() -> outboxTransactionTemplate.execute(status -> {
+       Role createdRole = roleDao.create(role);
+       outboxService.save(new RoleCreateEvent(scopeDTO.getAccountIdentifier(), RoleDTOMapper.toDTO(createdRole), scopeDTO));
+       return createdRole ;
+    }));
   }
 
   @Override
@@ -231,7 +243,7 @@ public class RoleServiceImpl implements RoleService {
     }
   }
 
-  private void validateScopes(Role role) {
+  private void validateScopes(Role role, Scope scope) {
     if (role.isManaged() && !scopeService.areScopeLevelsValid(role.getAllowedScopeLevels())) {
       throw new InvalidArgumentsException(
           String.format("The provided scopes are not registered in the service. Please select scopes out of [ %s ]",

@@ -74,7 +74,7 @@ import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
 import io.harness.accesscontrol.roleassignments.validator.RoleAssignmentValidationResult;
 import io.harness.accesscontrol.roles.RoleService;
-import io.harness.accesscontrol.roles.api.RoleDTOMapper;
+import io.harness.accesscontrol.roles.RoleDTOMapper;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.ScopeFilterType;

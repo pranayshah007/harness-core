@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.accesscontrol.roles.api;
+package io.harness.accesscontrol.roles;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -13,7 +13,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static com.google.common.collect.Sets.newHashSet;
 
 import io.harness.accesscontrol.roles.Role;
+import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel;
+import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.core.ScopeMapper;
@@ -67,6 +69,18 @@ public class RoleDTOMapper {
         .tags(object.getTags())
         .managed(false)
         .build();
+  }
+
+  public static RoleDTO toDTO(Role role) {
+    return RoleDTO.builder()
+            .identifier(role.getIdentifier())
+            .allowedScopeLevels(toAllowedScopeLevelsEnum(role.getAllowedScopeLevels()))
+            .name(role.getName())
+            .permissions(role.getPermissions() == null ? new HashSet<>() : role.getPermissions())
+            .description(role.getDescription())
+            .tags(role.getTags())
+            .build();
+
   }
 
   public static Set<String> fromAllowedScopeLevelsEnum(Set<ScopeLevel> scopeLevels) {

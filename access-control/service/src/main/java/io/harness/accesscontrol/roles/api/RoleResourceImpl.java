@@ -13,7 +13,7 @@ import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ROLE_PERMIS
 import static io.harness.accesscontrol.AccessControlResourceTypes.ROLE;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_CUSTOM;
-import static io.harness.accesscontrol.roles.api.RoleDTOMapper.fromDTO;
+import static io.harness.accesscontrol.roles.RoleDTOMapper.fromDTO;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
@@ -25,6 +25,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.roles.Role;
+import io.harness.accesscontrol.roles.RoleDTOMapper;
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.RoleUpdateResult;
 import io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel;
@@ -179,6 +180,8 @@ public class RoleResourceImpl implements RoleResource {
     if (isEmpty(roleDTO.getAllowedScopeLevels())) {
       roleDTO.setAllowedScopeLevels(Sets.newHashSet(ScopeLevel.fromString(scope.getLevel().toString())));
     }
+    RoleResponseDTO response = roleDTOMapper.toResponseDTO(roleService.create(fromDTO(scope.toString(), roleDTO)));
+    return ResponseDTO.newResponse(response);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       RoleResponseDTO response = roleDTOMapper.toResponseDTO(roleService.create(fromDTO(scope.toString(), roleDTO)));
       outboxService.save(

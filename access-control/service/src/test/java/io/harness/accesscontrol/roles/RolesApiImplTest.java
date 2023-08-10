@@ -28,7 +28,6 @@ import io.harness.accesscontrol.roles.api.AccountRolesApiImpl;
 import io.harness.accesscontrol.roles.api.OrgRolesApiImpl;
 import io.harness.accesscontrol.roles.api.ProjectRolesApiImpl;
 import io.harness.accesscontrol.roles.api.RoleDTO;
-import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.roles.api.RolesApiUtils;
 import io.harness.accesscontrol.roles.filter.RoleFilter;

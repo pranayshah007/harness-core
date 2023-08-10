@@ -33,7 +33,6 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.roles.api.RoleDTO;
-import io.harness.accesscontrol.roles.api.RoleDTOMapper;
 import io.harness.accesscontrol.roles.api.RoleResource;
 import io.harness.accesscontrol.roles.api.RoleResourceImpl;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;

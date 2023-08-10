@@ -15,7 +15,7 @@ import io.harness.accesscontrol.principals.PrincipalDTOV2;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.accesscontrol.roles.RoleService;
-import io.harness.accesscontrol.roles.api.RoleDTOMapper;
+import io.harness.accesscontrol.roles.RoleDTOMapper;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.ScopeResponseDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
