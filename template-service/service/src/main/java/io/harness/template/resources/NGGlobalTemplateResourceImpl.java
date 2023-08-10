@@ -81,8 +81,7 @@ public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(String.format("Get List of templates in project: %s, org: %s, account: %s", projectId, orgId, accountId));
-    Criteria criteria = templateServiceHelper.formCriteria(accountId, orgId, projectId, filterIdentifier,
-        filterProperties, false, searchTerm, includeAllTemplatesAccessibleAtScope);
+    Criteria criteria = new Criteria();
 
     // Adding criteria needed for ui homepage
     criteria = templateServiceHelper.formCriteria(criteria, templateListType);
@@ -93,7 +92,7 @@ public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
     Page<TemplateSummaryResponseDTO> templateSummaryResponseDTOS =
-        templateService.listGlobalTemplate(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches)
+        templateService.getAllGlobalTemplate(criteria, accountId, pageRequest, false)
             .map(NGTemplateDtoMapper::prepareTemplateSummaryResponseDto);
 
     return ResponseDTO.newResponse(templateSummaryResponseDTOS);
@@ -109,8 +108,8 @@ public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
     log.info(
         String.format("Retrieving Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
             templateIdentifier, versionLabel, projectId, orgId, accountId));
-    Optional<GlobalTemplateEntity> templateEntity = templateService.getGlobalTemplateByIdentifier(
-        accountId, orgId, projectId, templateIdentifier, versionLabel, deleted);
+    Optional<GlobalTemplateEntity> templateEntity =
+        templateService.getGlobalTemplateByIdentifier(templateIdentifier, versionLabel, deleted, accountId);
 
     String version = "0";
     if (templateEntity.isPresent()) {

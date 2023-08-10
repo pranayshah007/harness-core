@@ -214,9 +214,4 @@ public class TemplateUtils {
     GlobalContextManager.upsertGlobalContextRecord(
         ThreadOperationContextHelper.getOrInitThreadOperationContext().withUserFlow(userFlow));
   }
-
-  public Scope buildScope(GlobalTemplateEntity globalTemplateEntity) {
-    return Scope.of(globalTemplateEntity.getAccountIdentifier(), globalTemplateEntity.getOrgIdentifier(),
-        globalTemplateEntity.getProjectIdentifier());
-  }
 }

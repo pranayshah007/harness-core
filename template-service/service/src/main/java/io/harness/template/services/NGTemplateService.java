@@ -66,8 +66,10 @@ public interface NGTemplateService {
       String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache,
       boolean loadFromFallbackBranch);
 
-  Optional<GlobalTemplateEntity> getGlobalTemplateByIdentifier(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted);
+  Optional<GlobalTemplateEntity> getGlobalTemplateByIdentifier(
+      String templateIdentifier, String versionLabel, boolean deleted, String accountId);
+  Page<GlobalTemplateEntity> getAllGlobalTemplate(
+      Criteria criteria, String accountId, Pageable pageable, boolean deleted);
 
   Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted);
@@ -83,8 +85,6 @@ public interface NGTemplateService {
 
   Page<TemplateEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches);
-  Page<GlobalTemplateEntity> listGlobalTemplate(Criteria criteria, Pageable pageable, String accountId,
-      String orgIdentifier, String projectIdentifier, Boolean getDistinctFromBranches);
 
   Page<TemplateEntity> listTemplateMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       FilterParamsDTO filterParamsDTO, PageParamsDTO pageParamsDTO);
@@ -106,10 +106,8 @@ public interface NGTemplateService {
 
   boolean validateIsNewTemplateIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier);
-  boolean validateIsNewGlobalTemplateIdentifier(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier);
-  boolean validateGlobalIdentifierIsUnique(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel);
+  boolean validateIsNewGlobalTemplateIdentifier(String templateIdentifier);
+  boolean validateGlobalIdentifierIsUnique(String templateIdentifier, String versionLabel);
 
   TemplateEntity updateGitFilePath(TemplateEntity templateEntity, String newFilePath);
 

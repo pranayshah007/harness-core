@@ -145,33 +145,17 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       GlobalTemplateEntity savedTemplateEntity = mongoTemplate.save(templateToSave);
       if (shouldLogAudits(templateToSave.getAccountId(), templateToSave.getOrgIdentifier(),
               templateToSave.getProjectIdentifier())) {
-        outboxService.save(new GlobalTemplateCreateEvent(templateToSave.getAccountIdentifier(),
-            templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier(), templateToSave, comments));
+        outboxService.save(
+            new GlobalTemplateCreateEvent(templateToSave.getAccountIdentifier(), templateToSave, comments));
       }
       return savedTemplateEntity;
     }
-    if (templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToSave, gitEntityInfo)) {
-      Scope scope = TemplateUtils.buildScope(templateToSave);
-      String yamlToPush = templateToSave.getYaml();
-      addGitParamsToTemplateEntity(templateToSave, gitEntityInfo);
-      gitAwareEntityHelper.createEntityOnGit(templateToSave, yamlToPush, scope);
-    } else {
-      if (templateToSave.getProjectIdentifier() != null) {
-        throw new InvalidRequestException(
-            format("Remote git simplification was not enabled for Project [%s] in Organisation [%s] in Account [%s]",
-                templateToSave.getProjectIdentifier(), templateToSave.getOrgIdentifier(),
-                templateToSave.getAccountIdentifier()));
-      } else {
-        throw new InvalidRequestException(
-            format("Remote git simplification or feature flag was not enabled for Organisation [%s] or Account [%s]",
-                templateToSave.getOrgIdentifier(), templateToSave.getAccountIdentifier()));
-      }
-    }
+
     GlobalTemplateEntity savedTemplateEntity = mongoTemplate.save(templateToSave);
     if (shouldLogAudits(
             templateToSave.getAccountId(), templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())) {
-      outboxService.save(new GlobalTemplateCreateEvent(templateToSave.getAccountIdentifier(),
-          templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier(), templateToSave, comments));
+      outboxService.save(
+          new GlobalTemplateCreateEvent(templateToSave.getAccountIdentifier(), templateToSave, comments));
     }
     return savedTemplateEntity;
   }
@@ -200,14 +184,18 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public Optional<GlobalTemplateEntity>
-  findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
-      boolean notDeleted, boolean getMetadataOnly) {
-    Criteria criteria =
-        buildCriteriaForGlobalTemplateFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
+  public Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndVersionLabelAndDeletedNot(
+      String templateIdentifier, String versionLabel, boolean notDeleted, boolean getMetadataOnly) {
+    Criteria criteria = buildCriteriaForGlobalTemplateFindByIdentifierAndVersionLabelAndDeletedNot(
+        templateIdentifier, versionLabel, notDeleted);
     return getGlobalTemplateEntity(criteria, getMetadataOnly);
+  }
+
+  @Override
+  public Page<GlobalTemplateEntity> findALLGlobalTemplateAndDeletedNot(
+      boolean notDeleted, boolean getMetadataOnly, Pageable pageable, Criteria criteria) {
+    criteria = buildCriteriaForGlobalTemplateFindByDeletedNot(notDeleted);
+    return getAllGlobalTemplateEntity(criteria, getMetadataOnly, pageable);
   }
 
   @Override
@@ -244,13 +232,10 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public Optional<GlobalTemplateEntity>
-  findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
-      boolean getMetadataOnly) {
+  public Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndIsStableAndDeletedNot(
+      String templateIdentifier, boolean notDeleted, boolean getMetadataOnly) {
     Criteria criteria =
-        buildCriteriaForGlobalTemplateFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-            accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
+        buildCriteriaForGlobalTemplateFindByIdentifierAndIsStableAndDeletedNot(templateIdentifier, notDeleted);
     return getGlobalTemplateEntity(criteria, getMetadataOnly);
   }
 
@@ -293,22 +278,18 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         .is(accountId);
   }
 
-  private Criteria
-  buildCriteriaForGlobalTemplateFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
-      boolean notDeleted) {
+  private Criteria buildCriteriaForGlobalTemplateFindByIdentifierAndVersionLabelAndDeletedNot(
+      String templateIdentifier, String versionLabel, boolean notDeleted) {
     return Criteria.where(GlobalTemplateEntityKeys.deleted)
         .is(!notDeleted)
         .and(GlobalTemplateEntityKeys.versionLabel)
         .is(versionLabel)
         .and(GlobalTemplateEntityKeys.identifier)
-        .is(templateIdentifier)
-        .and(GlobalTemplateEntityKeys.projectIdentifier)
-        .is(projectIdentifier)
-        .and(GlobalTemplateEntityKeys.orgIdentifier)
-        .is(orgIdentifier)
-        .and(GlobalTemplateEntityKeys.accountId)
-        .is(accountId);
+        .is(templateIdentifier);
+  }
+
+  private Criteria buildCriteriaForGlobalTemplateFindByDeletedNot(boolean notDeleted) {
+    return Criteria.where(GlobalTemplateEntityKeys.deleted).is(!notDeleted);
   }
 
   private Criteria
@@ -328,21 +309,14 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         .is(accountId);
   }
 
-  private Criteria
-  buildCriteriaForGlobalTemplateFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted) {
+  private Criteria buildCriteriaForGlobalTemplateFindByIdentifierAndIsStableAndDeletedNot(
+      String templateIdentifier, boolean notDeleted) {
     return Criteria.where(GlobalTemplateEntityKeys.deleted)
         .is(!notDeleted)
         .and(GlobalTemplateEntityKeys.isStableTemplate)
         .is(true)
         .and(GlobalTemplateEntityKeys.identifier)
-        .is(templateIdentifier)
-        .and(GlobalTemplateEntityKeys.projectIdentifier)
-        .is(projectIdentifier)
-        .and(GlobalTemplateEntityKeys.orgIdentifier)
-        .is(orgIdentifier)
-        .and(GlobalTemplateEntityKeys.accountId)
-        .is(accountId);
+        .is(templateIdentifier);
   }
 
   private Criteria
@@ -397,6 +371,14 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       return Optional.of(savedEntity);
     }
     return Optional.of(savedEntity);
+  }
+
+  private Page<GlobalTemplateEntity> getAllGlobalTemplateEntity(
+      Criteria criteria, boolean getMetadataOnly, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    List<GlobalTemplateEntity> templateEntities = mongoTemplate.find(query, GlobalTemplateEntity.class);
+    return PageableExecutionUtils.getPage(templateEntities, pageable,
+        () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), GlobalTemplateEntity.class));
   }
 
   TemplateEntity fetchRemoteEntity(String accountId, String orgIdentifier, String projectIdentifier,
@@ -562,22 +544,6 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public Page<GlobalTemplateEntity> findAllGlobalTemplates(Criteria criteria, Pageable pageable,
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches) {
-    if (getDistinctFromBranches) {
-      return EntityDistinctElementHelper.getDistinctElementPage(mongoTemplate, criteria, pageable,
-          GlobalTemplateEntity.class, TemplateEntityKeys.accountId, TemplateEntityKeys.orgIdentifier,
-          TemplateEntityKeys.projectIdentifier, TemplateEntityKeys.identifier, TemplateEntityKeys.versionLabel);
-    }
-    List<GlobalTemplateEntity> templateEntities = gitAwarePersistence.find(
-        criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier, GlobalTemplateEntity.class, false);
-    return PageableExecutionUtils.getPage(templateEntities, pageable,
-        ()
-            -> gitAwarePersistence.count(
-                criteria, projectIdentifier, orgIdentifier, accountIdentifier, GlobalTemplateEntity.class));
-  }
-
-  @Override
   public Page<TemplateEntity> findAll(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Pageable pageable) {
     Query query = new Query(criteria).with(pageable);
@@ -603,19 +569,12 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public boolean globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierAndVersionLabel(String accountId,
-      String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel) {
+  public boolean globalTemplateExistByIdentifierAndVersionLabel(String templateIdentifier, String versionLabel) {
     return gitAwarePersistence.exists(Criteria.where(GlobalTemplateEntityKeys.identifier)
                                           .is(templateIdentifier)
-                                          .and(GlobalTemplateEntityKeys.projectIdentifier)
-                                          .is(projectIdentifier)
-                                          .and(GlobalTemplateEntityKeys.orgIdentifier)
-                                          .is(orgIdentifier)
-                                          .and(GlobalTemplateEntityKeys.accountId)
-                                          .is(accountId)
                                           .and(GlobalTemplateEntityKeys.versionLabel)
                                           .is(versionLabel),
-        projectIdentifier, orgIdentifier, accountId, GlobalTemplateEntity.class);
+        GlobalTemplateEntity.class);
   }
 
   @Override
@@ -634,18 +593,9 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public boolean globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
-    Optional<GlobalTemplateEntity> template =
-        gitAwarePersistence.findOne(Criteria.where(GlobalTemplateEntityKeys.identifier)
-                                        .is(templateIdentifier)
-                                        .and(GlobalTemplateEntityKeys.projectIdentifier)
-                                        .is(projectIdentifier)
-                                        .and(GlobalTemplateEntityKeys.orgIdentifier)
-                                        .is(orgIdentifier)
-                                        .and(GlobalTemplateEntityKeys.accountId)
-                                        .is(accountId),
-            projectIdentifier, orgIdentifier, accountId, GlobalTemplateEntity.class);
+  public boolean globalTemplateExistByIdentifierWithoutVersionLabel(String templateIdentifier) {
+    Optional<GlobalTemplateEntity> template = gitAwarePersistence.findOne(
+        Criteria.where(GlobalTemplateEntityKeys.identifier).is(templateIdentifier), GlobalTemplateEntity.class);
     return template.isPresent();
   }
 
@@ -826,9 +776,8 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
 
   private OutboxEvent generateUpdateOutboxEvent(GlobalTemplateEntity templateToUpdate,
       GlobalTemplateEntity oldTemplateEntity, String comments, TemplateUpdateEventType templateUpdateEventType) {
-    return outboxService.save(
-        new GlobalTemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate.getOrgIdentifier(),
-            templateToUpdate.getProjectIdentifier(), templateToUpdate, oldTemplateEntity, comments,
-            templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
+    return outboxService.save(new GlobalTemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate,
+        oldTemplateEntity, comments,
+        templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
   }
 }

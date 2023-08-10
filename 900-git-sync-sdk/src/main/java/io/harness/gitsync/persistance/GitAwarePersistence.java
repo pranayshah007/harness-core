@@ -39,6 +39,9 @@ public interface GitAwarePersistence {
       String projectIdentifier, String orgIdentifier, String accountId, Class<B> entityClass);
 
   <B extends GitSyncableEntity, Y extends YamlDTO> Optional<B> findOne(
+      @NotNull Criteria criteria, Class<B> entityClass);
+
+  <B extends GitSyncableEntity, Y extends YamlDTO> Optional<B> findOne(
       Criteria criteria, String repo, String branch, Class<B> entityClass);
 
   <B extends GitSyncableEntity, Y extends YamlDTO> List<B> find(@NotNull Criteria criteria, Pageable pageable,
@@ -46,6 +49,8 @@ public interface GitAwarePersistence {
 
   <B extends GitSyncableEntity, Y extends YamlDTO> boolean exists(@NotNull Criteria criteria, String projectIdentifier,
       String orgIdentifier, String accountId, Class<B> entityClass);
+
+  <B extends GitSyncableEntity, Y extends YamlDTO> boolean exists(@NotNull Criteria criteria, Class<B> entityClass);
 
   <B extends GitSyncableEntity, Y extends YamlDTO> B save(
       B objectToSave, ChangeType changeType, Class<B> entityClass, Supplier functor);

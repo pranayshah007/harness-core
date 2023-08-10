@@ -490,16 +490,13 @@ public class NGTemplateServiceHelper {
     }
   }
 
-  public Optional<GlobalTemplateEntity> getGlobalTemplate(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
-      boolean getMetadataOnly) {
+  public Optional<GlobalTemplateEntity> getGlobalTemplate(
+      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly) {
     if (EmptyPredicate.isEmpty(versionLabel)) {
-      return getStableTemplate(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted, getMetadataOnly);
+      return getStableTemplate(templateIdentifier, deleted, getMetadataOnly);
 
     } else {
-      return getGlobalTemplateWithVersionLabel(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, getMetadataOnly);
+      return getGlobalTemplateWithVersionLabel(templateIdentifier, versionLabel, deleted, getMetadataOnly);
     }
   }
 
@@ -518,11 +515,10 @@ public class NGTemplateServiceHelper {
     }
   }
 
-  public Optional<GlobalTemplateEntity> getStableTemplate(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, boolean deleted, boolean getMetadataOnly) {
-    return templateRepository
-        .findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-            accountId, orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly);
+  public Optional<GlobalTemplateEntity> getStableTemplate(
+      String templateIdentifier, boolean deleted, boolean getMetadataOnly) {
+    return templateRepository.findGlobalTemplateByIdentifierAndIsStableAndDeletedNot(
+        templateIdentifier, !deleted, getMetadataOnly);
   }
 
   public Optional<TemplateEntity> getTemplateWithVersionLabel(String accountId, String orgIdentifier,
@@ -540,12 +536,15 @@ public class NGTemplateServiceHelper {
     }
   }
 
-  public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
-      boolean getMetadataOnly) {
-    return templateRepository
-        .findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly);
+  public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(
+      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly) {
+    return templateRepository.findGlobalTemplateByIdentifierAndVersionLabelAndDeletedNot(
+        templateIdentifier, versionLabel, !deleted, getMetadataOnly);
+  }
+
+  public Page<GlobalTemplateEntity> getGlobalTemplate(
+      Criteria criteria, boolean deleted, boolean getMetadataOnly, Pageable pageable) {
+    return templateRepository.findALLGlobalTemplateAndDeletedNot(!deleted, getMetadataOnly, pageable, criteria);
   }
 
   public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(String accountId, String orgIdentifier,

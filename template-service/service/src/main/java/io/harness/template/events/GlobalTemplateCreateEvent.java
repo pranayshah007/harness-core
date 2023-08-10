@@ -7,55 +7,41 @@
 
 package io.harness.template.events;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
-import io.harness.encryption.Scope;
 import io.harness.event.Event;
 import io.harness.ng.core.AccountScope;
-import io.harness.ng.core.OrgScope;
-import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
 import io.harness.template.entity.GlobalTemplateEntity;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
 import java.util.Map;
-
-import static io.harness.annotations.dev.HarnessTeam.CDC;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @OwnedBy(CDC)
 @Getter
 @NoArgsConstructor
 public class GlobalTemplateCreateEvent implements Event {
-  private String accountIdentifier;
-  private String orgIdentifier;
-  private String projectIdentifier;
   private GlobalTemplateEntity templateEntity;
   private String comments;
+  private String accountIdentifier;
 
-  public GlobalTemplateCreateEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      GlobalTemplateEntity templateEntity, String comments) {
-    this.accountIdentifier = accountIdentifier;
-    this.orgIdentifier = orgIdentifier;
-    this.projectIdentifier = projectIdentifier;
+  public GlobalTemplateCreateEvent(String accountIdentifier, GlobalTemplateEntity templateEntity, String comments) {
     this.templateEntity = templateEntity;
     this.comments = comments;
+    this.accountIdentifier = accountIdentifier;
   }
 
   @JsonIgnore
   @Override
   public ResourceScope getResourceScope() {
-    if (templateEntity.getTemplateScope().equals(Scope.PROJECT)) {
-      return new ProjectScope(accountIdentifier, orgIdentifier, projectIdentifier);
-    } else if (templateEntity.getTemplateScope().equals(Scope.ORG)) {
-      return new OrgScope(accountIdentifier, orgIdentifier);
-    } else {
-      return new AccountScope(accountIdentifier);
-    }
+    return new AccountScope(accountIdentifier);
   }
 
   @JsonIgnore
@@ -77,5 +63,4 @@ public class GlobalTemplateCreateEvent implements Event {
   public String getEventType() {
     return TemplateOutboxEvents.TEMPLATE_VERSION_CREATED;
   }
-
 }

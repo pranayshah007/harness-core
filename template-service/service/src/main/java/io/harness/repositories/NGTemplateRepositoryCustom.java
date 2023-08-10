@@ -39,10 +39,11 @@ public interface NGTemplateRepositoryCustom {
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
       boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
 
-  Optional<GlobalTemplateEntity>
-  findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
-      boolean notDeleted, boolean getMetadataOnly);
+  Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndVersionLabelAndDeletedNot(
+      String templateIdentifier, String versionLabel, boolean notDeleted, boolean getMetadataOnly);
+
+  Page<GlobalTemplateEntity> findALLGlobalTemplateAndDeletedNot(
+      boolean notDeleted, boolean getMetadataOnly, Pageable pageable, Criteria criteria);
 
   Optional<GlobalTemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForGlobalTemplate(
@@ -56,10 +57,8 @@ public interface NGTemplateRepositoryCustom {
   Optional<TemplateEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
       boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
-  Optional<GlobalTemplateEntity>
-  findGlobalTemplateByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
-      boolean getMetadataOnly);
+  Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndIsStableAndDeletedNot(
+      String templateIdentifier, boolean notDeleted, boolean getMetadataOnly);
 
   Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForOldGitSync(
@@ -88,8 +87,6 @@ public interface NGTemplateRepositoryCustom {
 
   Page<TemplateEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, boolean getDistinctFromBranches);
-  Page<GlobalTemplateEntity> findAllGlobalTemplates(Criteria criteria, Pageable pageable, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches);
 
   Page<TemplateEntity> findAll(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Pageable pageable);
@@ -99,10 +96,8 @@ public interface NGTemplateRepositoryCustom {
 
   boolean existsByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier);
-  boolean globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier);
-  boolean globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierAndVersionLabel(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel);
+  boolean globalTemplateExistByIdentifierWithoutVersionLabel(String templateIdentifier);
+  boolean globalTemplateExistByIdentifierAndVersionLabel(String templateIdentifier, String versionLabel);
 
   @Deprecated
   TemplateEntity update(

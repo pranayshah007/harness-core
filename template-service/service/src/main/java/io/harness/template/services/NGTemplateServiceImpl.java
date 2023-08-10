@@ -352,34 +352,22 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           globalTemplateEntity.getRepo(), globalTemplateEntity.getConnectorRef());
     }
 
-    if (!validateGlobalIdentifierIsUnique(globalTemplateEntity.getAccountId(), globalTemplateEntity.getOrgIdentifier(),
-            globalTemplateEntity.getProjectIdentifier(), globalTemplateEntity.getIdentifier(),
-            globalTemplateEntity.getVersionLabel())) {
-      throw new InvalidRequestException(String.format(
-          "The template with identifier %s and version label %s already exists in the account %s, org %s, project %s",
-          globalTemplateEntity.getIdentifier(), globalTemplateEntity.getVersionLabel(),
-          globalTemplateEntity.getAccountId(), globalTemplateEntity.getOrgIdentifier(),
-          globalTemplateEntity.getProjectIdentifier()));
+    if (!validateGlobalIdentifierIsUnique(
+            globalTemplateEntity.getIdentifier(), globalTemplateEntity.getVersionLabel())) {
+      throw new InvalidRequestException(
+          String.format("The template with identifier %s and version label %s already exists.",
+              globalTemplateEntity.getIdentifier(), globalTemplateEntity.getVersionLabel()));
     }
 
-    if (isNewTemplate
-        && validateIsNewGlobalTemplateIdentifier(globalTemplateEntity.getAccountId(),
-            globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getProjectIdentifier(),
-            globalTemplateEntity.getIdentifier())) {
-      throw new TemplateAlreadyExistsException(String.format(
-          "The template with identifier %s already exists in account %s, org %s, project %s, if you want to create a new version %s of this template then use save as new version option from the given template or if you want to create a new Template then use a different identifier.",
-          globalTemplateEntity.getIdentifier(), globalTemplateEntity.getAccountId(),
-          globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getProjectIdentifier(),
-          globalTemplateEntity.getVersionLabel()));
+    if (isNewTemplate && validateIsNewGlobalTemplateIdentifier(globalTemplateEntity.getIdentifier())) {
+      throw new TemplateAlreadyExistsException(
+          "The template with identifier %s already exists, if you want to create a new version %s of this template then use save as new version option from the given template or if you want to create a new Template then use a different identifier.");
     }
 
     checkForChildTypesInTemplates(globalTemplateEntity, "create");
 
     // apply templates to template yaml for validation and populating module info
     applyTemplatesToYamlAndValidateSchema(globalTemplateEntity);
-
-    // List<EntityDetailProtoDTO> referredEntities =
-    // templateReferenceHelper.calculateTemplateReferences(globalTemplateEntity);
 
     try {
       // Check if this is template identifier first entry, for marking it as stable template.
@@ -832,12 +820,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
-  public Optional<GlobalTemplateEntity> getGlobalTemplateByIdentifier(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+  public Optional<GlobalTemplateEntity> getGlobalTemplateByIdentifier(
+      String templateIdentifier, String versionLabel, boolean deleted, String accountId) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
     try {
-      return templateServiceHelper.getGlobalTemplate(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
+      return templateServiceHelper.getGlobalTemplate(templateIdentifier, versionLabel, deleted, false);
 
     } catch (ExplanationException | HintException | ScmException e) {
       String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
@@ -845,6 +832,23 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       throw e;
     } catch (Exception e) {
       String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
+      log.error(errorMessage, e);
+      throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, e.getMessage()));
+    }
+  }
+
+  @Override
+  public Page<GlobalTemplateEntity> getAllGlobalTemplate(
+      Criteria criteria, String accountId, Pageable pageable, boolean deleted) {
+    enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
+    try {
+      return templateServiceHelper.getGlobalTemplate(criteria, deleted, false, pageable);
+
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error("Error while retrieving Global template", e);
+      throw e;
+    } catch (Exception e) {
+      String errorMessage = "Error while retrieving Global template";
       log.error(errorMessage, e);
       throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, e.getMessage()));
     }
@@ -1077,19 +1081,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
-  public Page<GlobalTemplateEntity> listGlobalTemplate(Criteria criteria, Pageable pageable, String accountId,
-      String orgIdentifier, String projectIdentifier, Boolean getDistinctFromBranches) {
-    enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
-    if (Boolean.TRUE.equals(getDistinctFromBranches)
-        && gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
-      return templateRepository.findAllGlobalTemplates(
-          criteria, pageable, accountId, orgIdentifier, projectIdentifier, true);
-    }
-    return templateRepository.findAllGlobalTemplates(
-        criteria, pageable, accountId, orgIdentifier, projectIdentifier, false);
-  }
-
-  @Override
   public Page<TemplateEntity> listTemplateMetadata(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, FilterParamsDTO filterParamsDTO, PageParamsDTO pageParamsDTO) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountIdentifier);
@@ -1214,10 +1205,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
-  public boolean validateGlobalIdentifierIsUnique(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel) {
-    return !templateRepository.globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierAndVersionLabel(
-        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel);
+  public boolean validateGlobalIdentifierIsUnique(String templateIdentifier, String versionLabel) {
+    return !templateRepository.globalTemplateExistByIdentifierAndVersionLabel(templateIdentifier, versionLabel);
   }
 
   @Override
@@ -1228,10 +1217,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
-  public boolean validateIsNewGlobalTemplateIdentifier(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
-    return templateRepository.globalTemplateExistByAccountIdAndOrgIdAndProjectIdAndIdentifierWithoutVersionLabel(
-        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier);
+  public boolean validateIsNewGlobalTemplateIdentifier(String templateIdentifier) {
+    return templateRepository.globalTemplateExistByIdentifierWithoutVersionLabel(templateIdentifier);
   }
 
   @Override
