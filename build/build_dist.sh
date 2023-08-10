@@ -137,6 +137,8 @@ function copy_migrator_jars(){
   java -jar migrator-capsule.jar scan-classpath-metadata
 
   cd ../..
+  pwd
+  ls
 
 }
 
