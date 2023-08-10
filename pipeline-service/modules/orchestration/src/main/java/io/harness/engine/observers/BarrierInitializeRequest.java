@@ -11,8 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
+
 import lombok.Builder;
 import lombok.Value;
+import java.util.List;
 
 @Value
 @Builder
@@ -20,5 +22,7 @@ import lombok.Value;
 public class BarrierInitializeRequest {
   String strategyExecutionId;
   String strategySetupId;
+  List<String> childrenSetupIds;
+  List<String> childrenRuntimeIds;
   Ambiance ambiance;
 }

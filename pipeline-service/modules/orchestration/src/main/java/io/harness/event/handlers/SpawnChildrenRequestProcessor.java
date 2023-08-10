@@ -49,6 +49,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,13 +76,14 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     String nodeSetupId = Objects.requireNonNull(AmbianceUtils.obtainCurrentSetupId(ambiance));
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
-      initializeBarriersWithinStrategyNode(nodeExecutionId, nodeSetupId, ambiance);
       List<String> childrenIds = new ArrayList<>();
       List<String> callbackIds = new ArrayList<>();
       int currentChild = 0;
       for (int i = 0; i < request.getChildren().getChildrenList().size(); i++) {
         childrenIds.add(generateUuid());
       }
+      // TODO: Do not call initializeBarriers this if there are no barriers in children
+      initializeBarriersWithinStrategyNode(nodeExecutionId, nodeSetupId, request.getChildren().getChildrenList().stream().map(child -> child.getChildNodeId()).collect(Collectors.toList()), childrenIds, ambiance);
 
       int maxConcurrency = getMaxConcurrencyLimit(ambiance, childrenIds, request.getChildren().getMaxConcurrency());
 
@@ -196,8 +199,11 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
     return currentChild < maxConcurrency;
   }
 
-  private void initializeBarriersWithinStrategyNode(String strategyExecutionId, String strategySetupId, Ambiance ambiance) {
+  private void initializeBarriersWithinStrategyNode(String strategyExecutionId, String strategySetupId, List<String> childrenSetupIds, List<String> childrenRuntimeIds, Ambiance ambiance) {
     barrierInitializer.fireInform(BarrierInitializeWithinStrategyObserver::onInitializeRequest,
-            BarrierInitializeRequest.builder().strategyExecutionId(strategyExecutionId).strategySetupId(strategySetupId).ambiance(ambiance).build());
+            BarrierInitializeRequest.builder().strategyExecutionId(strategyExecutionId).strategySetupId(strategySetupId)
+                    .childrenSetupIds(childrenSetupIds)
+                    .childrenRuntimeIds(childrenRuntimeIds)
+                    .ambiance(ambiance).build());
   }
 }

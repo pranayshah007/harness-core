@@ -14,6 +14,7 @@ import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -29,6 +30,7 @@ import com.google.inject.name.Named;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,8 +54,11 @@ public class BarrierDropper implements AsyncInformObserver, NodeStatusUpdateObse
           RecastOrchestrationUtils.fromMap(nodeExecution.getResolvedStepParameters(), StepElementParameters.class);
       BarrierSpecParameters barrierSpecParameters = (BarrierSpecParameters) stepElementParameters.getSpec();
 
+      Optional<Level> strategyLevel = AmbianceUtils.getStrategyLevelFromAmbiance(nodeUpdateInfo.getNodeExecution().getAmbiance());
+      String strategyExecutionId = strategyLevel.isPresent() ? strategyLevel.get().getRuntimeId() : null;
+
       BarrierExecutionInstance barrierExecutionInstance =
-          barrierService.findByIdentifierAndPlanExecutionId(barrierSpecParameters.getBarrierRef(), planExecutionId);
+          barrierService.findByIdentifierAndPlanExecutionIdAndStrategyExecutionId(barrierSpecParameters.getBarrierRef(), planExecutionId, strategyExecutionId);
       barrierService.update(barrierExecutionInstance);
     } catch (Exception e) {
       log.error("Failed to bring barriers down for planExecutionId: [{}]", planExecutionId);

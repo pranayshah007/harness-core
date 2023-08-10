@@ -146,6 +146,11 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   }
 
   @Override
+  public BarrierExecutionInstance findByIdentifierAndPlanExecutionIdAndStrategyExecutionId(String identifier, String planExecutionId, String strategyExecutionId) {
+    return barrierNodeRepository.findByIdentifierAndPlanExecutionIdAndStrategyExecutionId(identifier, planExecutionId, strategyExecutionId);
+  }
+
+  @Override
   public BarrierExecutionInstance findByPlanNodeIdAndPlanExecutionId(String planNodeId, String planExecutionId) {
     Criteria positionCriteria = Criteria.where(BarrierExecutionInstanceKeys.positions)
                                     .elemMatch(Criteria.where(BarrierPositionKeys.stepSetupId).is(planNodeId));
@@ -235,11 +240,11 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
 
   @Override
   public List<BarrierExecutionInstance> updatePosition(
-      String planExecutionId, BarrierPositionType positionType, String positionSetupId, String positionExecutionId) {
+      String planExecutionId, BarrierPositionType positionType, String positionSetupId, String positionExecutionId, String stageExecutionId, String stepGroupExecutionId) {
     List<BarrierExecutionInstance> barrierExecutionInstances =
         findByPosition(planExecutionId, positionType, positionSetupId);
 
-    Update update = obtainRuntimeIdUpdate(positionType, positionSetupId, positionExecutionId);
+    Update update = obtainRuntimeIdUpdate(positionType, positionSetupId, positionExecutionId, stageExecutionId, stepGroupExecutionId);
 
     // mongo does not support multiple documents atomic update, let's update one by one
     barrierExecutionInstances.forEach(instance
@@ -254,7 +259,7 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   }
 
   private Update obtainRuntimeIdUpdate(
-      BarrierPositionType positionType, String positionSetupId, String positionExecutionId) {
+      BarrierPositionType positionType, String positionSetupId, String positionExecutionId, String stageExecutionId, String stepGroupExecutionId) {
     String position = "position";
     final String positions = BarrierExecutionInstanceKeys.positions + ".$[" + position + "].";
     Update update;
@@ -264,20 +269,24 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
             new Update()
                 .set(positions.concat(BarrierPositionKeys.stageRuntimeId), positionExecutionId)
                 .filterArray(
-                    Criteria.where(position.concat(".").concat(BarrierPositionKeys.stageSetupId)).is(positionSetupId));
+                    Criteria.where(position.concat(".").concat(BarrierPositionKeys.stageSetupId)).is(positionSetupId)
+                            .and("setupInfo.strategyNodeType").ne("step"));
         break;
       case STEP_GROUP:
         update = new Update()
                      .set(positions.concat(BarrierPositionKeys.stepGroupRuntimeId), positionExecutionId)
                      .filterArray(Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepGroupSetupId))
-                                      .is(positionSetupId));
+                                      .is(positionSetupId)
+                             .and("setupInfo.strategyNodeType").ne("stepGroup"));
         break;
       case STEP:
         update =
             new Update()
                 .set(positions.concat(BarrierPositionKeys.stepRuntimeId), positionExecutionId)
                 .filterArray(
-                    Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepSetupId)).is(positionSetupId));
+                    Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepSetupId)).is(positionSetupId)
+                            .and(position.concat(".").concat(BarrierPositionKeys.stageRuntimeId)).is(stageExecutionId)
+                            .and(position.concat(".").concat(BarrierPositionKeys.stepGroupRuntimeId)).is(stepGroupExecutionId));
         break;
       default:
         throw new InvalidRequestException(String.format("%s position type is not implemented", positionType));

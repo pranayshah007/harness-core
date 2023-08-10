@@ -16,11 +16,13 @@ import io.harness.distribution.barrier.Barrier;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.observers.BarrierInitializeRequest;
 import io.harness.engine.observers.BarrierInitializeWithinStrategyObserver;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
@@ -41,7 +43,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
-public class BarrierWithinStrategyInitializer implements AsyncInformObserver, BarrierInitializeWithinStrategyObserver {
+public class BarrierWithinStrategyInitializer implements BarrierInitializeWithinStrategyObserver {
   @Inject @Named("OrchestrationVisualizationExecutorService") ExecutorService executorService;
   @Inject private BarrierService barrierService;
   @Inject private PlanExecutionMetadataService planExecutionMetadataService;
@@ -52,21 +54,50 @@ public class BarrierWithinStrategyInitializer implements AsyncInformObserver, Ba
     PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.findByPlanExecutionId(ambiance.getPlanExecutionId()).get();
     String version = AmbianceUtils.getPipelineVersion(ambiance);
     String planExecutionId = ambiance.getPlanExecutionId();
+    List<String> childrenSetupIds = barrierInitializeRequest.getChildrenSetupIds();
+    List<String> childrenRuntimeIds = barrierInitializeRequest.getChildrenRuntimeIds();
     try {
       switch (version) {
         case PipelineVersion.V1:
           // TODO: Barrier support
           break;
         case PipelineVersion.V0:
-          BarrierVisitor barriersInfo = barrierService.getBarrierInfo(planExecutionMetadata.getProcessedYaml());
+          BarrierVisitor barriersInfo = barrierService.getBarrierInfo(planExecutionMetadata.getProcessedYaml()); //
           Map<String, BarrierSetupInfo> barrierIdentifierSetupInfoMap = new ArrayList<>(barriersInfo.getBarrierIdentifierMap().values())
                   .stream()
                   .collect(Collectors.toMap(BarrierSetupInfo::getIdentifier, Function.identity()));
           Map<String, List<BarrierPositionInfo.BarrierPosition>> barrierPositionInfoMap = barriersInfo.getBarrierPositionInfoMap();
           for (String barrierId : barrierPositionInfoMap.keySet()) {
+            List<BarrierPositionInfo.BarrierPosition> newBarrierPositionInfo = new ArrayList<>();
             for (BarrierPositionInfo.BarrierPosition positionInfo : barrierPositionInfoMap.get(barrierId)) {
-              positionInfo.setStageRuntimeId(ambiance.getStageExecutionId());
+              positionInfo.setStageRuntimeId(ambiance.getStageExecutionId()); // TODO: Remove this
+              for (int i = 0; i < childrenSetupIds.size(); i++) {
+                BarrierPositionInfo.BarrierPosition newBarrierPosition = BarrierPositionInfo.BarrierPosition.builder()
+                        .stepSetupId(positionInfo.getStepSetupId())
+                        .stepRuntimeId(positionInfo.getStepRuntimeId())
+                        .stageSetupId(positionInfo.getStageSetupId())
+                        .stageRuntimeId(ambiance.getStageExecutionId())
+                        .stepGroupSetupId(positionInfo.getStepGroupSetupId())
+                        .stepGroupRuntimeId(positionInfo.getStepGroupRuntimeId())
+                        .stepGroupRollback(positionInfo.isStepGroupRollback())
+                        .build();
+                newBarrierPositionInfo.add(newBarrierPosition);
+                switch (barrierIdentifierSetupInfoMap.get(barrierId).getStrategyNodeType()) {
+                  case YAMLFieldNameConstants.STEP:
+                    newBarrierPosition.setStageSetupId(childrenSetupIds.get(i));
+                    newBarrierPosition.setStageRuntimeId(childrenRuntimeIds.get(i));
+                    break;
+                  case YAMLFieldNameConstants.STEP_GROUP:
+                    newBarrierPosition.setStepGroupSetupId(childrenSetupIds.get(i));
+                    newBarrierPosition.setStepGroupRuntimeId(childrenRuntimeIds.get(i));
+                    break;
+                  default:
+                    throw new InvalidRequestException(String.format("Unsupported strategy node type: %s",
+                            barrierIdentifierSetupInfoMap.get(barrierId).getStrategyNodeType()));
+                }
+              }
             }
+            barrierPositionInfoMap.put(barrierId, newBarrierPositionInfo);
           }
           List<BarrierExecutionInstance> barriers =
                   barrierPositionInfoMap.entrySet()
@@ -99,10 +130,5 @@ public class BarrierWithinStrategyInitializer implements AsyncInformObserver, Ba
       log.error("Barrier initialization failed for planExecutionId: [{}]", planExecutionId);
       throw e;
     }
-  }
-
-  @Override
-  public ExecutorService getInformExecutorService() {
-    return executorService;
   }
 }
