@@ -50,6 +50,7 @@ public class StatsModel {
                                    .workloadType(data.getWorkloadType())
                                    .workloadName(data.getWorkloadName())
                                    .namespace(data.getNamespace())
+                                   .service(data.getService())
                                    .region(data.getRegion())
                                    .cloudProvider(data.getCloudProvider())
                                    .gcpProduct(data.getGcpProduct())

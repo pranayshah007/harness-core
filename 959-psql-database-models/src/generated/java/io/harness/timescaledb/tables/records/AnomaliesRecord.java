@@ -487,6 +487,21 @@ public class AnomaliesRecord extends TableRecordImpl<AnomaliesRecord> {
     return (String) get(30);
   }
 
+  /**
+   * Setter for <code>public.anomalies.service</code>.
+   */
+  public AnomaliesRecord setService(String value) {
+    set(31, value);
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.anomalies.service</code>.
+   */
+  public String getService() {
+    return (String) get(31);
+  }
+
   // -------------------------------------------------------------------------
   // Constructors
   // -------------------------------------------------------------------------
@@ -494,6 +509,7 @@ public class AnomaliesRecord extends TableRecordImpl<AnomaliesRecord> {
   /**
    * Create a detached AnomaliesRecord
    */
+
   public AnomaliesRecord() {
     super(Anomalies.ANOMALIES);
   }
@@ -507,7 +523,7 @@ public class AnomaliesRecord extends TableRecordImpl<AnomaliesRecord> {
       String gcpskudescription, String gcpproject, String awsservice, String awsaccount, String awsinstancetype,
       String awsusagetype, Double anomalyscore, String reportedby, String feedback, Boolean slackdailynotification,
       Boolean slackinstantnotification, Boolean slackweeklynotification, Boolean newentity,
-      String azuresubscriptionguid, String azureresourcegroup, String azuremetercategory) {
+      String azuresubscriptionguid, String azureresourcegroup, String azuremetercategory, String service) {
     super(Anomalies.ANOMALIES);
 
     setId(id);
@@ -541,5 +557,6 @@ public class AnomaliesRecord extends TableRecordImpl<AnomaliesRecord> {
     setAzuresubscriptionguid(azuresubscriptionguid);
     setAzureresourcegroup(azureresourcegroup);
     setAzuremetercategory(azuremetercategory);
+    setService(service);
   }
 }

@@ -35,6 +35,7 @@ public class PythonMappers {
         .namespace(timeSeries.getNamespace())
         .workloadType(timeSeries.getWorkloadType())
         .workloadName(timeSeries.getWorkloadName())
+        .service(timeSeries.getService())
         .gcpProject(timeSeries.getGcpProject())
         .gcpProduct(timeSeries.getGcpProduct())
         .gcpSKUId(timeSeries.getGcpSKUId())

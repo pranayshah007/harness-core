@@ -26,6 +26,7 @@ public class PythonInput {
   String workloadName;
   String workloadType;
   String namespace;
+  String service;
   String gcpProject;
   String gcpSKUId;
   String gcpSKUDescription;
