@@ -1824,6 +1824,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return null;
     }
 
+    copyTaskDataV2ToTaskData(task);
     task.getData().setParameters(delegateTask.getData().getParameters());
     log.info("Returning previously assigned task to delegate");
     return resolvePreAssignmentExpressions(task, SecretManagerMode.APPLY);
