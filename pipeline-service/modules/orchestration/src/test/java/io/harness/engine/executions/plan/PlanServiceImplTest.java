@@ -142,7 +142,7 @@ public class PlanServiceImplTest extends OrchestrationTestBase {
     assertThat(fetchPlan.getUuid()).isEqualTo(plan.getUuid());
 
     Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
-    planService.updateTTLForPlans(Set.of(plan.getUuid()), ttlExpiry);
+    planService.updateTTLForPlans(plan.getUuid(), ttlExpiry);
     Plan newPlanResult = planService.fetchPlan(plan.getUuid());
     assertThat(newPlanResult.getValidUntil()).isEqualTo(ttlExpiry);
   }

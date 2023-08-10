@@ -148,12 +148,12 @@ public class PlanServiceImpl implements PlanService {
   }
 
   @Override
-  public void updateTTLForPlans(Set<String> planIds, Date ttlDate) {
-    if (EmptyPredicate.isEmpty(planIds)) {
+  public void updateTTLForPlans(String planId, Date ttlDate) {
+    if (EmptyPredicate.isEmpty(planId)) {
       return;
     }
 
-    Criteria criteria = Criteria.where(PlanKeys.uuid).in(planIds);
+    Criteria criteria = Criteria.where(PlanKeys.uuid).is(planId);
     Query query = new Query(criteria);
     Update ops = new Update();
     ops.set(PlanKeys.validUntil, ttlDate);
@@ -161,7 +161,7 @@ public class PlanServiceImpl implements PlanService {
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
       UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, Plan.class);
       if (!updateResult.wasAcknowledged()) {
-        log.warn("No Plans could be marked as updated TTL for given planIds - " + planIds);
+        log.warn("No Plans could be marked as updated TTL for given planIds - " + planId);
       }
       return true;
     });
