@@ -332,8 +332,6 @@ func getStepTypeContext(stepType, infra string) string {
 		return "while uploading the files to Jfrog artifactory in Harness CI"
 	case "JiraUpdate":
 		return "while updating the Jira ticket in Harness"
-	case "TERRAFORM_APPLY":
-		return "while applying the terrform manifest in Harness CD"
 	case "K8S_BLUE_GREEN":
 		return "while performing Blue Green Deployment for kubernetes in Harness CD"
 	case "K8S_ROLLING":
@@ -380,6 +378,64 @@ func getStepTypeContext(stepType, infra string) string {
 		return "while rolling back the ECS service for Blue Green Deployment in Harness CD"
 	case "ECS_RUN_TASK":
 		return "while running the ECS task in Harness CD"
+	case "HELM_DEPLOY":
+		return "while deploying Helm chart into Kubernetes using Harness CD"
+	case "HELM_ROLLBACK":
+		return "while rolling back Helm chart in Kubernetes using Harness CD"
+	case "TAS_CANARY_APP_SETUP":
+		return "while setting up a canary app in Tanzu Application Service using Harness CD"
+	case "TAS_BG_APP_SETUP":
+		return "while setting up a blue green deployment in Tanzu Application Service using Harness CD"
+	case "TAS_BASIC_APP_SETUP":
+		return "while setting up a basic app in Tanzu Application Service using Harness CD"
+	case "TAS_APP_RESIZE":
+		return "while resizing an app in Tanzu Application Service using Harness CD"
+	case "TAS_SWAP_ROUTES":
+		return "while swapping routes in Tanzu Application Service using Harness CD"
+	case "TAS_ROLLBACK":
+		return "while rolling back an app in Tanzu Application Service using Harness CD"
+	case "TAS_ROLLING_DEPLOY":
+		return "while performing a rolling deployment in Tanzu Application Service using Harness CD"
+	case "TAS_ROLLING_ROLLBACK":
+		return "while performing a rolling rollback in Tanzu Application Service using Harness CD"
+	case "TAS_ROUTE_MAPPING":
+		return "while setting up route mapping in Tanzu Application Service using Harness CD"
+	case "TERRAFORM_APPLY":
+		return "while applying Terraform configuration to infrastructure using Harness CD"
+	case "TERRAFORM_PLAN":
+		return "while planning Terraform configuration for infrastructure using Harness CD"
+	case "TERRAFORM_DESTROY":
+		return "while destroying Terraform infrastructure using Harness CD"
+	case "TERRAFORM_ROLLBACK":
+		return "while rolling back Terraform changes to infrastructure using Harness CD"
+	case "TERRAFORM_PLAN_V2":
+		return "while planning Terraform configuration for infrastructure using Harness CD"
+	case "TERRAFORM_APPLY_V2":
+		return "while applying Terraform configuration to infrastructure using Harness CD"
+	case "TERRAFORM_DESTROY_V2":
+		return "while destroying Terraform infrastructure using Harness CD"
+	case "TERRAFORM_ROLLBACK_V2":
+		return "while rolling back Terraform changes to infrastructure using Harness CD"
+	case "TERRAFORM_CLOUD_RUN":
+		return "while running Terraform cloud using Harness CD"
+	case "TERRAFORM_CLOUD_ROLLBACK":
+		return "while rolling back Terraform cloud changes using Harness CD"
+	case "AWS_CDK_BOOTSTRAP":
+		return "while bootstrapping AWS CDK environment using Harness CD"
+	case "AWS_CDK_SYNTH":
+		return "while synthesizing AWS CDK stack using Harness CD"
+	case "AWS_CDK_DIFF":
+		return "while diffing AWS CDK stack using Harness CD"
+	case "AWS_CDK_DEPLOY":
+		return "while deploying AWS CDK stack using Harness CD"
+	case "AWS_CDK_DESTROY":
+		return "while destroying AWS CDK stack using Harness CD"
+	case "AWS_SAM_DEPLOY":
+		return "while deploying AWS SAM application using Harness CD"
+	case "AWS_SAM_BUILD":
+		return "while building AWS SAM application using Harness CD"
+	case "AWS_SAM_ROLLBACK":
+		return "while rolling back AWS SAM application using Harness CD"
 	}
 	return ""
 }
