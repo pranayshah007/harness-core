@@ -12,13 +12,14 @@ import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckListItem;
 
 import java.util.List;
+import java.util.Set;
 
 public interface CheckService {
   void createCheck(CheckDetails checkDetails, String accountIdentifier);
   void updateCheck(CheckDetails checkDetails, String accountIdentifier);
   List<CheckListItem> getChecksByAccountId(boolean custom, String accountIdentifier);
   List<CheckEntity> getActiveChecks(String accountIdentifier, List<String> checkIdentifiers);
-  CheckDetails getCheckDetails(String accountIdentifier, String identifier);
-  List<CheckEntity> getChecksByAccountIdAndIdentifiers(String accountIdentifier, List<String> identifiers);
   void deleteCustomCheck(String accountIdentifier, String identifier, boolean forceDelete);
+  CheckDetails getCheckDetails(String accountIdentifier, String identifier, boolean custom);
+  List<CheckEntity> getChecksByAccountIdsAndIdentifiers(List<String> accountIdentifier, Set<String> identifiers);
 }

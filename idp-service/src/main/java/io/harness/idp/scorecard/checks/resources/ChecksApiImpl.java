@@ -29,6 +29,7 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 
 @NextGenManagerAuth
 @OwnedBy(HarnessTeam.IDP)
@@ -48,9 +49,9 @@ public class ChecksApiImpl implements ChecksApi {
   }
 
   @Override
-  public Response getCheck(String checkId, String harnessAccount) {
+  public Response getCheck(String checkId, Boolean isCustom, String harnessAccount) {
     try {
-      CheckDetails checkDetails = checkService.getCheckDetails(harnessAccount, checkId);
+      CheckDetails checkDetails = checkService.getCheckDetails(harnessAccount, checkId, isCustom);
       CheckDetailsResponse response = new CheckDetailsResponse();
       response.setCheckDetails(checkDetails);
       return Response.status(Response.Status.OK).entity(response).build();
@@ -70,6 +71,13 @@ public class ChecksApiImpl implements ChecksApi {
     try {
       checkService.createCheck(body.getCheckDetails(), harnessAccount);
       return Response.status(Response.Status.CREATED).build();
+    } catch (DuplicateKeyException e) {
+      String errorMessage = String.format(
+          "Check [%s] already created for accountId [%s]", body.getCheckDetails().getIdentifier(), harnessAccount);
+      log.info(errorMessage);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     } catch (Exception e) {
       log.error("Could not create check", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

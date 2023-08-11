@@ -7,6 +7,8 @@
 
 package io.harness.idp.scorecard.checks.service;
 
+import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
+
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 
@@ -32,6 +34,7 @@ import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
@@ -75,14 +78,16 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
-  public CheckDetails getCheckDetails(String accountIdentifier, String identifier) {
-    CheckEntity checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+  public CheckDetails getCheckDetails(String accountIdentifier, String identifier, boolean custom) {
+    String accountId = custom ? accountIdentifier : GLOBAL_ACCOUNT_ID;
+    CheckEntity checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(accountId, identifier);
     return CheckDetailsMapper.toDTO(checkEntity);
   }
 
   @Override
-  public List<CheckEntity> getChecksByAccountIdAndIdentifiers(String accountIdentifier, List<String> identifiers) {
-    return checkRepository.findByAccountIdentifierAndIdentifierIn(accountIdentifier, identifiers);
+  public List<CheckEntity> getChecksByAccountIdsAndIdentifiers(
+      List<String> accountIdentifiers, Set<String> identifiers) {
+    return checkRepository.findByAccountIdentifierInAndIdentifierIn(accountIdentifiers, identifiers);
   }
 
   @Override

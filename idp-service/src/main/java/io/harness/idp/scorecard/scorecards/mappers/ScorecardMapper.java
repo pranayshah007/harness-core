@@ -7,6 +7,10 @@
 
 package io.harness.idp.scorecard.scorecards.mappers;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.idp.common.Constants.DOT_SEPARATOR;
+import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
@@ -17,26 +21,37 @@ import io.harness.spec.server.idp.v1.model.ScorecardResponse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class ScorecardMapper {
-  public Scorecard toDTO(ScorecardEntity scorecardEntity, List<CheckEntity> checkEntityList) {
+  public Scorecard toDTO(
+      ScorecardEntity scorecardEntity, Map<String, CheckEntity> checkEntityMap, String harnessAccount) {
     Scorecard scorecard = new Scorecard();
     scorecard.setName(scorecardEntity.getName());
     scorecard.setIdentifier(scorecardEntity.getIdentifier());
     scorecard.setDescription(scorecardEntity.getDescription());
     List<Check> checks = new ArrayList<>();
-    checkEntityList.forEach(checkEntity -> {
-      Check check = new Check();
-      check.setName(checkEntity.getName());
-      check.setIdentifier(checkEntity.getIdentifier());
-      check.setDescription(checkEntity.getDescription());
-      check.setExpression(checkEntity.getExpression());
-      checks.add(check);
+    List<String> checksMissing = new ArrayList<>();
+    scorecardEntity.getChecks().forEach(scorecardCheck -> {
+      String accountIdentifier = scorecardCheck.isCustom() ? harnessAccount : GLOBAL_ACCOUNT_ID;
+      CheckEntity checkEntity = checkEntityMap.get(accountIdentifier + DOT_SEPARATOR + scorecardCheck.getIdentifier());
+      if (checkEntity != null && !checkEntity.isDeleted()) {
+        Check check = new Check();
+        check.setName(checkEntity.getName());
+        check.setIdentifier(checkEntity.getIdentifier());
+        check.setDescription(checkEntity.getDescription());
+        check.setExpression(checkEntity.getExpression());
+        checks.add(check);
+      } else {
+        checksMissing.add(scorecardCheck.getIdentifier());
+      }
     });
     scorecard.setChecks(checks);
+    scorecard.setChecksMissing(checksMissing);
+    scorecard.setPublished(scorecardEntity.isPublished());
     return scorecard;
   }
 

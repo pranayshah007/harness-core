@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
@@ -25,4 +26,5 @@ public interface CheckRepository extends CrudRepository<CheckEntity, String>, Ch
   List<CheckEntity> findByAccountIdentifierAndIsDeletedAndIdentifierIn(
       String accountIdentifier, boolean isDeleted, List<String> identifier);
   CheckEntity findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
+  List<CheckEntity> findByAccountIdentifierInAndIdentifierIn(List<String> accountIdentifier, Set<String> identifier);
 }

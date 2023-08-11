@@ -988,6 +988,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/CheckIdentifier'
+        - $ref: '#/components/parameters/CheckType'
       x-internal: true
     put:
       summary: Update check details for given checkId
@@ -2282,14 +2283,6 @@ components:
               type: boolean
               x-stoplight:
                 id: it7cwhdz3iybm
-            tags:
-              type: array
-              x-stoplight:
-                id: jz5a6os04cen1
-              items:
-                x-stoplight:
-                  id: uow20bew76m73
-                type: string
             default_behaviour:
               x-stoplight:
                 id: 13d4z9h0oimjr
@@ -2375,8 +2368,13 @@ components:
           x-stoplight:
             id: 9u8dxhjfrafed
           format: double
+        custom:
+          type: boolean
+          x-stoplight:
+            id: gq0dfcshoqumh
       required:
         - identifier
+        - custom
     ScorecardChecksDetails:
       title: ScorecardChecksDetails
       x-stoplight:
@@ -2419,6 +2417,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Check'
+        published:
+          type: boolean
+          x-stoplight:
+            id: bprjxwrnen0vj
+        checks_missing:
+          type: array
+          x-stoplight:
+            id: ec045eeauhsdv
+          items:
+            x-stoplight:
+              id: ws9ljw83jq43w
+            type: string
       required:
         - name
         - identifier
@@ -2449,6 +2459,14 @@ components:
           type: boolean
           x-stoplight:
             id: zo3ufqnmsgvo1
+        checks_missing:
+          type: array
+          x-stoplight:
+            id: ec045edauhsdv
+          items:
+            x-stoplight:
+              id: ws9ltw83jq43w
+            type: string
       required:
         - name
         - identifier

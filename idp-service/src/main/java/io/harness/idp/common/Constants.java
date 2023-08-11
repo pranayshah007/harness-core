@@ -54,4 +54,7 @@ public class Constants {
   public static final String SOURCE_FORMAT = "blob";
   public static final String LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES = "LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES";
   public static final String PLUGIN_REQUEST_NOTIFICATION_SLACK_WEBHOOK = "pluginRequestsNotificationSlack";
+  public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
+  public static final String DOT_SEPARATOR = ".";
+  public static final String SPACE_SEPARATOR = " ";
 }

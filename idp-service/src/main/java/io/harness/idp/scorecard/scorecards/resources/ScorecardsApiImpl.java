@@ -28,6 +28,7 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 
 @NextGenManagerAuth
 @OwnedBy(HarnessTeam.IDP)
@@ -68,6 +69,13 @@ public class ScorecardsApiImpl implements ScorecardsApi {
     try {
       scorecardService.saveScorecard(body, harnessAccount);
       return Response.status(Response.Status.CREATED).build();
+    } catch (DuplicateKeyException e) {
+      String errorMessage = String.format(
+          "Scorecard [%s] already created for accountId [%s]", body.getScorecard().getIdentifier(), harnessAccount);
+      log.info(errorMessage);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     } catch (Exception e) {
       log.error("Could not create scorecard", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
