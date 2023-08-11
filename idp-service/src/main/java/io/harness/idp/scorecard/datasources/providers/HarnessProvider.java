@@ -7,6 +7,8 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
+import static io.harness.idp.scorecard.datasources.constants.Constants.HARNESS_PROVIDER;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
@@ -18,7 +20,7 @@ import java.util.Set;
 public class HarnessProvider implements DataSourceProvider {
   @Override
   public String getProviderIdentifier() {
-    return "catalog";
+    return HARNESS_PROVIDER;
   }
 
   @Override

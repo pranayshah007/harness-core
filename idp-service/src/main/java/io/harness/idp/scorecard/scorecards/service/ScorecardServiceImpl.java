@@ -102,6 +102,7 @@ public class ScorecardServiceImpl implements ScorecardService {
     for (ScorecardEntity scorecardEntity : scorecardEntities) {
       List<CheckEntity> checksList = scorecardEntity.getChecks()
                                          .stream()
+                                         .filter(check -> checkEntityMap.containsKey(check.getIdentifier()))
                                          .map(check -> checkEntityMap.get(check.getIdentifier()))
                                          .collect(Collectors.toList());
       scorecardDetailsList.add(ScorecardCheckFullDetailsMapper.toDTO(scorecardEntity, checksList));

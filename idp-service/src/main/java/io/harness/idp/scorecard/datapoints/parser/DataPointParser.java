@@ -9,18 +9,17 @@ package io.harness.idp.scorecard.datapoints.parser;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
 import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface DataPointParser {
-  Object parseDataPoint(Map<String, Object> data, DataPointEntity entity, Set<String> strings);
+  Object parseDataPoint(Map<String, Object> data, String dataPointIdentifier, Set<String> strings);
 
   default String extractInputValue(String expression) {
     return "INV";
   }
 
-  String getReplaceKey(DataPointEntity entity);
+  String getReplaceKey();
 }

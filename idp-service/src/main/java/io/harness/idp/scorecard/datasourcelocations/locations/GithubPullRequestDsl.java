@@ -24,8 +24,10 @@ import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class GithubPullRequestDsl implements DataSourceLocation {
   DataPointParserFactory dataPointParserFactory;
@@ -33,16 +35,21 @@ public class GithubPullRequestDsl implements DataSourceLocation {
 
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      String dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues) {
-    for (DataPointEntity dataPoint :
-        dataPointsAndInputValues.keySet()) { // isBranchProtected(main), isBranchProtected(develop)
-      DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPoint.getIdentifier());
-      if (dataPoint.isConditional()) {
-        String key = dataPointParser.getReplaceKey(dataPoint); // {branch}
-        String value = dataPointParser.extractInputValue(dataPoint.getExpression()); // main/develop
-        // replace in the API
+      String dataSourceLocationEntity, Map<String, Set<String>> dataPointsAndInputValues) {
+    // ---------------------------------------------------------------
+    // In case of idp-service generic API, this needs to go in idp-service generic API
+    for (Map.Entry<String, Set<String>> entry : dataPointsAndInputValues.entrySet()) {
+      // isBranchProtected(main), isBranchProtected(develop)
+      String dataPointIdentifier = entry.getKey();
+      Set<String> inputValues = entry.getValue();
+      DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPointIdentifier);
+      if (!inputValues.isEmpty()) {
+        String key = dataPointParser.getReplaceKey(); // {branch}
+        log.info("replace key : {}, value: [{}]", key, inputValues);
+        // replace in the API url or params
       }
     }
+    // ---------------------------------------------------------------
 
     // API
     // headers

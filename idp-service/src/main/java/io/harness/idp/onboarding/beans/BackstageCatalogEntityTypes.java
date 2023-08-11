@@ -18,7 +18,10 @@ public enum BackstageCatalogEntityTypes {
   DOMAIN("Domain"),
   SYSTEM("System"),
   COMPONENT("Component"),
+  API("Api"),
+  USER("User"),
   GROUP("Group"),
+  RESOURCE("Resource"),
   LOCATION("Location"),
   TEMPLATE("Template");
 
@@ -45,8 +48,14 @@ public enum BackstageCatalogEntityTypes {
         return new TypeReference<List<BackstageCatalogSystemEntity>>() {};
       case COMPONENT:
         return new TypeReference<List<BackstageCatalogComponentEntity>>() {};
+      case API:
+        return new TypeReference<List<BackstageCatalogApiEntity>>() {};
+      case USER:
+        return new TypeReference<List<BackstageCatalogUserEntity>>() {};
       case GROUP:
         return new TypeReference<List<BackstageCatalogGroupEntity>>() {};
+      case RESOURCE:
+        return new TypeReference<List<BackstageCatalogResourceEntity>>() {};
       case LOCATION:
         return new TypeReference<List<BackstageCatalogLocationEntity>>() {};
       case TEMPLATE:
@@ -58,14 +67,19 @@ public enum BackstageCatalogEntityTypes {
 
   public static String getEntityType(BackstageCatalogEntity entity) {
     switch (BackstageCatalogEntityTypes.fromString(entity.getKind())) {
+      case API:
+        return ((BackstageCatalogApiEntity) entity).getSpec().getType();
       case COMPONENT:
         return ((BackstageCatalogComponentEntity) entity).getSpec().getType();
       case LOCATION:
         return ((BackstageCatalogLocationEntity) entity).getSpec().getType();
       case TEMPLATE:
         return ((BackstageCatalogTemplateEntity) entity).getSpec().getType();
+      case RESOURCE:
+        return ((BackstageCatalogResourceEntity) entity).getSpec().getType();
       case DOMAIN:
       case SYSTEM:
+      case USER:
       case GROUP:
       default:
         return null;

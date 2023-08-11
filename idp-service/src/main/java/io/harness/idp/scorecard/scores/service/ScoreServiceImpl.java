@@ -253,9 +253,13 @@ public class ScoreServiceImpl implements ScoreService {
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
     Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
     for (DataSourceProvider provider : dataSourceProviderFactory.getProviders()) {
-      Map<String, Map<String, Object>> data = provider.fetchData(accountIdentifier, entity, dataPointsAndInputValues);
-      if (data != null) {
-        aggregatedData.putAll(data);
+      try {
+        Map<String, Map<String, Object>> data = provider.fetchData(accountIdentifier, entity, dataPointsAndInputValues);
+        if (data != null) {
+          aggregatedData.putAll(data);
+        }
+      } catch (Exception e) {
+        log.warn("Error fetching data from {} provider", provider.getProviderIdentifier(), e);
       }
     }
     return aggregatedData;
@@ -267,43 +271,49 @@ public class ScoreServiceImpl implements ScoreService {
 
     for (ScorecardCheckFullDetails scorecardCheckFullDetails : scorecardCheckFullDetailsList) {
       ScorecardEntity scorecard = scorecardCheckFullDetails.getScorecard();
-      if (!shouldComputeScore(scorecard.getFilter(), entity)) {
-        return;
+      try {
+        if (!shouldComputeScore(scorecard.getFilter(), entity)) {
+          return;
+        }
+
+        log.info("Calculating score for scorecard: {}, account: {}", scorecard.getIdentifier(), accountIdentifier);
+
+        ScoreEntity.ScoreEntityBuilder scoreBuilder = ScoreEntity.builder()
+                                                          .scorecardIdentifier(scorecard.getIdentifier())
+                                                          .accountIdentifier(accountIdentifier)
+                                                          .entityIdentifier(entity.getMetadata().getUid());
+
+        int totalScore = 0;
+        int totalPossibleScore = 0;
+        List<CheckStatus> checkStatuses = new ArrayList<>();
+        List<CheckEntity> checks = scorecardCheckFullDetails.getChecks();
+
+        Map<String, ScorecardEntity.Check> scorecardCheckByIdentifier = scorecard.getChecks().stream().collect(
+            Collectors.toMap(ScorecardEntity.Check::getIdentifier, Function.identity()));
+
+        for (CheckEntity check : checks) {
+          log.info("Evaluating check status for: {}, account: {}", check.getIdentifier(), accountIdentifier);
+
+          CheckStatus checkStatus = new CheckStatus();
+          checkStatus.setName(check.getName());
+          checkStatus.setStatus(getCheckStatus(evaluator, check));
+          checkStatuses.add(checkStatus);
+          log.info("Check status for {} : {}; Account: {} ", check.getIdentifier(), checkStatus.getStatus(),
+              accountIdentifier);
+
+          double weightage = scorecardCheckByIdentifier.get(check.getIdentifier()).getWeightage();
+          totalPossibleScore += weightage;
+          totalScore += (checkStatus.getStatus().equals("PASS") ? 1 : 0) * weightage;
+        }
+
+        scoreBuilder.checkStatus(checkStatuses);
+        scoreBuilder.score(totalPossibleScore == 0 ? 0 : Math.round((float) totalScore / totalPossibleScore * 100));
+        scoreBuilder.lastComputedTimestamp(System.currentTimeMillis());
+        scoreRepository.save(scoreBuilder.build());
+      } catch (Exception e) {
+        log.warn("Error computing score for scorecard {} entity {}", scorecard.getIdentifier(),
+            entity.getMetadata().getIdentifier(), e);
       }
-
-      log.info("Calculating score for scorecard: {}, account: {}", scorecard.getIdentifier(), accountIdentifier);
-
-      ScoreEntity.ScoreEntityBuilder scoreBuilder = ScoreEntity.builder()
-                                                        .scorecardIdentifier(scorecard.getIdentifier())
-                                                        .accountIdentifier(accountIdentifier)
-                                                        .entityIdentifier(entity.getMetadata().getUid());
-
-      int totalScore = 0;
-      int totalPossibleScore = 0;
-      List<CheckStatus> checkStatuses = new ArrayList<>();
-      List<CheckEntity> checks = scorecardCheckFullDetails.getChecks();
-
-      Map<String, ScorecardEntity.Check> scorecardCheckByIdentifier = scorecard.getChecks().stream().collect(
-          Collectors.toMap(ScorecardEntity.Check::getIdentifier, Function.identity()));
-
-      for (CheckEntity check : checks) {
-        log.info("Evaluating check status for: {}, account: {}", check.getIdentifier(), accountIdentifier);
-
-        CheckStatus checkStatus = new CheckStatus();
-        checkStatus.setName(check.getName());
-        checkStatus.setStatus(getCheckStatus(evaluator, check));
-        checkStatuses.add(checkStatus);
-        log.info("Check status for {} : {}; Account: {} ", check.getIdentifier(), checkStatus, accountIdentifier);
-
-        double weightage = scorecardCheckByIdentifier.get(check.getIdentifier()).getWeightage();
-        totalPossibleScore += weightage;
-        totalScore += (checkStatus.getStatus().equals("PASS") ? 1 : 0) * weightage;
-      }
-
-      scoreBuilder.checkStatus(checkStatuses);
-      scoreBuilder.score(totalPossibleScore == 0 ? 0 : Math.round((float) totalScore / totalPossibleScore * 100));
-      scoreBuilder.lastComputedTimestamp(System.currentTimeMillis());
-      scoreRepository.save(scoreBuilder.build());
     }
   }
 
@@ -325,7 +335,8 @@ public class ScoreServiceImpl implements ScoreService {
       return checkEntity.getDefaultBehaviour().toString();
     } else {
       if (!(value instanceof Boolean)) {
-        throw new InvalidRequestException(String.format("Expected boolean assertion, got %s value", value));
+        log.warn("Expected boolean assertion, got {} value for check {}", value, checkEntity.getIdentifier());
+        return checkEntity.getDefaultBehaviour().toString();
       }
       // TODO: Some issue with open api, it's not generating enum. Need to update this later
       return (boolean) value ? "PASS" : "FAIL";

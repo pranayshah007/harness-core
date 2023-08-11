@@ -5,17 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.scorecard.datapoints.constants;
-
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
+package io.harness.idp.scorecard.datasources.constants;
 
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-@OwnedBy(HarnessTeam.IDP)
-public class DataPoints {
-  // Github
-  public static final String GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
-  public static final String GITHUB_IS_BRANCH_PROTECTED = "isBranchProtected";
+public class Constants {
+  public static final String HARNESS_PROVIDER = "harness";
+  public static final String GITHUB_PROVIDER = "github";
+  public static final String CATALOG_PROVIDER = "catalog";
 }
