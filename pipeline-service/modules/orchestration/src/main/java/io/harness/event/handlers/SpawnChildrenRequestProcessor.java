@@ -30,9 +30,9 @@ import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.events.SpawnChildrenRequest;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.utils.ExecutionModeUtils;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -43,6 +43,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -73,15 +74,11 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       for (int i = 0; i < request.getChildren().getChildrenList().size(); i++) {
         childrenIds.add(generateUuid());
       }
-      int maxConcurrencyLimit = pipelineSettingsService.getMaxConcurrencyBasedOnEdition(
-          AmbianceUtils.getAccountId(ambiance), childrenIds.size());
-      int maxConcurrency = maxConcurrencyLimit;
-      if (request.getChildren().getMaxConcurrency() > 0
-          && request.getChildren().getMaxConcurrency() < maxConcurrencyLimit) {
-        maxConcurrency = (int) request.getChildren().getMaxConcurrency();
-      }
 
-      if (childrenIds.isEmpty()) {
+      int maxConcurrency = getMaxConcurrencyLimit(ambiance, childrenIds, request.getChildren().getMaxConcurrency());
+
+      List<Child> filteredChildren = getFilteredChildren(ambiance, request.getChildren().getChildrenList());
+      if (childrenIds.isEmpty() || filteredChildren.isEmpty()) {
         // If callbackIds are empty then it means that there are no children, we should just do a no-op and return to
         // parent.
         orchestrationEngine.resumeNodeExecution(ambiance, new HashMap<>(), false);
@@ -93,25 +90,10 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       nodeExecutionInfoService.addConcurrentChildInformation(
           ConcurrentChildInstance.builder().childrenNodeExecutionIds(childrenIds).cursor(maxConcurrency).build(),
           nodeExecutionId);
-      List<PostExecutionRollbackInfo> postExecutionRollbackInfos =
-          ambiance.getMetadata().getPostExecutionRollbackInfoList();
-      Multimap<String, StrategyMetadata> strategyMetadataMap = HashMultimap.create();
-      postExecutionRollbackInfos.forEach(
-          o -> strategyMetadataMap.put(o.getPostExecutionRollbackStageId(), o.getRollbackStageStrategyMetadata()));
-      String parentNodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
 
-      for (Child child : request.getChildren().getChildrenList()) {
+      for (Child child : filteredChildren) {
         String uuid = childrenIds.get(currentChild);
         StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
-
-        if (ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())) {
-          // If the parentNodeId is present in the list of stages being rolledBack. Then initiate the child only if its
-          // strategyMetadata matches the strategyMetadata of stage being rolledBack.
-          if (strategyMetadataMap.containsKey(parentNodeId)
-              && !strategyMetadataMap.get(parentNodeId).contains(child.getStrategyMetadata())) {
-            continue;
-          }
-        }
         callbackIds.add(uuid);
 
         // If the current child count is less than maxConcurrency then create and start the nodeExecution
@@ -136,6 +118,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
             waitInstanceId);
         currentChild++;
       }
+
       // If some children were skipped due to rollback mode. Then update the concurrent children info.
       if (callbackIds.size() < childrenIds.size()) {
         nodeExecutionInfoService.addConcurrentChildInformation(
@@ -155,6 +138,51 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
           -> ops.addToSet(NodeExecutionKeys.executableResponses,
               ExecutableResponse.newBuilder().setChildren(request.getChildren()).build()));
     }
+  }
+
+  /**
+   * Get max concurrency limit based on plan and pipeline setting.
+   * If maxConcurrency provided is less than the limit, we use the max concurrency provided by the user.
+   */
+  private int getMaxConcurrencyLimit(Ambiance ambiance, List<String> childrenIds, long requestMaxConcurrency) {
+    int maxConcurrencyLimit = pipelineSettingsService.getMaxConcurrencyBasedOnEdition(
+        AmbianceUtils.getAccountId(ambiance), childrenIds.size());
+    int maxConcurrency = maxConcurrencyLimit;
+    if (requestMaxConcurrency > 0 && requestMaxConcurrency < maxConcurrencyLimit) {
+      maxConcurrency = (int) requestMaxConcurrency;
+    }
+    return maxConcurrency;
+  }
+
+  /**
+   * This filters the children provided by strategy node.
+   *
+   * Filtering is required mainly for post prod rollback because
+   *  - We need to run only one combination in matrix which deployed that service.
+   *  - If the service being rolled back is not inside matrix, then we want to do a
+   *  no-op
+   */
+  private List<Child> getFilteredChildren(Ambiance ambiance, List<Child> children) {
+    if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
+      List<PostExecutionRollbackInfo> postExecutionRollbackInfos =
+          ambiance.getMetadata().getPostExecutionRollbackInfoList();
+      Multimap<String, StrategyMetadata> strategyMetadataMap = HashMultimap.create();
+      postExecutionRollbackInfos.forEach(
+          o -> strategyMetadataMap.put(o.getPostExecutionRollbackStageId(), o.getRollbackStageStrategyMetadata()));
+      String parentNodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
+      List<Child> filteredChild = new LinkedList<>();
+      for (Child child : children) {
+        // If the parentNodeId is present in the list of stages being rolledBack. Then initiate the child only if its
+        // strategyMetadata matches the strategyMetadata of stage being rolledBack.
+        if (!strategyMetadataMap.containsKey(parentNodeId)
+            || !strategyMetadataMap.get(parentNodeId).contains(child.getStrategyMetadata())) {
+          continue;
+        }
+        filteredChild.add(child);
+      }
+      return filteredChild;
+    }
+    return children;
   }
 
   private boolean shouldCreateAndStart(int maxConcurrency, int currentChild) {
