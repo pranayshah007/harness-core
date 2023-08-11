@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.usage.impl.resources.ActiveMonitoredServiceDTO;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -41,7 +42,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -82,7 +82,7 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
   }
 
   @Override
-  public Page<ActiveServiceMonitoredDTO> listLicenseUsage(
+  public Page<ActiveMonitoredServiceDTO> listLicenseUsage(
       String accountIdentifier, ModuleType module, long currentTsInMs, PageableUsageRequestParams usageRequest) {
     if (currentTsInMs <= 0) {
       throw new InvalidArgumentsException(
@@ -101,36 +101,17 @@ public class SRMLicenseUsageImpl implements LicenseUsageInterface<SRMLicenseUsag
         (ActiveServiceMonitoredFilterParams) defaultUsageRequestParams.getFilterParams();
 
     ProjectParams projectParams = ProjectParams.builder().accountIdentifier(accountIdentifier).build();
-
-    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList =
-        monitoredServiceService.listActiveServiceMonitored(projectParams);
-
-    activeServiceMonitoredDTOList =
-        activeServiceMonitoredDTOList.stream()
-            .filter(activeServiceMonitoredDTO -> filterResult(activeServiceMonitoredDTO, filterParams))
-            .collect(Collectors.toList());
-
-    return new PageImpl<>(activeServiceMonitoredDTOList, pageRequest, activeServiceMonitoredDTOList.size());
-  }
-
-  private boolean filterResult(
-      ActiveServiceMonitoredDTO activeServiceMonitoredDTO, ActiveServiceMonitoredFilterParams filterParams) {
     if (filterParams.getOrgIdentifier() != null && isNotEmpty(filterParams.getOrgIdentifier())) {
-      if (!activeServiceMonitoredDTO.getOrgIdentifier().equals(filterParams.getOrgIdentifier())) {
-        return false;
-      }
+      projectParams.setOrgIdentifier(filterParams.getOrgIdentifier());
     }
     if (filterParams.getProjectIdentifier() != null && isNotEmpty(filterParams.getProjectIdentifier())) {
-      if (!activeServiceMonitoredDTO.getProjectIdentifier().equals(filterParams.getProjectIdentifier())) {
-        return false;
-      }
+      projectParams.setProjectIdentifier(filterParams.getProjectIdentifier());
     }
-    if (filterParams.getServiceIdentifier() != null && isNotEmpty(filterParams.getServiceIdentifier())) {
-      if (!activeServiceMonitoredDTO.getIdentifier().equals(filterParams.getServiceIdentifier())) {
-        return false;
-      }
-    }
-    return true;
+
+    List<ActiveMonitoredServiceDTO> activeMonitoredServiceDTOList =
+        monitoredServiceService.listActiveMonitoredServices(projectParams, filterParams.getServiceIdentifier());
+
+    return new PageImpl<>(activeMonitoredServiceDTOList, pageRequest, activeMonitoredServiceDTOList.size());
   }
 
   @Override

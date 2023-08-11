@@ -14,6 +14,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.data.StepOutcomeRef;
 import io.harness.pms.contracts.refobjects.RefObject;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +43,16 @@ public interface PmsOutcomeService extends Resolver {
   /**
    * Delete all outcome instances for given planExecutionIds
    * Uses - unique_levelRuntimeIdUniqueIdx
+   *
    * @param planExecutionIds
    */
   void deleteAllOutcomesInstances(Set<String> planExecutionIds);
+
+  /**
+   * Updates all outcome instances for given planExecutionId
+   * Uses - unique_levelRuntimeIdUniqueIdx
+   *
+   * @param planExecutionId
+   */
+  void updateTTL(String planExecutionId, Date ttlDate);
 }

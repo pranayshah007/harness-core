@@ -29,10 +29,12 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.approval.AbstractApprovalCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.evaluation.CriteriaEvaluator;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
@@ -61,6 +63,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
 
   @Builder
   public JiraApprovalCallback(String approvalInstanceId) {
@@ -72,9 +75,12 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceService.get(approvalInstanceId);
     try (AutoLogContext ignore = instance.autoLogContext()) {
       pushInternal(response);
+    } finally {
+      if (ParameterField.isNotNull(instance.getRetryInterval())) {
+        resetNextIteration(instance);
+      }
     }
   }
-
   private void pushInternal(Map<String, ResponseData> response) {
     JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceService.get(approvalInstanceId);
     log.info("Jira Approval Instance callback for instance id - {}", instance.getId());
@@ -198,6 +204,10 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
   protected void updateTicketFieldsInApprovalInstance(TicketNG ticket, ApprovalInstance instance) {
     approvalInstanceService.updateTicketFieldsInJiraApprovalInstance(
         (JiraApprovalInstance) instance, (JiraIssueNG) ticket);
+  }
+  private void resetNextIteration(JiraApprovalInstance instance) {
+    approvalInstanceService.resetNextIterations(instance.getId(), instance.recalculateNextIterations());
+    irregularApprovalInstanceHandler.wakeup();
   }
 
   @Override

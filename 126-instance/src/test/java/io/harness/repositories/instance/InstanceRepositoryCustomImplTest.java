@@ -7,6 +7,7 @@
 
 package io.harness.repositories.instance;
 
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.MEENA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
@@ -360,5 +361,21 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
 
     instanceRepositoryCustom.updateInfrastructureMapping(instanceId, infraMappingId);
     verify(mongoTemplate).findAndModify(query, update, Instance.class);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetInstancesForProject() {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(ACCOUNT_ID)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(ORGANIZATION_ID)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(PROJECT_ID);
+    Query query = new Query(criteria);
+
+    instanceRepositoryCustom.getInstancesForProject(ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID);
+    verify(secondaryMongoTemplate).find(query, Instance.class);
   }
 }

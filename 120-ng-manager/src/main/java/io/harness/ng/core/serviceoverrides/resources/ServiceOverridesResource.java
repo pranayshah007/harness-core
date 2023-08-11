@@ -8,6 +8,7 @@
 package io.harness.ng.core.serviceoverrides.resources;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
@@ -22,6 +23,7 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -32,7 +34,9 @@ import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.Service
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateService;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -51,7 +55,10 @@ import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverridesMapperV2;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.CGRestUtils;
+import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.security.dto.Principal;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -137,6 +144,7 @@ public class ServiceOverridesResource {
   @Inject private ServiceOverrideV2SettingsUpdateService serviceOverrideV2SettingsUpdateService;
 
   @Inject private OrgAndProjectValidationHelper orgAndProjectValidationHelper;
+  @Inject private AccountClient accountClient;
   private static final int MAX_LIMIT = 1000;
 
   @GET
@@ -356,6 +364,10 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to migrate overrides.", USER);
+    }
+
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
         serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, true, false);
     return ResponseDTO.newResponse(serviceOverrideMigrationResponseDTO);
@@ -377,9 +389,21 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to migrate overrides.", USER);
+    }
+
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
         serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, false, false);
     return ResponseDTO.newResponse(serviceOverrideMigrationResponseDTO);
+  }
+
+  private Boolean isHarnessSupportedUser() {
+    SourcePrincipalContextData sourcePrincipalContextData =
+        (SourcePrincipalContextData) GlobalContextManager.get(SourcePrincipalContextData.SOURCE_PRINCIPAL);
+    Principal principal = sourcePrincipalContextData.getPrincipal();
+    String userId = principal.getName();
+    return CGRestUtils.getResponse(accountClient.isHarnessSupportUserId(userId));
   }
 
   @POST
@@ -399,6 +423,10 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to revert overrides migration.", USER);
+    }
+
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
         serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, true, true);
     OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
@@ -427,6 +455,10 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to revert overrides migration.", USER);
+    }
+
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
         serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, false, true);
     OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
@@ -455,6 +487,10 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "Boolean field to decide whether to also update settings of all lower scoped entities.")
       @QueryParam("updateChildren") boolean updateChildren) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to update overrides v2 setting.", USER);
+    }
+
     OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
         serviceOverrideV2SettingsUpdateService.settingsUpdateToV2(
             accountId, orgIdentifier, projectIdentifier, updateChildren, false);

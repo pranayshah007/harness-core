@@ -38,13 +38,15 @@ public class EcrPollingItemGenerator implements PollingItemGenerator {
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
     String region = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.region");
     String imagePath = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.imagePath");
+    String registryId = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.registryId");
 
     return builder
         .setPollingPayloadData(
             PollingPayloadData.newBuilder()
                 .setConnectorRef(connectorRef)
                 .setType(Type.ECR)
-                .setEcrPayload(EcrPayload.newBuilder().setRegion(region).setImagePath(imagePath).build())
+                .setEcrPayload(
+                    EcrPayload.newBuilder().setRegion(region).setImagePath(imagePath).setRegistryId(registryId).build())
                 .build())
         .build();
   }

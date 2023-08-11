@@ -8,7 +8,7 @@
 package io.harness.platform.audit;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.authorization.AuthorizationServiceHeader.PLATFORM_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.AUDIT_SERVICE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
@@ -34,14 +34,14 @@ public class EventsFrameworkModule extends AbstractModule {
     RedisConfig redisConfig = this.eventsFrameworkConfiguration.getRedisConfig();
     if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
       bind(Consumer.class)
-          .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
+          .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD + AUDIT_SERVICE))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
     } else {
       RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(Consumer.class)
-          .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
-          .toInstance(RedisConsumer.of(EventsFrameworkConstants.ENTITY_CRUD, PLATFORM_SERVICE.getServiceId(),
+          .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD + AUDIT_SERVICE))
+          .toInstance(RedisConsumer.of(EventsFrameworkConstants.ENTITY_CRUD, AUDIT_SERVICE.getServiceId(),
               redissonClient, EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME,
               EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }

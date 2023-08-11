@@ -19,4 +19,5 @@ public interface CheckService {
   List<CheckListItem> getChecksByAccountId(boolean custom, String accountIdentifier);
   CheckDetails getCheckDetails(String accountIdentifier, String identifier);
   List<CheckEntity> getChecksByAccountIdAndIdentifiers(String accountIdentifier, List<String> identifiers);
+  void deleteCustomCheck(String accountIdentifier, String identifier, boolean forceDelete);
 }

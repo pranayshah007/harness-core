@@ -173,6 +173,37 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     return planCreationResponseMap;
   }
 
+  /*
+  iterateWrapperSteps is going to iterate through all the JsonNodes until it finds the step node. Then, once the node
+   with the Step info is found, it will send that to the addIACMVariablesToStep where, depending on what type of step
+   is, will get specific IACM variables.
+   */
+  private void iterateWrapperSteps(JsonNode node, Map<String, String> envVars, Map<String, String> envVarsFromConnector,
+      Map<String, String> secretVars, Map<String, String> secretVarsFromConnector, String workspace) {
+    if (node == null || node.isNull()) {
+      return;
+    }
+
+    if (node.isObject()) {
+      ObjectNode objectNode = (ObjectNode) node;
+
+      JsonNode stepNode;
+      if (objectNode.has("step")) {
+        stepNode = objectNode.get("step");
+        addIACMVariablesToSteps(
+            stepNode, envVars, envVarsFromConnector, secretVars, secretVarsFromConnector, workspace);
+      }
+
+      for (JsonNode childNode : objectNode) {
+        iterateWrapperSteps(childNode, envVars, envVarsFromConnector, secretVars, secretVarsFromConnector, workspace);
+      }
+    } else if (node.isArray()) {
+      for (JsonNode childNode : node) {
+        iterateWrapperSteps(childNode, envVars, envVarsFromConnector, secretVars, secretVarsFromConnector, workspace);
+      }
+    }
+  }
+
   private ExecutionElementConfig addWorkspaceToIACMSteps(
       PlanCreationContext ctx, ExecutionElementConfig modifiedExecutionPlan, String workspace) {
     Map<String, String> envVars = iacmStepsUtils.getIACMEnvVariables(
@@ -185,72 +216,38 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspace);
 
     List<ExecutionWrapperConfig> modifiedSteps = new ArrayList<>();
+    // Bare with me for a sec. The pipeline can have 3 types of steps
+    // Normal old good step
+    // Parallel step, which can have any number of the other steps including more Parallel steps
+    // StepGroup steps, which can also have any number other of the other steps, also including more StepGroups steps
+    // So, we want to add the IACM variables to all the steps (depending on the type of the step, we will add more or
+    // less variables, but overall there is a subset of variables that we want to add for sure)
+    // So in order to do that want we want to do is navigate from the root of the step all the way down to all the
+    // step branches that the steps can have, in order to add to all of them the IACM variables, which
+    // means...RECURSION!! With that in mind you can continue your path traveler.
     for (ExecutionWrapperConfig wrapperConfig : modifiedExecutionPlan.getSteps()) {
-      switch (wrapperConfig.getStep().get("type").asText()) {
-        // If the step is one of our steps, we want to put all the variables from the workspace, including the system
-        // variables
-        case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN:
-        case IACMStepSpecTypeConstants.IACM_APPROVAL:
-          ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
-          Map<String, String> envVarsCopy = new HashMap<>(envVars);
-          String command;
-          if (Objects.equals(wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_APPROVAL)) {
-            command = "approval";
-          } else {
-            command = wrapperConfig.getStep().get("spec").get("command").asText();
-          }
-          envVarsCopy.put("PLUGIN_COMMAND", command);
-          ObjectMapper objectMapper = new ObjectMapper();
-          ((ObjectNode) wrapperConfig.getStep().get("spec")).set("envVariables", objectMapper.valueToTree(envVarsCopy));
-          ((ObjectNode) wrapperConfig.getStep().get("spec"))
-              .set("envVariablesFromConnector", objectMapper.valueToTree(envVarsFromConnector));
-          ((ObjectNode) wrapperConfig.getStep().get("spec"))
-              .set("secretVariables", objectMapper.valueToTree(secretVars));
-          ((ObjectNode) wrapperConfig.getStep().get("spec"))
-              .set("secretVariablesFromConnector", objectMapper.valueToTree(secretVarsFromConnector));
-          break;
-        case IACMStepSpecTypeConstants.IACM_LITE_ENGINE:
-          try {
-            for (JsonNode jsonNode : wrapperConfig.getStep().get("spec").get("executionElementConfig").get("steps")) {
-              JsonNode step = jsonNode.get("step");
-              if (step.get("type") != null
-                  && (step.get("type").asText().equals(IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN)
-                      || step.get("type").asText().equals(IACMStepSpecTypeConstants.IACM_APPROVAL))) {
-                ObjectNode spec = (ObjectNode) step.get("spec");
-                spec.put("workspace", workspace);
-                spec.set("envVariables", new ObjectMapper().valueToTree(envVars));
-                spec.set("envVariablesFromConnector", new ObjectMapper().valueToTree(envVarsFromConnector));
-                spec.set("secretVariables", new ObjectMapper().valueToTree(secretVars));
-                spec.set("secretVariablesFromConnector", new ObjectMapper().valueToTree(secretVarsFromConnector));
-              }
-            }
-          } catch (NullPointerException npe) {
-            log.error(
-                "failed to add workspace and env variables to the lite engine task for kubernetes during planning",
-                npe);
-          }
-          break;
-        default:
-          // For any other step, we want to put only the variables defined in the workspace. Skip this for the
-          // liteTaskEngine and clone step
-          if (!Objects.equals(
-                  wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_LITE_ENGINE)) {
-            if (!Objects.equals(
-                    wrapperConfig.getStep().get("type").asText(), IACMStepSpecTypeConstants.IACM_CLONE_CODEBASE)) {
-              Map<String, String> copyMap = new HashMap<>();
-              for (Map.Entry<String, String> entry : envVars.entrySet()) {
-                if (!entry.getKey().startsWith("PLUGIN_")) {
-                  copyMap.put(entry.getKey(), entry.getValue());
-                }
-              }
-              ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
-              Map<String, String> pluginEnvVarsCopy = new HashMap<>(copyMap);
-              ObjectMapper pluginObjectMapper = new ObjectMapper();
-              ((ObjectNode) wrapperConfig.getStep().get("spec"))
-                  .set("envVariables", pluginObjectMapper.valueToTree(pluginEnvVarsCopy));
-            }
-          }
-          break;
+      if (wrapperConfig.getStepGroup() != null) {
+        JsonNode stepGroup = wrapperConfig.getStepGroup();
+        iterateWrapperSteps(stepGroup, envVars, envVarsFromConnector, secretVars, secretVarsFromConnector, workspace);
+      } else if (wrapperConfig.getStep() != null) {
+        // I spend some time with the recursion function and the entry point worked perfectly for stepGroup and Parallel
+        // as they were both JsonNodes but for the step the problem is that the object was an ExecutionWrapperConfig
+        // which a step inside I realised that it was easier to just convert the object into JsonNode and pass that to
+        // the recursion function to do it's magic Normally I would not do that because a single step should not be that
+        // controversial, and we should be able to just add the IACM variables directly. Enters in the room the
+        // lite-engine step. This step contains _all_ the steps as a part of the step, which means that we need to dive
+        // in into the step, retrieve the section that contains the steps and then, send that to the recursion function
+        // to add all the env variables to all the other steps. Which is why I had to do this. Of course, after adding
+        // the variables, I needed to cast back to ExecutionWrapperConfig and set it to wrapperConfig or we will be
+        // losing all the changes
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode step = mapper.valueToTree(wrapperConfig);
+        iterateWrapperSteps(step, envVars, envVarsFromConnector, secretVars, secretVarsFromConnector, workspace);
+        wrapperConfig = mapper.convertValue(step, ExecutionWrapperConfig.class);
+      } else if (wrapperConfig.getParallel() != null) {
+        JsonNode parallelStep = wrapperConfig.getParallel();
+        iterateWrapperSteps(
+            parallelStep, envVars, envVarsFromConnector, secretVars, secretVarsFromConnector, workspace);
       }
       modifiedSteps.add(wrapperConfig);
     }
@@ -259,6 +256,65 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         .rollbackSteps(modifiedExecutionPlan.getRollbackSteps())
         .steps(modifiedSteps)
         .build();
+  }
+
+  private void addIACMVariablesToSteps(JsonNode stepNode, Map<String, String> envVars,
+      Map<String, String> envVarsFromConnector, Map<String, String> secretVars,
+      Map<String, String> secretVarsFromConnector, String workspace) {
+    String type = stepNode.get("type").asText();
+    switch (type) {
+      case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN:
+      case IACMStepSpecTypeConstants.IACM_APPROVAL: {
+        ObjectNode spec = (ObjectNode) stepNode.get("spec");
+        spec.put("workspace", workspace);
+        Map<String, String> envVarsCopy = new HashMap<>(envVars);
+        String command;
+        if (Objects.equals(type, IACMStepSpecTypeConstants.IACM_APPROVAL)) {
+          command = "approval";
+        } else {
+          command = spec.get("command").asText();
+        }
+        envVarsCopy.put("PLUGIN_COMMAND", command);
+        ObjectMapper objectMapper = new ObjectMapper();
+        spec.set("envVariables", objectMapper.valueToTree(envVarsCopy));
+        spec.set("envVariablesFromConnector", objectMapper.valueToTree(envVarsFromConnector));
+        spec.set("secretVariables", objectMapper.valueToTree(secretVars));
+        spec.set("secretVariablesFromConnector", objectMapper.valueToTree(secretVarsFromConnector));
+        break;
+      }
+      case IACMStepSpecTypeConstants.IACM_LITE_ENGINE:
+        for (JsonNode jsonNode : stepNode.get("spec").get("executionElementConfig").get("steps")) {
+          iterateWrapperSteps(jsonNode, envVars, envVarsFromConnector, secretVars, secretVarsFromConnector, workspace);
+        }
+        break;
+      default:
+        // For any other step, we want to put only the variables defined in the workspace. Skip this for the
+        // liteTaskEngine and clone step
+        ObjectNode spec = (ObjectNode) stepNode.get("spec");
+        if (!Objects.equals(type, IACMStepSpecTypeConstants.IACM_LITE_ENGINE)) {
+          if (!Objects.equals(type, IACMStepSpecTypeConstants.IACM_CLONE_CODEBASE)) {
+            Map<String, String> copyMap = new HashMap<>();
+            // Copy the envVariables from the step to the copyMap map before starting to add IACM env variables
+            if (spec.has("envVariables")) {
+              ObjectMapper objectMapper = new ObjectMapper();
+              JsonNode envVarsNode = spec.get("envVariables");
+              Map<String, String> map = objectMapper.convertValue(envVarsNode, Map.class);
+              copyMap.putAll(map);
+            }
+            for (Map.Entry<String, String> entry : envVars.entrySet()) {
+              if (!entry.getKey().startsWith("PLUGIN_")) {
+                copyMap.put(entry.getKey(), entry.getValue());
+              }
+            }
+            spec.put("workspace", workspace);
+            Map<String, String> pluginEnvVarsCopy = new HashMap<>(copyMap);
+            ObjectMapper pluginObjectMapper = new ObjectMapper();
+            spec.set("envVariables", pluginObjectMapper.valueToTree(pluginEnvVarsCopy));
+          }
+        }
+
+        break;
+    }
   }
 
   @Override
@@ -327,7 +383,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   }
 
   /**
-  This function is the one used to send back to the PMS SDK the modified Yaml
+   This function is the one used to send back to the PMS SDK the modified Yaml
    */
   private void putNewExecutionYAMLInResponseMap(YamlField executionField,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, ExecutionElementConfig modifiedExecutionPlan,
@@ -367,8 +423,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   }
 
   /**
-  This is one of the functions that I think that we really need to understand. This function creates a PlanNode for a
-  step and the step is the CISpecStep, but I don't understand what is this step doing. Is this the
+   This is one of the functions that I think that we really need to understand. This function creates a PlanNode for a
+   step and the step is the CISpecStep, but I don't understand what is this step doing. Is this the
    */
   private PlanNode getSpecPlanNode(YamlField specField, IACMIntegrationStageStepParametersPMS stepParameters) {
     return PlanNode.builder()
@@ -386,10 +442,10 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   }
 
   /**
-    This function seems to build the ExecutionSource object which contains information about how the Execution was
-    triggered (Webhook, manual, custom). Because this is the CI world, it could be possible that the webhook is
-    related with changes in the repository, so that should be something that we may want to investigate.
-    If we want to disallow custom or webhook scenarios for some reason this would also be the place
+   This function seems to build the ExecutionSource object which contains information about how the Execution was
+   triggered (Webhook, manual, custom). Because this is the CI world, it could be possible that the webhook is
+   related with changes in the repository, so that should be something that we may want to investigate.
+   If we want to disallow custom or webhook scenarios for some reason this would also be the place
    */
   private ExecutionSource buildExecutionSource(PlanCreationContext ctx, IACMStageNode stageNode) {
     PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
@@ -408,8 +464,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   }
 
   /**
-  Used for Webhooks
-  TODO: Needs investigation
+   Used for Webhooks
+   TODO: Needs investigation
    */
   private BuildStatusUpdateParameter obtainBuildStatusUpdateParameter(
       PlanCreationContext ctx, IACMStageNode stageNode, ExecutionSource executionSource, String workspace) {
@@ -440,8 +496,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   }
 
   /**
-  Used for Webhooks
-  TODO: Needs investigation
+   Used for Webhooks
+   TODO: Needs investigation
    */
   private String retrieveLastCommitSha(WebhookExecutionSource webhookExecutionSource) {
     if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.PR) {
@@ -458,10 +514,10 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
   /**
    *  This method will retrieve the properties/ci/codebase information from the yaml similar to:
-  pipeline:
-    properties:
-      ci:
-        codebase:
+   pipeline:
+   properties:
+   ci:
+   codebase:
    NOTE: If we want to add information at this level, the way to do it will be similar to this method
    */
   private CodeBase getIACMCodebase(PlanCreationContext ctx, String workspaceId) {
@@ -557,10 +613,10 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     }
   }
   /**
-  This is the step that creates the integrationStageNode class from the stageNode yaml file. Important note is that
+   This is the step that creates the integrationStageNode class from the stageNode yaml file. Important note is that
    we are using the IntegrationStageConfigImpl, which belongs to the CI module, we are NOT using the
-  IACMIntegrationStageConfig. If we want to use the code in CI we need to do that, which is the reason of why we are
-  injecting invisible steps to bypass this limitation
+   IACMIntegrationStageConfig. If we want to use the code in CI we need to do that, which is the reason of why we are
+   injecting invisible steps to bypass this limitation
    */
   private IntegrationStageNode getIntegrationStageNode(IACMStageNode stageNode) {
     IntegrationStageConfig currentStageConfig = (IntegrationStageConfig) stageNode.getStageInfoConfig();

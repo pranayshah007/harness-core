@@ -16,7 +16,8 @@ public enum SecondaryEventsType {
   @JsonProperty("Downtime") DOWNTIME("Downtime"),
   @JsonProperty("DataCollectionFailure") DATA_COLLECTION_FAILURE("DataCollectionFailure"),
   @JsonProperty("Annotation") ANNOTATION("Annotation"),
-  @JsonProperty("ErrorBudgetReset") ERROR_BUDGET_RESET("ErrorBudgetReset");
+  @JsonProperty("ErrorBudgetReset") ERROR_BUDGET_RESET("ErrorBudgetReset"),
+  @JsonProperty("SrmAnalysisImpact") SRM_ANALYSIS_IMPACT("SrmAnalysisImpact");
 
   private String value;
 

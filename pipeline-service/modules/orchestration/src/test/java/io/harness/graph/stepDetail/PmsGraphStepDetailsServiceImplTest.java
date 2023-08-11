@@ -40,7 +40,10 @@ import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -307,5 +310,29 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
     pmsGraphStepDetailsService.deleteNodeExecutionInfoForGivenIds(Set.of(nodeExecutionId));
     byNodeExecutionId = nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
     assertThat(byNodeExecutionId).isNotPresent();
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testUpdateTTLForNodeExecutionInfoForGivenPlanExecutionId() {
+    on(pmsGraphStepDetailsService).set("nodeExecutionsInfoRepository", nodeExecutionsInfoRepository);
+    String nodeExecutionId = generateUuid();
+    String planExecutionId = generateUuid();
+    NodeExecutionsInfo nodeExecutionsInfo = NodeExecutionsInfo.builder()
+                                                .nodeExecutionId(nodeExecutionId)
+                                                .uuid(generateUuid())
+                                                .planExecutionId(planExecutionId)
+                                                .build();
+    mongoTemplate.save(nodeExecutionsInfo);
+    Optional<NodeExecutionsInfo> byNodeExecutionId =
+        nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
+    assertThat(byNodeExecutionId).isPresent();
+
+    Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
+    pmsGraphStepDetailsService.updateTTLForNodesForGivenPlanExecutionId(planExecutionId, ttlExpiry);
+    byNodeExecutionId = nodeExecutionsInfoRepository.findByNodeExecutionId(nodeExecutionId);
+    assertThat(byNodeExecutionId).isPresent();
+    assertThat(byNodeExecutionId.get().getValidUntil()).isEqualTo(ttlExpiry);
   }
 }

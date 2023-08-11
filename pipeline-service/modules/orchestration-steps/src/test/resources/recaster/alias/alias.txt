@@ -258,7 +258,6 @@ io.harness.beans.yaml.extended.TISplitStrategy
 io.harness.beans.yaml.extended.CIShellType
 io.harness.beans.steps.stepinfo.RunStepInfo
 io.harness.plancreator.strategy.ExpressionAxisConfig
-io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml
 io.harness.steps.shellscript.ExecutionTarget
 io.harness.steps.servicenow.create.ServiceNowCreateStepInfo
 io.harness.plancreator.steps.internal.FlagConfigurationStepNode

@@ -85,13 +85,14 @@ import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.PatternSyntaxException;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.PredicateUtils;
@@ -100,6 +101,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
@@ -116,8 +118,6 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private GitSyncSdkService gitSyncSdkService;
-
-  private static final int MAX_LIST_SIZE = 1000;
 
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
@@ -262,26 +262,33 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
   @Override
   public PMSPipelineListRepoResponse getListOfRepo(Criteria criteria) {
-    List<String> uniqueRepos = pmsExecutionSummaryRespository.findListOfUniqueRepositories(criteria);
-    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
-    if (uniqueRepos.size() > MAX_LIST_SIZE) {
-      log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
-      throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    Set<String> repoList = new HashSet<>();
+    try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
+             pmsExecutionSummaryRespository.findListOfRepositories(criteria)) {
+      while (iterator.hasNext()) {
+        repoList.add(iterator.next().getEntityGitDetails().getRepoName());
+      }
     }
+
+    List<String> uniqueRepos = new ArrayList<>(repoList);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
     return PMSPipelineListRepoResponse.builder().repositories(uniqueRepos).build();
   }
 
   @Override
   public PMSPipelineListBranchesResponse getListOfBranches(Criteria criteria) {
-    List<String> uniqueBranches = pmsExecutionSummaryRespository.findListOfUniqueBranches(criteria);
-    CollectionUtils.filter(uniqueBranches, PredicateUtils.notNullPredicate());
-    if (uniqueBranches.size() > MAX_LIST_SIZE) {
-      log.error(String.format(BRANCH_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
-      throw new InternalServerErrorException(String.format(BRANCH_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    Set<String> branchList = new HashSet<>();
+    try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
+             pmsExecutionSummaryRespository.findListOfBranches(criteria)) {
+      while (iterator.hasNext()) {
+        branchList.add(iterator.next().getEntityGitDetails().getBranch());
+      }
     }
+
+    List<String> uniqueBranches = new ArrayList<>(branchList);
+    CollectionUtils.filter(uniqueBranches, PredicateUtils.notNullPredicate());
     return PMSPipelineListBranchesResponse.builder().branches(uniqueBranches).build();
   }
-
   @Override
   public Criteria formCriteriaOROperatorOnModules(String accountId, String orgId, String projectId,
       List<String> pipelineIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String filterIdentifier) {

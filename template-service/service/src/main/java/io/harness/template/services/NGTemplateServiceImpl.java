@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.services;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -50,6 +51,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
@@ -252,7 +254,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           getAllTemplatesForGivenIdentifier(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
               templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), false);
       boolean firstVersionEntry = EmptyPredicate.isEmpty(templates);
-      validateTemplateTypeAndChildTypeOfTemplate(templateEntity, templates);
+      validateTemplateTypeAndChildTypeOfTemplateForCreation(templateEntity, templates);
       if (firstVersionEntry || setStableTemplate) {
         templateEntity = templateEntity.withStableTemplate(true);
       }
@@ -329,19 +331,31 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return false;
   }
 
-  private void validateTemplateTypeAndChildTypeOfTemplate(
-      TemplateEntity templateEntity, List<TemplateEntity> templates) {
+  /*
+  validating the new version of existing template is of same entity type.
+  validating the child type of new version  are same as of existing version of template.
+   */
+  private void validateTemplateTypeAndChildTypeOfTemplateForCreation(
+      TemplateEntity newTemplateEntity, List<TemplateEntity> templates) {
     if (EmptyPredicate.isNotEmpty(templates)) {
-      TemplateEntityType templateEntityType = templates.get(0).getTemplateEntityType();
-      String childType = templates.get(0).getChildType();
-      if (!Objects.equals(templateEntityType, templateEntity.getTemplateEntityType())) {
-        throw new InvalidRequestException(String.format(
-            "Template should have same template entity type %s as other template versions", templateEntityType));
-      }
-      if (!Objects.equals(childType, templateEntity.getChildType())) {
-        throw new InvalidRequestException(
-            String.format("Template should have same child type %s as other template versions", childType));
-      }
+      templates.forEach(existingTemplateEntity -> {
+        if (!Objects.equals(
+                existingTemplateEntity.getTemplateEntityType(), newTemplateEntity.getTemplateEntityType())) {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              String.format(
+                  "Failed to save the template [%s] because an existing template of different type has the same identifier",
+                  newTemplateEntity.getIdentifier(), newTemplateEntity.getVersionLabel()),
+              String.format(
+                  "Template identifier [%s] exists. You cannot save a template of different type with the same identifier.",
+                  newTemplateEntity.getIdentifier(), newTemplateEntity.getName()),
+              new InvalidRequestException("Failed to save the template."));
+        }
+        if (!Objects.equals(existingTemplateEntity.getChildType(), newTemplateEntity.getChildType())) {
+          throw new InvalidRequestException(
+              String.format("Template should have same child type %s as other template versions",
+                  existingTemplateEntity.getChildType()));
+        }
+      });
     }
   }
 

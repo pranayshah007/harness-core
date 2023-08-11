@@ -78,7 +78,25 @@ public class ScorecardsApiImpl implements ScorecardsApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response updateScorecard(String scorecardId, @Valid ScorecardDetailsRequest body, String harnessAccount) {
+  public Response deleteScorecard(String scorecardId, @AccountIdentifier String harnessAccount) {
+    try {
+      scorecardService.deleteScorecard(harnessAccount, scorecardId);
+      return Response.status(Response.Status.NO_CONTENT).build();
+    } catch (Exception e) {
+      String errorMessage =
+          String.format("Error occurred while deleting scorecard for accountId: [%s], scorecardId: [%s]",
+              harnessAccount, scorecardId);
+      log.error(errorMessage, e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response updateScorecard(
+      String scorecardId, @Valid ScorecardDetailsRequest body, @AccountIdentifier String harnessAccount) {
     try {
       scorecardService.updateScorecard(body, harnessAccount);
       return Response.status(Response.Status.OK).build();

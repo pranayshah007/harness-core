@@ -81,4 +81,12 @@ public class PlanExecutionExpansionRepositoryCustomImpl implements PlanExecution
             "[Failed]: Failed deleting PlanExecutionExpansion entity; attempt: {}");
     Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, PlanExecutionExpansion.class));
   }
+
+  @Override
+  public void multiUpdate(Query query, Update updateOps) {
+    RetryPolicy<Object> retryPolicy =
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed updating PlanExecutionExpansion entity; attempt: {}",
+            "[Failed]: Failed updating PlanExecutionExpansion entity; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.updateMulti(query, updateOps, PlanExecutionExpansion.class));
+  }
 }

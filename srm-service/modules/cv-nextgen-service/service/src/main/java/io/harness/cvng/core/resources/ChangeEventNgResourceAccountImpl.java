@@ -12,6 +12,7 @@ import static io.harness.cvng.core.services.CVNextGenConstants.CHANGE_EVENT_NG_A
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
@@ -36,6 +37,7 @@ import java.time.Instant;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import org.apache.commons.lang3.StringUtils;
@@ -68,6 +70,26 @@ public class ChangeEventNgResourceAccountImpl implements ChangeEventNgResource {
     return new RestResponse<>(changeEventService.getChangeEvents(projectParams, serviceIdentifiers, envIdentifiers,
         scopedMonitoredServiceIdentifiers, true, changeCategories, changeSourceTypes, Instant.ofEpochMilli(startTime),
         Instant.ofEpochMilli(endTime), pageRequest));
+  }
+
+  @Override
+  @Timed
+  @NextGenManagerAuth
+  @ExceptionMetered
+  @ApiOperation(value = "get ReportList List for Account", nickname = "reportListAccount")
+  public RestResponse<PageResponse<SRMAnalysisStepDetailDTO>> get(@Valid @BeanParam ProjectPathParams projectPathParams,
+      List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
+      List<String> scopedMonitoredServiceIdentifiers, @NotNull long startTime, @NotNull long endTime,
+      PageRequest pageRequest) {
+    validate(monitoredServiceIdentifiers, scopedMonitoredServiceIdentifiers, projectPathParams, startTime, endTime);
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(projectPathParams.getAccountIdentifier())
+                                      .orgIdentifier(projectPathParams.getOrgIdentifier())
+                                      .projectIdentifier(projectPathParams.getProjectIdentifier())
+                                      .build();
+    return new RestResponse<>(changeEventService.getReportList(projectParams, serviceIdentifiers, envIdentifiers,
+        scopedMonitoredServiceIdentifiers, true, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime),
+        pageRequest));
   }
 
   @Override

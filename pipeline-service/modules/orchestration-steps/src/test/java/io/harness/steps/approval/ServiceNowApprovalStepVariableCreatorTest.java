@@ -93,6 +93,7 @@ public class ServiceNowApprovalStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.timeout",
             "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.spec.ticketNumber",
             "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.name",
+            "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.spec.retryInterval",
             "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.when");
 
     // yaml extra properties

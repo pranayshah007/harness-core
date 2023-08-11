@@ -13,6 +13,7 @@ import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.entity.CheckEntity.CheckKeys;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.UpdateResult;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -45,5 +46,20 @@ public class CheckRepositoryCustomImpl implements CheckRepositoryCustom {
     update.set(CheckKeys.labels, checkEntity.getLabels());
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
     return mongoTemplate.findAndModify(query, update, options, CheckEntity.class);
+  }
+
+  @Override
+  public UpdateResult updateDeleted(String accountIdentifier, String identifier) {
+    Criteria criteria = Criteria.where(CheckKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(CheckKeys.identifier)
+                            .is(identifier)
+                            .and(CheckKeys.isCustom)
+                            .is(true);
+    Query query = new Query(criteria);
+    Update update = new Update();
+    update.set(CheckKeys.isDeleted, true);
+    update.set(CheckKeys.deletedAt, System.currentTimeMillis());
+    return mongoTemplate.updateFirst(query, update, CheckEntity.class);
   }
 }

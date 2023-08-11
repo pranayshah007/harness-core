@@ -15,16 +15,31 @@ import io.harness.idp.scorecard.datasources.providers.DataSourceProvider;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProviderFactory;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
+import io.harness.idp.scorecard.scores.entities.ScoreEntity;
+import io.harness.idp.scorecard.scores.mappers.ScorecardGraphSummaryInfoMapper;
+import io.harness.idp.scorecard.scores.mappers.ScorecardScoreMapper;
+import io.harness.idp.scorecard.scores.mappers.ScorecardSummaryInfoMapper;
+import io.harness.idp.scorecard.scores.repositories.ScoreRepository;
+import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
+import io.harness.spec.server.idp.v1.model.ScorecardScore;
+import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 
 @OwnedBy(HarnessTeam.IDP)
+@AllArgsConstructor(onConstructor = @__({ @com.google.inject.Inject }))
 public class ScoreServiceImpl implements ScoreService {
   ScorecardService scorecardService;
   DataSourceProviderFactory dataSourceProviderFactory;
+
+  ScoreRepository scoreRepository;
 
   @Override
   public void computeScores(String accountIdentifier) {
@@ -37,6 +52,65 @@ public class ScoreServiceImpl implements ScoreService {
       Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, dataPoints);
       compute(data, scorecards);
     }
+  }
+
+  @Override
+  public List<ScorecardSummaryInfo> getScoresSummaryForAnEntity(String accountIdentifier, String entityIdentifier) {
+    List<ScoreEntity> scoreEntities =
+        scoreRepository.findAllByAccountIdentifierAndEntityIdentifier(accountIdentifier, entityIdentifier);
+    Map<String, String> scoreCardIdentifierNameMapping =
+        scorecardService.getAllScorecards(accountIdentifier)
+            .stream()
+            .collect(Collectors.toMap(ScorecardEntity::getIdentifier, ScorecardEntity::getName));
+    return scoreEntities.stream()
+        .map(scoreEntity
+            -> ScorecardSummaryInfoMapper.toDTO(
+                scoreEntity, scoreCardIdentifierNameMapping.get(scoreEntity.getScorecardIdentifier())))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<ScorecardGraphSummaryInfo> getScoresGraphSummaryForAnEntityAndScorecard(
+      String accountIdentifier, String entityIdentifier, String scorecardIdentifier) {
+    List<ScoreEntity> scoreEntities =
+        scoreRepository.findAllByAccountIdentifierAndEntityIdentifierAndScorecardIdentifier(
+            accountIdentifier, entityIdentifier, scorecardIdentifier);
+    return scoreEntities.stream()
+        .map(scoreEntity -> ScorecardGraphSummaryInfoMapper.toDTO(scoreEntity))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<ScorecardScore> getScorecardScoreOverviewForAnEntity(String accountIdentifier, String entityIdentifier) {
+    List<ScoreEntity> scoreEntities =
+        scoreRepository.findAllByAccountIdentifierAndEntityIdentifier(accountIdentifier, entityIdentifier);
+    Map<String, ScorecardEntity> scorecardIdentifierEntityMapping =
+        scorecardService.getAllScorecards(accountIdentifier)
+            .stream()
+            .collect(Collectors.toMap(ScorecardEntity::getIdentifier, Function.identity()));
+    return scoreEntities.stream()
+        .map(scoreEntity
+            -> ScorecardScoreMapper.toDTO(scoreEntity,
+                scorecardIdentifierEntityMapping.get(scoreEntity.getScorecardIdentifier()).getName(),
+                scorecardIdentifierEntityMapping.get(scoreEntity.getScorecardIdentifier()).getDescription()))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public ScorecardSummaryInfo getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
+      String accountIdentifier, String entityIdentifier, String scorecardIdentifier) {
+    List<ScoreEntity> scoreEntities =
+        scoreRepository.findAllByAccountIdentifierAndEntityIdentifierAndScorecardIdentifier(
+            accountIdentifier, entityIdentifier, scorecardIdentifier);
+    if (scoreEntities.size() > 0) {
+      scoreEntities.sort(Comparator.comparing(ScoreEntity::getLastComputedTimestamp));
+      ScoreEntity scoreEntity = scoreEntities.get(scoreEntities.size() - 1);
+      return ScorecardSummaryInfoMapper.toDTO(scoreEntity,
+          scorecardService.getScorecardDetails(accountIdentifier, scoreEntity.getScorecardIdentifier())
+              .getScorecard()
+              .getName());
+    }
+    return new ScorecardSummaryInfo();
   }
 
   private List<String> getAllFilters(List<ScorecardEntity> scorecards) {

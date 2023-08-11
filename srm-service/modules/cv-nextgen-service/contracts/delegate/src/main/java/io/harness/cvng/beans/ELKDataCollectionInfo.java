@@ -8,7 +8,7 @@
 package io.harness.cvng.beans;
 
 import io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO;
-import io.harness.delegate.beans.cvng.elk.elkUtils;
+import io.harness.delegate.beans.cvng.elk.ElkUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,7 +58,7 @@ public class ELKDataCollectionInfo extends LogDataCollectionInfo<ELKConnectorDTO
 
   @Override
   public Map<String, String> collectionHeaders(ELKConnectorDTO connectorConfigDTO) {
-    return elkUtils.collectionHeaders(connectorConfigDTO);
+    return ElkUtils.collectionHeaders(connectorConfigDTO);
   }
 
   @Override

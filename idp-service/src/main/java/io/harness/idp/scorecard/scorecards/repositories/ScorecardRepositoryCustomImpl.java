@@ -11,6 +11,7 @@ import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity.ScorecardKeys;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -39,5 +40,15 @@ public class ScorecardRepositoryCustomImpl implements ScorecardRepositoryCustom 
     update.set(ScorecardKeys.weightageStrategy, scorecardEntity.getWeightageStrategy());
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
     return mongoTemplate.findAndModify(query, update, options, ScorecardEntity.class);
+  }
+
+  @Override
+  public DeleteResult delete(String accountIdentifier, String identifier) {
+    Criteria criteria = Criteria.where(ScorecardKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(ScorecardKeys.identifier)
+                            .is(identifier);
+    Query query = new Query(criteria);
+    return mongoTemplate.remove(query, ScorecardEntity.class);
   }
 }

@@ -30,7 +30,7 @@ import io.harness.servicenow.misc.TicketNG;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
-import io.harness.steps.approval.step.custom.CustomApprovalInstanceHandler;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalTicketNG;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.custom.evaluation.CustomApprovalCriteriaEvaluator;
@@ -62,7 +62,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private ShellScriptHelperService shellScriptHelperService;
-  @Inject private CustomApprovalInstanceHandler customApprovalInstanceHandler;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
 
   @Builder
   public CustomApprovalCallback(String approvalInstanceId) {
@@ -153,7 +153,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
 
   private void resetNextIteration(CustomApprovalInstance instance) {
     approvalInstanceService.resetNextIterations(instance.getId(), instance.recalculateNextIterations());
-    customApprovalInstanceHandler.wakeup();
+    irregularApprovalInstanceHandler.wakeup();
   }
 
   @Override

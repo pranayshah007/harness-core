@@ -23,4 +23,5 @@ public class OrchestrationStepEnvVariables {
   String stepExecutionId;
   String stepIdentifier;
   String sscaCoreUrl;
+  boolean sscaManagerEnabled;
 }

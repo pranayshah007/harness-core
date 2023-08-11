@@ -81,7 +81,7 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
     Map<String, String> sscaEnvVarMap =
         sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance, Type.K8);
     assertThat(sscaEnvVarMap).isNotNull().isNotEmpty();
-    assertThat(sscaEnvVarMap).hasSize(9);
+    assertThat(sscaEnvVarMap).hasSize(10);
     assertThat(sscaEnvVarMap.get(PLUGIN_TOOL)).isEqualTo(SbomOrchestrationToolType.SYFT.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_FORMAT)).isEqualTo(SyftOrchestrationFormat.SPDX_JSON.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_SBOMSOURCE)).isEqualTo("image:tag");
@@ -164,7 +164,7 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
     Map<String, String> sscaEnvVarMap =
         sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance, Type.VM);
     assertThat(sscaEnvVarMap).isNotNull().isNotEmpty();
-    assertThat(sscaEnvVarMap).hasSize(11);
+    assertThat(sscaEnvVarMap).hasSize(12);
     assertThat(sscaEnvVarMap.get(PLUGIN_TOOL)).isEqualTo(SbomOrchestrationToolType.SYFT.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_FORMAT)).isEqualTo(SyftOrchestrationFormat.SPDX_JSON.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_SBOMSOURCE)).isEqualTo("image:tag");
