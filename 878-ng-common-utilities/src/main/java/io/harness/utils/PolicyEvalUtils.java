@@ -24,8 +24,7 @@ import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.OpaPolicySetEvaluationResponse;
 import io.harness.plancreator.policy.PolicyConfig;
-import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.v1.StepElementParametersV1;
+import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -153,17 +152,7 @@ public class PolicyEvalUtils {
 
   public StepResponse evalPolicies(
       Ambiance ambiance, StepParameters stepParameters, StepResponse stepResponse, OpaServiceClient opaServiceClient) {
-    PolicyConfig enforce;
-    String name;
-    if (stepParameters instanceof StepElementParameters) {
-      StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
-      enforce = stepElementParameters.getEnforce();
-      name = stepElementParameters.getName();
-    } else {
-      StepElementParametersV1 stepElementParameters = (StepElementParametersV1) stepParameters;
-      enforce = stepElementParameters.getEnforce();
-      name = stepElementParameters.getName();
-    }
+    PolicyConfig enforce = StepParametersUtilsV1.getPolicyConfig(stepParameters);
     if (enforce == null || ParameterField.isNull(enforce.getPolicySets())
         || isEmpty(enforce.getPolicySets().getValue())) {
       return stepResponse;
@@ -173,8 +162,8 @@ public class PolicyEvalUtils {
       opaEvaluationResponseHolder = SafeHttpCall.executeWithErrorMessage(
           opaServiceClient.evaluateWithCredentialsByID(AmbianceUtils.getAccountId(ambiance),
               AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
-              getPolicySetsStringForQueryParam(enforce.getPolicySets().getValue()), getEntityMetadataString(name),
-              stepResponse.getStepOutcomes()));
+              getPolicySetsStringForQueryParam(enforce.getPolicySets().getValue()),
+              getEntityMetadataString(StepParametersUtilsV1.getName(stepParameters)), stepResponse.getStepOutcomes()));
     } catch (InvalidRequestException ex) {
       log.error(PolicyConstants.OPA_EVALUATION_ERROR_MSG, ex);
       return PolicyEvalUtils.buildPolicyEvaluationErrorStepResponse(ex.getMessage(), stepResponse);

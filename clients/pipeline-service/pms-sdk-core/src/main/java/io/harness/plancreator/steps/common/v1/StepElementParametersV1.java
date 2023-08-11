@@ -14,7 +14,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.sdk.core.steps.io.v1.StepParametersV1;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
@@ -32,7 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("StepElementParametersV1")
 @RecasterAlias("io.harness.plancreator.steps.common.v1.StepElementParametersV1")
-public class StepElementParametersV1 implements StepParametersV1 {
+public class StepElementParametersV1 implements StepBaseParameters {
   String uuid;
   String identifier;
   String name;

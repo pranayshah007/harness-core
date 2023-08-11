@@ -28,7 +28,7 @@ import io.harness.execution.step.jira.update.JiraUpdateStepExecutionDetails;
 import io.harness.jira.JiraActionNG;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -39,6 +39,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
@@ -55,7 +56,7 @@ import java.util.concurrent.ExecutorService;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
-public class JiraUpdateStep extends PipelineTaskExecutable<StepElementParameters, JiraTaskNGResponse> {
+public class JiraUpdateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.JIRA_UPDATE_STEP_TYPE;
 
   @Inject private JiraStepHelperService jiraStepHelperService;
@@ -64,11 +65,12 @@ public class JiraUpdateStep extends PipelineTaskExecutable<StepElementParameters
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-    JiraUpdateSpecParameters specParameters = (JiraUpdateSpecParameters) stepParameters.getSpec();
+    JiraUpdateSpecParameters specParameters =
+        (JiraUpdateSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
     String connectorRef = specParameters.getConnectorRef().getValue();
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(connectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -80,8 +82,9 @@ public class JiraUpdateStep extends PipelineTaskExecutable<StepElementParameters
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    JiraUpdateSpecParameters specParameters = (JiraUpdateSpecParameters) stepParameters.getSpec();
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
+    JiraUpdateSpecParameters specParameters =
+        (JiraUpdateSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
     JiraTaskNGParametersBuilder paramsBuilder =
         JiraTaskNGParameters.builder()
             .action(JiraActionNG.UPDATE_ISSUE)
@@ -96,15 +99,16 @@ public class JiraUpdateStep extends PipelineTaskExecutable<StepElementParameters
             .delegateSelectors(
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()));
     return jiraStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
-        specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(), "Jira Task: Update Issue",
-        TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
+        specParameters.getConnectorRef().getValue(), StepParametersUtilsV1.getStepTimeout(stepParameters).getValue(),
+        "Jira Task: Update Issue", TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<JiraTaskNGResponse> responseSupplier) throws Exception {
-    dashboardExecutorService.submit(
-        () -> updateJiraUpdateStepExecutionDetailsFromResponse(ambiance, responseSupplier, stepParameters.getName()));
+    dashboardExecutorService.submit(()
+                                        -> updateJiraUpdateStepExecutionDetailsFromResponse(
+                                            ambiance, responseSupplier, StepParametersUtilsV1.getName(stepParameters)));
     return jiraStepHelperService.prepareStepResponse(responseSupplier);
   }
 
@@ -135,7 +139,7 @@ public class JiraUpdateStep extends PipelineTaskExecutable<StepElementParameters
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

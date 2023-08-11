@@ -17,7 +17,7 @@ import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNow
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
@@ -25,6 +25,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
@@ -39,18 +40,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(CDC)
-public class ServiceNowUpdateStep extends PipelineTaskExecutable<StepElementParameters, ServiceNowTaskNGResponse> {
+public class ServiceNowUpdateStep extends PipelineTaskExecutable<ServiceNowTaskNGResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SERVICE_NOW_UPDATE_STEP_TYPE;
 
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private ServiceNowStepHelperService serviceNowStepHelperService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-    ServiceNowUpdateSpecParameters specParameters = (ServiceNowUpdateSpecParameters) stepParameters.getSpec();
+    ServiceNowUpdateSpecParameters specParameters =
+        (ServiceNowUpdateSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
     String connectorRef = specParameters.getConnectorRef().getValue();
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(connectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -62,8 +64,9 @@ public class ServiceNowUpdateStep extends PipelineTaskExecutable<StepElementPara
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    ServiceNowUpdateSpecParameters specParameters = (ServiceNowUpdateSpecParameters) stepParameters.getSpec();
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
+    ServiceNowUpdateSpecParameters specParameters =
+        (ServiceNowUpdateSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
     ServiceNowTaskNGParametersBuilder paramsBuilder =
         ServiceNowTaskNGParameters.builder()
             .action(ServiceNowActionNG.UPDATE_TICKET)
@@ -75,18 +78,18 @@ public class ServiceNowUpdateStep extends PipelineTaskExecutable<StepElementPara
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
             .fields(ServiceNowStepUtils.processServiceNowFieldsInSpec(specParameters.getFields()));
     return serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
-        specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(),
+        specParameters.getConnectorRef().getValue(), StepParametersUtilsV1.getStepTimeout(stepParameters).getValue(),
         "ServiceNow Task: Update Ticket", TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<ServiceNowTaskNGResponse> responseSupplier) throws Exception {
     return serviceNowStepHelperService.prepareStepResponse(responseSupplier);
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

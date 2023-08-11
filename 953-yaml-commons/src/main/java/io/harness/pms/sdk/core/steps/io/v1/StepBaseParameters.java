@@ -9,4 +9,4 @@ package io.harness.pms.sdk.core.steps.io.v1;
 
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
-public interface StepParametersV1 extends StepParameters {}
+public interface StepBaseParameters extends StepParameters {}

@@ -24,7 +24,7 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
@@ -32,6 +32,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
@@ -46,7 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(CDC)
-public class ServiceNowImportSetStep extends PipelineTaskExecutable<StepElementParameters, ServiceNowTaskNGResponse> {
+public class ServiceNowImportSetStep extends PipelineTaskExecutable<ServiceNowTaskNGResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SERVICE_NOW_IMPORT_SET_STEP_TYPE;
 
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -55,11 +56,12 @@ public class ServiceNowImportSetStep extends PipelineTaskExecutable<StepElementP
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-    ServiceNowImportSetSpecParameters specParameters = (ServiceNowImportSetSpecParameters) stepParameters.getSpec();
+    ServiceNowImportSetSpecParameters specParameters =
+        (ServiceNowImportSetSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
     String connectorRef = specParameters.getConnectorRef().getValue();
     if (isBlank(connectorRef)) {
       throw new InvalidRequestException("connectorRef can't be empty");
@@ -74,14 +76,16 @@ public class ServiceNowImportSetStep extends PipelineTaskExecutable<StepElementP
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     // Creating the log stream once and will close at the end of the task.
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
-    ServiceNowImportSetSpecParameters specParameters = (ServiceNowImportSetSpecParameters) stepParameters.getSpec();
+    ServiceNowImportSetSpecParameters specParameters =
+        (ServiceNowImportSetSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
     try {
       return serviceNowStepHelperService.prepareTaskRequest(getServiceNowTaskNGFromSpecParameters(specParameters),
-          ambiance, specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(),
+          ambiance, specParameters.getConnectorRef().getValue(),
+          StepParametersUtilsV1.getStepTimeout(stepParameters).getValue(),
           String.format("ServiceNow Task: %s", ServiceNowActionNG.IMPORT_SET),
           TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
     } catch (InvalidRequestException ex) {
@@ -91,7 +95,7 @@ public class ServiceNowImportSetStep extends PipelineTaskExecutable<StepElementP
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<ServiceNowTaskNGResponse> responseSupplier) throws Exception {
     try {
       return serviceNowStepHelperService.prepareImportSetStepResponse(responseSupplier);
@@ -102,8 +106,8 @@ public class ServiceNowImportSetStep extends PipelineTaskExecutable<StepElementP
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   private ServiceNowTaskNGParametersBuilder getServiceNowTaskNGFromSpecParameters(
