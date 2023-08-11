@@ -12,6 +12,8 @@ WORKDIR /app
 ENV BUILD_PURPOSE=DEVELOPMENT
 RUN chmod +x \
  /app/product/log-service/build/feature_build.sh \
+ /app/scripts/bazel/generate_credentials.sh \
+ && /app/scripts/bazel/generate_credentials.sh \
  && /app/product/log-service/build/feature_build.sh
 
 FROM us.gcr.io/platform-205701/ubi/ubi-go:8.8
