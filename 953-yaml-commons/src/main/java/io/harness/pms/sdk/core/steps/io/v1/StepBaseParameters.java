@@ -13,8 +13,10 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 
 public interface StepBaseParameters extends StepParameters {
+  String getIdentifier();
+  String getName();
+  String getType();
   ParameterField<String> getTimeout();
   SpecParameters getSpec();
-  String getName();
   PolicyConfig getEnforce();
 }

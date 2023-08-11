@@ -23,8 +23,7 @@ import com.google.inject.Inject;
 
 // Task Executable with RBAC, Rollback and postTaskValidation
 @OwnedBy(PIPELINE)
-public abstract class PipelineTaskExecutable<R extends ResponseData>
-    extends TaskExecutableWithCapabilities<StepBaseParameters, R> {
+public abstract class PipelineTaskExecutable<R extends ResponseData> extends TaskExecutableWithCapabilities<R> {
   @Inject OpaServiceClient opaServiceClient;
 
   // evaluating policies added in advanced section of the steps and updating status and failure info in the step

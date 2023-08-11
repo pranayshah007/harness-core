@@ -14,11 +14,11 @@ import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
 import io.harness.delegate.beans.CDDelegateTaskNotifyResponseData;
 import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.opaclient.OpaServiceClient;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.executable.TaskExecutableWithCapabilities;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -30,15 +30,14 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Slf4j
 // Task Executable with RBAC, Rollback and postTaskValidation
-public abstract class CdTaskExecutable<R extends ResponseData>
-    extends TaskExecutableWithCapabilities<StepElementParameters, R> {
+public abstract class CdTaskExecutable<R extends ResponseData> extends TaskExecutableWithCapabilities<R> {
   @Inject OpaServiceClient opaServiceClient;
   @Inject StageExecutionInstanceInfoService stageExecutionInstanceInfoService;
 
   // evaluating policies added in advanced section of the steps and updating status and failure info in the step
   // response
   public StepResponse postTaskValidate(
-      Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepResponse stepResponse) {
     if (Status.SUCCEEDED.equals(stepResponse.getStatus())) {
       return PolicyEvalUtils.evalPolicies(ambiance, stepParameters, stepResponse, opaServiceClient);
     }
@@ -46,14 +45,14 @@ public abstract class CdTaskExecutable<R extends ResponseData>
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<R> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContext(
+      Ambiance ambiance, StepBaseParameters stepParameters, ThrowingSupplier<R> responseDataSupplier) throws Exception {
     saveNodeInfo(ambiance, responseDataSupplier);
     return handleTaskResultWithSecurityContextAndNodeInfo(ambiance, stepParameters, responseDataSupplier);
   }
 
-  public abstract StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, ThrowingSupplier<R> responseDataSupplier) throws Exception;
+  public abstract StepResponse handleTaskResultWithSecurityContextAndNodeInfo(
+      Ambiance ambiance, StepBaseParameters stepParameters, ThrowingSupplier<R> responseDataSupplier) throws Exception;
 
   private void saveNodeInfo(Ambiance ambiance, ThrowingSupplier<R> responseSupplier) {
     if (responseSupplier != null) {

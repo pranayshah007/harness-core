@@ -23,16 +23,17 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 // Task Executable with RBAC, Rollback and postTaskValidation
-public abstract class TaskExecutableWithCapabilities<T extends StepBaseParameters, R extends ResponseData>
-    implements TaskExecutableWithRbac<T, R> {
+public abstract class TaskExecutableWithCapabilities<R extends ResponseData>
+    implements TaskExecutableWithRbac<StepBaseParameters, R> {
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Override
-  public void handleFailureInterrupt(Ambiance ambiance, T stepParameters, Map<String, String> metadata) {
+  public void handleFailureInterrupt(
+      Ambiance ambiance, StepBaseParameters stepParameters, Map<String, String> metadata) {
     RollbackExecutableUtility.publishRollbackInfo(ambiance, stepParameters, metadata, executionSweepingOutputService);
   }
   @Override
-  public StepResponse handleTaskResult(Ambiance ambiance, T stepParameters, ThrowingSupplier<R> responseDataSupplier)
-      throws Exception {
+  public StepResponse handleTaskResult(
+      Ambiance ambiance, StepBaseParameters stepParameters, ThrowingSupplier<R> responseDataSupplier) throws Exception {
     try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
       StepResponse stepResponse = handleTaskResultWithSecurityContext(ambiance, stepParameters, responseDataSupplier);
       return postTaskValidate(ambiance, stepParameters, stepResponse);
@@ -41,7 +42,8 @@ public abstract class TaskExecutableWithCapabilities<T extends StepBaseParameter
 
   // evaluating policies added in advanced section of the steps and updating status and failure info in the step
   // response
-  public StepResponse postTaskValidate(Ambiance ambiance, T stepParameters, StepResponse stepResponse) {
+  public StepResponse postTaskValidate(
+      Ambiance ambiance, StepBaseParameters stepParameters, StepResponse stepResponse) {
     return stepResponse;
   }
 }
