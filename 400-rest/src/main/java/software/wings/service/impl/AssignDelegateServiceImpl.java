@@ -941,7 +941,8 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     for (String delegateId : activeDelegates) {
       Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId);
       boolean canAssignSelector = canAssignSelectors(delegate, delegateTask.getExecutionCapabilities());
-      if (!canAssignSelector) {
+      boolean canAssignOwner = canAssignOwner(delegate, delegateTask.getSetupAbstractions());
+      if (!canAssignSelector && canAssignOwner) {
         selectorMismatchedDelegates.add(delegate.getHostName());
       }
     }
