@@ -49,7 +49,7 @@ public class ChecksApiImpl implements ChecksApi {
   }
 
   @Override
-  public Response getCheck(String checkId, Boolean isCustom, String harnessAccount) {
+  public Response getCheck(String checkId, String harnessAccount, Boolean isCustom) {
     try {
       CheckDetails checkDetails = checkService.getCheckDetails(harnessAccount, checkId, isCustom);
       CheckDetailsResponse response = new CheckDetailsResponse();

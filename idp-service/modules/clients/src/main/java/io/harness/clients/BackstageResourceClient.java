@@ -29,6 +29,7 @@ public interface BackstageResourceClient {
   String HARNESS_REFRESH_API = "{accountIdentifier}/idp/api/harness/provider";
 
   @GET Call<Object> getCatalogEntities(@Url String url);
+  @GET Call<Object> getCatalogEntityFacets(@Url String url);
 
   @POST(CATALOG_API + "/locations")
   Call<Object> createCatalogLocation(@Path("accountIdentifier") String accountIdentifier,

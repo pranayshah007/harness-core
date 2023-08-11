@@ -10,7 +10,7 @@ package io.harness.idp.scorecard.scorecards.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.scorecards.beans.ScorecardCheckFullDetails;
-import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
+import io.harness.spec.server.idp.v1.model.Facets;
 import io.harness.spec.server.idp.v1.model.Scorecard;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
@@ -27,4 +27,5 @@ public interface ScorecardService {
   void updateScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier);
   ScorecardDetailsResponse getScorecardDetails(String accountIdentifier, String identifier);
   void deleteScorecard(String accountIdentifier, String identifier);
+  Facets getAllEntityFacets(String accountIdentifier, String kind);
 }

@@ -10,27 +10,33 @@ package io.harness.idp.scorecard.scorecards.service;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
+import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
 
 import static java.lang.String.format;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.clients.BackstageResourceClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.service.CheckService;
+import io.harness.idp.scorecard.scorecards.beans.BackstageCatalogEntityFacets;
 import io.harness.idp.scorecard.scorecards.beans.ScorecardCheckFullDetails;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scorecards.mappers.ScorecardCheckFullDetailsMapper;
 import io.harness.idp.scorecard.scorecards.mappers.ScorecardDetailsMapper;
 import io.harness.idp.scorecard.scorecards.mappers.ScorecardMapper;
 import io.harness.idp.scorecard.scorecards.repositories.ScorecardRepository;
+import io.harness.spec.server.idp.v1.model.Facets;
 import io.harness.spec.server.idp.v1.model.Scorecard;
 import io.harness.spec.server.idp.v1.model.ScorecardChecks;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
 import java.util.ArrayList;
@@ -49,13 +55,21 @@ public class ScorecardServiceImpl implements ScorecardService {
   private final ScorecardRepository scorecardRepository;
   private final CheckService checkService;
   private final SetupUsageProducer setupUsageProducer;
+  private final BackstageResourceClient backstageResourceClient;
+  private static final ObjectMapper mapper =
+      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  private static final String CATALOG_API = "%s/idp/api/catalog/entity-facets?filter=kind=%s&facet=%s";
+  private static final String OWNERS_FILTER = "relations.ownedBy";
+  private static final String TAGS_FILTER = "metadata.tags";
+  private static final String LIFECYCLE_FILTER = "spec.lifecycle";
 
   @Inject
-  public ScorecardServiceImpl(
-      ScorecardRepository scorecardRepository, CheckService checkService, SetupUsageProducer setupUsageProducer) {
+  public ScorecardServiceImpl(ScorecardRepository scorecardRepository, CheckService checkService,
+      SetupUsageProducer setupUsageProducer, BackstageResourceClient backstageResourceClient) {
     this.scorecardRepository = scorecardRepository;
     this.checkService = checkService;
     this.setupUsageProducer = setupUsageProducer;
+    this.backstageResourceClient = backstageResourceClient;
   }
 
   @Override
@@ -175,5 +189,51 @@ public class ScorecardServiceImpl implements ScorecardService {
       throw new InvalidRequestException("Could not delete scorecard");
     }
     setupUsageProducer.deleteScorecardSetupUsage(accountIdentifier, identifier);
+  }
+
+  @Override
+  public Facets getAllEntityFacets(String accountIdentifier, String kind) {
+    Facets facets = new Facets();
+    List<BackstageCatalogEntityFacets> entityFacets = new ArrayList<>();
+    entityFacets.add(getEntityResponse(accountIdentifier, kind, OWNERS_FILTER));
+    entityFacets.add(getEntityResponse(accountIdentifier, kind, TAGS_FILTER));
+    entityFacets.add(getEntityResponse(accountIdentifier, kind, LIFECYCLE_FILTER));
+
+    for (BackstageCatalogEntityFacets backstageCatalogEntityFacets : entityFacets) {
+      populateFacets(backstageCatalogEntityFacets, facets);
+    }
+    return facets;
+  }
+
+  private BackstageCatalogEntityFacets getEntityResponse(String accountIdentifier, String kind, String filter) {
+    String url = String.format(CATALOG_API, accountIdentifier, kind, filter);
+    return mapper.convertValue(
+        getGeneralResponse(backstageResourceClient.getCatalogEntityFacets(url)), BackstageCatalogEntityFacets.class);
+  }
+
+  private void populateFacets(BackstageCatalogEntityFacets backstageCatalogEntityFacets, Facets facets) {
+    for (Map.Entry<String, List<BackstageCatalogEntityFacets.FacetType>> entry :
+        backstageCatalogEntityFacets.getFacets().entrySet()) {
+      switch (entry.getKey()) {
+        case OWNERS_FILTER:
+          facets.setOwners(entry.getValue()
+                               .stream()
+                               .map(BackstageCatalogEntityFacets.FacetType::getValue)
+                               .collect(Collectors.toList()));
+          break;
+        case TAGS_FILTER:
+          facets.setTags(entry.getValue()
+                             .stream()
+                             .map(BackstageCatalogEntityFacets.FacetType::getValue)
+                             .collect(Collectors.toList()));
+          break;
+        case LIFECYCLE_FILTER:
+          facets.setLifecycle(entry.getValue()
+                                  .stream()
+                                  .map(BackstageCatalogEntityFacets.FacetType::getValue)
+                                  .collect(Collectors.toList()));
+          break;
+      }
+    }
   }
 }
