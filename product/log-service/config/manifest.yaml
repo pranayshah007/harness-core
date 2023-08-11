@@ -1,3 +1,3 @@
-DOCKER_FILE_PATH: /harness/harness-core/product/log-service/docker/Dockerfile-log-service-multistage
+DOCKER_FILE_PATH: /harness/harness-core/product/log-service/docker/Dockerfile-logservice-multistage
 CONTEXT_PATH: $(bazelisk info bazel-bin)/product/log-service
 HELM_CHART_SOURCE_DIRECTORY: harness-core/product/log-service/chart
