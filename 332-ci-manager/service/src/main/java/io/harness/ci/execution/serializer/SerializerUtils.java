@@ -166,7 +166,7 @@ public class SerializerUtils {
     String cmd;
     CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
     if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
-      cmd = "set -xe; ";
+      cmd = "set -e; ";
     } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
       cmd = "$ErrorActionPreference = 'Stop' \n";
     } else if (shellType == CIShellType.PYTHON) {
