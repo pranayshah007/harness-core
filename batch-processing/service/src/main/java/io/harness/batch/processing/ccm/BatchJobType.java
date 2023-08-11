@@ -33,9 +33,9 @@ import org.springframework.batch.core.Job;
 public enum BatchJobType {
   AWS_EC2_SERVICE_RECOMMENDATION(10, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER_ECS),
   BILLING_DATA_PIPELINE(50, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
-  SYNC_BILLING_REPORT_S3(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
-  SYNC_BILLING_REPORT_AZURE(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
-  SYNC_BILLING_REPORT_GCP(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
+  SYNC_BILLING_REPORT_S3(100, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER),
+  SYNC_BILLING_REPORT_AZURE(100, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER),
+  SYNC_BILLING_REPORT_GCP(100, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER),
   SYNC_BILLING_REPORT_S3_TO_CLICKHOUSE(105, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
   AWS_ECS_CLUSTER_SYNC(110, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER_ECS),
   AZURE_VM_RECOMMENDATION(110, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER),
