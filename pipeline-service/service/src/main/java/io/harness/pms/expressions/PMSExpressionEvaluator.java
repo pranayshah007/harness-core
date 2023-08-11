@@ -115,7 +115,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     });
 
     addToContext("serviceVariableOverrides", new ServiceVariableOverridesFunctor(ambiance, pmsEngineExpressionService));
-    addToContext("approvedBy", new ApprovalFunctor(ambiance, pmsOutcomeService));
+    addToContext("approval", new ApprovalFunctor(ambiance, pmsOutcomeService));
 
     // Group aliases
     // TODO: Replace with step category

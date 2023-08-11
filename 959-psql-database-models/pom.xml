@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>software.wings</groupId>
+        <artifactId>portal</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>959-psql-database-models</artifactId>
+    <properties>
+        <jdbc.driver>org.postgresql.Driver</jdbc.driver>
+        <skip.jooq.generation>false</skip.jooq.generation>
+        <timescaledb.password>password</timescaledb.password>
+        <timescaledb.url>jdbc:postgresql://localhost:5432/harness</timescaledb.url>
+        <timescaledb.user>admin</timescaledb.user>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq</artifactId>
+            <version>${jooq.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgres.jdbc.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen-maven</artifactId>
+                <version>${jooq.version}</version>
+                <!-- <configuration/> has to be outside <executions/> for the code-gen plugin to work standalone -->
+                <configuration>
+                    <skip>${skip.jooq.generation}</skip>
+                    <jdbc>
+                        <driver>${jdbc.driver}</driver>
+                        <url>${timescaledb.url}</url>
+                        <user>${timescaledb.user}</user>
+                        <password>${timescaledb.password}</password>
+                    </jdbc>
+                    <generator>
+                        <database>
+                            <name>org.jooq.meta.postgres.PostgresDatabase</name>
+                            <!-- table names for which we want to gnerate the pojo -->
+                            <includes>
+                                anomalies |
+                                billing_data |
+                                ce_recommendations |
+                                environments |
+                                kubernetes_utilization_data |
+                                module_licenses |
+                                ng_instance_stats |
+                                node_info |
+                                node_pool_aggregated |
+                                pipeline_execution_summary_cd |
+                                pipeline_execution_summary_ci |
+                                pipelines |
+                                pod_info |
+                                service_infra_info |
+                                services |
+                                utilization_data |
+                                workload_info |
+                                services_license_daily_report |
+                                service_instances_license_daily_report
+                            </includes>
+                            <excludes />
+                            <inputSchema>public</inputSchema>
+                        </database>
+                        <generate>
+                            <pojos>true</pojos>
+                            <pojosEqualsAndHashCode>true</pojosEqualsAndHashCode>
+                            <javaTimeTypes>true</javaTimeTypes>
+                            <fluentSetters>true</fluentSetters>
+                            <springAnnotations>true</springAnnotations>
+                        </generate>
+                        <target>
+                            <packageName>io.harness.timescaledb</packageName>
+                            <directory>${project.basedir}/src/generated/java/</directory>
+                        </target>
+                    </generator>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-postgre</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

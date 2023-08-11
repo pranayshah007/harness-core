@@ -10,6 +10,7 @@ package io.harness.engine.pms.data;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
@@ -30,6 +31,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.data.StepOutcomeRef;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.Outcome;
@@ -182,6 +184,30 @@ public class PmsOutcomeServiceImplTest extends OrchestrationTestBase {
                    .map(oc -> (RecastOrchestrationUtils.fromJson(oc, DummyOrchestrationOutcome.class)).getTest())
                    .collect(Collectors.toList()))
         .containsExactlyInAnyOrder("test1", "test2");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void shouldFetchOutcomesByStepTypeAndCategory() {
+    String planExecutionId = generateUuid();
+    Ambiance ambiance = AmbianceTestUtils.buildAmbiance(planExecutionId);
+    String outcomeName = "outcome";
+    Ambiance ambiance1 = AmbianceTestUtils.buildAmbiance(planExecutionId);
+    String outcomeName1 = "outcome1";
+
+    pmsOutcomeService.consume(ambiance, outcomeName,
+        RecastOrchestrationUtils.toJson(DummyOrchestrationOutcome.builder().test("test1").build()), null);
+    pmsOutcomeService.consume(ambiance1, outcomeName1,
+        RecastOrchestrationUtils.toJson(DummyOrchestrationOutcome.builder().test("test2").build()), null);
+
+    List<String> outcomes = pmsOutcomeService.fetchOutcomesByStepTypeAndCategory(
+        planExecutionId, "DEPLOY_SECTION", StepCategory.STEP.name());
+    assertThat(outcomes.size()).isEqualTo(2);
+    assertThat(outcomes.stream()
+                   .map(oc -> (RecastOrchestrationUtils.fromJson(oc, DummyOrchestrationOutcome.class)).getTest())
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("test2", "test1");
   }
 
   @Test

@@ -7,12 +7,10 @@
 
 package io.harness.pms.expressions.functors;
 
-import static java.lang.String.format;
-
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.data.PmsOutcomeService;
-import io.harness.exception.InvalidArgumentsException;
-import io.harness.expression.LateBindingMap;
+import io.harness.exception.EngineFunctorException;
+import io.harness.expression.LateBindingValue;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.resolver.outcome.mapper.PmsOutcomeMapper;
@@ -21,9 +19,7 @@ import io.harness.steps.approval.step.harness.HarnessApprovalStep;
 
 import java.util.List;
 
-public class ApprovalFunctor extends LateBindingMap {
-  private static final String NAME_PROPERTY = "name";
-
+public class ApprovalFunctor implements LateBindingValue {
   private final Ambiance ambiance;
   private final PmsOutcomeService pmsOutcomeService;
   ;
@@ -34,11 +30,7 @@ public class ApprovalFunctor extends LateBindingMap {
   }
 
   @Override
-  public synchronized Object get(Object key) {
-    if (!(key instanceof String)) {
-      return null;
-    }
-
+  public Object bind() {
     List<String> outcomes = pmsOutcomeService.fetchOutcomesByStepTypeAndCategory(ambiance.getPlanExecutionId(),
         HarnessApprovalStep.STEP_TYPE.getType(), HarnessApprovalStep.STEP_TYPE.getStepCategory().name());
     if (EmptyPredicate.isEmpty(outcomes)) {
@@ -47,16 +39,10 @@ public class ApprovalFunctor extends LateBindingMap {
 
     Outcome outcome = PmsOutcomeMapper.convertJsonToOutcome(outcomes.get(0));
     if (!(outcome instanceof HarnessApprovalOutcome)) {
-      return null;
+      throw new EngineFunctorException(String.format("Found invalid outcome for approval expression, type: %s",
+          outcome != null ? outcome.getClass().getName() : null));
     }
 
-    String approvalProperty = (String) key;
-    HarnessApprovalOutcome approvalOutcome = (HarnessApprovalOutcome) outcome;
-
-    if (NAME_PROPERTY.equals(approvalProperty)) {
-      return approvalOutcome.getApprovalActivities().get(0).getUser().getName();
-    } else {
-      throw new InvalidArgumentsException(format("Unsupported approval property, property: %s", approvalProperty));
-    }
+    return outcome;
   }
 }
