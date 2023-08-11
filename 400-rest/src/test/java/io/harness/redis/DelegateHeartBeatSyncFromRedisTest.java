@@ -40,15 +40,12 @@ import org.redisson.api.RedissonClient;
 public class DelegateHeartBeatSyncFromRedisTest extends WingsBaseTest {
   @Inject @InjectMocks private DelegateHeartBeatSyncFromRedis delegateHeartBeatSyncFromRedis;
 
-  @Mock private DelegateHeartBeatSyncFromRedis delegateHeartBeatSyncFromRedisMock;
   @Inject private HPersistence persistence;
   @Mock DelegateCache delegateCache;
   @Mock private RedissonClient client;
 
   private static final long NEW_HEARTBEAT_VALUE = 1691116575000L;
   private static final long HEARTBEAT_VALUE = 1691124412000L;
-
-  private PersistentLocker persistentLocker;
 
   @Before
   public void setup() {}
@@ -62,7 +59,17 @@ public class DelegateHeartBeatSyncFromRedisTest extends WingsBaseTest {
     when(client.getLock(anyString())).thenReturn(rLock);
     when(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).thenReturn(false);
     when(persistentLocker.tryToAcquireLock(any(), any(), any())).thenReturn(mock(AcquiredNoopLock.class));
+
+    String accountId = generateUuid();
+    Delegate delegate1 = createDelegateBuilder(accountId);
+    persistence.save(delegate1);
+    // update cache with new HB
+    delegate1.setLastHeartBeat(NEW_HEARTBEAT_VALUE);
+    when(delegateCache.get(accountId, delegate1.getUuid())).thenReturn(delegate1);
+
     delegateHeartBeatSyncFromRedis.run();
+    Delegate delegate1Updated = persistence.get(Delegate.class, delegate1.getUuid());
+    assertThat(delegate1Updated.getLastHeartBeat()).isEqualTo(NEW_HEARTBEAT_VALUE);
   }
 
   @Test
