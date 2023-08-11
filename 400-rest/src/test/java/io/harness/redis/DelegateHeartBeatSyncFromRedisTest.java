@@ -11,11 +11,17 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.JENNY;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.lock.PersistentLocker;
+import io.harness.lock.noop.AcquiredNoopLock;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.service.intfc.DelegateCache;
@@ -23,18 +29,41 @@ import io.harness.service.intfc.DelegateCache;
 import software.wings.WingsBaseTest;
 
 import com.google.inject.Inject;
+import java.util.concurrent.TimeUnit;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 public class DelegateHeartBeatSyncFromRedisTest extends WingsBaseTest {
   @Inject @InjectMocks private DelegateHeartBeatSyncFromRedis delegateHeartBeatSyncFromRedis;
+
+  @Mock private DelegateHeartBeatSyncFromRedis delegateHeartBeatSyncFromRedisMock;
   @Inject private HPersistence persistence;
   @Mock DelegateCache delegateCache;
+  @Mock private RedissonClient client;
 
   private static final long NEW_HEARTBEAT_VALUE = 1691116575000L;
   private static final long HEARTBEAT_VALUE = 1691124412000L;
+
+  private PersistentLocker persistentLocker;
+
+  @Before
+  public void setup() {}
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testSyncJobLock() throws InterruptedException {
+    RLock rLock = mock(RLock.class);
+    PersistentLocker persistentLocker = mock(PersistentLocker.class);
+    when(client.getLock(anyString())).thenReturn(rLock);
+    when(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).thenReturn(false);
+    when(persistentLocker.tryToAcquireLock(any(), any(), any())).thenReturn(mock(AcquiredNoopLock.class));
+    delegateHeartBeatSyncFromRedis.run();
+  }
 
   @Test
   @Owner(developers = JENNY)
