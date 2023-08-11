@@ -106,7 +106,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     ExecutionMetadata metadata = planExecution.getMetadata();
     String pipelineId = metadata.getPipelineIdentifier();
     Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, true);
     if (pipelineEntity.isEmpty()) {
       return;
     }
@@ -172,7 +172,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .planExecutionId(planExecutionId)
             .name(pipelineEntity.get().getName())
             .inputSetYaml(planExecutionMetadata.getInputSetYaml())
-            .pipelineTemplate(getPipelineTemplate(pipelineEntity.get(), planExecutionMetadata))
+            .pipelineTemplate(getPipelineTemplate(planExecutionMetadata))
             .internalStatus(planExecution.getStatus())
             .status(ExecutionStatus.getExecutionStatus(planExecution.getStatus()))
             .startTs(planExecution.getStartTs())
@@ -199,20 +199,21 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .connectorRef(
                 EmptyPredicate.isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
             .executionMode(metadata.getExecutionMode())
-            .pipelineVersion(PipelineYamlHelper.getVersion(pipelineEntity.get().getYaml()))
+            .pipelineVersion(PipelineYamlHelper.getVersion(planExecutionMetadata.getPipelineYaml()))
             .build();
     pmsExecutionSummaryService.save(pipelineExecutionSummaryEntity);
+    unsetPipelineYamlInPlanExecutionMetadata(planExecutionMetadata);
     notificationHelper.sendNotification(
         orchestrationStartInfo.getAmbiance(), PipelineEventType.PIPELINE_START, null, null);
   }
 
-  private String getPipelineTemplate(PipelineEntity pipelineEntity, PlanExecutionMetadata planExecutionMetadata) {
+  private String getPipelineTemplate(PlanExecutionMetadata planExecutionMetadata) {
     StagesExecutionMetadata stagesExecutionMetadata = planExecutionMetadata.getStagesExecutionMetadata();
     if (stagesExecutionMetadata != null && stagesExecutionMetadata.isStagesExecution()) {
       return InputSetTemplateHelper.createTemplateFromPipelineForGivenStages(
-          pipelineEntity.getYaml(), stagesExecutionMetadata.getStageIdentifiers());
+          planExecutionMetadata.getPipelineYaml(), stagesExecutionMetadata.getStageIdentifiers());
     }
-    return InputSetTemplateHelper.createTemplateFromPipeline(pipelineEntity.getYaml());
+    return InputSetTemplateHelper.createTemplateFromPipeline(planExecutionMetadata.getPipelineYaml());
   }
 
   private void updateExecutionInfoInPipelineEntity(String accountId, String orgId, String projectId, String pipelineId,
@@ -234,5 +235,9 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     executionSummaryInfo.setLastExecutionTs(todaysDate.getTime());
     executionSummaryInfo.setLastExecutionId(planExecutionId);
     pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
+  }
+
+  private void unsetPipelineYamlInPlanExecutionMetadata(PlanExecutionMetadata planExecutionMetadata) {
+    planExecutionMetadata.setPipelineYaml(null);
   }
 }

@@ -72,6 +72,11 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
 
   private ExecutionSummaryCreateEventHandler executionSummaryCreateEventHandler;
 
+  private final String ACCOUNT_IDENTIFIER = "accId";
+  private final String ORG_IDENTIFIER = "orgId";
+  private final String PROJECT_IDENTIFIER = "projId";
+  private final String PIPELINE_IDENTIFIER = "pipelineId";
+
   @Before
   public void setUp() throws Exception {
     executionSummaryCreateEventHandler = new ExecutionSummaryCreateEventHandler(pmsPipelineService, planService,
@@ -88,15 +93,16 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     Ambiance ambiance = Ambiance.newBuilder()
                             .setPlanExecutionId(planExecutionId)
                             .setPlanId(planId)
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
                             .build();
     PlanExecutionMetadata planExecutionMetadata =
         PlanExecutionMetadata.builder()
             .planExecutionId(ambiance.getPlanExecutionId())
             .inputSetYaml("some-yaml")
             .yaml("pipeline :\n  identifier: pipelineId")
+            .pipelineYaml("pipeline :\n  identifier: pipelineId")
             .stagesExecutionMetadata(StagesExecutionMetadata.builder().isStagesExecution(true).build())
             .executionInputConfigured(true)
             .allowStagesExecution(true)
@@ -111,6 +117,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
 
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .uuid(generateUuid())
+                                        .identifier(PIPELINE_IDENTIFIER)
                                         .yaml("pipeline :\n  identifier: pipelineId")
                                         .executionSummaryInfo(ExecutionSummaryInfo.builder()
                                                                   .lastExecutionStatus(ExecutionStatus.RUNNING)
@@ -179,6 +186,8 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(capturedEntity.getRollbackModeExecutionId()).isNull();
 
     verify(notificationHelper, times(1)).sendNotification(ambiance, PipelineEventType.PIPELINE_START, null, null);
+    verify(pmsPipelineService, times(1))
+        .getPipeline(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, PIPELINE_IDENTIFIER, false, true);
   }
 
   private String getFormattedDate() {
