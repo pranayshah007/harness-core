@@ -11,6 +11,8 @@ import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.rule.OwnerRule.GAURAV;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.TEJAS;
+import static io.harness.rule.OwnerRule.VITALIE;
+import static io.harness.windows.CmdUtils.WIN_RM_MARKER;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -111,5 +113,29 @@ public class LogStreamingSanitizerTest extends CategoryTest {
     logLine.setMessage(null);
     logSanitizer.sanitizeLogMessage(logLine);
     Assertions.assertThat(logLine.getMessage()).isNull();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void shouldSanitizeWinRmWhenSecretsAreAvailable() {
+    String specialCharSecret = "ab>cd<ef&gh|";
+    String specialCharSecretEscaped = "ab^>cd^<ef^&gh^|";
+    String message = "test message with secret1 and " + specialCharSecretEscaped;
+    String sanitizedMessage = "test message with " + SECRET_MASK + " and " + SECRET_MASK;
+
+    LogLine logLine = LogLine.builder().message(message).build();
+
+    Set<String> secrets = new HashSet<>();
+    secrets.add("secret1");
+    secrets.add(specialCharSecret);
+
+    LogStreamingSanitizer logStreamingSanitizer = LogStreamingSanitizer.builder().secrets(secrets).build();
+
+    logStreamingSanitizer.sanitizeLogMessage(logLine);
+    Assertions.assertThat(logLine.getMessage()).isNotEqualTo(sanitizedMessage);
+
+    logStreamingSanitizer.sanitizeLogMessage(logLine, Set.of(WIN_RM_MARKER));
+    Assertions.assertThat(logLine.getMessage()).isEqualTo(sanitizedMessage);
   }
 }

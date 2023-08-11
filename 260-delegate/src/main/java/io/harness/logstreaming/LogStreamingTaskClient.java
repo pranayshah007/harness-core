@@ -17,7 +17,10 @@ import static software.wings.beans.LogWeight.Bold;
 import static java.lang.System.currentTimeMillis;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
@@ -32,9 +35,11 @@ import software.wings.delegatetasks.DelegateLogService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -54,6 +59,8 @@ import org.jetbrains.annotations.NotNull;
  *    -> close stream
  * concurrent usage of open and close stream will result in loss of logs
  */
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Builder
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
@@ -73,6 +80,8 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   private final ITaskProgressClient taskProgressClient;
 
   @Default private final Map<String, List<LogLine>> logCache = new HashMap<>();
+
+  private Set<String> markers;
 
   @Override
   public void openStream(String baseLogKeySuffix) {
@@ -134,7 +143,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
     String logKey = getLogKey(baseLogKeySuffix);
 
-    logStreamingSanitizer.sanitizeLogMessage(logLine);
+    logStreamingSanitizer.sanitizeLogMessage(logLine, getMarkers());
     colorLog(logLine);
 
     synchronized (logCache) {
@@ -196,5 +205,13 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   @Override
   public ExecutorService obtainTaskProgressExecutor() {
     return taskProgressExecutor;
+  }
+
+  @Override
+  public Set<String> getMarkers() {
+    if (markers == null) {
+      markers = new HashSet<>();
+    }
+    return markers;
   }
 }

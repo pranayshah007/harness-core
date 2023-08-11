@@ -7,14 +7,20 @@
 
 package io.harness.delegate.beans.logstreaming;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
 import io.harness.logging.LogCallback;
 import io.harness.logstreaming.LogLine;
 
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CDP)
 public interface ILogStreamingTaskClient {
   /**
@@ -54,4 +60,6 @@ public interface ILogStreamingTaskClient {
   ExecutorService obtainTaskProgressExecutor();
 
   default void dispatchLogs() {}
+
+  Set<String> getMarkers();
 }

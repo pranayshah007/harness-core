@@ -9,6 +9,7 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.windows.CmdUtils.WIN_RM_MARKER;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -87,6 +88,7 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private DelegateResponseData runWinRm(WinrmTaskParameters parameters) {
+    getLogStreamingTaskClient().getMarkers().add(WIN_RM_MARKER);
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
     try {
