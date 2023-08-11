@@ -14,13 +14,14 @@ import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 
 import java.util.List;
 
 public interface PipelineStepMonitoredServiceResolutionService {
   ResolvedCVConfigInfo fetchAndPersistResolvedCVConfigInfo(
-      ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode);
+      Ambiance ambiance, ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode);
   default void managePerpetualTasks(ServiceEnvironmentParams serviceEnvironmentParams,
       ResolvedCVConfigInfo resolvedCVConfigInfo, String verificationJobInstanceId) {}
   List<EntityDetailProtoDTO> getReferredEntities(

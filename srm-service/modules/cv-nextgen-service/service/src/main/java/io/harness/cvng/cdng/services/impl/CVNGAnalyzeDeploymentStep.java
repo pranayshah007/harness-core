@@ -116,7 +116,7 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
     MonitoredServiceSpecType monitoredServiceType = CVNGStepUtils.getMonitoredServiceSpecType(monitoredServiceNode);
     ResolvedCVConfigInfo resolvedCVConfigInfo =
         verifyStepCvConfigServiceMap.get(monitoredServiceType)
-            .fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+            .fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode);
     String monitoredServiceIdentifier = resolvedCVConfigInfo.getMonitoredServiceIdentifier();
     MonitoredServiceParams monitoredServiceParams =
         MonitoredServiceParams.builder()
