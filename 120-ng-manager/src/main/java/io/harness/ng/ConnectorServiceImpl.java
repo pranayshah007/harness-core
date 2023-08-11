@@ -70,6 +70,7 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.ngexception.beans.ConnectorValidationErrorMetadataDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -619,6 +620,11 @@ public class ConnectorServiceImpl implements ConnectorService {
         validationFailureBuilder.errorSummary(errorSummary).errors(errorDetail);
       }
       connectorValidationResult = validationFailureBuilder.build();
+      // set Delegate taskId as the metadata
+      if (isNotEmpty((String) wingsException.getParams().get("taskId"))) {
+        wingsException.setMetadata(
+            new ConnectorValidationErrorMetadataDTO((String) wingsException.getParams().get("taskId")));
+      }
       throw wingsException;
     } finally {
       if (connectorValidationResult != null) {

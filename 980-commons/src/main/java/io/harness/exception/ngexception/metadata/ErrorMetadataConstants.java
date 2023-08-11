@@ -18,4 +18,5 @@ public interface ErrorMetadataConstants {
   String INVALID_FIELDS_ERROR = "InvalidFieldsDTO";
   String FILTER_CREATOR_ERROR = "FilterCreatorResponseError";
   String GIT_ERROR = "GitErrorMetadataDTO";
+  String CONNECTOR_VALIDATION_ERROR = "ConnectorValidationErrorMetaData";
 }

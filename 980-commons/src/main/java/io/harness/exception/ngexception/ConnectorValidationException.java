@@ -14,10 +14,17 @@ import io.harness.exception.WingsException;
 
 public class ConnectorValidationException extends WingsException {
   private static final String MESSAGE_KEY = "message";
+  private static final String DELEGATE_TASK_ID = "taskId";
 
   public ConnectorValidationException(String message) {
     super(message, null, CONNECTOR_VALIDATION_EXCEPTION, Level.ERROR, null, null);
     param(MESSAGE_KEY, message);
+  }
+
+  public ConnectorValidationException(String message, String taskId) {
+    super(message, null, CONNECTOR_VALIDATION_EXCEPTION, Level.ERROR, null, null);
+    param(MESSAGE_KEY, message);
+    param(DELEGATE_TASK_ID, taskId);
   }
 
   public ConnectorValidationException(String message, Throwable cause) {
