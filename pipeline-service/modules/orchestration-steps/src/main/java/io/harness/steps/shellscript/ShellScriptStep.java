@@ -54,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Slf4j
-public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskResponseNG> {
+public class ShellScriptStep extends PipelineTaskExecutable<StepElementParameters, ShellScriptTaskResponseNG> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SHELL_SCRIPT_STEP_TYPE;
 
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;

@@ -18,7 +18,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.executable.TaskExecutableWithCapabilities;
 import io.harness.supplier.ThrowingSupplier;
@@ -31,7 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Slf4j
 // Task Executable with RBAC, Rollback and postTaskValidation
-public abstract class CdTaskExecutable<R extends ResponseData> extends TaskExecutableWithCapabilities<R> {
+public abstract class CdTaskExecutable<R extends ResponseData>
+    extends TaskExecutableWithCapabilities<StepElementParameters, R> {
   @Inject OpaServiceClient opaServiceClient;
   @Inject StageExecutionInstanceInfoService stageExecutionInstanceInfoService;
 

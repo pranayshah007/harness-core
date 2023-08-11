@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.opaclient.OpaServiceClient;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.executable.TaskExecutableWithCapabilities;
 import io.harness.tasks.ResponseData;
@@ -23,13 +23,13 @@ import com.google.inject.Inject;
 
 // Task Executable with RBAC, Rollback and postTaskValidation
 @OwnedBy(PIPELINE)
-public abstract class PipelineTaskExecutable<R extends ResponseData> extends TaskExecutableWithCapabilities<R> {
+public abstract class PipelineTaskExecutable<T extends StepParameters, R extends ResponseData>
+    extends TaskExecutableWithCapabilities<T, R> {
   @Inject OpaServiceClient opaServiceClient;
 
   // evaluating policies added in advanced section of the steps and updating status and failure info in the step
   // response
-  public StepResponse postTaskValidate(
-      Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
+  public StepResponse postTaskValidate(Ambiance ambiance, T stepParameters, StepResponse stepResponse) {
     if (Status.SUCCEEDED.equals(stepResponse.getStatus())) {
       return PolicyEvalUtils.evalPolicies(ambiance, stepParameters, stepResponse, opaServiceClient);
     }
@@ -37,5 +37,5 @@ public abstract class PipelineTaskExecutable<R extends ResponseData> extends Tas
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, T stepParameters) {}
 }

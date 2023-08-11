@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.http;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.constants.JsonConstants.RESOLVE_OBJECTS_VIA_JSON_SELECT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -38,7 +39,9 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.v1.StepElementParametersV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.TaskExecutableResponse;
@@ -51,6 +54,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepParametersV1;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
@@ -85,7 +89,7 @@ import lombok.extern.slf4j.Slf4j;
     module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 @Slf4j
-public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
+public class HttpStep extends PipelineTaskExecutable<StepParametersV1, HttpStepResponse> {
   private static final String URL_ENCODED_CHAR_REGEX = ".*%[0-9a-fA-F]{2}.*";
   public static final StepType STEP_TYPE = StepSpecTypeConstants.HTTP_STEP_TYPE;
 
@@ -97,8 +101,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   @Inject private EngineExpressionService engineExpressionService;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepParametersV1> getStepParametersClass() {
+    return StepParametersV1.class;
   }
 
   private NGLogCallback getNGLogCallback(LogStreamingStepClientFactory logStreamingStepClientFactory, Ambiance ambiance,
@@ -108,16 +112,25 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepParametersV1 stepParameters, StepInputPackage inputPackage) {
     int socketTimeoutMillis = (int) NGTimeConversionHelper.convertTimeStringToMilliseconds("10m");
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(HttpTaskNG.COMMAND_UNIT);
-
-    if (stepParameters.getTimeout() != null && stepParameters.getTimeout().getValue() != null) {
-      socketTimeoutMillis =
-          (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue());
+    ParameterField<String> timeout;
+    SpecParameters specParameters;
+    if (stepParameters instanceof StepElementParameters) {
+      StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
+      timeout = stepElementParameters.getTimeout();
+      specParameters = stepElementParameters.getSpec();
+    } else {
+      StepElementParametersV1 stepElementParametersV1 = (StepElementParametersV1) stepParameters;
+      timeout = stepElementParametersV1.getTimeout();
+      specParameters = stepElementParametersV1.getSpec();
     }
-    HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
+    if (timeout != null && timeout.getValue() != null) {
+      socketTimeoutMillis = (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(timeout.getValue());
+    }
+    HttpStepParameters httpStepParameters = (HttpStepParameters) specParameters;
 
     String url = (String) httpStepParameters.getUrl().fetchFinalValue();
 
@@ -153,13 +166,12 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       createCertificate(httpStepParameters).ifPresent(cert -> { httpTaskParametersNgBuilder.certificateNG(cert); });
     }
 
-    final TaskData taskData =
-        TaskData.builder()
-            .async(true)
-            .timeout(NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue()))
-            .taskType(TaskType.HTTP_TASK_NG.name())
-            .parameters(new Object[] {httpTaskParametersNgBuilder.build()})
-            .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(NGTimeConversionHelper.convertTimeStringToMilliseconds(timeout.getValue()))
+                                  .taskType(TaskType.HTTP_TASK_NG.name())
+                                  .parameters(new Object[] {httpTaskParametersNgBuilder.build()})
+                                  .build();
 
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
@@ -188,7 +200,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepParametersV1 stepParameters,
       ThrowingSupplier<HttpStepResponse> responseSupplier) throws Exception {
     try {
       NGLogCallback logCallback =
@@ -196,8 +208,15 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
       StepResponseBuilder responseBuilder = StepResponse.builder();
       HttpStepResponse httpStepResponse = responseSupplier.get();
-
-      HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
+      SpecParameters specParameters;
+      if (stepParameters instanceof StepElementParameters) {
+        StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
+        specParameters = stepElementParameters.getSpec();
+      } else {
+        StepElementParametersV1 stepElementParametersV1 = (StepElementParametersV1) stepParameters;
+        specParameters = stepElementParametersV1.getSpec();
+      }
+      HttpStepParameters httpStepParameters = (HttpStepParameters) specParameters;
       logCallback.saveExecutionLog(
           String.format("Successfully executed the http request %s .", fetchFinalValue(httpStepParameters.getUrl())));
 
@@ -335,7 +354,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
   @Override
   public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, TaskExecutableResponse executableResponse) {
+      Ambiance ambiance, StepParametersV1 stepParameters, TaskExecutableResponse executableResponse) {
     closeLogStream(ambiance);
   }
 }

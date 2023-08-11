@@ -23,7 +23,9 @@ import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.OpaPolicySetEvaluationResponse;
+import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.v1.StepElementParametersV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -31,6 +33,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -148,10 +151,21 @@ public class PolicyEvalUtils {
     return "The following Policy Sets were not adhered to: " + failedPolicySetsString;
   }
 
-  public StepResponse evalPolicies(Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse,
-      OpaServiceClient opaServiceClient) {
-    if (stepParameters.getEnforce() == null || ParameterField.isNull(stepParameters.getEnforce().getPolicySets())
-        || isEmpty(stepParameters.getEnforce().getPolicySets().getValue())) {
+  public StepResponse evalPolicies(
+      Ambiance ambiance, StepParameters stepParameters, StepResponse stepResponse, OpaServiceClient opaServiceClient) {
+    PolicyConfig enforce;
+    String name;
+    if (stepParameters instanceof StepElementParameters) {
+      StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
+      enforce = stepElementParameters.getEnforce();
+      name = stepElementParameters.getName();
+    } else {
+      StepElementParametersV1 stepElementParameters = (StepElementParametersV1) stepParameters;
+      enforce = stepElementParameters.getEnforce();
+      name = stepElementParameters.getName();
+    }
+    if (enforce == null || ParameterField.isNull(enforce.getPolicySets())
+        || isEmpty(enforce.getPolicySets().getValue())) {
       return stepResponse;
     }
     OpaEvaluationResponseHolder opaEvaluationResponseHolder;
@@ -159,8 +173,8 @@ public class PolicyEvalUtils {
       opaEvaluationResponseHolder = SafeHttpCall.executeWithErrorMessage(
           opaServiceClient.evaluateWithCredentialsByID(AmbianceUtils.getAccountId(ambiance),
               AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
-              getPolicySetsStringForQueryParam(stepParameters.getEnforce().getPolicySets().getValue()),
-              getEntityMetadataString(stepParameters.getName()), stepResponse.getStepOutcomes()));
+              getPolicySetsStringForQueryParam(enforce.getPolicySets().getValue()), getEntityMetadataString(name),
+              stepResponse.getStepOutcomes()));
     } catch (InvalidRequestException ex) {
       log.error(PolicyConstants.OPA_EVALUATION_ERROR_MSG, ex);
       return PolicyEvalUtils.buildPolicyEvaluationErrorStepResponse(ex.getMessage(), stepResponse);

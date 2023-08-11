@@ -9,10 +9,10 @@ package io.harness.steps.executable;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.RollbackExecutableUtility;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.supplier.ThrowingSupplier;
@@ -23,17 +23,16 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 // Task Executable with RBAC, Rollback and postTaskValidation
-public abstract class TaskExecutableWithCapabilities<R extends ResponseData>
-    implements TaskExecutableWithRbac<StepElementParameters, R> {
+public abstract class TaskExecutableWithCapabilities<T extends StepParameters, R extends ResponseData>
+    implements TaskExecutableWithRbac<T, R> {
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Override
-  public void handleFailureInterrupt(
-      Ambiance ambiance, StepElementParameters stepParameters, Map<String, String> metadata) {
+  public void handleFailureInterrupt(Ambiance ambiance, T stepParameters, Map<String, String> metadata) {
     RollbackExecutableUtility.publishRollbackInfo(ambiance, stepParameters, metadata, executionSweepingOutputService);
   }
   @Override
-  public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<R> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResult(Ambiance ambiance, T stepParameters, ThrowingSupplier<R> responseDataSupplier)
+      throws Exception {
     try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
       StepResponse stepResponse = handleTaskResultWithSecurityContext(ambiance, stepParameters, responseDataSupplier);
       return postTaskValidate(ambiance, stepParameters, stepResponse);
@@ -42,8 +41,7 @@ public abstract class TaskExecutableWithCapabilities<R extends ResponseData>
 
   // evaluating policies added in advanced section of the steps and updating status and failure info in the step
   // response
-  public StepResponse postTaskValidate(
-      Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
+  public StepResponse postTaskValidate(Ambiance ambiance, T stepParameters, StepResponse stepResponse) {
     return stepResponse;
   }
 }

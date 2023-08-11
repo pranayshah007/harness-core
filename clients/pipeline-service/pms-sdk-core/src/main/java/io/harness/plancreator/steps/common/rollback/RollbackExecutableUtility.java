@@ -15,10 +15,12 @@ import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.v1.StepElementParametersV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import java.util.Map;
@@ -30,9 +32,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RollbackExecutableUtility {
   private final String ROLLBACK = "ROLLBACK";
-  public void publishRollbackInfo(Ambiance ambiance, StepElementParameters stepParameters, Map<String, String> metadata,
+  public void publishRollbackInfo(Ambiance ambiance, StepParameters stepParameters, Map<String, String> metadata,
       ExecutionSweepingOutputService executionSweepingOutputService) {
-    OnFailRollbackParameters onFailRollbackParameters = stepParameters.getRollbackParameters();
+    OnFailRollbackParameters onFailRollbackParameters;
+    if (stepParameters instanceof StepElementParameters) {
+      StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
+      onFailRollbackParameters = stepElementParameters.getRollbackParameters();
+    } else {
+      StepElementParametersV1 stepElementParameters = (StepElementParametersV1) stepParameters;
+      onFailRollbackParameters = stepElementParameters.getRollbackParameters();
+    }
     RollbackStrategy strategy;
     if (onFailRollbackParameters.getStrategy() == RollbackStrategy.UNKNOWN) {
       if (!metadata.containsKey(ROLLBACK)) {

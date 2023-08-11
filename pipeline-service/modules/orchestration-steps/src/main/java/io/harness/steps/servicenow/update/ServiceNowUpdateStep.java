@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(CDC)
-public class ServiceNowUpdateStep extends PipelineTaskExecutable<ServiceNowTaskNGResponse> {
+public class ServiceNowUpdateStep extends PipelineTaskExecutable<StepElementParameters, ServiceNowTaskNGResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SERVICE_NOW_UPDATE_STEP_TYPE;
 
   @Inject private PipelineRbacHelper pipelineRbacHelper;

@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.jira.update;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 import static io.harness.jira.JiraConstantsNG.ISSUE_TYPE_NAME;
@@ -54,7 +55,7 @@ import java.util.concurrent.ExecutorService;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
-public class JiraUpdateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
+public class JiraUpdateStep extends PipelineTaskExecutable<StepElementParameters, JiraTaskNGResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.JIRA_UPDATE_STEP_TYPE;
 
   @Inject private JiraStepHelperService jiraStepHelperService;

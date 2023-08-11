@@ -1,11 +1,11 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.plancreator.steps.common;
+package io.harness.plancreator.steps.common.v1;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
@@ -13,10 +13,10 @@ import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.policy.PolicyConfig;
+import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.sdk.core.steps.io.v1.StepParametersV1;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import java.util.List;
@@ -30,9 +30,9 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@TypeAlias("stepElementParameters")
-@RecasterAlias("io.harness.plancreator.steps.common.StepElementParameters")
-public class StepElementParameters extends StepParametersV1 {
+@TypeAlias("StepElementParametersV1")
+@RecasterAlias("io.harness.plancreator.steps.common.v1.StepElementParametersV1")
+public class StepElementParametersV1 extends StepParametersV1 {
   String uuid;
   String identifier;
   String name;
@@ -41,7 +41,7 @@ public class StepElementParameters extends StepParametersV1 {
   List<FailureStrategyConfig> failureStrategies;
 
   ParameterField<String> skipCondition;
-  StepWhenCondition when;
+  String when;
 
   String type;
   SpecParameters spec;
@@ -54,15 +54,15 @@ public class StepElementParameters extends StepParametersV1 {
 
   @Override
   public String toViewJson() {
-    StepElementParameters stepElementParameters = cloneParameters(false, false);
+    StepElementParametersV1 stepElementParameters = cloneParameters(false, false);
     if (spec != null) {
       stepElementParameters.setSpec(spec.getViewJsonObject());
     }
     return RecastOrchestrationUtils.toJson(stepElementParameters);
   }
 
-  public StepElementParameters cloneParameters(boolean includeUuid, boolean includeSpec) {
-    return StepElementParameters.builder()
+  public StepElementParametersV1 cloneParameters(boolean includeUuid, boolean includeSpec) {
+    return StepElementParametersV1.builder()
         .uuid(includeUuid ? this.uuid : null)
         .type(this.type)
         .name(this.name)
