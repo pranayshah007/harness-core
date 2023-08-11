@@ -32,7 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("StepElementParametersV1")
 @RecasterAlias("io.harness.plancreator.steps.common.v1.StepElementParametersV1")
-public class StepElementParametersV1 extends StepParametersV1 {
+public class StepElementParametersV1 implements StepParametersV1 {
   String uuid;
   String identifier;
   String name;
