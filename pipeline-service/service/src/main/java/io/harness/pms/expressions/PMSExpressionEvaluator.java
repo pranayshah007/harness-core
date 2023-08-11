@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.expressions;
+
 import io.harness.ModuleType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.CodePulse;
@@ -20,6 +21,7 @@ import io.harness.engine.expressions.AmbianceExpressionEvaluator;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.engine.expressions.functors.StrategyFunctor;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ngtriggers.expressions.functors.EventPayloadFunctor;
 import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
@@ -28,6 +30,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.expression.RemoteFunctorServiceGrpc.RemoteFunctorServiceBlockingStub;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.expressions.functors.AccountFunctor;
+import io.harness.pms.expressions.functors.ApprovalFunctor;
 import io.harness.pms.expressions.functors.ExecutionInputExpressionFunctor;
 import io.harness.pms.expressions.functors.InputSetFunctor;
 import io.harness.pms.expressions.functors.OrgFunctor;
@@ -67,6 +70,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject PmsExecutionSummaryService pmsExecutionSummaryService;
 
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
+  @Inject PmsOutcomeService pmsOutcomeService;
 
   public PMSExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
       Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
@@ -111,6 +115,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     });
 
     addToContext("serviceVariableOverrides", new ServiceVariableOverridesFunctor(ambiance, pmsEngineExpressionService));
+    addToContext("approvedBy", new ApprovalFunctor(ambiance, pmsOutcomeService));
 
     // Group aliases
     // TODO: Replace with step category
