@@ -219,6 +219,13 @@ templateServiceClientConfig:
   connectTimeOutSeconds: 120
   readTimeOutSeconds: 120
 
+errorTrackingClientConfig:
+  errorTrackingServiceConfig:
+    baseUrl: http://localhost:9191/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  errorTrackingServiceSecret: LocalTestErrorTrackingServiceSecretLocalTestErrorTrackingServiceSecretLocalTestE
+
 containerStepConfigureWithCi: ${SHOULD_CONFIGURE_WITH_CI:-false}
 ciServiceClientConfig:
   baseUrl: http://localhost:4457/api/
