@@ -9,14 +9,19 @@ package io.harness.connector.impl;
 
 import static io.harness.NGConstants.ENTITY_REFERENCE_LOG_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.SECRET_REFERRED_BY_CONNECTOR;
 import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.TEMPLATE_REFERRED_BY_CONNECTOR;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.TEST_CONNECTION;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
+import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.utils.TemplateDetails;
+import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
@@ -25,13 +30,17 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
+import io.harness.eventsframework.schemas.entityactivity.EntityActivityCreateDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.activityhistory.NGActivityStatus;
+import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -53,7 +62,9 @@ public class ConnectorEntityReferenceHelper {
   private static final String STABLE_VERSION = "__STABLE__";
   private static final String ACCOUNT_ID = "accountId";
   Producer eventProducer;
+  Producer entityUsageEventProducer;
   SecretRefInputValidationHelper secretRefInputValidationHelper;
+  IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
 
   private final String TEMPLATE_REFERENCE_CREATE_FAIL_LOG_MSG =
       "The entity reference was not created for the connector [{}], event ID [{}] with the exception[{}]";
@@ -68,9 +79,13 @@ public class ConnectorEntityReferenceHelper {
 
   @Inject
   public ConnectorEntityReferenceHelper(@Named(EventsFrameworkConstants.SETUP_USAGE) Producer eventProducer,
-      SecretRefInputValidationHelper secretRefInputValidationHelper) {
+      @Named(EventsFrameworkConstants.ENTITY_ACTIVITY) Producer entityUsageEventProducer,
+      SecretRefInputValidationHelper secretRefInputValidationHelper,
+      IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper) {
     this.eventProducer = eventProducer;
     this.secretRefInputValidationHelper = secretRefInputValidationHelper;
+    this.entityUsageEventProducer = entityUsageEventProducer;
+    this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
   }
 
   public boolean createSetupUsageForSecret(
@@ -351,5 +366,69 @@ public class ConnectorEntityReferenceHelper {
       log.error("Error deleting the setup usages for the connector with the identifier {} in project {} in org {}",
           identifier, projectIdentifier, orgIdentifier, ex);
     }
+  }
+
+  public void sendSecretUsageEventForConnectorTest(
+      String accountIdentifier, ConnectorInfoDTO connectorInfoDTO, ConnectivityStatus connectivityStatus) {
+    List<DecryptableEntity> decryptableEntities = connectorInfoDTO.getConnectorConfig().getDecryptableEntities();
+    if (isEmpty(decryptableEntities)) {
+      return;
+    }
+
+    Map<String, SecretRefData> secrets = secretRefInputValidationHelper.getDecryptableFieldsData(decryptableEntities);
+
+    secrets.forEach((key, value) -> {
+      if (isNotEmpty(value.getIdentifier())) {
+        EntityActivityCreateDTO ngActivityDTO =
+            createTestConnectionActivity(accountIdentifier, connectorInfoDTO, connectivityStatus, value);
+        try {
+          entityUsageEventProducer.send(
+              Message.newBuilder()
+                  .putAllMetadata(ImmutableMap.of("accountId", accountIdentifier,
+                      EventsFrameworkMetadataConstants.ENTITY_TYPE, EventsFrameworkConstants.ENTITY_ACTIVITY,
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.CREATE_ACTION))
+                  .setData(ngActivityDTO.toByteString())
+                  .build());
+        } catch (Exception ex) {
+          log.error("Secret Usage: Exception while pushing the secret usage");
+        }
+      }
+    });
+  }
+
+  private EntityActivityCreateDTO createTestConnectionActivity(String accountIdentifier,
+      ConnectorInfoDTO connectorInfoDTO, ConnectivityStatus connectivityStatus, SecretRefData secretRef) {
+    String secretOrgIdentifier = null;
+    String secretProjectIdentifier = null;
+    if (secretRef.getScope() == Scope.ORG) {
+      secretOrgIdentifier = connectorInfoDTO.getOrgIdentifier();
+    } else if (secretRef.getScope() == Scope.PROJECT) {
+      secretOrgIdentifier = connectorInfoDTO.getOrgIdentifier();
+      secretProjectIdentifier = connectorInfoDTO.getProjectIdentifier();
+    }
+
+    return EntityActivityCreateDTO.newBuilder()
+        .setType(NGActivityType.ENTITY_USAGE.toString())
+        .setStatus(ConnectivityStatus.SUCCESS.equals(connectivityStatus) ? NGActivityStatus.SUCCESS.toString()
+                                                                         : NGActivityStatus.FAILED.toString())
+        .setActivityTime(System.currentTimeMillis())
+        .setAccountIdentifier(accountIdentifier)
+        .setReferredEntity(
+            EntityDetailProtoDTO.newBuilder()
+                .setType(SECRETS)
+                .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                    accountIdentifier, secretOrgIdentifier, secretProjectIdentifier, secretRef.getIdentifier()))
+                .build())
+        .setEntityUsageDetail(
+            EntityActivityCreateDTO.EntityUsageActivityDetailProtoDTO.newBuilder()
+                .setReferredByEntity(EntityDetailProtoDTO.newBuilder()
+                                         .setType(EntityTypeProtoEnum.CONNECTORS)
+                                         .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+                                             accountIdentifier, connectorInfoDTO.getOrgIdentifier(),
+                                             connectorInfoDTO.getProjectIdentifier(), connectorInfoDTO.getIdentifier()))
+                                         .build())
+                .setUsageDetail(EntityUsageDetailProto.newBuilder().setUsageType(TEST_CONNECTION).build())
+                .build())
+        .build();
   }
 }
