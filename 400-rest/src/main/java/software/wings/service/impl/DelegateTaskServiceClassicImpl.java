@@ -197,6 +197,7 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
+import com.mongodb.ReadPreference;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
@@ -1086,6 +1087,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         persistence.createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(taskId))
             .filter(DelegateTaskKeys.accountId, accountId)
             .filter(DelegateTaskKeys.uuid, taskId)
+            .useReadPreference(ReadPreference.secondaryPreferred())
             .get();
 
     if (delegateTask != null) {
