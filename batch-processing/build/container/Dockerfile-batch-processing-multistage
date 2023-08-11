@@ -1,0 +1,54 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+FROM us.gcr.io/platform-205701/cie-agent-harness-core-jdk11:latest as builder
+
+RUN mkdir -p /app
+ARG GCP_KEY
+ENV SERVICE_NAME="batch-processing"
+COPY . /app
+
+WORKDIR /app
+
+ENV BUILD_PURPOSE=DEVELOPMENT
+
+RUN chmod +x \
+    /app/build/feature_build.sh \
+    /app/build/build_dist.sh \
+    /app/scripts/bazel/generate_credentials.sh \
+    && /app/scripts/bazel/generate_credentials.sh \
+    && /app/build/feature_build.sh $GCP_KEY
+
+FROM us.gcr.io/platform-205701/ubi/ubi-java:8.8 as base
+
+# Add the capsule JAR and config.yml
+COPY --chown=65534:65534 --from=builder \
+ /app/dist/batch-processing/batch-processing-capsule.jar \
+ /app/dist/batch-processing/keystore.jks \
+ /app/dist/batch-processing/batch-processing-config.yml \
+ /app/dist/batch-processing/protocol.info \
+ /app/dist/batch-processing/scripts \
+ /app/dockerization/base-images/apm/*.sh \
+ /opt/harness/
+
+RUN chmod +x /opt/harness/*.sh
+CMD [ "/opt/harness/run.sh" ]
+
+############################ON PREM#########################
+FROM base as onprem
+
+RUN /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh && rm /opt/harness/inject-onprem-apm-bins-into-dockerimage.sh
+USER root
+RUN microdnf remove tar unzip gzip \
+    && microdnf clean all \
+    && rm -rf /var/cache/yum
+USER 65534
+
+############################SAAS#########################
+FROM base as saas
+
+RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness/inject-saas-apm-bins-into-dockerimage.sh
+
+USER root
