@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateHeartBeatSyncFromRedis implements Runnable {
   @Inject private DelegateCache delegateCache;
   @Inject private HPersistence persistence;
-  @Inject private RedisPersistentLocker persistentLocker;
+  @Inject private PersistentLocker persistentLocker;
   private final int BULK_OPERATION_MAX = 5000;
   private final String lockId = "DELEGATE_HEARTBEAT_SYNC_";
 
