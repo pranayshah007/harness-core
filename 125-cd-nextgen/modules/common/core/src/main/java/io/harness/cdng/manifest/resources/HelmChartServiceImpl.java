@@ -178,6 +178,7 @@ public class HelmChartServiceImpl implements HelmChartService {
               .checkIncorrectChartVersion(true)
               .useRepoFlags(helmVersion != HelmVersion.V2)
               .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
+              .ignoreResponseCode(true)
               .build();
 
       HelmFetchChartVersionRequestNG helmFetchChartVersionRequestNG =

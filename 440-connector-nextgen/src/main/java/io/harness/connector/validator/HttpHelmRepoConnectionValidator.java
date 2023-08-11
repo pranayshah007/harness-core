@@ -43,6 +43,7 @@ public class HttpHelmRepoConnectionValidator extends AbstractConnectorValidator 
         .helmConnector(helmConnector)
         .encryptionDetails(
             super.getEncryptionDetail(helmAuthCredentials, accountIdentifier, orgIdentifier, projectIdentifier))
+        .ignoreResponseCode(true)
         .build();
   }
 

@@ -117,6 +117,7 @@ public class K8sManifestDelegateMapper {
             .skipApplyHelmDefaultValues(cdFeatureFlagHelper.isEnabled(
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_NG))
             .subChartPath(getParameterFieldValue(helmChartManifestOutcome.getSubChartPath()))
+            .ignoreResponseCode(true)
             .build();
 
       case ManifestType.Kustomize:
