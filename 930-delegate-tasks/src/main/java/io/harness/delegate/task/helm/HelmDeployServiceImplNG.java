@@ -473,8 +473,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   public List<ContainerInfo> getContainerInfos(HelmCommandRequestNG commandRequest,
       List<KubernetesResourceId> workloads, boolean useSteadyStateCheck, LogCallback logCallback, long timeoutInMillis)
       throws Exception {
-    return useSteadyStateCheck ? getKubectlContainerInfos(commandRequest, workloads, logCallback, timeoutInMillis)
-                               : getFabric8ContainerInfos(commandRequest, logCallback, timeoutInMillis);
+    if (useSteadyStateCheck) {
+      return getKubectlContainerInfos(commandRequest, workloads, logCallback, timeoutInMillis, true);
+    } else if (commandRequest.isDisableFabric8()) {
+      return getKubectlContainerInfos(commandRequest, workloads, logCallback, timeoutInMillis, false);
+    }
+    return getFabric8ContainerInfos(commandRequest, logCallback, timeoutInMillis);
   }
 
   private List<ContainerInfo> getFabric8ContainerInfos(
@@ -498,7 +502,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   }
 
   private List<ContainerInfo> getKubectlContainerInfos(HelmCommandRequestNG commandRequest,
-      List<KubernetesResourceId> workloads, LogCallback logCallback, long timeoutInMillis) throws Exception {
+      List<KubernetesResourceId> workloads, LogCallback logCallback, long timeoutInMillis,
+      boolean statusCheckAllResourcesForHelm) throws Exception {
     Kubectl client = KubectlFactory.getKubectlClient(
         k8sGlobalConfigService.getKubectlPath(commandRequest.isUseLatestKubectlVersion()),
         commandRequest.getKubeConfigLocation(), commandRequest.getWorkingDir());
@@ -520,9 +525,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           Optional<String> ocPath = setupPathOfOcBinaries(entry.getValue());
           ocPath.ifPresent(commandRequest::setOcPath);
           success = success
-              && doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
+              && doStatusCheckForHelm(client, entry.getValue(), commandRequest.getOcPath(),
                   commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(), logCallback,
-                  commandRequest.getGcpKeyPath());
+                  commandRequest.getGcpKeyPath(), statusCheckAllResourcesForHelm);
           logCallback.saveExecutionLog(
               format("Status check done with success [%s] for resources in namespace: [%s]", success, namespace));
         }
@@ -543,9 +548,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     }
   }
 
-  private boolean doStatusCheckAllResourcesForHelm(Kubectl client, List<KubernetesResourceId> resourceIds,
-      String ocPath, String workingDir, String namespace, String kubeconfigPath, LogCallback executionLogCallback,
-      String gcpKeyFilePath) throws Exception {
+  private boolean doStatusCheckForHelm(Kubectl client, List<KubernetesResourceId> resourceIds, String ocPath,
+      String workingDir, String namespace, String kubeconfigPath, LogCallback executionLogCallback,
+      String gcpKeyFilePath, boolean statusCheckAllResourcesForHelm) throws Exception {
     return k8sTaskHelperBase.doStatusCheckForAllResources(client, resourceIds,
         K8sDelegateTaskParams.builder()
             .ocPath(ocPath)
@@ -553,7 +558,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
             .kubeconfigPath(kubeconfigPath)
             .gcpKeyFilePath(gcpKeyFilePath)
             .build(),
-        namespace, executionLogCallback, false, true);
+        namespace, executionLogCallback, false, true, statusCheckAllResourcesForHelm);
   }
 
   private Collection<? extends ContainerInfo> fetchContainerInfo(

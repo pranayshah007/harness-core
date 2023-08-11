@@ -62,6 +62,8 @@ public enum Kind {
   public static final Set<String> SCALABLE_WORKLOAD_KINDS =
       ImmutableSet.of(Deployment.name(), DaemonSet.name(), StatefulSet.name(), DeploymentConfig.name(),
           ReplicationController.name(), ReplicaSet.name(), Job.name(), CronJob.name());
+  public static final Set<String> HELM_STEADY_STATE_WORKLOAD_KINDS = ImmutableSet.of(Deployment.name(),
+      DaemonSet.name(), StatefulSet.name(), DeploymentConfig.name(), ReplicationController.name(), ReplicaSet.name());
 
   public static Kind fromString(String kindName) {
     if (isEmpty(kindName)) {

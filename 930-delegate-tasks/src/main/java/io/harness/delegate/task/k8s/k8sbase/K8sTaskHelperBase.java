@@ -36,6 +36,7 @@ import static io.harness.k8s.manifest.ManifestHelper.values_filename;
 import static io.harness.k8s.manifest.ManifestHelper.yaml_file_extension;
 import static io.harness.k8s.manifest.ManifestHelper.yml_file_extension;
 import static io.harness.k8s.model.Kind.ConfigMap;
+import static io.harness.k8s.model.Kind.HELM_STEADY_STATE_WORKLOAD_KINDS;
 import static io.harness.k8s.model.Kind.Namespace;
 import static io.harness.k8s.model.Kind.Secret;
 import static io.harness.k8s.model.KubernetesResourceId.createKubernetesResourceIdFromNamespaceKindName;
@@ -1376,6 +1377,26 @@ public class K8sTaskHelperBase {
     }
   }
 
+  private boolean doStatusCheckForWorkloads(Kubectl client, List<KubernetesResourceId> resourceIds,
+      K8sDelegateTaskParams k8sDelegateTaskParams, String statusFormat, LogCallback executionLogCallback,
+      boolean isErrorFrameworkEnabled) throws Exception {
+    boolean success = false;
+    for (KubernetesResourceId kubernetesResourceId : resourceIds) {
+      if (Kind.Job.name().equals(kubernetesResourceId.getKind())) {
+        success = doStatusCheckForJob(client, kubernetesResourceId, k8sDelegateTaskParams, statusFormat,
+            executionLogCallback, isErrorFrameworkEnabled);
+      } else {
+        success = doStatusCheckForWorkloads(client, kubernetesResourceId, k8sDelegateTaskParams, statusFormat,
+            executionLogCallback, isErrorFrameworkEnabled);
+      }
+
+      if (!success) {
+        break;
+      }
+    }
+    return success;
+  }
+
   public boolean doStatusCheckForWorkloads(Kubectl client, KubernetesResourceId resourceId,
       K8sDelegateTaskParams k8sDelegateTaskParams, String statusFormat, LogCallback executionLogCallback,
       boolean isErrorFrameworkEnabled) throws Exception {
@@ -1453,12 +1474,12 @@ public class K8sTaskHelperBase {
       K8sDelegateTaskParams k8sDelegateTaskParams, String namespace, LogCallback executionLogCallback,
       boolean denoteOverallSuccess) throws Exception {
     return doStatusCheckForAllResources(
-        client, resourceIds, k8sDelegateTaskParams, namespace, executionLogCallback, denoteOverallSuccess, false);
+        client, resourceIds, k8sDelegateTaskParams, namespace, executionLogCallback, denoteOverallSuccess, false, true);
   }
 
   public boolean doStatusCheckForAllResources(Kubectl client, List<KubernetesResourceId> resourceIds,
       K8sDelegateTaskParams k8sDelegateTaskParams, String namespace, LogCallback executionLogCallback,
-      boolean denoteOverallSuccess, boolean isErrorFrameworkEnabled) throws Exception {
+      boolean denoteOverallSuccess, boolean isErrorFrameworkEnabled, boolean statusCheckAllResources) throws Exception {
     if (isEmpty(resourceIds)) {
       return true;
     }
@@ -1520,18 +1541,16 @@ public class K8sTaskHelperBase {
             k8sDelegateTaskParams.getWorkingDirectory(), getEventsCommand, watchInfoStream, watchErrorStream));
       }
 
-      for (KubernetesResourceId kubernetesResourceId : resourceIds) {
-        if (Kind.Job.name().equals(kubernetesResourceId.getKind())) {
-          success = doStatusCheckForJob(client, kubernetesResourceId, k8sDelegateTaskParams, statusFormat,
-              executionLogCallback, isErrorFrameworkEnabled);
-        } else {
-          success = doStatusCheckForWorkloads(client, kubernetesResourceId, k8sDelegateTaskParams, statusFormat,
-              executionLogCallback, isErrorFrameworkEnabled);
-        }
-
-        if (!success) {
-          break;
-        }
+      if (!statusCheckAllResources) {
+        List<KubernetesResourceId> updatedResourceIds =
+            resourceIds.stream()
+                .filter(resource -> HELM_STEADY_STATE_WORKLOAD_KINDS.contains(resource.getKind()))
+                .collect(toList());
+        success = doStatusCheckForWorkloads(client, updatedResourceIds, k8sDelegateTaskParams, statusFormat,
+            executionLogCallback, isErrorFrameworkEnabled);
+      } else {
+        success = doStatusCheckForWorkloads(
+            client, resourceIds, k8sDelegateTaskParams, statusFormat, executionLogCallback, isErrorFrameworkEnabled);
       }
 
       return success;

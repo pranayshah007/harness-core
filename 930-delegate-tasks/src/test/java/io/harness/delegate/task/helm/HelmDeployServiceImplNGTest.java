@@ -760,7 +760,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
         .thenReturn(containerInfosDefault1);
 
     when(k8sTaskHelperBase.doStatusCheckForAllResources(
-             any(Kubectl.class), anyList(), any(), anyString(), any(), anyBoolean(), anyBoolean()))
+             any(Kubectl.class), anyList(), any(), anyString(), any(), anyBoolean(), anyBoolean(), anyBoolean()))
         .thenReturn(true);
 
     return helmDeployService.rollback(request);
