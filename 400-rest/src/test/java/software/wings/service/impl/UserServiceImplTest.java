@@ -472,6 +472,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     assertNotNull(user);
     ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
     verify(ngInviteClient, times(1)).completeUserCreationForJIT(argumentCaptor.capture(), any());
+    verify(userServiceLimitChecker, times(0)).limitCheck(anyString(), any(), any());
     assertThat(email).isEqualTo(argumentCaptor.getValue());
   }
 

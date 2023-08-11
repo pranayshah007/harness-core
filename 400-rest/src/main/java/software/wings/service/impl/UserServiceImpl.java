@@ -2166,7 +2166,6 @@ public class UserServiceImpl implements UserService {
   public void completeNGInvite(
       UserInviteDTO userInvite, boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail) {
     String accountId = userInvite.getAccountId();
-    limitCheck(accountId, userInvite.getEmail());
     Account account = accountService.get(accountId);
     User user = getUserByEmail(userInvite.getEmail());
     if (user == null) {
