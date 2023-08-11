@@ -393,6 +393,9 @@ public class ApprovalStepMapperImpl extends StepMapper {
                       NGMigrationEntityType.USER_GROUP, NGMigrationConstants.RUNTIME_INPUT))
               .collect(Collectors.toList()));
     }
+    if (state.isUserGroupAsExpression()) {
+      return ParameterField.createExpressionField(true, state.getUserGroupExpression(), null, false);
+    }
     return ParameterField.createExpressionField(true, "<+input>", null, false);
   }
 }
