@@ -444,6 +444,7 @@ public class UserServiceImplTest extends WingsBaseTest {
              AccessedExpiryPolicy.factoryOf(Duration.THIRTY_MINUTES)))
         .thenReturn(new NoOpCache<>());
     userServiceImpl.completeNGInvite(inviteDTO, false, true);
+    verify(userServiceLimitChecker, times(0)).limitCheck(anyString(), any(), any());
     verify(eventPublishHelper, times(1)).publishUserRegistrationCompletionEvent(anyString(), any());
   }
 
@@ -472,7 +473,6 @@ public class UserServiceImplTest extends WingsBaseTest {
     assertNotNull(user);
     ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
     verify(ngInviteClient, times(1)).completeUserCreationForJIT(argumentCaptor.capture(), any());
-    verify(userServiceLimitChecker, times(0)).limitCheck(anyString(), any(), any());
     assertThat(email).isEqualTo(argumentCaptor.getValue());
   }
 
