@@ -391,10 +391,10 @@ portal:
   jwtDataHandlerSecret: RdL7j9ZdCz6TVSHO7obJRS6ywYLJjH8tdfPP39i4MbevKjVodvjdhakdhashsh4371dasjldas
   jwtNextGenManagerSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   delegateDockerImage: harness/delegate:latest
-  externalGraphQLRateLimitPerMinute: 500
-  customDashGraphQLRateLimitPerMinute: 1000
-  optionalDelegateTaskRejectAtLimit: 5000
-  importantDelegateTaskRejectAtLimit: 5000
+  externalGraphQLRateLimitPerMinute: 25000
+  customDashGraphQLRateLimitPerMinute: 50000
+  optionalDelegateTaskRejectAtLimit: 50000
+  importantDelegateTaskRejectAtLimit: 50000
   criticalDelegateTaskRejectAtLimit: 100000
 
 totp:
