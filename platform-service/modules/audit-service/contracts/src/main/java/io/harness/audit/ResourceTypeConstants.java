@@ -77,6 +77,6 @@ public class ResourceTypeConstants {
   public static final String CET_AGENT_TOKEN = "CET_AGENT_TOKEN";
   public static final String CET_CRITICAL_EVENT = "CET_CRITICAL_EVENT";
   public static final String CHAOS_SECURITY_GOVERNANCE = "CHAOS_SECURITY_GOVERNANCE";
-  public static final String EULA = "END_LEVEL_USER_AGREEMENT";
+  public static final String EULA = "END_USER_LICENSE_AGREEMENT";
   public static final String WORKSPACE = "WORKSPACE";
 }

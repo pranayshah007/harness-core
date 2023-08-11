@@ -22,5 +22,5 @@ import lombok.Data;
 @Builder
 public class EulaDTO {
   @NotEmpty @Schema(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountIdentifier;
-  @NotEmpty @Schema(description = "End Level User Agreement to be Signed.") AgreementType agreement;
+  @NotEmpty @Schema(description = "End User License Agreement to be Signed.") AgreementType agreement;
 }

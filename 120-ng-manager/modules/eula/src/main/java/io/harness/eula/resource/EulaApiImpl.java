@@ -36,10 +36,10 @@ public class EulaApiImpl implements EulaApi {
     String responseMessage;
     if (isSigned) {
       responseMessage =
-          String.format("Successfully signed End Level User Agreement for %s.", eulaDTO.getAgreement().toString());
+          String.format("Successfully signed an End User License Agreement for %s.", eulaDTO.getAgreement().toString());
     } else {
       responseMessage =
-          String.format("An End Level User Agreement is already signed for %s.", eulaDTO.getAgreement().toString());
+          String.format("An End User License Agreement is already signed for %s.", eulaDTO.getAgreement().toString());
     }
     return Response.ok().entity(new EulaSignResponse().signed(true).message(responseMessage)).build();
   }
@@ -50,9 +50,9 @@ public class EulaApiImpl implements EulaApi {
         EnumUtils.getEnum(io.harness.eula.AgreementType.class, agreementType.toString()), harnessAccount);
     String responseMessage;
     if (isSigned) {
-      responseMessage = String.format("An End Level User Agreement is signed for %s.", agreementType);
+      responseMessage = String.format("An End User License Agreement is signed for %s.", agreementType);
     } else {
-      responseMessage = String.format("An End Level User Agreement is not yet signed for %s.", agreementType);
+      responseMessage = String.format("An End User License Agreement is not yet signed for %s.", agreementType);
     }
     return Response.ok().entity(new EulaSignResponse().signed(isSigned).message(responseMessage)).build();
   }
