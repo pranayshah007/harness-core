@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.mapper;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.constants.Constants.AMZ_SUBSCRIPTION_CONFIRMATION_TYPE;
@@ -519,7 +520,6 @@ public class NGTriggerElementMapper {
       }
       webhookTriggerType = CUSTOM;
     }
-
     TriggerWebhookEventBuilder triggerWebhookEventBuilder =
         TriggerWebhookEvent.builder()
             .accountId(accountIdentifier)

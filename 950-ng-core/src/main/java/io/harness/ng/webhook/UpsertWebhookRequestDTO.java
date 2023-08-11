@@ -36,6 +36,7 @@ public class UpsertWebhookRequestDTO {
   String projectIdentifier;
   String connectorIdentifierRef;
   @NotNull HookEventType hookEventType;
+  // for harness scm repoUrl points to scoped repo name
   String repoURL;
   String webhookSecretIdentifierRef;
   Boolean isHarnessScm;

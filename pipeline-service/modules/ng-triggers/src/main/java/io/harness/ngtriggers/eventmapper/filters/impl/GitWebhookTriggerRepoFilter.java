@@ -263,10 +263,10 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
       if (webhook == null || webhook.getGit() == null) {
         continue;
       }
-
       if (StringUtil.isBlank(webhook.getGit().getConnectorIdentifier())) {
         String completeHarnessRepoName = GitClientHelper.convertToHarnessRepoName(ngTriggerEntity.getAccountId(),
             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), webhook.getGit().getRepoName());
+        // todo(abhinav): make changes here if code repo is supported at different scopes.
         String finalUrl =
             urls.stream().filter(u -> u.contains(completeHarnessRepoName.toLowerCase())).findAny().orElse(null);
 
