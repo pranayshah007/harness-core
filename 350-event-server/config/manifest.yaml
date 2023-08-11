@@ -1,2 +1,3 @@
-DOCKER_FILE_PATH: /harness/harness-core/dist/event-server/Dockerfile-cie-jdk
+DOCKER_FILE_PATH: /harness/harness-core/dockerization/event-server/Dockerfile-event-server-multistage
+CONTEXT_PATH: /harness/harness-core
 HELM_CHART_SOURCE_DIRECTORY: harness-core/350-event-server/chart
