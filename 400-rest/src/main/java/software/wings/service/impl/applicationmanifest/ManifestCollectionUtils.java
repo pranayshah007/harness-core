@@ -184,6 +184,7 @@ public class ManifestCollectionUtils {
   public DelegateTask buildValidationTask(String appManifestId, String appId) {
     HelmChartCollectionParams helmChartCollectionParams =
         (HelmChartCollectionParams) prepareCollectTaskParams(appManifestId, appId);
+
     HelmRepoConfigValidationTaskParams helmRepoConfigValidationTaskParams =
         HelmRepoConfigValidationTaskParams.builder()
             .appId(appId)
@@ -199,6 +200,7 @@ public class ManifestCollectionUtils {
                 featureFlagService.isEnabled(FeatureName.HELM_VERSION_3_8_0, helmChartCollectionParams.getAccountId()))
             .connectorEncryptedDataDetails(
                 helmChartCollectionParams.getHelmChartConfigParams().getConnectorEncryptedDataDetails())
+            .useCache(helmChartCollectionParams.getHelmChartConfigParams().isUseCache())
             .build();
     return DelegateTask.builder()
         .accountId(helmChartCollectionParams.getAccountId())

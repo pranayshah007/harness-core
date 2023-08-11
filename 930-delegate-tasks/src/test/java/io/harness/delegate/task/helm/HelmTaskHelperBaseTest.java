@@ -1181,6 +1181,26 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testHelmTryAddRepo() {
+    doReturn(new ProcessResult(0, new ProcessOutput("".getBytes())))
+        .when(helmTaskHelperBase)
+        .executeCommand(anyMap(), anyString(), anyString(), anyString(), anyLong(), eq(HelmCliCommandType.REPO_ADD));
+
+    helmTaskHelperBase.tryAddRepo(
+        "test", "test", "https://helm.repo", "admin", "secret-text".toCharArray(), "/home", V3, 9000L, "", null);
+
+    // call only helm repo add
+    verify(helmTaskHelperBase, times(1))
+        .executeCommand(anyMap(), anyString(), anyString(), anyString(), anyLong(), any());
+    verify(helmTaskHelperBase, times(1))
+        .executeCommand(anyMap(),
+            eq("v3/helm repo add test https://helm.repo --username admin --password secret-text "), anyString(),
+            anyString(), anyLong(), eq(HelmCliCommandType.REPO_ADD));
+  }
+
+  @Test
   @Owner(developers = ACHYUTH)
   @Category(UnitTests.class)
   public void testChartVersionRange() {
