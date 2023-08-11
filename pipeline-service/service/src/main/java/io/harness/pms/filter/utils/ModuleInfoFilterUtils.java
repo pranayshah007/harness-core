@@ -7,6 +7,8 @@
 
 package io.harness.pms.filter.utils;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,7 +31,9 @@ public class ModuleInfoFilterUtils {
       for (JsonNode arrayItem : jsonNode) {
         valueList.add(arrayItem.textValue());
       }
-      criteria.and(parentPath).in(valueList);
+      if (isNotEmpty(valueList)) {
+        criteria.and(parentPath).in(valueList);
+      }
     } else if (jsonNode.isObject()) {
       Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
       while (fields.hasNext()) {
