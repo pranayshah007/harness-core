@@ -42,8 +42,10 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -64,12 +66,19 @@ import org.springframework.data.domain.Sort;
 @Path("/usage")
 @Produces("application/json")
 @NextGenManagerAuth
+@Tag(name = "Usage", description = "This contains APIs related to License Usage.")
 public class SRMLicenseUsageResource {
   @Inject LicenseUsageInterface licenseUsageInterface;
 
   private static final String SERVICE_INSTANCE_ID = "serviceInstances";
 
+  public static final String LAST_UPDATED_AT_QUERY_PROPERTY = "lastUpdatedSeconds";
+  public static final String LAST_UPDATED_AT_SORT_PROPERTY = "lastUpdatedSeconds";
+
   private static final List<String> ACTIVE_SERVICES_MONITORED_SORT_QUERY_PROPERTIES = List.of(SERVICE_INSTANCE_ID);
+
+  private static final List<String> ACTIVE_MONITORED_SERVICES_SORT_QUERY_PROPERTIES =
+      Arrays.asList(LAST_UPDATED_AT_QUERY_PROPERTY);
 
   private static final String ACTIVE_SERVICES_MONITORED_FILTER_PARAM_MESSAGE =
       "Details of the Active Services Monitored Filter";
@@ -143,9 +152,8 @@ public class SRMLicenseUsageResource {
   @POST
   @Path("/SRM/active-monitored-services")
   @ApiOperation(value = "List Active Services in SRM Module", nickname = "listSRMActiveMonitoredServices")
-  @Hidden
   @Operation(operationId = "listSRMActiveMonitoredServices",
-      summary = "Returns a List of active monitored services along with identifier,lastUpdatedBy and other details",
+      summary = "Returns a List of active monitored services along with identifier,lastUpdatedAt and other details",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -162,9 +170,10 @@ public class SRMLicenseUsageResource {
       @QueryParam(TIMESTAMP) @DefaultValue("0") long currentTsInMs,
       @Valid @RequestBody(description = ACTIVE_SERVICES_MONITORED_FILTER_PARAM_MESSAGE)
       ActiveServiceMonitoredFilterParams filterParams) {
+    currentTsInMs = fixOptionalCurrentTs(currentTsInMs);
     Pageable pageRequest =
-        PageableUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, SERVICE_INSTANCE_ID));
-    validateSort(pageRequest.getSort(), ACTIVE_SERVICES_MONITORED_SORT_QUERY_PROPERTIES);
+        PageableUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, LAST_UPDATED_AT_QUERY_PROPERTY));
+    validateSort(pageRequest.getSort(), ACTIVE_MONITORED_SERVICES_SORT_QUERY_PROPERTIES);
     DefaultPageableUsageRequestParams requestParams =
         DefaultPageableUsageRequestParams.builder().filterParams(filterParams).pageRequest(pageRequest).build();
 

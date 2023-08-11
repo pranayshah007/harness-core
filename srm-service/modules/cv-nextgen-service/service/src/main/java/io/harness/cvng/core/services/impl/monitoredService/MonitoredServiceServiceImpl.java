@@ -2167,6 +2167,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                   .orgIdentifier(monitoredService.getOrgIdentifier())
                   .projectIdentifier(monitoredService.getProjectIdentifier())
                   .accountIdentifier(monitoredService.getAccountId())
+                  .envIdentifier(monitoredService.getEnvironmentIdentifierList().get(0))
                   .identifier(monitoredService.getIdentifier())
                   .name(monitoredService.getName())
                   .lastUpdatedSeconds(monitoredService.getLastUpdatedAt())
@@ -2183,7 +2184,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
               monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier());
           EnvironmentResponseDTO environmentResponseDTO =
               nextGenService.getEnvironment(monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
-                  monitoredService.getProjectIdentifier(), monitoredService.getEnvironmentIdentifier());
+                  monitoredService.getProjectIdentifier(), monitoredService.getEnvironmentIdentifierList().get(0));
 
           activeMonitoredServiceDTO.setServiceName(serviceResponseDTO != null ? serviceResponseDTO.getName() : null);
           activeMonitoredServiceDTO.setEnvName(
@@ -2223,7 +2224,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   private List<MonitoredService> getActiveMonitoredServicesWithScopedQuery(
-      ProjectParams projectParams, String serviceIdentifer) {
+      ProjectParams projectParams, String serviceIdentifier) {
     Query<MonitoredService> query = hPersistence.createQuery(MonitoredService.class)
                                         .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
                                         .filter(MonitoredServiceKeys.enabled, true);
@@ -2234,8 +2235,10 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     if (projectParams.getProjectIdentifier() != null) {
       query = query.filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier());
     }
-    if (!serviceIdentifer.isEmpty()) {
-      query = query.filter(MonitoredServiceKeys.serviceIdentifier, serviceIdentifer);
+    if (serviceIdentifier != null) {
+      if (!serviceIdentifier.isEmpty()) {
+        query = query.filter(MonitoredServiceKeys.serviceIdentifier, serviceIdentifier);
+      }
     }
     return query.asList();
   }
