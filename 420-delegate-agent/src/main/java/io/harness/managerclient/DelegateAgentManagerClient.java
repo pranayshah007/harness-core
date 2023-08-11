@@ -47,11 +47,6 @@ import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDeta
 import io.harness.rest.RestResponse;
 import io.harness.serializer.kryo.KryoRequest;
 import io.harness.serializer.kryo.KryoResponse;
-
-import software.wings.beans.configfile.ConfigFileDto;
-
-import java.util.List;
-import javax.ws.rs.Consumes;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -65,6 +60,10 @@ import retrofit2.http.PUT;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+import software.wings.beans.configfile.ConfigFileDto;
+
+import javax.ws.rs.Consumes;
+import java.util.List;
 
 @OwnedBy(HarnessTeam.DEL)
 public interface DelegateAgentManagerClient {
@@ -151,7 +150,7 @@ public interface DelegateAgentManagerClient {
   Call<RestResponse<Boolean>> processInstanceSyncNGResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body InstanceSyncPerpetualTaskResponse responseData);
 
-  /// ##############INSTANCE SYNC V2 ###################
+  ///##############INSTANCE SYNC V2 ###################
   @POST("instancesync/instance-sync/v2/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishInstanceSyncResultV2(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body DelegateResponseData responseData);

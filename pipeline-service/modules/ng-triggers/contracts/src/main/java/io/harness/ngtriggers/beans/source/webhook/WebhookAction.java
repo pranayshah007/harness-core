@@ -6,21 +6,21 @@
  */
 
 package io.harness.ngtriggers.beans.source.webhook;
-import static io.harness.annotations.dev.HarnessTeam.CI;
 
-import static java.util.Collections.emptySet;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import static io.harness.annotations.dev.HarnessTeam.CI;
+import static java.util.Collections.emptySet;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(CI)
@@ -74,9 +74,7 @@ public enum WebhookAction {
   public String getValue() {
     return value;
   }
-  private static class EventActionHolder {
-    static Map<String, WebhookAction> map = new HashMap<>();
-  }
+  private static class EventActionHolder { static Map<String, WebhookAction> map = new HashMap<>(); }
 
   public static WebhookAction find(String val) {
     WebhookAction action = EventActionHolder.map.get(val);
