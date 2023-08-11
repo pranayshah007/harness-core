@@ -9,7 +9,6 @@ package io.harness.utils.v1;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.plancreator.steps.common.SpecParameters;

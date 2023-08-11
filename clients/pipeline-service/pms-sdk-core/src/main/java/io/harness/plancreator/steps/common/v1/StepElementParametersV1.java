@@ -38,9 +38,9 @@ public class StepElementParametersV1 implements StepBaseParameters {
   String name;
   String description;
   ParameterField<String> timeout;
+  // TODO: change this to List<FailureStrategyConfigV1>
   List<FailureStrategyConfig> failureStrategies;
 
-  ParameterField<String> skipCondition;
   String when;
 
   String type;
@@ -73,7 +73,6 @@ public class StepElementParametersV1 implements StepBaseParameters {
         .enforce(this.enforce)
         .failureStrategies(this.failureStrategies)
         .when(this.when)
-        .skipCondition(this.skipCondition)
         .delegateSelectors(this.delegateSelectors)
         .build();
   }
