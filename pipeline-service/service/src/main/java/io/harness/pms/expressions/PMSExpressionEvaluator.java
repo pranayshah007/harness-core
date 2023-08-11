@@ -20,6 +20,7 @@ import io.harness.engine.expressions.AmbianceExpressionEvaluator;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.engine.expressions.functors.StrategyFunctor;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.errortracking.client.remote.ErrorTrackingClient;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ngtriggers.expressions.functors.EventPayloadFunctor;
 import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
@@ -28,6 +29,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.expression.RemoteFunctorServiceGrpc.RemoteFunctorServiceBlockingStub;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.expressions.functors.AccountFunctor;
+import io.harness.pms.expressions.functors.ErrorTrackingFunctor;
 import io.harness.pms.expressions.functors.ExecutionInputExpressionFunctor;
 import io.harness.pms.expressions.functors.InputSetFunctor;
 import io.harness.pms.expressions.functors.OrgFunctor;
@@ -58,6 +60,8 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject @Named("PRIVILEGED") private AccountClient accountClient;
   @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
+
+  @Inject private ErrorTrackingClient errorTrackingClient;
   @Inject private PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private PMSExecutionService pmsExecutionService;
   @Inject PmsSdkInstanceService pmsSdkInstanceService;
@@ -84,6 +88,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     addToContext("pipeline",
         new PipelineExecutionFunctor(
             pmsExecutionService, pipelineExpressionHelper, planExecutionMetadataService, ambiance));
+    addToContext("cet", new ErrorTrackingFunctor(errorTrackingClient, ambiance));
     addToContext("executionInput", new ExecutionInputExpressionFunctor(executionInputService, ambiance));
 
     addToContext("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache));
