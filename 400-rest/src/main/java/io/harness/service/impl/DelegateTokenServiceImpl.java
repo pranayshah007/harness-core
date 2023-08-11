@@ -58,6 +58,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
   @Inject private DelegateSecretManager delegateSecretManager;
   @Inject private BroadcasterFactory broadcasterFactory;
   private static final String DEFAULT_TOKEN_NAME = "default";
+  private static final String DEFAULT_TOKEN_NAME_CG = "default_fg";
 
   @Override
   public DelegateTokenDetails createDelegateToken(String accountId, String name) {
@@ -86,7 +87,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
   public DelegateTokenDetails upsertDefaultToken(String accountId, String tokenValue) {
     Query<DelegateToken> query = persistence.createQuery(DelegateToken.class)
                                      .filter(DelegateTokenKeys.accountId, accountId)
-                                     .filter(DelegateTokenKeys.name, DEFAULT_TOKEN_NAME);
+                                     .filter(DelegateTokenKeys.name, DEFAULT_TOKEN_NAME_CG);
 
     UpdateOperations<DelegateToken> updateOperations =
         persistence.createUpdateOperations(DelegateToken.class)
@@ -96,7 +97,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
             .set(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE)
             .set(DelegateTokenKeys.value, tokenValue)
             .set(DelegateTokenKeys.encryptedTokenId,
-                delegateSecretManager.encrypt(accountId, tokenValue, DEFAULT_TOKEN_NAME));
+                delegateSecretManager.encrypt(accountId, tokenValue, DEFAULT_TOKEN_NAME_CG));
 
     DelegateToken delegateToken = persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
 
@@ -145,7 +146,7 @@ public class DelegateTokenServiceImpl implements DelegateTokenService, AccountCr
 
     DelegateToken delegateToken = deleteQuery.get();
 
-    if (!delegateToken.getName().equals(DEFAULT_TOKEN_NAME)) {
+    if (!delegateToken.getName().equals(DEFAULT_TOKEN_NAME) || !delegateToken.getName().equals(DEFAULT_TOKEN_NAME_CG)) {
       persistence.delete(delegateToken);
       auditServiceHelper.reportDeleteForAuditingUsingAccountId(accountId, delegateToken);
     }
