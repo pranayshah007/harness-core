@@ -864,7 +864,8 @@ public enum FeatureName {
       "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP),
   CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL("For removing usage of retry interval field for ", HarnessTeam.CDC),
   CDS_NG_FETCH_FILES_REFACTOR(
-      "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP);
+      "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP),
+  CDS_YAML_SIMPLIFICATION("Feature flag for CD YAML Simplification.", PIPELINE);
   // keep-sorted end
 
   @Deprecated
