@@ -22,8 +22,11 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -61,6 +64,7 @@ import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 public class CustomManifestFetchTask extends AbstractDelegateRunnableTask {
   private static final String ZIPPED_CUSTOM_MANIFEST_FILE_NAME = "zippedCustomManifestFiles";
   @Inject private CustomManifestService customManifestService;
@@ -172,12 +176,12 @@ public class CustomManifestFetchTask extends AbstractDelegateRunnableTask {
   }
 
   private boolean isManifestsFilesSizeAllowed(LogCallback logCallback, String defaultSourceWorkingDirectory) {
-    long sizeOfManifestDirectory = FileUtils.sizeOfDirectory(new File(defaultSourceWorkingDirectory));
+    long sizeOfManifest = FileUtils.sizeOf(new File(defaultSourceWorkingDirectory));
     // added 25Mb cap on manifest files
-    if (sizeOfManifestDirectory / (1024 * 1024) > 25) {
+    if (sizeOfManifest / (1024 * 1024) > 25) {
       logCallback.saveExecutionLog(
-          format("Custom Manifest File size: %s, exceeds cap 25Mb", sizeOfManifestDirectory / (1024 * 1024) > 25),
-          ERROR, FAILURE);
+          format("Custom Manifest File size: %s, exceeds cap 25Mb", sizeOfManifest / (1024 * 1024) > 25), ERROR,
+          FAILURE);
       return false;
     }
     return true;
