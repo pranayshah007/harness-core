@@ -41,6 +41,7 @@ import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
+import io.harness.delegate.task.ecs.response.EcsServiceCreationResponse;
 import io.harness.exception.CommandExecutionException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -755,7 +756,7 @@ public class EcsCommandTaskNGHelper {
     return registerScalingPolicyRequestBuilderStrings;
   }
 
-  public String createStageService(String ecsServiceDefinitionManifestContent,
+  public EcsServiceCreationResponse createStageService(String ecsServiceDefinitionManifestContent,
       List<String> ecsScalableTargetManifestContentList, List<String> ecsScalingPolicyManifestContentList,
       EcsInfraConfig ecsInfraConfig, LogCallback logCallback, long timeoutInMillis, String targetGroupArnKey,
       String taskDefinitionArn, String targetGroupArn) {
@@ -813,34 +814,57 @@ public class EcsCommandTaskNGHelper {
                                      createServiceRequest.serviceName(), createServiceRequest.taskDefinition(),
                                      createServiceRequest.desiredCount()),
         LogLevel.INFO);
-    CreateServiceResponse createServiceResponse =
-        createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+    CreateServiceResponse createServiceResponse;
+    try {
+      createServiceResponse =
+          createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+    } catch (Exception ex) {
+      log.warn("Failed to create service: {}", createServiceRequest.serviceName(), ex);
+      logCallback.saveExecutionLog("Failed to create service: " + createServiceRequest.serviceName());
+      return EcsServiceCreationResponse.builder()
+          .created(false)
+          .serviceName(createServiceRequest.serviceName())
+          .ex(ex)
+          .build();
+    }
 
     List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(createServiceResponse.service().events());
 
-    ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
-        createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
+    try {
+      ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
+          createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
 
-    logCallback.saveExecutionLog(format("Created Stage Service %s with Arn %s %n%n", createServiceRequest.serviceName(),
-                                     createServiceResponse.service().serviceArn()),
-        LogLevel.INFO);
+      logCallback.saveExecutionLog(
+          format("Created Stage Service %s with Arn %s %n%n", createServiceRequest.serviceName(),
+              createServiceResponse.service().serviceArn()),
+          LogLevel.INFO);
 
-    logCallback.saveExecutionLog(format("Target Group with Arn: %s is associated with Stage Service %s", targetGroupArn,
-                                     createServiceRequest.serviceName()),
-        LogLevel.INFO);
+      logCallback.saveExecutionLog(format("Target Group with Arn: %s is associated with Stage Service %s",
+                                       targetGroupArn, createServiceRequest.serviceName()),
+          LogLevel.INFO);
 
-    logCallback.saveExecutionLog(format("Tag: [%s, %s] is associated with Stage Service %s", BG_VERSION, BG_GREEN,
-                                     createServiceRequest.serviceName()),
-        LogLevel.INFO);
+      logCallback.saveExecutionLog(format("Tag: [%s, %s] is associated with Stage Service %s", BG_VERSION, BG_GREEN,
+                                       createServiceRequest.serviceName()),
+          LogLevel.INFO);
 
-    registerScalableTargets(ecsScalableTargetManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
-        createServiceResponse.service().serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
-        logCallback);
+      registerScalableTargets(ecsScalableTargetManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
+          createServiceResponse.service().serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
+          logCallback);
 
-    attachScalingPolicies(ecsScalingPolicyManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
-        createServiceResponse.service().serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
-        logCallback);
-    return createServiceResponse.service().serviceName();
+      attachScalingPolicies(ecsScalingPolicyManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
+          createServiceResponse.service().serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
+          logCallback);
+    } catch (Exception ex) {
+      log.warn("Service: {} failed to reach steady state", createServiceRequest.serviceName(), ex);
+      logCallback.saveExecutionLog("Failed to create service: " + createServiceRequest.serviceName());
+      return EcsServiceCreationResponse.builder()
+          .created(false)
+          .serviceName(createServiceRequest.serviceName())
+          .ex(ex)
+          .build();
+    }
+    return EcsServiceCreationResponse.builder().created(true).serviceName(createServiceRequest.serviceName()).build();
   }
 
   public void updateOldService(EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest,

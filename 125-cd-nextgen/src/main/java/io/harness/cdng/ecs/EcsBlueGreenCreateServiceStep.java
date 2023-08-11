@@ -193,25 +193,16 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
     }
     StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
         ecsBlueGreenCreateServiceResponse.getUnitProgressData().getUnitProgresses());
+
     if (ecsBlueGreenCreateServiceResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
+          saveOutcome(ambiance, ecsBlueGreenCreateServiceResponse);
       return EcsStepCommonHelper.getFailureResponseBuilder(ecsBlueGreenCreateServiceResponse, stepResponseBuilder)
           .build();
     }
 
-    EcsBlueGreenCreateServiceResult ecsBlueGreenCreateServiceResult =
-        ecsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult();
     EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
-        EcsBlueGreenCreateServiceDataOutcome.builder()
-            .isNewServiceCreated(ecsBlueGreenCreateServiceResult.isNewServiceCreated())
-            .serviceName(ecsBlueGreenCreateServiceResult.getServiceName())
-            .targetGroupArn(ecsBlueGreenCreateServiceResult.getTargetGroupArn())
-            .loadBalancer(ecsBlueGreenCreateServiceResult.getLoadBalancer())
-            .listenerArn(ecsBlueGreenCreateServiceResult.getListenerArn())
-            .listenerRuleArn(ecsBlueGreenCreateServiceResult.getListenerRuleArn())
-            .build();
-
-    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ECS_BLUE_GREEN_CREATE_SERVICE_OUTCOME,
-        ecsBlueGreenCreateServiceDataOutcome, StepOutcomeGroup.STEP.name());
+        saveOutcome(ambiance, ecsBlueGreenCreateServiceResponse);
 
     List<ServerInstanceInfo> serverInstanceInfos = ecsStepCommonHelper.getServerInstanceInfos(
         ecsBlueGreenCreateServiceResponse, infrastructureOutcome.getInfrastructureKey());
@@ -224,6 +215,24 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
                          .build())
         .stepOutcome(stepOutcome)
         .build();
+  }
+
+  private EcsBlueGreenCreateServiceDataOutcome saveOutcome(
+      Ambiance ambiance, EcsBlueGreenCreateServiceResponse ecsBlueGreenCreateServiceResponse) {
+    EcsBlueGreenCreateServiceResult ecsBlueGreenCreateServiceResult =
+        ecsBlueGreenCreateServiceResponse.getEcsBlueGreenCreateServiceResult();
+    EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
+        EcsBlueGreenCreateServiceDataOutcome.builder()
+            .isNewServiceCreated(ecsBlueGreenCreateServiceResult.isNewServiceCreated())
+            .serviceName(ecsBlueGreenCreateServiceResult.getServiceName())
+            .targetGroupArn(ecsBlueGreenCreateServiceResult.getTargetGroupArn())
+            .loadBalancer(ecsBlueGreenCreateServiceResult.getLoadBalancer())
+            .listenerArn(ecsBlueGreenCreateServiceResult.getListenerArn())
+            .listenerRuleArn(ecsBlueGreenCreateServiceResult.getListenerRuleArn())
+            .build();
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ECS_BLUE_GREEN_CREATE_SERVICE_OUTCOME,
+        ecsBlueGreenCreateServiceDataOutcome, StepOutcomeGroup.STEP.name());
+    return ecsBlueGreenCreateServiceDataOutcome;
   }
 
   @Override

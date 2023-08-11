@@ -33,6 +33,7 @@ import io.harness.delegate.task.ecs.request.EcsCommandRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsCanaryDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
+import io.harness.delegate.task.ecs.response.EcsServiceCreationResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -149,11 +150,12 @@ public class EcsDeploymentHelper {
         ? createTaskDefinition(ecsTaskDefinitionManifestContent, deployLogCallback, ecsInfraConfig)
         : ecsTaskDefinitionArn;
 
-    String serviceName = ecsCommandTaskHelper.createStageService(ecsServiceDefinitionManifestContent,
-        ecsScalableTargetManifestContentList, ecsScalingPolicyManifestContentList, ecsInfraConfig, deployLogCallback,
-        timeoutInMillis, targetGroupArnKey, finalEcsTaskDefinitionArn, targetGroupArn);
-
-    EcsBlueGreenCreateServiceResult ecsBlueGreenCreateServiceResult =
+    EcsServiceCreationResponse stageServiceResponse =
+        ecsCommandTaskHelper.createStageService(ecsServiceDefinitionManifestContent,
+            ecsScalableTargetManifestContentList, ecsScalingPolicyManifestContentList, ecsInfraConfig,
+            deployLogCallback, timeoutInMillis, targetGroupArnKey, finalEcsTaskDefinitionArn, targetGroupArn);
+    String serviceName = stageServiceResponse.getServiceName();
+    EcsBlueGreenCreateServiceResult.EcsBlueGreenCreateServiceResultBuilder createServiceResultBuilder =
         EcsBlueGreenCreateServiceResult.builder()
             .region(ecsInfraConfig.getRegion())
             .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
@@ -163,17 +165,23 @@ public class EcsDeploymentHelper {
             .serviceName(serviceName)
             .loadBalancer(ecsLoadBalancerConfig.getLoadBalancer())
             .listenerArn(ecsLoadBalancerConfig.getStageListenerArn())
-            .listenerRuleArn(ecsLoadBalancerConfig.getStageListenerRuleArn())
-            .build();
-    EcsBlueGreenCreateServiceResponse ecsBlueGreenCreateServiceResponse =
-        EcsBlueGreenCreateServiceResponse.builder()
-            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .ecsBlueGreenCreateServiceResult(ecsBlueGreenCreateServiceResult)
-            .build();
-    deployLogCallback.saveExecutionLog(
-        color(DEPLOYMENT_SUCCESSFUL_LOG, Green, Bold), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-    log.info(TASK_COMPLETION_LOG, ecsCommandRequest.getEcsCommandType().name());
-    return ecsBlueGreenCreateServiceResponse;
+            .listenerRuleArn(ecsLoadBalancerConfig.getStageListenerRuleArn());
+
+    CommandExecutionStatus commandExecutionStatus =
+        stageServiceResponse.isCreated() ? CommandExecutionStatus.SUCCESS : CommandExecutionStatus.FAILURE;
+
+    if (stageServiceResponse.isCreated()) {
+      createServiceResultBuilder.ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(
+          ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion()));
+      deployLogCallback.saveExecutionLog(
+          color(DEPLOYMENT_SUCCESSFUL_LOG, Green, Bold), LogLevel.INFO, commandExecutionStatus);
+      log.info(TASK_COMPLETION_LOG, ecsCommandRequest.getEcsCommandType().name());
+    }
+
+    return EcsBlueGreenCreateServiceResponse.builder()
+        .commandExecutionStatus(commandExecutionStatus)
+        .ecsBlueGreenCreateServiceResult(createServiceResultBuilder.build())
+        .build();
   }
 
   public CreateServiceRequest createServiceDefinitionRequest(LogCallback deployLogCallback,
