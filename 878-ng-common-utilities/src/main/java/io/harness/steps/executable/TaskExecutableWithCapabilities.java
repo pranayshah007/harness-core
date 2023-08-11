@@ -12,8 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.common.rollback.RollbackExecutableUtility;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -23,7 +23,7 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 // Task Executable with RBAC, Rollback and postTaskValidation
-public abstract class TaskExecutableWithCapabilities<T extends StepParameters, R extends ResponseData>
+public abstract class TaskExecutableWithCapabilities<T extends StepBaseParameters, R extends ResponseData>
     implements TaskExecutableWithRbac<T, R> {
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Override

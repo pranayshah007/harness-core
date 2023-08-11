@@ -24,7 +24,6 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
@@ -41,6 +40,7 @@ import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.beans.ImportDataSpecWrapperDTO;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.v1.StepParametersUtilsV1;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;

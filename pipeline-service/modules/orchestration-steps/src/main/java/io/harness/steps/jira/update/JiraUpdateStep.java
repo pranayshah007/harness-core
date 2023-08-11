@@ -28,7 +28,6 @@ import io.harness.execution.step.jira.update.JiraUpdateStepExecutionDetails;
 import io.harness.jira.JiraActionNG;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -47,6 +46,7 @@ import io.harness.steps.jira.JiraStepHelperService;
 import io.harness.steps.jira.JiraStepUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.v1.StepParametersUtilsV1;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
