@@ -43,7 +43,6 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
-import io.harness.utils.v1.StepParametersUtilsV1;
 
 import software.wings.beans.TaskType;
 
@@ -71,8 +70,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
-    ShellScriptStepParameters shellScriptStepParameters =
-        (ShellScriptStepParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
+    ShellScriptStepParameters shellScriptStepParameters = (ShellScriptStepParameters) stepParameters.getSpec();
     TaskParameters taskParameters =
         shellScriptHelperService.buildShellScriptTaskParametersNG(ambiance, shellScriptStepParameters);
 
@@ -91,13 +89,13 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     final List<String> units = shellScriptStepParameters.getAllCommandUnits();
     units.forEach(logStreamingStepClient::openStream);
-    TaskData taskData = TaskData.builder()
-                            .async(true)
-                            .taskType(TaskType.SHELL_SCRIPT_TASK_NG.name())
-                            .parameters(new Object[] {taskParameters})
-                            .timeout(StepUtils.getTimeoutMillis(
-                                StepParametersUtilsV1.getStepTimeout(stepParameters), StepUtils.DEFAULT_STEP_TIMEOUT))
-                            .build();
+    TaskData taskData =
+        TaskData.builder()
+            .async(true)
+            .taskType(TaskType.SHELL_SCRIPT_TASK_NG.name())
+            .parameters(new Object[] {taskParameters})
+            .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
+            .build();
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), units)),
         null, null, TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),
@@ -111,13 +109,13 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
     final List<String> units = shellScriptStepParameters.getAllCommandUnits();
     units.forEach(logStreamingStepClient::openStream);
 
-    TaskData taskData = TaskData.builder()
-                            .async(true)
-                            .taskType(TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG.name())
-                            .parameters(new Object[] {taskParameters})
-                            .timeout(StepUtils.getTimeoutMillis(
-                                StepParametersUtilsV1.getStepTimeout(stepParameters), StepUtils.DEFAULT_STEP_TIMEOUT))
-                            .build();
+    TaskData taskData =
+        TaskData.builder()
+            .async(true)
+            .taskType(TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG.name())
+            .parameters(new Object[] {taskParameters})
+            .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
+            .build();
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, units,
         TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),
@@ -130,8 +128,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
     try {
       StepResponseBuilder stepResponseBuilder = StepResponse.builder();
       ShellScriptTaskResponseNG taskResponse = responseSupplier.get();
-      ShellScriptStepParameters shellScriptStepParameters =
-          (ShellScriptStepParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
+      ShellScriptStepParameters shellScriptStepParameters = (ShellScriptStepParameters) stepParameters.getSpec();
       List<UnitProgress> unitProgresses = taskResponse.getUnitProgressData() == null
           ? emptyList()
           : taskResponse.getUnitProgressData().getUnitProgresses();
@@ -186,7 +183,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
       // Once log-service provide the API to pass list of log-keys as parameter. Then only one call will be enough to
       // close all log-stream. Right now we are doing forEach.
-      ((ShellScriptStepParameters) StepParametersUtilsV1.getSpecParameters(stepParameters))
+      ((ShellScriptStepParameters) stepParameters.getSpec())
           .getAllCommandUnits()
           .forEach(logStreamingStepClient::closeStream);
     }

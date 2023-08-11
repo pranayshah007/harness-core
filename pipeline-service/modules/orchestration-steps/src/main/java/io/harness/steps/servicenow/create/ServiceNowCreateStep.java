@@ -33,7 +33,6 @@ import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.ServiceNowStepUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.v1.StepParametersUtilsV1;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -51,8 +50,7 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-    ServiceNowCreateSpecParameters specParameters =
-        (ServiceNowCreateSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
+    ServiceNowCreateSpecParameters specParameters = (ServiceNowCreateSpecParameters) stepParameters.getSpec();
     String connectorRef = specParameters.getConnectorRef().getValue();
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(connectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -65,8 +63,7 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
-    ServiceNowCreateSpecParameters specParameters =
-        (ServiceNowCreateSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
+    ServiceNowCreateSpecParameters specParameters = (ServiceNowCreateSpecParameters) stepParameters.getSpec();
 
     ServiceNowTaskNGParametersBuilder paramsBuilder =
         ServiceNowTaskNGParameters.builder()
@@ -78,7 +75,7 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
             .fields(ServiceNowStepUtils.processServiceNowFieldsInSpec(specParameters.getFields()));
     return serviceNowStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
-        specParameters.getConnectorRef().getValue(), StepParametersUtilsV1.getStepTimeout(stepParameters).getValue(),
+        specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(),
         "ServiceNow Task: Create Ticket", TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
   }
 

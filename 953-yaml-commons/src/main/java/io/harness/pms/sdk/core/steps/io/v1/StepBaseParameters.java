@@ -7,6 +7,14 @@
 
 package io.harness.pms.sdk.core.steps.io.v1;
 
+import io.harness.plancreator.policy.PolicyConfig;
+import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.ParameterField;
 
-public interface StepBaseParameters extends StepParameters {}
+public interface StepBaseParameters extends StepParameters {
+  ParameterField<String> getTimeout();
+  SpecParameters getSpec();
+  String getName();
+  PolicyConfig getEnforce();
+}

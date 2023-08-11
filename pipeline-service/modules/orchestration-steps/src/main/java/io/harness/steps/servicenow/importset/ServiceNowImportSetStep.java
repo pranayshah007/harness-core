@@ -40,7 +40,6 @@ import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.beans.ImportDataSpecWrapperDTO;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.v1.StepParametersUtilsV1;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -60,8 +59,7 @@ public class ServiceNowImportSetStep extends PipelineTaskExecutable<ServiceNowTa
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-    ServiceNowImportSetSpecParameters specParameters =
-        (ServiceNowImportSetSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
+    ServiceNowImportSetSpecParameters specParameters = (ServiceNowImportSetSpecParameters) stepParameters.getSpec();
     String connectorRef = specParameters.getConnectorRef().getValue();
     if (isBlank(connectorRef)) {
       throw new InvalidRequestException("connectorRef can't be empty");
@@ -80,12 +78,10 @@ public class ServiceNowImportSetStep extends PipelineTaskExecutable<ServiceNowTa
     // Creating the log stream once and will close at the end of the task.
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
-    ServiceNowImportSetSpecParameters specParameters =
-        (ServiceNowImportSetSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
+    ServiceNowImportSetSpecParameters specParameters = (ServiceNowImportSetSpecParameters) stepParameters.getSpec();
     try {
       return serviceNowStepHelperService.prepareTaskRequest(getServiceNowTaskNGFromSpecParameters(specParameters),
-          ambiance, specParameters.getConnectorRef().getValue(),
-          StepParametersUtilsV1.getStepTimeout(stepParameters).getValue(),
+          ambiance, specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(),
           String.format("ServiceNow Task: %s", ServiceNowActionNG.IMPORT_SET),
           TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
     } catch (InvalidRequestException ex) {

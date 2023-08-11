@@ -62,7 +62,6 @@ import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.PmsFeatureFlagHelper;
-import io.harness.utils.v1.StepParametersUtilsV1;
 
 import software.wings.beans.TaskType;
 
@@ -114,13 +113,12 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     int socketTimeoutMillis = (int) NGTimeConversionHelper.convertTimeStringToMilliseconds("10m");
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(HttpTaskNG.COMMAND_UNIT);
-    ParameterField<String> timeout = StepParametersUtilsV1.getStepTimeout(stepParameters);
-    HttpStepParameters httpStepParameters =
-        (HttpStepParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
 
-    if (timeout != null && timeout.getValue() != null) {
-      socketTimeoutMillis = (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(timeout.getValue());
+    if (stepParameters.getTimeout() != null && stepParameters.getTimeout().getValue() != null) {
+      socketTimeoutMillis =
+          (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue());
     }
+    HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
 
     String url = (String) httpStepParameters.getUrl().fetchFinalValue();
 
@@ -156,12 +154,13 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       createCertificate(httpStepParameters).ifPresent(cert -> { httpTaskParametersNgBuilder.certificateNG(cert); });
     }
 
-    final TaskData taskData = TaskData.builder()
-                                  .async(true)
-                                  .timeout(NGTimeConversionHelper.convertTimeStringToMilliseconds(timeout.getValue()))
-                                  .taskType(TaskType.HTTP_TASK_NG.name())
-                                  .parameters(new Object[] {httpTaskParametersNgBuilder.build()})
-                                  .build();
+    final TaskData taskData =
+        TaskData.builder()
+            .async(true)
+            .timeout(NGTimeConversionHelper.convertTimeStringToMilliseconds(stepParameters.getTimeout().getValue()))
+            .taskType(TaskType.HTTP_TASK_NG.name())
+            .parameters(new Object[] {httpTaskParametersNgBuilder.build()})
+            .build();
 
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
@@ -198,8 +197,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
       StepResponseBuilder responseBuilder = StepResponse.builder();
       HttpStepResponse httpStepResponse = responseSupplier.get();
-      HttpStepParameters httpStepParameters =
-          (HttpStepParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
+
+      HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
       logCallback.saveExecutionLog(
           String.format("Successfully executed the http request %s .", fetchFinalValue(httpStepParameters.getUrl())));
 

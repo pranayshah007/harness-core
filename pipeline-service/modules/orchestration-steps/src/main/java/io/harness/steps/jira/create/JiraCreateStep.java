@@ -48,7 +48,6 @@ import io.harness.steps.jira.JiraStepUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
-import io.harness.utils.v1.StepParametersUtilsV1;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -72,8 +71,7 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-    JiraCreateSpecParameters specParameters =
-        (JiraCreateSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
+    JiraCreateSpecParameters specParameters = (JiraCreateSpecParameters) stepParameters.getSpec();
     String connectorRef = specParameters.getConnectorRef().getValue();
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(connectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -86,8 +84,7 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
-    JiraCreateSpecParameters specParameters =
-        (JiraCreateSpecParameters) StepParametersUtilsV1.getSpecParameters(stepParameters);
+    JiraCreateSpecParameters specParameters = (JiraCreateSpecParameters) stepParameters.getSpec();
     JiraTaskNGParametersBuilder paramsBuilder =
         JiraTaskNGParameters.builder()
             .action(JiraActionNG.CREATE_ISSUE)
@@ -99,16 +96,15 @@ public class JiraCreateStep extends PipelineTaskExecutable<JiraTaskNGResponse> {
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
             .fields(JiraStepUtils.processJiraFieldsInParameters(specParameters.getFields()));
     return jiraStepHelperService.prepareTaskRequest(paramsBuilder, ambiance,
-        specParameters.getConnectorRef().getValue(), StepParametersUtilsV1.getStepTimeout(stepParameters).getValue(),
-        "Jira Task: Create Issue", TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
+        specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(), "Jira Task: Create Issue",
+        TaskSelectorYaml.toTaskSelector(specParameters.getDelegateSelectors()));
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<JiraTaskNGResponse> responseSupplier) throws Exception {
-    dashboardExecutorService.submit(()
-                                        -> updateJiraCreateStepExecutionDetailsFromResponse(
-                                            ambiance, responseSupplier, StepParametersUtilsV1.getName(stepParameters)));
+    dashboardExecutorService.submit(
+        () -> updateJiraCreateStepExecutionDetailsFromResponse(ambiance, responseSupplier, stepParameters.getName()));
     return jiraStepHelperService.prepareStepResponse(responseSupplier);
   }
 
