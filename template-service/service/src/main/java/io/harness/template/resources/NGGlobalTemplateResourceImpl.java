@@ -63,8 +63,8 @@ public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
   private final NGTemplateServiceHelper templateServiceHelper;
   private final AccessControlClient accessControlClient;
   @Override
-  public ResponseDTO<List<TemplateWrapperResponseDTO>> crud(@NotNull String accountId, @OrgIdentifier String orgId,
-      @ProjectIdentifier String projectId, String connectorRef, String targetBranch,
+  public ResponseDTO<List<TemplateWrapperResponseDTO>> createAndUpdate(@NotNull String accountId,
+      @OrgIdentifier String orgId, @ProjectIdentifier String projectId, String connectorRef, String targetBranch,
       GitEntityCreateInfoDTO gitEntityCreateInfo, @NotNull String webhookEvent, boolean setDefaultTemplate,
       String comments, boolean isNewTemplate) throws IOException {
     List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = templateService.createUpdateGlobalTemplate(

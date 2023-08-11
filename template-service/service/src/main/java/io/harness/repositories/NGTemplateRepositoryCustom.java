@@ -90,6 +90,7 @@ public interface NGTemplateRepositoryCustom {
 
   Page<TemplateEntity> findAll(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Pageable pageable);
+  Page<GlobalTemplateEntity> findAll(String accountIdentifier, Criteria criteria, Pageable pageable);
 
   boolean existsByAccountIdAndOrgIdAndProjectIdAndIdentifierAndVersionLabel(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel);
@@ -107,6 +108,8 @@ public interface NGTemplateRepositoryCustom {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update);
 
   TemplateEntity updateIsStableTemplate(TemplateEntity templateEntity, boolean value);
+
+  GlobalTemplateEntity updateIsStableTemplate(GlobalTemplateEntity globalTemplateEntity, boolean value);
 
   TemplateEntity updateIsLastUpdatedTemplate(TemplateEntity templateEntity, boolean value);
 

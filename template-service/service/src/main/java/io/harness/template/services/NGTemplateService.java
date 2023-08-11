@@ -89,6 +89,9 @@ public interface NGTemplateService {
   Page<TemplateEntity> listTemplateMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       FilterParamsDTO filterParamsDTO, PageParamsDTO pageParamsDTO);
 
+  Page<GlobalTemplateEntity> listTemplateMetadata(
+      String accountIdentifier, FilterParamsDTO filterParamsDTO, PageParamsDTO pageParamsDTO);
+
   TemplateEntity updateStableTemplateVersion(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String newStableTemplateVersion, String comments);
 

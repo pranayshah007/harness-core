@@ -719,6 +719,10 @@ public class NGTemplateServiceHelper {
     }
   }
 
+  public Page<GlobalTemplateEntity> listTemplate(String accountIdentifier, Criteria criteria, Pageable pageable) {
+    return templateRepository.findAll(accountIdentifier, criteria, pageable);
+  }
+
   public boolean deleteTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, TemplateEntity templateToDelete, String versionLabel, String comments,
       boolean forceDelete) {

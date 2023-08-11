@@ -553,6 +553,14 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
+  public Page<GlobalTemplateEntity> findAll(String accountIdentifier, Criteria criteria, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    List<GlobalTemplateEntity> globalTemplateEntities = mongoTemplate.find(query, GlobalTemplateEntity.class);
+    return PageableExecutionUtils.getPage(globalTemplateEntities, pageable,
+        () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), GlobalTemplateEntity.class));
+  }
+
+  @Override
   public boolean existsByAccountIdAndOrgIdAndProjectIdAndIdentifierAndVersionLabel(String accountId,
       String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel) {
     return gitAwarePersistence.exists(Criteria.where(TemplateEntityKeys.identifier)
@@ -620,6 +628,13 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     Update update = new Update().set(TemplateEntityKeys.isStableTemplate, value);
     return mongoTemplate.findAndModify(query(buildCriteria(templateEntity)), update,
         FindAndModifyOptions.options().returnNew(true), TemplateEntity.class);
+  }
+
+  @Override
+  public GlobalTemplateEntity updateIsStableTemplate(GlobalTemplateEntity globalTemplateEntity, boolean value) {
+    Update update = new Update().set(GlobalTemplateEntityKeys.isStableTemplate, value);
+    return mongoTemplate.findAndModify(query(buildCriteria(globalTemplateEntity)), update,
+        FindAndModifyOptions.options().returnNew(true), GlobalTemplateEntity.class);
   }
 
   @Override
@@ -725,44 +740,51 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         .is(templateEntity.getYamlGitConfigRef());
   }
 
+  private Criteria buildCriteria(GlobalTemplateEntity globalTemplateEntity) {
+    return Criteria.where(TemplateEntityKeys.identifier)
+        .is(globalTemplateEntity.getIdentifier())
+        .and(TemplateEntityKeys.versionLabel)
+        .is(globalTemplateEntity.getVersionLabel());
+  }
+
   boolean shouldLogAudits(String accountId, String orgIdentifier, String projectIdentifier) {
     // if git sync is disabled or if git sync is enabled (only for default branch)
     return !gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier);
   }
 
-  private void addGitParamsToTemplateEntity(TemplateEntity templateEntity, GitEntityInfo gitEntityInfo) {
-    templateEntity.setStoreType(StoreType.REMOTE);
-    if (EmptyPredicate.isEmpty(templateEntity.getRepoURL())) {
-      templateEntity.setRepoURL(gitAwareEntityHelper.getRepoUrl(
-          templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier()));
+  private void addGitParamsToTemplateEntity(TemplateEntity globalTemplateEntity, GitEntityInfo gitEntityInfo) {
+    globalTemplateEntity.setStoreType(StoreType.REMOTE);
+    if (EmptyPredicate.isEmpty(globalTemplateEntity.getRepoURL())) {
+      globalTemplateEntity.setRepoURL(gitAwareEntityHelper.getRepoUrl(globalTemplateEntity.getAccountId(),
+          globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getProjectIdentifier()));
     }
-    templateEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
-    templateEntity.setRepo(gitEntityInfo.getRepoName());
-    templateEntity.setFilePath(gitEntityInfo.getFilePath());
-    templateEntity.setFallBackBranch(gitEntityInfo.getBranch());
+    globalTemplateEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    globalTemplateEntity.setRepo(gitEntityInfo.getRepoName());
+    globalTemplateEntity.setFilePath(gitEntityInfo.getFilePath());
+    globalTemplateEntity.setFallBackBranch(gitEntityInfo.getBranch());
   }
 
-  private void addGitParamsToTemplateEntity(GlobalTemplateEntity templateEntity, GitEntityInfo gitEntityInfo) {
-    templateEntity.setStoreType(StoreType.REMOTE);
-    if (EmptyPredicate.isEmpty(templateEntity.getRepoURL())) {
-      templateEntity.setRepoURL(gitAwareEntityHelper.getRepoUrl(
-          templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier()));
+  private void addGitParamsToTemplateEntity(GlobalTemplateEntity globalTemplateEntity, GitEntityInfo gitEntityInfo) {
+    globalTemplateEntity.setStoreType(StoreType.REMOTE);
+    if (EmptyPredicate.isEmpty(globalTemplateEntity.getRepoURL())) {
+      globalTemplateEntity.setRepoURL(gitAwareEntityHelper.getRepoUrl(globalTemplateEntity.getAccountId(),
+          globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getProjectIdentifier()));
     }
-    templateEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
-    templateEntity.setRepo(gitEntityInfo.getRepoName());
-    templateEntity.setFilePath(gitEntityInfo.getFilePath());
-    templateEntity.setFallBackBranch(gitEntityInfo.getBranch());
+    globalTemplateEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    globalTemplateEntity.setRepo(gitEntityInfo.getRepoName());
+    globalTemplateEntity.setFilePath(gitEntityInfo.getFilePath());
+    globalTemplateEntity.setFallBackBranch(gitEntityInfo.getBranch());
   }
 
-  private boolean isAuditEnabled(TemplateEntity templateEntity, boolean skipAudits) {
-    return shouldLogAudits(
-               templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier())
+  private boolean isAuditEnabled(TemplateEntity globalTemplateEntity, boolean skipAudits) {
+    return shouldLogAudits(globalTemplateEntity.getAccountId(), globalTemplateEntity.getOrgIdentifier(),
+               globalTemplateEntity.getProjectIdentifier())
         && !skipAudits;
   }
 
-  private boolean isAuditEnabled(GlobalTemplateEntity templateEntity, boolean skipAudits) {
-    return shouldLogAudits(
-               templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier())
+  private boolean isAuditEnabled(GlobalTemplateEntity globalTemplateEntity, boolean skipAudits) {
+    return shouldLogAudits(globalTemplateEntity.getAccountId(), globalTemplateEntity.getOrgIdentifier(),
+               globalTemplateEntity.getProjectIdentifier())
         && !skipAudits;
   }
 
