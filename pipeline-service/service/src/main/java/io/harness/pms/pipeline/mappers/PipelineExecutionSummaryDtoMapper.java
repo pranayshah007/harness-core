@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.mappers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -91,7 +92,15 @@ public class PipelineExecutionSummaryDtoMapper {
                 : pipelineExecutionSummaryEntity.getConnectorRef())
         .abortedBy(pipelineExecutionSummaryEntity.getAbortedBy())
         .executionMode(pipelineExecutionSummaryEntity.getExecutionMode())
+        .notesExistForPlanExecutionId(checkNotesExistForPlanExecutionId(pipelineExecutionSummaryEntity))
         .build();
+  }
+
+  public boolean checkNotesExistForPlanExecutionId(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
+    if (null != pipelineExecutionSummaryEntity.getNotesExistForPlanExecutionId()) {
+      return pipelineExecutionSummaryEntity.getNotesExistForPlanExecutionId();
+    }
+    return false;
   }
 
   public PipelineExecutionIdentifierSummaryDTO toExecutionIdentifierDto(
