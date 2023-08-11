@@ -1,0 +1,11 @@
+[
+  {
+    "id": "64d4f26ed87dc387cb5ee933",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "coverage",
+    "name": "Sonarqube coverage",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "sonarqube",
+    "dataSourceLocationIdentifier": "__HARNESS__59416052-669b-45e0-813b-f686eb26e464"
+  }
+]

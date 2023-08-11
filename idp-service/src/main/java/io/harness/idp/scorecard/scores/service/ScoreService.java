@@ -17,6 +17,16 @@ import java.util.List;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface ScoreService {
+  /**
+   * This function populates data into scorecard related collections against the global account identifier
+   * @param checkEntities check entities represented as json string
+   * @param datapointEntities datapoint entities represented as json string
+   * @param datasourceEntities datasource entities represented as json string
+   * @param datasourceLocationEntities datasourceLocation entities represented as json string
+   */
+  void populateData(
+      String checkEntities, String datapointEntities, String datasourceEntities, String datasourceLocationEntities);
+
   void computeScores(String accountIdentifier, List<String> scorecardIdentifiers, List<String> entityIdentifiers);
   List<ScorecardSummaryInfo> getScoresSummaryForAnEntity(String accountIdentifier, String entityIdentifier);
 

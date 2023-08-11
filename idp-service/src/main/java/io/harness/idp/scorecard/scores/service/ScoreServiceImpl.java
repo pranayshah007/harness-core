@@ -8,6 +8,7 @@
 package io.harness.idp.scorecard.scores.service;
 
 import static io.harness.expression.common.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
+import static io.harness.idp.common.JacksonUtils.convert;
 import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,8 +18,15 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntityTypes;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
+import io.harness.idp.scorecard.checks.repositories.CheckRepository;
+import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.datapoints.repositories.DataPointsRepository;
+import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
+import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProvider;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProviderFactory;
+import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.idp.scorecard.scorecards.beans.ScorecardCheckFullDetails;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
@@ -34,6 +42,7 @@ import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardScore;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
+import io.harness.springdata.TransactionHelper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -51,17 +60,35 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@AllArgsConstructor(onConstructor = @__({ @com.google.inject.Inject }))
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class ScoreServiceImpl implements ScoreService {
   private static final String CATALOG_API_SUFFIX = "%s/idp/api/catalog/entities?filter=%s";
+  @Inject TransactionHelper transactionHelper;
+  @Inject CheckRepository checkRepository;
+  @Inject DataPointsRepository datapointRepository;
+  @Inject DataSourceRepository datasourceRepository;
+  @Inject DataSourceLocationRepository datasourceLocationRepository;
   ScorecardService scorecardService;
   DataSourceProviderFactory dataSourceProviderFactory;
   ScoreRepository scoreRepository;
   BackstageResourceClient backstageResourceClient;
   static final ObjectMapper mapper =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+  @Override
+  public void populateData(
+      String checkEntities, String datapointEntities, String datasourceEntities, String datasourceLocationEntities) {
+    List<CheckEntity> checks = convert(checkEntities, CheckEntity.class);
+    List<DataPointEntity> dataPoints = convert(datapointEntities, DataPointEntity.class);
+    List<DataSourceEntity> dataSources = convert(datasourceEntities, DataSourceEntity.class);
+    List<DataSourceLocationEntity> dataSourceLocations =
+        convert(datasourceLocationEntities, DataSourceLocationEntity.class);
+    log.info("Converted entities json string to corresponding list<> pojo's");
+    saveAll(checks, dataPoints, dataSources, dataSourceLocations);
+    log.info("Populated data into checks, dataPoints, dataSources, dataSourceLocations");
+  }
 
   @Override
   public void computeScores(
@@ -147,6 +174,17 @@ public class ScoreServiceImpl implements ScoreService {
               .getName());
     }
     return new ScorecardSummaryInfo();
+  }
+
+  private void saveAll(List<CheckEntity> checks, List<DataPointEntity> dataPoints, List<DataSourceEntity> dataSources,
+      List<DataSourceLocationEntity> dataSourceLocations) {
+    transactionHelper.performTransaction(() -> {
+      checkRepository.saveAll(checks);
+      datapointRepository.saveAll(dataPoints);
+      datasourceRepository.saveAll(dataSources);
+      datasourceLocationRepository.saveAll(dataSourceLocations);
+      return null;
+    });
   }
 
   public List<? extends BackstageCatalogEntity> getAllEntities(

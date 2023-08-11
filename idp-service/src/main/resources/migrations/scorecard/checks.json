@@ -1,0 +1,22 @@
+[
+  {
+    "id": "64d4f1a9b308cf71096284be",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__bfeece93-8892-4459-be93-b7a647df7e5f",
+    "name": "Code coverage is more than 70%",
+    "description": "Code coverage is more than 70%",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "sonarqube",
+        "data_point_identifier": "coverage",
+        "operator": ">",
+        "value": "70"
+      }
+    ],
+    "expression": "sonarqube.coverage > 70",
+    "labels": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Code coverage is less than 70%"
+  }
+]
