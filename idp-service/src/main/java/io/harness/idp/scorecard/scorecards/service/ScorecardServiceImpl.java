@@ -14,7 +14,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.service.CheckService;
+import io.harness.idp.scorecard.scorecards.beans.ScorecardCheckFullDetails;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
+import io.harness.idp.scorecard.scorecards.mappers.ScorecardCheckFullDetailsMapper;
 import io.harness.idp.scorecard.scorecards.mappers.ScorecardDetailsMapper;
 import io.harness.idp.scorecard.scorecards.mappers.ScorecardMapper;
 import io.harness.idp.scorecard.scorecards.repositories.ScorecardRepository;
@@ -62,8 +64,32 @@ public class ScorecardServiceImpl implements ScorecardService {
   }
 
   @Override
-  public List<ScorecardEntity> getAllScorecards(String accountIdentifier) {
-    return null;
+  public List<ScorecardCheckFullDetails> getAllScorecardCheckFullDetails(
+      String accountIdentifier, List<String> scorecardIdentifiers) {
+    List<ScorecardEntity> scorecardEntities;
+    if (scorecardIdentifiers.isEmpty()) {
+      scorecardEntities = scorecardRepository.findByAccountIdentifierAndPublished(accountIdentifier, true);
+    } else {
+      scorecardEntities =
+          scorecardRepository.findByAccountIdentifierAndIdentifierIn(accountIdentifier, scorecardIdentifiers);
+    }
+    List<String> checkIdentifiers = scorecardEntities.stream()
+                                        .flatMap(scorecardEntity -> scorecardEntity.getChecks().stream())
+                                        .map(ScorecardEntity.Check::getIdentifier)
+                                        .collect(Collectors.toList());
+    Map<String, CheckEntity> checkEntityMap =
+        checkService.getActiveChecks(accountIdentifier, checkIdentifiers)
+            .stream()
+            .collect(Collectors.toMap(CheckEntity::getIdentifier, Function.identity()));
+    List<ScorecardCheckFullDetails> scorecardDetailsList = new ArrayList<>();
+    for (ScorecardEntity scorecardEntity : scorecardEntities) {
+      List<CheckEntity> checksList = scorecardEntity.getChecks()
+                                         .stream()
+                                         .map(check -> checkEntityMap.get(check.getIdentifier()))
+                                         .collect(Collectors.toList());
+      scorecardDetailsList.add(ScorecardCheckFullDetailsMapper.toDTO(scorecardEntity, checksList));
+    }
+    return scorecardDetailsList;
   }
 
   @Override

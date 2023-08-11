@@ -20,20 +20,22 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
-import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Slf4j
 @Singleton
 public class RuleSetDAO {
   @Inject private HPersistence hPersistence;
+  @Inject private MongoTemplate mongoTemplate;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
   public boolean save(RuleSet rulesSet) {
-    log.info("created: {}", hPersistence.save(rulesSet));
-    return hPersistence.save(rulesSet) != null;
+    RuleSet savedRuleSet = mongoTemplate.save(rulesSet);
+    log.info("created: {}", savedRuleSet);
+    return savedRuleSet != null;
   }
 
   public boolean deleteOOTB(String accountId, String uuid) {
@@ -57,31 +59,26 @@ public class RuleSetDAO {
   }
 
   public RuleSet update(String accountId, RuleSet ruleSet) {
-    Query<RuleSet> query = hPersistence.createQuery(RuleSet.class)
-                               .field(RuleSetId.accountId)
-                               .equal(accountId)
-                               .field(RuleSetId.uuid)
-                               .equal(ruleSet.getUuid());
-    UpdateOperations<RuleSet> updateOperations = hPersistence.createUpdateOperations(RuleSet.class);
+    RuleSet existingRuleSet = fetchById(accountId, ruleSet.getUuid(), false);
     if (ruleSet.getName() != null) {
       if (fetchByName(ruleSet.getAccountId(), ruleSet.getName(), true) != null) {
         throw new InvalidRequestException("Rule Set with this name already exits");
       }
-      updateOperations.set(RuleSetId.name, ruleSet.getName());
+      existingRuleSet.setName(ruleSet.getName());
     }
     if (ruleSet.getTags() != null) {
-      updateOperations.set(RuleSetId.tags, ruleSet.getTags());
+      existingRuleSet.setTags(ruleSet.getTags());
     }
     if (ruleSet.getRulesIdentifier() != null) {
-      updateOperations.set(RuleSetId.rulesIdentifier, ruleSet.getRulesIdentifier());
+      existingRuleSet.setRulesIdentifier(ruleSet.getRulesIdentifier());
     }
     if (ruleSet.getDescription() != null) {
-      updateOperations.set(RuleSetId.description, ruleSet.getDescription());
+      existingRuleSet.setDescription(ruleSet.getDescription());
     }
 
-    hPersistence.update(query, updateOperations);
-    log.info("Updated rules: {} {}", query, hPersistence.update(query, updateOperations));
-    return query.asList().get(0);
+    RuleSet savedRuleSet = mongoTemplate.save(existingRuleSet);
+    log.info("Updated rules: {}", savedRuleSet);
+    return savedRuleSet;
   }
 
   public RuleSet fetchByName(String accountId, String name, boolean create) {

@@ -291,9 +291,9 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         resources, k8sCanaryHandlerConfig.getKubernetesConfig().getNamespace());
 
     k8sCanaryBaseHandler.updateDestinationRuleManifestFilesWithSubsets(
-        resources, k8sCanaryHandlerConfig.getKubernetesConfig(), logCallback);
+        resources, request.isDisableFabric8() ? null : k8sCanaryHandlerConfig.getKubernetesConfig(), logCallback);
     k8sCanaryBaseHandler.updateVirtualServiceManifestFilesWithRoutes(
-        resources, k8sCanaryHandlerConfig.getKubernetesConfig(), logCallback);
+        resources, request.isDisableFabric8() ? null : k8sCanaryHandlerConfig.getKubernetesConfig(), logCallback);
     k8sCanaryHandlerConfig.setResources(resources);
 
     logCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));

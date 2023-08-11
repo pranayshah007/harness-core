@@ -8,6 +8,7 @@
 package io.harness.artifacts.nexus;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.SHIVAM;
@@ -26,6 +27,7 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.artifact.ArtifactFileMetadataInternal;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
@@ -44,6 +46,9 @@ import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -1652,5 +1657,66 @@ public class NexusThreeClientImplTest extends CategoryTest {
     assertThat(response.stream().map(BuildDetailsInternal::getNumber).collect(Collectors.toList()))
         .isEqualTo(Lists.newArrayList(
             "hello-world/v5.json", "hello-world/v0.json", "hello-world/v1.json", "hello-world/v4.json"));
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testGetVersionsSuccessV2() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version(VERSION_3)
+                                   .build();
+
+    String repoKey = "snapshots-harness";
+    String artifactPath = "my-app";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"my-app\",\n"
+                                 + "        \"format\": \"maven2\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    byte[] bytes =
+        Files.readAllBytes(Paths.get("960-api-services/src/test/resources/__files/artifactory/nexus-3-response.json"));
+    String searchResponse = new String(bytes, StandardCharsets.UTF_8);
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey
+                + "&maven.groupId=my.group&maven.artifactId=" + URLEncoder.encode(artifactPath, "UTF-8")
+                + "&maven.extension=zip&maven.classifier=dist"))
+            .willReturn(aResponse().withStatus(200).withBody(searchResponse)));
+
+    List<BuildDetailsInternal> response =
+        nexusThreeService.getVersions(nexusConfig, repoKey, "my.group", artifactPath, "zip", "dist", Integer.MAX_VALUE);
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(4);
+    for (BuildDetailsInternal details : response) {
+      String number = details.getNumber();
+      assertThat(details.getBuildUrl()).endsWith(number + "-dist.zip");
+      assertThat(details.getMetadata().get("version")).isEqualTo(number);
+      List<ArtifactFileMetadataInternal> artifactFileMetadataList = details.getArtifactFileMetadataList();
+      assertThat(artifactFileMetadataList).hasSize(1);
+      assertThat(artifactFileMetadataList.get(0).getFileName()).endsWith("my-app-" + number + "-dist.zip");
+      assertThat(artifactFileMetadataList.get(0).getUrl()).endsWith("my-app-" + number + "-dist.zip");
+      assertThat(artifactFileMetadataList.get(0).getImagePath()).endsWith("my-app-" + number + "-dist.zip");
+    }
   }
 }

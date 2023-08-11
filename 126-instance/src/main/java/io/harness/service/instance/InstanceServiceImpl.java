@@ -10,6 +10,7 @@ package io.harness.service.instance;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.entities.Instance.InstanceKeysAdditional;
+import io.harness.exception.ExceptionUtils;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
@@ -381,5 +383,19 @@ public class InstanceServiceImpl implements InstanceService {
       String projectIdentifier, String serviceIdentifier, String agentIdentifier) {
     return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByServiceId(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, agentIdentifier));
+  }
+
+  @Override
+  public boolean deleteForProject(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    try {
+      instanceRepository.getInstancesForProject(accountIdentifier, orgIdentifier, projectIdentifier)
+          .forEach(instance -> deleteById(instance.getId()));
+      return true;
+    } catch (Exception e) {
+      log.warn(format("Error while deleting InstanceNG for AccountId [%s], OrgId [%s], ProjectId [%s] : %s",
+                   accountIdentifier, orgIdentifier, projectIdentifier, ExceptionUtils.getMessage(e)),
+          e);
+      return false;
+    }
   }
 }

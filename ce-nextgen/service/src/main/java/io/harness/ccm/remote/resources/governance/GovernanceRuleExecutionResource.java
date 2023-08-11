@@ -14,7 +14,16 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
+import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.governance.dto.OverviewExecutionCostDetails;
+import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
+import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
+import io.harness.ccm.graphql.query.recommendation.RecommendationsOverviewQueryV2;
+import io.harness.ccm.graphql.utils.GraphQLToRESTHelper;
+import io.harness.ccm.helper.RecommendationQueryHelper;
+import io.harness.ccm.remote.beans.recommendation.CCMRecommendationFilterPropertiesDTO;
+import io.harness.ccm.remote.beans.recommendation.K8sRecommendationFilterPropertiesDTO;
 import io.harness.ccm.views.dto.CreateRuleExecutionDTO;
 import io.harness.ccm.views.dto.CreateRuleExecutionFilterDTO;
 import io.harness.ccm.views.entities.RuleExecution;
@@ -36,6 +45,8 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.inject.Inject;
+import io.fabric8.utils.Lists;
+import io.leangen.graphql.execution.ResolutionEnvironment;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -47,7 +58,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -100,6 +113,7 @@ public class GovernanceRuleExecutionResource {
   private final RuleExecutionService ruleExecutionService;
   @Inject CENextGenConfiguration configuration;
   @Inject private BigQueryService bigQueryService;
+  @Inject private RecommendationsOverviewQueryV2 recommendationsOverviewQueryV2;
 
   @Inject
   public GovernanceRuleExecutionResource(RuleExecutionService ruleExecutionService) {
@@ -312,7 +326,23 @@ public class GovernanceRuleExecutionResource {
       @Valid CreateRuleExecutionFilterDTO createRuleExecutionFilterDTO) {
     RuleExecutionFilter ruleExecutionFilter = createRuleExecutionFilterDTO.getRuleExecutionFilter();
     ruleExecutionFilter.setAccountId(accountId);
-    return ResponseDTO.newResponse(ruleExecutionService.getExecutionCostDetails(accountId, ruleExecutionFilter));
+
+    // Getting recommendations data from timescale DB
+    K8sRecommendationFilterDTO filter =
+        RecommendationQueryHelper.buildK8sRecommendationFilterDTO(getDefaultGovernanceRecommendationOverviewFilter());
+    GraphQLToRESTHelper.setDefaultPaginatedFilterValues(filter);
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
+    List<RecommendationItemDTO> recommendationsDTO =
+        recommendationsOverviewQueryV2.recommendations(filter, env).getItems();
+    if (Lists.isNullOrEmpty(recommendationsDTO)) {
+      return ResponseDTO.newResponse(OverviewExecutionCostDetails.builder().build());
+    }
+    List<String> recommendationsIds = recommendationsDTO.stream()
+                                          .map(recommendationItemDTO -> recommendationItemDTO.getId())
+                                          .collect(Collectors.toList());
+
+    return ResponseDTO.newResponse(
+        ruleExecutionService.getExecutionCostDetails(accountId, ruleExecutionFilter, recommendationsIds));
   }
 
   @GET
@@ -332,5 +362,17 @@ public class GovernanceRuleExecutionResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("recommendationId") @NotNull @Valid String recommendationId) {
     return ResponseDTO.newResponse(ruleExecutionService.getRuleRecommendationDetails(recommendationId, accountId));
+  }
+
+  private CCMRecommendationFilterPropertiesDTO getDefaultGovernanceRecommendationOverviewFilter() {
+    // Forming the same query passed through UI on Governance overview Page
+    return CCMRecommendationFilterPropertiesDTO.builder()
+        .k8sRecommendationFilterPropertiesDTO(K8sRecommendationFilterPropertiesDTO.builder()
+                                                  .resourceTypes(List.of(ResourceType.GOVERNANCE))
+                                                  .recommendationStates(List.of(RecommendationState.OPEN))
+                                                  .build())
+        .limit(5L)
+        .offset(0L)
+        .build();
   }
 }

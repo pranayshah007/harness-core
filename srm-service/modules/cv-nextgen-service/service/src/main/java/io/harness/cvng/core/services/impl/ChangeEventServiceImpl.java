@@ -28,6 +28,7 @@ import io.harness.cvng.activity.entities.ActivityBucket.ActivityBucketKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService.ServiceEnvironmentKeys;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
@@ -269,6 +270,13 @@ public class ChangeEventServiceImpl implements ChangeEventService {
                                     .asList();
     return PageUtils.offsetAndLimit(activities.stream().map(transformer::getDto).collect(Collectors.toList()),
         pageRequest.getPageIndex(), pageRequest.getPageSize());
+  }
+
+  public PageResponse<SRMAnalysisStepDetailDTO> getReportList(ProjectParams projectParams,
+      List<String> serviceIdentifiers, List<String> environmentIdentifier, List<String> monitoredServiceIdentifiers,
+      boolean isMonitoredServiceIdentifierScoped, Instant startTime, Instant endTime, PageRequest pageRequest) {
+    return srmAnalysisStepService.getReportList(projectParams, serviceIdentifiers, environmentIdentifier,
+        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, startTime, endTime, pageRequest);
   }
 
   private ChangeTimeline getTimeline(ProjectParams projectParams, List<String> monitoredServiceIdentifiers,

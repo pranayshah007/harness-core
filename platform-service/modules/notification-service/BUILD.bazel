@@ -29,6 +29,7 @@ java_library(
         "//950-delegate-tasks-beans:module",
         "//950-ng-project-n-orgs:module",
         "//950-wait-engine:module",
+        "//953-events-api:module",
         "//953-yaml-commons:module",
         "//960-ng-core-beans:module",
         "//960-persistence:module",

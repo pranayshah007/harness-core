@@ -6,6 +6,7 @@
  */
 
 package io.harness.platform;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
@@ -24,7 +25,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.audit.eventframework.PlatformEventConsumerService;
+import io.harness.audit.eventframework.AuditEventConsumerService;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
@@ -36,6 +37,7 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.notification.eventframework.NotificationConsumerService;
 import io.harness.notification.exception.NotificationExceptionMapper;
 import io.harness.platform.audit.AuditServiceModule;
 import io.harness.platform.audit.AuditServiceSetup;
@@ -191,8 +193,8 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     registerRequestContextFilter(environment);
     registerOasResource(appConfig, environment, godInjector.get(PLATFORM_SERVICE));
     createConsumerThreadsToListenToEvents(environment, godInjector.get(AUDIT_SERVICE));
+    createConsumerThreadsToListenToNotificationEvents(environment, godInjector.get(NOTIFICATION_SERVICE));
     initMetrics(godInjector);
-
     new NotificationServiceSetup().setup(
         appConfig.getNotificationServiceConfig(), environment, godInjector.get(NOTIFICATION_SERVICE));
 
@@ -213,7 +215,11 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
   }
 
   private void createConsumerThreadsToListenToEvents(Environment environment, Injector injector) {
-    environment.lifecycle().manage(injector.getInstance(PlatformEventConsumerService.class));
+    environment.lifecycle().manage(injector.getInstance(AuditEventConsumerService.class));
+  }
+
+  private void createConsumerThreadsToListenToNotificationEvents(Environment environment, Injector injector) {
+    environment.lifecycle().manage(injector.getInstance(NotificationConsumerService.class));
   }
 
   private void registerOasResource(PlatformConfiguration appConfig, Environment environment, Injector injector) {

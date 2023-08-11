@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.serverless.container.steps;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -19,13 +20,13 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.data.annotation.TypeAlias;
 
 @CodePulse(

@@ -143,8 +143,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
                                   .errorMessage(errorMessage)
                                   .build());
         taskResponse.responseCode(ResponseCode.FAILED);
-        metricRegistry.registerCounterMetric(
-            TASK_FAILED, new String[] {DELEGATE_NAME, taskType}, "Total number of task failed");
+        metricRegistry.recordCounterInc(TASK_FAILED, new String[] {DELEGATE_NAME, taskType});
       }
       log.debug("Completed executing task {}", taskId);
     } catch (DelegateRetryableException exception) {
@@ -161,7 +160,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
       taskResponse.response(delegateExceptionManager.getResponseData(
           throwable, errorNotifyResponseDataBuilder, isSupportingErrorFramework()));
       taskResponse.responseCode(ResponseCode.FAILED);
-      metricRegistry.recordGaugeInc(TASK_FAILED, new String[] {delegateHostname, taskType});
+      metricRegistry.recordCounterInc(TASK_FAILED, new String[] {DELEGATE_NAME, taskType});
     } finally {
       GlobalContextManager.unset();
       if (consumer != null) {

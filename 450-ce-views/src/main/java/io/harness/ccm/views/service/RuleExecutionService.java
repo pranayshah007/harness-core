@@ -27,5 +27,6 @@ public interface RuleExecutionService {
   RuleExecutionList getRuleRecommendationDetails(String ruleRecommendationId, String accountId);
   RuleRecommendation getRuleRecommendation(String ruleRecommendationId, String accountId);
   OverviewExecutionDetails getOverviewExecutionDetails(String accountId, RuleExecutionFilter ruleExecutionFilter);
-  OverviewExecutionCostDetails getExecutionCostDetails(String accountId, RuleExecutionFilter ruleExecutionFilter);
+  OverviewExecutionCostDetails getExecutionCostDetails(
+      String accountId, RuleExecutionFilter ruleExecutionFilter, List<String> recommendationIds);
 }

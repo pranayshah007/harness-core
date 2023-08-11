@@ -29,6 +29,8 @@ public interface ViewFieldConstants {
   String AWS_ACCOUNT_FIELD_ID = "awsUsageaccountid";
   String AWS_INSTANCE_TYPE_FIELD_ID = "awsInstancetype";
   String AWS_USAGE_TYPE_ID = "awsUsageType";
+  String AWS_BILLING_ENTITY = "awsBillingEntity";
+  String AWS_LINE_ITEM_TYPE = "awsLineItemType";
 
   String AZURE_SUBSCRIPTION_GUID = "azureSubscriptionGuid";
   String AZURE_RESOURCE_GROUP = "azureResourceGroup";

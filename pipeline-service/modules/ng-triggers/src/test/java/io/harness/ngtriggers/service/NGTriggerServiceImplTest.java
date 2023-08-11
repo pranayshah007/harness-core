@@ -19,6 +19,7 @@ import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -147,6 +149,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -167,6 +170,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -1868,6 +1872,45 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testUpdateEnabledField() {
+    // Prepare test data
+    String accountIdentifier = "accountId";
+    String orgIdentifier = "orgIdentifier";
+    String projectIdentifier = "projectIdentifier";
+
+    Criteria criteria = new Criteria();
+    // Set up your criteria mock here
+    List<NGTriggerEntity> listOfTriggers = Collections.singletonList(NGTriggerEntity.builder().build());
+    // Add some NGTriggerEntity instances to listOfTriggers
+    CloseableIterator<NGTriggerEntity> iterator = createCloseableIterator(listOfTriggers.iterator());
+
+    TriggerUpdateCount triggerUpdateCount = TriggerUpdateCount.builder().successCount(1L).failureCount(1L).build();
+    // Set up your triggerUpdateCount mock here
+
+    // Mock the behavior of ngTriggerRepository.findAll
+    when(ngTriggerRepository.findAll(any(Criteria.class))).thenReturn(iterator);
+
+    // Mock the behavior of ngTriggerElementMapper.updateEntityYmlWithEnabledValue
+    doNothing().when(ngTriggerElementMapper).updateEntityYmlWithEnabledValue(any(NGTriggerEntity.class));
+
+    // Mock the behavior of ngTriggerRepository.updateTriggerEnabled
+    when(ngTriggerRepository.updateTriggerEnabled(anyList())).thenReturn(triggerUpdateCount);
+
+    // Perform the test
+    TriggerUpdateCount result =
+        ngTriggerServiceImpl.disableTriggers(accountIdentifier, orgIdentifier, projectIdentifier);
+
+    // Verify the mock interactions and assertions
+    verify(ngTriggerRepository).findAll(any(Criteria.class));
+    verify(ngTriggerElementMapper, times(listOfTriggers.size())).updateEntityYmlWithEnabledValue(any());
+    verify(ngTriggerRepository).updateTriggerEnabled(anyList());
+
+    assertEquals(triggerUpdateCount, result);
+  }
+
+  @Test
   @Owner(developers = VINICIUS)
   @Category(UnitTests.class)
   public void testExecutePollingSubscriptionChangesForMultiRegionArtifactTriggerDisabled() throws Exception {
@@ -2020,5 +2063,22 @@ public class NGTriggerServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> ngTriggerServiceImpl.updateTriggerPollingStatus("account", statusUpdate))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Empty signatures list provided for trigger polling status update");
+  }
+
+  private static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {
+    return new CloseableIterator<T>() {
+      @Override
+      public void close() {}
+
+      @Override
+      public boolean hasNext() {
+        return iterator.hasNext();
+      }
+
+      @Override
+      public T next() {
+        return iterator.next();
+      }
+    };
   }
 }

@@ -10,16 +10,20 @@ package io.harness.idp.scorecard.datasources.providers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
 public class HarnessProvider implements DataSourceProvider {
   @Override
+  public String getProviderIdentifier() {
+    return "catalog";
+  }
+
+  @Override
   public Map<String, Map<String, Object>> fetchData(
-      String accountIdentifier, BackstageCatalogEntity entity, List<DataPointEntity> dataPoints) {
+      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
     return null;
   }
 }

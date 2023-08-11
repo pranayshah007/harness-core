@@ -90,6 +90,8 @@ public class TriggerEventHistory implements PersistentEntity {
   String eventCorrelationId;
   @Nullable String pollingDocId;
   String payload;
+  @Nullable String buildSourceType;
+  @Nullable String build;
   Long eventCreatedAt;
   String finalStatus;
   String message;

@@ -13,48 +13,62 @@ import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
-import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
+import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 
+import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import lombok.AllArgsConstructor;
 
 @OwnedBy(HarnessTeam.IDP)
+
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class GithubProvider implements DataSourceProvider {
   private DataSourceLocationFactory dataSourceLocationFactory;
   private DataPointParserFactory dataPointParserFactory;
+  private DataPointService dataPointService;
+
+  @Override
+  public String getProviderIdentifier() {
+    return "github";
+  }
 
   @Override
   public Map<String, Map<String, Object>> fetchData(
-      String accountIdentifier, BackstageCatalogEntity entity, List<DataPointEntity> dataPoints) {
-    Map<DataSourceLocationEntity, List<DataPointEntity>> dataToFetch = new HashMap<>();
-    /*
-    Construct this map :
-    {
-        GITHUB_PR: [DP1(main), DP1(develop), DP2(.gitleaks), DP3]
-        GITHUB_BASE: [DP4, DP5],
-    }
-    THIRD not needed
-    * */
+      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
+    Set<String> dataPointIdentifiers = dataPointsAndInputValues.keySet();
+    Map<String, List<DataPointEntity>> dataToFetch = dataPointService.getDslDataPointsInfo(
+        accountIdentifier, new ArrayList<>(dataPointIdentifiers), this.getProviderIdentifier());
+
     Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
 
-    for (DataSourceLocationEntity dataSourceLocationEntity : dataToFetch.keySet()) {
-      Map<String, Object> dataPointValues = new HashMap<>();
-      List<DataPointEntity> dataPointsToFetch = dataToFetch.get(dataSourceLocationEntity);
+    for (String dslIdentifier : dataToFetch.keySet()) {
+      Map<DataPointEntity, Set<String>> dataToFetchWithInputValues = new HashMap<>();
+      dataToFetch.get(dslIdentifier)
+          .forEach(dataPointEntity
+              -> dataToFetchWithInputValues.put(
+                  dataPointEntity, dataPointsAndInputValues.get(dataPointEntity.getIdentifier())));
 
-      DataSourceLocation dataSourceLocation =
-          dataSourceLocationFactory.getDataSourceLocation(dataSourceLocationEntity.getIdentifier(), dataPointsToFetch);
+      DataSourceLocation dataSourceLocation = dataSourceLocationFactory.getDataSourceLocation(dslIdentifier);
       Map<String, Object> response =
-          dataSourceLocation.fetchData(accountIdentifier, entity, dataSourceLocationEntity, dataPointsToFetch);
+          dataSourceLocation.fetchData(accountIdentifier, entity, dslIdentifier, dataToFetchWithInputValues);
 
-      for (DataPointEntity dataPoint : dataPointsToFetch) {
+      Map<String, Object> dataPointValues = new HashMap<>();
+      for (DataPointEntity dataPoint : dataToFetchWithInputValues.keySet()) {
         DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPoint.getIdentifier());
-        Object value = dataPointParser.parseDataPoint(response, dataPoint);
-        dataPointValues.put(dataPoint.getIdentifier(), value);
+        Object values = dataPointParser.parseDataPoint(response, dataPoint, dataToFetchWithInputValues.get(dataPoint));
+        if (values != null) {
+          dataPointValues.put(dataPoint.getIdentifier(), values);
+        }
       }
-      aggregatedData.getOrDefault("github", new HashMap<>()).putAll(dataPointValues);
+      Map<String, Object> providerData = aggregatedData.getOrDefault(getProviderIdentifier(), new HashMap<>());
+      providerData.putAll(dataPointValues);
+      aggregatedData.put(getProviderIdentifier(), providerData);
     }
 
     return aggregatedData;

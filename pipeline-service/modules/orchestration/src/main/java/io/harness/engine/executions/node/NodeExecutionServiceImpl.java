@@ -604,14 +604,16 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     }
   }
 
-  private List<String> getTimeoutInstanceIds(Status toBeUpdatedNodeStatus, String curretNodeExecutionId) {
+  @VisibleForTesting
+  List<String> getTimeoutInstanceIds(Status toBeUpdatedNodeStatus, String currentNodeExecutionId) {
     List<String> timeoutInstanceIds = new LinkedList<>();
     if (StatusUtils.isFinalStatus(toBeUpdatedNodeStatus)) {
-      Query getCurrentNodeQuery = query(where(NodeExecutionKeys.uuid).is(curretNodeExecutionId));
+      Query getCurrentNodeQuery = query(where(NodeExecutionKeys.uuid).is(currentNodeExecutionId));
       getCurrentNodeQuery.fields().include(NodeExecutionKeys.uuid).include(NodeExecutionKeys.timeoutInstanceIds);
       NodeExecution oldNodeExecution =
           nodeExecutionReadHelper.fetchNodeExecutionsFromSecondaryTemplate(getCurrentNodeQuery);
-      timeoutInstanceIds = oldNodeExecution.getTimeoutInstanceIds();
+      // nodeExecution could be null due to skipped nodes
+      timeoutInstanceIds = oldNodeExecution == null ? new LinkedList<>() : oldNodeExecution.getTimeoutInstanceIds();
     }
     return timeoutInstanceIds;
   }

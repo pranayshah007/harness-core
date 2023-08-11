@@ -46,6 +46,7 @@ java_library(
         "//970-api-services-beans/src/main/java/io/harness/k8s/exception:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s/manifest:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/model/istio:module",
         "//970-api-services-beans/src/main/java/io/harness/k8s/model/response:module",
         "//970-api-services-beans/src/main/java/io/harness/logging:module",
         "//970-api-services-beans/src/main/java/io/harness/manifest:module",

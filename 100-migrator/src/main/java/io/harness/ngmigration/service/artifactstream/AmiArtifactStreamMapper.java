@@ -86,7 +86,7 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
   public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     String connectorRef = getConnectorRef(migratedEntities, artifactStream);
-    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
     String region = "us-east-1";
     List<AMITag> tags = Collections.emptyList();
     List<AMIFilter> filters = Collections.emptyList();

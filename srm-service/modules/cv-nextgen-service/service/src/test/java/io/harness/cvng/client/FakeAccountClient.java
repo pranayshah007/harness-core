@@ -155,6 +155,11 @@ public class FakeAccountClient implements AccountClient {
   }
 
   @Override
+  public Call<RestResponse<Boolean>> isHarnessSupportUserId(String userId) {
+    throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
+  }
+
+  @Override
   public Call<RestResponse<Boolean>> checkAutoInviteAcceptanceEnabledForAccount(String accountId) {
     throw new UnsupportedOperationException(EXCEPTION_MESSAGE);
   }

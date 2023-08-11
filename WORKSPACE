@@ -9,6 +9,7 @@ workspace(name = "harness_monorepo")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("//tools/bazel/pmd:dependencies.bzl", "rules_pmd_dependencies")
+load("//:tools/bazel/repository.bzl", "REPOSITORY")
 
 rules_pmd_dependencies()
 
@@ -16,7 +17,7 @@ http_archive(
     name = "com_github_bazelbuild_buildtools",
     sha256 = "932160d5694e688cb7a05ac38efba4b9a90470c75f39716d85fb1d2f95eec96d",
     strip_prefix = "buildtools-4.0.1",
-    url = "https://harness-artifactory.harness.io/artifactory/bazel-buildtools-github/archive/refs/tags/4.0.1.zip",
+    url = "https://%s.harness.io/artifactory/bazel-buildtools-github/archive/refs/tags/4.0.1.zip" % REPOSITORY,
 )
 
 # Workaround for https://github.com/bazelbuild/bazel-gazelle/issues/1285. Ideally,
@@ -39,7 +40,7 @@ http_archive(
     sha256 = "6aff9834fd7c540875e1836967c8d14c6897e3785a2efac629f69860fb7834ff",
     strip_prefix = "protobuf-3.15.0",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/protobuf-github/archive/v3.15.0.tar.gz",
+        "https://%s.harness.io/artifactory/protobuf-github/archive/v3.15.0.tar.gz" % REPOSITORY,
         #"https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.14.0.tar.gz",
         #"https://github.com/protocolbuffers/protobuf/archive/v3.14.0.tar.gz",
     ],
@@ -62,7 +63,7 @@ http_archive(
     name = "io_bazel_rules_go",
     sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/rules-go-github/download/v0.39.1/rules_go-v0.39.1.zip",
+        "https://%s.harness.io/artifactory/rules-go-github/download/v0.39.1/rules_go-v0.39.1.zip" % REPOSITORY,
         #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
         #"https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
     ],
@@ -72,7 +73,7 @@ http_archive(
     name = "bazel_gazelle",
     sha256 = "448e37e0dbf61d6fa8f00aaa12d191745e14f07c31cabfa731f0c8e8a4f41b97",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/bazel-gazelle-github/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
+        "https://%s.harness.io/artifactory/bazel-gazelle-github/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz" % REPOSITORY,
         #"https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
         #"https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.28.0/bazel-gazelle-v0.28.0.tar.gz",
     ],
@@ -3897,7 +3898,7 @@ http_archive(
     strip_prefix = "rules_rust-f37b9d6a552e9412285e627f30cb124e709f4f7a",
     urls = [
         # Master branch as of 2021-01-27
-        "https://harness-artifactory.harness.io/artifactory/rules-rust-github/archive/f37b9d6a552e9412285e627f30cb124e709f4f7a.tar.gz",
+        "https://%s.harness.io/artifactory/rules-rust-github/archive/f37b9d6a552e9412285e627f30cb124e709f4f7a.tar.gz" % REPOSITORY,
     ],
 )
 
@@ -4636,7 +4637,7 @@ http_archive(
     name = "rules_proto_grpc",
     sha256 = "5f0f2fc0199810c65a2de148a52ba0aff14d631d4e8202f41aff6a9d590a471b",
     strip_prefix = "rules_proto_grpc-1.0.2",
-    urls = ["https://harness-artifactory.harness.io/artifactory/rules-proto-grpc-github/archive/1.0.2.tar.gz"],
+    urls = ["https://%s.harness.io/artifactory/rules-proto-grpc-github/archive/1.0.2.tar.gz" % REPOSITORY],
 )
 
 load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
@@ -4674,7 +4675,7 @@ http_archive(
     name = "rules_spring",
     sha256 = "9385652bb92d365675d1ca7c963672a8091dc5940a9e307104d3c92e7a789c8e",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/rules-spring-github/download/2.1.4/rules-spring-2.1.4.zip",
+        "https://%s.harness.io/artifactory/rules-spring-github/download/2.1.4/rules-spring-2.1.4.zip" % REPOSITORY,
     ],
 )
 
@@ -4684,7 +4685,7 @@ http_archive(
     name = "rules_jvm_external",
     sha256 = "b17d7388feb9bfa7f2fa09031b32707df529f26c91ab9e5d909eb1676badd9a6",
     strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
-    url = "https://harness-artifactory.harness.io/artifactory/rules-jvm-external-github/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+    url = "https://%s.harness.io/artifactory/rules-jvm-external-github/archive/%s.zip" % (REPOSITORY, RULES_JVM_EXTERNAL_TAG),
 )
 
 load("@rules_jvm_external//:defs.bzl", "maven_install")
@@ -5578,7 +5579,7 @@ maven_install(
         "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongodb_driver_core",
     },
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/artifactory/harness-internal",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
@@ -5599,7 +5600,7 @@ maven_install(
         "com.fasterxml.jackson.core:jackson-databind": "@maven//:com_fasterxml_jackson_core_jackson_databind",
     },
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
     version_conflict_policy = "pinned",
@@ -5619,7 +5620,7 @@ maven_install(
         "software.amazon.awssdk:account:2.20.74",
     ],
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
         "https://search.maven.org/artifact/",
         "https://mvnrepository.com/artifact/",
@@ -5641,7 +5642,7 @@ maven_install(
         "com.azure.resourcemanager:azure-resourcemanager-resources:2.14.0",
     ],
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
     version_conflict_policy = "pinned",
@@ -5662,7 +5663,7 @@ maven_install(
         "com.github.sevntu-checkstyle:sevntu-checks:1.35.0",
     ],
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
 )
@@ -5687,7 +5688,7 @@ maven_install(
         ),
     ],
     repositories = [
-        "https://harness-artifactory.harness.io/artifactory/portal-maven",
+        "https://%s.harness.io/artifactory/portal-maven" % REPOSITORY,
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
     ],
 )
@@ -5704,7 +5705,7 @@ exports_files(["WORKSPACE"], visibility = ["//visibility:public"])
 """,
     sha256 = "f39b523c724d0e0047d238eb2bb17a9565a60574cf651206c867ee5fc000ab43",
     strip_prefix = "jdk8u242-b08",
-    urls = ["https://harness-artifactory.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u242b08.tar.gz"],
+    urls = ["https://%s.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u242b08.tar.gz" % REPOSITORY],
 )
 
 http_archive(
@@ -5719,7 +5720,7 @@ java_runtime(
 """,
     sha256 = "06675b7d65bce0313ee1f2e888dd44267e8afeced75e0b39b5ad1f5fdff54e0b",
     strip_prefix = "jdk8u242-b08",
-    urls = ["https://harness-artifactory.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_mac_hotspot_8u242b08.tar.gz"],
+    urls = ["https://%s.harness.io/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_mac_hotspot_8u242b08.tar.gz" % REPOSITORY],
 )
 
 load("//tools/bazel/pmd:toolchains.bzl", "rules_pmd_toolchains")
@@ -5772,7 +5773,7 @@ register_toolchains("//:py_toolchain")
 http_archive(
     name = "io_bazel_rules_docker",
     sha256 = "b1e80761a8a8243d03ebca8845e9cc1ba6c82ce7c5179ce2b295cd36f7e394bf",
-    urls = ["https://harness-artifactory.harness.io/artifactory/rules-docker-github/download/v0.25.0/rules_docker-v0.25.0.tar.gz"],
+    urls = ["https://%s.harness.io/artifactory/rules-docker-github/download/v0.25.0/rules_docker-v0.25.0.tar.gz" % REPOSITORY],
 )
 
 load(
@@ -5831,7 +5832,7 @@ http_archive(
     name = "rules_pkg",
     sha256 = "eea0f59c28a9241156a47d7a8e32db9122f3d50b505fae0f33de6ce4d9b61834",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/rules-pkg-github/download/0.8.0/rules_pkg-0.8.0.tar.gz",
+        "https://%s.harness.io/artifactory/rules-pkg-github/download/0.8.0/rules_pkg-0.8.0.tar.gz % (REPOSITORY)",
         #"https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.4.0/rules_pkg-0.4.0.tar.gz",
         #"https://github.com/bazelbuild/rules_pkg/releases/download/0.4.0/rules_pkg-0.4.0.tar.gz",
     ],
@@ -5927,7 +5928,7 @@ http_archive(
     name = "contrib_rules_jvm",
     sha256 = "548f0583192ff79c317789b03b882a7be9b1325eb5d3da5d7fdcc4b7ca69d543",
     strip_prefix = "rules_jvm-0.9.0",
-    url = "https://harness-artifactory.harness.io/artifactory/bazel-contrib-rules-jvm/archive/v0.9.0.tar.gz",
+    url = "https://%s.harness.io/artifactory/bazel-contrib-rules-jvm/archive/v0.9.0.tar.gz" % REPOSITORY,
 )
 
 # Fetches the contrib_rules_jvm dependencies.

@@ -288,6 +288,42 @@ func TestRequiredQueryParams_error(t *testing.T) {
 	assert.Equal(t, writer.Code, 404)
 }
 
+func TestRequiredQueryParams_error_encoded_url(t *testing.T) {
+	path := "accountId%253AVNlPYoF1QMOwZmE0CmZLsQ%252ForgId%253ACorpAlpha%252FprojectId%253Aazpdevtest%252FpipelineId%253Azyztest1%252FrunSequence%253A12"
+	url := &url.URL{
+		Host:     "localhost/blob/prefix/",
+		Path:     path,
+		RawQuery: path,
+	}
+
+	header := http.Header{}
+	httpReq := &http.Request{URL: url, Header: header}
+	fn := RequiredQueryParams("accountID", "prefix")
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 404)
+}
+
+func TestRequiredQueryParams_error_withoutNumber(t *testing.T) {
+	path := "prefix=accountId:accId/path1:path/runSequence:"
+	url := &url.URL{
+		Host:     "localhost/blob/prefix/",
+		Path:     path,
+		RawQuery: path,
+	}
+
+	header := http.Header{}
+	httpReq := &http.Request{URL: url, Header: header}
+	fn := RequiredQueryParams("accountID", "prefix")
+	mockHandler := &MockHandler{}
+	handlerFunc := fn(mockHandler)
+	writer := httptest.NewRecorder()
+	handlerFunc.ServeHTTP(writer, httpReq)
+	assert.Equal(t, writer.Code, 404)
+}
+
 func TestCacheRequest_whenCacheDidntExists(t *testing.T) {
 	path := "accountID=accId&prefix=accountId:accId/path1:path/runSequence:9/pipeline:level0"
 	url := &url.URL{

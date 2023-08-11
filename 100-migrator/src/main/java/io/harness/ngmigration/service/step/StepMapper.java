@@ -70,7 +70,7 @@ import org.jetbrains.annotations.NotNull;
 public abstract class StepMapper {
   @Inject MigrationTemplateUtils migrationTemplateUtils;
   @Inject WorkflowHandlerFactory workflowHandlerFactory;
-  @Inject SecretRefUtils secretRefUtils;
+  @Inject protected SecretRefUtils secretRefUtils;
 
   public ServiceDefinitionType inferServiceDef(WorkflowMigrationContext context, GraphNode graphNode) {
     return null;

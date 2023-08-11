@@ -9,6 +9,8 @@ package io.harness.platform.notification;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NOTIFICATION_ENTITY;
 import static io.harness.notification.NotificationServiceConstants.MAILSERVICE;
 import static io.harness.notification.NotificationServiceConstants.MSTEAMSSERVICE;
 import static io.harness.notification.NotificationServiceConstants.PAGERDUTYSERVICE;
@@ -33,10 +35,12 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.mongo.queue.NGMongoQueueConsumer;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.core.event.MessageListener;
 import io.harness.notification.SmtpConfig;
 import io.harness.notification.entities.MongoNotificationRequest;
 import io.harness.notification.eventbackbone.MessageConsumer;
 import io.harness.notification.eventbackbone.MongoMessageConsumer;
+import io.harness.notification.eventframework.NotificationEntityCrudStreamListener;
 import io.harness.notification.modules.SmtpConfigClientModule;
 import io.harness.notification.service.ChannelServiceImpl;
 import io.harness.notification.service.MSTeamsServiceImpl;
@@ -224,6 +228,14 @@ public class NotificationServiceModule extends AbstractModule {
     bindMessageConsumer();
     install(new TokenClientModule(this.appConfig.getRbacServiceConfig(),
         this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), NOTIFICATION_SERVICE.getServiceId()));
+    install(new EventsFrameworkModule(this.appConfig.getEventsFrameworkConfiguration()));
+    registerEventListeners();
+  }
+
+  private void registerEventListeners() {
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(NOTIFICATION_ENTITY + ENTITY_CRUD))
+        .to(NotificationEntityCrudStreamListener.class);
   }
 
   @Provides
