@@ -12,8 +12,8 @@ import static io.harness.accesscontrol.AccessControlPermissions.EDIT_ROLE_PERMIS
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ROLE_PERMISSION;
 import static io.harness.accesscontrol.AccessControlResourceTypes.ROLE;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
-import static io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel.fromString;
 import static io.harness.accesscontrol.roles.RoleDTOMapper.fromDTO;
+import static io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel.fromString;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
@@ -24,9 +24,9 @@ import io.harness.accesscontrol.roles.RoleDTOMapper;
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
 import io.harness.accesscontrol.scopes.core.Scope;
+import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
-import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
@@ -80,7 +80,7 @@ public class OrgRolesApiImpl implements OrganizationRolesApi {
     RoleDTO roleDTO = rolesApiUtils.getRoleOrgDTO(body);
     roleDTO.setAllowedScopeLevels(Sets.newHashSet(fromString(scope.getLevel().toString())));
     RoleResponseDTO responseDTO = roleDTOMapper.toResponseDTO(roleService.create(fromDTO(scope.toString(), roleDTO)));
-    RolesResponse response =  RolesApiUtils.getRolesResponse(responseDTO);
+    RolesResponse response = RolesApiUtils.getRolesResponse(responseDTO);
     return Response.status(201).entity(response).build();
   }
 

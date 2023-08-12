@@ -20,12 +20,6 @@ import io.harness.accesscontrol.roles.RoleModule;
 import io.harness.accesscontrol.scopes.ScopeModule;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
 import io.harness.annotations.dev.OwnedBy;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Key;
-import com.google.inject.TypeLiteral;
-import java.util.Map;
-
 import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.outbox.OutboxPollConfiguration;
 import io.harness.outbox.TransactionOutboxModule;
@@ -33,6 +27,11 @@ import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serviceaccount.ServiceAccountClientModule;
 import io.harness.usermembership.UserMembershipClientModule;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
+import java.util.Map;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -49,10 +48,10 @@ public class AccessControlCoreModule extends AbstractModule {
   private ServiceHttpClientConfig userServiceConfig;
   private String userServiceSecret;
 
-  private AccessControlCoreModule(String defaultServiceSecret, ServiceHttpClientConfig auditClientConfig, boolean enableAudit,
-                                  OutboxPollConfiguration outboxPollConfig, boolean exportMetricsToStackDriver,
-                                  ServiceHttpClientConfig serviceAccountServiceConfig, String serviceAccountServiceSecret,
-                                  ServiceHttpClientConfig userServiceConfig, String userServiceSecret) {
+  private AccessControlCoreModule(String defaultServiceSecret, ServiceHttpClientConfig auditClientConfig,
+      boolean enableAudit, OutboxPollConfiguration outboxPollConfig, boolean exportMetricsToStackDriver,
+      ServiceHttpClientConfig serviceAccountServiceConfig, String serviceAccountServiceSecret,
+      ServiceHttpClientConfig userServiceConfig, String userServiceSecret) {
     this.defaultServiceSecret = defaultServiceSecret;
     this.auditClientConfig = auditClientConfig;
     this.enableAudit = enableAudit;
@@ -64,14 +63,14 @@ public class AccessControlCoreModule extends AbstractModule {
     this.userServiceSecret = userServiceSecret;
   }
 
-  public static synchronized AccessControlCoreModule getInstance(String defaultServiceSecret, ServiceHttpClientConfig auditClientConfig,
-                                                                 boolean enableAudit,
-                                                                 OutboxPollConfiguration outboxPollConfig, boolean exportMetricsToStackDriver,
-                                                                 ServiceHttpClientConfig serviceAccountServiceConfig, String serviceAccountServiceSecret,
-                                                                 ServiceHttpClientConfig userServiceConfig, String userServiceSecret) {
+  public static synchronized AccessControlCoreModule getInstance(String defaultServiceSecret,
+      ServiceHttpClientConfig auditClientConfig, boolean enableAudit, OutboxPollConfiguration outboxPollConfig,
+      boolean exportMetricsToStackDriver, ServiceHttpClientConfig serviceAccountServiceConfig,
+      String serviceAccountServiceSecret, ServiceHttpClientConfig userServiceConfig, String userServiceSecret) {
     if (instance == null) {
-      instance = new AccessControlCoreModule(defaultServiceSecret, auditClientConfig, enableAudit, outboxPollConfig, exportMetricsToStackDriver,
-              serviceAccountServiceConfig, serviceAccountServiceSecret, userServiceConfig, userServiceSecret);
+      instance = new AccessControlCoreModule(defaultServiceSecret, auditClientConfig, enableAudit, outboxPollConfig,
+          exportMetricsToStackDriver, serviceAccountServiceConfig, serviceAccountServiceSecret, userServiceConfig,
+          userServiceSecret);
     }
     return instance;
   }
@@ -85,15 +84,15 @@ public class AccessControlCoreModule extends AbstractModule {
     install(PrincipalModule.getInstance());
     install(RoleAssignmentModule.getInstance());
     install(ACLModule.getInstance());
-    install(new AuditClientModule(auditClientConfig, defaultServiceSecret,
-            ACCESS_CONTROL_SERVICE.getServiceId(), enableAudit));
-    install(new TransactionOutboxModule(outboxPollConfig, ACCESS_CONTROL_SERVICE.getServiceId(),
-            exportMetricsToStackDriver));
-    install(new ServiceAccountClientModule(serviceAccountServiceConfig,
-                    serviceAccountServiceSecret,
-                    ACCESS_CONTROL_SERVICE.getServiceId()));
+    install(new AuditClientModule(
+        auditClientConfig, defaultServiceSecret, ACCESS_CONTROL_SERVICE.getServiceId(), enableAudit));
+    install(new TransactionOutboxModule(
+        outboxPollConfig, ACCESS_CONTROL_SERVICE.getServiceId(), exportMetricsToStackDriver));
+    install(new ServiceAccountClientModule(
+        serviceAccountServiceConfig, serviceAccountServiceSecret, ACCESS_CONTROL_SERVICE.getServiceId()));
 
-    install(new UserMembershipClientModule(userServiceConfig, userServiceSecret, ACCESS_CONTROL_SERVICE.getServiceId()));
+    install(
+        new UserMembershipClientModule(userServiceConfig, userServiceSecret, ACCESS_CONTROL_SERVICE.getServiceId()));
 
     registerRequiredBindings();
   }

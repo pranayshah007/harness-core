@@ -20,8 +20,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.AccessControlTestBase;
-import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.HarnessScopeLevel;
+import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.dto.ResponseDTO;

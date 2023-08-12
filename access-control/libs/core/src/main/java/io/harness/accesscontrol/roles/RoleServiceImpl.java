@@ -14,7 +14,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
-import com.google.inject.name.Named;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.permissions.Permission;
 import io.harness.accesscontrol.permissions.PermissionFilter;
@@ -43,6 +42,7 @@ import io.harness.springdata.PersistenceUtils;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -81,8 +81,8 @@ public class RoleServiceImpl implements RoleService {
 
   @Inject
   public RoleServiceImpl(RoleDao roleDao, PermissionService permissionService, ScopeService scopeService,
-                         RoleAssignmentService roleAssignmentService, TransactionTemplate transactionTemplate,
-                         @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate outboxTransactionTemplate, OutboxService outboxService) {
+      RoleAssignmentService roleAssignmentService, TransactionTemplate transactionTemplate,
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate outboxTransactionTemplate, OutboxService outboxService) {
     this.roleDao = roleDao;
     this.permissionService = permissionService;
     this.scopeService = scopeService;
@@ -100,9 +100,10 @@ public class RoleServiceImpl implements RoleService {
     addCompulsoryPermissions(role);
     ScopeDTO scopeDTO = toDTO(scope);
     return Failsafe.with(transactionRetryPolicy).get(() -> outboxTransactionTemplate.execute(status -> {
-       Role createdRole = roleDao.create(role);
-       outboxService.save(new RoleCreateEvent(scopeDTO.getAccountIdentifier(), RoleDTOMapper.toDTO(createdRole), scopeDTO));
-       return createdRole ;
+      Role createdRole = roleDao.create(role);
+      outboxService.save(
+          new RoleCreateEvent(scopeDTO.getAccountIdentifier(), RoleDTOMapper.toDTO(createdRole), scopeDTO));
+      return createdRole;
     }));
   }
 
@@ -150,7 +151,7 @@ public class RoleServiceImpl implements RoleService {
       }
       Role updatedRole = roleDao.update(roleUpdate);
       outboxService.save(new RoleUpdateEvent(scopeDTO.getAccountIdentifier(), RoleDTOMapper.toDTO(updatedRole),
-              RoleDTOMapper.toDTO(currentRole), scopeDTO));
+          RoleDTOMapper.toDTO(currentRole), scopeDTO));
       return updatedRole;
     }));
   }
@@ -188,7 +189,8 @@ public class RoleServiceImpl implements RoleService {
     return deleteManagedRole(identifier);
   }
 
-  //NOTE: This method should be used only for deleting roles on scope deletion as here we are generating outbox event for ACLs processing.
+  // NOTE: This method should be used only for deleting roles on scope deletion as here we are generating outbox event
+  // for ACLs processing.
   @Override
   public long deleteMulti(RoleFilter roleFilter) {
     if (!roleFilter.getManagedFilter().equals(ONLY_CUSTOM)) {
@@ -217,16 +219,16 @@ public class RoleServiceImpl implements RoleService {
       Optional<Role> roleOptional = roleDao.delete(identifier, scopeIdentifier, false);
       if (roleOptional.isPresent()) {
         roleAssignmentService.deleteMulti(RoleAssignmentFilter.builder()
-                .scopeFilter(scopeIdentifier)
-                .roleFilter(Collections.singleton(identifier))
-                .build());
+                                              .scopeFilter(scopeIdentifier)
+                                              .roleFilter(Collections.singleton(identifier))
+                                              .build());
       }
       Role deletedRole = roleOptional.orElseThrow(
-              ()
-                      -> new UnexpectedException(
-                      String.format("Failed to delete the role %s in the scope %s", identifier, scopeIdentifier)));
+          ()
+              -> new UnexpectedException(
+                  String.format("Failed to delete the role %s in the scope %s", identifier, scopeIdentifier)));
       outboxService.save(
-              new RoleDeleteEvent(scopeDTO.getAccountIdentifier(), RoleDTOMapper.toDTO(deletedRole), scopeDTO));
+          new RoleDeleteEvent(scopeDTO.getAccountIdentifier(), RoleDTOMapper.toDTO(deletedRole), scopeDTO));
       return deletedRole;
     }));
   }

@@ -37,11 +37,11 @@ import io.harness.accesscontrol.roles.api.RoleResource;
 import io.harness.accesscontrol.roles.api.RoleResourceImpl;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
-import io.harness.accesscontrol.scopes.core.Scope;
-import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.core.HarnessScopeLevel;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
+import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeMapper;
+import io.harness.accesscontrol.scopes.core.ScopeService;
+import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
@@ -85,8 +85,8 @@ public class RoleResourceTest extends AccessControlTestBase {
     transactionTemplate = mock(TransactionTemplate.class);
     accessControlClient = mock(AccessControlClient.class);
     featureFlagService = mock(FeatureFlagService.class);
-    roleResource = new RoleResourceImpl(roleService, scopeService, roleDTOMapper,
-        accessControlClient, featureFlagService);
+    roleResource =
+        new RoleResourceImpl(roleService, scopeService, roleDTOMapper, accessControlClient, featureFlagService);
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
     accountIdentifier = randomAlphabetic(10);
     orgIdentifier = randomAlphabetic(10);

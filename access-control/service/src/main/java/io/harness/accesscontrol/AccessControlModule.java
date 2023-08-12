@@ -320,15 +320,13 @@ public class AccessControlModule extends AbstractModule {
     install(NGMigrationSdkModule.getInstance());
 
     install(AccessControlPersistenceModule.getInstance(config.getMongoConfig()));
-    install(AccessControlCoreModule.getInstance(
-            config.getDefaultServiceSecret(), config.getAuditClientConfig(),
-            config.isEnableAudit(), config.getOutboxPollConfig(),
-            config.getAggregatorConfiguration().isExportMetricsToStackDriver(),
-            config.getServiceAccountClientConfiguration().getServiceAccountServiceConfig(),
-            config.getServiceAccountClientConfiguration().getServiceAccountServiceSecret(),
-            config.getUserClientConfiguration().getUserServiceConfig(),
-            config.getUserClientConfiguration().getUserServiceSecret()
-    ));
+    install(AccessControlCoreModule.getInstance(config.getDefaultServiceSecret(), config.getAuditClientConfig(),
+        config.isEnableAudit(), config.getOutboxPollConfig(),
+        config.getAggregatorConfiguration().isExportMetricsToStackDriver(),
+        config.getServiceAccountClientConfiguration().getServiceAccountServiceConfig(),
+        config.getServiceAccountClientConfiguration().getServiceAccountServiceSecret(),
+        config.getUserClientConfiguration().getUserServiceConfig(),
+        config.getUserClientConfiguration().getUserServiceSecret()));
     install(AccessControlPreferenceModule.getInstance());
     install(new AbstractTelemetryModule() {
       @Override
@@ -345,8 +343,6 @@ public class AccessControlModule extends AbstractModule {
         config.getAccountClientConfiguration().getAccountServiceSecret(), ACCESS_CONTROL_SERVICE.toString()));
 
     bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
-
-
 
     MapBinder<String, ScopeLevel> scopesByKey = MapBinder.newMapBinder(binder(), String.class, ScopeLevel.class);
     scopesByKey.addBinding(ACCOUNT.toString()).toInstance(ACCOUNT);

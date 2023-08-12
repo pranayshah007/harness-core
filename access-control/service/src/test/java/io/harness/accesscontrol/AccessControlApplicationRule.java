@@ -97,8 +97,7 @@ public class AccessControlApplicationRule implements MethodRule, InjectorRuleMix
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
     modules.add(new AccessControlPersistenceTestModule());
-    modules.add(AccessControlCoreModule.getInstance("", null, false,
-            null, false, null, "", null, ""));
+    modules.add(AccessControlCoreModule.getInstance("", null, false, null, false, null, "", null, ""));
 
     modules.add(new AbstractModule() {
       @Override

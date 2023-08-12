@@ -30,11 +30,11 @@ import io.harness.accesscontrol.roles.api.ProjectRolesApiImpl;
 import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RolesApiUtils;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
-import io.harness.accesscontrol.scopes.core.Scope;
-import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.core.HarnessScopeLevel;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
+import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeMapper;
+import io.harness.accesscontrol.scopes.core.ScopeService;
+import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
@@ -84,10 +84,11 @@ public class RolesApiImplTest extends CategoryTest {
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
     rolesApiUtils = new RolesApiUtils(validator);
-    accountRolesApi = new AccountRolesApiImpl(roleService, scopeService, roleDTOMapper, accessControlClient, rolesApiUtils);
-    orgRolesApi = new OrgRolesApiImpl(roleService, scopeService, roleDTOMapper,
-        accessControlClient, rolesApiUtils);
-    projectRolesApi = new ProjectRolesApiImpl(roleService, scopeService, roleDTOMapper, accessControlClient, rolesApiUtils);
+    accountRolesApi =
+        new AccountRolesApiImpl(roleService, scopeService, roleDTOMapper, accessControlClient, rolesApiUtils);
+    orgRolesApi = new OrgRolesApiImpl(roleService, scopeService, roleDTOMapper, accessControlClient, rolesApiUtils);
+    projectRolesApi =
+        new ProjectRolesApiImpl(roleService, scopeService, roleDTOMapper, accessControlClient, rolesApiUtils);
   }
 
   @Test

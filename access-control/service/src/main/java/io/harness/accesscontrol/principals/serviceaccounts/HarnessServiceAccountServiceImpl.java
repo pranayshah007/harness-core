@@ -10,8 +10,8 @@ package io.harness.accesscontrol.principals.serviceaccounts;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.accesscontrol.scopes.core.Scope;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.core.ScopeMapper;
+import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.serviceaccount.ServiceAccountDTO;

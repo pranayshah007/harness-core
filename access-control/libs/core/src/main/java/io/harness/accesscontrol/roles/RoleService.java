@@ -39,6 +39,7 @@ public interface RoleService {
 
   Role deleteManaged(@NotEmpty String identifier);
 
-  //NOTE: This method should be used only for deleting roles on scope deletion as here we are generating outbox event for ACLs processing.
+  // NOTE: This method should be used only for deleting roles on scope deletion as here we are generating outbox event
+  // for ACLs processing.
   long deleteMulti(@Valid @NotNull RoleFilter roleFilter);
 }

@@ -17,8 +17,8 @@ import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
-import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.core.ScopeMapper;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Inject;
@@ -73,14 +73,13 @@ public class RoleDTOMapper {
 
   public static RoleDTO toDTO(Role role) {
     return RoleDTO.builder()
-            .identifier(role.getIdentifier())
-            .allowedScopeLevels(toAllowedScopeLevelsEnum(role.getAllowedScopeLevels()))
-            .name(role.getName())
-            .permissions(role.getPermissions() == null ? new HashSet<>() : role.getPermissions())
-            .description(role.getDescription())
-            .tags(role.getTags())
-            .build();
-
+        .identifier(role.getIdentifier())
+        .allowedScopeLevels(toAllowedScopeLevelsEnum(role.getAllowedScopeLevels()))
+        .name(role.getName())
+        .permissions(role.getPermissions() == null ? new HashSet<>() : role.getPermissions())
+        .description(role.getDescription())
+        .tags(role.getTags())
+        .build();
   }
 
   public static Set<String> fromAllowedScopeLevelsEnum(Set<ScopeLevel> scopeLevels) {
