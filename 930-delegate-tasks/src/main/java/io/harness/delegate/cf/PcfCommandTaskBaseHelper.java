@@ -120,9 +120,7 @@ import org.jetbrains.annotations.NotNull;
  * Stateles helper class
  */
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_PCF, HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_FIRST_GEN,
-        HarnessModuleComponent.CDS_SERVERLESS})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)

@@ -28,7 +28,7 @@ import lombok.Value;
 import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder

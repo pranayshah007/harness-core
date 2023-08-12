@@ -7,6 +7,12 @@
 
 package io.harness.freeze.beans;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 public class PermissionTypes {
   public static final String DEPLOYMENT_FREEZE_MANAGE_PERMISSION = "core_deploymentfreeze_manage";
   public static final String DEPLOYMENT_FREEZE_OVERRIDE_PERMISSION = "core_deploymentfreeze_override";

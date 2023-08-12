@@ -9,11 +9,16 @@ package io.harness.cdng.creator.plan.stage;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.google.inject.Inject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES, HarnessModuleComponent.CDS_PCF})
 @OwnedBy(HarnessTeam.CDP)
 public class StageValidatorFactory {
   @Inject TasStageValidatorHelper tasStageValidatorHelper;

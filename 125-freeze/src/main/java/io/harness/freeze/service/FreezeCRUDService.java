@@ -7,6 +7,9 @@
 
 package io.harness.freeze.service;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.response.FreezeResponseDTO;
@@ -20,6 +23,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 public interface FreezeCRUDService {
   FreezeResponseDTO createFreezeConfig(String deploymentFreezeYaml, String accountId, String orgId, String projectId);
 

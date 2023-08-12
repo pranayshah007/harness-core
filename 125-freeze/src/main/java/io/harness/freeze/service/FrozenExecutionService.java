@@ -7,6 +7,9 @@
 
 package io.harness.freeze.service;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.entity.FrozenExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -14,6 +17,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import java.util.List;
 import java.util.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 public interface FrozenExecutionService {
   void createFrozenExecution(Ambiance ambiance, List<FreezeSummaryResponseDTO> manualFreezeConfigs,
       List<FreezeSummaryResponseDTO> globalFreezeConfigs);
