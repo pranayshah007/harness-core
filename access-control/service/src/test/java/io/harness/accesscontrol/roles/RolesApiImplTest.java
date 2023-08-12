@@ -91,12 +91,10 @@ public class RolesApiImplTest extends CategoryTest {
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
     rolesApiUtils = new RolesApiUtils(validator);
-    accountRolesApi = new AccountRolesApiImpl(roleService, scopeService, roleDTOMapper, transactionTemplate,
-        outboxService, accessControlClient, rolesApiUtils);
-    orgRolesApi = new OrgRolesApiImpl(roleService, scopeService, roleDTOMapper, transactionTemplate, outboxService,
+    accountRolesApi = new AccountRolesApiImpl(roleService, scopeService, roleDTOMapper, accessControlClient, rolesApiUtils);
+    orgRolesApi = new OrgRolesApiImpl(roleService, scopeService, roleDTOMapper,
         accessControlClient, rolesApiUtils);
-    projectRolesApi = new ProjectRolesApiImpl(roleService, scopeService, roleDTOMapper, transactionTemplate,
-        outboxService, accessControlClient, rolesApiUtils);
+    projectRolesApi = new ProjectRolesApiImpl(roleService, scopeService, roleDTOMapper, accessControlClient, rolesApiUtils);
   }
 
   @Test

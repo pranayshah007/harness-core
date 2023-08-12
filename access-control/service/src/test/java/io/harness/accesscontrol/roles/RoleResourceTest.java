@@ -50,7 +50,6 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 
 import java.util.Optional;
@@ -68,7 +67,6 @@ public class RoleResourceTest extends AccessControlTestBase {
   private ScopeService scopeService;
   private RoleDTOMapper roleDTOMapper;
   private TransactionTemplate transactionTemplate;
-  private OutboxService outboxService;
   private AccessControlClient accessControlClient;
   private RoleResource roleResource;
   private PageRequest pageRequest;
@@ -85,10 +83,9 @@ public class RoleResourceTest extends AccessControlTestBase {
     scopeService = mock(ScopeService.class);
     roleDTOMapper = mock(RoleDTOMapper.class);
     transactionTemplate = mock(TransactionTemplate.class);
-    outboxService = mock(OutboxService.class);
     accessControlClient = mock(AccessControlClient.class);
     featureFlagService = mock(FeatureFlagService.class);
-    roleResource = new RoleResourceImpl(roleService, scopeService, roleDTOMapper, transactionTemplate, outboxService,
+    roleResource = new RoleResourceImpl(roleService, scopeService, roleDTOMapper,
         accessControlClient, featureFlagService);
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
     accountIdentifier = randomAlphabetic(10);
