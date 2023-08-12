@@ -28,10 +28,8 @@ import io.harness.accesscontrol.roles.api.AccountRolesApiImpl;
 import io.harness.accesscontrol.roles.api.OrgRolesApiImpl;
 import io.harness.accesscontrol.roles.api.ProjectRolesApiImpl;
 import io.harness.accesscontrol.roles.api.RoleDTO;
-import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.accesscontrol.roles.api.RolesApiUtils;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
-import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.core.HarnessScopeLevel;
@@ -39,7 +37,6 @@ import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.accesscontrol.v1.model.CreateRoleRequest;
 import io.harness.spec.server.accesscontrol.v1.model.RolesResponse;
@@ -54,14 +51,12 @@ import javax.ws.rs.core.Response;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
 public class RolesApiImplTest extends CategoryTest {
   private RoleService roleService;
   private ScopeService scopeService;
   private RoleDTOMapper roleDTOMapper;
-  private TransactionTemplate transactionTemplate;
   private AccessControlClient accessControlClient;
   private AccountRolesApiImpl accountRolesApi;
   private OrgRolesApiImpl orgRolesApi;
@@ -85,8 +80,6 @@ public class RolesApiImplTest extends CategoryTest {
     roleService = mock(RoleService.class);
     scopeService = mock(ScopeService.class);
     roleDTOMapper = new RoleDTOMapper(scopeService);
-    transactionTemplate = mock(TransactionTemplate.class);
-    OutboxService outboxService = mock(OutboxService.class);
     accessControlClient = mock(AccessControlClient.class);
     ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
     validator = factory.getValidator();
@@ -108,11 +101,9 @@ public class RolesApiImplTest extends CategoryTest {
     when(scopeService.getOrCreate(scope)).thenReturn(scope);
 
     RoleDTO roleDTO = rolesApiUtils.getRoleAccDTO(request);
-    RoleResponseDTO roleResponseDTO =
-        RoleResponseDTO.builder().role(roleDTO).scope(ScopeDTO.builder().accountIdentifier(account).build()).build();
-    RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(roleResponseDTO);
-    when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
-
+    Role role = RoleDTOMapper.fromDTO(scope.toString(), roleDTO);
+    when(roleService.create(role)).thenReturn(role);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
     Response response = accountRolesApi.createRoleAcc(request, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
     assertEquals(identifier, entity.getIdentifier());
@@ -120,7 +111,7 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(account, entity.getScope().getAccount());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     verify(scopeService, times(1)).getOrCreate(any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).create(role);
   }
 
   @Test
@@ -131,8 +122,8 @@ public class RolesApiImplTest extends CategoryTest {
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierAcc)).thenReturn(scope);
 
     Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierAcc).build();
-    RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(roleDTOMapper.toResponseDTO(role));
-    when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
+    when(roleService.delete(identifier, scopeIdentifierAcc)).thenReturn(role);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
 
     Response response = accountRolesApi.deleteRoleAcc(identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
@@ -140,7 +131,7 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(name, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).delete(identifier, scopeIdentifierAcc);
   }
 
   @Test
@@ -199,9 +190,10 @@ public class RolesApiImplTest extends CategoryTest {
     request.setIdentifier(identifier);
     request.setName(updatedName);
     RoleDTO roleDTO = rolesApiUtils.getRoleAccDTO(request);
-    RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(
-        RoleResponseDTO.builder().role(roleDTO).scope(ScopeDTO.builder().accountIdentifier(account).build()).build());
-    when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
+
+    Role role = RoleDTOMapper.fromDTO(scope.toString(), roleDTO);
+    when(roleService.update(role)).thenReturn(role);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
 
     Response response = accountRolesApi.updateRoleAcc(request, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
@@ -209,7 +201,7 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(updatedName, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).update(role);
   }
 
   @Test
@@ -225,13 +217,10 @@ public class RolesApiImplTest extends CategoryTest {
     when(scopeService.getOrCreate(scope)).thenReturn(scope);
 
     RoleDTO roleDTO = rolesApiUtils.getRoleOrgDTO(request);
-    RoleResponseDTO roleResponseDTO =
-        RoleResponseDTO.builder()
-            .role(roleDTO)
-            .scope(ScopeDTO.builder().accountIdentifier(account).orgIdentifier(org).build())
-            .build();
-    RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(roleResponseDTO);
-    when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
+
+    Role role = RoleDTOMapper.fromDTO(scope.toString(), roleDTO);
+    when(roleService.create(role)).thenReturn(role);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
 
     Response response = orgRolesApi.createRoleOrg(request, org, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
@@ -241,7 +230,7 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(org, entity.getScope().getOrg());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     verify(scopeService, times(1)).getOrCreate(any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).create(role);
   }
 
   @Test
@@ -254,8 +243,9 @@ public class RolesApiImplTest extends CategoryTest {
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierOrg)).thenReturn(scope);
 
     Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierOrg).build();
-    RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(roleDTOMapper.toResponseDTO(role));
-    when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
+
+    when(roleService.delete(identifier, scopeIdentifierOrg)).thenReturn(role);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
 
     Response response = orgRolesApi.deleteRoleOrg(org, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
@@ -264,7 +254,7 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(account, entity.getScope().getAccount());
     assertEquals(org, entity.getScope().getOrg());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).delete(identifier, scopeIdentifierOrg);
   }
 
   @Test
@@ -331,12 +321,10 @@ public class RolesApiImplTest extends CategoryTest {
     request.setIdentifier(identifier);
     request.setName(updatedName);
     RoleDTO roleDTO = rolesApiUtils.getRoleOrgDTO(request);
-    RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(
-        RoleResponseDTO.builder()
-            .role(roleDTO)
-            .scope(ScopeDTO.builder().accountIdentifier(account).orgIdentifier(org).build())
-            .build());
-    when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
+
+    Role role = RoleDTOMapper.fromDTO(scope.toString(), roleDTO);
+    when(roleService.update(role)).thenReturn(role);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
 
     Response response = orgRolesApi.updateRoleOrg(request, org, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
@@ -345,7 +333,7 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(account, entity.getScope().getAccount());
     assertEquals(org, entity.getScope().getOrg());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).update(role);
   }
 
   @Test
@@ -361,13 +349,9 @@ public class RolesApiImplTest extends CategoryTest {
     when(scopeService.getOrCreate(scope)).thenReturn(scope);
 
     RoleDTO roleDTO = rolesApiUtils.getRoleProjectDTO(request);
-    RoleResponseDTO roleResponseDTO =
-        RoleResponseDTO.builder()
-            .role(roleDTO)
-            .scope(ScopeDTO.builder().accountIdentifier(account).orgIdentifier(org).projectIdentifier(project).build())
-            .build();
-    RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(roleResponseDTO);
-    when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
+    Role role = RoleDTOMapper.fromDTO(scope.toString(), roleDTO);
+    when(roleService.create(role)).thenReturn(role);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
 
     Response response = projectRolesApi.createRoleProject(request, org, project, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
@@ -378,7 +362,7 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(project, entity.getScope().getProject());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
     verify(scopeService, times(1)).getOrCreate(any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).create(role);
   }
 
   @Test
@@ -391,8 +375,8 @@ public class RolesApiImplTest extends CategoryTest {
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierProject)).thenReturn(scope);
 
     Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierProject).build();
-    RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(roleDTOMapper.toResponseDTO(role));
-    when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
+    when(roleService.delete(identifier, scopeIdentifierProject)).thenReturn(role);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
 
     Response response = projectRolesApi.deleteRoleProject(org, project, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
@@ -402,7 +386,7 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(org, entity.getScope().getOrg());
     assertEquals(project, entity.getScope().getProject());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).delete(identifier, scopeIdentifierProject);
   }
 
   @Test
@@ -472,12 +456,9 @@ public class RolesApiImplTest extends CategoryTest {
     request.setIdentifier(identifier);
     request.setName(updatedName);
     RoleDTO roleDTO = rolesApiUtils.getRoleProjectDTO(request);
-    RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(
-        RoleResponseDTO.builder()
-            .role(roleDTO)
-            .scope(ScopeDTO.builder().accountIdentifier(account).orgIdentifier(org).projectIdentifier(project).build())
-            .build());
-    when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
+    Role role = RoleDTOMapper.fromDTO(scope.toString(), roleDTO);
+    when(roleService.update(role)).thenReturn(role);
+    when(scopeService.buildScopeFromScopeIdentifier(any())).thenReturn(scope);
 
     Response response = projectRolesApi.updateRoleProject(request, org, project, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
@@ -487,6 +468,6 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(org, entity.getScope().getOrg());
     assertEquals(project, entity.getScope().getProject());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
-    verify(transactionTemplate, times(1)).execute(any());
+    verify(roleService, times(1)).update(role);
   }
 }
