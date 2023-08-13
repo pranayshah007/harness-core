@@ -5,12 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.aggregator.models;
+package io.harness.accesscontrol.acl.models;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.accesscontrol.principals.usergroups.UserGroup;
-import io.harness.aggregator.consumers.AccessControlChangeEventData;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Set;

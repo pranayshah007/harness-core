@@ -14,18 +14,12 @@ import io.harness.accesscontrol.principals.usergroups.UserGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.scopes.core.ScopeService;
-import io.harness.aggregator.consumers.ACLGeneratorService;
-import io.harness.aggregator.consumers.ACLGeneratorServiceImpl;
-import io.harness.aggregator.consumers.AccessControlChangeConsumer;
 import io.harness.aggregator.consumers.ChangeEventFailureHandler;
-import io.harness.aggregator.consumers.UserGroupChangeConsumer;
-import io.harness.aggregator.models.UserGroupUpdateEventData;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
@@ -60,8 +54,6 @@ public class AggregatorModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), new TypeLiteral<Class<? extends MorphiaRegistrar>>() {});
     morphiaRegistrars.addBinding().toInstance(AggregatorMorphiaRegistrar.class);
     bind(AggregatorMetricsService.class).to(AggregatorMetricsServiceImpl.class);
-    bind(ACLGeneratorService.class).to(ACLGeneratorServiceImpl.class).in(Scopes.SINGLETON);
-    bind(new TypeLiteral<AccessControlChangeConsumer<UserGroupUpdateEventData>>() {}).to(UserGroupChangeConsumer.class);
     registerRequiredBindings();
   }
 

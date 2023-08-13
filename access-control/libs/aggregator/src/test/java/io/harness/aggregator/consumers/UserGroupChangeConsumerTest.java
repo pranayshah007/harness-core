@@ -21,6 +21,7 @@ import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.acl.consumers.UserGroupChangeConsumer;
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
@@ -42,7 +43,7 @@ import io.harness.accesscontrol.scopes.TestScopeLevels;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.aggregator.AggregatorTestBase;
-import io.harness.aggregator.models.UserGroupUpdateEventData;
+import io.harness.accesscontrol.acl.models.UserGroupUpdateEventData;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;

@@ -5,7 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.aggregator.consumers;
+package io.harness.accesscontrol.acl.consumers;
+
+import io.harness.accesscontrol.acl.models.AccessControlChangeEventData;
 
 import static io.harness.aggregator.ACLEventProcessingConstants.CREATE_ACTION;
 import static io.harness.aggregator.ACLEventProcessingConstants.DELETE_ACTION;

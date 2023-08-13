@@ -7,6 +7,10 @@
 
 package io.harness.accesscontrol.acl;
 
+import com.google.inject.Scopes;
+import io.harness.accesscontrol.acl.consumers.AccessControlChangeConsumer;
+import io.harness.accesscontrol.acl.consumers.UserGroupChangeConsumer;
+import io.harness.accesscontrol.acl.models.UserGroupUpdateEventData;
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.ACLDAO;
 import io.harness.accesscontrol.acl.persistence.ACLDAOImpl;
@@ -14,6 +18,8 @@ import io.harness.accesscontrol.acl.persistence.ACLMorphiaRegistrar;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.acl.persistence.repositories.PrimaryACLRepositoryImpl;
 import io.harness.accesscontrol.acl.persistence.repositories.SecondaryACLRepositoryImpl;
+import io.harness.aggregator.consumers.ACLGeneratorService;
+import io.harness.aggregator.consumers.ACLGeneratorServiceImpl;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
@@ -44,5 +50,7 @@ public class ACLModule extends AbstractModule {
     bind(ACLDAO.class).to(ACLDAOImpl.class);
     bind(ACLRepository.class).annotatedWith(Names.named(ACL.PRIMARY_COLLECTION)).to(PrimaryACLRepositoryImpl.class);
     bind(ACLRepository.class).annotatedWith(Names.named(ACL.SECONDARY_COLLECTION)).to(SecondaryACLRepositoryImpl.class);
+    bind(ACLGeneratorService.class).to(ACLGeneratorServiceImpl.class).in(Scopes.SINGLETON);
+    bind(new TypeLiteral<AccessControlChangeConsumer<UserGroupUpdateEventData>>() {}).to(UserGroupChangeConsumer.class);
   }
 }
