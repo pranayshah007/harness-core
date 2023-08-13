@@ -18,8 +18,6 @@ import io.harness.accesscontrol.acl.persistence.ACLMorphiaRegistrar;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.acl.persistence.repositories.PrimaryACLRepositoryImpl;
 import io.harness.accesscontrol.acl.persistence.repositories.SecondaryACLRepositoryImpl;
-import io.harness.aggregator.consumers.ACLGeneratorService;
-import io.harness.aggregator.consumers.ACLGeneratorServiceImpl;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;

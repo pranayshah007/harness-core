@@ -21,7 +21,7 @@ import io.harness.accesscontrol.roles.persistence.repositories.RoleRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.AggregatorConfiguration;
-import io.harness.aggregator.consumers.ACLGeneratorService;
+import io.harness.accesscontrol.acl.ACLGeneratorService;
 import io.harness.aggregator.consumers.AccessControlDebeziumChangeConsumer;
 import io.harness.aggregator.consumers.ChangeEventFailureHandler;
 import io.harness.aggregator.consumers.RoleAssignmentCRUDEventHandler;

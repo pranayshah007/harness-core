@@ -255,10 +255,9 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     when(permissionService.list(compulsoryPermissionFilter)).thenReturn(new ArrayList<>());
     when(transactionTemplate.execute(any())).thenReturn(updatedRole);
 
-    RoleUpdateResult roleUpdateResult = roleService.update(roleUpdate);
+    Role roleUpdated = roleService.update(roleUpdate);
 
-    assertEquals(updatedRole, roleUpdateResult.getUpdatedRole());
-    assertEquals(currentRole, roleUpdateResult.getOriginalRole());
+    assertEquals(updatedRole, roleUpdated);
     verify(roleDao, times(1)).get(any(), any(), any());
     verify(permissionService, times(2)).list(any());
     verify(transactionTemplate, times(1)).execute(any());

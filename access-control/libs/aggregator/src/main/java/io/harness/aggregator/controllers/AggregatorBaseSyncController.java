@@ -22,7 +22,7 @@ import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.AggregatorConfiguration;
 import io.harness.aggregator.DebeziumConfig;
 import io.harness.aggregator.MongoOffsetBackingStore;
-import io.harness.aggregator.consumers.ACLGeneratorService;
+import io.harness.accesscontrol.acl.ACLGeneratorService;
 import io.harness.aggregator.consumers.AccessControlDebeziumChangeConsumer;
 import io.harness.aggregator.consumers.ChangeConsumer;
 import io.harness.aggregator.consumers.ChangeEventFailureHandler;

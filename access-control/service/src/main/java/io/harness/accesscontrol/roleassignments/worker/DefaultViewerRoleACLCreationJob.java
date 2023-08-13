@@ -28,7 +28,7 @@ import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.scopes.core.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
-import io.harness.aggregator.consumers.ACLGeneratorService;
+import io.harness.accesscontrol.acl.ACLGeneratorService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;

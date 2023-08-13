@@ -9,9 +9,9 @@ package io.harness.accesscontrol.acl.consumers;
 
 import io.harness.accesscontrol.acl.models.AccessControlChangeEventData;
 
-import static io.harness.aggregator.ACLEventProcessingConstants.CREATE_ACTION;
-import static io.harness.aggregator.ACLEventProcessingConstants.DELETE_ACTION;
-import static io.harness.aggregator.ACLEventProcessingConstants.UPDATE_ACTION;
+import static io.harness.accesscontrol.acl.constants.ACLEventProcessingConstants.CREATE_ACTION;
+import static io.harness.accesscontrol.acl.constants.ACLEventProcessingConstants.DELETE_ACTION;
+import static io.harness.accesscontrol.acl.constants.ACLEventProcessingConstants.UPDATE_ACTION;
 
 public interface AccessControlChangeConsumer<T extends AccessControlChangeEventData> {
   default void consumeEvent(String eventType, String id, T changeEventData) {

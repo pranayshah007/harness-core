@@ -5,14 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.aggregator.consumers;
+package io.harness.accesscontrol.acl;
 
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.accesscontrol.scopes.core.ScopeHelper.toParentScope;
-import static io.harness.aggregator.ACLUtils.buildACL;
-import static io.harness.aggregator.ACLUtils.buildResourceSelector;
+import static io.harness.accesscontrol.acl.ACLUtils.buildACL;
+import static io.harness.accesscontrol.acl.ACLUtils.buildResourceSelector;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 

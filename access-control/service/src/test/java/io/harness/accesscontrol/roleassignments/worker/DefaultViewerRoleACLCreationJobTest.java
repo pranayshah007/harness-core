@@ -37,7 +37,7 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeMapper;
-import io.harness.aggregator.consumers.ACLGeneratorService;
+import io.harness.accesscontrol.acl.ACLGeneratorService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ff.FeatureFlagService;

@@ -21,7 +21,7 @@ import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.Ro
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.acl.models.UserGroupUpdateEventData;
-import io.harness.aggregator.consumers.ACLGeneratorService;
+import io.harness.accesscontrol.acl.ACLGeneratorService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
 import io.harness.logging.DelayLogContext;

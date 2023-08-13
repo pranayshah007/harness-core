@@ -7,7 +7,7 @@
 
 package io.harness.accesscontrol.principals.usergroups;
 
-import static io.harness.aggregator.ACLEventProcessingConstants.UPDATE_ACTION;
+import static io.harness.accesscontrol.acl.constants.ACLEventProcessingConstants.UPDATE_ACTION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
