@@ -20,10 +20,14 @@ public interface ACLGeneratorService {
 
   long createACLsForRoleAssignment(RoleAssignmentDBO roleAssignment, Set<String> principals);
 
+  long createACLsFromPermissions(RoleAssignmentDBO roleAssignmentDBO, Set<String> permissions);
+
   long createImplicitACLsForRoleAssignment(
       RoleAssignmentDBO roleAssignment, Set<String> addedPrincipals, Set<String> addedPermissions);
 
   long createImplicitACLs(RoleAssignmentDBO roleAssignment, Set<String> addedUsers);
+
+  long createImplicitACLsFromPermissions(RoleAssignmentDBO roleAssignment, Set<String> permissions);
 
   long createACLs(RoleAssignmentDBO roleAssignmentDBO, Set<String> principals, Set<String> permissions,
       Set<ResourceSelector> resourceSelectors);

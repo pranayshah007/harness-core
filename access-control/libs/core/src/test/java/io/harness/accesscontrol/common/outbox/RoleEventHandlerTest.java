@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
+import io.harness.accesscontrol.acl.consumers.RoleChangeConsumer;
 import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.events.RoleCreateEvent;
 import io.harness.accesscontrol.roles.events.RoleDeleteEvent;
@@ -51,12 +52,13 @@ public class RoleEventHandlerTest extends CategoryTest {
   private ObjectMapper objectMapper;
   private AuditClientService auditClientService;
   private RoleEventHandler roleEventHandler;
-
+  private RoleChangeConsumer roleChangeConsumer;
   @Before
   public void setup() {
     objectMapper = NG_DEFAULT_OBJECT_MAPPER;
     auditClientService = mock(AuditClientService.class);
-    roleEventHandler = spy(new RoleEventHandler(auditClientService));
+    roleChangeConsumer = mock(RoleChangeConsumer.class);
+    roleEventHandler = spy(new RoleEventHandler(auditClientService, roleChangeConsumer));
   }
 
   private RoleDTO getRoleDTO(String identifier) {

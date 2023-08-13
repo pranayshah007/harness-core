@@ -14,10 +14,17 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
+import com.google.common.collect.Sets;
 import io.harness.ModuleType;
+import io.harness.accesscontrol.acl.consumers.RoleChangeConsumer;
+import io.harness.accesscontrol.acl.models.RoleChangeEventData;
+import io.harness.accesscontrol.roles.RoleDTOMapper;
+import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.events.RoleCreateEvent;
 import io.harness.accesscontrol.roles.events.RoleDeleteEvent;
 import io.harness.accesscontrol.roles.events.RoleUpdateEvent;
+import io.harness.accesscontrol.scopes.ScopeDTO;
+import io.harness.accesscontrol.scopes.core.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
@@ -32,6 +39,9 @@ import io.harness.outbox.api.OutboxEventHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
+
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
@@ -39,11 +49,13 @@ import lombok.extern.slf4j.Slf4j;
 public class RoleEventHandler implements OutboxEventHandler {
   private final ObjectMapper objectMapper;
   private final AuditClientService auditClientService;
+  private final RoleChangeConsumer roleChangeConsumer;
 
   @Inject
-  public RoleEventHandler(AuditClientService auditClientService) {
+  public RoleEventHandler(AuditClientService auditClientService, RoleChangeConsumer roleChangeConsumer) {
     this.objectMapper = NG_DEFAULT_OBJECT_MAPPER;
     this.auditClientService = auditClientService;
+    this.roleChangeConsumer = roleChangeConsumer;
   }
 
   @Override
@@ -84,6 +96,20 @@ public class RoleEventHandler implements OutboxEventHandler {
   private boolean handleRoleUpdateEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     RoleUpdateEvent roleUpdateEvent = objectMapper.readValue(outboxEvent.getEventData(), RoleUpdateEvent.class);
+    boolean configValue = false;
+    if (configValue) {
+      RoleDTO newRole = roleUpdateEvent.getNewRole();
+      RoleDTO oldRole = roleUpdateEvent.getOldRole();
+      ScopeDTO scopeDTO = roleUpdateEvent.getScope();
+      Set<String> permissionsAddedToRole = Sets.difference(newRole.getPermissions() == null ? Collections.emptySet() :
+              newRole.getPermissions(), oldRole.getPermissions());
+      Set<String> permissionsRemovedFromRole = Sets.difference(oldRole.getPermissions() == null ? Collections.emptySet() :
+              oldRole.getPermissions(), newRole.getPermissions());
+
+      RoleChangeEventData roleChangeEventData =  RoleChangeEventData.builder().updatedRole(RoleDTOMapper.fromDTO(ScopeMapper.fromDTO(scopeDTO).toString(), newRole))
+              .permissionsAdded(permissionsAddedToRole).permissionsRemoved(permissionsRemovedFromRole).build();
+      roleChangeConsumer.consumeUpdateEvent(null, roleChangeEventData);
+    }
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
                                 .module(ModuleType.CORE)
