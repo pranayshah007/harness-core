@@ -72,7 +72,7 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
                                                .build();
   public static final String ECS_BLUE_GREEN_ROLLBACK_COMMAND_NAME = "EcsBlueGreenRollback";
   public static final String ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING =
-      "Blue Green Create Service step is not configured.";
+      "Blue Green Create Service step is not configured or Deployment didn't started, no need to rollback.";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
@@ -178,14 +178,11 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
         RefObjectUtils.getSweepingOutputRefObject(ecsBlueGreenRollbackStepParameters.getEcsBlueGreenCreateServiceFnq()
             + "." + OutcomeExpressionConstants.ECS_BLUE_GREEN_CREATE_SERVICE_OUTCOME));
 
-    if (!ecsBlueGreenPrepareRollbackDataOptional.isFound() || !ecsBlueGreenCreateServiceDataOptional.isFound()) {
+    if (!ecsBlueGreenPrepareRollbackDataOptional.isFound()) {
       return skipTaskRequest(ambiance, ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING);
     }
     EcsBlueGreenPrepareRollbackDataOutcome ecsBlueGreenPrepareRollbackDataOutcome =
         (EcsBlueGreenPrepareRollbackDataOutcome) ecsBlueGreenPrepareRollbackDataOptional.getOutput();
-
-    EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
-        (EcsBlueGreenCreateServiceDataOutcome) ecsBlueGreenCreateServiceDataOptional.getOutput();
 
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -210,9 +207,15 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
             .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .oldServiceName(ecsBlueGreenPrepareRollbackDataOutcome.getServiceName())
-            .newServiceName(ecsBlueGreenCreateServiceDataOutcome.getServiceName())
+            .newServiceName(ecsBlueGreenPrepareRollbackDataOutcome.getGreenServiceName())
+            .isGreenServiceExisted(ecsBlueGreenPrepareRollbackDataOutcome.isGreenServiceExist())
+            .newServiceRequestBuilderString(
+                ecsBlueGreenPrepareRollbackDataOutcome.getGreenServiceRequestBuilderString())
+            .newServiceScalableTargetRequestBuilderStrings(
+                ecsBlueGreenPrepareRollbackDataOutcome.getGreenServiceScalableTargetRequestBuilderStrings())
+            .newServiceScalingPolicyRequestBuilderStrings(
+                ecsBlueGreenPrepareRollbackDataOutcome.getGreenServiceScalingPolicyRequestBuilderStrings())
             .isFirstDeployment(ecsBlueGreenPrepareRollbackDataOutcome.isFirstDeployment())
-            .isNewServiceCreated(ecsBlueGreenCreateServiceDataOutcome.isNewServiceCreated())
             .oldServiceCreateRequestBuilderString(
                 ecsBlueGreenPrepareRollbackDataOutcome.getCreateServiceRequestBuilderString())
             .oldServiceScalableTargetManifestContentList(
@@ -220,6 +223,13 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
             .oldServiceScalingPolicyManifestContentList(
                 ecsBlueGreenPrepareRollbackDataOutcome.getRegisterScalingPolicyRequestBuilderStrings())
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig);
+
+    if (ecsBlueGreenCreateServiceDataOptional.isFound()) {
+      EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
+          (EcsBlueGreenCreateServiceDataOutcome) ecsBlueGreenCreateServiceDataOptional.getOutput();
+      ecsBlueGreenRollbackRequestBuilder.isNewServiceCreated(
+          ecsBlueGreenCreateServiceDataOutcome.isNewServiceCreated());
+    }
 
     if (EmptyPredicate.isEmpty(ecsBlueGreenRollbackStepParameters.ecsBlueGreenSwapTargetGroupsFnq)) {
       ecsBlueGreenRollbackRequestBuilder.isTargetShiftStarted(false);

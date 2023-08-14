@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.ecs;
+
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -1910,6 +1911,14 @@ public class EcsStepCommonHelper extends EcsStepUtils {
               .stageListenerRuleArn(
                   ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getStageListenerRuleArn())
               .stageTargetGroupArn(stageTargetGroupArn)
+              .isGreenServiceExist(ecsBlueGreenPrepareRollbackDataResult.isGreenServiceExist())
+              .greenServiceName(ecsBlueGreenPrepareRollbackDataResult.getGreenServiceName())
+              .greenServiceRequestBuilderString(
+                  ecsBlueGreenPrepareRollbackDataResult.getGreenServiceRequestBuilderString())
+              .greenServiceScalableTargetRequestBuilderStrings(
+                  ecsBlueGreenPrepareRollbackDataResult.getGreenServiceScalableTargetRequestBuilderStrings())
+              .greenServiceScalingPolicyRequestBuilderStrings(
+                  ecsBlueGreenPrepareRollbackDataResult.getGreenServiceScalingPolicyRequestBuilderStrings())
               .build();
 
       executionSweepingOutputService.consume(ambiance,
