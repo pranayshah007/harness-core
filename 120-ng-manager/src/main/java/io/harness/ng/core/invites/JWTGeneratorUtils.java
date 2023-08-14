@@ -38,4 +38,8 @@ public class JWTGeneratorUtils {
   public Map<String, Claim> verifyJWTToken(String token, String jwtPasswordSecret) {
     return JWTTokenServiceUtils.verifyJWTToken(token, jwtPasswordSecret);
   }
+
+  public Map<String, Claim> verifyJWTTokenV2(String token, String jwtPasswordSecret) {
+    return JWTTokenServiceUtils.verifyJWTTokenV2(token, jwtPasswordSecret);
+  }
 }
