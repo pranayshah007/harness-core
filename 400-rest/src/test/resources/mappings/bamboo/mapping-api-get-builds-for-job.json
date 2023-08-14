@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/rest/api/latest/result/TP-PLAN2.json?authType=basic&buildstate=Successful&expand=results.result&max-result=50"
+    "url": "/rest/api/latest/result/TP-PLAN2.json?authType=basic&buildstate=Successful&expand=results.result&max-result=50&start-index=0"
   },
   "response": {
     "status": 200,

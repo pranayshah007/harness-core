@@ -866,7 +866,9 @@ public enum FeatureName {
   CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL("For removing usage of retry interval field for ", HarnessTeam.CDC),
   CDS_NG_FETCH_FILES_REFACTOR(
       "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP),
-  CDS_YAML_SIMPLIFICATION("Feature flag for CD YAML Simplification.", PIPELINE);
+  CDS_YAML_SIMPLIFICATION("Feature flag for CD YAML Simplification.", PIPELINE),
+  CDS_SERVICE_GITX("Onboard Service entity to GitX", HarnessTeam.CDC),
+  CDS_ENV_GITX("Onboard Environment entity to GitX", HarnessTeam.CDC);
   // keep-sorted end
 
   @Deprecated

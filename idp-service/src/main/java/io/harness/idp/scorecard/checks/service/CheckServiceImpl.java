@@ -62,9 +62,15 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
-  public List<CheckListItem> getChecksByAccountId(boolean custom, String accountIdentifier) {
-    List<CheckEntity> entities =
-        checkRepository.findByAccountIdentifierAndIsCustomAndIsDeleted(accountIdentifier, custom, false);
+  public List<CheckListItem> getChecksByAccountId(Boolean custom, String accountIdentifier) {
+    List<CheckEntity> entities;
+    if (custom == null) {
+      entities =
+          checkRepository.findByAccountIdentifierInAndIsDeleted(List.of(GLOBAL_ACCOUNT_ID, accountIdentifier), false);
+    } else {
+      String accountId = custom ? accountIdentifier : GLOBAL_ACCOUNT_ID;
+      entities = checkRepository.findByAccountIdentifierAndIsCustomAndIsDeleted(accountId, custom, false);
+    }
     List<CheckListItem> checks = new ArrayList<>();
     entities.forEach(entity -> checks.add(CheckMapper.toDTO(entity)));
     return checks;
@@ -78,9 +84,13 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
-  public CheckDetails getCheckDetails(String accountIdentifier, String identifier, boolean custom) {
-    String accountId = custom ? accountIdentifier : GLOBAL_ACCOUNT_ID;
-    CheckEntity checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(accountId, identifier);
+  public CheckDetails getCheckDetails(String accountIdentifier, String identifier, Boolean custom) {
+    CheckEntity checkEntity;
+    if (Boolean.TRUE.equals(custom)) {
+      checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+    } else {
+      checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(GLOBAL_ACCOUNT_ID, identifier);
+    }
     return CheckDetailsMapper.toDTO(checkEntity);
   }
 

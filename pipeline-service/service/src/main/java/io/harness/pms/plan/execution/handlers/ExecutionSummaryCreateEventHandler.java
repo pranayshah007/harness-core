@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution.handlers;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -187,6 +188,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .labels(LabelsHelper.getLabels(planExecutionMetadata.getYaml(), pipelineEntity.get().getHarnessVersion()))
             .modules(new ArrayList<>(modules))
             .isLatestExecution(true)
+            .notesExistForPlanExecutionId(EmptyPredicate.isNotEmpty(planExecutionMetadata.getNotes()))
             .retryExecutionMetadata(RetryExecutionMetadata.builder()
                                         .parentExecutionId(parentExecutionId)
                                         .rootExecutionId(rootExecutionId)

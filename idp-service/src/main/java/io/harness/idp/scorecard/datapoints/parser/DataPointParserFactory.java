@@ -8,7 +8,7 @@
 package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_BRANCH_PROTECTED;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_PR_MMTM;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,7 +24,7 @@ public class DataPointParserFactory {
 
   public DataPointParser getParser(String identifier) {
     switch (identifier) {
-      case GITHUB_PR_MMTM:
+      case GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE:
         return githubMeanTimeToMergeParser;
       case GITHUB_IS_BRANCH_PROTECTED:
         return githubIsBranchProtectedParser;

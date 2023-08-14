@@ -1050,6 +1050,12 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         List<ErrorDetail> errorDetail = Collections.singletonList(ngErrorHelper.createErrorDetail(errorMessage));
         validationFailureBuilder.errorSummary(errorSummary).errors(errorDetail);
       }
+      String taskId = (String) ex.getParams().get("taskId");
+      if (isNotEmpty(taskId)) {
+        ConnectorValidationResult result = validationFailureBuilder.build();
+        result.setTaskId(taskId);
+        return result;
+      }
       return validationFailureBuilder.build();
     } catch (WingsException wingsException) {
       log.error("An error occurred while validating the Connector ", wingsException);

@@ -332,109 +332,101 @@ func getStepTypeContext(stepType, infra string) string {
 		return "while uploading the files to Jfrog artifactory in Harness CI"
 	case "JiraUpdate":
 		return "while updating the Jira ticket in Harness"
-	case "K8S_BLUE_GREEN":
+	case "K8sBlueGreenDeploy":
 		return "while performing Blue Green Deployment for kubernetes in Harness CD"
-	case "K8S_ROLLING":
+	case "K8sRollingDeploy":
 		return "while performing Rolling Deployment for Kubernetes in Harness CD"
-	case "K8S_ROLLBACK_ROLLING":
+	case "K8sRollingRollback":
 		return "while performing Rolling Deployment rollback for Kubernetes in Harness CD"
-	case "K8S_APPLY":
+	case "K8sApply":
 		return "while applying the Kubernetes manifest in Harness CD"
-	case "K8S_SCALE":
+	case "K8sScale":
 		return "while scaling the Kubernetes deployment in Harness CD"
-	case "K8S_CANARY":
+	case "K8sCanaryDeploy":
 		return "while performing Canary Deployment for Kubernetes in Harness CD"
-	case "K8S_BG_SWAP_SERVICES":
+	case "K8sBGSwapServices":
 		return "while swapping the Kubernetes services in Harness CD"
-	case "K8S_DELETE":
+	case "K8sDelete":
 		return "while deleting the Kubernetes deployment in Harness CD"
-	case "K8S_CANARY_DELETE":
+	case "K8sCanaryDelete":
 		return "while deleting the Canary Deployment for Kubernetes in Harness CD"
-	case "K8S_DRY_RUN_MANIFEST":
+	case "K8sDryRun":
 		return "while performing a dry run of the Kubernetes manifest in Harness CD"
-	case "SERVERLESS_AWS_LAMBDA_DEPLOY":
+	case "ServerlessAwsLambdaDeploy":
 		return "while deploying the AWS Lambda function in Harness CD"
-	case "SERVERLESS_AWS_LAMBDA_ROLLBACK":
+	case "ServerlessAwsLambdaRollback":
 		return "while rolling back the AWS Lambda function in Harness CD"
-	case "SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2":
+	case "ServerlessAwsLambdaPrepareRollbackV2":
 		return "while preparing to rollback the AWS Lambda function in Harness CD"
-	case "SERVERLESS_AWS_LAMBDA_ROLLBACK_V2":
+	case "ServerlessAwsLambdaRollbackV2":
 		return "while rolling back the AWS Lambda function in Harness CD"
-	case "SERVERLESS_AWS_LAMBDA_DEPLOY_V2":
+	case "ServerlessAwsLambdaDeployV2":
 		return "while deploying the AWS Lambda function in Harness CD"
-	case "SERVERLESS_AWS_LAMBDA_PACKAGE_V2":
+	case "ServerlessAwsLambdaPackageV2":
 		return "while packaging the AWS Lambda function in Harness CD"
-	case "ECS_ROLLING_DEPLOY":
+	case "EcsRollingDeploy":
 		return "while performing Rolling Deployment for ECS in Harness CD"
-	case "ECS_ROLLING_ROLLBACK":
+	case "EcsRollingRollback":
 		return "while performing Rolling Deployment rollback for ECS in Harness CD"
-	case "ECS_CANARY_DEPLOY":
+	case "EcsCanaryDeploy":
 		return "while performing Canary Deployment for ECS in Harness CD"
-	case "ECS_CANARY_DELETE":
+	case "EcsCanaryDelete":
 		return "while deleting the Canary Deployment for ECS in Harness CD"
-	case "ECS_BLUE_GREEN_CREATE_SERVICE":
+	case "EcsBlueGreenCreateService":
 		return "while creating the ECS service for Blue Green Deployment in Harness CD"
-	case "ECS_BLUE_GREEN_ROLLBACK":
+	case "EcsBlueGreenRollback":
 		return "while rolling back the ECS service for Blue Green Deployment in Harness CD"
-	case "ECS_RUN_TASK":
+	case "EcsRunTask":
 		return "while running the ECS task in Harness CD"
-	case "HELM_DEPLOY":
+	case "HelmDeploy":
 		return "while deploying Helm chart into Kubernetes using Harness CD"
-	case "HELM_ROLLBACK":
+	case "HelmRollback":
 		return "while rolling back Helm chart in Kubernetes using Harness CD"
-	case "TAS_CANARY_APP_SETUP":
+	case "CanaryAppSetup":
 		return "while setting up a canary app in Tanzu Application Service using Harness CD"
-	case "TAS_BG_APP_SETUP":
+	case "BGAppSetup":
 		return "while setting up a blue green deployment in Tanzu Application Service using Harness CD"
-	case "TAS_BASIC_APP_SETUP":
+	case "BasicAppSetup":
 		return "while setting up a basic app in Tanzu Application Service using Harness CD"
-	case "TAS_APP_RESIZE":
+	case "AppResize":
 		return "while resizing an app in Tanzu Application Service using Harness CD"
-	case "TAS_SWAP_ROUTES":
+	case "SwapRoutes":
 		return "while swapping routes in Tanzu Application Service using Harness CD"
-	case "TAS_ROLLBACK":
+	case "SwapRollback":
 		return "while rolling back an app in Tanzu Application Service using Harness CD"
-	case "TAS_ROLLING_DEPLOY":
+	case "TasRollingDeploy":
 		return "while performing a rolling deployment in Tanzu Application Service using Harness CD"
-	case "TAS_ROLLING_ROLLBACK":
+	case "TasRollingRollback":
 		return "while performing a rolling rollback in Tanzu Application Service using Harness CD"
-	case "TAS_ROUTE_MAPPING":
+	case "RouteMapping":
 		return "while setting up route mapping in Tanzu Application Service using Harness CD"
-	case "TERRAFORM_APPLY":
+	case "TerraformApply":
 		return "while applying Terraform configuration to infrastructure using Harness CD"
-	case "TERRAFORM_PLAN":
+	case "TerraformPlan":
 		return "while planning Terraform configuration for infrastructure using Harness CD"
-	case "TERRAFORM_DESTROY":
+	case "TerraformDestroy":
 		return "while destroying Terraform infrastructure using Harness CD"
-	case "TERRAFORM_ROLLBACK":
+	case "TerraformRollback":
 		return "while rolling back Terraform changes to infrastructure using Harness CD"
-	case "TERRAFORM_PLAN_V2":
-		return "while planning Terraform configuration for infrastructure using Harness CD"
-	case "TERRAFORM_APPLY_V2":
-		return "while applying Terraform configuration to infrastructure using Harness CD"
-	case "TERRAFORM_DESTROY_V2":
-		return "while destroying Terraform infrastructure using Harness CD"
-	case "TERRAFORM_ROLLBACK_V2":
-		return "while rolling back Terraform changes to infrastructure using Harness CD"
-	case "TERRAFORM_CLOUD_RUN":
+	case "TerraformCloudRun":
 		return "while running Terraform cloud using Harness CD"
-	case "TERRAFORM_CLOUD_ROLLBACK":
+	case "TerraformCloudRollback":
 		return "while rolling back Terraform cloud changes using Harness CD"
-	case "AWS_CDK_BOOTSTRAP":
+	case "AwsCdkBootstrap":
 		return "while bootstrapping AWS CDK environment using Harness CD"
-	case "AWS_CDK_SYNTH":
+	case "AwsCdkSynth":
 		return "while synthesizing AWS CDK stack using Harness CD"
-	case "AWS_CDK_DIFF":
+	case "AwsCdkDiff":
 		return "while diffing AWS CDK stack using Harness CD"
-	case "AWS_CDK_DEPLOY":
+	case "AwsCdkDeploy":
 		return "while deploying AWS CDK stack using Harness CD"
-	case "AWS_CDK_DESTROY":
+	case "AwsCdkDestroy":
 		return "while destroying AWS CDK stack using Harness CD"
-	case "AWS_SAM_DEPLOY":
+	case "AwsSamDeploy":
 		return "while deploying AWS SAM application using Harness CD"
-	case "AWS_SAM_BUILD":
+	case "AwsSamBuild":
 		return "while building AWS SAM application using Harness CD"
-	case "AWS_SAM_ROLLBACK":
+	case "AwsSamRollback":
 		return "while rolling back AWS SAM application using Harness CD"
 	}
 	return ""

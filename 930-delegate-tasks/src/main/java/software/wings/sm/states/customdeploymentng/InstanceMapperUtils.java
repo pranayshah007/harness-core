@@ -9,6 +9,9 @@ package software.wings.sm.states.customdeploymentng;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.serializer.JsonSubtypeResolver;
 import io.harness.serializer.JsonUtils;
 
@@ -31,6 +34,8 @@ import lombok.Data;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @Singleton
 @UtilityClass
 public class InstanceMapperUtils {

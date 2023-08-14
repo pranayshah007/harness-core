@@ -1122,6 +1122,23 @@ paths:
         - Scorecards
       x-stoplight:
         id: o1dppys5mqejp
+  /v1/entity-facets:
+    get:
+      summary: Get all entity facets for given kind
+      tags:
+       - Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/FacetsResponse'
+      operationId: get-entity-facets
+      x-stoplight:
+        id: 8bdlnmkjjb6rm
+      description: Get all entity facets for given kind
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CatalogKind'
 components:
   schemas:
     BackstageEnvVariable:
@@ -2553,6 +2570,36 @@ components:
       required:
         - scorecard
         - checks
+    Facets:
+      title: Facets
+      x-stoplight:
+        id: 4s1zzr3b7vexk
+      type: object
+      properties:
+        owners:
+          type: array
+          x-stoplight:
+            id: snknx3g63gqfz
+          items:
+            x-stoplight:
+              id: vur35640o2x04
+            type: string
+        tags:
+          type: array
+          x-stoplight:
+            id: dvr6apmvo4hc9
+          items:
+            x-stoplight:
+              id: fqyhjib03ov1g
+            type: string
+        lifecycle:
+          type: array
+          x-stoplight:
+            id: a5i4ybt9y21tz
+          items:
+            x-stoplight:
+              id: 3oil2gdwpinc8
+            type: string
     DataSource:
       title: DataSource
       x-stoplight:
@@ -2940,7 +2987,7 @@ components:
       schema:
         type: boolean
       description: Type of checks to be returned
-      required: true
+      required: false
     CheckIdentifier:
       name: check-id
       in: path
@@ -2969,6 +3016,13 @@ components:
       schema:
         type: boolean
       description: This is used if an entity need to be force deleted
+    CatalogKind:
+      name: kind
+      in: query
+      required: true
+      schema:
+        type: string
+      description: This is used to filter backstage catalog entity facets by kind
   requestBodies:
     BackstageEnvVariableRequest:
       content:
@@ -3424,6 +3478,15 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/ScorecardDetailsResponse'
+    FacetsResponse:
+      description: Response for entity facets
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Facets'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/Facets'
   securitySchemes:
     x-api-key:
       name: x-api-key

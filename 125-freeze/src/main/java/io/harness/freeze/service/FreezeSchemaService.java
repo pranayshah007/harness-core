@@ -7,12 +7,17 @@
 
 package io.harness.freeze.service;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.freeze.entity.FreezeConfigEntity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 public interface FreezeSchemaService {
   JsonNode getFreezeSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, Scope scope);
 

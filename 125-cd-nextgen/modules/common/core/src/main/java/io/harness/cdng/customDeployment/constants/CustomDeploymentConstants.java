@@ -7,9 +7,14 @@
 
 package io.harness.cdng.customDeployment.constants;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @OwnedBy(HarnessTeam.CDP)
 public class CustomDeploymentConstants {
   public static final String TEMPLATE = "template";
