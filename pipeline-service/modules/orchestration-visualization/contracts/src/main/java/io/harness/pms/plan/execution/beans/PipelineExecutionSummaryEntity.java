@@ -151,6 +151,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   ExecutionMode executionMode; // this is used to filter out rollback mode executions from executions list API
   RollbackExecutionInfo rollbackExecutionInfo;
+  Boolean notesExistForPlanExecutionId;
 
   // TTL index
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());

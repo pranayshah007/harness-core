@@ -28,13 +28,16 @@ import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -42,6 +45,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(PIPELINE)
 @Data
 @Builder(builderClassName = "Builder")
+@NoArgsConstructor
+@AllArgsConstructor
 @FieldNameConstants(innerTypeName = "PlanExecutionMetadataKeys")
 @StoreIn(DbAliases.PMS)
 @Entity(value = "planExecutionsMetadata", noClassnameStored = true)
@@ -59,6 +64,9 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
 
   // Final yaml after merging input sets to given yaml, given to plan creation
   private String yaml;
+
+  // Pipeline yaml before resolving templates and input sets
+  @Transient private String pipelineYaml;
 
   // Yaml having injectedUUid which is processed by PlanCreation
   @With private String processedYaml;

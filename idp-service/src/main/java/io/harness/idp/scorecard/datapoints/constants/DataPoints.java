@@ -10,8 +10,12 @@ package io.harness.idp.scorecard.datapoints.constants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 @OwnedBy(HarnessTeam.IDP)
 public class DataPoints {
-  public static final String GITHUB_PR_MMTM = "github_pr_mmtm";
+  // Github
+  public static final String GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
   public static final String GITHUB_IS_BRANCH_PROTECTED = "isBranchProtected";
 }

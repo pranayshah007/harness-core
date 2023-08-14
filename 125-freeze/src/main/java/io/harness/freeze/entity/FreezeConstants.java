@@ -7,8 +7,14 @@
 
 package io.harness.freeze.entity;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @UtilityClass
 public class FreezeConstants {
   public static final String CREATE_API_YAML = "freeze:\n"

@@ -10,12 +10,16 @@ package io.harness.delegate.task.pcf.artifact;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.Expression;
 
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @Data
 @Builder
 @OwnedBy(CDP)

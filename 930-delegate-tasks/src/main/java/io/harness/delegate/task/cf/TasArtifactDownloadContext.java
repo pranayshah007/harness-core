@@ -9,13 +9,17 @@ package io.harness.delegate.task.cf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 
 import java.io.File;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @Data
 @Builder
 @OwnedBy(CDP)

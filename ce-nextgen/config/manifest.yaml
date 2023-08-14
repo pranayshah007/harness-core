@@ -1,2 +1,3 @@
-DOCKER_FILE_PATH: /harness/harness-core/dist/ce-nextgen/Dockerfile-ce-nextgen-cie-jdk
+DOCKER_FILE_PATH: /harness/harness-core/ce-nextgen/build/container/Dockerfile-ce-nextgen-multistage
+CONTEXT_PATH: /harness/harness-core
 HELM_CHART_SOURCE_DIRECTORY: harness-core/ce-nextgen/chart

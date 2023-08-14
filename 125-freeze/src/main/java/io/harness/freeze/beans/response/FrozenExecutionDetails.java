@@ -7,14 +7,19 @@
 
 package io.harness.freeze.beans.response;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.List;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @OwnedBy(HarnessTeam.CDC)
 @Value
 @Builder

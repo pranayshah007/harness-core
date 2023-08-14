@@ -261,6 +261,7 @@ public enum FeatureName {
   CHAOS_DASHBOARD_ENABLED("Enables chaos dashboards in CHAOS module", HarnessTeam.CHAOS),
   CHAOS_IMAGE_REGISTRY_DEV("Enable image registry configuration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
+  CHAOS_NEW_ENVIRONMENTS_PAGE("Enable New Environments page in CHAOS", HarnessTeam.CHAOS),
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
   CHAOS_SECURITY_GOVERNANCE("Enable security governance routes, validation and navigation in CHAOS", HarnessTeam.CHAOS),
   CIE_ENABLED_RBAC("Enable rbac validationa at CI level", HarnessTeam.CI),
@@ -864,7 +865,10 @@ public enum FeatureName {
       "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP),
   CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL("For removing usage of retry interval field for ", HarnessTeam.CDC),
   CDS_NG_FETCH_FILES_REFACTOR(
-      "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP);
+      "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP),
+  CDS_YAML_SIMPLIFICATION("Feature flag for CD YAML Simplification.", PIPELINE),
+  CDS_SERVICE_GITX("Onboard Service entity to GitX", HarnessTeam.CDC),
+  CDS_ENV_GITX("Onboard Environment entity to GitX", HarnessTeam.CDC);
   // keep-sorted end
 
   @Deprecated

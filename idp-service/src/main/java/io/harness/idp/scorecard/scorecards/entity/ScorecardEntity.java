@@ -79,5 +79,6 @@ public class ScorecardEntity
   public static class Check {
     private String identifier;
     private double weightage;
+    private boolean isCustom;
   }
 }
