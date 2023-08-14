@@ -38,8 +38,8 @@ write_mongo_params() {
   done
 }
 
-yq -i 'del(.server.applicationConnectors.[] | select(.type == "h2"))' $CONFIG_FILE
-yq -i 'del(.grpcServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE
+#yq -i 'del(.server.applicationConnectors.[] | select(.type == "h2"))' $CONFIG_FILE
+#yq -i 'del(.grpcServerConfig.connectors.[] | select(.secure == true))' $CONFIG_FILE
 
 yq -i '.server.adminConnectors=[]' $CONFIG_FILE
 
@@ -56,11 +56,11 @@ if [[ "" != "$LOGGERS" ]]; then
   done
 fi
 
-if [[ "" != "$SERVER_PORT" ]]; then
-  export SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
-else
-  yq -i '.server.applicationConnectors[0].port=9090' $CONFIG_FILE
-fi
+#if [[ "" != "$SERVER_PORT" ]]; then
+#  export SERVER_PORT; yq -i '.server.applicationConnectors[0].port=env(SERVER_PORT)' $CONFIG_FILE
+#else
+#  yq -i '.server.applicationConnectors[0].port=9090' $CONFIG_FILE
+#fi
 
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then
   export GRPC_SERVER_PORT; yq -i '.grpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE

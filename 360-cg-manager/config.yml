@@ -1,5 +1,6 @@
 server:
   applicationConnectors:
+    {{- if .Values.SEGMENT_ENABLED}}
     - type: h2
       port: 9090
       keyStorePath: keystore.jks
@@ -8,10 +9,13 @@ server:
       certAlias: localhost
       validateCerts: false
       maxRequestHeaderSize: 100KiB
+    {{  else  }}
     - type: http
-      port: 3457
+      port: 9090
       maxRequestHeaderSize: 100KiB
+    {{- end}}
   adminConnectors:
+    #if local
     - type: h2
       port: 9091
       keyStorePath: keystore.jks
@@ -23,7 +27,7 @@ server:
     appenders:
       - type: console
         target: STDOUT
-        threshold: ERROR
+        threshold: TRACE
   maxThreads: 1024
 
 commonPoolConfig:
@@ -141,6 +145,7 @@ redisDelegateConfig:
   masterName: "test"
   redisUrl: "redis://localhost:6379"
   sentinelUrls:
+    # define 3 different env variables
     - "redis://redis1:26379"
     - "redis://redis2:26379"
     - "redis://redis3:26379"
@@ -154,6 +159,7 @@ redisLockConfig:
   sentinel: false
   masterName: "test"
   redisUrl: "redis://localhost:6379"
+  # define 3 different env variables
   sentinelUrls:
     - "redis://redis1:26379"
     - "redis://redis2:26379"
@@ -170,6 +176,7 @@ redisAtmosphereConfig:
   masterName: "test"
   redisUrl: "redis://localhost:6379"
   sentinelUrls:
+    # define 3 different env variables
     - "redis://redis1:26379"
     - "redis://redis2:26379"
     - "redis://redis3:26379"
@@ -244,7 +251,10 @@ logging:
     # TODO: remove this suppression when the mentioned issue is resolved
     com.novemberain.quartz.mongodb.TriggerRunner: "OFF"
     org.glassfish.jersey.server.ServerRuntime.Responder: "OFF"
+    # add LOGGERS for non local env
+    #okhttp3=FINE, org.mongodb.morphia=ERROR, org.elasticsearch.client.RestClient=ERROR
   appenders:
+    # if condition based on type
     - type: console
       threshold: TRACE
       target: STDOUT
@@ -280,6 +290,7 @@ timescaledb:
 
 grpcServerConfig:
   connectors:
+    # if condition based on local
     - port: 9880
       secure: true
       keyFilePath: key.pem
@@ -653,6 +664,7 @@ eventsFramework:
     masterName: "test"
     redisUrl: "redis://localhost:6379"
     sentinelUrls:
+      # define 3 different env variables
       - "redis://redis1:26379"
       - "redis://redis2:26379"
       - "redis://redis3:26379"
