@@ -175,22 +175,22 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
 
   @Override
   public Optional<ApprovalInstance> findLatestApprovalInstanceByPlanExecutionIdAndType(
-          @NotEmpty String planExecutionId, @NotNull ApprovalType approvalType) {
-    if(isEmpty(planExecutionId)) {
+      @NotEmpty String planExecutionId, @NotNull ApprovalType approvalType) {
+    if (isEmpty(planExecutionId)) {
       throw new InvalidArgumentsException("PlanExecutionId cannot be null or empty");
     }
-    if(approvalType == null) {
+    if (approvalType == null) {
       throw new InvalidArgumentsException("ApprovalType cannot be null");
     }
 
     Query approvalInstancesByPlanExecutionIdAndTypeQuery =
-            query(where(ApprovalInstanceKeys.planExecutionId).is(planExecutionId))
-                    .addCriteria(where(ApprovalInstanceKeys.type).in(approvalType))
-                    .with(Sort.by(Sort.Direction.DESC, ApprovalInstanceKeys.createdAt))
-                    .limit(1);
+        query(where(ApprovalInstanceKeys.planExecutionId).is(planExecutionId))
+            .addCriteria(where(ApprovalInstanceKeys.type).in(approvalType))
+            .with(Sort.by(Sort.Direction.DESC, ApprovalInstanceKeys.createdAt))
+            .limit(1);
 
     List<ApprovalInstance> approvalInstances =
-            approvalInstanceRepository.find(approvalInstancesByPlanExecutionIdAndTypeQuery);
+        approvalInstanceRepository.find(approvalInstancesByPlanExecutionIdAndTypeQuery);
     return isEmpty(approvalInstances) ? Optional.empty() : Optional.ofNullable(approvalInstances.get(0));
   }
 

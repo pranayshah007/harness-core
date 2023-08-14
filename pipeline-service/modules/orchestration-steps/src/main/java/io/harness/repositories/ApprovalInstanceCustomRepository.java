@@ -7,8 +7,11 @@
 
 package io.harness.repositories;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 
 import com.mongodb.client.result.UpdateResult;
@@ -17,6 +20,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(HarnessTeam.CDC)
 public interface ApprovalInstanceCustomRepository {
   ApprovalInstance updateFirst(Query query, Update update);
