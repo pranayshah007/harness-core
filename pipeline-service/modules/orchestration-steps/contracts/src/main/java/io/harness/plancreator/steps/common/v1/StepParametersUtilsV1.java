@@ -29,7 +29,6 @@ public class StepParametersUtilsV1 {
     stepBuilder.failureStrategies(
         stepElementConfig.getFailureStrategies() != null ? stepElementConfig.getFailureStrategies().getValue() : null);
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepElementConfig.getTimeout())));
-    // TODO: when needs to be converted to ParameterField<String> for V1
     stepBuilder.when(
         stepElementConfig.getWhen() != null ? (String) stepElementConfig.getWhen().fetchFinalValue() : null);
     stepBuilder.uuid(stepElementConfig.getUuid());
