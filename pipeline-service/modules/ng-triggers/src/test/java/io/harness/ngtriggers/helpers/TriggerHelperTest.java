@@ -26,6 +26,7 @@ import static io.harness.ngtriggers.Constants.PR_TITLE;
 import static io.harness.ngtriggers.Constants.PUSH;
 import static io.harness.ngtriggers.Constants.REPO_URL;
 import static io.harness.ngtriggers.Constants.SCHEDULED_TYPE;
+import static io.harness.ngtriggers.Constants.SOURCE;
 import static io.harness.ngtriggers.Constants.SOURCE_BRANCH;
 import static io.harness.ngtriggers.Constants.SOURCE_TYPE;
 import static io.harness.ngtriggers.Constants.TARGET_BRANCH;
@@ -130,14 +131,23 @@ public class TriggerHelperTest extends CategoryTest {
   public void testBuildJsonObjectFromAmbianceArtifact() {
     Map<String, String> metadata = new HashMap<>();
     metadata.put("url", "my_url");
+
+    Map<String, String> source = new HashMap<>();
+    source.put("connectorRef", "connector");
+    source.put("imagePath", "image");
+
     TriggerPayload artifactPayload =
         TriggerPayload.newBuilder()
             .setArtifactData(ArtifactData.newBuilder().setBuild("1.0").putAllMetadata(metadata).build())
+            .setConnectorRef("connector")
+            .setImagePath("image")
             .build();
     Map<String, Object> jsonObject = TriggerHelper.buildJsonObjectFromAmbiance(artifactPayload);
     assertThat(jsonObject.get(TYPE)).isEqualTo(ARTIFACT_TYPE);
     assertThat(((Map<String, Object>) jsonObject.get(ARTIFACT_EXPR)).get(ARTIFACT_BUILD_EXPR)).isEqualTo("1.0");
     assertThat(((Map<String, Object>) jsonObject.get(ARTIFACT_EXPR)).get(ARTIFACT_METADATA_EXPR)).isEqualTo(metadata);
+
+    assertThat(((Map<String, Object>) jsonObject.get(ARTIFACT_EXPR)).get(SOURCE)).isEqualTo(source);
   }
 
   @Test

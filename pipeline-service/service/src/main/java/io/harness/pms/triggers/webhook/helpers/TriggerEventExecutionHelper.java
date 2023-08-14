@@ -70,7 +70,9 @@ import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistratio
 import io.harness.ngtriggers.beans.response.TargetExecutionSummary;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
+import io.harness.ngtriggers.helpers.ArtifactConfigHelper;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.helpers.WebhookEventMapperHelper;
@@ -393,6 +395,14 @@ public class TriggerEventExecutionHelper {
         }
         triggerPayloadBuilder.setArtifactData(
             ArtifactData.newBuilder().setBuild(build).putAllMetadata(metadata).build());
+
+        // Fetching connectorRef and image path
+        if (triggerDetails.getNgTriggerConfigV2() != null && triggerDetails.getNgTriggerConfigV2().getSource() != null
+            && triggerDetails.getNgTriggerConfigV2().getSource().getSpec() instanceof ArtifactTriggerConfig) {
+          ArtifactTriggerConfig artifactConfig =
+              (ArtifactTriggerConfig) triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
+          ArtifactConfigHelper.setConnectorAndImage(triggerPayloadBuilder, artifactConfig);
+        }
 
       } else if (buildType == Type.MANIFEST) {
         triggerPayloadBuilder.setManifestData(ManifestData.newBuilder().setVersion(build).build());
