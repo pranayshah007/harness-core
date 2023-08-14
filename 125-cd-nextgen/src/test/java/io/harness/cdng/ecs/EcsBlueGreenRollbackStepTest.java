@@ -7,7 +7,7 @@
 
 package io.harness.cdng.ecs;
 
-import static io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStep.ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING;
+import static io.harness.cdng.ecs.EcsBlueGreenRollbackStep.ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
 import static org.assertj.core.api.Assertions.assertThat;
