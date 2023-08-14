@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service;
+
 import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
 import io.harness.annotations.dev.CodePulse;
@@ -191,10 +192,8 @@ public abstract class NgMigrationService {
     RequestBody type = RequestBody.create(TEXT_PLAIN, "FILE");
     RequestBody parentIdentifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getRootIdentifier());
     RequestBody mimeType = RequestBody.create(TEXT_PLAIN, "txt");
-    RequestBody content = null;
-    if (StringUtils.isNotBlank(fileYamlDTO.getContent())) {
-      content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
-    }
+    RequestBody content = RequestBody.create(
+        MediaType.parse("application/octet-stream"), StringUtils.defaultIfBlank(fileYamlDTO.getContent(), ""));
 
     Response<ResponseDTO<FileDTO>> resp;
     try {
