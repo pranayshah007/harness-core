@@ -25,6 +25,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class PlanCreatorUtilsV1 {
+  // TODO:use https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto#L51 for metadataMap
   public List<AdviserObtainment> getAdviserObtainmentsForStage(KryoSerializer kryoSerializer, Dependency dependency) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())

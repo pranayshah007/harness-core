@@ -10,20 +10,18 @@ package io.harness.plancreator.steps.common.v1;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
+import io.harness.plancreator.steps.common.v1.StepElementParametersV1.StepElementParametersV1Builder;
 import io.harness.plancreator.steps.internal.v1.PmsAbstractStepNodeV1;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.TimeoutUtils;
-import io.harness.when.beans.StepWhenCondition;
 
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class StepParametersUtilsV1 {
-  public StepElementParametersBuilder getStepParameters(PmsAbstractStepNodeV1 stepElementConfig) {
-    StepElementParametersBuilder stepBuilder = StepElementParameters.builder();
+  public StepElementParametersV1Builder getStepParameters(PmsAbstractStepNodeV1 stepElementConfig) {
+    StepElementParametersV1Builder stepBuilder = StepElementParametersV1.builder();
     stepBuilder.name(stepElementConfig.getName());
     stepBuilder.identifier(stepElementConfig.getId());
     stepBuilder.delegateSelectors(stepElementConfig.getDelegateSelectors());
@@ -32,9 +30,8 @@ public class StepParametersUtilsV1 {
         stepElementConfig.getFailureStrategies() != null ? stepElementConfig.getFailureStrategies().getValue() : null);
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepElementConfig.getTimeout())));
     // TODO: when needs to be converted to ParameterField<String> for V1
-    stepBuilder.when(stepElementConfig.getWhen() != null
-            ? StepWhenCondition.builder().condition(stepElementConfig.getWhen()).build()
-            : null);
+    stepBuilder.when(
+        stepElementConfig.getWhen() != null ? (String) stepElementConfig.getWhen().fetchFinalValue() : null);
     stepBuilder.uuid(stepElementConfig.getUuid());
     stepBuilder.enforce(stepElementConfig.getEnforce());
 

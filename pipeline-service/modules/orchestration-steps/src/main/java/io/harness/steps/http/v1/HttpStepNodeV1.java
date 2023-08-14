@@ -5,20 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.plancreator.steps.http.v1;
+package io.harness.steps.http.v1;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
-import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.v1.StepElementParametersV1;
+import io.harness.plancreator.steps.common.v1.StepElementParametersV1.StepElementParametersV1Builder;
 import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.plancreator.steps.http.HttpStepInfo;
 import io.harness.plancreator.steps.internal.v1.PmsAbstractStepNodeV1;
@@ -35,18 +35,11 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.TypeAlias;
 
-@Data
-@NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.HTTP)
-@TypeAlias("HttpStepNodeV1")
 @OwnedBy(PIPELINE)
-@RecasterAlias("io.harness.plancreator.steps.http.v1.HttpStepNodeV1")
+@JsonTypeName(StepSpecTypeConstants.HTTP)
+@Data
 public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
   StepType type = StepType.Http;
 
@@ -64,8 +57,8 @@ public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
   }
 
   // TODO: set rollback parameters
-  public StepElementParameters getStepParameters(PlanCreationContext ctx) {
-    StepElementParameters.StepElementParametersBuilder stepBuilder = StepParametersUtilsV1.getStepParameters(this);
+  public StepElementParametersV1 getStepParameters(PlanCreationContext ctx) {
+    StepElementParametersV1Builder stepBuilder = StepParametersUtilsV1.getStepParameters(this);
     stepBuilder.spec(getSpecParameters(getHttpStepInfo()));
     stepBuilder.type(StepSpecTypeConstants.HTTP);
     StepUtils.appendDelegateSelectorsToSpecParameters(httpStepInfo, ctx);
