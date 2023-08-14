@@ -11,6 +11,8 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class CmdUtils {
+  public static final String WIN_RM_MARKER = "WinRm";
+
   public static String escapeEnvValueSpecialChars(String value) {
     /*
     https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/set_1

@@ -20,12 +20,15 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 public interface NGTriggerRepositoryCustom {
+  CloseableIterator<NGTriggerEntity> findAll(Criteria criteria);
   Page<NGTriggerEntity> findAll(Criteria criteria, Pageable pageable);
   NGTriggerEntity update(Criteria criteria, NGTriggerEntity ngTriggerEntity);
+  TriggerUpdateCount updateTriggerEnabled(List<NGTriggerEntity> ngTriggerEntityList);
   NGTriggerEntity updateValidationStatus(Criteria criteria, NGTriggerEntity ngTriggerEntity);
   NGTriggerEntity updateValidationStatusAndMetadata(Criteria criteria, NGTriggerEntity ngTriggerEntity);
   DeleteResult hardDelete(Criteria criteria);

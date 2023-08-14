@@ -9,6 +9,14 @@ package io.harness.delegate.task.pcf.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
-@OwnedBy(CDP) public enum TasArtifactType { CONTAINER, PACKAGE }
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
+@OwnedBy(CDP)
+public enum TasArtifactType {
+  CONTAINER,
+  PACKAGE
+}

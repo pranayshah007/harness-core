@@ -29,6 +29,9 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(PIPELINE)
 public interface PmsExecutionSummaryRepositoryCustom {
   PipelineExecutionSummaryEntity update(Query query, Update update);
+
+  // updates multiple records and doesnt return any record
+  void multiUpdate(Query query, Update update);
   UpdateResult deleteAllExecutionsWhenPipelineDeleted(Query query, Update update);
   Page<PipelineExecutionSummaryEntity> findAll(Criteria criteria, Pageable pageable);
 

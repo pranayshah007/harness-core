@@ -33,6 +33,7 @@ import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -69,7 +70,7 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImpl
 
   @Override
   public ResolvedCVConfigInfo fetchAndPersistResolvedCVConfigInfo(
-      ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
+      Ambiance ambiance, ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
     TemplateMonitoredServiceSpec templateMonitoredServiceSpec =
         (TemplateMonitoredServiceSpec) monitoredServiceNode.getSpec();
     String executionIdentifier = generateUuid();
@@ -79,8 +80,8 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImpl
             .monitoredServiceTemplateIdentifier(
                 templateMonitoredServiceSpec.getMonitoredServiceTemplateRef().getValue())
             .monitoredServiceTemplateVersionLabel(templateMonitoredServiceSpec.getVersionLabel());
-    populateSourceDataFromTemplate(
-        serviceEnvironmentParams, templateMonitoredServiceSpec, resolvedCVConfigInfoBuilder, executionIdentifier);
+    populateSourceDataFromTemplate(ambiance, serviceEnvironmentParams, templateMonitoredServiceSpec,
+        resolvedCVConfigInfoBuilder, executionIdentifier);
     return resolvedCVConfigInfoBuilder.build();
   }
 
@@ -122,16 +123,17 @@ public class TemplatePipelineStepMonitoredServiceResolutionServiceImpl
     throw new RuntimeException("Template Monitored Service is not supported in analyze deployment step");
   }
 
-  private void populateSourceDataFromTemplate(ServiceEnvironmentParams serviceEnvironmentParams,
+  private void populateSourceDataFromTemplate(Ambiance ambiance, ServiceEnvironmentParams serviceEnvironmentParams,
       TemplateMonitoredServiceSpec templateMonitoredServiceSpec,
       ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder, String executionIdentifier) {
-    MonitoredServiceDTO monitoredServiceDTO = monitoredServiceService.getExpandedMonitoredServiceFromYaml(
-        ProjectParams.builder()
-            .accountIdentifier(serviceEnvironmentParams.getAccountIdentifier())
-            .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
-            .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
-            .build(),
-        getTemplateYaml(templateMonitoredServiceSpec));
+    MonitoredServiceDTO monitoredServiceDTO =
+        monitoredServiceService.getExpandedMonitoredServiceFromYamlWithPipelineVariables(
+            ProjectParams.builder()
+                .accountIdentifier(serviceEnvironmentParams.getAccountIdentifier())
+                .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
+                .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
+                .build(),
+            getTemplateYaml(templateMonitoredServiceSpec), ambiance);
     if (Objects.nonNull(monitoredServiceDTO) && Objects.nonNull(monitoredServiceDTO.getSources())
         && CollectionUtils.isNotEmpty(monitoredServiceDTO.getSources().getHealthSources())) {
       persistTemplateMonitoredService(serviceEnvironmentParams, monitoredServiceDTO);

@@ -10,15 +10,79 @@ package io.harness.idp.onboarding.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.List;
+
 @OwnedBy(HarnessTeam.IDP)
 public enum BackstageCatalogEntityTypes {
   DOMAIN("Domain"),
   SYSTEM("System"),
-  COMPONENT("Component");
+  COMPONENT("Component"),
+  API("Api"),
+  USER("User"),
+  GROUP("Group"),
+  RESOURCE("Resource"),
+  LOCATION("Location"),
+  TEMPLATE("Template");
 
   public final String kind;
 
   BackstageCatalogEntityTypes(String kind) {
     this.kind = kind;
+  }
+
+  public static BackstageCatalogEntityTypes fromString(String text) {
+    for (BackstageCatalogEntityTypes type : BackstageCatalogEntityTypes.values()) {
+      if (type.kind.equalsIgnoreCase(text)) {
+        return type;
+      }
+    }
+    throw new IllegalArgumentException(String.format("Could not find type for %s", text));
+  }
+
+  public static TypeReference getTypeReference(String kind) {
+    switch (BackstageCatalogEntityTypes.fromString(kind)) {
+      case DOMAIN:
+        return new TypeReference<List<BackstageCatalogDomainEntity>>() {};
+      case SYSTEM:
+        return new TypeReference<List<BackstageCatalogSystemEntity>>() {};
+      case COMPONENT:
+        return new TypeReference<List<BackstageCatalogComponentEntity>>() {};
+      case API:
+        return new TypeReference<List<BackstageCatalogApiEntity>>() {};
+      case USER:
+        return new TypeReference<List<BackstageCatalogUserEntity>>() {};
+      case GROUP:
+        return new TypeReference<List<BackstageCatalogGroupEntity>>() {};
+      case RESOURCE:
+        return new TypeReference<List<BackstageCatalogResourceEntity>>() {};
+      case LOCATION:
+        return new TypeReference<List<BackstageCatalogLocationEntity>>() {};
+      case TEMPLATE:
+        return new TypeReference<List<BackstageCatalogTemplateEntity>>() {};
+      default:
+        throw new IllegalArgumentException(String.format("Could not get TypeReference for unknown kind %s", kind));
+    }
+  }
+
+  public static String getEntityType(BackstageCatalogEntity entity) {
+    switch (BackstageCatalogEntityTypes.fromString(entity.getKind())) {
+      case API:
+        return ((BackstageCatalogApiEntity) entity).getSpec().getType();
+      case COMPONENT:
+        return ((BackstageCatalogComponentEntity) entity).getSpec().getType();
+      case LOCATION:
+        return ((BackstageCatalogLocationEntity) entity).getSpec().getType();
+      case TEMPLATE:
+        return ((BackstageCatalogTemplateEntity) entity).getSpec().getType();
+      case RESOURCE:
+        return ((BackstageCatalogResourceEntity) entity).getSpec().getType();
+      case DOMAIN:
+      case SYSTEM:
+      case USER:
+      case GROUP:
+      default:
+        return null;
+    }
   }
 }

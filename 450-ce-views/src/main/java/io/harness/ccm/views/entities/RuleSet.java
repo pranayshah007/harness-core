@@ -34,6 +34,13 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.FieldType;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 @Data
 @Builder
@@ -42,11 +49,12 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "governanceRuleSet", noClassnameStored = true)
+@Document("governanceRuleSet")
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Policy set")
 
 public final class RuleSet implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
                                       CreatedByAware, UpdatedByAware {
-  @Id @Schema(description = "unique id") String uuid;
+  @Id @Schema(description = "unique id") @MongoId(targetType = FieldType.STRING) String uuid;
   @Schema(description = "account id") String accountId;
   @Schema(description = "name") String name;
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
@@ -56,10 +64,10 @@ public final class RuleSet implements PersistentEntity, UuidAware, CreatedAtAwar
   @Schema(description = "cloudProvider") RuleCloudProviderType cloudProvider;
   @Schema(description = "List of rules identifiers from governancePolicy collection") List<String> rulesIdentifier;
   @Schema(description = "is OOTB flag") Boolean isOOTB;
-  @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
-  @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
-  @Schema(description = "created by") private EmbeddedUser createdBy;
-  @Schema(description = "updated by") private EmbeddedUser lastUpdatedBy;
+  @CreatedDate @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
+  @LastModifiedDate @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
+  @CreatedBy @Schema(description = "created by") private EmbeddedUser createdBy;
+  @LastModifiedBy @Schema(description = "updated by") private EmbeddedUser lastUpdatedBy;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

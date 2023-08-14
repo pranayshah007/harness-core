@@ -238,4 +238,6 @@ enum EntityTypeProtoEnum {
   AWS_CDK_DIFF = 225;
   AWS_CDK_DEPLOY = 226;
   AWS_CDK_DESTROY = 227;
+  IDP_SCORECARD = 228;
+  IDP_CHECK = 229;
 }

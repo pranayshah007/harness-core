@@ -21,6 +21,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SRMAnalysisStepDetailDTO {
+  @NotNull String accountId;
+  @NotNull String orgIdentifier;
+  @NotNull String projectIdentifier;
   @NotNull private long analysisStartTime;
   @NotNull private long analysisEndTime;
 
@@ -29,7 +32,7 @@ public class SRMAnalysisStepDetailDTO {
   @NotNull private SRMAnalysisStatus analysisStatus;
 
   @NotNull private String monitoredServiceIdentifier;
-  @NotNull private String serviceIdentifier;
+  private String serviceIdentifier;
   String serviceName;
   @NotNull private String envIdentifier;
   String environmentName;
@@ -47,6 +50,9 @@ public class SRMAnalysisStepDetailDTO {
         .analysisEndTime(stepExecutionDetail.getAnalysisEndTime())
         .analysisDuration(stepExecutionDetail.getAnalysisDuration())
         .executionDetailIdentifier(stepExecutionDetail.getUuid())
+        .accountId(stepExecutionDetail.getAccountId())
+        .orgIdentifier(stepExecutionDetail.getOrgIdentifier())
+        .projectIdentifier(stepExecutionDetail.getProjectIdentifier())
         .stepName(stepExecutionDetail.getStepName())
         .build();
   }

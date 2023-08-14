@@ -3353,6 +3353,10 @@
             },
             "rejectionCriteria": {
               "$ref": "#/definitions/CriteriaSpecWrapper"
+            },
+            "retryInterval": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
             }
           }
         }
@@ -3460,6 +3464,12 @@
               }
             },
             "issueKey": {
+              "type": "string"
+            },
+            "issueType": {
+              "type": "string"
+            },
+            "projectKey": {
               "type": "string"
             },
             "transitionTo": {
@@ -6025,6 +6035,10 @@
             },
             "rejectionCriteria": {
               "$ref": "#/definitions/CriteriaSpecWrapper"
+            },
+            "retryInterval": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
             },
             "ticketNumber": {
               "type": "string"

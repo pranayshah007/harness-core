@@ -450,8 +450,7 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
           osArch = ciInfraDetails.getInfraArchType();
           buildMultiplier = IntegrationStageUtils.getBuildTimeMultiplierForHostedInfra(infrastructure);
 
-          if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM
-              || infrastructure.getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
+          if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
             OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
                 ambiance, RefObjectUtils.getOutcomeRefObject(INITIALIZE_EXECUTION));
             if (optionalSweepingOutput.isFound()) {

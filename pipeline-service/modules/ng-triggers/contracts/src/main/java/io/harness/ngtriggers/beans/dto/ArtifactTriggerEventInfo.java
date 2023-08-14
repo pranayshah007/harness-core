@@ -14,4 +14,5 @@ import lombok.Data;
 @Builder
 public class ArtifactTriggerEventInfo implements NGTriggerEventInfo {
   PollingDocumentInfo pollingDocumentInfo;
+  String build;
 }

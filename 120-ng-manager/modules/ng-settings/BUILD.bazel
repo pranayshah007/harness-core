@@ -18,6 +18,8 @@ java_library(
     visibility = ["//120-ng-manager:__subpackages__"],
     deps = [
         "//:lombok",
+        "//120-ng-manager/modules/eula/contracts/src/main/java/io/harness/eula:module",
+        "//120-ng-manager/modules/eula/src/main/java/io/harness/eula/service:module",
         "//120-ng-manager/modules/ng-settings/contracts:module",
         "//930-ng-core-clients:module",
         "//930-ng-license-manager:module",

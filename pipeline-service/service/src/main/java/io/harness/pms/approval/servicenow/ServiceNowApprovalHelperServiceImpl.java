@@ -10,6 +10,7 @@ package io.harness.pms.approval.servicenow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.pms.approval.ApprovalUtils.sendTaskIdProgressUpdate;
+import static io.harness.steps.approval.step.entities.ApprovalInstance.ASYNC_DELEGATE_TIMEOUT;
 
 import static software.wings.beans.TaskType.SERVICENOW_TASK_NG;
 
@@ -36,6 +37,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
+import io.harness.iterator.PersistenceIterator;
 import io.harness.logging.AutoLogContext;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
@@ -55,6 +57,8 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
+import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance.ApprovalInstanceKeys;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalHelperService;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
@@ -74,6 +78,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
@@ -87,13 +92,15 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
   private final KryoSerializer referenceFalseKryoSerializer;
   private final String publisherName;
   private final WaitNotifyEngine waitNotifyEngine;
+  private final ApprovalInstanceService approvalInstanceService;
 
   @Inject
   public ServiceNowApprovalHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
       PmsGitSyncHelper pmsGitSyncHelper, LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
       @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
-      @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, WaitNotifyEngine waitNotifyEngine) {
+      @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, WaitNotifyEngine waitNotifyEngine,
+      ApprovalInstanceService approvalInstanceService) {
     this.connectorResourceClient = connectorResourceClient;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.logStreamingStepClientFactory = logStreamingStepClientFactory;
@@ -102,6 +109,7 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.publisherName = publisherName;
     this.waitNotifyEngine = waitNotifyEngine;
+    this.approvalInstanceService = approvalInstanceService;
   }
 
   @Override
@@ -135,15 +143,17 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
   }
 
   @Override
-  public void handlePollingEvent(ServiceNowApprovalInstance serviceNowApprovalInstance) {
+  public void handlePollingEvent(
+      PersistenceIterator<ApprovalInstance> iterator, ServiceNowApprovalInstance serviceNowApprovalInstance) {
     try (PmsGitSyncBranchContextGuard ignore1 =
              pmsGitSyncHelper.createGitSyncBranchContextGuard(serviceNowApprovalInstance.getAmbiance(), true);
          AutoLogContext ignore2 = serviceNowApprovalInstance.autoLogContext()) {
-      handlePollingEventInternal(serviceNowApprovalInstance);
+      handlePollingEventInternal(iterator, serviceNowApprovalInstance);
     }
   }
 
-  private void handlePollingEventInternal(ServiceNowApprovalInstance instance) {
+  private void handlePollingEventInternal(
+      PersistenceIterator<ApprovalInstance> iterator, ServiceNowApprovalInstance instance) {
     Ambiance ambiance = instance.getAmbiance();
     NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
     try {
@@ -184,6 +194,9 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
       logCallback.saveExecutionLog(
           String.format("Error creating task for fetching serviceNow ticket: %s", ExceptionUtils.getMessage(ex)));
       log.warn("Error creating task for fetching serviceNow ticket while polling", ex);
+      if (iterator != null && ParameterField.isNotNull(instance.getRetryInterval())) {
+        resetNextIteration(iterator, instance);
+      }
     }
   }
 
@@ -236,16 +249,19 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
 
   private TaskRequest prepareServiceNowTaskRequest(Ambiance ambiance,
       ServiceNowTaskNGParameters serviceNowTaskNGParameters, String taskName, List<TaskSelector> selectors) {
-    TaskDetails taskDetails = TaskDetails.newBuilder()
-                                  .setKryoParameters(ByteString.copyFrom(
-                                      referenceFalseKryoSerializer.asDeflatedBytes(serviceNowTaskNGParameters) == null
-                                          ? new byte[] {}
-                                          : referenceFalseKryoSerializer.asDeflatedBytes(serviceNowTaskNGParameters)))
-                                  .setExecutionTimeout(com.google.protobuf.Duration.newBuilder().setSeconds(20).build())
-                                  .setMode(TaskMode.ASYNC)
-                                  .setParked(false)
-                                  .setType(TaskType.newBuilder().setType(SERVICENOW_TASK_NG.name()).build())
-                                  .build();
+    TaskDetails taskDetails =
+        TaskDetails.newBuilder()
+            .setKryoParameters(
+                ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(serviceNowTaskNGParameters) == null
+                        ? new byte[] {}
+                        : referenceFalseKryoSerializer.asDeflatedBytes(serviceNowTaskNGParameters)))
+            .setExecutionTimeout(com.google.protobuf.Duration.newBuilder()
+                                     .setSeconds(TimeUnit.MILLISECONDS.toSeconds(ASYNC_DELEGATE_TIMEOUT))
+                                     .build())
+            .setMode(TaskMode.ASYNC)
+            .setParked(false)
+            .setType(TaskType.newBuilder().setType(SERVICENOW_TASK_NG.name()).build())
+            .build();
 
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskDetails, new ArrayList<>(), selectors, taskName, false);
   }
@@ -253,6 +269,12 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
   private void validateField(String value, String name) {
     if (isBlank(value)) {
       throw new InvalidRequestException(format("Field %s can't be empty", name));
+    }
+  }
+  private void resetNextIteration(PersistenceIterator<ApprovalInstance> iterator, ServiceNowApprovalInstance instance) {
+    approvalInstanceService.resetNextIterations(instance.getId(), instance.recalculateNextIterations());
+    if (iterator != null) {
+      iterator.wakeup();
     }
   }
 }

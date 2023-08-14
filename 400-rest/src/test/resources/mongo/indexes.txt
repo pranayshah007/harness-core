@@ -877,6 +877,7 @@ workflowExecutions {"name": "accountId_appId_envIds_createdAt_cdPageCandidate_st
 workflowExecutions {"name": "accountId_appId_onDemandRollback_createdAt", "background": true} {"accountId": 1, "appId": 1, "onDemandRollback": 1, "createdAt": -1}
 workflowExecutions {"name": "accountId_appId_serviceIds_createdAt_cdPageCandidate_status", "background": true} {"accountId": 1, "appId": 1, "serviceIds": 1, "createdAt": -1, "cdPageCandidate": 1, "status": 1}
 workflowExecutions {"name": "accountId_appId_workflowId_createdAt_cdPageCandidate_status", "background": true} {"accountId": 1, "appId": 1, "workflowId": 1, "createdAt": -1, "cdPageCandidate": 1, "status": 1}
+workflowExecutions {"name": "accountId_createdBy-email_createdAt", "background": true} {"accountId": 1, "createdBy.email": 1, "createdAt": 1}
 workflowExecutions {"name": "accountId_endTs_status_pipelineExecutionId", "background": true} {"accountId": 1, "endTs": 1, "status": 1, "pipelineExecutionId": 1}
 workflowExecutions {"name": "accountId_pipelineExecutionId_createdAt_appId", "background": true} {"accountId": 1, "pipelineExecutionId": 1, "createdAt": -1, "appId": 1}
 workflowExecutions {"name": "accountId_startTs_serviceIds", "background": true} {"accountId": 1, "startTs": 1, "serviceIds": 1}

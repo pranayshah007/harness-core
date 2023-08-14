@@ -63,6 +63,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
   @Inject private BroadcasterFactory broadcasterFactory;
 
   @Inject private DelegateSetupService delegateSetupService;
+
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 

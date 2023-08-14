@@ -11,6 +11,7 @@ import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity.ScorecardKeys;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -31,7 +32,7 @@ public class ScorecardRepositoryCustomImpl implements ScorecardRepositoryCustom 
                             .is(scorecardEntity.getIdentifier());
     Query query = new Query(criteria);
     Update update = new Update();
-    update.set(ScorecardKeys.filters, scorecardEntity.getFilters());
+    update.set(ScorecardKeys.filter, scorecardEntity.getFilter());
     update.set(ScorecardKeys.description, scorecardEntity.getDescription());
     update.set(ScorecardKeys.checks, scorecardEntity.getChecks());
     update.set(ScorecardKeys.name, scorecardEntity.getName());
@@ -39,5 +40,15 @@ public class ScorecardRepositoryCustomImpl implements ScorecardRepositoryCustom 
     update.set(ScorecardKeys.weightageStrategy, scorecardEntity.getWeightageStrategy());
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
     return mongoTemplate.findAndModify(query, update, options, ScorecardEntity.class);
+  }
+
+  @Override
+  public DeleteResult delete(String accountIdentifier, String identifier) {
+    Criteria criteria = Criteria.where(ScorecardKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(ScorecardKeys.identifier)
+                            .is(identifier);
+    Query query = new Query(criteria);
+    return mongoTemplate.remove(query, ScorecardEntity.class);
   }
 }

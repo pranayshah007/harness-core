@@ -7,7 +7,6 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
@@ -1531,15 +1530,12 @@ public class TerraformStepHelper {
   }
 
   public void validateSecretManager(Ambiance ambiance, IdentifierRef identifierRef) {
-    if (cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN)) {
-      boolean isSecretManagerReadOnly =
-          ngEncryptedDataService.isSecretManagerReadOnly(identifierRef.getAccountIdentifier(),
-              identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
-      if (isSecretManagerReadOnly) {
-        throw new InvalidRequestException(
-            "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");
-      }
+    boolean isSecretManagerReadOnly =
+        ngEncryptedDataService.isSecretManagerReadOnly(identifierRef.getAccountIdentifier(),
+            identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
+    if (isSecretManagerReadOnly) {
+      throw new InvalidRequestException(
+          "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");
     }
   }
 

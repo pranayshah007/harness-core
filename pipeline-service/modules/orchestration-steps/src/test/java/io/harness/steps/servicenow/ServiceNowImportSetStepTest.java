@@ -36,6 +36,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.servicenow.ServiceNowActionNG;
@@ -192,7 +193,7 @@ public class ServiceNowImportSetStepTest extends CategoryTest {
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(serviceNowImportSetStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(serviceNowImportSetStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

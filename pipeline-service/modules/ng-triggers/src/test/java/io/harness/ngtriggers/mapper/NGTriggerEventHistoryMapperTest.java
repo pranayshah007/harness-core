@@ -47,6 +47,7 @@ public class NGTriggerEventHistoryMapperTest extends CategoryTest {
                                                   .pollingDocId(pollingDocId)
                                                   .orgIdentifier(orgId)
                                                   .projectIdentifier(projectId)
+                                                  .build("build")
                                                   .build();
     NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
                                           .accountId(accountId)
@@ -64,6 +65,7 @@ public class NGTriggerEventHistoryMapperTest extends CategoryTest {
             .triggerIdentifier(triggerIdentifier)
             .ngTriggerEventInfo(
                 ArtifactTriggerEventInfo.builder()
+                    .build("build")
                     .pollingDocumentInfo(PollingDocumentInfo.builder().pollingDocumentId(pollingDocId).build())
                     .build())
             .build();
@@ -77,6 +79,7 @@ public class NGTriggerEventHistoryMapperTest extends CategoryTest {
     ngTriggerEventHistoryDTO.setType(NGTriggerType.MANIFEST);
     ngTriggerEventHistoryDTO.setNgTriggerEventInfo(
         ManifestTriggerEventInfo.builder()
+            .build("build")
             .pollingDocumentInfo(PollingDocumentInfo.builder().pollingDocumentId(pollingDocId).build())
             .build());
     response = NGTriggerEventHistoryMapper.toTriggerEventHistoryDto(triggerEventHistory, ngTriggerEntity);

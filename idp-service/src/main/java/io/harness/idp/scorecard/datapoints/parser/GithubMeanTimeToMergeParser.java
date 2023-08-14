@@ -9,19 +9,19 @@ package io.harness.idp.scorecard.datapoints.parser;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
 import java.util.Map;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
 public class GithubMeanTimeToMergeParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity entity) {
+  public Object parseDataPoint(Map<String, Object> data, String dataPointIdentifier, Set<String> strings) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public String getReplaceKey(DataPointEntity entity) {
+  public String getReplaceKey() {
     throw new UnsupportedOperationException();
   }
 }

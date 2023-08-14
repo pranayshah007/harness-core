@@ -56,7 +56,9 @@ nodeExecutions {"name": "previous_id_idx", "background": true} {"previousId": 1}
 nodeExecutions {"name": "status_idx", "background": true} {"status": 1}
 nodeExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 nodeExecutionsInfo {"name": "nodeExecutionId_unique_idx", "unique": true} {"nodeExecutionId": 1}
+nodeExecutionsInfo {"name": "planExecutionId_idx", "background": true} {"planExecutionId": 1}
 nodeExecutionsInfo {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+nodes {"name": "planId_idx", "background": true} {"planId": 1}
 nodes {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 notifyQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 notifyQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
@@ -122,8 +124,6 @@ resourceRestraintInstances {"name": "resourceRestraintId_state_idx", "background
 resourceRestraintInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 resourceRestraints {"name": "uniqueName", "unique": true} {"accountId": 1, "name": 1}
 stageExecutionEntity {"name": "stage_execution_entity_sorted_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "stageExecutionId": 1, "createdAt": -1}
-stepDetailInstance {"name": "nodeExecutionId_name_unique_idx", "unique": true} {"nodeExecutionId": 1, "name": 1}
-stepDetailInstance {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 stepExecutionEntity {"name": "step_execution_entity_sorted_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "stepExecutionId": 1, "createdAt": -1}
 timeoutInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
 timeoutInstances {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
@@ -146,3 +146,4 @@ waitInstances {"name": "correlationIds_1", "background": true} {"correlationIds"
 waitInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 waitInstances {"name": "waitingOnCorrelationIds_1", "background": true} {"waitingOnCorrelationIds": 1}
 waitStepInstance {"name": "nodeExecutionId_1", "unique": true} {"nodeExecutionId": 1}
+waitStepInstance {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

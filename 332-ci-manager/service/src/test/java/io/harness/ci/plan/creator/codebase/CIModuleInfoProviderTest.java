@@ -28,8 +28,6 @@ import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml.K8sHostedInfraYamlSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
@@ -209,51 +207,6 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getTargetBranch()).isEqualTo("main");
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getCommits()).isEqualTo(ciBuildCommits);
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getAuthor()).isNull();
-  }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testGetPipelineStageLevelModuleInfoForK8Hosted() {
-    Ambiance ambiance = getAmbianceWithLevel(
-        Level.newBuilder().setStartTs(1111L).setStepType(IntegrationStageStepPMS.STEP_TYPE).build());
-    Infrastructure infrastructure =
-        K8sHostedInfraYaml.builder().spec(K8sHostedInfraYamlSpec.builder().identifier("k8HostedInfra").build()).build();
-    OrchestrationEvent event =
-        OrchestrationEvent.builder()
-            .ambiance(ambiance)
-            .serviceName("ci")
-            .resolvedStepParameters(
-                StageElementParameters.builder()
-                    .identifier("stageId")
-                    .name("stageName")
-                    .specConfig(IntegrationStageStepParametersPMS.builder().infrastructure(infrastructure).build())
-                    .build())
-            .status(Status.RUNNING)
-            .build();
-
-    when(executionSweepingOutputService.resolveOptional(
-             ambiance, RefObjectUtils.getOutcomeRefObject(INITIALIZE_EXECUTION)))
-        .thenReturn(OptionalSweepingOutput.builder()
-                        .found(true)
-                        .output(InitializeExecutionSweepingOutput.builder().initialiseExecutionTime(1234L).build())
-                        .build());
-    when(executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STAGE_EXECUTION)))
-        .thenReturn(OptionalSweepingOutput.builder()
-                        .found(true)
-                        .output(StageExecutionSweepingOutput.builder().stageExecutionTime(5671L).build())
-                        .build());
-    CIPipelineModuleInfo ciPipelineModuleInfo =
-        (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo()).isNotNull();
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageId()).isEqualTo("stageId");
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageName()).isEqualTo("stageName");
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsArch()).isEqualTo("Amd64");
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsType()).isEqualTo("Linux");
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageExecutionId()).isEqualTo("stageExecutionId");
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getCpuTime()).isEqualTo(4437L);
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageBuildTime()).isEqualTo(5671L);
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStartTs()).isEqualTo(1111L);
   }
 
   @Test

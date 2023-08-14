@@ -164,3 +164,4 @@ io.harness.delegate.task.ecs.EcsS3FetchFileConfig
 io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo
 io.harness.delegate.beans.logstreaming.CommandUnitProgress
 io.harness.git.model.FetchFilesResult
+io.harness.plancreator.steps.common.v1.StepElementParametersV1

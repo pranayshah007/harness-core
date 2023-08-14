@@ -246,6 +246,7 @@ public class EngineExpressionEvaluator {
         }
         log.warn("[EXPRESSION_CONCATENATE]: Failed to render expression in new flow for - " + expression
             + " whose value is - " + finalExpression);
+        log.warn("[EXPRESSION_CONCATENATE_ERRORS] - " + e.getMessage(), e);
         return finalExpression;
       }
       throw e;
@@ -281,6 +282,7 @@ public class EngineExpressionEvaluator {
         Object expressionValue = evaluateExpressionInternal(expression, engineJexlContext, MAX_DEPTH, expressionMode);
         log.warn("[EXPRESSION_EVALUATE_CONCATENATE]: Failed to evaluate expression in new flow for - " + expression
             + " whose value is - " + expressionValue);
+        log.warn("[EXPRESSION_CONCATENATE_ERRORS] - " + e.getMessage(), e);
         return expressionValue;
       }
       throw e;

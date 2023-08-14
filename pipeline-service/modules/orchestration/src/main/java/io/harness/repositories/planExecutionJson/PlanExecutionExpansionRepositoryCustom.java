@@ -24,4 +24,12 @@ public interface PlanExecutionExpansionRepositoryCustom {
   PlanExecutionExpansion find(Query query);
 
   void deleteAllExpansions(Set<String> planExecutionIds);
+
+  /**
+   * Update multiple records of PlanExpansion with given find query and updateOperations
+   * @param query
+   * @param updateOps
+   * @return
+   */
+  void multiUpdate(Query query, Update updateOps);
 }

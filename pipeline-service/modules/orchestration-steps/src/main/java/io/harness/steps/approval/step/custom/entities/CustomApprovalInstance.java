@@ -110,16 +110,6 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
         .build();
   }
 
-  private static ParameterField<Timeout> getTimeout(String fieldName, Object objectParameterField) {
-    if (objectParameterField instanceof String) {
-      return ParameterField.createValueField(Timeout.fromString(objectParameterField.toString()));
-    }
-    if (objectParameterField instanceof Timeout) {
-      return ParameterField.createValueField((Timeout) objectParameterField);
-    }
-    throw new IllegalArgumentException(String.format("Invalid value for %s", fieldName));
-  }
-
   private long getGap() {
     long timeout = getScriptTimeout().getValue().getTimeoutInMillis();
     long retryTime = getRetryInterval().getValue().getTimeoutInMillis();

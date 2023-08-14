@@ -10,6 +10,7 @@ package io.harness.repositories.executions;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
@@ -143,7 +144,7 @@ public class PmsExecutionSummaryRepositoryCustomImplTest extends OrchestrationVi
   }
 
   @Test
-  @Owner(developers = SHALINI)
+  @Owner(developers = VIVEK_DIXIT)
   @Category(UnitTests.class)
   public void testFindListOfBranches() {
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =

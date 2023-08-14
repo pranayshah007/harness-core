@@ -11,12 +11,15 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDBO;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupRepository;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
+import io.harness.accesscontrol.scopes.core.ScopeLevel;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
@@ -80,18 +83,20 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
       return true;
     }
 
-    Pattern startsWithScope = Pattern.compile("^".concat(userGroup.get().getScopeIdentifier()));
-    String principalScopeLevel =
-        scopeService.buildScopeFromScopeIdentifier(userGroup.get().getScopeIdentifier()).getLevel().toString();
+    Pattern startsWithScope = Pattern.compile("^".concat(userGroup.get().getScopeIdentifier()).concat("/"));
+    ScopeLevel principalScopeLevel =
+        scopeService.buildScopeFromScopeIdentifier(userGroup.get().getScopeIdentifier()).getLevel();
 
-    Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.principalType)
+    Criteria criteria = where(RoleAssignmentDBOKeys.principalType)
                             .is(USER_GROUP)
                             .and(RoleAssignmentDBOKeys.principalIdentifier)
                             .is(userGroup.get().getIdentifier())
                             .and(RoleAssignmentDBOKeys.principalScopeLevel)
-                            .is(principalScopeLevel)
-                            .and(RoleAssignmentDBOKeys.scopeIdentifier)
-                            .regex(startsWithScope);
+                            .is(principalScopeLevel.toString())
+                            .andOperator(new Criteria().orOperator(
+                                where(RoleAssignmentDBOKeys.scopeIdentifier).is(userGroup.get().getScopeIdentifier()),
+                                where(RoleAssignmentDBOKeys.scopeIdentifier).regex(startsWithScope)));
+
     List<ReProcessRoleAssignmentOnUserGroupUpdateTask> tasksToExecute =
         roleAssignmentRepository.findAll(criteria, Pageable.unpaged())
             .stream()

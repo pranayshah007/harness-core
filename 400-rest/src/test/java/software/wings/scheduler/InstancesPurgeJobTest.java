@@ -28,7 +28,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.TemporalAdjusters;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
@@ -38,10 +37,8 @@ import org.mockito.InjectMocks;
 
 public class InstancesPurgeJobTest extends WingsBaseTest {
   private static final int MAX_INSTANCES = 100;
-  private static final int MAX_INSTANCE_STATS = 500;
 
   private static final int MONTHS_INSTANCES_DATA_TO_GENERATE_EXCLUDING_CURRENT_MONTH = 11;
-  private static final int MONTHS_INSTANCE_STATS_DATA_TO_GENERATE_EXCLUDING_CURRENT_MONTH = 11;
 
   @Inject private HPersistence persistence;
 
@@ -53,8 +50,6 @@ public class InstancesPurgeJobTest extends WingsBaseTest {
   public void shouldPurgeCorrectly() {
     generateAccount();
     generateInstances();
-    generateInstanceStats();
-    generateServerlessInstanceStats();
 
     List<Instance> allInstances = persistence.createQuery(Instance.class).asList();
     List<InstanceStatsSnapshot> allInstanceStats = persistence.createQuery(InstanceStatsSnapshot.class).asList();
@@ -121,49 +116,5 @@ public class InstancesPurgeJobTest extends WingsBaseTest {
       builder.isDeleted(false);
     }
     return builder.build();
-  }
-
-  private void generateInstanceStats() {
-    Instant startInstant = LocalDate.now(ZoneOffset.UTC)
-                               .minusMonths(MONTHS_INSTANCE_STATS_DATA_TO_GENERATE_EXCLUDING_CURRENT_MONTH)
-                               .with(TemporalAdjusters.firstDayOfMonth())
-                               .atStartOfDay()
-                               .toInstant(ZoneOffset.UTC);
-    Instant endInstant = Instant.now();
-
-    List<InstanceStatsSnapshot> instanceStats =
-        Stream.generate(() -> createInstanceStatInTimeRange(startInstant, endInstant))
-            .limit(MAX_INSTANCE_STATS)
-            .collect(toList());
-
-    persistence.save(instanceStats);
-  }
-
-  private void generateServerlessInstanceStats() {
-    Instant startInstant = LocalDate.now(ZoneOffset.UTC)
-                               .minusMonths(MONTHS_INSTANCE_STATS_DATA_TO_GENERATE_EXCLUDING_CURRENT_MONTH)
-                               .with(TemporalAdjusters.firstDayOfMonth())
-                               .atStartOfDay()
-                               .toInstant(ZoneOffset.UTC);
-    Instant endInstant = Instant.now();
-
-    List<ServerlessInstanceStats> serverlessInstanceStats =
-        Stream.generate(() -> createServerlessInstanceStatInTimeRange(startInstant, endInstant))
-            .limit(MAX_INSTANCE_STATS)
-            .collect(toList());
-
-    persistence.save(serverlessInstanceStats);
-  }
-
-  private InstanceStatsSnapshot createInstanceStatInTimeRange(Instant startInstant, Instant endInstant) {
-    return new InstanceStatsSnapshot(Instant.ofEpochMilli(ThreadLocalRandom.current().nextLong(
-                                         startInstant.toEpochMilli(), endInstant.toEpochMilli())),
-        "DummyAccountId", Collections.emptyList());
-  }
-
-  private ServerlessInstanceStats createServerlessInstanceStatInTimeRange(Instant startInstant, Instant endInstant) {
-    return new ServerlessInstanceStats(Instant.ofEpochMilli(ThreadLocalRandom.current().nextLong(
-                                           startInstant.toEpochMilli(), endInstant.toEpochMilli())),
-        "DummyAccountId", Collections.emptyList());
   }
 }

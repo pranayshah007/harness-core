@@ -64,6 +64,15 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   }
 
   @Override
+  public void multiUpdate(Query query, Update update) {
+    RetryPolicy<Object> retryPolicy =
+        getRetryPolicy("[Retrying]: Failed updating PipelineExecutionSummary; attempt: {}",
+            "[Failed]: Failed updating PipelineExecutionSummary; attempt: {}");
+    Failsafe.with(retryPolicy)
+        .get(() -> mongoTemplate.updateMulti(query, update, PipelineExecutionSummaryEntity.class));
+  }
+
+  @Override
   public UpdateResult deleteAllExecutionsWhenPipelineDeleted(Query query, Update update) {
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy("[Retrying]: Failed deleting PipelineExecutionSummary; attempt: {}",

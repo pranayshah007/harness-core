@@ -39,9 +39,11 @@ import io.harness.springdata.TransactionHelper;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.mongodb.DuplicateKeyException;
+import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -60,6 +62,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
@@ -320,6 +323,24 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
         PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting OutcomeInstance; attempt: {}",
             "[Failed]: Failed deleting OutcomeInstance; attempt: {}");
     Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, OutcomeInstance.class));
+  }
+
+  @Override
+  public void updateTTL(String planExecutionId, Date ttlDate) {
+    Criteria criteria = where(OutcomeInstanceKeys.planExecutionId).is(planExecutionId);
+    Query query = new Query(criteria);
+    Update ops = new Update();
+    ops.set(OutcomeInstanceKeys.validUntil, ttlDate);
+    RetryPolicy<Object> retryPolicy =
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed updating TTL OutcomeInstance; attempt: {}",
+            "[Failed]: Failed updating TTL OutcomeInstance; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> {
+      UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, OutcomeInstance.class);
+      if (!updateResult.wasAcknowledged()) {
+        log.warn("No OutcomeInstance could be marked as updated TTL for given planExecutionIds - " + planExecutionId);
+      }
+      return true;
+    });
   }
 
   private OptionalOutcome resolveOptionalUsingProducerSetupId(Ambiance ambiance, RefObject refObject) {

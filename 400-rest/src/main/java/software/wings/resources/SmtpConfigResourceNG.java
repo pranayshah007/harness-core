@@ -10,6 +10,7 @@ package software.wings.resources;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.notification.SmtpConfig.SmtpConfigBuilder;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.notification.remote.SmtpConfigResponse;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -39,10 +40,10 @@ public class SmtpConfigResourceNG {
   @GET
   @Produces("application/x-kryo")
   @Consumes("application/x-kryo")
-  public RestResponse<SmtpConfigResponse> getSmtpConfig(@QueryParam("accountId") String accountId) {
+  public RestResponse<SmtpConfigResponse> getSmtpConfig(@QueryParam("accountId") String accountId) throws Exception {
     SmtpConfig smtpConfig = emailHelperUtils.getSmtpConfig(accountId, true);
     if (smtpConfig == null) {
-      return null;
+      throw new InvalidRequestException("SMTP Configuration Missing for Account: " + accountId);
     }
     SmtpConfigBuilder notificationSmtpConfigBuilder = io.harness.notification.SmtpConfig.builder()
                                                           .host(smtpConfig.getHost())

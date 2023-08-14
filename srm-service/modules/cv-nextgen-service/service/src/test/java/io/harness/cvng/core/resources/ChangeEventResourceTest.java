@@ -7,47 +7,69 @@
 
 package io.harness.cvng.core.resources;
 
+import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.SHASHWAT_SACHAN;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.persistence.HPersistence;
+import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import retrofit2.Call;
 
 public class ChangeEventResourceTest extends CvNextGenTestBase {
   private static ChangeEventResource changeEventResource = new ChangeEventResource();
@@ -58,6 +80,16 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
   @Inject private HPersistence hPersistence;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private ActivityService activityService;
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
+  @Mock PipelineServiceClient pipelineServiceClient;
+  @Inject Clock clock;
+  private String stepName;
+  private String monitoredServiceIdentifier;
+
+  private ServiceEnvironmentParams serviceEnvironmentParams;
+
+  private String analysisExecutionDetailsId;
+  private String activityId;
   BuilderFactory builderFactory = BuilderFactory.getDefault();
 
   @ClassRule
@@ -77,6 +109,31 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
     injector.injectMembers(changeEventNgResourceAccountScoped);
     monitoredServiceService.createDefault(builderFactory.getProjectParams(),
         builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
+    clock = FIXED_TIME_FOR_TESTS;
+    stepName = "Mocked step name";
+    Call<ResponseDTO<Object>> pipelineSummaryCall = mock(Call.class);
+    doReturn(pipelineSummaryCall).when(pipelineServiceClient).getExecutionDetailV2(any(), any(), any(), any());
+    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectNode pipelineExecutionSummary = objectMapper.createObjectNode();
+    pipelineExecutionSummary.put("name", "Mocked Pipeline");
+    ObjectNode mockResponse = objectMapper.createObjectNode();
+    mockResponse.set("pipelineExecutionSummary", pipelineExecutionSummary);
+    when(pipelineSummaryCall.execute()).thenReturn(retrofit2.Response.success(ResponseDTO.newResponse(mockResponse)));
+    FieldUtils.writeField(srmAnalysisStepService, "pipelineServiceClient", pipelineServiceClient, true);
+    monitoredServiceIdentifier = builderFactory.getContext().getMonitoredServiceIdentifier();
+    serviceEnvironmentParams = ServiceEnvironmentParams.builderWithProjectParams(builderFactory.getProjectParams())
+                                   .serviceIdentifier("service1")
+                                   .environmentIdentifier("env1")
+                                   .build();
+    analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, stepName,
+        serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
+    SRMStepAnalysisActivity stepAnalysisActivity = builderFactory.getSRMStepAnalysisActivityBuilder()
+                                                       .executionNotificationDetailsId(analysisExecutionDetailsId)
+                                                       .build();
+    stepAnalysisActivity.setUuid(analysisExecutionDetailsId);
+    activityId = activityService.createActivity(stepAnalysisActivity);
+    FieldUtils.writeField(srmAnalysisStepService, "clock", clock, true);
   }
 
   @Test
@@ -196,6 +253,87 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
                             .queryParam("pageSize", 2)
                             .request(MediaType.APPLICATION_JSON_TYPE)
                             .get();
+
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains(
+            "java.lang.IllegalStateException: serviceIdentifier, envIdentifier filter can not be used with monitoredServiceIdentifier filter");
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetPaginatedReport() {
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
+    Response response = NGRESOURCES.client()
+                            .target(getChangeEventPath(builderFactory.getContext().getProjectParams()) + "/report")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("monitoredServiceIdentifiers", monitoredServiceIdentifier)
+                            .queryParam("startTime", clock.instant().toEpochMilli())
+                            .queryParam("endTime", clock.instant().plus(4, ChronoUnit.DAYS).toEpochMilli())
+                            .queryParam("pageIndex", 0)
+                            .queryParam("pageSize", 2)
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    PageResponse<SRMAnalysisStepDetailDTO> firstPage =
+        response.readEntity(new GenericType<RestResponse<PageResponse<SRMAnalysisStepDetailDTO>>>() {}).getResource();
+    assertThat(firstPage.getPageIndex()).isEqualTo(0);
+    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
+    assertThat(firstPage.getTotalItems()).isEqualTo(1);
+    assertThat(firstPage.getTotalPages()).isEqualTo(1);
+    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetPaginatedReportAccount() {
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
+    Response response =
+        NGACCOUNTRESOURCES.client()
+            .target(getChangeEventAccountPath(builderFactory.getContext().getProjectParams()) + "/report")
+            .queryParam("accountId", builderFactory.getContext().getAccountId())
+            .queryParam("scopedMonitoredServiceIdentifiers",
+                ScopedInformation.getScopedInformation(builderFactory.getContext().getAccountId(),
+                    builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+                    builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier()))
+            .queryParam("startTime", clock.instant().toEpochMilli())
+            .queryParam("endTime", clock.instant().plus(4, ChronoUnit.DAYS).toEpochMilli())
+            .queryParam("pageIndex", 0)
+            .queryParam("pageSize", 2)
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .get();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    PageResponse<SRMAnalysisStepDetailDTO> firstPage =
+        response.readEntity(new GenericType<RestResponse<PageResponse<SRMAnalysisStepDetailDTO>>>() {}).getResource();
+    assertThat(firstPage.getPageIndex()).isEqualTo(0);
+    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
+    assertThat(firstPage.getTotalItems()).isEqualTo(1);
+    assertThat(firstPage.getTotalPages()).isEqualTo(1);
+    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetPaginatedReportWithInvalidQueryParams() {
+    Response response =
+        NGRESOURCES.client()
+            .target(getChangeEventPath(builderFactory.getContext().getProjectParams()) + "/report")
+            .queryParam("accountId", builderFactory.getContext().getAccountId())
+            .queryParam("monitoredServiceIdentifiers", builderFactory.getContext().getMonitoredServiceIdentifier())
+            .queryParam("serviceIdentifiers", builderFactory.getContext().getServiceIdentifier())
+            .queryParam("startTime", clock.instant().toEpochMilli())
+            .queryParam("endTime", clock.instant().plus(4, ChronoUnit.DAYS).toEpochMilli())
+            .queryParam("pageIndex", 0)
+            .queryParam("pageSize", 2)
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .get();
 
     assertThat(response.getStatus()).isEqualTo(500);
     assertThat(response.readEntity(String.class))

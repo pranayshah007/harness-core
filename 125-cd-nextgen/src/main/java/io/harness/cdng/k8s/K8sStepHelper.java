@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.k8s;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -100,6 +101,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -148,7 +150,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private AccountClient accountClient;
 
-  public TaskChainResponse queueK8sTask(StepElementParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
+  public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {k8sDeployRequest})
@@ -170,7 +172,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
         .build();
   }
 
-  public TaskChainResponse queueK8sTask(StepElementParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
+  public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData) {
     TaskType taskType = getK8sTaskType(k8sDeployRequest, ambiance);
     return queueK8sTask(stepElementParameters, k8sDeployRequest, ambiance, executionPassThroughData, taskType);
@@ -994,14 +996,19 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     return Collections.emptyList();
   }
 
-  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags) {
+  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags, Ambiance ambiance) {
     if (commandFlags == null) {
       return new HashMap<>();
     }
 
     Map<String, String> commandsValueMap = new HashMap<>();
     for (K8sStepCommandFlag commandFlag : commandFlags) {
-      commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), commandFlag.getFlag().getValue());
+      if (ParameterField.isNotNull(commandFlag.getFlag())) {
+        String flagValue = commandFlag.getFlag().isExpression()
+            ? cdExpressionResolver.renderExpression(ambiance, commandFlag.getFlag().getExpressionValue())
+            : commandFlag.getFlag().getValue();
+        commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), flagValue);
+      }
     }
 
     return commandsValueMap;

@@ -315,14 +315,10 @@ public class IACMManagerServiceModule extends AbstractModule {
     install(new CILogServiceClientModule(iacmManagerConfiguration.getLogServiceConfig())); // For logging
     install(UserClientModule.getInstance(iacmManagerConfiguration.getManagerClientConfig(),
         iacmManagerConfiguration.getManagerServiceSecret(), IACM_MANAGER.getServiceId())); // Retrieve user information
-    install(new TIServiceClientModule(
-        iacmManagerConfiguration
-            .getTiServiceConfig())); // Dependency needed for
-                                     // ciIntegrationStageModifier->CIStepGroupUtils->VMInitialiseTaskPAramBuilder->TIServiceUtils
-    install(new STOServiceClientModule(
-        iacmManagerConfiguration
-            .getStoServiceConfig())); // Dependency needed for
-                                      // ciIntegrationStageModifier->CIStepGroupUtils->VMInitialiseTaskPAramBuilder->STOServiceUtils
+    install(new TIServiceClientModule(iacmManagerConfiguration.getTiServiceConfig())); // Dependency needed for
+    // ciIntegrationStageModifier->CIStepGroupUtils->VMInitialiseTaskPAramBuilder->TIServiceUtils
+    install(new STOServiceClientModule(iacmManagerConfiguration.getStoServiceConfig())); // Dependency needed for
+    // ciIntegrationStageModifier->CIStepGroupUtils->VMInitialiseTaskPAramBuilder->STOServiceUtils
     install(new IACMServiceClientModule(iacmManagerConfiguration.getIacmServiceConfig()));
     install(new AccountClientModule(iacmManagerConfiguration.getManagerClientConfig(), // Account stuff?
         iacmManagerConfiguration.getNgManagerServiceSecret(), IACM_MANAGER.toString()));

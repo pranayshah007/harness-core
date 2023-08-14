@@ -11,7 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 
+import com.mongodb.client.result.UpdateResult;
+
 @OwnedBy(HarnessTeam.IDP)
 public interface CheckRepositoryCustom {
   CheckEntity update(CheckEntity checkEntity);
+  UpdateResult updateDeleted(String accountIdentifier, String identifier);
 }

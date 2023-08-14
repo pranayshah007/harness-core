@@ -74,7 +74,7 @@ public class NGActivityDTOToEntityMapper {
                                     .activityStatusMessage(entityUsageDTO.getActivityStatusMessage())
                                     .errors(entityUsageDTO.getErrors())
                                     .errorSummary(entityUsageDTO.getErrorSummary())
-                                    .status(entityUsageDTO.getStatus());
+                                    .activityMetadata(entityUsageDTO.getActivityMetadata());
     populateCommonActivityProperties(builder, activityDTO);
     return builder.build();
   }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.provision.terraform;
+
 import io.harness.EntityType;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -35,7 +36,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -46,6 +46,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
 import io.harness.security.encryption.EncryptionConfig;
@@ -85,12 +86,12 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
   @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -134,9 +135,9 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
     log.info("Starting execution ObtainTask after Rbac for the Plan Step");
-    TerraformPlanStepParameters planStepParameters = (TerraformPlanStepParameters) stepElementParameters.getSpec();
+    TerraformPlanStepParameters planStepParameters = (TerraformPlanStepParameters) StepBaseParameters.getSpec();
     helper.validatePlanStepConfigFiles(planStepParameters);
     TerraformPlanExecutionDataParameters configuration = planStepParameters.getConfiguration();
     TerraformTaskNGParametersBuilder builder = TerraformTaskNGParameters.builder();
@@ -173,8 +174,8 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
         builder.taskType(TFTaskType.PLAN)
             .terraformCommandUnit(TerraformCommandUnit.Plan)
             .entityId(entityId)
-            .tfModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
-                configuration.getConfigFiles(), stepElementParameters.getType()))
+            .tfModuleSourceInheritSSH(
+                helper.isExportCredentialForSourceModule(configuration.getConfigFiles(), StepBaseParameters.getType()))
             .currentStateFileId(helper.getLatestFileId(entityId))
             .configFile(helper.getGitFetchFilesConfig(
                 configuration.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
@@ -193,7 +194,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
             .planName(helper.getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
                 planStepParameters.getProvisionerIdentifier().getValue()))
             .timeoutInMillis(
-                StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+                StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
             .isTerraformCloudCli(isTerraformCloudCli)
             .build();
@@ -202,7 +203,7 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
         TaskData.builder()
             .async(true)
             .taskType(terraformTaskNGParameters.getDelegateTaskType().name())
-            .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+            .timeout(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {builder.build()})
             .build();
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
@@ -214,10 +215,10 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<TerraformTaskNGResponse> responseSupplier)
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<TerraformTaskNGResponse> responseSupplier)
       throws Exception {
     log.info("Handling Task result with Security Context for the Plan Step");
-    TerraformPlanStepParameters planStepParameters = (TerraformPlanStepParameters) stepElementParameters.getSpec();
+    TerraformPlanStepParameters planStepParameters = (TerraformPlanStepParameters) StepBaseParameters.getSpec();
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     TerraformTaskNGResponse terraformTaskNGResponse = responseSupplier.get();
     List<UnitProgress> unitProgresses = terraformTaskNGResponse.getUnitProgressData() == null

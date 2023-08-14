@@ -17,7 +17,6 @@ java_library(
         "//960-persistence/src/main/java/io/harness/persistence/api:module",
         "//980-commons/src/main/java/io/harness/morphia:module",
         "//999-annotations:module",
-        "//idp-service/src/main/java/io/harness/idp/onboarding:module",
         "//idp-service/src/main/java/io/harness/idp/scorecard/datapoints:module",
         "//idp-service/src/main/java/io/harness/idp/scorecard/datasourcelocations:module",
         "@maven//:org_mongodb_morphia_morphia",
