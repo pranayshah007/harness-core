@@ -32,6 +32,7 @@ const (
 	LangType_CSHARP  LangType = 1
 	LangType_PYTHON  LangType = 2
 	LangType_UNKNOWN LangType = 3
+	LangType_RUBY    LangType = 3
 )
 
 const (
@@ -43,11 +44,13 @@ const (
 )
 
 var (
-	javaSourceRegex = fmt.Sprintf("^.*%s", JAVA_SRC_PATH)
-	javaTestRegex   = fmt.Sprintf("^.*%s", JAVA_TEST_PATH)
-	scalaTestRegex  = fmt.Sprintf("^.*%s", SCALA_TEST_PATH)
-	kotlinTestRegex = fmt.Sprintf("^.*%s", KOTLIN_TEST_PATH)
+	getWorkspace        = external.GetWrkspcPath
+	javaSourceRegex     = fmt.Sprintf("^.*%s", JAVA_SRC_PATH)
+	javaTestRegex       = fmt.Sprintf("^.*%s", JAVA_TEST_PATH)
+	scalaTestRegex      = fmt.Sprintf("^.*%s", SCALA_TEST_PATH)
+	kotlinTestRegex     = fmt.Sprintf("^.*%s", KOTLIN_TEST_PATH)
 	PYTHON_TEST_PATTERN = []string{"test_*.py", "*_test.py"}
+	RUBY_TEST_PATTERN   = []string{"*_spec.py"}
 )
 
 //Node holds data about a source code
@@ -124,22 +127,30 @@ func ParseCsharpNode(file types.File, testGlobs []string) (*Node, error) {
 	return &node, nil
 }
 
-// ParsePythonNode extracts the file name from a Python file path
+// ParsePathBasedNode extracts the file name from a Python file path
 // e.g., src/abc/def/A.py
-// will return class = A
-func ParsePythonNode(file types.File, testGlobs []string) (*Node, error) {
+// will return class = src/abc/def/A.py file = src/abc/def/A.py
+func ParsePathBasedNode(file types.File, testGlobs []string) (*Node, error) {
 	var node Node
 	node.Pkg = ""
 	node.Class = ""
 	node.Lang = LangType_UNKNOWN
-	node.Type = NodeType_OTHER
+	node.Type = NodeType_SOURCE
 
 	filename := strings.TrimSpace(file.Name)
 	if !strings.HasSuffix(filename, ".py") {
-		return &node, nil
+		node.Lang = LangType_PYTHON
+		node.Type = NodeType_SOURCE
+		if len(testGlobs) == 0 {
+			testGlobs = PYTHON_TEST_PATTERN
+		}
+	} else if strings.HasSuffix(filename, ".rb") {
+		node.Lang = LangType_RUBY
+		node.Type = NodeType_SOURCE
+		if len(testGlobs) == 0 {
+			testGlobs = RUBY_TEST_PATTERN
+		}
 	}
-	node.Lang = LangType_PYTHON
-	node.Type = NodeType_SOURCE
 
 	for _, glob := range testGlobs {
 		if matched, _ := zglob.Match(glob, filename); !matched {
@@ -150,6 +161,31 @@ func ParsePythonNode(file types.File, testGlobs []string) (*Node, error) {
 	node.File = filename
 	node.Class = filename
 	return &node, nil
+}
+
+func GetTestsFromLocal(testGlobs []string, extension string) ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	wp, err := getWorkspace()
+	if err != nil {
+		return tests, err
+	}
+
+	files, _ := GetFiles(fmt.Sprintf("%s/**/*.%s", wp, extension))
+	for _, path := range files {
+		if path == "" {
+			continue
+		}
+		f := types.File{Name: path}
+		node, _ := ParsePathBasedNode(f, testGlobs)
+		if node.Type != NodeType_TEST {
+			continue
+		}
+		test := types.RunnableTest{
+			Class: node.File,
+		}
+		tests = append(tests, test)
+	}
+	return tests, nil
 }
 
 //ParseJavaNodeFromPath extracts the pkg and class names from a Java file path
@@ -272,7 +308,7 @@ func ParseJavaNode(file types.File) (*Node, error) {
 }
 
 //ParseFileNames accepts a list of file names, parses and returns the list of Node
-func ParseFileNames(files []types.File) ([]Node, error) {
+func ParseFileNames(files []types.File, testGlobs []string) ([]Node, error) {
 
 	nodes := make([]Node, 0)
 	for _, file := range files {
@@ -280,16 +316,15 @@ func ParseFileNames(files []types.File) ([]Node, error) {
 		if len(path) == 0 {
 			continue
 		}
+		var node *Node
 		if strings.HasSuffix(path, ".cs") {
-			node, _ := ParseCsharpNode(file, []string{})
-			nodes = append(nodes, *node)
-		} else if strings.HasSuffix(path, ".py") {
-			node, _ := ParsePythonNode(file, PYTHON_TEST_PATTERN)
-			nodes = append(nodes, *node)
+			node, _ = ParseCsharpNode(file, testGlobs)
+		} else if strings.HasSuffix(path, ".java") || strings.HasSuffix(path, ".kt") || strings.HasSuffix(path, ".sc") {
+			node, _ = ParseJavaNode(file)
 		} else {
-			node, _ := ParseJavaNode(file)
-			nodes = append(nodes, *node)
+			node, _ = ParsePathBasedNode(file, testGlobs)
 		}
+		nodes = append(nodes, *node)
 	}
 	return nodes, nil
 }

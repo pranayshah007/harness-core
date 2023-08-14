@@ -618,7 +618,7 @@ func (r *runTestsTask) execute(ctx context.Context) (map[string]string, error) {
 
 	// Install agent artifacts if not present
 	var agentPath = ""
-	if r.language == "csharp" || r.language == "python" {
+	if r.language != "java" && r.language == "kotlin" && r.language == "scala" {
 		zipAgentPath, err := installAgentFn(ctx, r.tmpFilePath, r.language, r.buildTool, r.frameworkVersion, r.buildEnvironment, r.log, r.fs)
 		if err != nil {
 			return nil, err
@@ -719,6 +719,15 @@ func (r *runTestsTask) getTiRunner(agentPath string) (runner testintelligence.Te
 				runner = python.NewPytestRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
 			case "unittest":
 				runner = python.NewUnittestRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+			default:
+				return runner, fmt.Errorf("build tool: %s is not supported for python", r.buildTool)
+			}
+		}
+	case "ruby":
+		{
+			switch r.buildTool {
+			case "rspec":
+				runner = ruby.NewRspecRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
 			default:
 				return runner, fmt.Errorf("build tool: %s is not supported for python", r.buildTool)
 			}
