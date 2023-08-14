@@ -34,9 +34,8 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
   @Override
   public void registerActiveExecutionMetrics() {
     Map<PipelineExecutionMetric, Integer> metricMap = new HashMap<>();
-    try (CloseableIterator<PlanExecution> iterator =
-             planExecutionService.fetchPlanExecutionsByStatusFromAnalytics(StatusUtils.activeStatuses(),
-                 ImmutableSet.of(PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.metadata))) {
+    try (CloseableIterator<PlanExecution> iterator = planExecutionService.fetchPlanExecutionsByStatusFromAnalytics(
+             StatusUtils.activeStatuses(), ImmutableSet.of(PlanExecutionKeys.accountId))) {
       while (iterator.hasNext()) {
         PlanExecution planExecution = iterator.next();
         PipelineExecutionMetric planExecutionMetric =
