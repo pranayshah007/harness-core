@@ -90,7 +90,7 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
                                                             .build();
 
     try {
-      List<BuildDetails> buildDetails = bambooBuildService.getBuilds(null, artifactStreamAttributes,
+      List<BuildDetails> buildDetails = bambooBuildService.getBuildsWithoutTimeOut(artifactStreamAttributes,
           BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails(),
           Integer.MAX_VALUE);
       checkIfEmptyBuilds(buildDetails);

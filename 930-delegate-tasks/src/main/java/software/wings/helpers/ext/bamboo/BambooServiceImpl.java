@@ -15,6 +15,7 @@ import static io.harness.exception.WingsException.USER;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 
+import static java.lang.Integer.min;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -25,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.concurrent.HTimeLimiter;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.exception.ArtifactServerException;
@@ -88,6 +90,8 @@ public class BambooServiceImpl implements BambooService {
   @Inject private EncryptionService encryptionService;
   @Inject private TimeLimiter timeLimiter;
   @Inject private ArtifactCollectionCommonTaskHelper artifactCollectionCommonTaskHelper;
+
+  private static final int MAXIMUM_BUILDS_IN_A_PAGE = 30;
 
   private BambooRestClient getBambooClient(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails) {
     try {
@@ -292,59 +296,87 @@ public class BambooServiceImpl implements BambooService {
   public List<BuildDetails> getBuilds(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
       String planKey, List<String> artifactPaths, int maxNumberOfBuilds) {
     try {
-      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(60), () -> {
-        List<BuildDetails> buildDetailsList = new ArrayList<>();
-        Call<JsonNode> request =
-            getBambooClient(bambooConfig, encryptionDetails)
-                .listBuildsForJob(getBasicAuthCredentials(bambooConfig, encryptionDetails), planKey, maxNumberOfBuilds);
-        Response<JsonNode> response = null;
-        try {
-          response = getHttpRequestExecutionResponse(request);
-          if (response.body() != null) {
-            JsonNode resultNode = response.body().at("/results/result");
-            if (resultNode != null) {
-              resultNode.elements().forEachRemaining(jsonNode -> {
-                List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
-                Map<String, String> metadata = new HashMap<>();
-                if (isNotEmpty(artifactPaths)) {
-                  for (String artifactPath : artifactPaths) {
-                    artifactFileMetadata.addAll(getArtifactFileMetadata(
-                        bambooConfig, encryptionDetails, planKey, jsonNode.get("buildNumber").asText(), artifactPath));
-                  }
-                }
-                if (jsonNode.get(ArtifactMetadataKeys.id) != null) {
-                  metadata.put(ArtifactMetadataKeys.id, jsonNode.get(ArtifactMetadataKeys.id).asText());
-                }
-                if (jsonNode.get(ArtifactMetadataKeys.planName) != null) {
-                  metadata.put(ArtifactMetadataKeys.planName, jsonNode.get(ArtifactMetadataKeys.planName).asText());
-                }
-                buildDetailsList.add(
-                    aBuildDetails()
-                        .withNumber(jsonNode.get("buildNumber").asText())
-                        .withRevision(
-                            jsonNode.get("vcsRevisionKey") != null ? jsonNode.get("vcsRevisionKey").asText() : null)
-                        .withBuildUrl(jsonNode.get("link").get("href").asText())
-                        .withUiDisplayName("Build# " + jsonNode.get("buildNumber").asText())
-                        .withArtifactDownloadMetadata(artifactFileMetadata)
-                        .withMetadata(metadata)
-                        .build());
-              });
-            }
-          }
-          return buildDetailsList;
-        } catch (Exception e) {
-          if (response != null && !response.isSuccessful()) {
-            IOUtils.closeQuietly(response.errorBody());
-          }
-          throw new ArtifactServerException("Error in fetching builds from bamboo server", e, USER);
-        }
-      });
+      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(60),
+          () -> getBuildsHelper(bambooConfig, encryptionDetails, planKey, artifactPaths, 0, maxNumberOfBuilds));
     } catch (UncheckedTimeoutException e) {
       throw new InvalidArtifactServerException("Bamboo server took too long to respond", e);
     } catch (WingsException e) {
       throw e;
     } catch (Exception e) {
       throw new WingsException(GENERAL_ERROR, USER, e).addParam("message", ExceptionUtils.getMessage(e));
+    }
+  }
+
+  public List<BuildDetails> getBuildsWithoutTimeout(BambooConfig bambooConfig,
+      List<EncryptedDataDetail> encryptionDetails, String planKey, List<String> artifactPaths, int maxNumberOfBuilds) {
+    try {
+      List<BuildDetails> buildDetailsList = new ArrayList<>();
+
+      for (int startIndex = 0; startIndex < maxNumberOfBuilds; startIndex = startIndex + MAXIMUM_BUILDS_IN_A_PAGE) {
+        List<BuildDetails> buildDetails = getBuildsHelper(bambooConfig, encryptionDetails, planKey, artifactPaths,
+            startIndex, min(MAXIMUM_BUILDS_IN_A_PAGE, maxNumberOfBuilds - startIndex));
+        if (EmptyPredicate.isEmpty(buildDetails)) {
+          break;
+        }
+        buildDetailsList.addAll(buildDetails);
+      }
+
+      return buildDetailsList;
+    } catch (UncheckedTimeoutException e) {
+      throw new InvalidArtifactServerException("Bamboo server took too long to respond", e);
+    } catch (WingsException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new WingsException(GENERAL_ERROR, USER, e).addParam("message", ExceptionUtils.getMessage(e));
+    }
+  }
+
+  private List<BuildDetails> getBuildsHelper(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
+      String planKey, List<String> artifactPaths, int startIndex, int maxNumberOfBuilds) {
+    List<BuildDetails> buildDetailsList = new ArrayList<>();
+    Call<JsonNode> request = getBambooClient(bambooConfig, encryptionDetails)
+                                 .listBuildsForJob(getBasicAuthCredentials(bambooConfig, encryptionDetails), planKey,
+                                     maxNumberOfBuilds, startIndex);
+    Response<JsonNode> response = null;
+    try {
+      response = getHttpRequestExecutionResponse(request);
+      if (response.body() != null) {
+        JsonNode resultNode = response.body().at("/results/result");
+        if (resultNode != null) {
+          resultNode.elements().forEachRemaining(jsonNode -> {
+            List<ArtifactFileMetadata> artifactFileMetadata = new ArrayList<>();
+            Map<String, String> metadata = new HashMap<>();
+            if (isNotEmpty(artifactPaths)) {
+              for (String artifactPath : artifactPaths) {
+                artifactFileMetadata.addAll(getArtifactFileMetadata(
+                    bambooConfig, encryptionDetails, planKey, jsonNode.get("buildNumber").asText(), artifactPath));
+              }
+            }
+            if (jsonNode.get(ArtifactMetadataKeys.id) != null) {
+              metadata.put(ArtifactMetadataKeys.id, jsonNode.get(ArtifactMetadataKeys.id).asText());
+            }
+            if (jsonNode.get(ArtifactMetadataKeys.planName) != null) {
+              metadata.put(ArtifactMetadataKeys.planName, jsonNode.get(ArtifactMetadataKeys.planName).asText());
+            }
+            buildDetailsList.add(
+                aBuildDetails()
+                    .withNumber(jsonNode.get("buildNumber").asText())
+                    .withRevision(
+                        jsonNode.get("vcsRevisionKey") != null ? jsonNode.get("vcsRevisionKey").asText() : null)
+                    .withBuildUrl(jsonNode.get("link").get("href").asText())
+                    .withUiDisplayName("Build# " + jsonNode.get("buildNumber").asText())
+                    .withArtifactDownloadMetadata(artifactFileMetadata)
+                    .withMetadata(metadata)
+                    .build());
+          });
+        }
+      }
+      return buildDetailsList;
+    } catch (Exception e) {
+      if (response != null && !response.isSuccessful()) {
+        IOUtils.closeQuietly(response.errorBody());
+      }
+      throw new ArtifactServerException("Error in fetching builds from bamboo server", e, USER);
     }
   }
 
