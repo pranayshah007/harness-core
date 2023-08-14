@@ -51,7 +51,7 @@ public class EulaServiceImpl implements EulaService {
     }
     return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Eula eula = eulaRepository.upsert(newEula);
-      // send an audit event that an End Level User Agreement has been signed for an account.
+      // send an audit event that an End User License Agreement has been signed for an account.
       outboxService.save(new EulaSignEvent(eula.getAccountIdentifier(), eulaDTO.getAgreement()));
       return true;
     }));

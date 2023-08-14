@@ -77,7 +77,10 @@ public class ScorecardDetailsMapper {
                     .map(scorecardCheck
                         -> ScorecardEntity.Check.builder()
                                .identifier(scorecardCheck.getIdentifier())
-                               .weightage(scorecardCheck.getWeightage())
+                               .weightage(
+                                   ScorecardDetails.WeightageStrategyEnum.CUSTOM.equals(details.getWeightageStrategy())
+                                       ? scorecardCheck.getWeightage()
+                                       : 1)
                                .isCustom(scorecardCheck.isCustom())
                                .build())
                     .collect(Collectors.toList()))

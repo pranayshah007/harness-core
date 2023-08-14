@@ -12,7 +12,10 @@ import static io.harness.audit.ResourceTypeConstants.DEPLOYMENT_FREEZE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.event.Event;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.ng.core.AccountScope;
@@ -29,6 +32,8 @@ import lombok.Builder;
 import lombok.Getter;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @OwnedBy(CDC)
 @Getter
 @Builder

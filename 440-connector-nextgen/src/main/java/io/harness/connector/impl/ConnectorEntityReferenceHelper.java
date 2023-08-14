@@ -16,6 +16,8 @@ import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.SECRE
 import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.TEMPLATE_REFERRED_BY_CONNECTOR;
 import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.TEST_CONNECTION;
 
+import static java.util.Objects.isNull;
+
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectivityStatus;
@@ -378,7 +380,7 @@ public class ConnectorEntityReferenceHelper {
     Map<String, SecretRefData> secrets = secretRefInputValidationHelper.getDecryptableFieldsData(decryptableEntities);
 
     secrets.forEach((key, value) -> {
-      if (isNotEmpty(value.getIdentifier())) {
+      if (!isNull(value) && isNotEmpty(value.getIdentifier())) {
         EntityActivityCreateDTO ngActivityDTO =
             createTestConnectionActivity(accountIdentifier, connectorInfoDTO, connectivityStatus, value);
         try {

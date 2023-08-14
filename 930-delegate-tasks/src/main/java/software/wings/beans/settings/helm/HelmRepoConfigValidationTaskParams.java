@@ -43,6 +43,7 @@ public class HelmRepoConfigValidationTaskParams implements TaskParameters, Execu
   private boolean useLatestChartMuseumVersion;
   private boolean useOCIHelmRepo;
   private boolean useNewHelmBinary;
+  private boolean useCache;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

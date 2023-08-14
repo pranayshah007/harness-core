@@ -9,6 +9,7 @@ package io.harness.impl.scm;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -48,7 +49,7 @@ public class ScmGitProviderHelper {
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       return getSlugFromUrlForAzureRepo(((AzureRepoConnectorDTO) scmConnector).getUrl());
     } else if (scmConnector instanceof HarnessConnectorDTO) {
-      return getSlugFromHarnessUrl(((HarnessConnectorDTO) scmConnector).getUrl());
+      return getSlugFromHarnessUrl((HarnessConnectorDTO) scmConnector);
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
@@ -66,8 +67,11 @@ public class ScmGitProviderHelper {
   }
 
   // An unclean method which might change/mature with time but we need to maintain bg compatibilty.
-  private String getSlugFromHarnessUrl(String url) {
-    return gitClientHelper.getHarnessRepoName(url);
+  private String getSlugFromHarnessUrl(HarnessConnectorDTO harnessConnectorDTO) {
+    if (isNotEmpty(harnessConnectorDTO.getSlug())) {
+      return harnessConnectorDTO.getSlug();
+    }
+    return gitClientHelper.getHarnessRepoName(harnessConnectorDTO.getUrl());
   }
 
   private String getSlugFromUrlForGitlab(GitlabConnectorDTO gitlabConnectorDTO) {

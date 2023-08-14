@@ -106,6 +106,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
             .stagesExecutionMetadata(StagesExecutionMetadata.builder().isStagesExecution(true).build())
             .executionInputConfigured(true)
             .allowStagesExecution(true)
+            .notes("notes")
             .build();
     PlanExecution planExecution = PlanExecution.builder()
                                       .metadata(ExecutionMetadata.newBuilder()
@@ -164,6 +165,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(executionSummaryInfo.getLastExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
 
     PipelineExecutionSummaryEntity capturedEntity = pipelineExecutionSummaryEntityArgumentCaptor.getValue();
+    assertThat(capturedEntity.getNotesExistForPlanExecutionId()).isTrue();
     assertThat(capturedEntity).isNotNull();
     assertThat(capturedEntity.getRunSequence()).isEqualTo(1);
     assertThat(capturedEntity.getPipelineIdentifier()).isEqualTo("pipelineId");

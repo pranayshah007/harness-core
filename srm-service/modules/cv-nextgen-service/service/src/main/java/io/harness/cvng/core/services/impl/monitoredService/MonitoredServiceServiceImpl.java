@@ -8,7 +8,6 @@
 package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
-import static io.harness.cvng.core.constant.MonitoredServiceConstants.REGULAR_EXPRESSION;
 import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
@@ -91,8 +90,8 @@ import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.utils.FeatureFlagNames;
+import io.harness.cvng.core.utils.template.MonitoredServiceExpressionResolver;
 import io.harness.cvng.core.utils.template.MonitoredServiceValidator;
-import io.harness.cvng.core.utils.template.MonitoredServiceYamlExpressionEvaluator;
 import io.harness.cvng.core.utils.template.TemplateFacade;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
@@ -133,7 +132,6 @@ import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.common.ExpressionMode;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
@@ -149,13 +147,10 @@ import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
-import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.PageUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Resources;
@@ -252,6 +247,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   @Inject private EntityDisabledTimeService entityDisabledTimeService;
 
+  @Inject private MonitoredServiceExpressionResolver monitoredServiceExpressionResolver;
+
   @Override
   public MonitoredServiceResponse create(String accountId, MonitoredServiceDTO monitoredServiceDTO) {
     ServiceEnvironmentParams environmentParams = ServiceEnvironmentParams.builder()
@@ -318,30 +315,21 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     return update(projectParams.getAccountIdentifier(), monitoredServiceDTO);
   }
 
-  @SneakyThrows
   @Override
   public MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml) {
+    return getExpandedMonitoredServiceFromYamlWithPipelineVariables(projectParams, yaml, null);
+  }
+
+  @Override
+  public MonitoredServiceDTO getExpandedMonitoredServiceFromYamlWithPipelineVariables(
+      ProjectParams projectParams, String yaml, @Nullable Ambiance ambiance) {
     String templateResolvedYaml = templateFacade.resolveYaml(projectParams, yaml);
-    MonitoredServiceYamlExpressionEvaluator yamlExpressionEvaluator =
-        new MonitoredServiceYamlExpressionEvaluator(templateResolvedYaml);
-    templateResolvedYaml = sanitizeTemplateYaml(templateResolvedYaml);
     MonitoredServiceDTO monitoredServiceDTO =
-        YamlUtils.read(templateResolvedYaml, MonitoredServiceYamlDTO.class).getMonitoredServiceDTO();
-    monitoredServiceDTO = (MonitoredServiceDTO) yamlExpressionEvaluator.resolve(
-        monitoredServiceDTO, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+        monitoredServiceExpressionResolver.resolve(templateResolvedYaml, ambiance);
     monitoredServiceDTO.setProjectIdentifier(projectParams.getProjectIdentifier());
     monitoredServiceDTO.setOrgIdentifier(projectParams.getOrgIdentifier());
     MonitoredServiceValidator.validateMSDTO(monitoredServiceDTO);
     return monitoredServiceDTO;
-  }
-
-  private String sanitizeTemplateYaml(String templateResolvedYaml) throws IOException {
-    YamlField rootYamlNode = YamlUtils.readTree(templateResolvedYaml);
-    JsonNode rootNode = rootYamlNode.getNode().getCurrJsonNode();
-    ObjectNode monitoredService = (ObjectNode) rootNode.get("monitoredService");
-    monitoredService.put("identifier", REGULAR_EXPRESSION);
-    monitoredService.put("name", REGULAR_EXPRESSION);
-    return YamlUtils.writeYamlString(rootYamlNode);
   }
 
   private void validateDependencyMetadata(ProjectParams projectParams, Set<ServiceDependencyDTO> dependencyDTOs) {

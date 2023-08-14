@@ -26,13 +26,6 @@ public interface InstanceStatService {
   boolean save(InstanceStatsSnapshot stats);
 
   /**
-   * Purge all stats up-to a given instant
-   *
-   * @param timestamp   - exclusive
-   */
-  boolean purgeUpTo(Instant timestamp);
-
-  /**
    * Get a "timeline" of instance history usage.
    *
    * @param from - inclusive

@@ -10,7 +10,6 @@ package io.harness.idp.scorecard.datasourcelocations.locations;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
 import java.util.Map;
 import java.util.Set;
@@ -18,5 +17,5 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.IDP)
 public interface DataSourceLocation {
   Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      String dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues);
+      String dataSourceLocationEntity, Map<String, Set<String>> dataPointsAndInputValues);
 }

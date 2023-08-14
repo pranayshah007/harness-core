@@ -7,6 +7,8 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
+import static io.harness.idp.scorecard.datasources.constants.Constants.GITHUB_PROVIDER;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
@@ -35,7 +37,7 @@ public class GithubProvider implements DataSourceProvider {
 
   @Override
   public String getProviderIdentifier() {
-    return "github";
+    return GITHUB_PROVIDER;
   }
 
   @Override
@@ -48,22 +50,24 @@ public class GithubProvider implements DataSourceProvider {
     Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
 
     for (String dslIdentifier : dataToFetch.keySet()) {
-      Map<DataPointEntity, Set<String>> dataToFetchWithInputValues = new HashMap<>();
+      Map<String, Set<String>> dataToFetchWithInputValues = new HashMap<>();
       dataToFetch.get(dslIdentifier)
           .forEach(dataPointEntity
               -> dataToFetchWithInputValues.put(
-                  dataPointEntity, dataPointsAndInputValues.get(dataPointEntity.getIdentifier())));
+                  dataPointEntity.getIdentifier(), dataPointsAndInputValues.get(dataPointEntity.getIdentifier())));
 
       DataSourceLocation dataSourceLocation = dataSourceLocationFactory.getDataSourceLocation(dslIdentifier);
       Map<String, Object> response =
           dataSourceLocation.fetchData(accountIdentifier, entity, dslIdentifier, dataToFetchWithInputValues);
 
       Map<String, Object> dataPointValues = new HashMap<>();
-      for (DataPointEntity dataPoint : dataToFetchWithInputValues.keySet()) {
-        DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPoint.getIdentifier());
-        Object values = dataPointParser.parseDataPoint(response, dataPoint, dataToFetchWithInputValues.get(dataPoint));
+      for (Map.Entry<String, Set<String>> entry : dataToFetchWithInputValues.entrySet()) {
+        String dataPointIdentifier = entry.getKey();
+        Set<String> inputValues = entry.getValue();
+        DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPointIdentifier);
+        Object values = dataPointParser.parseDataPoint(response, dataPointIdentifier, inputValues);
         if (values != null) {
-          dataPointValues.put(dataPoint.getIdentifier(), values);
+          dataPointValues.put(dataPointIdentifier, values);
         }
       }
       Map<String, Object> providerData = aggregatedData.getOrDefault(getProviderIdentifier(), new HashMap<>());
