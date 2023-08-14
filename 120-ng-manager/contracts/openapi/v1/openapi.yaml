@@ -1471,12 +1471,12 @@ paths:
       x-internal: true
   '/v1/eula/sign':
     post:
-      summary: Sign an End Level User Agreement
+      summary: Sign an End User License Agreement
       operationId: sign-eula
       responses:
         '200':
           $ref: '#/components/responses/EulaSignResponse'
-      description: Sign an End Level User Agreement.
+      description: Sign an End User License Agreement.
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       security:
@@ -1497,7 +1497,7 @@ paths:
           name: agreement-type
           in: query
           required: true
-      description: Check whether End Level User Agreement has been signed for specified agreement type.
+      description: Check whether End User License Agreement has been signed for specified agreement type.
       security:
         - x-api-key: []
       responses:
@@ -2400,13 +2400,13 @@ components:
     EulaSignResponse:
       title: EulaSignResponse
       type: object
-      description: Response of signing an End Level User Agreement
+      description: Response of signing an End User License Agreement
       properties:
         signed:
           type: boolean
         message:
           type: string
-          description: Signing an End Level User Agreement result
+          description: Signing an End User License Agreement result
     IPAllowlistConfig:
       title: IPAllowlistConfig
       x-stoplight:
@@ -3033,7 +3033,7 @@ components:
                 success: true
                 message: 'Validation is Successful, Secret can be referenced'
     EulaSignResponse:
-      description: Response of signing End Level User Agreement
+      description: Response of signing End User License Agreement
       content:
         application/json:
           schema:

@@ -67,7 +67,7 @@ public interface PlanService {
   /**
    * Updates TTL for all Plans for given uuids
    * Uses - id index
-   * @param planIds
+   * @param planId
    */
-  void updateTTLForPlans(Set<String> planIds, Date ttlDate);
+  void updateTTLForPlans(String planId, Date ttlDate);
 }

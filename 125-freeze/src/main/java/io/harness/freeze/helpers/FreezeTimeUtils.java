@@ -7,6 +7,9 @@
 
 package io.harness.freeze.helpers;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.CurrentOrUpcomingWindow;
@@ -33,6 +36,8 @@ import java.util.TimeZone;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @UtilityClass
 public class FreezeTimeUtils {
   public DateTimeFormatter dtf = new DateTimeFormatterBuilder()

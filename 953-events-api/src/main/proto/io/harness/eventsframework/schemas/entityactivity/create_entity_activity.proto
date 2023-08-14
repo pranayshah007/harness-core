@@ -34,7 +34,7 @@ message EntityActivityCreateDTO {
     string activityStatusMessage = 2;
     repeated ErrorDetailProto errors = 3;
     string errorSummary = 4;
-    string status = 5;
+    map<string, string> activityMetadata = 5;
     io.harness.eventsframework.schemas.entity.EntityUsageDetailProto usageDetail = 6;
   }
 

@@ -7,6 +7,11 @@
 
 package io.harness.cdng.tas;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 public class TasConstants {
   public static final String FROM_MANIFEST = "FromManifest";
   public static final String MATCH_RUNNING_INSTANCES = "MatchRunningInstances";

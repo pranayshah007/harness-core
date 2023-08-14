@@ -155,8 +155,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     when(k8sTaskHelper.renderTemplate(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(Collections.emptyList());
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(Collections.emptyList());
-    when(istioTaskHelper.updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any())).thenReturn(null);
-    when(istioTaskHelper.updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any())).thenReturn(null);
+    doNothing().when(istioTaskHelper).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
+    doNothing().when(istioTaskHelper).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
 
     k8sCanaryDeployTaskHandler.init(canaryDeployTaskParams, delegateTaskParams, executionLogCallback);
     verify(k8sTaskHelperBase, times(0)).dryRunManifests(any(), any(), any(), any(), anyBoolean());
@@ -183,8 +183,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     when(containerDeploymentDelegateHelper.getKubernetesConfig(any(), eq(false)))
         .thenReturn(KubernetesConfig.builder().build());
     doNothing().when(k8sTaskHelperBase).deleteSkippedManifestFiles(any(), any());
-    when(istioTaskHelper.updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any())).thenReturn(null);
-    when(istioTaskHelper.updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any())).thenReturn(null);
+    doNothing().when(istioTaskHelper).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
+    doNothing().when(istioTaskHelper).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
 
     k8sCanaryDeployTaskHandler.init(canaryDeployTaskParams, delegateTaskParams, executionLogCallback);
     verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any());

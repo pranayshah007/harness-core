@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.service.impl;
+
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -238,7 +239,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     if (ngTriggerEntity.getMetadata().getWebhook() != null
         && ngTriggerEntity.getMetadata().getWebhook().getGit() != null
         && Boolean.TRUE.equals(ngTriggerEntity.getMetadata().getWebhook().getGit().getIsHarnessScm())) {
-      // todo(abhinav): check what reponame is used
+      // todo(abhinav): if org level repos come we will need to change here to extract right repo name
       String repoName = ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName();
       String repositoryAccessControlResourceName = "REPOSITORY";
       String repositoryAccessControlPerms = "code_repo_edit";

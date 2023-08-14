@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.serverless;
+
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -38,7 +39,10 @@ import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessV2ValuesYamlDataOutcome;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepParameters;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
@@ -722,13 +726,26 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   public void putValuesYamlEnvVars(Ambiance ambiance,
-      ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters,
-      Map<String, String> envVarMap) {
+      ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo, Map<String, String> envVarMap) {
+    final String downManifestsFqn;
+    if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaPrepareRollbackV2StepParameters) {
+      downManifestsFqn = ((ServerlessAwsLambdaPrepareRollbackV2StepParameters) serverlessAwsLambdaV2BaseStepInfo)
+                             .getDownloadManifestsFqn();
+    } else if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaPackageV2StepParameters) {
+      downManifestsFqn =
+          ((ServerlessAwsLambdaPackageV2StepParameters) serverlessAwsLambdaV2BaseStepInfo).getDownloadManifestsFqn();
+    } else if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaDeployV2StepParameters) {
+      downManifestsFqn =
+          ((ServerlessAwsLambdaDeployV2StepParameters) serverlessAwsLambdaV2BaseStepInfo).getDownloadManifestsFqn();
+    } else {
+      downManifestsFqn = null;
+      throw new InvalidRequestException("Cannot put values yaml for this step");
+    }
+
     OptionalSweepingOutput serverlessValuesYamlDataOptionalOutput =
         executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
-                serverlessAwsLambdaPrepareRollbackV2StepParameters.getDownloadManifestsFqn() + "."
-                + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
+                downManifestsFqn + "." + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
 
     if (serverlessValuesYamlDataOptionalOutput.isFound()) {
       ServerlessV2ValuesYamlDataOutcome serverlessV2ValuesYamlDataOutcome =

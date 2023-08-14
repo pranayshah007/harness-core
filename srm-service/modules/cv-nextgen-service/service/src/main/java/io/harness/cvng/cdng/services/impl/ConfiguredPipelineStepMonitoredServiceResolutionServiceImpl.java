@@ -24,6 +24,7 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.ParameterField;
 
@@ -42,7 +43,7 @@ public class ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl
 
   @Override
   public ResolvedCVConfigInfo fetchAndPersistResolvedCVConfigInfo(
-      ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
+      Ambiance ambiance, ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
     ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder = ResolvedCVConfigInfo.builder();
     String monitoredServiceIdentifier = getMonitoredServiceIdentifier(monitoredServiceNode);
     resolvedCVConfigInfoBuilder.monitoredServiceIdentifier(monitoredServiceIdentifier)

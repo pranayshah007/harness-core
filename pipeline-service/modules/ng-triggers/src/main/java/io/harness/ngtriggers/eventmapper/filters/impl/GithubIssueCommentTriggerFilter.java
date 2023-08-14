@@ -12,24 +12,29 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.EXCEPTION_WHILE_PROCESSING;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.FAILED_TO_FETCH_PR_DETAILS;
 
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.IssueCommentWebhookEvent;
 import io.harness.beans.Repository;
+import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiFindPRTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitRepoType;
+import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.TriggerException;
 import io.harness.exception.WingsException;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -41,13 +46,17 @@ import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.utils.TaskExecutionUtils;
 import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
+import io.harness.product.ci.scm.proto.FindPRResponse;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequest.Builder;
 import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.product.ci.scm.proto.Reference;
+import io.harness.product.ci.scm.proto.SCMGrpc.SCMBlockingStub;
 import io.harness.product.ci.scm.proto.User;
+import io.harness.secrets.SecretDecryptor;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.ScmServiceClient;
 import io.harness.service.WebhookParserSCMService;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ErrorResponseData;
@@ -60,8 +69,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.time.Duration;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -76,12 +89,18 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
   private WebhookEventPayloadParser webhookEventPayloadParser;
   private PayloadConditionsTriggerFilter payloadConditionsTriggerFilter;
   private WebhookParserSCMService webhookParserSCMService;
+  private SecretDecryptor secretDecryptor;
+  private SCMBlockingStub scmBlockingStub;
+  private ScmServiceClient scmServiceClient;
+  public static final String PATH_SEPARATOR = "/";
+  private static final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
+  private static final int MAX_ATTEMPTS = 3;
 
   @Override
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
     WebhookEventMappingResponseBuilder mappingResponseBuilder = initWebhookEventMappingResponse(filterRequestData);
-    String prJson = fetchPrDetailsFromGithub(filterRequestData);
-    if (isBlank(prJson)) {
+    Optional<PullRequest> optionalPullRequest = fetchPrDetailsFromGithub(filterRequestData);
+    if (optionalPullRequest.isEmpty()) {
       return mappingResponseBuilder.failedToFindTrigger(true)
           .webhookEventResponse(TriggerEventResponseHelper.toResponse(FAILED_TO_FETCH_PR_DETAILS,
               filterRequestData.getWebhookPayloadData().getOriginalEvent(), null, null, "Failed to fetch PR Details",
@@ -90,8 +109,8 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
     }
 
     try {
-      filterRequestData.setWebhookPayloadData(
-          generateUpdateWebhookPayloadDataWithPrHook(filterRequestData, prJson, mappingResponseBuilder));
+      filterRequestData.setWebhookPayloadData(generateUpdateWebhookPayloadDataWithPrHook(
+          filterRequestData, optionalPullRequest.get(), mappingResponseBuilder));
     } catch (Exception e) {
       String errorMsg = new StringBuilder(128)
                             .append("Failed  while deserializing PR details for IssueComment event. ")
@@ -112,11 +131,10 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
   }
 
   private WebhookPayloadData generateUpdateWebhookPayloadDataWithPrHook(FilterRequestData filterRequestData,
-      String prJson, WebhookEventMappingResponseBuilder mappingResponseBuilder) throws Exception {
+      PullRequest pullRequest, WebhookEventMappingResponseBuilder mappingResponseBuilder) throws Exception {
     ParseWebhookResponse originalParseWebhookResponse =
         filterRequestData.getWebhookPayloadData().getParseWebhookResponse();
 
-    PullRequest pullRequest = generateProtoFromJson(prJson);
     PullRequestHook pullRequestHook = PullRequestHook.newBuilder()
                                           .setRepo(originalParseWebhookResponse.getComment().getRepo())
                                           .setSender(originalParseWebhookResponse.getComment().getSender())
@@ -185,18 +203,29 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
     return "refs/heads/" + name;
   }
 
-  private String fetchPrDetailsFromGithub(FilterRequestData filterRequestData) {
+  private Optional<PullRequest> fetchPrDetailsFromGithub(FilterRequestData filterRequestData) {
     WebhookPayloadData webhookPayloadData = filterRequestData.getWebhookPayloadData();
-    String json = EMPTY;
     for (TriggerDetails details : filterRequestData.getDetails()) {
       try {
         String connectorIdentifier =
             details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getConnectorIdentifier();
-        GitApiTaskResponse taskResponse = buildAndFireDelegateTask(webhookPayloadData, details, connectorIdentifier);
-        if (taskResponse.getCommandExecutionStatus() == SUCCESS) {
-          GitApiFindPRTaskResponse gitApiResult = (GitApiFindPRTaskResponse) taskResponse.getGitApiResult();
-          json = gitApiResult.getPrJson();
-          break;
+        ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(
+            IdentifierRef.builder()
+                .accountIdentifier(details.getNgTriggerEntity().getAccountId())
+                .orgIdentifier(details.getNgTriggerEntity().getOrgIdentifier())
+                .projectIdentifier(details.getNgTriggerEntity().getProjectIdentifier())
+                .build(),
+            connectorIdentifier);
+        boolean executeOnDelegate =
+            connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
+        if (executeOnDelegate) {
+          GitApiTaskResponse taskResponse = buildAndFireDelegateTask(webhookPayloadData, details, connectorDetails);
+          if (taskResponse.getCommandExecutionStatus() == SUCCESS) {
+            GitApiFindPRTaskResponse gitApiResult = (GitApiFindPRTaskResponse) taskResponse.getGitApiResult();
+            return Optional.of(generateProtoFromJson(gitApiResult.getPrJson()));
+          }
+        } else {
+          return Optional.of(getPrJsonDetailsViaManager(connectorDetails, webhookPayloadData));
         }
       } catch (Exception e) {
         log.error(new StringBuilder(128)
@@ -209,20 +238,11 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
             e);
       }
     }
-    return json;
+    return Optional.empty();
   }
 
   private GitApiTaskResponse buildAndFireDelegateTask(
-      WebhookPayloadData webhookPayloadData, TriggerDetails details, String connectorIdentifier) {
-    // Fet connector details (ConnectorDetails returned by this API also contains encryptionDetails)
-    ConnectorDetails connectorDetails =
-        connectorUtils.getConnectorDetails(IdentifierRef.builder()
-                                               .accountIdentifier(details.getNgTriggerEntity().getAccountId())
-                                               .orgIdentifier(details.getNgTriggerEntity().getOrgIdentifier())
-                                               .projectIdentifier(details.getNgTriggerEntity().getProjectIdentifier())
-                                               .build(),
-            connectorIdentifier);
-
+      WebhookPayloadData webhookPayloadData, TriggerDetails details, ConnectorDetails connectorDetails) {
     Repository repository = webhookPayloadData.getRepository();
     ResponseData responseData = taskExecutionUtils.executeSyncTask(
         DelegateTaskRequest.builder()
@@ -264,5 +284,44 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
       }
     }
     throw new TriggerException("Failed to fetch PR Details", WingsException.SRE);
+  }
+
+  private PullRequest getPrJsonDetailsViaManager(
+      ConnectorDetails connectorDetails, WebhookPayloadData webhookPayloadData) {
+    ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
+    GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) connectorDetails.getConnectorConfig();
+    Repository repository = webhookPayloadData.getRepository();
+    scmConnector.setUrl(getGithubUrl(scmConnector.getUrl(), repository.getName(), gitConfigDTO.getConnectionType()));
+    final DecryptableEntity decryptableEntity =
+        secretDecryptor.decrypt(GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(scmConnector),
+            connectorDetails.getEncryptedDataDetails());
+    GitApiAccessDecryptionHelper.setAPIAccessDecryptableEntity(scmConnector, decryptableEntity);
+    long prNumber =
+        Long.parseLong(((IssueCommentWebhookEvent) webhookPayloadData.getWebhookEvent()).getPullRequestNum());
+    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+        format("[Retrying failed call to fetch codebase metadata: [%s], attempt: {}", connectorDetails.getIdentifier()),
+        format(
+            "Failed call to fetch codebase metadata: [%s] after retrying {} times", connectorDetails.getIdentifier()));
+    FindPRResponse findPRResponse =
+        Failsafe.with(retryPolicy).get(() -> scmServiceClient.findPR(scmConnector, prNumber, scmBlockingStub));
+    return findPRResponse.getPr();
+  }
+
+  private String getGithubUrl(String url, String repo, GitConnectionType gitConnectionType) {
+    if (gitConnectionType == GitConnectionType.ACCOUNT && isNotEmpty(repo)) {
+      return StringUtils.join(
+          StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR, StringUtils.stripStart(repo, PATH_SEPARATOR));
+    }
+    return url;
+  }
+
+  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
+    return new RetryPolicy<>()
+        .handle(Exception.class)
+        .abortOn(ConnectorNotFoundException.class)
+        .withDelay(RETRY_SLEEP_DURATION)
+        .withMaxAttempts(MAX_ATTEMPTS)
+        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 }

@@ -22,6 +22,7 @@ import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -30,6 +31,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mockito;
 
 public class ConfiguredPipelineStepMonitoredServiceResolutionServiceImplTest extends CvNextGenTestBase {
   @Inject private MonitoredServiceService monitoredServiceService;
@@ -46,6 +48,8 @@ public class ConfiguredPipelineStepMonitoredServiceResolutionServiceImplTest ext
   private ConfiguredMonitoredServiceSpec configuredMonitoredServiceSpec;
   private MonitoredServiceDTO monitoredServiceDTO;
   private ServiceEnvironmentParams serviceEnvironmentParams;
+
+  private Ambiance ambiance = Mockito.mock(Ambiance.class);
 
   @Before
   public void setup() {
@@ -67,7 +71,7 @@ public class ConfiguredPipelineStepMonitoredServiceResolutionServiceImplTest ext
   public void testGetMonitoredServiceIdentifier_monitoredServiceRefExists() {
     String expectedIdentifier = builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier();
     String actualIdentifier =
-        configuredService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        configuredService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getMonitoredServiceIdentifier();
     assertThat(actualIdentifier).isEqualTo(expectedIdentifier);
   }
@@ -79,7 +83,7 @@ public class ConfiguredPipelineStepMonitoredServiceResolutionServiceImplTest ext
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     List<CVConfig> actualCvConfigs =
-        configuredService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        configuredService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(1);
   }
@@ -89,7 +93,7 @@ public class ConfiguredPipelineStepMonitoredServiceResolutionServiceImplTest ext
   @Category(UnitTests.class)
   public void testGetCVConfigs_monitoredServiceDoesNotExist() {
     List<CVConfig> actualCvConfigs =
-        configuredService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        configuredService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getCvConfigs();
     assertThat(actualCvConfigs).isEmpty();
   }
@@ -102,7 +106,7 @@ public class ConfiguredPipelineStepMonitoredServiceResolutionServiceImplTest ext
     monitoredServiceDTO.getSources().setHealthSources(Collections.emptySet());
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     List<CVConfig> actualCvConfigs =
-        configuredService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
+        configuredService.fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode)
             .getCvConfigs();
     assertThat(actualCvConfigs).isEmpty();
   }

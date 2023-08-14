@@ -7,19 +7,39 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
+import static io.harness.idp.scorecard.datasources.constants.Constants.CATALOG_PROVIDER;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.datasourcelocations.locations.CatalogDsl;
 
-import java.util.List;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import lombok.AllArgsConstructor;
 
 @OwnedBy(HarnessTeam.IDP)
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class CatalogProvider implements DataSourceProvider {
+  CatalogDsl catalogDsl;
+  static final ObjectMapper mapper =
+      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+  @Override
+  public String getProviderIdentifier() {
+    return CATALOG_PROVIDER;
+  }
+
   @Override
   public Map<String, Map<String, Object>> fetchData(
-      String accountIdentifier, BackstageCatalogEntity entity, List<DataPointEntity> dataPoints) {
-    return null;
+      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
+    Map<String, Map<String, Object>> data = new HashMap<>();
+    data.put(getProviderIdentifier(), mapper.convertValue(entity, new TypeReference<>() {}));
+    return data;
   }
 }

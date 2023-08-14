@@ -90,4 +90,5 @@ public class PipelineExecutionSummaryDTO {
   AbortedBy abortedBy;
 
   ExecutionMode executionMode;
+  boolean notesExistForPlanExecutionId;
 }

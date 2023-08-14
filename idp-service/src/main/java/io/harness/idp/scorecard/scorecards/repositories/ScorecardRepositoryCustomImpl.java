@@ -32,7 +32,7 @@ public class ScorecardRepositoryCustomImpl implements ScorecardRepositoryCustom 
                             .is(scorecardEntity.getIdentifier());
     Query query = new Query(criteria);
     Update update = new Update();
-    update.set(ScorecardKeys.filters, scorecardEntity.getFilters());
+    update.set(ScorecardKeys.filter, scorecardEntity.getFilter());
     update.set(ScorecardKeys.description, scorecardEntity.getDescription());
     update.set(ScorecardKeys.checks, scorecardEntity.getChecks());
     update.set(ScorecardKeys.name, scorecardEntity.getName());

@@ -16211,9 +16211,6 @@
                 }
               ]
             },
-            "downloadManifestsFqn": {
-              "type": "string"
-            },
             "image": {
               "type": "string"
             },
@@ -16376,9 +16373,6 @@
                   "type": "string"
                 }
               ]
-            },
-            "serverlessAwsLambdaRollbackFnq": {
-              "type": "string"
             },
             "serverlessVersion": {
               "oneOf": [

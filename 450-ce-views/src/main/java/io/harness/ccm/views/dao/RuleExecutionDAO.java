@@ -6,6 +6,7 @@
  */
 
 package io.harness.ccm.views.dao;
+
 import static io.harness.persistence.HQuery.excludeValidate;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
@@ -36,6 +37,7 @@ import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -212,5 +214,18 @@ public class RuleExecutionDAO {
       condition.or(CE_RECOMMENDATIONS.GOVERNANCERULEID.eq(governanceRuleId.getRuleId()));
     }
     return condition;
+  }
+
+  @NonNull
+  public List<RuleRecommendation> getGovernanceRecommendations(
+      @NonNull String accountId, @NonNull List<String> recommendationIds) {
+    List<ObjectId> recommendationObjectIds = recommendationIds.stream().map(ObjectId::new).collect(Collectors.toList());
+    return hPersistence.createQuery(RuleRecommendation.class)
+        .project(RuleRecommendationId.executions, true)
+        .field(RuleRecommendationId.accountId)
+        .equal(accountId)
+        .field(RuleRecommendationId.uuid)
+        .in(recommendationObjectIds)
+        .asList();
   }
 }

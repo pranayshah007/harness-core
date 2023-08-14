@@ -40,4 +40,5 @@ public class SettingIdentifiers {
   public static String TICKETING_PREFERENCES_GROUP_IDENTIFIER = "ticketing_preferences";
   public static String TICKETING_TOOL_IDENTIFIER = "ticketing_tool";
   public static String TICKETING_TOOL_CONNECTOR_IDENTIFIER = "ticketing_tool_connector";
+  public static String AIDA = "aida";
 }

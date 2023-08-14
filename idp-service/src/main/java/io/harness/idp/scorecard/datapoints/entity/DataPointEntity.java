@@ -40,6 +40,7 @@ public class DataPointEntity implements PersistentEntity {
                  .name("unique_account_identifier")
                  .unique(true)
                  .field(DataPointKeys.accountIdentifier)
+                 .field(DataPointKeys.dataSourceIdentifier)
                  .field(DataPointKeys.identifier)
                  .build())
         .build();
@@ -50,7 +51,6 @@ public class DataPointEntity implements PersistentEntity {
   private String identifier;
   private String name;
   private Type type;
-  private String expression;
   private String description;
   private boolean isConditional;
   private String conditionalInputValueDescription;

@@ -7,6 +7,9 @@
 
 package io.harness.idp.scorecard.checks.mappers;
 
+import static io.harness.idp.common.Constants.DOT_SEPARATOR;
+import static io.harness.idp.common.Constants.SPACE_SEPARATOR;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
@@ -19,9 +22,6 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class CheckDetailsMapper {
-  public static final String DOT_SEPARATOR = ".";
-  public static final String SPACE_SEPARATOR = " ";
-
   public CheckDetails toDTO(CheckEntity checkEntity) {
     CheckDetails checkDetails = new CheckDetails();
     checkDetails.setName(checkEntity.getName());
@@ -33,7 +33,6 @@ public class CheckDetailsMapper {
     checkDetails.setFailMessage(checkEntity.getFailMessage());
     checkDetails.setRuleStrategy(checkEntity.getRuleStrategy());
     checkDetails.setRules(checkEntity.getRules());
-    checkDetails.setTags(checkEntity.getTags());
     checkDetails.setLabels(checkEntity.getLabels());
     return checkDetails;
   }
@@ -56,7 +55,6 @@ public class CheckDetailsMapper {
         .failMessage(checkDetails.getFailMessage())
         .ruleStrategy(checkDetails.getRuleStrategy())
         .rules(checkDetails.getRules())
-        .tags(checkDetails.getTags())
         .labels(checkDetails.getLabels())
         .build();
   }

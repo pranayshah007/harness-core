@@ -1,0 +1,9 @@
+[
+  {
+    "id": "64d4f28112b52ab21d072258",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "sonarqube",
+    "name": "Sonarqube",
+    "description": "Sonarqube"
+  }
+]

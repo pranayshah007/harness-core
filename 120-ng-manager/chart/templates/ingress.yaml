@@ -42,7 +42,7 @@ metadata:
     {{- if .Values.global.ingress.objects.annotations }}
     {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
     {{- end }}
-    nginx.ingress.kubernetes.io/rewrite-target: /api/$1
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   ingressClassName: {{ .Values.global.ingress.className | quote }}
   rules:
@@ -231,6 +231,13 @@ spec:
                 port:
                   number: {{ $.Values.service.port }}
             path: /(v1/favorites/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/eula/.+)
             pathType: ImplementationSpecific
     {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}

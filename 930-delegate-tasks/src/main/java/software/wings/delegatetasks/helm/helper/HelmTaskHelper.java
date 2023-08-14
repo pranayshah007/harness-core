@@ -454,6 +454,13 @@ public class HelmTaskHelper {
         timeoutInMillis, "", helmCommandFlag);
   }
 
+  public void tryAddHelmRepo(String repoName, String repoDisplayName, String chartRepoUrl, String username,
+      char[] password, String chartDirectory, HelmVersion helmVersion, long timeoutInMillis, String cacheDir,
+      HelmCommandFlag helmCommandFlag) {
+    helmTaskHelperBase.tryAddRepo(repoName, repoDisplayName, chartRepoUrl, username, password, chartDirectory,
+        helmVersion, timeoutInMillis, cacheDir, helmCommandFlag);
+  }
+
   public void loginOciRegistry(OciHelmRepoConfig repoConfig, HelmVersion helmVersion, long timeoutInMillis,
       String destinationDirectory, String regConfigFilePath) {
     helmTaskHelperBase.loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(),

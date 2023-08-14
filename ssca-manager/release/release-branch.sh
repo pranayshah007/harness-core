@@ -35,7 +35,13 @@ function check_branch_name(){
     fi
 }
 
-
+function check_file_present(){
+     local_file=$1
+     if [ ! -f "$local_file" ]; then
+        echo "ERROR: Line $LINENO: File $local_file not found. Exiting..."
+        exit 1
+     fi
+}
 
 echo "INFO: Step 0: Setting values for env variables PURPOSE and STATUS_ID_TO_MOVE."
 export PURPOSE=ssca
@@ -56,7 +62,7 @@ set -x
 echo "INFO: Step 7: Fetching develop"
 git fetch origin refs/heads/develop; git checkout develop && git branch
 check_branch_name "develop"
-echo "INFO: Step 8: Checking for Not Merged SRM Hot Fixes in develop."
+echo "INFO: Step 8: Checking for Not Merged SSCA Hot Fixes in develop."
 
 PROJFILE="jira-projects.txt"
 check_file_present $PROJFILE
@@ -69,14 +75,14 @@ NOT_MERGED=`comm -23 release.txt develop.txt`
 
 if [ ! -z "$NOT_MERGED" ]
 then
-    echo "ERROR: There are jira issues in template-service release branches that are not reflected in develop."
+    echo "ERROR: There are jira issues in ssca-manager release branches that are not reflected in develop."
     exit 1
 fi
 
-echo "INFO: Get Previous Tag and Tagging Develop Branch according to type of release."
+echo "INFO: Get Previous Tag and Tagging develop Branch according to type of release."
 if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     export SHA=`git rev-parse HEAD`
-    export VERSION_FILE=template-service/build.properties
+    export VERSION_FILE=ssca-manager/build.properties
 
     # break down the version number into it's components
     major=`cat ${VERSION_FILE} | grep 'build.majorVersion=' | sed -e 's: *build.majorVersion=::g'`

@@ -42,7 +42,6 @@ public class CheckRepositoryCustomImpl implements CheckRepositoryCustom {
     update.set(CheckKeys.rules, checkEntity.getRules());
     update.set(CheckKeys.failMessage, checkEntity.getFailMessage());
     update.set(CheckKeys.ruleStrategy, checkEntity.getRuleStrategy());
-    update.set(CheckKeys.tags, checkEntity.getTags());
     update.set(CheckKeys.labels, checkEntity.getLabels());
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
     return mongoTemplate.findAndModify(query, update, options, CheckEntity.class);

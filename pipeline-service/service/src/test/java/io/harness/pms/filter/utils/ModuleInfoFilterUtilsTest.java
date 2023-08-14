@@ -9,6 +9,7 @@ package io.harness.pms.filter.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,6 +21,8 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import org.bson.Document;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,5 +44,22 @@ public class ModuleInfoFilterUtilsTest extends CategoryTest {
     assertThat(criteriaObject).hasSize(2);
     assertThat(criteriaObject.get("topKey.cd.identifier")).isEqualTo("p1");
     assertThat(criteriaObject.containsKey("topKey.cd.serviceDefinitionTypes")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void processNodeEmptyArray() throws IOException {
+    String json = "{\"ci\":{},\"cd\":{\"serviceIdentifiers\":[],\"envIdentifiers\":[\"testcluster\"]}}}";
+    YamlField yamlField = YamlUtils.readTree(json);
+    assertThat(yamlField).isNotNull();
+    Criteria criteria = new Criteria();
+    ModuleInfoFilterUtils.processNode(yamlField.getNode().getCurrJsonNode(), "topKey", criteria);
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject).hasSize(1);
+    assertThat(criteriaObject.containsKey("topKey.cd.serviceIdentifiers")).isFalse();
+    assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get("topKey.cd.envIdentifiers")).get("$in")).size()).isEqualTo(1);
+    assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get("topKey.cd.envIdentifiers")).get("$in")).get(0))
+        .isEqualTo("testcluster");
   }
 }
