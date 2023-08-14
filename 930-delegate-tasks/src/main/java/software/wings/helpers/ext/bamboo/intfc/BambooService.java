@@ -9,7 +9,10 @@ package software.wings.helpers.ext.bamboo;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -26,6 +29,9 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * Created by anubhaw on 11/29/16.
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface BambooService {
   /**
@@ -68,6 +74,9 @@ public interface BambooService {
    */
   List<BuildDetails> getBuilds(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails, String planKey,
       List<String> artifactPaths, int maxNumberOfBuilds);
+
+  List<BuildDetails> getBuildsWithoutTimeout(BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails,
+      String planKey, List<String> artifactPaths, int maxNumberOfBuilds);
 
   /**
    * Gets artifact path.
