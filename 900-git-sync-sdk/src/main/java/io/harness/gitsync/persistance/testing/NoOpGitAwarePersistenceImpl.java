@@ -88,6 +88,18 @@ public class NoOpGitAwarePersistenceImpl implements GitAwarePersistence {
   }
 
   @Override
+  public <B extends GitSyncableEntity, Y extends YamlDTO> Optional<B> findOne(Criteria criteria, Class<B> entityClass) {
+    final B object = mongoTemplate.findOne(query(criteria), entityClass);
+    return Optional.ofNullable(object);
+  }
+
+  @Override
+  public <B extends GitSyncableEntity, Y extends YamlDTO> boolean exists(Criteria criteria, Class<B> entityClass) {
+    Query query = new Query(criteria);
+    return mongoTemplate.exists(query, entityClass);
+  }
+
+  @Override
   public <B extends GitSyncableEntity, Y extends YamlDTO> Long count(@NotNull Criteria criteria,
       String projectIdentifier, String orgIdentifier, String accountId, Class<B> entityClass) {
     Query query = new Query(criteria).skip(-1).limit(-1);

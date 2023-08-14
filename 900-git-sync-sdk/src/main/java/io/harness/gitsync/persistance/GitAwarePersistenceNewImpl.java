@@ -6,6 +6,7 @@
  */
 
 package io.harness.gitsync.persistance;
+
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
@@ -332,5 +333,18 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
       String accountId, String orgIdentifier, String projectIdentifier, Class entityClass, Criteria criteria) {
     Criteria gitSyncCriteria = getCriteriaWithGitSync(projectIdentifier, orgIdentifier, accountId, entityClass);
     return criteria == null ? gitSyncCriteria : new Criteria().andOperator(criteria, gitSyncCriteria);
+  }
+
+  @Override
+  public <B extends GitSyncableEntity, Y extends YamlDTO> Optional<B> findOne(Criteria criteria, Class<B> entityClass) {
+    Query query = new Query().addCriteria(criteria);
+    final B object = mongoTemplate.findOne(query, entityClass);
+    return Optional.ofNullable(object);
+  }
+
+  @Override
+  public <B extends GitSyncableEntity, Y extends YamlDTO> boolean exists(Criteria criteria, Class<B> entityClass) {
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.exists(query, entityClass);
   }
 }

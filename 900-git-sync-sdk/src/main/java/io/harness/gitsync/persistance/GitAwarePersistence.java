@@ -64,4 +64,7 @@ public interface GitAwarePersistence {
 
   Criteria makeCriteriaGitAware(
       String accountId, String orgIdentifier, String projectIdentifier, Class entityClass, Criteria criteria);
+  <B extends GitSyncableEntity, Y extends YamlDTO> Optional<B> findOne(
+      @NotNull Criteria criteria, Class<B> entityClass);
+  <B extends GitSyncableEntity, Y extends YamlDTO> boolean exists(@NotNull Criteria criteria, Class<B> entityClass);
 }

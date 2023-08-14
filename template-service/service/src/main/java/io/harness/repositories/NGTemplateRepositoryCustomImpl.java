@@ -6,6 +6,7 @@
  */
 
 package io.harness.repositories;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
@@ -35,8 +36,12 @@ import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
+import io.harness.template.entity.GlobalTemplateEntity;
+import io.harness.template.entity.GlobalTemplateEntity.GlobalTemplateEntityKeys;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
+import io.harness.template.events.GlobalTemplateCreateEvent;
+import io.harness.template.events.GlobalTemplateUpdateEvent;
 import io.harness.template.events.TemplateCreateEvent;
 import io.harness.template.events.TemplateDeleteEvent;
 import io.harness.template.events.TemplateForceDeleteEvent;
@@ -564,6 +569,172 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   public List<String> getListOfRepos(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.findDistinct(query, TemplateEntityKeys.repo, TemplateEntity.class, String.class);
+  }
+
+  @Override
+  public GlobalTemplateEntity save(GlobalTemplateEntity templateToSave, String comments)
+      throws InvalidRequestException {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    if (gitEntityInfo == null || TemplateUtils.isInlineEntity(gitEntityInfo)) {
+      templateToSave.setStoreType(StoreType.INLINE);
+      GlobalTemplateEntity savedTemplateEntity = mongoTemplate.save(templateToSave);
+      if (shouldLogAudits(templateToSave.getAccountId(), templateToSave.getOrgIdentifier(),
+              templateToSave.getProjectIdentifier())) {
+        outboxService.save(
+            new GlobalTemplateCreateEvent(templateToSave.getAccountIdentifier(), templateToSave, comments));
+      }
+      return savedTemplateEntity;
+    }
+
+    GlobalTemplateEntity savedTemplateEntity = mongoTemplate.save(templateToSave);
+    if (shouldLogAudits(
+            templateToSave.getAccountId(), templateToSave.getOrgIdentifier(), templateToSave.getProjectIdentifier())) {
+      outboxService.save(
+          new GlobalTemplateCreateEvent(templateToSave.getAccountIdentifier(), templateToSave, comments));
+    }
+    return savedTemplateEntity;
+  }
+
+  @Override
+  public Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndVersionLabelAndDeletedNot(
+      String templateIdentifier, String versionLabel, boolean notDeleted, boolean getMetadataOnly) {
+    Criteria criteria = buildCriteriaForGlobalTemplateFindByIdentifierAndVersionLabelAndDeletedNot(
+        templateIdentifier, versionLabel, notDeleted);
+    return getGlobalTemplateEntity(criteria, getMetadataOnly);
+  }
+
+  @Override
+  public Page<GlobalTemplateEntity> findALLGlobalTemplateAndDeletedNot(
+      boolean notDeleted, boolean getMetadataOnly, Pageable pageable, Criteria criteria) {
+    criteria = buildCriteriaForGlobalTemplateFindByDeletedNot(notDeleted);
+    return getAllGlobalTemplateEntity(criteria, getMetadataOnly, pageable);
+  }
+
+  @Override
+  public Optional<GlobalTemplateEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForGlobalTemplate(
+      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
+      boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    Criteria criteria =
+        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
+    return getGlobalTemplateEntity(criteria, getMetadataOnly);
+  }
+
+  private Optional<GlobalTemplateEntity> getGlobalTemplateEntity(Criteria criteria, boolean getMetadataOnly) {
+    Query query = new Query(criteria);
+    GlobalTemplateEntity savedEntity = mongoTemplate.findOne(query, GlobalTemplateEntity.class);
+    if (savedEntity == null) {
+      return Optional.empty();
+    }
+    if (getMetadataOnly) {
+      return Optional.of(savedEntity);
+    }
+    return Optional.of(savedEntity);
+  }
+
+  @Override
+  public GlobalTemplateEntity updateTemplateInDb(GlobalTemplateEntity templateToUpdate,
+      GlobalTemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
+      TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
+    // This works considering that the templateToUpdate has the same _id as the oldTemplate
+    GlobalTemplateEntity templateEntity = mongoTemplate.save(templateToUpdate);
+
+    if (isAuditEnabled(templateToUpdate, skipAudits)) {
+      generateUpdateOutboxEvent(templateToUpdate, oldTemplateEntity, comments, templateUpdateEventType);
+    }
+    return templateEntity;
+  }
+
+  @Override
+  public Page<GlobalTemplateEntity> findAll(String accountIdentifier, Criteria criteria, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    List<GlobalTemplateEntity> globalTemplateEntities = mongoTemplate.find(query, GlobalTemplateEntity.class);
+    return PageableExecutionUtils.getPage(globalTemplateEntities, pageable,
+        () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), GlobalTemplateEntity.class));
+  }
+
+  private OutboxEvent generateUpdateOutboxEvent(GlobalTemplateEntity templateToUpdate,
+      GlobalTemplateEntity oldTemplateEntity, String comments, TemplateUpdateEventType templateUpdateEventType) {
+    return outboxService.save(new GlobalTemplateUpdateEvent(templateToUpdate.getAccountIdentifier(), templateToUpdate,
+        oldTemplateEntity, comments,
+        templateUpdateEventType != null ? templateUpdateEventType : TemplateUpdateEventType.OTHERS_EVENT));
+  }
+
+  @Override
+  public GlobalTemplateEntity updateIsStableTemplate(GlobalTemplateEntity globalTemplateEntity, boolean value) {
+    Update update = new Update().set(GlobalTemplateEntityKeys.isStableTemplate, value);
+    return mongoTemplate.findAndModify(query(buildCriteria(globalTemplateEntity)), update,
+        FindAndModifyOptions.options().returnNew(true), GlobalTemplateEntity.class);
+  }
+
+  @Override
+  public boolean globalTemplateExistByIdentifierAndVersionLabel(String templateIdentifier, String versionLabel) {
+    return gitAwarePersistence.exists(Criteria.where(GlobalTemplateEntityKeys.identifier)
+                                          .is(templateIdentifier)
+                                          .and(GlobalTemplateEntityKeys.versionLabel)
+                                          .is(versionLabel),
+        GlobalTemplateEntity.class);
+  }
+
+  @Override
+  public boolean globalTemplateExistByIdentifierWithoutVersionLabel(String templateIdentifier) {
+    Optional<GlobalTemplateEntity> template = gitAwarePersistence.findOne(
+        Criteria.where(GlobalTemplateEntityKeys.identifier).is(templateIdentifier), GlobalTemplateEntity.class);
+    return template.isPresent();
+  }
+
+  @Override
+  public Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndIsStableAndDeletedNot(
+      String templateIdentifier, boolean notDeleted, boolean getMetadataOnly) {
+    Criteria criteria =
+        buildCriteriaForGlobalTemplateFindByIdentifierAndIsStableAndDeletedNot(templateIdentifier, notDeleted);
+    return getGlobalTemplateEntity(criteria, getMetadataOnly);
+  }
+
+  private Criteria buildCriteriaForGlobalTemplateFindByIdentifierAndIsStableAndDeletedNot(
+      String templateIdentifier, boolean notDeleted) {
+    return Criteria.where(GlobalTemplateEntityKeys.deleted)
+        .is(!notDeleted)
+        .and(GlobalTemplateEntityKeys.isStableTemplate)
+        .is(true)
+        .and(GlobalTemplateEntityKeys.identifier)
+        .is(templateIdentifier);
+  }
+  private Criteria buildCriteria(GlobalTemplateEntity globalTemplateEntity) {
+    return Criteria.where(TemplateEntityKeys.identifier)
+        .is(globalTemplateEntity.getIdentifier())
+        .and(TemplateEntityKeys.versionLabel)
+        .is(globalTemplateEntity.getVersionLabel());
+  }
+
+  private boolean isAuditEnabled(GlobalTemplateEntity globalTemplateEntity, boolean skipAudits) {
+    return shouldLogAudits(globalTemplateEntity.getAccountId(), globalTemplateEntity.getOrgIdentifier(),
+               globalTemplateEntity.getProjectIdentifier())
+        && !skipAudits;
+  }
+
+  private Page<GlobalTemplateEntity> getAllGlobalTemplateEntity(
+      Criteria criteria, boolean getMetadataOnly, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    List<GlobalTemplateEntity> templateEntities = mongoTemplate.find(query, GlobalTemplateEntity.class);
+    return PageableExecutionUtils.getPage(templateEntities, pageable,
+        () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), GlobalTemplateEntity.class));
+  }
+
+  private Criteria buildCriteriaForGlobalTemplateFindByIdentifierAndVersionLabelAndDeletedNot(
+      String templateIdentifier, String versionLabel, boolean notDeleted) {
+    return Criteria.where(GlobalTemplateEntityKeys.deleted)
+        .is(!notDeleted)
+        .and(GlobalTemplateEntityKeys.versionLabel)
+        .is(versionLabel)
+        .and(GlobalTemplateEntityKeys.identifier)
+        .is(templateIdentifier);
+  }
+
+  private Criteria buildCriteriaForGlobalTemplateFindByDeletedNot(boolean notDeleted) {
+    return Criteria.where(GlobalTemplateEntityKeys.deleted).is(!notDeleted);
   }
 
   private Long countTemplates(Criteria criteria) {

@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.services;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.Scope.ACCOUNT;
@@ -48,6 +49,7 @@ import io.harness.persistence.gitaware.GitAware;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -686,5 +688,83 @@ public class NGTemplateServiceHelper {
       update.set(TemplateEntityKeys.connectorRef, updateGitDetailsParams.getConnectorRef());
     }
     return update;
+  }
+
+  public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(
+      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly) {
+    return templateRepository.findGlobalTemplateByIdentifierAndVersionLabelAndDeletedNot(
+        templateIdentifier, versionLabel, !deleted, getMetadataOnly);
+  }
+
+  public Page<GlobalTemplateEntity> getGlobalTemplate(
+      Criteria criteria, boolean deleted, boolean getMetadataOnly, Pageable pageable) {
+    return templateRepository.findALLGlobalTemplateAndDeletedNot(!deleted, getMetadataOnly, pageable, criteria);
+  }
+
+  public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(String accountId, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    return templateRepository
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForGlobalTemplate(
+            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly,
+            loadFromCache, loadFromFallbackBranch);
+  }
+
+  public GlobalTemplateEntity makeTemplateUpdateCall(GlobalTemplateEntity templateToUpdate,
+      GlobalTemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
+      TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
+    return makeUpdateCall(
+        templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits, true);
+  }
+
+  private GlobalTemplateEntity makeUpdateCall(GlobalTemplateEntity templateToUpdate,
+      GlobalTemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
+      TemplateUpdateEventType templateUpdateEventType, boolean skipAudits, boolean makeOnlyDbUpdate) {
+    try {
+      GlobalTemplateEntity updatedTemplate = null;
+
+      if (makeOnlyDbUpdate) {
+        updatedTemplate = templateRepository.updateTemplateInDb(
+            templateToUpdate, oldTemplateEntity, changeType, comments, templateUpdateEventType, skipAudits);
+      }
+
+      if (updatedTemplate == null) {
+        throw new InvalidRequestException(format(
+            "Unexpected exception occurred while updating template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] could not be updated.",
+            templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(),
+            templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()));
+      }
+
+      return updatedTemplate;
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(
+          String.format(
+              "Unexpected exception occurred while updating template [%s] and versionLabel [%s], under Project[%s], Organization [%s]",
+              templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(),
+              templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()),
+          e);
+      throw e;
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Unexpected exception occurred while updating template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s]",
+              templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(),
+              templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()),
+          e);
+      throw new InvalidRequestException(String.format(
+          "Unexpected exception occurred while updating template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] : %s",
+          templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel(), templateToUpdate.getProjectIdentifier(),
+          templateToUpdate.getOrgIdentifier(), e.getMessage()));
+    }
+  }
+
+  public Page<GlobalTemplateEntity> listTemplate(String accountIdentifier, Criteria criteria, Pageable pageable) {
+    return templateRepository.findAll(accountIdentifier, criteria, pageable);
+  }
+
+  public Optional<GlobalTemplateEntity> getStableTemplate(
+      String templateIdentifier, boolean deleted, boolean getMetadataOnly) {
+    return templateRepository.findGlobalTemplateByIdentifierAndIsStableAndDeletedNot(
+        templateIdentifier, !deleted, getMetadataOnly);
   }
 }
