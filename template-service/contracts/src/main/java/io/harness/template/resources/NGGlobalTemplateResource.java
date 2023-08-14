@@ -70,7 +70,7 @@ import retrofit2.http.Body;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-@Tag(name = "Templates", description = "This contains a list of APIs specific to the Templates")
+@Tag(name = "Global Templates", description = "This contains a list of APIs specific to the Global Templates")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.BAD_REQUEST_CODE,
     description = NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE,
     content =
@@ -98,8 +98,8 @@ public interface NGGlobalTemplateResource {
   @Operation(operationId = "createGlobalTemplate", summary = "Creates a Global Template",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "default", description = "Fetches Template YAML from Harness DB and creates a remote entity")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Fetches Template YAML from git and create global template to Harness DB")
       })
   ResponseDTO<List<TemplateWrapperResponseDTO>>
   createAndUpdate(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -131,12 +131,12 @@ public interface NGGlobalTemplateResource {
 
   @POST
   @Path("/list")
-  @ApiOperation(value = "Gets all template list", nickname = "getTemplateList")
-  @Operation(operationId = "getTemplateList", summary = "Get Templates",
+  @ApiOperation(value = "Gets all Global template list", nickname = "listGlobalTemplates")
+  @Operation(operationId = "listGlobalTemplates", summary = "Get Global Templates",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns a list of all the Templates")
+        ApiResponse(responseCode = "default", description = "Returns a list of all the Global Templates")
       })
   @Hidden
   // will return non deleted templates only
@@ -170,12 +170,12 @@ public interface NGGlobalTemplateResource {
 
   @GET
   @Path("{templateIdentifier}")
-  @ApiOperation(value = "Gets Template", nickname = "getTemplate")
-  @Operation(operationId = "getTemplate", summary = "Get Template",
+  @ApiOperation(value = "Get Global Template", nickname = "getGlobalTemplate")
+  @Operation(operationId = "getGlobalTemplate", summary = "Get Template",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the saved Template")
+        ApiResponse(responseCode = "default", description = "Returns the saved Template by identifier")
       })
   ResponseDTO<TemplateResponseDTO>
   get(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
