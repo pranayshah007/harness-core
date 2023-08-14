@@ -70,7 +70,6 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
   @Inject private ResourceGroupV2Repository resourceGroupV2Repository;
   @Inject private ResourceGroupValidatorImpl resourceGroupValidatorImpl;
   private ResourceGroupV2Repository resourceGroupV2RepositoryMock;
-  private io.harness.resourcegroup.framework.v1.service.ResourceGroupService resourceGroupV1ServiceMock;
   private OutboxService outboxService;
   private TransactionTemplate transactionTemplate;
   private ResourceGroupServiceImpl resourceGroupService;
@@ -89,7 +88,6 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
   @Before
   public void setup() {
     resourceGroupV2RepositoryMock = mock(ResourceGroupV2Repository.class);
-    resourceGroupV1ServiceMock = mock(io.harness.resourcegroup.framework.v1.service.ResourceGroupService.class);
     outboxService = mock(OutboxService.class);
     transactionTemplate = mock(TransactionTemplate.class);
     accessControlClient = mock(AccessControlClient.class);

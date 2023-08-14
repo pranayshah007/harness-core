@@ -83,8 +83,6 @@ public class ResourceGroupModule extends AbstractModule {
   protected void configure() {
     install(new AccessControlAdminClientModule(
         resourceGroupServiceConfig.getAccessControlAdminClientConfiguration(), RESOUCE_GROUP_SERVICE.toString()));
-    bind(io.harness.resourcegroup.framework.v1.service.ResourceGroupService.class)
-        .to(io.harness.resourcegroup.framework.v1.service.impl.ResourceGroupServiceImpl.class);
     bind(ResourceGroupService.class).to(ResourceGroupServiceImpl.class);
     bind(ResourceTypeService.class).to(ResourceTypeServiceImpl.class);
     bind(String.class).annotatedWith(Names.named("serviceId")).toInstance(RESOUCE_GROUP_SERVICE.toString());
