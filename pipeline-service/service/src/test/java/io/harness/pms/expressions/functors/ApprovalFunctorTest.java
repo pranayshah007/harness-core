@@ -17,19 +17,21 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
-import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.exception.EngineFunctorException;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.sdk.core.resolver.outcome.mapper.PmsOutcomeMapper;
 import io.harness.rule.Owner;
-import io.harness.steps.approval.step.custom.CustomApprovalOutcome;
+import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.steps.approval.step.beans.ApprovalType;
+import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.harness.HarnessApprovalOutcome;
-import io.harness.steps.approval.step.harness.HarnessApprovalStep;
-import io.harness.steps.approval.step.harness.beans.EmbeddedUserDTO;
-import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityDTO;
+import io.harness.steps.approval.step.harness.beans.ApproversDTO;
+import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivity;
+import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,10 +41,10 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ApprovalFunctorTest extends CategoryTest {
-  public static final String APPROVAL_NAME = "Admin";
-  public static final String APPROVAL_EMAIL = "admin@harness.io";
-  public static final String APPROVAL_COMMENT = "Approval comment";
-  @Mock private PmsOutcomeService pmsOutcomeService;
+  private static final String APPROVAL_NAME = "Admin";
+  private static final String APPROVAL_EMAIL = "admin@harness.io";
+  private static final String APPROVAL_COMMENT = "Approval comment";
+  @Mock private ApprovalInstanceService approvalInstanceService;
   @InjectMocks private ApprovalFunctor approvalFunctor;
   private final Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("execution_id").build();
 
@@ -56,16 +58,18 @@ public class ApprovalFunctorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testBind() {
     on(approvalFunctor).set("ambiance", ambiance);
-    when(pmsOutcomeService.fetchOutcomesByStepTypeAndCategory(ambiance.getPlanExecutionId(),
-             HarnessApprovalStep.STEP_TYPE.getType(), HarnessApprovalStep.STEP_TYPE.getStepCategory().name()))
-        .thenReturn(List.of(PmsOutcomeMapper.convertOutcomeValueToJson(
-            HarnessApprovalOutcome.builder()
-                .approvalActivities(
-                    List.of(HarnessApprovalActivityDTO.builder()
-                                .user(EmbeddedUserDTO.builder().name(APPROVAL_NAME).email(APPROVAL_EMAIL).build())
-                                .comments(APPROVAL_COMMENT)
-                                .build()))
-                .build())));
+    when(approvalInstanceService.findLatestApprovalInstanceByPlanExecutionIdAndType(
+             ambiance.getPlanExecutionId(), ApprovalType.HARNESS_APPROVAL))
+        .thenReturn(
+            Optional.of(HarnessApprovalInstance.builder()
+                            .approvalMessage(APPROVAL_COMMENT)
+                            .approvalActivities(List.of(
+                                HarnessApprovalActivity.builder()
+                                    .comments(APPROVAL_COMMENT)
+                                    .user(EmbeddedUser.builder().email(APPROVAL_EMAIL).name(APPROVAL_NAME).build())
+                                    .build()))
+                            .approvers(ApproversDTO.builder().userGroups(List.of(APPROVAL_NAME)).build())
+                            .build()));
 
     Object resolvedObject = approvalFunctor.bind();
     assertThat(resolvedObject).isInstanceOf(HarnessApprovalOutcome.class);
@@ -80,13 +84,13 @@ public class ApprovalFunctorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testBindWithNotValidOutcome() {
     on(approvalFunctor).set("ambiance", ambiance);
-    when(pmsOutcomeService.fetchOutcomesByStepTypeAndCategory(ambiance.getPlanExecutionId(),
-             HarnessApprovalStep.STEP_TYPE.getType(), HarnessApprovalStep.STEP_TYPE.getStepCategory().name()))
-        .thenReturn(List.of(PmsOutcomeMapper.convertOutcomeValueToJson(CustomApprovalOutcome.builder().build())));
+    when(approvalInstanceService.findLatestApprovalInstanceByPlanExecutionIdAndType(
+             ambiance.getPlanExecutionId(), ApprovalType.HARNESS_APPROVAL))
+        .thenReturn(Optional.of(CustomApprovalInstance.builder().build()));
 
     assertThatThrownBy(() -> approvalFunctor.bind())
         .hasMessage(
-            "Found invalid outcome for approval expression, type: io.harness.steps.approval.step.custom.CustomApprovalOutcome")
+            "Found invalid approval instance for approval expression, type: io.harness.steps.approval.step.custom.entities.CustomApprovalInstance")
         .isInstanceOf(EngineFunctorException.class);
   }
 }

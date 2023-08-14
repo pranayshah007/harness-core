@@ -23,4 +23,6 @@ public interface ApprovalInstanceCustomRepository {
   UpdateResult updateMulti(Query query, Update update);
 
   List<ApprovalInstance> findAll(Criteria criteria);
+
+  List<ApprovalInstance> find(Query query);
 }

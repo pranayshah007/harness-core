@@ -49,4 +49,9 @@ public class ApprovalInstanceCustomRepositoryImpl implements ApprovalInstanceCus
     Query query = new Query(criteria);
     return mongoTemplate.find(query, ApprovalInstance.class);
   }
+
+  @Override
+  public List<ApprovalInstance> find(Query query) {
+    return mongoTemplate.find(query, ApprovalInstance.class);
+  }
 }

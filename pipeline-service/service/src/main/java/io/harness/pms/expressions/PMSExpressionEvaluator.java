@@ -21,7 +21,6 @@ import io.harness.engine.expressions.AmbianceExpressionEvaluator;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.engine.expressions.functors.StrategyFunctor;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
-import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ngtriggers.expressions.functors.EventPayloadFunctor;
 import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
@@ -50,6 +49,8 @@ import io.harness.project.remote.ProjectClient;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.harness.steps.approval.step.ApprovalInstanceService;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -70,7 +71,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject PmsExecutionSummaryService pmsExecutionSummaryService;
 
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
-  @Inject PmsOutcomeService pmsOutcomeService;
+  @Inject ApprovalInstanceService approvalInstanceService;
 
   public PMSExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
       Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
@@ -115,7 +116,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     });
 
     addToContext("serviceVariableOverrides", new ServiceVariableOverridesFunctor(ambiance, pmsEngineExpressionService));
-    addToContext("approval", new ApprovalFunctor(ambiance, pmsOutcomeService));
+    addToContext("approval", new ApprovalFunctor(ambiance, approvalInstanceService));
 
     // Group aliases
     // TODO: Replace with step category

@@ -7,42 +7,46 @@
 
 package io.harness.pms.expressions.functors;
 
-import io.harness.data.structure.EmptyPredicate;
-import io.harness.engine.pms.data.PmsOutcomeService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.EngineFunctorException;
 import io.harness.expression.LateBindingValue;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.sdk.core.data.Outcome;
-import io.harness.pms.sdk.core.resolver.outcome.mapper.PmsOutcomeMapper;
-import io.harness.steps.approval.step.harness.HarnessApprovalOutcome;
-import io.harness.steps.approval.step.harness.HarnessApprovalStep;
+import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.steps.approval.step.beans.ApprovalType;
+import io.harness.steps.approval.step.entities.ApprovalInstance;
+import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 
-import java.util.List;
-
+import java.util.Optional;
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@OwnedBy(HarnessTeam.CDP)
 public class ApprovalFunctor implements LateBindingValue {
   private final Ambiance ambiance;
-  private final PmsOutcomeService pmsOutcomeService;
-  ;
+  private final ApprovalInstanceService approvalInstanceService;
 
-  public ApprovalFunctor(Ambiance ambiance, PmsOutcomeService pmsOutcomeService) {
+  public ApprovalFunctor(Ambiance ambiance, ApprovalInstanceService approvalInstanceService) {
     this.ambiance = ambiance;
-    this.pmsOutcomeService = pmsOutcomeService;
+    this.approvalInstanceService = approvalInstanceService;
   }
 
   @Override
   public Object bind() {
-    List<String> outcomes = pmsOutcomeService.fetchOutcomesByStepTypeAndCategory(ambiance.getPlanExecutionId(),
-        HarnessApprovalStep.STEP_TYPE.getType(), HarnessApprovalStep.STEP_TYPE.getStepCategory().name());
-    if (EmptyPredicate.isEmpty(outcomes)) {
+    Optional<ApprovalInstance> latestApprovalInstance =
+        approvalInstanceService.findLatestApprovalInstanceByPlanExecutionIdAndType(
+            ambiance.getPlanExecutionId(), ApprovalType.HARNESS_APPROVAL);
+    if (latestApprovalInstance.isEmpty()) {
       return null;
     }
 
-    Outcome outcome = PmsOutcomeMapper.convertJsonToOutcome(outcomes.get(0));
-    if (!(outcome instanceof HarnessApprovalOutcome)) {
-      throw new EngineFunctorException(String.format("Found invalid outcome for approval expression, type: %s",
-          outcome != null ? outcome.getClass().getName() : null));
+    ApprovalInstance approvalInstance = latestApprovalInstance.get();
+    if (!(approvalInstance instanceof HarnessApprovalInstance)) {
+      throw new EngineFunctorException(String.format(
+          "Found invalid approval instance for approval expression, type: %s", approvalInstance.getClass().getName()));
     }
 
-    return outcome;
+    return ((HarnessApprovalInstance) approvalInstance).toHarnessApprovalOutcome();
   }
 }

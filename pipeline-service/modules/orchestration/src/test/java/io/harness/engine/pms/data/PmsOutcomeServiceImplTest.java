@@ -7,20 +7,8 @@
 
 package io.harness.engine.pms.data;
 
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.ALEXEI;
-import static io.harness.rule.OwnerRule.ARCHIT;
-import static io.harness.rule.OwnerRule.IVAN;
-import static io.harness.rule.OwnerRule.PRASHANT;
-import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.Mockito.when;
-
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -31,7 +19,6 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.data.StepOutcomeRef;
-import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.data.PmsOutcome;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.Outcome;
@@ -40,21 +27,31 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
 import io.harness.utils.AmbianceTestUtils;
 import io.harness.utils.DummyOrchestrationOutcome;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.data.mongodb.core.MongoTemplate;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.when;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsOutcomeServiceImplTest extends OrchestrationTestBase {
@@ -184,30 +181,6 @@ public class PmsOutcomeServiceImplTest extends OrchestrationTestBase {
                    .map(oc -> (RecastOrchestrationUtils.fromJson(oc, DummyOrchestrationOutcome.class)).getTest())
                    .collect(Collectors.toList()))
         .containsExactlyInAnyOrder("test1", "test2");
-  }
-
-  @Test
-  @Owner(developers = IVAN)
-  @Category(UnitTests.class)
-  public void shouldFetchOutcomesByStepTypeAndCategory() {
-    String planExecutionId = generateUuid();
-    Ambiance ambiance = AmbianceTestUtils.buildAmbiance(planExecutionId);
-    String outcomeName = "outcome";
-    Ambiance ambiance1 = AmbianceTestUtils.buildAmbiance(planExecutionId);
-    String outcomeName1 = "outcome1";
-
-    pmsOutcomeService.consume(ambiance, outcomeName,
-        RecastOrchestrationUtils.toJson(DummyOrchestrationOutcome.builder().test("test1").build()), null);
-    pmsOutcomeService.consume(ambiance1, outcomeName1,
-        RecastOrchestrationUtils.toJson(DummyOrchestrationOutcome.builder().test("test2").build()), null);
-
-    List<String> outcomes = pmsOutcomeService.fetchOutcomesByStepTypeAndCategory(
-        planExecutionId, "DEPLOY_SECTION", StepCategory.STEP.name());
-    assertThat(outcomes.size()).isEqualTo(2);
-    assertThat(outcomes.stream()
-                   .map(oc -> (RecastOrchestrationUtils.fromJson(oc, DummyOrchestrationOutcome.class)).getTest())
-                   .collect(Collectors.toList()))
-        .containsExactlyInAnyOrder("test2", "test1");
   }
 
   @Test

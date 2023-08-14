@@ -29,10 +29,6 @@ public class AmbianceTestUtils {
   public static final String SECTION_SETUP_ID = generateUuid();
 
   public static Ambiance buildAmbiance() {
-    return buildAmbiance(PLAN_EXECUTION_ID);
-  }
-
-  public static Ambiance buildAmbiance(String planExecutionId) {
     Level phaseLevel =
         Level.newBuilder()
             .setRuntimeId(PHASE_RUNTIME_ID)
@@ -51,7 +47,7 @@ public class AmbianceTestUtils {
     levels.add(phaseLevel);
     levels.add(sectionLevel);
     return Ambiance.newBuilder()
-        .setPlanExecutionId(planExecutionId)
+        .setPlanExecutionId(PLAN_EXECUTION_ID)
         .putAllSetupAbstractions(ImmutableMap.of("accountId", ACCOUNT_ID, "appId", APP_ID))
         .addAllLevels(levels)
         .setExpressionFunctorToken(1234)

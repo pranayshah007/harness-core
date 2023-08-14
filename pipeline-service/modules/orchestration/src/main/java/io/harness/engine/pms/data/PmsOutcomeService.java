@@ -33,7 +33,6 @@ public interface PmsOutcomeService extends Resolver {
   OptionalOutcome resolveOptional(Ambiance ambiance, RefObject refObject);
 
   List<OutcomeInstance> fetchOutcomeInstanceByRuntimeId(String runtimeId);
-  List<String> fetchOutcomesByStepTypeAndCategory(String planExecutionId, String stepType, String stepCategory);
 
   List<String> cloneForRetryExecution(Ambiance ambiance, String originalNodeExecutionId);
 

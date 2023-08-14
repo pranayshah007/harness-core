@@ -47,7 +47,6 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -314,22 +313,6 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
       });
     }
     return refMap;
-  }
-
-  @Override
-  public List<String> fetchOutcomesByStepTypeAndCategory(String planExecutionId, String stepType, String stepCategory) {
-    Query query = query(where(OutcomeInstanceKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(OutcomeInstanceKeys.producedBy + ".stepType.type").in(stepType))
-                      .addCriteria(where(OutcomeInstanceKeys.producedBy + ".stepType.stepCategory").in(stepCategory))
-                      .with(Sort.by(Sort.Direction.DESC, OutcomeInstanceKeys.createdAt));
-
-    List<OutcomeInstance> instances = mongoTemplate.find(query, OutcomeInstance.class);
-    List<String> outcomes = new LinkedList<>();
-    for (OutcomeInstance instance : instances) {
-      outcomes.add(instance.getOutcomeJsonValue());
-    }
-
-    return outcomes;
   }
 
   @Override
