@@ -60,6 +60,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -447,7 +448,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(terraformRollbackStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(terraformRollbackStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test
