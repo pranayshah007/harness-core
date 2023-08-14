@@ -105,7 +105,7 @@ public class InstanceServiceImplTest extends InstancesTestBase {
         Arrays.asList(new ActiveServiceInstanceInfoWithEnvType(instanceKey, infraMappingId, ENVIRONMENT_ID,
             ENVIRONMENT_ID, EnvironmentType.PreProduction, INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID,
             1l, DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus,
-            stageSetupId, rollbackStatus)),
+            stageSetupId, rollbackStatus, null)),
         new Document());
   }
 

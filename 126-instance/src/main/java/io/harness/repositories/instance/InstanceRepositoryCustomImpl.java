@@ -7,6 +7,7 @@
 
 package io.harness.repositories.instance;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.entities.Instance.InstanceKeysAdditional;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
@@ -64,6 +65,9 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   private static final String DISPLAY_NAME = "displayName";
   private static final String AGENT_IDENTIFIER = "agentIdentifier";
   private static final String CLUSTER_IDENTIFIER = "clusterIdentifier";
+  private static final String CHART_VERSION = "chartVersion";
+  private static final String HELM_CHART_INFO_VERSION = "helmChartInfo.version";
+  private static final String VERSION = "version";
 
   @Inject
   public InstanceRepositoryCustomImpl(MongoTemplate mongoTemplate,
@@ -312,13 +316,15 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.infraIdentifier, InstanceKeys.infraName,
         InstanceKeysAdditional.instanceInfoClusterIdentifier, InstanceKeysAdditional.instanceInfoAgentIdentifier,
         InstanceKeys.lastDeployedAt, InstanceKeys.stageNodeExecutionId, InstanceKeys.stageSetupId,
-        InstanceKeys.rollbackStatus, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId);
+        InstanceKeys.rollbackStatus, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId,
+        InstanceKeysAdditional.instanceInfoHelmChartVersion);
     GroupOperation groupOperation;
     if (!isGitOps) {
-      groupOperation =
-          group(InstanceKeys.envIdentifier, InstanceKeys.envType, InstanceKeys.infraIdentifier, DISPLAY_NAME);
+      groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envType, InstanceKeys.infraIdentifier,
+          DISPLAY_NAME, HELM_CHART_INFO_VERSION);
     } else {
-      groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envType, CLUSTER_IDENTIFIER, DISPLAY_NAME);
+      groupOperation = group(
+          InstanceKeys.envIdentifier, InstanceKeys.envType, CLUSTER_IDENTIFIER, DISPLAY_NAME, HELM_CHART_INFO_VERSION);
     }
 
     groupOperation = groupOperation.first(InstanceKeys.lastDeployedAt)
@@ -351,8 +357,10 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .project(InstanceKeys.instanceKey, InstanceKeys.infrastructureMappingId, InstanceKeys.envName,
                 InstanceKeys.infraName, AGENT_IDENTIFIER, InstanceKeys.lastDeployedAt,
                 InstanceKeys.stageNodeExecutionId, InstanceKeys.stageSetupId, InstanceKeys.rollbackStatus,
-                InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId,
+                InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId, VERSION,
                 InstanceSyncConstants.COUNT)
+            .andExpression(VERSION)
+            .as(CHART_VERSION)
             .andExpression("_id." + InstanceKeys.envIdentifier)
             .as(InstanceKeys.envIdentifier)
             .andExpression("_id." + InstanceKeys.envType)
@@ -451,7 +459,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));
     ProjectionOperation projectionOperation =
         Aggregation.project(InstanceKeys.envIdentifier, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME,
-            InstanceKeys.lastDeployedAt, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId);
+            InstanceKeys.lastDeployedAt, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastPipelineExecutionId,
+            InstanceKeysAdditional.instanceInfoHelmChartVersion);
     GroupOperation groupOperation;
 
     if (isEnvironmentCard) {
@@ -464,6 +473,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                          .as(InstanceKeys.envIdentifier)
                          .first(DISPLAY_NAME)
                          .as(DISPLAY_NAME)
+                         .first(HELM_CHART_INFO_VERSION)
+                         .as(CHART_VERSION)
                          .first(InstanceKeys.lastDeployedAt)
                          .as(InstanceKeys.lastDeployedAt)
                          .first(InstanceKeys.lastPipelineExecutionName)
@@ -552,7 +563,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public AggregationResults<InstanceGroupedByPipelineExecution> getActiveInstanceGroupedByPipelineExecution(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String envId,
-      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName) {
+      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName,
+      String chartVersion, boolean filterByChartVersion) {
     Criteria criteria =
         getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, null, envId);
 
@@ -564,6 +576,16 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         .is(environmentType)
         .and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
         .is(displayName);
+    if (filterByChartVersion) {
+      if (isEmpty(chartVersion)) {
+        Criteria chartCriteria = new Criteria();
+        chartCriteria.orOperator(Criteria.where(InstanceKeysAdditional.instanceInfoHelmChartVersion).is(null),
+            Criteria.where(InstanceKeysAdditional.instanceInfoHelmChartVersion).is(""));
+        criteria.andOperator(chartCriteria);
+      } else {
+        criteria.and(InstanceKeysAdditional.instanceInfoHelmChartVersion).is(chartVersion);
+      }
+    }
 
     MatchOperation matchOperation = Aggregation.match(criteria);
     SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));

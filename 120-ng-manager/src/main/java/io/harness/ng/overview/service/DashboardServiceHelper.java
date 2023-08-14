@@ -67,7 +67,8 @@ public class DashboardServiceHelper {
       Page<EnvironmentGroupEntity> environmentGroupEntitiesPage) {
     // nested map - environmentId, environmentType, infrastructureId, displayName, (count, lastDeployedAt)
     Map<String,
-        Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+        Map<EnvironmentType,
+            Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>>>
         instanceCountMap = new HashMap<>();
     Map<String, String> envIdToNameMap = new HashMap<>();
     // since we are already filtering instances on service type (gitOps or non-gitOps), infraIdToNameMap will contain
@@ -129,8 +130,10 @@ public class DashboardServiceHelper {
 
       infraIdToNameMap.putIfAbsent(infraId, infraName);
       instanceCountMap.get(envId).get(envType).putIfAbsent(infraId, new HashMap<>());
-      InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact byArtifact =
-          InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+      instanceCountMap.get(envId).get(envType).get(infraId).putIfAbsent(
+          activeServiceInstanceInfo.getDisplayName(), new HashMap<>());
+      InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion byChartVersion =
+          InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion.builder()
               .instanceKey(activeServiceInstanceInfo.getInstanceKey())
               .infrastructureMappingId(activeServiceInstanceInfo.getInfrastructureMappingId())
               .lastPlanExecutionId(activeServiceInstanceInfo.getLastPipelineExecutionId())
@@ -140,10 +143,13 @@ public class DashboardServiceHelper {
               .rollbackStatus(activeServiceInstanceInfo.getRollbackStatus())
               .lastDeployedAt(activeServiceInstanceInfo.getLastDeployedAt())
               .count(activeServiceInstanceInfo.getCount())
-              .artifact(activeServiceInstanceInfo.getDisplayName())
+              .chartVersion(activeServiceInstanceInfo.getVersion())
               .build();
-      instanceCountMap.get(envId).get(envType).get(infraId).putIfAbsent(
-          activeServiceInstanceInfo.getDisplayName(), byArtifact);
+      instanceCountMap.get(envId)
+          .get(envType)
+          .get(infraId)
+          .get(activeServiceInstanceInfo.getDisplayName())
+          .putIfAbsent(activeServiceInstanceInfo.getVersion(), byChartVersion);
     });
 
     return InstanceGroupedByEnvironmentList.builder()
@@ -156,7 +162,9 @@ public class DashboardServiceHelper {
       List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoList, boolean isGitOps,
       Page<EnvironmentGroupEntity> environmentGroupEntitiesPage, String envGrpId) {
     // nested map - displayName, envId, environmentType, instanceGroupedByInfrastructure
-    Map<String, Map<String, Map<EnvironmentType, List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure>>>>
+    Map<String,
+        Map<String,
+            Map<String, Map<EnvironmentType, List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure>>>>>
         instanceCountMap = new HashMap<>();
     Map<String, String> envIdToNameMap = new HashMap<>();
 
@@ -195,11 +203,16 @@ public class DashboardServiceHelper {
 
       final String displayName = activeServiceInstanceInfo.getDisplayName();
       instanceCountMap.putIfAbsent(displayName, new HashMap<>());
-      instanceCountMap.get(displayName).putIfAbsent(envId, new HashMap<>());
+      instanceCountMap.get(displayName).putIfAbsent(activeServiceInstanceInfo.getVersion(), new HashMap<>());
+      instanceCountMap.get(displayName).get(activeServiceInstanceInfo.getVersion()).putIfAbsent(envId, new HashMap<>());
 
       final EnvironmentType environmentType = activeServiceInstanceInfo.getEnvType();
-      instanceCountMap.get(displayName).get(envId).putIfAbsent(environmentType, new ArrayList<>());
       instanceCountMap.get(displayName)
+          .get(activeServiceInstanceInfo.getVersion())
+          .get(envId)
+          .putIfAbsent(environmentType, new ArrayList<>());
+      instanceCountMap.get(displayName)
+          .get(activeServiceInstanceInfo.getVersion())
           .get(envId)
           .get(environmentType)
           .add(getInstanceGroupedByInfrastructure(activeServiceInstanceInfo, isGitOps));
@@ -233,24 +246,27 @@ public class DashboardServiceHelper {
 
   private List<InstanceGroupedOnArtifactList.InstanceGroupedOnArtifact> groupByArtifact(
       Map<String,
-          Map<String, Map<EnvironmentType, List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure>>>>
+          Map<String,
+              Map<String, Map<EnvironmentType, List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure>>>>>
           instanceCountMap,
       Map<String, String> envIdToNameMap) {
     List<InstanceGroupedOnArtifactList.InstanceGroupedOnArtifact> instanceGroupedByArtifactList = new ArrayList<>();
     for (Map.Entry<String,
-             Map<String, Map<EnvironmentType, List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure>>>>
+             Map<String,
+                 Map<String,
+                     Map<EnvironmentType, List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure>>>>>
              entry : instanceCountMap.entrySet()) {
       final String displayName = entry.getKey();
-      List<InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironment> instanceGroupedByEnvironmentList =
-          groupByEnvironment(entry.getValue(), envIdToNameMap);
+      List<InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion> instanceGroupedOnChartVersionList =
+          groupByChartVersion(entry.getValue(), envIdToNameMap);
       long lastDeployedAt = 0l;
-      if (EmptyPredicate.isNotEmpty(instanceGroupedByEnvironmentList)) {
-        lastDeployedAt = instanceGroupedByEnvironmentList.get(0).getLastDeployedAt();
+      if (EmptyPredicate.isNotEmpty(instanceGroupedOnChartVersionList)) {
+        lastDeployedAt = instanceGroupedOnChartVersionList.get(0).getLastDeployedAt();
       }
       instanceGroupedByArtifactList.add(InstanceGroupedOnArtifactList.InstanceGroupedOnArtifact.builder()
                                             .artifact(displayName)
                                             .lastDeployedAt(lastDeployedAt)
-                                            .instanceGroupedOnEnvironmentList(instanceGroupedByEnvironmentList)
+                                            .instanceGroupedOnChartVersionList(instanceGroupedOnChartVersionList)
                                             .build());
     }
     // sort based on last deployed time
@@ -262,6 +278,40 @@ public class DashboardServiceHelper {
           }
         });
     return instanceGroupedByArtifactList;
+  }
+
+  private List<InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion> groupByChartVersion(
+      Map<String,
+          Map<String, Map<EnvironmentType, List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure>>>>
+          instanceCountMap,
+      Map<String, String> envIdToNameMap) {
+    List<InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion> instanceGroupedOnChartVersionList =
+        new ArrayList<>();
+    for (Map.Entry<String,
+             Map<String, Map<EnvironmentType, List<InstanceGroupedOnArtifactList.InstanceGroupedOnInfrastructure>>>>
+             entry : instanceCountMap.entrySet()) {
+      final String chartVersion = entry.getKey();
+      List<InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironment> instanceGroupedByEnvironmentList =
+          groupByEnvironment(entry.getValue(), envIdToNameMap);
+      long lastDeployedAt = 0l;
+      if (EmptyPredicate.isNotEmpty(instanceGroupedByEnvironmentList)) {
+        lastDeployedAt = instanceGroupedByEnvironmentList.get(0).getLastDeployedAt();
+      }
+      instanceGroupedOnChartVersionList.add(InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion.builder()
+                                                .chartVersion(chartVersion)
+                                                .lastDeployedAt(lastDeployedAt)
+                                                .instanceGroupedOnEnvironmentList(instanceGroupedByEnvironmentList)
+                                                .build());
+    }
+    // sort based on last deployed time
+    Collections.sort(instanceGroupedOnChartVersionList,
+        new Comparator<InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion>() {
+          public int compare(InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion o1,
+              InstanceGroupedOnArtifactList.InstanceGroupedOnChartVersion o2) {
+            return (int) (o2.getLastDeployedAt() - o1.getLastDeployedAt());
+          }
+        });
+    return instanceGroupedOnChartVersionList;
   }
 
   private List<InstanceGroupedOnArtifactList.InstanceGroupedOnEnvironment> groupByEnvironment(
@@ -339,7 +389,8 @@ public class DashboardServiceHelper {
 
   public List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironment> groupByEnvironment(
       Map<String,
-          Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+          Map<EnvironmentType,
+              Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>>>
           instanceCountMap,
       Map<String, String> infraIdToNameMap, Map<String, String> envIdToNameMap,
       Map<String, List<String>> envToEnvGroupMap, boolean isGitOps) {
@@ -347,7 +398,8 @@ public class DashboardServiceHelper {
         new ArrayList<>();
 
     for (Map.Entry<String,
-             Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>>
+             Map<EnvironmentType,
+                 Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>>>
              entry : instanceCountMap.entrySet()) {
       final String envId = entry.getKey();
       List<String> envGroupList = envToEnvGroupMap.get(envId);
@@ -396,15 +448,16 @@ public class DashboardServiceHelper {
   }
 
   public List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType> groupedByEnvironmentTypes(
-      Map<EnvironmentType, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>>
+      Map<EnvironmentType,
+          Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>>
           instanceCountMap,
       Map<String, String> infraIdToNameMap, boolean isGitOps) {
     List<InstanceGroupedByEnvironmentList.InstanceGroupedByEnvironmentType> instanceGroupedByEnvironmentTypeList =
         new ArrayList<>();
 
     for (Map.Entry<EnvironmentType,
-             Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>>> entry :
-        instanceCountMap.entrySet()) {
+             Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>>
+             entry : instanceCountMap.entrySet()) {
       EnvironmentType environmentType = entry.getKey();
 
       List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
@@ -437,13 +490,14 @@ public class DashboardServiceHelper {
   }
 
   public List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> groupedByInfrastructures(
-      Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>> instanceCountMap,
+      Map<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>
+          instanceCountMap,
       Map<String, String> infraIdToNameMap, boolean isGitOps) {
     List<InstanceGroupedByEnvironmentList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
         new ArrayList<>();
 
-    for (Map.Entry<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact>> entry :
-        instanceCountMap.entrySet()) {
+    for (Map.Entry<String, Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>>>
+             entry : instanceCountMap.entrySet()) {
       String infraId = entry.getKey();
 
       List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
@@ -480,12 +534,25 @@ public class DashboardServiceHelper {
   }
 
   public List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> groupedByArtifacts(
-      Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceCountMap) {
+      Map<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>> instanceCountMap) {
     List<InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> instanceGroupedByArtifactList = new ArrayList<>();
 
-    for (Map.Entry<String, InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact> entry :
+    for (Map.Entry<String, Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>> entry :
         instanceCountMap.entrySet()) {
-      instanceGroupedByArtifactList.add(entry.getValue());
+      List<InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion> instanceGroupedByChartVersionList =
+          groupedByChartVersion(entry.getValue());
+      long lastDeployedAt = 0l;
+      if (EmptyPredicate.isNotEmpty(instanceGroupedByChartVersionList)) {
+        lastDeployedAt = instanceGroupedByChartVersionList.get(0).getLastDeployedAt();
+      }
+
+      InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact instanceGroupedByArtifact =
+          InstanceGroupedByEnvironmentList.InstanceGroupedByArtifact.builder()
+              .artifact(entry.getKey())
+              .lastDeployedAt(lastDeployedAt)
+              .instanceGroupedByChartVersionList(instanceGroupedByChartVersionList)
+              .build();
+      instanceGroupedByArtifactList.add(instanceGroupedByArtifact);
     }
 
     // sort based on last deployed time
@@ -499,6 +566,29 @@ public class DashboardServiceHelper {
         });
 
     return instanceGroupedByArtifactList;
+  }
+
+  public List<InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion> groupedByChartVersion(
+      Map<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion> instanceCountMap) {
+    List<InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion> instanceGroupedByChartVersionList =
+        new ArrayList<>();
+
+    for (Map.Entry<String, InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion> entry :
+        instanceCountMap.entrySet()) {
+      instanceGroupedByChartVersionList.add(entry.getValue());
+    }
+
+    // sort based on last deployed time
+
+    Collections.sort(instanceGroupedByChartVersionList,
+        new Comparator<InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion>() {
+          public int compare(InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion o1,
+              InstanceGroupedByEnvironmentList.InstanceGroupedByChartVersion o2) {
+            return (int) (o2.getLastDeployedAt() - o1.getLastDeployedAt());
+          }
+        });
+
+    return instanceGroupedByChartVersionList;
   }
 
   public ArtifactInstanceDetails getArtifactInstanceDetailsFromMap(
@@ -976,6 +1066,7 @@ public class DashboardServiceHelper {
       map.putIfAbsent(envId,
           ArtifactDeploymentDetail.builder()
               .artifact(artifactDeploymentDetail.getDisplayName())
+              .chartVersion(artifactDeploymentDetail.getChartVersion())
               .envName(envIdToEnvNameMap.getOrDefault(envId, ""))
               .envId(envId)
               .lastDeployedAt(artifactDeploymentDetail.getLastDeployedAt())

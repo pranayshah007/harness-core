@@ -283,9 +283,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<InstanceGroupedByPipelineExecution> getActiveInstanceGroupedByPipelineExecution(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String envId,
-      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName) {
+      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName,
+      String chartVersion, boolean filterByChartVersion) {
     return instanceRepository.getActiveInstanceGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
-        projectIdentifier, serviceId, envId, environmentType, infraId, clusterIdentifier, displayName);
+        projectIdentifier, serviceId, envId, environmentType, infraId, clusterIdentifier, displayName, chartVersion,
+        filterByChartVersion);
   }
 
   /*

@@ -149,7 +149,8 @@ public interface CDOverviewDashboardService {
 
   InstanceDetailGroupedByPipelineExecutionList getInstanceDetailGroupedByPipelineExecution(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceIdentifier, String envIdentifier,
-      EnvironmentType environmentType, String infraIdentifier, String clusterIdentifier, String displayName);
+      EnvironmentType environmentType, String infraIdentifier, String clusterIdentifier, String displayName,
+      String chartVersion);
 
   io.harness.ng.overview.dto.TimeValuePairListDTO<Integer> getInstanceGrowthTrend(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, long startTimeInMs, long endTimeInMs);

@@ -55,7 +55,8 @@ public interface InstanceDashboardService {
   List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
   getActiveInstanceDetailGroupedByPipelineExecution(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, EnvironmentType environmentType, String infraId,
-      String clusterIdentifier, String displayName, boolean isGitOps);
+      String clusterIdentifier, String displayName, String chartVersion, boolean isGitOps,
+      boolean filterOnChartVersion);
   InstanceCountDetailsByEnvTypeAndServiceId getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
 }

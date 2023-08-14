@@ -30,6 +30,7 @@ import io.harness.cd.NGServiceConstants;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
 import io.harness.cdng.service.beans.CustomSequenceDTO;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.event.timeseries.processor.utils.DateUtils;
@@ -189,6 +190,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   private String tableNameCD = "pipeline_execution_summary_cd";
   private String EMPTY_ARTIFACT = "";
+  private String EMPTY_CHART_VERSION = "";
   private String CUSTOM_DEPLOYMENT = "CustomDeployment";
   private String tableNameServiceAndInfra = "service_infra_info";
   private static final String PIPELINE_EXECUTION_SUMMARY_CD_ID = "pipeline_execution_summary_cd_id";
@@ -2876,6 +2878,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       if (isNull(activeServiceInstanceInfoWithEnvType.getDisplayName())) {
         activeServiceInstanceInfoWithEnvType.setDisplayName(EMPTY_ARTIFACT);
       }
+      if (isNull(activeServiceInstanceInfoWithEnvType.getVersion())) {
+        activeServiceInstanceInfoWithEnvType.setVersion(EMPTY_CHART_VERSION);
+      }
     }
   }
 
@@ -3634,8 +3639,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public InstanceDetailGroupedByPipelineExecutionList getInstanceDetailGroupedByPipelineExecution(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
       String envIdentifier, EnvironmentType environmentType, String infraIdentifier, String clusterIdentifier,
-      String displayName) {
+      String displayName, String chartVersion) {
     boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+    boolean isK8sOrHelm = isK8sOrHelm(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
 
     List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
         instanceDetailGroupedByPipelineExecutionList = new ArrayList<>();
@@ -3644,17 +3650,17 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       instanceDetailGroupedByPipelineExecutionList.addAll(
           instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
               projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier, clusterIdentifier,
-              EMPTY_ARTIFACT, isGitOps));
+              EMPTY_ARTIFACT, chartVersion, isGitOps, isK8sOrHelm));
 
       instanceDetailGroupedByPipelineExecutionList.addAll(
           instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
               projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier, clusterIdentifier,
-              null, isGitOps));
+              null, chartVersion, isGitOps, isK8sOrHelm));
     } else {
       instanceDetailGroupedByPipelineExecutionList.addAll(
           instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
               projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier, clusterIdentifier,
-              displayName, isGitOps));
+              displayName, chartVersion, isGitOps, isK8sOrHelm));
     }
     // sort based on last deployed time
 
@@ -4133,6 +4139,20 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     if (serviceEntity.isPresent()) {
       ServiceEntity service = serviceEntity.get();
       return service.getGitOpsEnabled() != null ? service.getGitOpsEnabled() : Boolean.FALSE;
+    }
+    return Boolean.FALSE;
+  }
+
+  private Boolean isK8sOrHelm(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    Optional<ServiceEntity> serviceEntity =
+        serviceEntityServiceImpl.getService(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    if (serviceEntity.isPresent()) {
+      ServiceEntity service = serviceEntity.get();
+      return (ServiceDefinitionType.KUBERNETES.equals(service.getType())
+                 || ServiceDefinitionType.NATIVE_HELM.equals(service.getType()))
+          ? Boolean.TRUE
+          : Boolean.FALSE;
     }
     return Boolean.FALSE;
   }

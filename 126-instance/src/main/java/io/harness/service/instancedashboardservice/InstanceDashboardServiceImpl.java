@@ -319,10 +319,12 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   public List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
   getActiveInstanceDetailGroupedByPipelineExecution(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, EnvironmentType environmentType, String infraId,
-      String clusterIdentifier, String displayName, boolean isGitOps) {
+      String clusterIdentifier, String displayName, String chartVersion, boolean isGitOps,
+      boolean filterOnChartVersion) {
     AggregationResults<InstanceGroupedByPipelineExecution> aggregationResults =
         instanceService.getActiveInstanceGroupedByPipelineExecution(accountIdentifier, orgIdentifier, projectIdentifier,
-            serviceId, envId, environmentType, infraId, clusterIdentifier, displayName);
+            serviceId, envId, environmentType, infraId, clusterIdentifier, displayName, chartVersion,
+            filterOnChartVersion);
     List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
         instanceGroupedByPipelineExecutionList = new ArrayList<>();
     aggregationResults.forEach(instanceGroupedByPipelineExecution -> {

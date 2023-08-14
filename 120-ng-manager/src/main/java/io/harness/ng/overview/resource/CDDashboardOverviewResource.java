@@ -499,10 +499,11 @@ public class CDDashboardOverviewResource {
       @QueryParam(NGCommonEntityConstants.ENVIRONMENT_TYPE_KEY) EnvironmentType environmentType,
       @QueryParam(NGCommonEntityConstants.INFRA_IDENTIFIER) String infraId,
       @QueryParam(NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterId,
-      @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName) {
+      @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName,
+      @QueryParam(NGCommonEntityConstants.CHART_VERSION) String chartVersion) {
     return ResponseDTO.newResponse(
         cdOverviewDashboardService.getInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
-            projectIdentifier, serviceId, envId, environmentType, infraId, clusterId, displayName));
+            projectIdentifier, serviceId, envId, environmentType, infraId, clusterId, displayName, chartVersion));
   }
 
   @GET
