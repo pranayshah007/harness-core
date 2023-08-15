@@ -11,7 +11,6 @@ import static io.harness.ccm.CcmConstants.CLUSTER_ID_IDENTIFIER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -101,11 +100,15 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
         KubernetesConfig kubernetesConfig = getKubernetesConfig(watchTaskParams);
 
         String watchId = k8sWatchServiceDelegate.create(watchTaskParams, kubernetesConfig);
-        log.info("Ensured watch exists with id {}.", watchId);
+        log.info("Ensured watch exists with watchId: {}", watchId);
         taskWatchIdMap.putIfAbsent(taskId.getId(), watchId);
 
-        K8sControllerFetcher controllerFetcher =
-            requireNonNull(k8sWatchServiceDelegate.getK8sControllerFetcher(watchId));
+        K8sControllerFetcher controllerFetcher = k8sWatchServiceDelegate.getK8sControllerFetcher(watchId);
+
+        if (controllerFetcher == null) {
+          log.warn("controllerFetcher is null for watchId: {} and taskId: {}.", watchId, taskId);
+          return null;
+        }
         ApiClient apiClient = apiClientFactory.getClient(kubernetesConfig);
         DefaultK8sMetricsClient k8sMetricsClient = new DefaultK8sMetricsClient(apiClient);
 
