@@ -59,20 +59,15 @@ func (b *dotnetRunner) ReadPackages(files []types.File) []types.File {
 
 func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	// Hard coding the logger for now, as this is the only one for now that does not have compatibility issue with our agent
-	installLoggerCmd := "dotnet add package JUnitTestLogger --version 1.1.0"
-	var defaultRunCmd string
-	if strings.Contains(userArgs, "--logger") {
-	    defaultRunCmd = fmt.Sprintf("%s test %s", dotnetCmd, userArgs)
-	} else {
-	    defaultRunCmd = fmt.Sprintf("%s test --logger \"junit;LogFilePath=test_results.xml\" %s", dotnetCmd, userArgs)
-	}
+	installLoggerCmd := ""
+	defaultRunCmd := fmt.Sprintf("%s test %s", dotnetCmd, userArgs)
 	agentFullName := path.Join(b.agentPath, "dotnet-agent.injector.dll")
 
 	var instrumentCmd string
 	// Run all the DLLs through the injector
 	args := strings.Split(userArgs, " ")
 	for _, param := range args {
-		if strings.HasSuffix(param, ".dll") || strings.HasSuffix(param, ".csproj"){
+		if strings.HasSuffix(param, ".dll")){
 			instrumentCmd += fmt.Sprintf("%s %s %s %s\n", dotnetCmd, agentFullName, param, agentConfigPath)
 		}
 	}
