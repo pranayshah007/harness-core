@@ -299,6 +299,10 @@ public class NGLdapServiceImpl implements NGLdapService {
 
         if (null != groupSearchResponse.getLdapGroupsResponse()) {
           userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
+
+          if (!isUserGroupSsoStateValid(userGroup)) {
+            continue;
+          }
         } else {
           log.error(
               "NGLDAP: No LDAP group response received in delegate response. Points to some error in delegate task execution for group: {} in account: {}",
@@ -311,6 +315,29 @@ public class NGLdapServiceImpl implements NGLdapService {
 
     ngLdapGroupSyncHelper.reconcileAllUserGroups(
         userGroupsToLdapGroupMap, settingsWithEncryptedDataDetail.getLdapSettings().getUuid(), accountIdentifier);
+  }
+
+  public boolean isUserGroupSsoStateValid(UserGroup userGroup) {
+    // Check if the User Group State has not changed
+    Optional<UserGroup> savedUserGroup = userGroupService.get(userGroup.getAccountIdentifier(),
+        userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), userGroup.getIdentifier());
+    if (!savedUserGroup.isPresent()) {
+      log.error("NGLDAP: User group {} no longer exists. Not syncing this user group.", userGroup.getIdentifier());
+      return false;
+    }
+    if (!savedUserGroup.get().getIsSsoLinked()) {
+      log.error(
+          "NGLDAP: User group {} is no longer SSO linked. Not syncing this user group.", userGroup.getIdentifier());
+      return false;
+    }
+    if (!savedUserGroup.get().getSsoGroupId().equals(userGroup.getSsoGroupId())) {
+      log.error(
+          "NGLDAP: User group {} is linked to SSO Group {} but sync happening for SSO Group {}. Not syncing this user group",
+          userGroup.getIdentifier(), savedUserGroup.get().getSsoGroupId(), userGroup.getSsoGroupId());
+      return false;
+    }
+
+    return true;
   }
 
   private void handleErrorResponseMessageFromDelegate(String errorMessage, String ldapTestResponseMessage) {
