@@ -191,7 +191,7 @@ public class EcsBlueGreenRollbackStepTest extends CategoryTest {
             .prodListenerRuleArn("lisRuleArn")
             .prodTargetGroupArn("grpArn")
             .isFirstDeployment(true)
-            .serviceName("service")
+            .serviceName("service__1")
             .build();
     OptionalSweepingOutput ecsBlueGreenPrepareRollbackDataOptionalOutput =
         OptionalSweepingOutput.builder().found(true).output(ecsBlueGreenPrepareRollbackDataOutcome).build();
@@ -203,7 +203,7 @@ public class EcsBlueGreenRollbackStepTest extends CategoryTest {
                 + OutcomeExpressionConstants.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME));
 
     EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
-        EcsBlueGreenCreateServiceDataOutcome.builder().build();
+        EcsBlueGreenCreateServiceDataOutcome.builder().serviceName("service__2").build();
     OptionalSweepingOutput ecsBlueGreenSwapTargetGroupsDataOptionalOutput =
         OptionalSweepingOutput.builder().found(true).output(ecsBlueGreenCreateServiceDataOutcome).build();
     doReturn(ecsBlueGreenSwapTargetGroupsDataOptionalOutput)
