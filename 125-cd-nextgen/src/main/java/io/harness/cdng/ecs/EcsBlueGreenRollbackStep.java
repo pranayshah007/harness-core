@@ -61,6 +61,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
@@ -73,6 +74,9 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
   public static final String ECS_BLUE_GREEN_ROLLBACK_COMMAND_NAME = "EcsBlueGreenRollback";
   public static final String ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING =
       "Blue Green Create Service step is not configured or Deployment didn't started, no need to rollback.";
+  private static final String DUMMY_GREEN_SERVICE = "dummy";
+  private static final String DELIMITER__SERVICE_FIRST_VERSION = "__1";
+  private static final String DELIMITER__SERVICE_SECOND_VERSION = "__2";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
@@ -229,6 +233,13 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
           (EcsBlueGreenCreateServiceDataOutcome) ecsBlueGreenCreateServiceDataOptional.getOutput();
       ecsBlueGreenRollbackRequestBuilder.isNewServiceCreated(
           ecsBlueGreenCreateServiceDataOutcome.isNewServiceCreated());
+      ecsBlueGreenRollbackRequestBuilder.newServiceName(ecsBlueGreenCreateServiceDataOutcome.getServiceName());
+    }
+
+    if (StringUtils.isBlank(ecsBlueGreenRollbackRequestBuilder.build().getNewServiceName())) {
+      // todo: need to remove it later, adding it now to maintain backward compatibility
+      ecsBlueGreenRollbackRequestBuilder.newServiceName(
+          getGreenServiceName(ecsBlueGreenPrepareRollbackDataOutcome.getServiceName()));
     }
 
     if (EmptyPredicate.isEmpty(ecsBlueGreenRollbackStepParameters.ecsBlueGreenSwapTargetGroupsFnq)) {
@@ -267,5 +278,18 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
     return TaskRequest.newBuilder()
         .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
         .build();
+  }
+
+  private String getGreenServiceName(String blueServiceName) {
+    if (StringUtils.isBlank(blueServiceName)) {
+      return DUMMY_GREEN_SERVICE;
+    } else if (StringUtils.endsWith(blueServiceName, DELIMITER__SERVICE_FIRST_VERSION)) {
+      return StringUtils.removeEnd(blueServiceName, DELIMITER__SERVICE_FIRST_VERSION)
+          + DELIMITER__SERVICE_SECOND_VERSION;
+    } else if (StringUtils.endsWith(blueServiceName, DELIMITER__SERVICE_SECOND_VERSION)) {
+      return StringUtils.removeEnd(blueServiceName, DELIMITER__SERVICE_SECOND_VERSION)
+          + DELIMITER__SERVICE_FIRST_VERSION;
+    }
+    return DUMMY_GREEN_SERVICE;
   }
 }
