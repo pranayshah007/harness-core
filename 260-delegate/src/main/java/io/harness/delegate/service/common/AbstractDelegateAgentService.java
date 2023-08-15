@@ -232,6 +232,9 @@ public abstract class AbstractDelegateAgentService<AcquireResponse, ExecutionRes
 
   @Override
   public boolean isSocketHealthy() {
+    if (socket == null) {
+      return false;
+    }
     return socket.status() == Socket.STATUS.OPEN || socket.status() == Socket.STATUS.REOPENED;
   }
 
