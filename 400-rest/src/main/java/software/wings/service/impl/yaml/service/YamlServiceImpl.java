@@ -8,6 +8,7 @@
 package software.wings.service.impl.yaml.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_CG_ADDING_VALIDATION_OF_ENTITY_NULL;
 import static io.harness.beans.FeatureName.SPG_TRIPLE_TIMEOUT_FOR_ZIP_YAML_UPSERT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -1313,6 +1314,14 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
         String entityId = getEntityId(yamlFilePath, changeContext);
         // added tracability due to many recent issues
         doTracing(accountId, yamlFilePath, changeContext);
+
+        if (entityId == null && featureFlagService.isEnabled(SPG_CG_ADDING_VALIDATION_OF_ENTITY_NULL, accountId)) {
+          return FileOperationStatus.builder()
+              .status(FileOperationStatus.Status.FAILED)
+              .errorMssg("Usage limit reached. Please try again in few minutes")
+              .yamlFilePath(changeContext.getChange().getFilePath())
+              .build();
+        }
 
         return FileOperationStatus.builder()
             .status(FileOperationStatus.Status.SUCCESS)

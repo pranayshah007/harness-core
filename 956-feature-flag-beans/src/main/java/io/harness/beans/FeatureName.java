@@ -433,6 +433,9 @@ public enum FeatureName {
   GCB_CI_SYSTEM,
   GCP_WORKLOAD_IDENTITY,
   GITHUB_WEBHOOK_AUTHENTICATION,
+  SPG_CG_ADDING_VALIDATION_OF_ENTITY_NULL(
+      "Enables the error return when the database transaction was not completed due to reaching the transaction limit.",
+      SPG),
   SPG_CG_FIXING_PIPELINE_RESUME("This fixes pipeline resume when a loop state is skipped", HarnessTeam.SPG),
   GITOPS_FLUX_FLAMINGO("Support for flux via flamingo in GitOps", HarnessTeam.GITOPS),
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
