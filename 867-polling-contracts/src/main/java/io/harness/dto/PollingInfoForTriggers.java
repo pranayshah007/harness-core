@@ -7,6 +7,8 @@
 
 package io.harness.dto;
 
+import io.harness.pms.triggers.PerpetualTaskInfoForTriggers;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,5 +16,6 @@ import lombok.Data;
 @Builder
 public class PollingInfoForTriggers {
   String perpetualTaskId;
+  PerpetualTaskInfoForTriggers perpetualTaskInfoForTriggers;
   PolledResponse polledResponse;
 }

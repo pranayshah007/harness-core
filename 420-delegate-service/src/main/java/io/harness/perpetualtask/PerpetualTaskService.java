@@ -8,6 +8,7 @@
 package io.harness.perpetualtask;
 
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
+import io.harness.pms.triggers.PerpetualTaskInfoForTriggers;
 
 import java.util.List;
 
@@ -34,7 +35,7 @@ public interface PerpetualTaskService {
   List<PerpetualTaskRecord> listAllTasksForAccount(String accountId);
 
   PerpetualTaskRecord getTaskRecord(String taskId);
-
+  PerpetualTaskInfoForTriggers getTaskInfoForTriggers(String taskId);
   String getPerpetualTaskType(String taskId);
 
   PerpetualTaskExecutionContext perpetualTaskContext(String taskId);

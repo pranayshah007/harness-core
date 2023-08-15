@@ -16,6 +16,7 @@ java_library(
         "//867-polling-contracts:module",
         "//884-pms-commons:module",
         "//890-sm-core:module",
+        "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
         "//945-account-mgmt:module",
         "//950-ng-project-n-orgs:module",

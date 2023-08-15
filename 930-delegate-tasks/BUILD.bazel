@@ -123,6 +123,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/notification/constant:module",
         "//930-delegate-tasks/src/main/java/io/harness/notification/senders:module",
         "//930-delegate-tasks/src/main/java/io/harness/perpetualtask:module",
+        "//930-delegate-tasks/src/main/java/io/harness/perpetualtask/client:module",
         "//930-delegate-tasks/src/main/java/io/harness/perpetualtask/datacollection:module",
         "//930-delegate-tasks/src/main/java/io/harness/perpetualtask/internal:module",
         "//930-delegate-tasks/src/main/java/io/harness/perpetualtask/k8s/utils:module",

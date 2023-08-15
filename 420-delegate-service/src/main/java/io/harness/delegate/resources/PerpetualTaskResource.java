@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.grpc.utils.HTimestamps;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.perpetualtask.HeartbeatRequest;
 import io.harness.perpetualtask.HeartbeatResponse;
 import io.harness.perpetualtask.PerpetualTaskAssignDetails;
@@ -20,7 +21,9 @@ import io.harness.perpetualtask.PerpetualTaskFailureResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.PerpetualTaskService;
+import io.harness.pms.triggers.PerpetualTaskInfoForTriggers;
 import io.harness.security.annotations.DelegateAuth;
+import io.harness.security.annotations.InternalApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -58,6 +61,16 @@ public class PerpetualTaskResource {
     PerpetualTaskListResponse perpetualTaskListResponse =
         PerpetualTaskListResponse.newBuilder().addAllPerpetualTaskAssignDetails(perpetualTaskAssignDetails).build();
     return Response.ok(perpetualTaskListResponse).build();
+  }
+
+  @GET
+  @Path("/perpetual-task-info-for-triggers")
+  @InternalApi
+  @Produces({"application/json"})
+  @ApiOperation(value = "Get perpetual task info for triggers", nickname = "perpetualTaskInfoForTriggers")
+  public ResponseDTO<PerpetualTaskInfoForTriggers> getPerpetualTaskInfoForTriggers(
+      @QueryParam("perpetualTaskId") String perpetualTaskId, @QueryParam("accountId") String accountId) {
+    return ResponseDTO.newResponse(perpetualTaskService.getTaskInfoForTriggers(perpetualTaskId));
   }
 
   @GET

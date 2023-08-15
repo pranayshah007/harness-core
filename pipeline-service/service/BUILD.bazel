@@ -29,6 +29,7 @@ java_binary(
         "//:lombok",
         "//884-pms-commons:module",
         "//900-git-sync-sdk:module",
+        "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
         "//937-persistence-tracer:module",
         "//940-feature-flag:module",

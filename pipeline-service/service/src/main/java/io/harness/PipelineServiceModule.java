@@ -72,6 +72,7 @@ import io.harness.opaclient.OpaClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
+import io.harness.perpetualtask.client.PerpetualTaskResourceClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -364,7 +365,8 @@ public class PipelineServiceModule extends AbstractModule {
         configuration.getAccessControlClientConfiguration(), PIPELINE_SERVICE.getServiceId()));
     install(new PollResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), MANAGER.getServiceId()));
-
+    install(new PerpetualTaskResourceClientModule(
+        configuration.getManagerClientConfig(), configuration.getManagerServiceSecret(), MANAGER.getServiceId()));
     install(new OrganizationClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new ProjectClientModule(configuration.getNgManagerServiceHttpClientConfig(),

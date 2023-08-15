@@ -14,6 +14,7 @@ java_library(
     deps = [
         "//:lombok",
         "//867-polling-contracts/src/main/proto:867_polling_contracts_java_proto",
+        "//930-delegate-tasks:module",
         "//950-delegate-tasks-beans:module",
         "//970-ng-commons:module",
         "//980-commons:module",

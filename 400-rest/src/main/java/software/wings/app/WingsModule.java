@@ -223,6 +223,7 @@ import io.harness.pcf.CfDeploymentManager;
 import io.harness.perpetualtask.PerpetualTaskScheduleService;
 import io.harness.perpetualtask.PerpetualTaskScheduleServiceImpl;
 import io.harness.perpetualtask.PerpetualTaskServiceModule;
+import io.harness.perpetualtask.client.PerpetualTaskResourceClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollResourceClientModule;
 import io.harness.project.ProjectClientModule;
@@ -1535,7 +1536,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     install(new PollResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
-
+    install(new PerpetualTaskResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),
+        configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
     install(new NGSettingsClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
 

@@ -35,6 +35,7 @@ import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.internal.PerpetualTaskRecordDao;
+import io.harness.pms.triggers.PerpetualTaskInfoForTriggers;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.service.intfc.PerpetualTaskStateObserver;
 
@@ -267,7 +268,18 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   public PerpetualTaskRecord getTaskRecord(String taskId) {
     return perpetualTaskRecordDao.getTask(taskId);
   }
-
+  @Override
+  public PerpetualTaskInfoForTriggers getTaskInfoForTriggers(String taskId) {
+    PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
+    if (perpetualTaskRecord == null) {
+      return PerpetualTaskInfoForTriggers.builder().build();
+    }
+    return PerpetualTaskInfoForTriggers.builder()
+        .taskDescription(perpetualTaskRecord.getTaskDescription())
+        .unassignedReason(perpetualTaskRecord.getUnassignedReason())
+        .state(perpetualTaskRecord.getState())
+        .build();
+  }
   @Override
   public String getPerpetualTaskType(String taskId) {
     PerpetualTaskRecord perpetualTaskRecord = getTaskRecord(taskId);

@@ -127,6 +127,10 @@ public class BuildTriggerEventMapper {
                   unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity().getProjectIdentifier())
               .finalStatus(unMatchedTriggerInfo.getFinalStatus().toString())
               .message(unMatchedTriggerInfo.getMessage())
+              .eventCreatedAt(System.currentTimeMillis())
+              .build(webhookEventMappingResponse.getWebhookEventResponse() == null
+                      ? null
+                      : webhookEventMappingResponse.getWebhookEventResponse().getBuild())
               .orgIdentifier(unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity().getOrgIdentifier())
               .targetIdentifier(unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity().getTargetIdentifier())
               .triggerIdentifier(unMatchedTriggerInfo.getUnMatchedTriggers().getNgTriggerEntity().getIdentifier())
