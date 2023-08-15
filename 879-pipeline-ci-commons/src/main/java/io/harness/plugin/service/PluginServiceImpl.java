@@ -46,7 +46,10 @@ import io.harness.utils.CiCodebaseUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuild;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.CommitShaBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 
@@ -127,8 +130,8 @@ public class PluginServiceImpl implements PluginService {
       Ambiance ambiance, ConnectorDetails gitConnector, GitCloneStepInfo gitCloneStepInfo) {
     final String identifier = gitCloneStepInfo.getIdentifier();
     final String type = gitCloneStepInfo.getStepType().getType();
-    Build build = RunTimeInputHandler.resolveBuild(gitCloneStepInfo.getBuild());
-    final Pair<BuildType, String> buildTypeAndValue = getBuildTypeAndValue(build);
+    GitCloneStepBuild build = resolveBuild(gitCloneStepInfo.getBuild());
+    final Pair<GitCloneStepBuildType, String> buildTypeAndValue = getBuildTypeAndValue(build);
     Map<String, String> map = new HashMap<>();
 
     if (buildTypeAndValue != null) {
@@ -142,6 +145,9 @@ public class PluginServiceImpl implements PluginService {
           break;
         case PR:
           map.putAll(ciCodebaseUtils.getRuntimeCodebaseVars(ambiance, gitConnector));
+          break;
+        case COMMIT_SHA:
+          setMandatoryEnvironmentVariable(map, DRONE_COMMIT_SHA, buildTypeAndValue.getValue());
           break;
         default:
           throw new CIStageExecutionException(format("%s is not a valid build type in step type %s with identifier %s",
@@ -165,24 +171,29 @@ public class PluginServiceImpl implements PluginService {
     envVarMap.put(var, value);
   }
 
-  private static Pair<BuildType, String> getBuildTypeAndValue(Build build) {
-    Pair<BuildType, String> buildTypeAndValue = null;
+  private static Pair<GitCloneStepBuildType, String> getBuildTypeAndValue(GitCloneStepBuild build) {
+    Pair<GitCloneStepBuildType, String> buildTypeAndValue = null;
     if (build != null) {
       switch (build.getType()) {
         case PR:
           ParameterField<String> number = ((PRBuildSpec) build.getSpec()).getNumber();
           String numberString = resolveStringParameter("number", "Git Clone", "identifier", number, false);
-          buildTypeAndValue = new ImmutablePair<>(BuildType.PR, numberString);
+          buildTypeAndValue = new ImmutablePair<>(GitCloneStepBuildType.PR, numberString);
           break;
         case BRANCH:
           ParameterField<String> branch = ((BranchBuildSpec) build.getSpec()).getBranch();
           String branchString = resolveStringParameter("branch", "Git Clone", "identifier", branch, false);
-          buildTypeAndValue = new ImmutablePair<>(BuildType.BRANCH, branchString);
+          buildTypeAndValue = new ImmutablePair<>(GitCloneStepBuildType.BRANCH, branchString);
           break;
         case TAG:
           ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
           String tagString = resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
-          buildTypeAndValue = new ImmutablePair<>(BuildType.TAG, tagString);
+          buildTypeAndValue = new ImmutablePair<>(GitCloneStepBuildType.TAG, tagString);
+          break;
+        case COMMIT_SHA:
+          ParameterField<String> commitSha = ((CommitShaBuildSpec) build.getSpec()).getCommitSha();
+          String commitShaString = resolveStringParameter("commitSha", "Git Clone", "identifier", commitSha, false);
+          buildTypeAndValue = new ImmutablePair<>(GitCloneStepBuildType.COMMIT_SHA, commitShaString);
           break;
         default:
           throw new CIStageExecutionException(format("%s is not a valid build type.", build.getType()));
@@ -281,5 +292,13 @@ public class PluginServiceImpl implements PluginService {
   @Override
   public Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginCompatibleStep step, String identifier) {
     return new HashMap<>();
+  }
+
+  private static GitCloneStepBuild resolveBuild(ParameterField<GitCloneStepBuild> buildDetails) {
+    if (buildDetails == null || buildDetails.isExpression() || buildDetails.getValue() == null) {
+      return null;
+    } else {
+      return buildDetails.getValue();
+    }
   }
 }

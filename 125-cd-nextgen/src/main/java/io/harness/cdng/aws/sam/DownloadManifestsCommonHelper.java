@@ -22,6 +22,7 @@ import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.GeneralException;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -33,6 +34,9 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuild;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildSpec;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 
 import com.google.inject.Inject;
@@ -80,7 +84,7 @@ public class DownloadManifestsCommonHelper {
         .name(gitManifestOutcome.getIdentifier())
         .connectorRef(gitStoreConfig.getConnectorRef())
         .repoName(gitStoreConfig.getRepoName())
-        .build(ParameterField.<Build>builder().value(build).build())
+        .build(ParameterField.<GitCloneStepBuild>builder().value(getGitCloneStepBuild(build)).build())
         .build();
   }
 
@@ -97,7 +101,7 @@ public class DownloadManifestsCommonHelper {
         .connectorRef(gitStoreConfig.getConnectorRef())
         .repoName(gitStoreConfig.getRepoName())
         .outputFilePathsContent(ParameterField.<List<String>>builder().value(outputFilePathContent).build())
-        .build(ParameterField.<Build>builder().value(build).build())
+        .build(ParameterField.<GitCloneStepBuild>builder().value(getGitCloneStepBuild(build)).build())
         .build();
   }
 
@@ -125,5 +129,22 @@ public class DownloadManifestsCommonHelper {
 
   public String getGitCloneStepIdentifier(ManifestOutcome gitManifestOutcome) {
     return GIT_CLONE_STEP_ID + gitManifestOutcome.getIdentifier();
+  }
+
+  private GitCloneStepBuild getGitCloneStepBuild(Build build) {
+    GitCloneStepBuildType buildType;
+    switch (build.getType()) {
+      case BRANCH:
+        buildType = GitCloneStepBuildType.BRANCH;
+        return GitCloneStepBuild.builder().type(buildType).spec((GitCloneStepBuildSpec) build.getSpec()).build();
+      case PR:
+        buildType = GitCloneStepBuildType.PR;
+        return GitCloneStepBuild.builder().type(buildType).spec((GitCloneStepBuildSpec) build.getSpec()).build();
+      case TAG:
+        buildType = GitCloneStepBuildType.TAG;
+        return GitCloneStepBuild.builder().type(buildType).spec((GitCloneStepBuildSpec) build.getSpec()).build();
+      default:
+        throw new CIStageExecutionException(format("%s is not a valid build type", build.getType()));
+    }
   }
 }

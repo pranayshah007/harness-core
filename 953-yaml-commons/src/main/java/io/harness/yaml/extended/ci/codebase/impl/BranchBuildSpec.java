@@ -14,6 +14,7 @@ import static io.harness.yaml.extended.ci.codebase.BuildTypeConstants.BRANCH;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildSpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -27,6 +28,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("io.harness.yaml.extended.ci.impl.BranchBuildSpec")
 @JsonTypeName(BRANCH)
 @OwnedBy(CI)
-public class BranchBuildSpec implements BuildSpec {
+public class BranchBuildSpec implements BuildSpec, GitCloneStepBuildSpec {
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> branch;
 }

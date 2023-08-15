@@ -28,7 +28,6 @@ import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
-import static io.harness.yaml.extended.ci.codebase.Build.builder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -84,9 +83,9 @@ import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
 import io.harness.utils.CiCodebaseUtils;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
-import io.harness.yaml.extended.ci.codebase.Build;
-import io.harness.yaml.extended.ci.codebase.BuildSpec;
-import io.harness.yaml.extended.ci.codebase.BuildType;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuild;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildSpec;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
@@ -584,11 +583,11 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Owner(developers = JAMES_RICKS)
   @Category(UnitTests.class)
   public void shouldGetGitClonePluginCompatibleStepInfoBuildTypeTagEnvVariables() {
-    BuildType buildType = BuildType.TAG;
+    GitCloneStepBuildType buildType = GitCloneStepBuildType.TAG;
     String buildValue = "myTag";
     String repoName = "myRepoName";
 
-    final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
+    final ParameterField<GitCloneStepBuild> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
                                           .connectorRef(ParameterField.createValueField("myConnectorRef"))
                                           .build(buildParameter)
@@ -615,7 +614,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Owner(developers = JAMES_RICKS)
   @Category(UnitTests.class)
   public void shouldGetGitClonePluginCompatibleStepInfoEnvVariables() {
-    BuildType buildType = BuildType.BRANCH;
+    GitCloneStepBuildType buildType = GitCloneStepBuildType.BRANCH;
     String buildValue = "main";
     boolean sslVerify = true;
     String connectorRef = "myConnectorRef";
@@ -635,7 +634,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     when(codebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
     when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
 
-    final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
+    final ParameterField<GitCloneStepBuild> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
                                           .sslVerify(ParameterField.createValueField(sslVerify))
                                           .build(buildParameter)
@@ -665,7 +664,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Owner(developers = JAMES_RICKS)
   @Category(UnitTests.class)
   public void shouldGetGitClonePluginCompatibleStepInfoNoCloneDirAccountUrlEnvVariables() {
-    BuildType buildType = BuildType.BRANCH;
+    GitCloneStepBuildType buildType = GitCloneStepBuildType.BRANCH;
     String buildValue = "main";
     boolean sslVerify = true;
     String connectorRef = "myConnectorRef";
@@ -686,7 +685,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     when(codebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
     when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
 
-    final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
+    final ParameterField<GitCloneStepBuild> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
                                           .sslVerify(ParameterField.createValueField(sslVerify))
                                           .build(buildParameter)
@@ -715,7 +714,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Owner(developers = JAMES_RICKS)
   @Category(UnitTests.class)
   public void shouldGetGitClonePluginCompatibleStepInfoNoCloneDirRepoUrlEnvVariables() {
-    BuildType buildType = BuildType.BRANCH;
+    GitCloneStepBuildType buildType = GitCloneStepBuildType.BRANCH;
     String buildValue = "main";
     boolean sslVerify = true;
     String connectorRef = "myConnectorRef";
@@ -737,7 +736,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, null)).thenReturn(gitEnvVars);
 
-    final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
+    final ParameterField<GitCloneStepBuild> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
                                           .sslVerify(ParameterField.createValueField(sslVerify))
                                           .build(buildParameter)
@@ -766,11 +765,11 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Owner(developers = JAMES_RICKS)
   @Category(UnitTests.class)
   public void shouldGetGitClonePluginCompatibleStepInfoInvalidCloneDirEnvVariables() {
-    BuildType buildType = BuildType.TAG;
+    GitCloneStepBuildType buildType = GitCloneStepBuildType.TAG;
     String buildValue = "myTag";
     String cloneDir = "/harness";
 
-    final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
+    final ParameterField<GitCloneStepBuild> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
                                           .connectorRef(ParameterField.createValueField("myConnectorRef"))
                                           .build(buildParameter)
@@ -807,9 +806,9 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   public void shouldGetGitClonePluginCompatibleStepInfoZeroDepthEnvVariables() {
     boolean sslVerify = false;
     String repoName = "myRepoName";
-    BuildType buildType = BuildType.BRANCH;
+    GitCloneStepBuildType buildType = GitCloneStepBuildType.BRANCH;
     String buildValue = "main";
-    final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
+    final ParameterField<GitCloneStepBuild> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
                                           .connectorRef(ParameterField.createValueField("myConnectorRef"))
                                           .repoName(ParameterField.createValueField(repoName))
@@ -835,18 +834,18 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     assertThat(actual).isEqualTo(expected);
   }
 
-  private static ParameterField<Build> createBuildParameter(BuildType buildType, String value) {
+  private static ParameterField<GitCloneStepBuild> createBuildParameter(GitCloneStepBuildType buildType, String value) {
     final ParameterField<String> buildStringParameter = ParameterField.<String>builder().value(value).build();
-    BuildSpec buildSpec = null;
-    if (BuildType.BRANCH == buildType) {
+    GitCloneStepBuildSpec buildSpec = null;
+    if (GitCloneStepBuildType.BRANCH == buildType) {
       buildSpec = BranchBuildSpec.builder().branch(buildStringParameter).build();
-    } else if (BuildType.TAG == buildType) {
+    } else if (GitCloneStepBuildType.TAG == buildType) {
       buildSpec = TagBuildSpec.builder().tag(buildStringParameter).build();
-    } else if (BuildType.PR == buildType) {
+    } else if (GitCloneStepBuildType.PR == buildType) {
       buildSpec = PRBuildSpec.builder().number(buildStringParameter).build();
     }
-    final Build build = builder().spec(buildSpec).type(buildType).build();
-    return ParameterField.<Build>builder().value(build).build();
+    final GitCloneStepBuild build = GitCloneStepBuild.builder().spec(buildSpec).type(buildType).build();
+    return ParameterField.<GitCloneStepBuild>builder().value(build).build();
   }
 
   @Test

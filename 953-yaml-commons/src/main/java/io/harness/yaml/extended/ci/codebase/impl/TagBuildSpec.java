@@ -14,6 +14,7 @@ import static io.harness.yaml.extended.ci.codebase.BuildTypeConstants.TAG;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildSpec;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -27,6 +28,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("io.harness.yaml.extended.ci.impl.TagBuildSpec")
 @JsonTypeName(TAG)
 @OwnedBy(CI)
-public class TagBuildSpec implements BuildSpec {
+public class TagBuildSpec implements BuildSpec, GitCloneStepBuildSpec {
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> tag;
 }

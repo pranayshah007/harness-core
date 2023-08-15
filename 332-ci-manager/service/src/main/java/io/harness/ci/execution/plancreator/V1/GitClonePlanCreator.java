@@ -12,6 +12,8 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.nodes.GitCloneStepNode;
@@ -22,7 +24,11 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
+import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuild;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildSpec;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildType;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Set;
@@ -54,7 +60,9 @@ public class GitClonePlanCreator extends CIPMSStepPlanCreatorV2<GitCloneStepNode
                                             .depth(codeBase.getDepth())
                                             .sslVerify(codeBase.getSslVerify())
                                             .resources(codeBase.getResources())
-                                            .build(codeBase.getBuild())
+                                            .build(ParameterField.<GitCloneStepBuild>builder()
+                                                       .value(getGitCloneStepBuild(codeBase.getBuild().getValue()))
+                                                       .build())
                                             .cloneDirectory(ParameterField.createValueField(STEP_MOUNT_PATH))
                                             .build();
 
@@ -66,6 +74,23 @@ public class GitClonePlanCreator extends CIPMSStepPlanCreatorV2<GitCloneStepNode
         .type(GitCloneStepNode.StepType.GitClone)
         .gitCloneStepInfo(gitCloneStepInfo)
         .build();
+  }
+
+  private GitCloneStepBuild getGitCloneStepBuild(Build build) {
+    GitCloneStepBuildType buildType;
+    switch (build.getType()) {
+      case BRANCH:
+        buildType = GitCloneStepBuildType.BRANCH;
+        return GitCloneStepBuild.builder().type(buildType).spec((GitCloneStepBuildSpec) build.getSpec()).build();
+      case PR:
+        buildType = GitCloneStepBuildType.PR;
+        return GitCloneStepBuild.builder().type(buildType).spec((GitCloneStepBuildSpec) build.getSpec()).build();
+      case TAG:
+        buildType = GitCloneStepBuildType.TAG;
+        return GitCloneStepBuild.builder().type(buildType).spec((GitCloneStepBuildSpec) build.getSpec()).build();
+      default:
+        throw new CIStageExecutionException(format("%s is not a valid build type", build.getType()));
+    }
   }
 
   @Override

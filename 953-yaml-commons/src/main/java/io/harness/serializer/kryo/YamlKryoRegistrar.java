@@ -25,8 +25,11 @@ import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuild;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildType;
 import io.harness.yaml.extended.ci.codebase.PRCloneStrategy;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.CommitShaBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.extended.ci.container.ContainerResource;
@@ -65,5 +68,8 @@ public class YamlKryoRegistrar implements KryoRegistrar {
     kryo.register(RegistryCredential.class, 88516);
     kryo.register(Options.class, 88517);
     kryo.register(Clone.class, 88518);
+    kryo.register(GitCloneStepBuild.class, 88519);
+    kryo.register(GitCloneStepBuildType.class, 88520);
+    kryo.register(CommitShaBuildSpec.class, 88521);
   }
 }

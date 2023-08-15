@@ -29,7 +29,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
-import io.harness.yaml.extended.ci.codebase.Build;
+import io.harness.yaml.extended.ci.codebase.GitCloneStepBuild;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -88,10 +88,10 @@ public class GitCloneStepInfo implements PluginCompatibleStep, WithConnectorRef 
   @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> projectName;
 
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = "io.harness.yaml.extended.ci.codebase.Build")
+  @ApiModelProperty(dataType = "io.harness.yaml.extended.ci.codebase.GitCloneStepBuild")
   @NotNull
   @VariableExpression(skipVariableExpression = true)
-  ParameterField<Build> build;
+  ParameterField<GitCloneStepBuild> build;
 
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> depth;
 
@@ -103,10 +103,10 @@ public class GitCloneStepInfo implements PluginCompatibleStep, WithConnectorRef 
 
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "connectorRef", "resources", "runAsUser", "repoName", "build",
-      "projectName", "depth", "sslVerify", "cloneDirectory", "outputFilePathsContent"})
+      "projectName", "depth", "sslVerify", "test", "cloneDirectory", "outputFilePathsContent"})
   public GitCloneStepInfo(String identifier, String name, int retry, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<Integer> runAsUser, ParameterField<String> repoName,
-      ParameterField<Build> build, ParameterField<String> projectName, ParameterField<Integer> depth,
+      ParameterField<GitCloneStepBuild> build, ParameterField<String> projectName, ParameterField<Integer> depth,
       ParameterField<Boolean> sslVerify, ParameterField<String> cloneDirectory,
       ParameterField<List<String>> outputFilePathsContent) {
     this.identifier = identifier;
