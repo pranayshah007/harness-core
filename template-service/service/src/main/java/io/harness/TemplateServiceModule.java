@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -88,6 +89,8 @@ import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.health.HealthResource;
 import io.harness.template.health.HealthResourceImpl;
 import io.harness.template.mappers.TemplateFilterPropertiesMapper;
+import io.harness.template.resources.NGGlobalTemplateResource;
+import io.harness.template.resources.NGGlobalTemplateResourceImpl;
 import io.harness.template.resources.NGTemplateRefreshResource;
 import io.harness.template.resources.NGTemplateRefreshResourceImpl;
 import io.harness.template.resources.NGTemplateResource;
@@ -253,6 +256,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(NGTemplateSchemaService.class).to(NGTemplateSchemaServiceImpl.class);
     bind(TemplateRefreshService.class).to(TemplateRefreshServiceImpl.class);
     bind(NGTemplateResource.class).to(NGTemplateResourceImpl.class);
+    bind(NGGlobalTemplateResource.class).to(NGGlobalTemplateResourceImpl.class);
     bind(NGTemplateRefreshResource.class).to(NGTemplateRefreshResourceImpl.class);
     bind(NGTemplateSchemaResource.class).to(NGTemplateSchemaResourceImpl.class);
     bind(HealthResource.class).to(HealthResourceImpl.class);

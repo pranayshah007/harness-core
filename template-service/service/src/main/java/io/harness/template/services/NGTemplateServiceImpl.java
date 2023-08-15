@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
-import static io.harness.git.Constants.REPOSITORY;
 import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.INLINE_TO_REMOTE;
 import static io.harness.gitaware.helper.TemplateMoveConfigOperationType.getMoveConfigType;
 import static io.harness.remote.client.NGRestUtils.getResponse;
@@ -22,7 +21,9 @@ import static io.harness.template.resources.beans.NGTemplateConstants.DEFAULT_BR
 import static io.harness.template.resources.beans.NGTemplateConstants.FILE_ADDED;
 import static io.harness.template.resources.beans.NGTemplateConstants.FILE_MODIFIED;
 import static io.harness.template.resources.beans.NGTemplateConstants.IDENTIFIER;
+import static io.harness.template.resources.beans.NGTemplateConstants.LIST_PARTITION;
 import static io.harness.template.resources.beans.NGTemplateConstants.NAME;
+import static io.harness.template.resources.beans.NGTemplateConstants.REPOSITORY;
 import static io.harness.template.resources.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.template.resources.beans.PermissionTypes.TEMPLATE_VIEW_PERMISSION;
 
@@ -63,7 +64,8 @@ import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.TemplateAlreadyExistsException;
 import io.harness.git.model.ChangeType;
-import io.harness.gitaware.dto.GitContextRequestParams;
+import io.harness.gitaware.dto.FetchRemoteEntityRequest;
+import io.harness.gitaware.dto.GetFileGitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitaware.helper.TemplateMoveConfigOperationDTO;
@@ -91,6 +93,7 @@ import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.organization.remote.OrganizationClient;
+import io.harness.persistence.gitaware.GitAware;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -126,6 +129,7 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -136,6 +140,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -1589,8 +1594,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       ArrayList<String> filePaths = fetchFilesDetails(webhookEvent, FILE_ADDED);
       List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = Collections.emptyList();
       if (EmptyPredicate.isNotEmpty(filePaths)) {
-        templateWrapperResponseDTOS = createGlobalTemplate(accountId, orgId, projectId, repoName, branch, branch,
-            comments, connectorRef, filePaths, setDefaultTemplate, isNewTemplate);
+        templateWrapperResponseDTOS = createGlobalTemplate(accountId, orgId, projectId, repoName, branch, comments,
+            connectorRef, filePaths, setDefaultTemplate, isNewTemplate);
       }
       filePaths = fetchFilesDetails(webhookEvent, FILE_MODIFIED);
       if (EmptyPredicate.isNotEmpty(filePaths)) {
@@ -1608,15 +1613,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments,
       String connectorRef) {
     List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = new ArrayList<>();
-    String readMeFilePath;
-    for (String filePath : filePaths) {
-      GlobalTemplateEntity globalTemplateEntity =
-          getGitContent(accountId, orgId, projectId, filePath, repoName, branch, branch, connectorRef, false);
-      readMeFilePath = fetchReadMeFilePath(filePath);
-      globalTemplateEntity.setReadMe(getReadMeGitFileContent(
-          accountId, orgId, projectId, readMeFilePath, repoName, branch, branch, connectorRef, false));
-      globalTemplateEntity =
-          NGTemplateDtoMapper.toGlobalTemplateEntity(accountId, orgId, projectId, globalTemplateEntity.getYaml());
+    Map<String, GlobalTemplateEntity> globalTemplateEntities =
+        getGitContentForGlobalTemplates(accountId, orgId, projectId, filePaths, repoName, branch, connectorRef, false);
+    globalTemplateEntities.forEach((key, globalTemplateEntity) -> {
+      globalTemplateEntity = NGTemplateDtoMapper.toGlobalTemplateEntity(
+          accountId, orgId, projectId, globalTemplateEntity.getYaml(), globalTemplateEntity.getReadMe());
       GlobalTemplateEntity updateTemplate =
           updateTemplateEntity(globalTemplateEntity, ChangeType.MODIFY, setDefaultTemplate, comments);
       TemplateWrapperResponseDTO templateWrapperResponseDTO =
@@ -1625,7 +1626,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
               .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(updateTemplate))
               .build();
       templateWrapperResponseDTOS.add(templateWrapperResponseDTO);
-    }
+    });
     return templateWrapperResponseDTOS;
   }
 
@@ -1737,19 +1738,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private List<TemplateWrapperResponseDTO> createGlobalTemplate(String accountId, String orgId, String projectId,
-      String repoName, String branch, String fallBackBranch, String comments, String connectorRef,
-      ArrayList<String> filePaths, boolean setDefaultTemplate, boolean isNewTemplate) {
+      String repoName, String branch, String comments, String connectorRef, ArrayList<String> filePaths,
+      boolean setDefaultTemplate, boolean isNewTemplate) {
     List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = new ArrayList<>();
-    String readMeFilePath;
-    for (String filePath : filePaths) {
-      GlobalTemplateEntity globalTemplateEntity =
-          getGitContent(accountId, orgId, projectId, filePath, repoName, branch, fallBackBranch, connectorRef, false);
-      readMeFilePath = fetchReadMeFilePath(filePath);
-      String readMe = getReadMeGitFileContent(
-          accountId, orgId, projectId, readMeFilePath, repoName, branch, branch, connectorRef, false);
-      globalTemplateEntity =
-          NGTemplateDtoMapper.toGlobalTemplateEntity(accountId, orgId, projectId, globalTemplateEntity.getYaml());
-      globalTemplateEntity.setReadMe(readMe);
+    Map<String, GlobalTemplateEntity> globalTemplateEntities =
+        getGitContentForGlobalTemplates(accountId, orgId, projectId, filePaths, repoName, branch, connectorRef, false);
+    globalTemplateEntities.forEach((key, globalTemplateEntity) -> {
+      globalTemplateEntity = NGTemplateDtoMapper.toGlobalTemplateEntity(
+          accountId, orgId, projectId, globalTemplateEntity.getYaml(), globalTemplateEntity.getReadMe());
       GlobalTemplateEntity createdTemplate = create(globalTemplateEntity, setDefaultTemplate, comments, isNewTemplate);
       TemplateWrapperResponseDTO templateWrapperResponseDTO =
           TemplateWrapperResponseDTO.builder()
@@ -1757,60 +1753,54 @@ public class NGTemplateServiceImpl implements NGTemplateService {
               .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(createdTemplate))
               .build();
       templateWrapperResponseDTOS.add(templateWrapperResponseDTO);
-    }
+    });
     return templateWrapperResponseDTOS;
   }
 
-  String fetchReadMeFilePath(String filePath) {
-    if (EmptyPredicate.isNotEmpty(filePath)) {
-      String[] path = filePath.split("/");
-      return filePath.replace(path[path.length - 1], "README.md");
+  public List<String> fetchReadMeFilePath(List<String> filePaths) {
+    List<String> readMeFile = new ArrayList<>();
+    for (String filePath : filePaths) {
+      if (EmptyPredicate.isNotEmpty(filePath)) {
+        String[] path = filePath.split("/");
+        readMeFile.add(filePath.replace(path[path.length - 1], "README.md"));
+      }
     }
-    return null;
+    return readMeFile;
   }
 
-  public GlobalTemplateEntity getGitContent(String accountId, String orgIdentifier, String projectIdentifier,
-      String filePath, String repoName, String branch, String fallBackBranch, String connectorRef,
+  public Map<String, GlobalTemplateEntity> getGitContentForGlobalTemplates(String accountId, String orgIdentifier,
+      String projectIdentifier, List<String> filePathList, String repoName, String branch, String connectorRef,
       boolean loadFromCache) {
-    return (GlobalTemplateEntity) gitAwareEntityHelper.fetchEntityFromRemote(GlobalTemplateEntity.builder()
-                                                                                 .branch(branch)
-                                                                                 .fallBackBranch(fallBackBranch)
-                                                                                 .repo(repoName)
-                                                                                 .filePath(filePath)
-                                                                                 .build(),
-        io.harness.beans.Scope.of(accountId, orgIdentifier, projectIdentifier),
-        GitContextRequestParams.builder()
-            .branchName(branch)
+    Map<String, GlobalTemplateEntity> batchTemplateEntities = new HashMap<>();
+    Map<String, GitAware> remoteEntities = new HashMap<>();
+    GetFileGitContextRequestParams.GetFileGitContextRequestParamsBuilder getFileGitContextRequestParams =
+        GetFileGitContextRequestParams.builder()
             .connectorRef(connectorRef)
-            .filePath(filePath)
             .repoName(repoName)
+            .getOnlyFileContent(TemplateUtils.isExecutionFlow())
             .entityType(EntityType.TEMPLATE)
             .loadFromCache(loadFromCache)
-            .getOnlyFileContent(TemplateUtils.isExecutionFlow())
-            .build(),
-        Collections.emptyMap());
-  }
+            .branchName(branch);
+    for (List<String> filePaths : Lists.partition(filePathList, LIST_PARTITION)) {
+      Map<String, FetchRemoteEntityRequest> fetchRemoteEntityRequestMap = new HashMap<>();
+      // Adding the ReadMe file path of the Template version
+      filePaths.addAll(fetchReadMeFilePath(filePaths));
+      filePaths.forEach(filePath
+          -> fetchRemoteEntityRequestMap.put(filePath,
+              FetchRemoteEntityRequest.builder()
+                  .contextMap(Collections.emptyMap())
+                  .entity(GlobalTemplateEntity.builder().accountId(accountId).build())
+                  .scope(io.harness.beans.Scope.of(accountId, orgIdentifier, projectIdentifier))
+                  .getFileGitContextRequestParams(getFileGitContextRequestParams.filePath(filePath).build())
+                  .build()));
+      remoteEntities.putAll(
+          gitAwareEntityHelper.fetchGlobalTemplateEntitiesFromRemote(accountId, fetchRemoteEntityRequestMap));
+    }
 
-  public String getReadMeGitFileContent(String accountId, String orgIdentifier, String projectIdentifier,
-      String filePath, String repoName, String branch, String fallBackBranch, String connectorRef,
-      boolean loadFromCache) {
-    return gitAwareEntityHelper.fetchReadMeFileFromRemote(GlobalTemplateEntity.builder()
-                                                              .branch(branch)
-                                                              .fallBackBranch(fallBackBranch)
-                                                              .repo(repoName)
-                                                              .filePath(filePath)
-                                                              .build(),
-        io.harness.beans.Scope.of(accountId, orgIdentifier, projectIdentifier),
-        GitContextRequestParams.builder()
-            .branchName(branch)
-            .connectorRef(connectorRef)
-            .filePath(filePath)
-            .repoName(repoName)
-            .entityType(EntityType.TEMPLATE)
-            .loadFromCache(loadFromCache)
-            .getOnlyFileContent(TemplateUtils.isExecutionFlow())
-            .build(),
-        Collections.emptyMap());
+    for (Map.Entry<String, GitAware> remoteEntity : remoteEntities.entrySet()) {
+      batchTemplateEntities.put(remoteEntity.getKey(), (GlobalTemplateEntity) remoteEntity.getValue());
+    }
+    return batchTemplateEntities;
   }
 
   public GlobalTemplateEntity create(
@@ -2052,8 +2042,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       HashMap<String, Object> triggerPayloadMap = JsonPipelineUtils.read(webhookEvent, HashMap.class);
       ArrayList<Object> commitsList = (ArrayList) triggerPayloadMap.get(COMMITS);
       ArrayList<String> filePathList = new ArrayList<>();
-      for (Object test : commitsList) {
-        HashMap<String, Object> map = (HashMap<String, Object>) test;
+      for (Object commit : commitsList) {
+        HashMap<String, Object> map = (HashMap<String, Object>) commit;
         filePathList = (ArrayList) map.get(actionType);
       }
       return filePathList;

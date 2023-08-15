@@ -242,11 +242,17 @@ public class GitAwareEntityHelper {
   public Map<String, GitAware> fetchEntitiesFromRemote(
       String accountIdentifier, Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
     ScmGetBatchFileRequest scmGetBatchFileRequest = prepareScmGetBatchFilesRequest(remoteTemplatesList);
-
     ScmGetBatchFilesResponse scmGetBatchFilesResponse =
         scmGitSyncHelper.getBatchFilesByBranch(accountIdentifier, scmGetBatchFileRequest);
-
     return processScmGetBatchFiles(scmGetBatchFilesResponse.getBatchFilesResponse(), remoteTemplatesList);
+  }
+
+  public Map<String, GitAware> fetchGlobalTemplateEntitiesFromRemote(
+      String accountIdentifier, Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
+    ScmGetBatchFileRequest scmGetBatchFileRequest = prepareScmGetBatchFilesRequest(remoteTemplatesList);
+    ScmGetBatchFilesResponse scmGetBatchFilesResponse =
+        scmGitSyncHelper.getBatchFilesByBranch(accountIdentifier, scmGetBatchFileRequest);
+    return processScmGetBatchFilesWithReadMe(scmGetBatchFilesResponse.getBatchFilesResponse(), remoteTemplatesList);
   }
 
   private ScmGetBatchFileRequest prepareScmGetBatchFilesRequest(
@@ -303,10 +309,28 @@ public class GitAwareEntityHelper {
     getBatchFilesResponse.forEach((identifier, scmGetFileResponse) -> {
       GitAware gitAwareEntity = remoteTemplatesList.get(identifier).getEntity();
       gitAwareEntity.setData(scmGetFileResponse.getFileContent());
-
       batchFilesResponse.put(identifier, gitAwareEntity);
     });
+    return batchFilesResponse;
+  }
 
+  private Map<String, GitAware> processScmGetBatchFilesWithReadMe(Map<String, ScmGetFileResponse> getBatchFilesResponse,
+      Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
+    Map<String, GitAware> batchFilesResponse = new HashMap<>();
+
+    getBatchFilesResponse.forEach((identifier, scmGetFileResponse) -> {
+      GitAware gitAwareEntity = remoteTemplatesList.get(identifier).getEntity();
+      String filePath = scmGetFileResponse.getGitMetaData().getFilePath();
+      if (filePath.endsWith(".yaml") || filePath.endsWith(".yml")) {
+        gitAwareEntity.setData(scmGetFileResponse.getFileContent());
+        String[] path = filePath.split("/");
+        String readMeFile = filePath.replace(path[path.length - 1], "README.md");
+        if (getBatchFilesResponse.containsKey(readMeFile)) {
+          gitAwareEntity.setReadMe(getBatchFilesResponse.get(readMeFile).getFileContent());
+        }
+        batchFilesResponse.put(identifier, gitAwareEntity);
+      }
+    });
     return batchFilesResponse;
   }
 
@@ -324,7 +348,7 @@ public class GitAwareEntityHelper {
 
   @VisibleForTesting
   void validateFilePathHasCorrectExtension(String filePath) {
-    if (!filePath.endsWith(".yaml") && !filePath.endsWith(".yml")) {
+    if (!filePath.endsWith(".yaml") && !filePath.endsWith(".yml") && !filePath.endsWith(".md")) {
       throw NestedExceptionUtils.hintWithExplanationException(FILE_PATH_INVALID_HINT,
           FILE_PATH_INVALID_EXTENSION_EXPLANATION,
           new InvalidRequestException(String.format(FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT, filePath)));

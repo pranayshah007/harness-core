@@ -36,6 +36,7 @@ public class NGTemplateConstants {
   public static final String REPOSITORY = "repository";
   public static final String DEFAULT_BRANCH = "default_branch";
   public static final String COMMITS = "commits";
+  public static final int LIST_PARTITION = 5;
   public static final String API_SAMPLE_TEMPLATE_YAML = "template:\n"
       + "  name: pipelineTemplate\n"
       + "  identifier: pipelineTemplate\n"

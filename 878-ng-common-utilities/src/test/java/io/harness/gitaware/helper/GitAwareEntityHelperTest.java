@@ -426,6 +426,16 @@ public class GitAwareEntityHelperTest extends CategoryTest {
     public void setData(String data) {
       this.data = data;
     }
+
+    @Override
+    public void setReadMe(String fileContent) {
+      return null;
+    }
+
+    @Override
+    public String getReadMe() {
+      return null;
+    }
   }
 
   private void setupGitContext(GitEntityInfo branchInfo) {

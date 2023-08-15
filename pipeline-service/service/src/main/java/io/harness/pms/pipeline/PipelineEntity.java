@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
@@ -204,6 +205,16 @@ public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEn
   @Override
   public void setData(String data) {
     yaml = data;
+  }
+
+  @Override
+  public void setReadMe(String fileContent) {
+    return null;
+  }
+
+  @Override
+  public String getReadMe() {
+    return null;
   }
 
   @Override

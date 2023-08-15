@@ -29,4 +29,8 @@ public interface GitAware extends PersistentEntity, WithIdentifier {
 
   // Connector Identifier which will be used connect to the repo
   String getConnectorRef();
+  // Set the ReadMe for the file
+  void setReadMe(String fileContent);
+  // Get the ReadMe for the file
+  String getReadMe();
 }

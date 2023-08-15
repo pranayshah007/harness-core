@@ -470,17 +470,17 @@ public class NGTemplateDtoMapper {
   }
 
   public GlobalTemplateEntity toGlobalTemplateEntity(
-      String accountId, String orgId, String projectId, String templateYaml) {
+      String accountId, String orgId, String projectId, String templateYaml, String readMe) {
     try {
       NGTemplateConfig templateConfig = getTemplateConfigOrThrow(templateYaml);
-      return toGlobalTemplateEntityResponse(accountId, orgId, projectId, templateConfig, templateYaml);
+      return toGlobalTemplateEntityResponse(accountId, orgId, projectId, templateConfig, templateYaml, readMe);
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
     }
   }
 
   public GlobalTemplateEntity toGlobalTemplateEntityResponse(
-      String accountId, String orgId, String projectId, NGTemplateConfig templateConfig, String yaml) {
+      String accountId, String orgId, String projectId, NGTemplateConfig templateConfig, String yaml, String readMe) {
     validateTemplateYaml(templateConfig, orgId, projectId);
     NGTemplateReference templateReference =
         NGTemplateReference.builder()
@@ -507,6 +507,7 @@ public class NGTemplateDtoMapper {
         .templateScope(getScopeFromTemplateDto(templateConfig.getTemplateInfoConfig()))
         .fullyQualifiedIdentifier(templateReference.getFullyQualifiedName())
         .childType(templateConfig.getTemplateInfoConfig().fetchChildType())
+        .readMe(readMe)
         .build();
   }
 
