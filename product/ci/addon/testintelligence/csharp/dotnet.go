@@ -67,7 +67,7 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	// Run all the DLLs through the injector
 	args := strings.Split(userArgs, " ")
 	for _, param := range args {
-		if strings.HasSuffix(param, ".dll")){
+		if strings.HasSuffix(param, ".dll") {
 			instrumentCmd += fmt.Sprintf("%s %s %s %s\n", dotnetCmd, agentFullName, param, agentConfigPath)
 		}
 	}
