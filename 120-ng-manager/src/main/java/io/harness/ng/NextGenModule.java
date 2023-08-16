@@ -113,6 +113,7 @@ import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.enforcement.EnforcementModule;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
+import io.harness.errortracking.client.remote.ErrorTrackingClientModule;
 import io.harness.eula.outbox.EulaEventHandler;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -710,6 +711,7 @@ public class NextGenModule extends AbstractModule {
       }
     });
     install(new NextGenPersistenceModule());
+    install(new ErrorTrackingClientModule(appConfig.getErrorTrackingClientConfig()));
     install(new CoreModule());
     install(UserClientModule.getInstance(this.appConfig.getManagerClientConfig(),
         this.appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId()));
