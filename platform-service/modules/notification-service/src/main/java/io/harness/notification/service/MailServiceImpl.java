@@ -142,7 +142,9 @@ public class MailServiceImpl implements ChannelService {
         DEFAULT_SUBJECT_BODY, DEFAULT_SUBJECT_BODY, email, notificationSettingDTO.getAccountId());
     if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
         || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
-      throw new NotificationException("Failed to send email. Check SMTP configuration.", DEFAULT_ERROR_CODE, USER);
+      throw new NotificationException(
+          String.format("Failed to send email. Check SMTP configuration. %s", response.getErrorMessage()),
+          DEFAULT_ERROR_CODE, USER);
     }
     return true;
   }
@@ -171,7 +173,9 @@ public class MailServiceImpl implements ChannelService {
         emails, ccEmails, emailDTO.getSubject(), emailDTO.getBody(), emailDTO.getNotificationId(), accountId);
     if (response.getProcessingResponse() == null || response.getProcessingResponse().getResult().isEmpty()
         || NotificationProcessingResponse.isNotificationRequestFailed(response.getProcessingResponse())) {
-      throw new NotificationException("Failed to send email. Check SMTP configuration.", DEFAULT_ERROR_CODE, USER);
+      throw new NotificationException(
+          String.format("Failed to send email. Check SMTP configuration. %s", response.getErrorMessage()),
+          DEFAULT_ERROR_CODE, USER);
     }
     if (StringUtils.isNotEmpty(errorMessage)) {
       response.setErrorMessage(errorMessage);
