@@ -473,12 +473,10 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   public List<ContainerInfo> getContainerInfos(HelmCommandRequestNG commandRequest,
       List<KubernetesResourceId> workloads, boolean useSteadyStateCheck, LogCallback logCallback, long timeoutInMillis)
       throws Exception {
-    if (useSteadyStateCheck) {
-      return getKubectlContainerInfos(commandRequest, workloads, logCallback, timeoutInMillis, true);
-    } else if (commandRequest.isDisableFabric8()) {
-      return getKubectlContainerInfos(commandRequest, workloads, logCallback, timeoutInMillis, false);
+    if (!useSteadyStateCheck && !commandRequest.isDisableFabric8()) {
+      return getFabric8ContainerInfos(commandRequest, logCallback, timeoutInMillis);
     }
-    return getFabric8ContainerInfos(commandRequest, logCallback, timeoutInMillis);
+    return getKubectlContainerInfos(commandRequest, workloads, logCallback, timeoutInMillis, useSteadyStateCheck);
   }
 
   private List<ContainerInfo> getFabric8ContainerInfos(
