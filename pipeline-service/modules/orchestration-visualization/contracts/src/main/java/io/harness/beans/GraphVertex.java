@@ -17,6 +17,7 @@ import io.harness.dto.GraphDelegateSelectionLogParams;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.logging.UnitProgress;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
@@ -51,7 +52,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class GraphVertex implements Serializable {
   private String uuid;
-  private Ambiance ambiance;
+  @Deprecated private Ambiance ambiance;
   private String planNodeId;
   private String identifier;
   private String name;
@@ -82,6 +83,8 @@ public class GraphVertex implements Serializable {
   private List<UnitProgress> unitProgresses;
   private OrchestrationMap progressData;
   private Map<String, PmsStepDetails> stepDetails;
+  Level currentLevel;
+  String baseFqn;
 
   // UI
   @Builder.Default RepresentationStrategy representationStrategy = RepresentationStrategy.CAMELCASE;

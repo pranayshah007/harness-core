@@ -26,6 +26,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.rule.Owner;
 
 import java.time.Duration;
@@ -75,7 +76,7 @@ public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase
     GraphVertex graphVertex = graphVertexConverter.convertFrom(nodeExecution, null);
     assertThat(graphVertex).isNotNull();
     assertThat(graphVertex.getUuid()).isEqualTo(nodeExecution.getUuid());
-    assertThat(graphVertex.getAmbiance()).isEqualTo(ambiance);
+    assertThat(graphVertex.getCurrentLevel()).isEqualTo(AmbianceUtils.obtainCurrentLevel(ambiance));
     assertThat(graphVertex.getPlanNodeId()).isEqualTo("setUpId");
     assertThat(graphVertex.getIdentifier()).isEqualTo("identifier");
     assertThat(graphVertex.getStartTs()).isEqualTo(10L);
@@ -111,7 +112,7 @@ public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase
     GraphVertex graphVertex = graphVertexConverter.convertFrom(nodeExecution, null, null, null);
     assertThat(graphVertex).isNotNull();
     assertThat(graphVertex.getUuid()).isEqualTo(nodeExecution.getUuid());
-    assertThat(graphVertex.getAmbiance()).isEqualTo(ambiance);
+    assertThat(graphVertex.getCurrentLevel()).isEqualTo(AmbianceUtils.obtainCurrentLevel(ambiance));
     assertThat(graphVertex.getPlanNodeId()).isEqualTo("setUpId");
     assertThat(graphVertex.getIdentifier()).isEqualTo("identifier");
     assertThat(graphVertex.getStartTs()).isEqualTo(10L);
@@ -150,7 +151,7 @@ public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase
         NodeExecutionsInfo.builder().resolvedInputs(PmsStepParameters.parse(stepParams)).build(), null);
     assertThat(graphVertex).isNotNull();
     assertThat(graphVertex.getUuid()).isEqualTo(nodeExecution.getUuid());
-    assertThat(graphVertex.getAmbiance()).isEqualTo(ambiance);
+    assertThat(graphVertex.getCurrentLevel()).isEqualTo(AmbianceUtils.obtainCurrentLevel(ambiance));
     assertThat(graphVertex.getPlanNodeId()).isEqualTo("setUpId");
     assertThat(graphVertex.getIdentifier()).isEqualTo("identifier");
     assertThat(graphVertex.getStartTs()).isEqualTo(10L);

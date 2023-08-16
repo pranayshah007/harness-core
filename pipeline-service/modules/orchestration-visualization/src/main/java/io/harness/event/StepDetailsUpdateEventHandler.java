@@ -15,7 +15,6 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
@@ -39,8 +38,8 @@ public class StepDetailsUpdateEventHandler {
         Map<String, PmsStepDetails> stepDetails =
             pmsGraphStepDetailsService.getStepDetails(planExecutionId, nodeExecutionId);
         orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).setStepDetails(stepDetails);
-        Level currentLevel = AmbianceUtils.obtainCurrentLevel(
-            orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).getAmbiance());
+        Level currentLevel =
+            orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).getCurrentLevel();
         if (Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STAGE)
             || Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STRATEGY)) {
           String stageUuid = currentLevel.getSetupId();

@@ -77,6 +77,7 @@ public class GraphVertexDTO {
   // UI
   RepresentationStrategy representationStrategy = RepresentationStrategy.CAMELCASE;
   StrategyMetadata strategyMetadata;
+  String baseFqn;
 
   public Map<String, OrchestrationMap> getOrchestrationMapOutcomes() {
     return OrchestrationMapBackwardCompatibilityUtils.convertToOrchestrationMap(outcomes);

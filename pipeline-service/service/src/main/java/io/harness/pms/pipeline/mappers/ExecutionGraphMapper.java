@@ -22,7 +22,6 @@ import io.harness.dto.GraphVertexDTO;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.PipelineExecutionSummaryKeys;
-import io.harness.pms.plan.execution.PlanExecutionUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import java.util.HashMap;
@@ -39,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class ExecutionGraphMapper {
   public ExecutionNode toExecutionNode(GraphVertexDTO graphVertex) {
-    String basefqn = PlanExecutionUtils.getFQNUsingLevelDTOs(graphVertex.getAmbiance().getLevels());
+    String basefqn = graphVertex.getBaseFqn();
     return ExecutionNode.builder()
         .endTs(graphVertex.getEndTs())
         .failureInfo(graphVertex.getFailureInfo())
