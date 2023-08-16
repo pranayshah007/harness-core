@@ -75,6 +75,33 @@ public class DelegateGrpcClientWrapper {
     return Pair.of(taskId, delegateResponseData);
   }
 
+  public DelegateResponseData executeSyncTaskV2(DelegateTaskRequest delegateTaskRequest, String planExecutionId) {
+    final ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseDataV2(
+        delegateTaskRequest, delegateCallbackTokenSupplier.get(), planExecutionId);
+    DelegateResponseData delegateResponseData;
+    if (disableDeserialization) {
+      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+      delegateResponseData = (DelegateResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
+      if (delegateResponseData instanceof ErrorNotifyResponseData) {
+        WingsException exception = ((ErrorNotifyResponseData) delegateResponseData).getException();
+        // if task registered to error handling framework on delegate, then exception won't be null
+        if (exception != null) {
+          throw exception;
+        }
+      } else if (delegateResponseData instanceof RemoteMethodReturnValueData) {
+        Throwable throwable = ((RemoteMethodReturnValueData) delegateResponseData).getException();
+        if (throwable != null) {
+          throw new InvalidRequestException(ExceptionUtils.getMessage(throwable), throwable);
+        }
+      }
+    } else {
+      delegateResponseData = (DelegateResponseData) responseData;
+    }
+    return delegateResponseData;
+  }
+
   public DelegateResponseData executeSyncTaskV2(DelegateTaskRequest delegateTaskRequest) {
     return executeSyncTaskV2ReturnTaskId(delegateTaskRequest).getValue();
   }
