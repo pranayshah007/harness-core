@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.aws.sam;
+
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
@@ -66,5 +67,5 @@ public class AwsSamBaseStepInfo {
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   private ParameterField<ImagePullPolicy> imagePullPolicy;
 
-  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samVersion;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samVersion;
 }

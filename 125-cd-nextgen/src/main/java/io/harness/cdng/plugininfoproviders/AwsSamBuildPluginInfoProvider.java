@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
+
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -162,10 +163,6 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
           password = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
               dockerUserNamePasswordDTO.getPasswordRef().toSecretRefStringValue(),
               ambiance.getExpressionFunctorToken());
-        } else {
-          String errorMessage = String.format(
-              "Only Docker Registry type connector with user name and password creds is supported in SAM Build Docker Registry");
-          throw new InvalidRequestException(errorMessage);
         }
       } else {
         String errorMessage =
