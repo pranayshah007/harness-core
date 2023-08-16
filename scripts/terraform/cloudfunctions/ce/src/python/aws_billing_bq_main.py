@@ -88,10 +88,10 @@ def main(request):
     jsonData["tableId"] = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
 
     if not create_dataset_and_tables(jsonData):
-        return "CF completed execution."
+        return "CF completed execution. jsonPayload.cloudFunctionExecutionId= \"%s\"" % util.CF_EXECUTION_ID
     ingest_data_from_csv(jsonData)
     set_available_columns(jsonData)
-    get_unique_accountids(jsonData)
+    set_query_metadata(jsonData)
 
     get_preferred_currency(jsonData)
     insert_currencies_with_unit_conversion_factors_in_bq(jsonData)
@@ -124,7 +124,7 @@ def main(request):
     })
 
     print_("Completed")
-    return "CF executed successfully."
+    return "CF executed successfully. jsonPayload.cloudFunctionExecutionId= \"%s\"" % util.CF_EXECUTION_ID
 
 
 def trigger_historical_cost_update_in_preferred_currency(jsonData):
@@ -575,10 +575,10 @@ def create_dataset_and_tables(jsonData):
             createTable(client, table_ref)
         else:
             # Enable these only when needed.
-            # if table_ref == aws_cur_table_ref:
-            #      alter_awscur_table(jsonData)
-            # elif table_ref == unified_table_ref:
-            #      alter_unified_table(jsonData)
+            if table_ref == aws_cur_table_ref:
+                 alter_awscur_table(jsonData)
+            elif table_ref == unified_table_ref:
+                 alter_unified_table(jsonData)
             print_("%s table exists" % table_ref)
 
     ds = f"{PROJECTID}.{jsonData['datasetName']}"
@@ -758,12 +758,12 @@ def ingest_data_to_awscur(jsonData):
 
     desirable_columns = ["resourceid", "usagestartdate", "productname", "productfamily", "servicecode", "servicename", "blendedrate", "blendedcost",
                          "unblendedrate", "unblendedcost", "region", "availabilityzone", "usageaccountid", "instancetype",
-                         "usagetype", "lineitemtype", "effectivecost", "billingentity", "instancefamily", "marketoption", "usageamount"]
+                         "usagetype", "lineitemtype", "effectivecost", "billingentity", "instancefamily", "marketoption", "usageamount",
+                         "billingperiodstartdate", "billingperiodenddate"]
     if jsonData.get('accountId') in ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE:
         desirable_columns += ["payeraccountid", "lineitemdescription", "billtype", "usagetype_1", "description", "pricingunit",
                               "publicondemandcost", "publicondemandrate", "operation", "usagehours", "savingsplaneffectivecost",
-                              "storage", "licensemodel", "gpumemory", "gpu", "datatransferout", "billingperiodstartdate",
-                              "billingperiodenddate"]
+                              "storage", "licensemodel", "gpumemory", "gpu", "datatransferout"]
     available_columns = list(set(desirable_columns) & set(jsonData["available_columns"]))
     select_available_columns = prepare_select_query(jsonData, available_columns)  # passing updated available_columns
     available_columns = ", ".join(f"{w}" for w in available_columns)
@@ -772,19 +772,21 @@ def ingest_data_to_awscur(jsonData):
     net_amortised_cost_query = prep_net_amortised_cost_query(jsonData, set(jsonData["available_columns"]))
 
     query = """
-    DELETE FROM `%s` WHERE DATE(usagestartdate) >= '%s' AND DATE(usagestartdate) <= '%s' and usageaccountid IN (%s);
+    DELETE FROM `%s` WHERE DATE(usagestartdate) >= '%s' AND DATE(usagestartdate) <= '%s' 
+        and DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s' and usageaccountid IN (%s);
     INSERT INTO `%s` (%s, amortisedCost, netAmortisedCost, tags, fxRateSrcToDest, ccmPreferredCurrency, mspMarkupMultiplier) 
         SELECT %s, %s, %s, %s, %s as fxRateSrcToDest, %s as ccmPreferredCurrency, %s as mspMarkupMultiplier
         FROM `%s` table 
-        WHERE DATE(usagestartdate) >= '%s' AND DATE(usagestartdate) <= '%s';
-     """ % (tableName, date_start, date_end, jsonData["usageaccountid"],
+        WHERE DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s' and usageaccountid IN (%s);
+     """ % (tableName, jsonData["min_usagestartdate"], jsonData["max_usagestartdate"],
+            jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"], jsonData["usageaccountid"],
             tableName, available_columns,
             select_available_columns, amortised_cost_query, net_amortised_cost_query, tags_query,
             ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
             (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"),
             ("mspMarkupMultiplier" if jsonData["markups"] else "cast(1 as float64)"),
             jsonData["tableId"],
-            date_start, date_end)
+            jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"], jsonData["usageaccountid"])
     # Configure the query job.
     print_(query)
     job_config = bigquery.QueryJobConfig(
@@ -865,7 +867,7 @@ def prep_net_amortised_cost_query(jsonData, cols):
     print_(query)
     return query
 
-def get_unique_accountids(jsonData):
+def set_query_metadata(jsonData):
     # Support for account allowlist. When more usecases arises, we shall move this to a table in BQ
     account_allowlist = {
         'LI2hS5sbS_2gLSnDqpAbTg': ['087946768277', '102095771087', '753890487724', '912131591631', '551316786239',
@@ -874,14 +876,26 @@ def get_unique_accountids(jsonData):
 
     # Get unique aws accountIds from main awsBilling table
     query = """ 
-            SELECT DISTINCT(usageaccountid) FROM `%s`;
-            """ % (jsonData["tableId"])
+            SELECT DISTINCT(usageaccountid) as usageaccountid, DATE(billingperiodstartdate) as billingperiodstartdate,
+              DATE(billingperiodenddate) as billingperiodenddate,
+            (SELECT MAX(DATE(usagestartdate)) FROM `%s`) as max_usagestartdate,
+            (SELECT MIN(DATE(usagestartdate)) FROM `%s`) as min_usagestartdate
+            FROM `%s`
+            GROUP by usageaccountid, billingperiodstartdate, billingperiodenddate;
+            """ % (jsonData["tableId"], jsonData["tableId"], jsonData["tableId"])
     try:
+        print_(query)
         query_job = client.query(query)
-        results = query_job.result()  # wait for job to complete
+        results = query_job.result()  # wait for job to complete. results is an iterator
         usageaccountid = []
         for row in results:
             usageaccountid.append(row.usageaccountid)
+            # billingperiodenddate / billingperiodstartdate should be same in all rows in a particular months folder
+            jsonData["billingperiodstartdate"] = row.billingperiodstartdate
+            jsonData["billingperiodenddate"] = row.billingperiodenddate
+            jsonData["max_usagestartdate"] = row.max_usagestartdate
+            jsonData["min_usagestartdate"] = row.min_usagestartdate
+
         print_("usageaccountid available are: %s" % usageaccountid)
         if len(account_allowlist.get(jsonData['accountId'], [])) > 0:
             print_("allow listed accounts are: %s" % account_allowlist[jsonData['accountId']])
@@ -893,7 +907,10 @@ def get_unique_accountids(jsonData):
         jsonData["usageaccountid"] = ""
         jsonData["usageaccountidlist"] = []
         raise e
-    print_("usageaccountid we will use %s" % usageaccountid)
+    print_("query metadata we will use billingperiodstartdate: %s,  billingperiodenddate: %s, "
+           "max_usagestartdate: %s, min_usagestartdate: %s, usageaccountid: %s" % (
+            jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"], jsonData["max_usagestartdate"], jsonData["min_usagestartdate"],
+            usageaccountid))
 
 
 def ingest_data_to_preagg(jsonData):
@@ -979,7 +996,7 @@ def ingest_data_to_unified(jsonData):
                     "AWS" AS cloudProvider, billingentity as awsBillingEntity, tags AS labels"""
 
     # Amend query as per columns availability
-    for additionalColumn in ["instancetype", "usagetype"]:
+    for additionalColumn in ["instancetype", "usagetype", "billingperiodstartdate", "billingperiodenddate"]:
         if additionalColumn.lower() in jsonData["available_columns"]:
             insert_columns = insert_columns + ", aws%s" % additionalColumn
             select_columns = select_columns + ", %s as aws%s" % (additionalColumn, additionalColumn)
@@ -990,8 +1007,7 @@ def ingest_data_to_unified(jsonData):
                                  "instancefamily", "marketoption", "servicecode", "usageamount",
                                  "billtype", "usagetype_1", "description", "pricingunit",
                                  "publicondemandcost", "publicondemandrate", "operation", "usagehours", "savingsplaneffectivecost",
-                                 "storage", "licensemodel", "gpumemory", "gpu", "datatransferout", "billingperiodstartdate",
-                                 "billingperiodenddate"]:
+                                 "storage", "licensemodel", "gpumemory", "gpu", "datatransferout"]:
 
             if additionalColumn.lower() in jsonData["available_columns"]:
                 insert_columns = insert_columns + ", aws%s%s" % (additionalColumn,
@@ -1000,18 +1016,20 @@ def ingest_data_to_unified(jsonData):
                                                                        additionalColumn,
                                                                        "" if additionalColumn != "servicecode" else "_simplified")
 
-    query = """DELETE FROM `%s` WHERE DATE(startTime) >= '%s' AND DATE(startTime) <= '%s'  AND cloudProvider = "AWS"
+    query = """DELETE FROM `%s` WHERE DATE(startTime) >= '%s' AND DATE(startTime) <= '%s' 
+                    AND DATE(awsbillingperiodstartdate) = '%s' AND DATE(awsbillingperiodenddate) = '%s'  AND cloudProvider = "AWS"
                     AND awsUsageAccountId IN (%s);
                INSERT INTO `%s` (%s)
                SELECT %s 
                FROM `%s.awscur_%s` 
-               WHERE usageaccountid IN (%s);
-     """ % (tableName, date_start, date_end,
+               WHERE usageaccountid IN (%s) and DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s' ;
+     """ % (tableName, jsonData["min_usagestartdate"], jsonData["max_usagestartdate"],
+            jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"],
             jsonData["usageaccountid"],
             tableName, insert_columns,
             select_columns,
             ds, jsonData["awsCurTableSuffix"],
-            jsonData["usageaccountid"])
+            jsonData["usageaccountid"], jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
     print_(query)
 
     # Configure the query job.
