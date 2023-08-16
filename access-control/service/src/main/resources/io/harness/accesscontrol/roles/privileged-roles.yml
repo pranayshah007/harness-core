@@ -13,6 +13,8 @@ roles:
       - core_delegate_view
       - core_delegateconfiguration_view
       - core_pipeline_view
+      - core_governancePolicy_view
+      - core_governancePolicySets_view
       - core_service_view
       - core_environment_view
       - core_environmentgroup_view
