@@ -171,10 +171,23 @@ public class DelegateServiceGrpcClient {
     final SubmitTaskResponse submitTaskResponse =
         submitTaskInternalV2(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
     final String taskId = submitTaskResponse.getTaskId().getId();
+    log.info("LOG_TASK_ID_DEBUG: Task ID for type: {} is {}", taskRequest.getTaskType(), taskId);
     return Pair.of(taskId,
         delegateSyncService.waitForTask(taskId,
             Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
             Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null));
+  }
+
+  public <T extends ResponseData> T executeSyncTaskReturningResponseDataV2(
+      DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken, String planExecutionId) {
+    final SubmitTaskResponse submitTaskResponse =
+        submitTaskInternalV2(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
+    final String taskId = submitTaskResponse.getTaskId().getId();
+    log.info("LOG_TASK_ID_DEBUG: Task ID for type: {} is {} with planExecutionId: {}", taskRequest.getTaskType(),
+        taskId, planExecutionId);
+    return delegateSyncService.waitForTask(taskId,
+        Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
+        Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
   }
 
   public SubmitTaskResponse submitTask(DelegateCallbackToken delegateCallbackToken, AccountId accountId,

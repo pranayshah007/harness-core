@@ -19,7 +19,9 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class ImagePullSecretFunctor implements SdkFunctor {
   public static final String IMAGE_PULL_SECRET = "imagePullSecret";
@@ -32,13 +34,16 @@ public class ImagePullSecretFunctor implements SdkFunctor {
 
   @Override
   public Object get(Ambiance ambiance, String... args) {
+    log.info("IMAGE_PULL_SECRET_FUNCTOR: Start processing");
     String artifactIdentifier = args[0];
     ArtifactsOutcome artifactsOutcome = fetchArtifactsOutcome(ambiance);
     if (artifactIdentifier.equals(PRIMARY_ARTIFACT)) {
       if (artifactsOutcome == null || artifactsOutcome.getPrimary() == null) {
         return null;
       }
-      return imagePullSecretUtils.getImagePullSecret(artifactsOutcome.getPrimary(), ambiance);
+      String result = imagePullSecretUtils.getImagePullSecret(artifactsOutcome.getPrimary(), ambiance);
+      log.info("IMAGE_PULL_SECRET_FUNCTOR: Result size: {}", result != null ? result.length() : "null");
+      return result;
     } else if (artifactIdentifier.equals(SIDECAR_ARTIFACTS)) {
       Map<String, Object> sidecarsImagePullSecrets = new HashMap<>();
       artifactsOutcome.getSidecars().forEach(

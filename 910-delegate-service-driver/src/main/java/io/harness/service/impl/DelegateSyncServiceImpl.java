@@ -112,7 +112,7 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
           }
         }
       }
-      String errorMsg = "Task has expired.";
+      String errorMsg = String.format("Task with task id: %s has expired.", taskId);
       if (CollectionUtils.isNotEmpty(capabilityErrorMsgsList)) {
         errorMsg = errorMsg
             + String.format(" None of the delegate had following capabilities [%s]",

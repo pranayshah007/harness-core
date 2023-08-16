@@ -88,7 +88,7 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
     assertThat(ecrImagePullSecretHelper.executeSyncTask(ecrArtifactDelegateRequest, ArtifactTaskType.GET_IMAGE_URL,
-                   baseNGAccess, "execute sync task failed"))
+                   baseNGAccess, "execute sync task failed", null))
         .isEqualTo(artifactTaskExecutionResponse);
   }
 
@@ -152,7 +152,7 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> ecrImagePullSecretHelper.executeSyncTask(ecrArtifactDelegateRequest,
-                               ArtifactTaskType.GET_IMAGE_URL, baseNGAccess, "execute sync task failed"))
+                               ArtifactTaskType.GET_IMAGE_URL, baseNGAccess, "execute sync task failed", null))
         .isInstanceOf(ArtifactServerException.class)
         .hasMessage("execute sync task failed - Testing");
   }
@@ -189,7 +189,7 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> ecrImagePullSecretHelper.executeSyncTask(ecrArtifactDelegateRequest,
-                               ArtifactTaskType.GET_IMAGE_URL, baseNGAccess, "execute sync task failed"))
+                               ArtifactTaskType.GET_IMAGE_URL, baseNGAccess, "execute sync task failed", null))
         .isInstanceOf(WingsException.class)
         .hasMessage("execute sync task failed - Test failed with error code: DEFAULT_ERROR_CODE");
   }
@@ -230,7 +230,7 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> ecrImagePullSecretHelper.executeSyncTask(ecrArtifactDelegateRequest,
-                               ArtifactTaskType.GET_IMAGE_URL, baseNGAccess, "execute sync task failed"))
+                               ArtifactTaskType.GET_IMAGE_URL, baseNGAccess, "execute sync task failed", null))
         .isInstanceOf(WingsException.class)
         .hasMessage("wings exception message");
   }
