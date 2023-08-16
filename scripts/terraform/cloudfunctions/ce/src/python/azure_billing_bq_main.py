@@ -945,6 +945,7 @@ def ingest_data_into_preagg(jsonData, azure_column_mapping):
 
 def ingest_data_into_unified(jsonData, azure_column_mapping):
     # create_bq_udf() # Enable this only when needed.
+
     ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
     tableName = "%s.%s" % (ds, "unifiedTable")
     year, month = jsonData["reportYear"], jsonData["reportMonth"]
@@ -1003,6 +1004,17 @@ def ingest_data_into_unified(jsonData, azure_column_mapping):
         if additionalColumn.lower() in jsonData["columns"]:
             insert_columns = insert_columns + ", azure%s" % additionalColumn
             select_columns = select_columns + ", %s as azure%s" % (additionalColumn, additionalColumn)
+
+    # Amend query for Elevance
+    if jsonData.get("accountId") == "pC_7h33wQTeZ_j-libvF4A":
+        print_("Adding more fields for Elevance")
+        for additionalColumn in ["BillingAccountId", "BillingAccountName", "BillingPeriodStartDate", "BillingPeriodEndDate",
+                                 "ProductName", "Quantity", "UnitPrice", "ResourceName", "CostCenter",
+                                 "UnitOfMeasure", "ChargeType"]:
+            if additionalColumn.lower() in jsonData["columns"]:
+                insert_columns = insert_columns + ", azure%s" % additionalColumn
+                select_columns = select_columns + ", %s as azure%s" % (additionalColumn, additionalColumn)
+
 
     query = """DELETE FROM `%s.unifiedTable` WHERE DATE(startTime) >= '%s' AND DATE(startTime) <= '%s'  
                 AND cloudProvider = "AZURE" AND azureSubscriptionGuid IN (%s);
