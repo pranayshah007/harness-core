@@ -52,6 +52,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -105,8 +106,8 @@ public class TasSwapRoutesStepTest extends CategoryTest {
   @Owner(developers = SOURABH)
   @Category(UnitTests.class)
   public void getStepParametersClassTest() {
-    Class<StepElementParameters> stepElementParametersClass = tasSwapRoutesStep.getStepParametersClass();
-    assertThat(stepElementParametersClass).isEqualTo(StepElementParameters.class);
+    Class<StepBaseParameters> stepElementParametersClass = tasSwapRoutesStep.getStepParametersClass();
+    assertThat(stepElementParametersClass).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

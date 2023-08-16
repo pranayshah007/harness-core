@@ -388,3 +388,4 @@ io.harness.delegate.beans.logstreaming.CommandUnitsProgress
 io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo
 io.harness.connector.ConnectorInfoDTO
 io.harness.delegate.task.ecs.EcsS3FetchFileConfig
+io.harness.plancreator.steps.common.v1.StepElementParametersV1

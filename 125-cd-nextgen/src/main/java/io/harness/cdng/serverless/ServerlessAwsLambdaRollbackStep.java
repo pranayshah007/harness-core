@@ -33,7 +33,6 @@ import io.harness.delegate.task.serverless.response.ServerlessRollbackResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -50,6 +49,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
@@ -79,15 +79,15 @@ public class ServerlessAwsLambdaRollbackStep extends CdTaskExecutable<Serverless
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Nothing to validate
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
     ServerlessAwsLambdaRollbackStepParameters rollbackStepParameters =
-        (ServerlessAwsLambdaRollbackStepParameters) stepElementParameters.getSpec();
+        (ServerlessAwsLambdaRollbackStepParameters) StepBaseParameters.getSpec();
     if (EmptyPredicate.isEmpty(rollbackStepParameters.getServerlessAwsLambdaRollbackFnq())) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
@@ -145,18 +145,18 @@ public class ServerlessAwsLambdaRollbackStep extends CdTaskExecutable<Serverless
             .serverlessRollbackConfig(serverlessAwsLambdaRollbackConfig)
             .commandName(SERVERLESS_AWS_LAMBDA_ROLLBACK_COMMAND_NAME)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
-            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(StepBaseParameters))
             .manifestContent(serverlessFetchFileOutcome.getManifestFileOverrideContent())
             .build();
     return serverlessStepCommonHelper
-        .queueServerlessTask(stepElementParameters, serverlessRollbackRequest, ambiance,
+        .queueServerlessTask(StepBaseParameters, serverlessRollbackRequest, ambiance,
             ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
         .getTaskRequest();
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, ThrowingSupplier<ServerlessCommandResponse> responseDataSupplier)
+      StepBaseParameters stepParameters, ThrowingSupplier<ServerlessCommandResponse> responseDataSupplier)
       throws Exception {
     StepResponse stepResponse = null;
     try {
@@ -210,7 +210,7 @@ public class ServerlessAwsLambdaRollbackStep extends CdTaskExecutable<Serverless
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

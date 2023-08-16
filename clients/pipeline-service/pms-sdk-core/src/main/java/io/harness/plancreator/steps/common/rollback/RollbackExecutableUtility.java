@@ -15,10 +15,12 @@ import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.v1.StepElementParametersV1;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import java.util.Map;
@@ -30,9 +32,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RollbackExecutableUtility {
   private final String ROLLBACK = "ROLLBACK";
-  public void publishRollbackInfo(Ambiance ambiance, StepElementParameters stepParameters, Map<String, String> metadata,
+  public void publishRollbackInfo(Ambiance ambiance, StepBaseParameters stepParameters, Map<String, String> metadata,
       ExecutionSweepingOutputService executionSweepingOutputService) {
-    OnFailRollbackParameters onFailRollbackParameters = stepParameters.getRollbackParameters();
+    OnFailRollbackParameters onFailRollbackParameters = getOnFailRollbackParameters(stepParameters);
     RollbackStrategy strategy;
     if (onFailRollbackParameters.getStrategy() == RollbackStrategy.UNKNOWN) {
       if (!metadata.containsKey(ROLLBACK)) {
@@ -54,5 +56,14 @@ public class RollbackExecutableUtility {
     } catch (Exception e) {
       log.warn("Ignoring duplicate sweeping output of - " + YAMLFieldNameConstants.STOP_STEPS_SEQUENCE);
     }
+  }
+
+  private OnFailRollbackParameters getOnFailRollbackParameters(StepBaseParameters stepParameters) {
+    if (stepParameters instanceof StepElementParameters) {
+      StepElementParameters stepElementParameters = (StepElementParameters) stepParameters;
+      return stepElementParameters.getRollbackParameters();
+    }
+    StepElementParametersV1 stepElementParameters = (StepElementParametersV1) stepParameters;
+    return stepElementParameters.getRollbackParameters();
   }
 }

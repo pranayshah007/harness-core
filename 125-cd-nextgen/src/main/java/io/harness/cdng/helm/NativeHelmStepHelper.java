@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.helm;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -84,6 +85,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -123,7 +125,7 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
   @Inject private CDStepHelper cdStepHelper;
   @DefaultValue("10") private int steadyStateTimeout; // Minutes
 
-  public TaskChainResponse queueNativeHelmTask(StepElementParameters stepElementParameters,
+  public TaskChainResponse queueNativeHelmTask(StepBaseParameters stepElementParameters,
       HelmCommandRequestNG helmCommandRequest, Ambiance ambiance,
       NativeHelmExecutionPassThroughData executionPassThroughData) {
     TaskType taskType = getHelmTaskType(helmCommandRequest, ambiance);

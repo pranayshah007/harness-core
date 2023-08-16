@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.helm;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -37,7 +38,6 @@ import io.harness.delegate.task.helm.HelmRollbackCommandRequestNG.HelmRollbackCo
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -55,6 +55,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
@@ -83,13 +84,13 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
   @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // No validation
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, ThrowingSupplier<HelmCmdExecResponseNG> responseDataSupplier)
+      StepBaseParameters stepParameters, ThrowingSupplier<HelmCmdExecResponseNG> responseDataSupplier)
       throws Exception {
     StepResponse stepResponse = null;
     try {
@@ -147,7 +148,7 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     HelmRollbackStepParams helmRollbackStepParams = (HelmRollbackStepParams) stepParameters.getSpec();
     if (EmptyPredicate.isEmpty(helmRollbackStepParams.getHelmRollbackFqn())) {
       return TaskRequest.newBuilder()
@@ -230,7 +231,7 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

@@ -116,6 +116,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -270,13 +271,13 @@ public class AzureWebAppStepHelper {
         stepElementParameters, ambiance, gitFetchRequest, TaskType.GIT_FETCH_NEXT_GEN_TASK, units);
   }
 
-  public TaskRequest prepareTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,
+  public TaskRequest prepareTaskRequest(StepBaseParameters stepElementParameters, Ambiance ambiance,
       TaskParameters taskParameters, TaskType taskType, List<String> units) {
     return prepareTaskRequest(
         stepElementParameters, ambiance, taskParameters, taskType, taskType.getDisplayName(), units);
   }
 
-  public TaskRequest prepareTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,
+  public TaskRequest prepareTaskRequest(StepBaseParameters stepElementParameters, Ambiance ambiance,
       TaskParameters taskParameters, TaskType taskType, String displayName, List<String> units) {
     AzureWebAppStepParameters stepSpec = (AzureWebAppStepParameters) stepElementParameters.getSpec();
     List<TaskSelectorYaml> taskSelectors = stepSpec.getDelegateSelectors().getValue();

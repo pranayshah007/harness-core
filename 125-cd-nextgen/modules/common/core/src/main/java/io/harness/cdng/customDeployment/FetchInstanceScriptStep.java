@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.customDeployment;
+
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import static software.wings.beans.TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG;
@@ -50,7 +51,6 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -62,6 +62,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
@@ -119,7 +120,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   };
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_SVC_ENV_REDESIGN)) {
       throw new AccessDeniedException(
           "NG_SVC_ENV_REDESIGN FF is not enabled for this account. Please contact harness customer care.",
@@ -157,7 +158,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     FetchInstanceScriptStepParameters stepSpec = (FetchInstanceScriptStepParameters) stepParameters.getSpec();
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
@@ -189,7 +190,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier)
+      StepBaseParameters stepParameters, ThrowingSupplier<FetchInstanceScriptTaskNGResponse> responseDataSupplier)
       throws Exception {
     try {
       FetchInstanceScriptTaskNGResponse response;
@@ -281,7 +282,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

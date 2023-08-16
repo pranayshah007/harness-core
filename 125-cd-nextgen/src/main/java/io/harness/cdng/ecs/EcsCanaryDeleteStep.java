@@ -33,7 +33,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -50,6 +49,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -81,13 +81,13 @@ public class EcsCanaryDeleteStep extends CdTaskExecutable<EcsCommandResponse> {
   @Inject private StepHelper stepHelper;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Nothing to validate
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<EcsCommandResponse> responseDataSupplier)
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<EcsCommandResponse> responseDataSupplier)
       throws Exception {
     StepResponse stepResponse = null;
     try {
@@ -138,11 +138,11 @@ public class EcsCanaryDeleteStep extends CdTaskExecutable<EcsCommandResponse> {
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
     EcsCanaryDeleteStepParameters ecsCanaryDeleteStepParameters =
-        (EcsCanaryDeleteStepParameters) stepElementParameters.getSpec();
+        (EcsCanaryDeleteStepParameters) StepBaseParameters.getSpec();
 
     if (EmptyPredicate.isEmpty(ecsCanaryDeleteStepParameters.getEcsCanaryDeployFnq())) {
       throw new InvalidRequestException(ECS_CANARY_DELETE_STEP_MISSING, USER);
@@ -171,11 +171,11 @@ public class EcsCanaryDeleteStep extends CdTaskExecutable<EcsCommandResponse> {
             .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
             .ecsServiceDefinitionManifestContent(ecsCanaryDeleteDataOutcome.getCreateServiceRequestBuilderString())
             .ecsServiceNameSuffix(ecsCanaryDeleteDataOutcome.getEcsServiceNameSuffix())
-            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(StepBaseParameters))
             .build();
 
     return ecsStepCommonHelper
-        .queueEcsTask(stepElementParameters, ecsCanaryDeleteRequest, ambiance,
+        .queueEcsTask(StepBaseParameters, ecsCanaryDeleteRequest, ambiance,
             EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
             TaskType.ECS_COMMAND_TASK_NG)
         .getTaskRequest();
@@ -192,7 +192,7 @@ public class EcsCanaryDeleteStep extends CdTaskExecutable<EcsCommandResponse> {
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

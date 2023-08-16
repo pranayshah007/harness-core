@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.ssh;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.ssh.utils.CommandStepUtils.prepareOutputVariables;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -44,7 +45,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -56,6 +56,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
@@ -91,18 +92,18 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
   @Inject private CommandTaskDataFactory commandTaskDataFactory;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     try {
       CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepParameters.getSpec();
       validateStepParameters(executeCommandStepParameters);
@@ -131,8 +132,7 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, ThrowingSupplier<CommandTaskResponse> responseDataSupplier)
-      throws Exception {
+      StepBaseParameters stepParameters, ThrowingSupplier<CommandTaskResponse> responseDataSupplier) throws Exception {
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     CommandTaskResponse taskResponse;
     try {

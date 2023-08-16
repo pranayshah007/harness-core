@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.aws.asg;
+
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -95,6 +96,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.LogWrapper;
@@ -304,7 +306,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
     return taskChainResponse;
   }
 
-  public TaskChainResponse queueAsgTask(StepElementParameters stepElementParameters, AsgCommandRequest commandRequest,
+  public TaskChainResponse queueAsgTask(StepBaseParameters stepElementParameters, AsgCommandRequest commandRequest,
       Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {commandRequest})

@@ -30,7 +30,6 @@ import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -43,6 +42,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
@@ -63,15 +63,15 @@ public class K8sScaleStep extends CdTaskExecutable<K8sDeployResponse> {
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
-    K8sScaleStepParameter scaleStepParameter = (K8sScaleStepParameter) stepElementParameters.getSpec();
-    validateStepParameters(stepElementParameters, scaleStepParameter);
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
+    K8sScaleStepParameter scaleStepParameter = (K8sScaleStepParameter) StepBaseParameters.getSpec();
+    validateStepParameters(StepBaseParameters, scaleStepParameter);
 
     InfrastructureOutcome infrastructure = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -79,7 +79,7 @@ public class K8sScaleStep extends CdTaskExecutable<K8sDeployResponse> {
     Integer instances = scaleStepParameter.getInstanceSelection().getSpec().getInstances();
 
     boolean skipSteadyCheck = CDStepHelper.getParameterFieldBooleanValue(scaleStepParameter.getSkipSteadyStateCheck(),
-        K8sScaleBaseStepInfoKeys.skipSteadyStateCheck, stepElementParameters);
+        K8sScaleBaseStepInfoKeys.skipSteadyStateCheck, StepBaseParameters);
     String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
@@ -94,7 +94,7 @@ public class K8sScaleStep extends CdTaskExecutable<K8sDeployResponse> {
             .skipSteadyStateCheck(skipSteadyCheck)
             .taskType(K8sTaskType.SCALE)
             .timeoutIntervalInMin(
-                NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
+                NGTimeConversionHelper.convertTimeStringToMinutes(StepBaseParameters.getTimeout().getValue()))
             .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
@@ -102,15 +102,14 @@ public class K8sScaleStep extends CdTaskExecutable<K8sDeployResponse> {
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
     return k8sStepHelper
-        .queueK8sTask(stepElementParameters, request, ambiance,
+        .queueK8sTask(StepBaseParameters, request, ambiance,
             K8sExecutionPassThroughData.builder().infrastructure(infrastructure).build())
         .getTaskRequest();
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier)
-      throws Exception {
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier) throws Exception {
     K8sDeployResponse k8sTaskExecutionResponse = responseSupplier.get();
     // do we need to include the newPods with instance details + summaries
     StepResponseBuilder stepResponseBuilder =
@@ -128,11 +127,11 @@ public class K8sScaleStep extends CdTaskExecutable<K8sDeployResponse> {
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
-  private void validateStepParameters(StepElementParameters parameters, K8sScaleStepParameter scaleStepParameter) {
+  private void validateStepParameters(StepBaseParameters parameters, K8sScaleStepParameter scaleStepParameter) {
     if (isEmpty(scaleStepParameter.getWorkload().getValue())) {
       boolean isUnresolvedExpression = scaleStepParameter.getWorkload().isExpression()
           && isNotEmpty(scaleStepParameter.getWorkload().getExpressionValue());

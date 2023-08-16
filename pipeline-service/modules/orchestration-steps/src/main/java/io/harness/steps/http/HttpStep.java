@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.http;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.constants.JsonConstants.RESOLVE_OBJECTS_VIA_JSON_SELECT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -38,7 +39,6 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.TaskExecutableResponse;
@@ -51,6 +51,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
@@ -97,8 +98,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   @Inject private EngineExpressionService engineExpressionService;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   private NGLogCallback getNGLogCallback(LogStreamingStepClientFactory logStreamingStepClientFactory, Ambiance ambiance,
@@ -108,7 +109,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     int socketTimeoutMillis = (int) NGTimeConversionHelper.convertTimeStringToMilliseconds("10m");
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(HttpTaskNG.COMMAND_UNIT);
@@ -188,7 +189,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<HttpStepResponse> responseSupplier) throws Exception {
     try {
       NGLogCallback logCallback =
@@ -335,7 +336,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
   @Override
   public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, TaskExecutableResponse executableResponse) {
+      Ambiance ambiance, StepBaseParameters stepParameters, TaskExecutableResponse executableResponse) {
     closeLogStream(ambiance);
   }
 }

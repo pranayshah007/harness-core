@@ -29,7 +29,6 @@ import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResp
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -39,6 +38,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -71,18 +71,18 @@ public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvis
   @Inject private ProvisionerOutputHelper provisionerOutputHelper;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
     ShellScriptProvisionStepParameters stepParameters =
-        (ShellScriptProvisionStepParameters) stepElementParameters.getSpec();
+        (ShellScriptProvisionStepParameters) StepBaseParameters.getSpec();
     log.info("Starting execution Obtain Task after Rbac for Shell Script Provision step");
 
     String scriptBody = sshCommandStepHelper.getShellScript(ambiance, stepParameters.getSource());
@@ -94,17 +94,17 @@ public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvis
         ShellScriptProvisionTaskNGRequest.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .executionId(String.format("%s-%s-%s", ambiance.getPlanExecutionId(), ambiance.getStageExecutionId(),
-                stepElementParameters.getIdentifier()))
+                StepBaseParameters.getIdentifier()))
             .scriptBody(scriptBody)
             .variables(getEnvironmentVariables(stepParameters.getEnvironmentVariables()))
-            .timeoutInMillis(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .timeoutInMillis(CDStepHelper.getTimeoutInMin(StepBaseParameters))
             .build();
 
     TaskData taskData = TaskData.builder()
                             .async(true)
                             .taskType(SHELL_SCRIPT_PROVISION.name())
                             .parameters(new Object[] {taskParameters})
-                            .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                            .timeout(CDStepHelper.getTimeoutInMillis(StepBaseParameters))
                             .build();
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(ShellScriptProvisionTaskNG.COMMAND_UNIT), SHELL_SCRIPT_PROVISION.getDisplayName(),
@@ -115,8 +115,8 @@ public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvis
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepElementParameters,
-      ThrowingSupplier<ShellScriptProvisionTaskNGResponse> responseSupplier) throws Exception {
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<ShellScriptProvisionTaskNGResponse> responseSupplier)
+      throws Exception {
     log.info("Handling Task Result With Security Context for Shell Script Provision step");
     ShellScriptProvisionTaskNGResponse response = responseSupplier.get();
 

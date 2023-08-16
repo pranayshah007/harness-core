@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.aws.lambda;
+
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -85,6 +86,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.TaskRequestsUtils;
@@ -130,7 +132,7 @@ public class AwsLambdaHelper extends CDStepHelper {
     return awsLambdaEntityHelper.getInfraConfig(infrastructure, AmbianceUtils.getNgAccess(ambiance));
   }
 
-  public TaskChainResponse queueTask(StepElementParameters stepElementParameters,
+  public TaskChainResponse queueTask(StepBaseParameters stepElementParameters,
       AwsLambdaCommandRequest awsLambdaCommandRequest, TaskType taskType, Ambiance ambiance,
       PassThroughData passThroughData, boolean isChainEnd) {
     TaskData taskData = TaskData.builder()

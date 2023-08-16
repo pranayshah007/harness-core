@@ -54,6 +54,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
@@ -94,8 +95,8 @@ public class EcsBlueGreenRollbackStepTest extends CategoryTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void getStepParametersClassTest() {
-    Class<StepElementParameters> stepElementParametersClass = ecsBlueGreenRollbackStep.getStepParametersClass();
-    assertThat(stepElementParametersClass).isEqualTo(StepElementParameters.class);
+    Class<StepBaseParameters> stepElementParametersClass = ecsBlueGreenRollbackStep.getStepParametersClass();
+    assertThat(stepElementParametersClass).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

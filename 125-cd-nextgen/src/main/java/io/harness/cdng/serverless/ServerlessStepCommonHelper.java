@@ -101,6 +101,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -301,7 +302,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         ambiance, true, stepElementParameters, serverlessStepPassThroughData, serverlessS3FetchFileConfig);
   }
 
-  public TaskChainResponse queueServerlessTask(StepElementParameters stepElementParameters,
+  public TaskChainResponse queueServerlessTask(StepBaseParameters stepElementParameters,
       ServerlessCommandRequest serverlessCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
       boolean isChainEnd) {
     TaskData taskData = TaskData.builder()

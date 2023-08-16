@@ -27,7 +27,6 @@ import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionComma
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionRollbackResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -40,6 +39,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
@@ -67,13 +67,13 @@ public class GoogleFunctionsRollbackStep extends CdTaskExecutable<GoogleFunction
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // nothing
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, ThrowingSupplier<GoogleFunctionCommandResponse> responseDataSupplier)
+      StepBaseParameters stepParameters, ThrowingSupplier<GoogleFunctionCommandResponse> responseDataSupplier)
       throws Exception {
     StepResponse stepResponse = null;
     try {
@@ -97,7 +97,7 @@ public class GoogleFunctionsRollbackStep extends CdTaskExecutable<GoogleFunction
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     GoogleFunctionsRollbackStepParameters googleFunctionsRollbackStepParameters =
         (GoogleFunctionsRollbackStepParameters) stepParameters.getSpec();
     if (EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq())
@@ -145,8 +145,8 @@ public class GoogleFunctionsRollbackStep extends CdTaskExecutable<GoogleFunction
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   private TaskRequest skipTaskRequest(String message) {

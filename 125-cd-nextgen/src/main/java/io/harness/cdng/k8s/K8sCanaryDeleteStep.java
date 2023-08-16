@@ -24,7 +24,6 @@ import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -39,6 +38,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
@@ -62,15 +62,15 @@ public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
     K8sCanaryDeleteStepParameters k8sCanaryDeleteStepParameters =
-        (K8sCanaryDeleteStepParameters) stepElementParameters.getSpec();
+        (K8sCanaryDeleteStepParameters) StepBaseParameters.getSpec();
     String canaryStepFqn = k8sCanaryDeleteStepParameters.getCanaryStepFqn();
     InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
     String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
@@ -83,7 +83,7 @@ public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
     if (optionalSweepingOutput.isFound()) {
       K8sCanaryOutcome k8sCanaryOutcome = (K8sCanaryOutcome) optionalSweepingOutput.getOutput();
       return obtainTaskBasedOnCanaryOutcome(
-          stepElementParameters, ambiance, infrastructure, k8sCanaryOutcome, releaseName);
+          StepBaseParameters, ambiance, infrastructure, k8sCanaryOutcome, releaseName);
     }
 
     optionalSweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
@@ -92,10 +92,10 @@ public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
       return skipTaskRequestOrThrowException(ambiance);
     }
 
-    return obtainTaskBasedOnReleaseName(stepElementParameters, ambiance, infrastructure, releaseName);
+    return obtainTaskBasedOnReleaseName(StepBaseParameters, ambiance, infrastructure, releaseName);
   }
 
-  private TaskRequest obtainTaskBasedOnCanaryOutcome(StepElementParameters stepElementParameters, Ambiance ambiance,
+  private TaskRequest obtainTaskBasedOnCanaryOutcome(StepBaseParameters StepBaseParameters, Ambiance ambiance,
       InfrastructureOutcome infrastructure, K8sCanaryOutcome canaryOutcome, String releaseName) {
     if (StepUtils.isStepInRollbackSection(ambiance) && !canaryOutcome.isCanaryWorkloadDeployed()) {
       return TaskRequest.newBuilder()
@@ -109,16 +109,16 @@ public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
             .commandName(K8S_CANARY_DELETE_COMMAND_NAME)
             .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .timeoutIntervalInMin(
-                NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
+                NGTimeConversionHelper.convertTimeStringToMinutes(StepBaseParameters.getTimeout().getValue()))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
             .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(ambiance))
             .enabledSupportHPAAndPDB(cdStepHelper.isEnabledSupportHPAAndPDB(AmbianceUtils.getAccountId(ambiance)))
             .build();
 
-    return queueCanaryDeleteRequest(stepElementParameters, request, ambiance, infrastructure, releaseName);
+    return queueCanaryDeleteRequest(StepBaseParameters, request, ambiance, infrastructure, releaseName);
   }
 
-  private TaskRequest obtainTaskBasedOnReleaseName(StepElementParameters stepElementParameters, Ambiance ambiance,
+  private TaskRequest obtainTaskBasedOnReleaseName(StepBaseParameters StepBaseParameters, Ambiance ambiance,
       InfrastructureOutcome infrastructure, String releaseName) {
     K8sCanaryDeleteRequest request =
         K8sCanaryDeleteRequest.builder()
@@ -126,19 +126,19 @@ public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
             .commandName(K8S_CANARY_DELETE_COMMAND_NAME)
             .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .timeoutIntervalInMin(
-                NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
+                NGTimeConversionHelper.convertTimeStringToMinutes(StepBaseParameters.getTimeout().getValue()))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
             .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(ambiance))
             .enabledSupportHPAAndPDB(cdStepHelper.isEnabledSupportHPAAndPDB(AmbianceUtils.getAccountId(ambiance)))
             .build();
 
-    return queueCanaryDeleteRequest(stepElementParameters, request, ambiance, infrastructure, releaseName);
+    return queueCanaryDeleteRequest(StepBaseParameters, request, ambiance, infrastructure, releaseName);
   }
 
-  private TaskRequest queueCanaryDeleteRequest(StepElementParameters stepElementParameters,
-      K8sCanaryDeleteRequest request, Ambiance ambiance, InfrastructureOutcome infrastructure, String releaseName) {
+  private TaskRequest queueCanaryDeleteRequest(StepBaseParameters StepBaseParameters, K8sCanaryDeleteRequest request,
+      Ambiance ambiance, InfrastructureOutcome infrastructure, String releaseName) {
     K8sCanaryDeleteStepParameters k8sCanaryDeleteStepParameters =
-        (K8sCanaryDeleteStepParameters) stepElementParameters.getSpec();
+        (K8sCanaryDeleteStepParameters) StepBaseParameters.getSpec();
     if (StepUtils.isStepInRollbackSection(ambiance)) {
       String canaryDeleteStepFqn = k8sCanaryDeleteStepParameters.getCanaryDeleteStepFqn();
       if (EmptyPredicate.isNotEmpty(canaryDeleteStepFqn)) {
@@ -155,7 +155,7 @@ public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
     return k8sStepHelper
-        .queueK8sTask(stepElementParameters, request, ambiance,
+        .queueK8sTask(StepBaseParameters, request, ambiance,
             K8sExecutionPassThroughData.builder().infrastructure(infrastructure).build())
         .getTaskRequest();
   }
@@ -172,8 +172,7 @@ public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier)
-      throws Exception {
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier) throws Exception {
     K8sDeployResponse k8sTaskExecutionResponse = responseSupplier.get();
     StepResponseBuilder responseBuilder =
         StepResponse.builder().unitProgressList(k8sTaskExecutionResponse.getCommandUnitsProgress().getUnitProgresses());
@@ -191,7 +190,7 @@ public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

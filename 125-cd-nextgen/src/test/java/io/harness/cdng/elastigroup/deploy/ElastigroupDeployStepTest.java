@@ -32,6 +32,7 @@ import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskRes
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
@@ -68,7 +69,7 @@ public class ElastigroupDeployStepTest extends CategoryTest {
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void setParameterClassShouldBeStep() {
-    assertThat(step.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(step.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

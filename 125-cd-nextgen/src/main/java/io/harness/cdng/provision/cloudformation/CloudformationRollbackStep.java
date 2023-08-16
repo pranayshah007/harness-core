@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.provision.cloudformation;
+
 import static io.harness.cdng.provision.cloudformation.CloudformationStepHelper.DEFAULT_TIMEOUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -38,7 +39,6 @@ import io.harness.delegate.task.cloudformation.CloudformationTaskType;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -49,6 +49,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -87,11 +88,11 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
                                                .build();
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, ThrowingSupplier<CloudformationTaskNGResponse> responseDataSupplier)
+      StepBaseParameters stepParameters, ThrowingSupplier<CloudformationTaskNGResponse> responseDataSupplier)
       throws Exception {
     CloudformationTaskNGResponse cloudformationTaskNGResponse;
     try {
@@ -135,7 +136,7 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     CloudformationRollbackStepParameters cloudformationRollbackStepParameters =
         (CloudformationRollbackStepParameters) stepParameters.getSpec();
     log.info("Starting execution Obtain Task after Rbac for the Cloudformation Rollback Step");
@@ -169,7 +170,7 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
     return TaskRequest.newBuilder().setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(reason).build()).build();
   }
 
-  private TaskRequest obtainCloudformationRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskRequest obtainCloudformationRollbackTask(Ambiance ambiance, StepBaseParameters stepParameters,
       CloudformationTaskNGParameters cloudformationTaskNGParameters) {
     TaskData taskData = TaskData.builder()
                             .async(true)
@@ -187,13 +188,13 @@ public class CloudformationRollbackStep extends CdTaskExecutable<CloudformationT
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @VisibleForTesting
   CloudformationTaskNGParameters getCreateStackCloudformationTaskNGParameters(
-      Ambiance ambiance, StepElementParameters stepParameters, CloudformationConfig cloudformationConfig) {
+      Ambiance ambiance, StepBaseParameters stepParameters, CloudformationConfig cloudformationConfig) {
     AwsConnectorDTO awsConnectorDTO =
         (AwsConnectorDTO) cloudformationStepHelper.getConnectorDTO(cloudformationConfig.getConnectorRef(), ambiance)
             .getConnectorConfig();
