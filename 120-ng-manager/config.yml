@@ -127,6 +127,13 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+errorTrackingClientConfig:
+  errorTrackingServiceConfig:
+    baseUrl: ${ERROR_TRACKING_SERVICE_BASE_URL:-http://localhost:9191/api/}
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  errorTrackingServiceSecret: ${ERROR_TRACKING_SERVICE_SECRET:-LocalTestErrorTrackingServiceSecretLocalTestErrorTrackingServiceSecretLocalTestE}
+
 ngManagerClientConfig:
   baseUrl: http://localhost:7457/
   connectTimeOutSeconds: 15
