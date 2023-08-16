@@ -10,18 +10,18 @@ package io.harness.steps.shellscript.v1;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
 import io.harness.plancreator.PlanCreatorUtilsV1;
-import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExpressionMode;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
-import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
@@ -31,10 +31,9 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
-import io.harness.steps.shellscript.ShellScriptStepNode;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.TimeoutUtils;
-import io.harness.when.utils.RunInfoUtils;
+import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -61,10 +60,10 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
   @SneakyThrows
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
-    ShellScriptStepNode stepNode = YamlUtils.read(field.getNode().toString(), ShellScriptStepNode.class);
+    final boolean isStepInsideRollback = PlanCreatorUtilsV1.isStepInsideRollback(ctx.getDependency());
+    ShellScriptStepNodeV1 stepNode = YamlUtils.read(field.getNode().toString(), ShellScriptStepNodeV1.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
-    StepParameters stepParameters = ((PMSStepInfo) stepNode.getStepSpecType()).getStepParameters(stepNode, null, ctx);
     StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap,
         metadataMap, PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));
     PlanNodeBuilder builder =
@@ -72,15 +71,14 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepNode.getUuid()))
             .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getNodeName()))
             .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getId()))
-            .stepType(stepNode.getStepSpecType().getStepType())
+            .stepType(StepSpecTypeConstants.SHELL_SCRIPT_STEP_TYPE)
             .group(StepOutcomeGroup.STEP.name())
-            .stepParameters(stepParameters)
+            .stepParameters(stepNode.getStepParameters(ctx))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
-                    .setType(
-                        FacilitatorType.newBuilder().setType(stepNode.getStepSpecType().getFacilitatorType()).build())
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
                     .build())
-            .whenCondition(RunInfoUtils.getRunConditionForStep(stepNode.getWhen()))
+            .whenCondition(RunInfoUtilsV1.getStepWhenCondition(stepNode.getWhen(), isStepInsideRollback))
             .timeoutObtainment(
                 SdkTimeoutObtainment.builder()
                     .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
@@ -88,8 +86,8 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
                                     .timeout(TimeoutUtils.getTimeoutParameterFieldString(stepNode.getTimeout()))
                                     .build())
                     .build())
-            .skipUnresolvedExpressionsCheck(stepNode.getStepSpecType().skipUnresolvedExpressionsCheck())
-            .expressionMode(stepNode.getStepSpecType().getExpressionMode());
+            .skipUnresolvedExpressionsCheck(true)
+            .expressionMode(ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
 
     if (field.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField("strategy") == null) {
       builder.adviserObtainments(PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));

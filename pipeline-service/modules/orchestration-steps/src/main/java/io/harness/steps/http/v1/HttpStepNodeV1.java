@@ -46,28 +46,27 @@ public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
   // TODO: set rollback parameters
   public StepElementParametersV1 getStepParameters(PlanCreationContext ctx) {
     StepElementParametersV1Builder stepBuilder = StepParametersUtilsV1.getStepParameters(this);
-    stepBuilder.spec(getSpecParameters(getSpec()));
+    stepBuilder.spec(getSpecParameters());
     stepBuilder.type(StepSpecTypeConstants.HTTP);
     StepUtils.appendDelegateSelectorsToSpecParameters(spec, ctx);
     return stepBuilder.build();
   }
 
-  public SpecParameters getSpecParameters(HttpStepInfo httpStepInfo) {
+  private SpecParameters getSpecParameters() {
     return HttpStepParameters.infoBuilder()
-        .assertion(httpStepInfo.getAssertion())
-        .headers(EmptyPredicate.isEmpty(httpStepInfo.getHeaders())
-                ? Collections.emptyMap()
-                : httpStepInfo.getHeaders().stream().collect(
-                    Collectors.toMap(HttpHeaderConfig::getKey, HttpHeaderConfig::getValue)))
-        .certificate(httpStepInfo.getCertificate())
-        .certificateKey(httpStepInfo.getCertificateKey())
-        .method(httpStepInfo.getMethod())
-        .outputVariables(NGVariablesUtils.getMapOfVariables(httpStepInfo.getOutputVariables(), 0L))
-        .inputVariables(NGVariablesUtils.getMapOfVariables(httpStepInfo.getInputVariables(), 0L))
-        .requestBody(httpStepInfo.getRequestBody())
+        .assertion(spec.getAssertion())
+        .headers(EmptyPredicate.isEmpty(spec.getHeaders()) ? Collections.emptyMap()
+                                                           : spec.getHeaders().stream().collect(Collectors.toMap(
+                                                               HttpHeaderConfig::getKey, HttpHeaderConfig::getValue)))
+        .certificate(spec.getCertificate())
+        .certificateKey(spec.getCertificateKey())
+        .method(spec.getMethod())
+        .outputVariables(NGVariablesUtils.getMapOfVariables(spec.getOutputVariables(), 0L))
+        .inputVariables(NGVariablesUtils.getMapOfVariables(spec.getInputVariables(), 0L))
+        .requestBody(spec.getRequestBody())
         .delegateSelectors(ParameterField.createValueField(CollectionUtils.emptyIfNull(
-            httpStepInfo.getDelegateSelectors() != null ? httpStepInfo.getDelegateSelectors().getValue() : null)))
-        .url(httpStepInfo.getUrl())
+            spec.getDelegateSelectors() != null ? spec.getDelegateSelectors().getValue() : null)))
+        .url(spec.getUrl())
         .build();
   }
 }
