@@ -29,6 +29,7 @@ public class CheckMapper {
     checks.setDescription(checkEntity.getDescription());
     checks.setExpression(checkEntity.getExpression());
     checks.setLabels(checkEntity.getLabels());
+    checks.setCustom(checkEntity.isCustom());
     checks.setDataSource(
         checkEntity.getRules().stream().map(Rule::getDataSourceIdentifier).collect(Collectors.toList()));
     return checks;

@@ -240,4 +240,5 @@ enum EntityTypeProtoEnum {
   AWS_CDK_DESTROY = 227;
   IDP_SCORECARD = 228;
   IDP_CHECK = 229;
+  AWS_CDK_ROLLBACK = 230;
 }

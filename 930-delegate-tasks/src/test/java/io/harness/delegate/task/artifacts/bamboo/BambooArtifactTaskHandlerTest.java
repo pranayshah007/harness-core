@@ -178,7 +178,7 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
                                                                       .buildNumber("45")
                                                                       .build();
 
-    when(bambooBuildService.getBuilds(null, ARTIFACT_STREAM_ATTRIBUTES,
+    when(bambooBuildService.getBuildsWithoutTimeOut(ARTIFACT_STREAM_ATTRIBUTES,
              BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
              bambooArtifactDelegateRequest.getEncryptedDataDetails(), Integer.MAX_VALUE))
         .thenReturn(BUILD_DETAILS_LIST);
@@ -207,7 +207,7 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
                                                                       .buildRegex(".*?")
                                                                       .build();
 
-    when(bambooBuildService.getBuilds(null, ARTIFACT_STREAM_ATTRIBUTES,
+    when(bambooBuildService.getBuildsWithoutTimeOut(ARTIFACT_STREAM_ATTRIBUTES,
              BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
              bambooArtifactDelegateRequest.getEncryptedDataDetails(), Integer.MAX_VALUE))
         .thenReturn(BUILD_DETAILS_LIST);
@@ -236,7 +236,7 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
                                                                       .buildRegex("45")
                                                                       .build();
 
-    when(bambooBuildService.getBuilds(null, ARTIFACT_STREAM_ATTRIBUTES,
+    when(bambooBuildService.getBuildsWithoutTimeOut(ARTIFACT_STREAM_ATTRIBUTES,
              BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
              bambooArtifactDelegateRequest.getEncryptedDataDetails(), Integer.MAX_VALUE))
         .thenReturn(BUILD_DETAILS_LIST);
@@ -336,7 +336,7 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
                                                                       .buildRegex("*")
                                                                       .build();
 
-    when(bambooBuildService.getBuilds(null, ARTIFACT_STREAM_ATTRIBUTES,
+    when(bambooBuildService.getBuildsWithoutTimeOut(ARTIFACT_STREAM_ATTRIBUTES,
              BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
              bambooArtifactDelegateRequest.getEncryptedDataDetails(), Integer.MAX_VALUE))
         .thenReturn(BUILD_DETAILS_LIST);

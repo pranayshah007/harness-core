@@ -18,6 +18,7 @@ import io.harness.resourcegroup.v2.model.ResourceGroup;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 
+import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -43,4 +44,8 @@ public interface ResourceGroupService {
   void deleteManaged(@NotEmpty String identifier);
 
   void deleteByScope(Scope scope);
+
+  List<ResourceGroup> getPermittedResourceGroups(List<ResourceGroup> resourceGroups);
+
+  Page<ResourceGroup> listAll(ResourceGroupFilterDTO resourceGroupFilterDTO, PageRequest pageRequest);
 }

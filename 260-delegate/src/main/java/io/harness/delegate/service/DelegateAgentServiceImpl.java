@@ -435,6 +435,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   public boolean isSocketHealthy() {
+    if (socket == null) {
+      return false;
+    }
     return socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED;
   }
 

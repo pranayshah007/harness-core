@@ -2712,6 +2712,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     return delegateQuery.project(DelegateKeys.status, true)
+        .project(DelegateKeys.accountId, true)
         .project(DelegateKeys.delegateProfileId, true)
         .project(DelegateKeys.ng, true)
         .project(DelegateKeys.hostName, true)

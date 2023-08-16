@@ -10,7 +10,6 @@ package io.harness.ng;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
-import io.harness.ng.accesscontrol.migrations.AccessControlMigrationPersistenceConfig;
 import io.harness.notification.NotificationChannelPersistenceConfig;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.springdata.SpringPersistenceConfig;
@@ -28,8 +27,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class NextGenPersistenceModule extends SpringPersistenceModule {
   @Override
   protected Class<?>[] getConfigClasses() {
-    List<Class<?>> resultClasses = Lists.newArrayList(ImmutableList.of(SpringPersistenceConfig.class,
-        NotificationChannelPersistenceConfig.class, AccessControlMigrationPersistenceConfig.class));
+    List<Class<?>> resultClasses =
+        Lists.newArrayList(ImmutableList.of(SpringPersistenceConfig.class, NotificationChannelPersistenceConfig.class));
     Class<?>[] resultClassesArray = new Class<?>[ resultClasses.size() ];
     return resultClasses.toArray(resultClassesArray);
   }

@@ -59,6 +59,7 @@ public class ScorecardServiceImpl implements ScorecardService {
   private static final ObjectMapper mapper =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   private static final String CATALOG_API = "%s/idp/api/catalog/entity-facets?filter=kind=%s&facet=%s";
+  private static final String TYPE_FILTER = "spec.type";
   private static final String OWNERS_FILTER = "relations.ownedBy";
   private static final String TAGS_FILTER = "metadata.tags";
   private static final String LIFECYCLE_FILTER = "spec.lifecycle";
@@ -144,6 +145,9 @@ public class ScorecardServiceImpl implements ScorecardService {
   public ScorecardDetailsResponse getScorecardDetails(String accountIdentifier, String identifier) {
     ScorecardEntity scorecardEntity =
         scorecardRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+    if (scorecardEntity == null) {
+      throw new InvalidRequestException(String.format("Scorecard details not found for scorecardId [%s]", identifier));
+    }
     Set<String> checkIds =
         scorecardEntity.getChecks().stream().map(ScorecardEntity.Check::getIdentifier).collect(Collectors.toSet());
     Map<String, CheckEntity> checkEntityMap =
@@ -195,6 +199,7 @@ public class ScorecardServiceImpl implements ScorecardService {
   public Facets getAllEntityFacets(String accountIdentifier, String kind) {
     Facets facets = new Facets();
     List<BackstageCatalogEntityFacets> entityFacets = new ArrayList<>();
+    entityFacets.add(getEntityResponse(accountIdentifier, kind, TYPE_FILTER));
     entityFacets.add(getEntityResponse(accountIdentifier, kind, OWNERS_FILTER));
     entityFacets.add(getEntityResponse(accountIdentifier, kind, TAGS_FILTER));
     entityFacets.add(getEntityResponse(accountIdentifier, kind, LIFECYCLE_FILTER));
@@ -215,6 +220,11 @@ public class ScorecardServiceImpl implements ScorecardService {
     for (Map.Entry<String, List<BackstageCatalogEntityFacets.FacetType>> entry :
         backstageCatalogEntityFacets.getFacets().entrySet()) {
       switch (entry.getKey()) {
+        case TYPE_FILTER:
+          facets.setType(entry.getValue()
+                             .stream()
+                             .map(BackstageCatalogEntityFacets.FacetType::getValue)
+                             .collect(Collectors.toList()));
         case OWNERS_FILTER:
           facets.setOwners(entry.getValue()
                                .stream()

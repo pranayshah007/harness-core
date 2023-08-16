@@ -148,7 +148,17 @@ public class PipelineAPIConstants {
       + "                                  namespace: sample\n";
 
   public static final String LIST_EXECUTIONS = "{\n"
-      + "    \"filterType\": \"PipelineExecution\"\n"
+      + "  \"filterType\": \"PipelineExecution\",\n"
+      + "  \"pipelineTags\": [\n"
+      + "    {\n"
+      + "      \"key\": \"tag1\",\n"
+      + "      \"value\": \"value1\"\n"
+      + "    },\n"
+      + "    {\n"
+      + "      \"key\": \"tag2\",\n"
+      + "      \"value\": \"value2\"\n"
+      + "    }\n"
+      + "  ]\n"
       + "}";
 
   public static final String EXECUTE_INPUT_YAML = "pipeline:\n"

@@ -198,6 +198,9 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
   }
 
   private String wrapInlineVariablesWithDoubleQuotes(String val) {
+    if (val == null) {
+      return "";
+    }
     boolean wrappedWithDoubleQuotes = !val.isEmpty() && val.charAt(0) == '"' && val.endsWith("\"");
     boolean wrappedWithBrackets = !val.isEmpty() && val.charAt(0) == '[' && val.endsWith("]");
     boolean wrappedWithParenthesis = !val.isEmpty() && val.charAt(0) == '(' && val.endsWith(")");

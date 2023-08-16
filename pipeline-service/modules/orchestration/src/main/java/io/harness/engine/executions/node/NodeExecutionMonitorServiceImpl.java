@@ -37,7 +37,7 @@ public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorServ
     Map<PipelineExecutionMetric, Integer> metricMap = new HashMap<>();
     try (CloseableIterator<NodeExecution> iterator =
              nodeExecutionService.fetchAllNodeExecutionsByStatusIteratorFromAnalytics(
-                 StatusUtils.activeStatuses(), Set.of(NodeExecutionKeys.ambiance))) {
+                 StatusUtils.activeStatuses(), Set.of(NodeExecutionKeys.accountId))) {
       while (iterator.hasNext()) {
         NodeExecution nodeExecution = iterator.next();
         PipelineExecutionMetric pipelineExecutionMetric =

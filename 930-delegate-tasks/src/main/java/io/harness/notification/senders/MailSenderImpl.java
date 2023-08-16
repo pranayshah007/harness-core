@@ -8,12 +8,14 @@
 package io.harness.notification.senders;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.network.Localhost.getLocalHostName;
 import static io.harness.notification.constant.NotificationClientConstants.HARNESS_NAME;
 
 import static org.apache.commons.lang3.StringUtils.stripToNull;
 
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.notification.SmtpConfig;
 
 import com.google.common.collect.ImmutableList;
@@ -71,9 +73,11 @@ public class MailSenderImpl {
       ((HtmlEmail) email).setHtmlMsg(body);
       email.send();
     } catch (EmailException e) {
-      log.error("Failed to send email. Check SMTP configuration. notificationId: {}\n{}", notificationId,
-          ExceptionUtils.getMessage(e));
-      return NotificationProcessingResponse.nonSent(emailIds.size() + ccEmailIds.size());
+      String delegateHostName = getLocalHostName();
+      String errorMessage = String.format(
+          "Delegate: %s executing the event failed : %s ", delegateHostName, ExceptionUtils.getMessage(e));
+      log.error("Failed to send email. Check SMTP configuration. notificationId: {}\n{}", notificationId, errorMessage);
+      throw new WingsException(errorMessage, e);
     }
     return NotificationProcessingResponse.allSent(emailIds.size() + ccEmailIds.size());
   }
