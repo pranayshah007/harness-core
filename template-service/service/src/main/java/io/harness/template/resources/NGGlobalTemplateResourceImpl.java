@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
+import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -33,6 +34,7 @@ import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 import io.harness.template.services.NGTemplateService;
 import io.harness.template.services.NGTemplateServiceHelper;
+import io.harness.template.services.TemplateMergeService;
 import io.harness.template.services.TemplateVariableCreatorFactory;
 import io.harness.utils.PageUtils;
 
@@ -61,6 +63,7 @@ public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
   @Inject TemplateVariableCreatorFactory templateVariableCreatorFactory;
   private final NGTemplateServiceHelper templateServiceHelper;
   private final AccessControlClient accessControlClient;
+  private final TemplateMergeService templateMergeService;
   @Override
   public ResponseDTO<List<TemplateWrapperResponseDTO>> createAndUpdate(@NotNull String accountId,
       @OrgIdentifier String orgId, @ProjectIdentifier String projectId, String connectorRef, String targetBranch,
@@ -120,5 +123,18 @@ public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
                 EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
 
     return ResponseDTO.newResponse(version, templateResponseDTO);
+  }
+
+  @Override
+  public ResponseDTO<String> getTemplateInputsYaml(@NotNull @AccountIdentifier String accountId,
+      @ResourceIdentifier String globalTemplateIdentifier, @NotNull String templateLabel, String loadFromCache,
+      GitEntityFindInfoDTO gitEntityBasicInfo) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, null, null),
+        Resource.of(TEMPLATE, globalTemplateIdentifier), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+    // if label not given, then consider stable template label
+    // returns templateInputs yaml
+    log.info(String.format("Get Template inputs for template with identifier %s ", globalTemplateIdentifier));
+    return ResponseDTO.newResponse(templateMergeService.getGlobalTemplateInputs(accountId, globalTemplateIdentifier,
+        templateLabel, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
   }
 }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.services;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.template.resources.beans.NGTemplateConstants.GIT_BRANCH;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE;
@@ -30,6 +31,7 @@ import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.MergeTemplateInputsInObject;
 import io.harness.template.helpers.TemplateInputsValidator;
@@ -69,6 +71,17 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
         accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, loadFromCache);
     if (optionalTemplateEntity.isEmpty()) {
       throw new NGTemplateException("Template to fetch template inputs does not exist.");
+    }
+    return templateMergeServiceHelper.createTemplateInputsFromTemplate(optionalTemplateEntity.get().getYaml());
+  }
+
+  @Override
+  public String getGlobalTemplateInputs(
+      String accountId, String templateIdentifier, String versionLabel, boolean loadFromCache) {
+    Optional<GlobalTemplateEntity> optionalTemplateEntity =
+        templateServiceHelper.getGlobalTemplateByIdentifier(templateIdentifier, versionLabel, false, loadFromCache);
+    if (optionalTemplateEntity.isEmpty()) {
+      throw new NGTemplateException("Global Template to fetch template inputs does not exist.");
     }
     return templateMergeServiceHelper.createTemplateInputsFromTemplate(optionalTemplateEntity.get().getYaml());
   }

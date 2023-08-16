@@ -22,6 +22,9 @@ public interface TemplateMergeService {
   String getTemplateInputs(String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier,
       String versionLabel, boolean loadFromCache);
 
+  String getGlobalTemplateInputs(
+      String accountId, String templateIdentifier, String versionLabel, boolean loadFromCache);
+
   TemplateMergeResponseDTO applyTemplatesToYaml(String accountId, String orgId, String projectId, String yaml,
       boolean getMergedYamlWithTemplateField, boolean loadFromCache, boolean appendInputSetValidator);
 

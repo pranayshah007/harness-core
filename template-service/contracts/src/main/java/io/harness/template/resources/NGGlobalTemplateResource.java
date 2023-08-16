@@ -192,4 +192,23 @@ public interface NGGlobalTemplateResource {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @QueryParam("loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch);
+
+  @GET
+  @Path("/globalTemplateInputs/{globalTemplateIdentifier}")
+  @ApiOperation(value = "Gets global template input set yaml", nickname = "getGlobalTemplateInputSetYaml")
+  @Operation(operationId = "getGlobalTemplateInputSetYaml", summary = "Gets Global Template Input Set YAML",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Template Input Set YAML")
+      })
+  ResponseDTO<String>
+  getTemplateInputsYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
+          "globalTemplateIdentifier") @ResourceIdentifier String globalTemplateIdentifier,
+      @Parameter(description = "Template Label") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
+      String templateLabel, @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @Parameter(
+          description = "This contains details of Git Entity") @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
 }
