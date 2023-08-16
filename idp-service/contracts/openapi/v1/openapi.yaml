@@ -1142,6 +1142,30 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/CatalogKind'
+  '/v1/data-source/{data-source}/data-point/values':
+    get:
+      summary: Get data points data for data source
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointInfoResponse'
+      operationId: get-data-source-data-point-values
+      x-stoplight:
+        id: n763zvcv8fxcy
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/DataSourceDataPointInfoRequest'
+      tags:
+        - DataPointsData
+    parameters:
+      - schema:
+          type: string
+        name: data-source
+        in: path
+        required: true
 components:
   schemas:
     BackstageEnvVariable:
@@ -2878,6 +2902,101 @@ components:
           $ref: '#/components/schemas/ScorecardSummaryInfo'
       required:
         - recalibrated_scores
+    DataSourceDataPointInfo:
+      title: DataSourceDataPointInfo
+      x-stoplight:
+        id: tggo329c3whzy
+      type: object
+      description: Request Content for fetching the data point data from data source
+      x-internal: true
+      properties:
+        ci_pipeline_url:
+          type: string
+          x-stoplight:
+            id: r53d288yjhv45
+        service_url:
+          type: string
+          x-stoplight:
+            id: tm3qx5d51qp2s
+        data_source_location:
+          $ref: '#/components/schemas/DataSourceLocationInfo'
+        github_url:
+          type: string
+          x-stoplight:
+            id: nphiny6fsdwgd
+      required:
+        - ci_pipeline_url
+        - service_url
+        - data_source_location
+        - github_url
+    DataPointInputValues:
+      title: DataPointInputValues
+      x-stoplight:
+        id: 6tvb6bvgpw47v
+      type: object
+      properties:
+        data_point_identifier:
+          type: string
+          x-stoplight:
+            id: zmwv1knumeiet
+        values:
+          type: array
+          x-stoplight:
+            id: f8uovlsr7vh6h
+          items:
+            x-stoplight:
+              id: xhke4prmxesht
+            type: string
+      required:
+        - data_point_identifier
+        - values
+      description: Data point values Info for Request
+      x-internal: true
+    DataSourceLocationInfo:
+      title: DataSourceLocationInfo
+      x-stoplight:
+        id: p26wnz3k5nsjh
+      type: object
+      description: Data Source Location Info for request
+      x-internal: true
+      properties:
+        data_points:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPointInputValues'
+        data_source_location_identifier:
+          type: string
+          x-stoplight:
+            id: wu0w94s9gbsdn
+      required:
+        - data_points
+        - data_source_location_identifier
+    DataSourceDataPointInfoResponse:
+      title: DataSourceDataPointInfoResponse
+      x-stoplight:
+        id: v5fltn2m4mhmd
+      type: object
+      description: Resonse for getting the data point data
+      x-internal: true
+      properties:
+        resource:
+          type: object
+          x-stoplight:
+            id: gorxsw7uo1m31
+      required:
+        - resource
+    DataSourceDataPointInfoRequest:
+      title: DataSourceDataPointInfoRequest
+      x-stoplight:
+        id: yxbkeqxrkzszu
+      type: object
+      description: Request for getting the data point data
+      x-internal: true
+      properties:
+        request:
+          $ref: '#/components/schemas/DataSourceDataPointInfo'
+      required:
+        - request
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -3172,6 +3291,12 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/CheckDetailsRequest'
+    DataSourceDataPointInfoRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointInfoRequest'
+      description: Request for getting the data point data
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -3503,6 +3628,12 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/Facets'
+    DataSourceDataPointInfoResponse:
+      description: Response for getting the data point data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointInfoResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3523,6 +3654,8 @@ tags:
     description: Backstage Permissions
   - name: ConnectorInfo
     description: Connector Information
+  - name: DataPointsData
+    description: DataPointData Information
   - name: DataSource
     description: DataSource Information
   - name: LayoutProxy
