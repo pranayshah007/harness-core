@@ -181,7 +181,7 @@ public final class EventsFrameworkConstants {
   public static final Duration HARNESS_TO_GIT_PUSH_MAX_PROCESSING_TIME = Duration.ofSeconds(50);
   public static final Duration GIT_CONFIG_STREAM_PROCESSING_TIME = Duration.ofSeconds(20);
   public static final Duration FULL_SYNC_STREAM_PROCESSING_TIME = Duration.ofSeconds(20);
-  public static final Duration ORCHESTRATION_LOG_MAX_PROCESSING_TIME = Duration.ofSeconds(30);
+  public static final Duration ORCHESTRATION_LOG_MAX_PROCESSING_TIME = Duration.ofSeconds(60);
   public static final Duration PLAN_NOTIFY_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
   public static final Duration CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
 

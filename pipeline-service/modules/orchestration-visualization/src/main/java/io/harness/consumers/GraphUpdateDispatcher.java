@@ -13,7 +13,6 @@ import io.harness.service.GraphGenerationService;
 
 import com.google.common.collect.ImmutableMap;
 import java.time.Duration;
-import java.util.List;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,34 +23,33 @@ public class GraphUpdateDispatcher implements Runnable {
   private final String planExecutionId;
   private final GraphGenerationService graphGenerationService;
   private final long startTs;
-  private final List<String> messageIds;
+  private final String messageId;
   private final Consumer consumer;
 
   @Builder
   public GraphUpdateDispatcher(String planExecutionId, GraphGenerationService graphGenerationService, long startTs,
-      List<String> messageIds, Consumer consumer) {
+      String messageId, Consumer consumer) {
     this.planExecutionId = planExecutionId;
     this.graphGenerationService = graphGenerationService;
     this.startTs = startTs;
-    this.messageIds = messageIds;
+    this.messageId = messageId;
     this.consumer = consumer;
   }
 
   @Override
   public void run() {
-    try (AutoLogContext ignore = new AutoLogContext(
-             ImmutableMap.of("planExecutionId", planExecutionId), AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
-      log.info("Start processing graph update via dispatcher for {} messageIds", messageIds.size());
+    try (AutoLogContext ignore =
+             new AutoLogContext(ImmutableMap.of("planExecutionId", planExecutionId, "messageId", messageId),
+                 AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
+      log.info("Start processing graph update via dispatcher for {} messageId", messageId);
       checkAndLogSchedulingDelays(planExecutionId, startTs);
       boolean shouldAck = graphGenerationService.updateGraph(planExecutionId);
       if (shouldAck) {
-        messageIds.forEach(consumer::acknowledge);
-        log.debug("Successfully acked the messageIds: {}", messageIds);
+        consumer.acknowledge(messageId);
+        log.debug("Successfully acked the messageId: {}", messageId);
         return;
       }
-      messageIds.remove(messageIds.size() - 1);
-      log.info("Graph update failed not acking the following message id {} from : {}", messageIds.get(0), messageIds);
-      messageIds.forEach(consumer::acknowledge);
+      log.info("Graph update failed not acking the following message id {}", messageId);
     }
   }
 
