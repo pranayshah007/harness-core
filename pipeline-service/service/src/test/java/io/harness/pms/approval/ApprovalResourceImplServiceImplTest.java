@@ -105,7 +105,7 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
     ApprovalInstance approvalInstance = HarnessApprovalInstance.builder().build();
     approvalInstance.setId(id);
     when(approvalInstanceService.get(id)).thenReturn(approvalInstance);
-    when(approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(approvalInstance))
+    when(approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(approvalInstance, true))
         .thenReturn(approvalInstanceResponseDTO);
     assertEquals(approvalResourceService.get(id), approvalInstanceResponseDTO);
   }

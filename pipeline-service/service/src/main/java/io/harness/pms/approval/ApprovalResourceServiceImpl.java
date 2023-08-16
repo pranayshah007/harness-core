@@ -92,7 +92,7 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
   @Override
   public ApprovalInstanceResponseDTO get(String approvalInstanceId) {
     return approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(
-        approvalInstanceService.get(approvalInstanceId));
+        approvalInstanceService.get(approvalInstanceId), true);
   }
 
   @Override

@@ -67,6 +67,9 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
   ParameterField<Timeout> scriptTimeout;
   List<Long> nextIterations;
 
+  // the id of the latest delegate task created while polling
+  String latestDelegateTaskId;
+
   public static CustomApprovalInstance fromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
     if (stepParameters == null) {
       return null;

@@ -104,6 +104,8 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
         .thenReturn(ShellScriptTaskParametersNG.builder().build());
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("__TASK_ID__");
     doNothing().when(waitNotifyEngine).progressOn(any(), any());
+    doNothing().when(approvalInstanceService).updateLatestDelegateTaskId(any(), any());
+
     try (MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class)) {
       aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
           .thenReturn(TaskRequest.newBuilder().build());
@@ -117,6 +119,7 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
                   .latestDelegateTaskId("__TASK_ID__")
                   .taskName(SHELL_SCRIPT_TASK_NG.getDisplayName())
                   .build());
+      verify(approvalInstanceService, times(1)).updateLatestDelegateTaskId("__ID__", "__TASK_ID__");
     }
 
     // when progress update fails
@@ -135,6 +138,7 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
                   .latestDelegateTaskId("__TASK_ID__")
                   .taskName(SHELL_SCRIPT_TASK_NG.getDisplayName())
                   .build());
+      verify(approvalInstanceService, times(2)).updateLatestDelegateTaskId("__ID__", "__TASK_ID__");
     }
 
     // when task id is empty, progress update shouldn't be called
@@ -147,6 +151,7 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
       verify(ngDelegate2TaskExecutor, times(3)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
       verify(waitNotifyEngine, times(3)).waitForAllOn(any(), any(), any());
       verifyNoMoreInteractions(waitNotifyEngine);
+      verifyNoMoreInteractions(approvalInstanceService);
     }
   }
 

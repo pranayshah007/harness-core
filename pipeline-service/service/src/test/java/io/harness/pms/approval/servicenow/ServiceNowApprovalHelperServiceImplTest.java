@@ -55,6 +55,7 @@ import io.harness.rule.Owner;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.TaskRequestsUtils;
+import io.harness.steps.approval.ApprovalUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.ApprovalProgressData;
 import io.harness.steps.approval.step.beans.ApprovalType;
@@ -89,10 +90,10 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
   @Mock private SecretNGManagerClient secretManagerClient;
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock ApprovalInstanceService approvalInstanceService;
   private String publisherName = "publisherName";
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
 
-  @Mock private ApprovalInstanceService approvalInstanceService;
   ServiceNowApprovalHelperService serviceNowApprovalHelperService;
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
   private MockedStatic<NGRestUtils> ngRestUtilsMockedStatic;
@@ -130,7 +131,7 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
     doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("__TASK_ID__");
     doNothing().when(waitNotifyEngine).progressOn(any(), any());
-
+    doNothing().when(approvalInstanceService).updateLatestDelegateTaskId(any(), any());
     ServiceNowApprovalInstance instance = getServiceNowApprovalInstance(ambiance);
     taskRequestsUtilsMockedStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Collections.EMPTY_LIST);
     doReturn(ServiceNowConnectorDTO.builder()
@@ -165,9 +166,9 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
         .progressOn("id",
             ApprovalProgressData.builder()
                 .latestDelegateTaskId("__TASK_ID__")
-                .taskName("ServiceNow Task: Get Ticket")
+                .taskName(ApprovalUtils.SERVICENOW_DELEGATE_TASK_NAME)
                 .build());
-
+    verify(approvalInstanceService, times(1)).updateLatestDelegateTaskId("id", "__TASK_ID__");
     // since auth object is present, then decrypt-able entity will be ServiceNowAuthCredentialsDTO
     doReturn(ServiceNowConnectorDTO.builder()
                  .username("username")
@@ -198,9 +199,9 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
         .progressOn("id",
             ApprovalProgressData.builder()
                 .latestDelegateTaskId("__TASK_ID__")
-                .taskName("ServiceNow Task: Get Ticket")
+                .taskName(ApprovalUtils.SERVICENOW_DELEGATE_TASK_NAME)
                 .build());
-
+    verify(approvalInstanceService, times(3)).updateLatestDelegateTaskId("id", "__TASK_ID__");
     // when task id is empty, progress update shouldn't be called
 
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("  ");
@@ -208,6 +209,7 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
     verify(ngDelegate2TaskExecutor, times(4)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
     verify(waitNotifyEngine, times(4)).waitForAllOn(any(), any(), any());
     verifyNoMoreInteractions(waitNotifyEngine);
+    verifyNoMoreInteractions(approvalInstanceService);
   }
 
   @Test

@@ -65,6 +65,9 @@ public class JiraApprovalInstance extends ApprovalInstance implements Persistent
   Map<String, Object> ticketFields;
   List<Long> nextIterations;
 
+  // the id of the latest delegate task created while polling
+  String latestDelegateTaskId;
+
   public static JiraApprovalInstance fromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
     if (stepParameters == null) {
       return null;

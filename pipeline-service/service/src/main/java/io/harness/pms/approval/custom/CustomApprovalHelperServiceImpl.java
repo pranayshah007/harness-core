@@ -8,7 +8,9 @@
 package io.harness.pms.approval.custom;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.pms.approval.ApprovalUtils.sendTaskIdProgressUpdate;
+import static io.harness.steps.approval.ApprovalUtils.getCustomApprovalTaskName;
+import static io.harness.steps.approval.ApprovalUtils.sendTaskIdProgressUpdate;
+import static io.harness.steps.approval.ApprovalUtils.updateTaskId;
 
 import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
 import static software.wings.beans.TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG;
@@ -133,6 +135,7 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
       String taskId = queueTask(ambiance, instance, scriptTaskParametersNG);
 
       sendTaskIdProgressUpdate(taskId, getCustomApprovalTaskName(instance), instanceId, waitNotifyEngine);
+      updateTaskId(instanceId, taskId, approvalInstanceService);
 
       log.info("Custom Approval Instance queued task with taskId - {}", taskId);
       logCallback.saveExecutionLog(String.format("Custom Shell Script Approval: %s", taskId));
@@ -173,16 +176,6 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
       return prepareBashCustomApprovalTaskRequest(ambiance, instance, stepParameters);
     } else if (ShellType.PowerShell.equals(instance.getShellType())) {
       return preparePowerShellCustomApprovalTaskRequest(ambiance, instance, stepParameters);
-    } else {
-      throw new InvalidRequestException(format("Shell %s is not supported", instance.getShellType()));
-    }
-  }
-
-  private String getCustomApprovalTaskName(CustomApprovalInstance instance) {
-    if (ShellType.Bash.equals(instance.getShellType())) {
-      return SHELL_SCRIPT_TASK_NG.getDisplayName();
-    } else if (ShellType.PowerShell.equals(instance.getShellType())) {
-      return WIN_RM_SHELL_SCRIPT_TASK_NG.getDisplayName();
     } else {
       throw new InvalidRequestException(format("Shell %s is not supported", instance.getShellType()));
     }

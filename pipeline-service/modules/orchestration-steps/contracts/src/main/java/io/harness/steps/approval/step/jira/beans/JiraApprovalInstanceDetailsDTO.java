@@ -14,6 +14,7 @@ import io.harness.jira.JiraIssueKeyNG;
 import io.harness.steps.approval.step.beans.ApprovalInstanceDetailsDTO;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
@@ -27,6 +28,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @ApiModel("JiraApprovalInstanceDetails")
 @Schema(name = "JiraApprovalInstanceDetails", description = "This contains details of Jira Approval Instance")
 public class JiraApprovalInstanceDetailsDTO implements ApprovalInstanceDetailsDTO {
@@ -34,4 +36,8 @@ public class JiraApprovalInstanceDetailsDTO implements ApprovalInstanceDetailsDT
   @NotNull JiraIssueKeyNG issue;
   @NotNull io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO approvalCriteria;
   @NotNull CriteriaSpecWrapperDTO rejectionCriteria;
+
+  // id of the delegate task created in the latest polling event
+  String latestDelegateTaskId;
+  String delegateTaskName;
 }

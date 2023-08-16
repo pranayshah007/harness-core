@@ -50,6 +50,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.approval.ApprovalUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.ApprovalProgressData;
 import io.harness.steps.approval.step.beans.ApprovalType;
@@ -118,6 +119,7 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
     doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("__TASK_ID__");
     doNothing().when(waitNotifyEngine).progressOn(any(), any());
+    doNothing().when(approvalInstanceService).updateLatestDelegateTaskId(any(), any());
 
     JiraApprovalInstance instance = getJiraApprovalInstance(ambiance);
     aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Collections.EMPTY_LIST);
@@ -140,8 +142,9 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
         .progressOn("id",
             ApprovalProgressData.builder()
                 .latestDelegateTaskId("__TASK_ID__")
-                .taskName("Jira Task: Get Issue")
+                .taskName(ApprovalUtils.JIRA_DELEGATE_TASK_NAME)
                 .build());
+    verify(approvalInstanceService, times(1)).updateLatestDelegateTaskId("id", "__TASK_ID__");
 
     // since auth object is present, then decrypt-able entity will be JiraAuthCredentialsDTO
     doReturn(JiraConnectorDTO.builder()
@@ -172,8 +175,9 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
         .progressOn("id",
             ApprovalProgressData.builder()
                 .latestDelegateTaskId("__TASK_ID__")
-                .taskName("Jira Task: Get Issue")
+                .taskName(ApprovalUtils.JIRA_DELEGATE_TASK_NAME)
                 .build());
+    verify(approvalInstanceService, times(3)).updateLatestDelegateTaskId("id", "__TASK_ID__");
 
     // when task id is empty, progress update shouldn't be called
 
@@ -182,6 +186,7 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
     verify(ngDelegate2TaskExecutor, times(4)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
     verify(waitNotifyEngine, times(4)).waitForAllOn(any(), any(), any());
     verifyNoMoreInteractions(waitNotifyEngine);
+    verifyNoMoreInteractions(approvalInstanceService);
   }
 
   @Test
