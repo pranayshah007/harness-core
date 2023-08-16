@@ -52,7 +52,7 @@ public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
     return stepBuilder.build();
   }
 
-  private SpecParameters getSpecParameters() {
+  public SpecParameters getSpecParameters() {
     return HttpStepParameters.infoBuilder()
         .assertion(spec.getAssertion())
         .headers(EmptyPredicate.isEmpty(spec.getHeaders()) ? Collections.emptyMap()

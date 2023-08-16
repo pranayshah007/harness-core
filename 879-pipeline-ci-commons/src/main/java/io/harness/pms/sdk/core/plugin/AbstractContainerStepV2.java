@@ -71,6 +71,10 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, T stepElementParameters, StepInputPackage inputPackage) {
+    if (shouldSkip(ambiance, stepElementParameters)) {
+      return AsyncExecutableResponse.newBuilder().build();
+    }
+
     log.info("Starting run in container step");
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
@@ -161,6 +165,10 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
       stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
     }
     return containerPortHelper.getPort(ambiance, stepIdentifier, false);
+  }
+
+  public boolean shouldSkip(Ambiance ambiance, T stepElementParameters) {
+    return false;
   }
 
   public abstract long getTimeout(Ambiance ambiance, T stepElementParameters);

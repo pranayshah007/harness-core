@@ -1179,4 +1179,7 @@ io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs
 io.harness.cdng.provision.awscdk.AwsCdkDestroyStepInfo
 io.harness.cdng.provision.awscdk.AwsCdkDestroyStepNode
 io.harness.cdng.provision.awscdk.AwsCdkDestroyStepParameters
+io.harness.cdng.provision.awscdk.AwsCdkRollbackStepInfo
+io.harness.cdng.provision.awscdk.AwsCdkRollbackStepNode
+io.harness.cdng.provision.awscdk.AwsCdkRollbackStepParameters
 io.harness.plancreator.steps.common.v1.StepElementParametersV1

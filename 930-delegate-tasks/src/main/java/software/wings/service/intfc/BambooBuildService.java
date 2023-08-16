@@ -9,8 +9,11 @@ package software.wings.service.intfc;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -28,6 +31,9 @@ import java.util.Optional;
 /**
  * Created by peeyushaggarwal on 1/12/17.
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public interface BambooBuildService extends BuildService<BambooConfig> {
@@ -40,6 +46,9 @@ public interface BambooBuildService extends BuildService<BambooConfig> {
   @DelegateTaskType(TaskType.BAMBOO_GET_BUILDS)
   List<BuildDetails> getBuilds(String appId, ArtifactStreamAttributes artifactStreamAttributes, BambooConfig config,
       List<EncryptedDataDetail> encryptionDetails, int limit);
+
+  List<BuildDetails> getBuildsWithoutTimeOut(ArtifactStreamAttributes artifactStreamAttributes,
+      BambooConfig bambooConfig, List<EncryptedDataDetail> encryptionDetails, int limit);
 
   @Override
   @DelegateTaskType(TaskType.BAMBOO_GET_JOBS)

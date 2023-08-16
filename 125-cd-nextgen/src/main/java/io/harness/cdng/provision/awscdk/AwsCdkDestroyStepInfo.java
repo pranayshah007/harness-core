@@ -87,6 +87,8 @@ public class AwsCdkDestroyStepInfo extends AwsCdkBaseStepInfo implements CDAbstr
         .imagePullPolicy(getImagePullPolicy())
         .commandOptions(getCommandOptions())
         .appPath(getAppPath())
+        .resources(getResources())
+        .envVariables(getEnvVariables())
         .stackNames(getStackNames())
         .build();
   }

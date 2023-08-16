@@ -41,6 +41,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.OrchestrationMap;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.timeout.TimeoutDetails;
@@ -181,6 +182,10 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
 
     public static final String stageFqn = NodeExecutionKeys.planNode + "."
         + "stageFqn";
+
+    public static final String accountId = NodeExecutionKeys.ambiance + "."
+        + "setupAbstractions"
+        + "." + SetupAbstractionKeys.accountId;
   }
 
   public static List<MongoIndex> mongoIndexes() {

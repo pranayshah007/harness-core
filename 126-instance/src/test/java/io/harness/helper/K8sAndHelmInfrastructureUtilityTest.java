@@ -79,18 +79,19 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
   public void testGetNativeHelmDeploymentReleaseDetails() {
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add(NAMESPACE);
-    DeploymentInfoDTO deploymentInfoDTO = NativeHelmDeploymentInfoDTO.builder()
-                                              .releaseName(RELEASE_NAME)
-                                              .namespaces(namespaces)
-                                              .helmVersion(HelmVersion.V3)
-                                              .helmChartInfo(HelmChartInfo.builder().name("helmChart").build())
-                                              .cloudConfigMetadata(K8sAzureCloudConfigMetadata.builder()
-                                                                       .clusterName("clusterName")
-                                                                       .subscription("subscriptionId")
-                                                                       .resourceGroup("resourceGroup")
-                                                                       .useClusterAdminCredentials(true)
-                                                                       .build())
-                                              .build();
+    NativeHelmDeploymentInfoDTO deploymentInfoDTO =
+        NativeHelmDeploymentInfoDTO.builder()
+            .releaseName(RELEASE_NAME)
+            .namespaces(namespaces)
+            .helmVersion(HelmVersion.V3)
+            .helmChartInfo(HelmChartInfo.builder().name("helmChart").build())
+            .cloudConfigMetadata(K8sAzureCloudConfigMetadata.builder()
+                                     .clusterName("clusterName")
+                                     .subscription("subscriptionId")
+                                     .resourceGroup("resourceGroup")
+                                     .useClusterAdminCredentials(true)
+                                     .build())
+            .build();
 
     NativeHelmDeploymentReleaseDetails helmDeploymentReleaseDetails =
         K8sAndHelmInfrastructureUtility.getNativeHelmDeploymentReleaseDetails(deploymentInfoDTO);
@@ -101,6 +102,8 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
     assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig().getResourceGroup()).isEqualTo("resourceGroup");
     assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig().getSubscriptionId()).isEqualTo("subscriptionId");
     assertThat(helmDeploymentReleaseDetails.getK8sCloudClusterConfig().isUseClusterAdminCredentials()).isTrue();
+    assertThat(helmDeploymentReleaseDetails.getHelmVersion()).isEqualTo(deploymentInfoDTO.getHelmVersion().toString());
+    assertThat(helmDeploymentReleaseDetails.getHelmChartInfo()).isEqualTo(deploymentInfoDTO.getHelmChartInfo());
   }
 
   @Test

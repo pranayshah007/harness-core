@@ -95,6 +95,7 @@ public class K8sAndHelmInfrastructureUtility {
                                    .useClusterAdminCredentials(useClusterAdminCredentials)
                                    .build())
         .helmVersion(nativeHelmDeploymentInfoDTO.getHelmVersion().toString())
+        .helmChartInfo(nativeHelmDeploymentInfoDTO.getHelmChartInfo())
         .build();
   }
 
