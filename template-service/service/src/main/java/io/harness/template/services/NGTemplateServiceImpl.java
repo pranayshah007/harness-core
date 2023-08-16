@@ -2024,6 +2024,24 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
+  @Override
+  public Optional<GlobalTemplateEntity> getGlobalTemplateByIdentifier(
+      String templateIdentifier, String versionLabel, boolean deleted, String accountId) {
+    enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
+    try {
+      return templateServiceHelper.getGlobalTemplateByIdentifier(templateIdentifier, versionLabel, deleted, false);
+
+    } catch (ExplanationException | HintException | ScmException e) {
+      String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
+      log.error(errorMessage, e);
+      throw e;
+    } catch (Exception e) {
+      String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
+      log.error(errorMessage, e);
+      throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, e.getMessage()));
+    }
+  }
+
   private void makePreviousStableGlobalTemplateFalse(
       String accountIdentifier, String templateIdentifier, String updatedStableTemplateVersion) {
     NGTemplateServiceHelper.validatePresenceOfRequiredFields(accountIdentifier, templateIdentifier);

@@ -22,8 +22,10 @@ import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateListType;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.resources.beans.PermissionTypes;
@@ -36,7 +38,9 @@ import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.NotFoundException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -91,5 +95,30 @@ public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
             .map(NGTemplateDtoMapper::prepareTemplateSummaryResponseDto);
 
     return ResponseDTO.newResponse(templateSummaryResponseDTOS);
+  }
+
+  public ResponseDTO<TemplateResponseDTO> get(@NotNull @AccountIdentifier String accountId, @OrgIdentifier String orgId,
+      @ProjectIdentifier String projectId, String templateIdentifier, String versionLabel, boolean deleted,
+      GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache, boolean loadFromFallbackBranch) {
+    // if label is not given, return stable template
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+    log.info(
+        String.format("Retrieving Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
+            templateIdentifier, versionLabel, projectId, orgId, accountId));
+    Optional<GlobalTemplateEntity> templateEntity =
+        templateService.getGlobalTemplateByIdentifier(templateIdentifier, versionLabel, deleted, accountId);
+
+    String version = "0";
+    if (templateEntity.isPresent()) {
+      version = templateEntity.get().getVersion().toString();
+    }
+    TemplateResponseDTO templateResponseDTO = NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity.orElseThrow(
+        ()
+            -> new NotFoundException(String.format(
+                "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
+                EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
+
+    return ResponseDTO.newResponse(version, templateResponseDTO);
   }
 }

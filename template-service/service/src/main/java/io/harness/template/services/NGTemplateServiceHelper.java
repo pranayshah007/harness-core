@@ -701,6 +701,16 @@ public class NGTemplateServiceHelper {
     return templateRepository.findALLGlobalTemplateAndDeletedNot(!deleted, getMetadataOnly, pageable, criteria);
   }
 
+  public Optional<GlobalTemplateEntity> getGlobalTemplateByIdentifier(
+      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly) {
+    if (EmptyPredicate.isEmpty(versionLabel)) {
+      return getStableTemplate(templateIdentifier, deleted, getMetadataOnly);
+
+    } else {
+      return getGlobalTemplateWithVersionLabel(templateIdentifier, versionLabel, deleted, getMetadataOnly);
+    }
+  }
+
   public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
       boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {

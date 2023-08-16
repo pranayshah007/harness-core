@@ -128,4 +128,6 @@ public interface NGTemplateService {
       String accountIdentifier, FilterParamsDTO filterParamsDTO, PageParamsDTO pageParamsDTO);
   Page<GlobalTemplateEntity> getAllGlobalTemplate(
       Criteria criteria, String accountId, Pageable pageable, boolean deleted);
+  Optional<GlobalTemplateEntity> getGlobalTemplateByIdentifier(
+      String templateIdentifier, String versionLabel, boolean deleted, String accountId);
 }
