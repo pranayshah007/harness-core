@@ -716,9 +716,9 @@ func (r *runTestsTask) getTiRunner(agentPath string) (runner testintelligence.Te
 		{
 			switch r.buildTool {
 			case "pytest":
-				runner = python.NewPytestRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+				runner = python.NewPytestRunner(r.log, r.fs, r.cmdContextFactory, agentPath, strings.Split(r.testGlobs, ","))
 			case "unittest":
-				runner = python.NewUnittestRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+				runner = python.NewUnittestRunner(r.log, r.fs, r.cmdContextFactory, agentPath, strings.Split(r.testGlobs, ","))
 			default:
 				return runner, fmt.Errorf("build tool: %s is not supported for python", r.buildTool)
 			}

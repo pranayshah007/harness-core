@@ -23,6 +23,7 @@ import (
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	"github.com/harness/ti-client/types"
+	zglob "github.com/mattn/go-zglob"
 	"go.uber.org/zap"
 )
 
@@ -37,14 +38,16 @@ type pytestRunner struct {
 	log               *zap.SugaredLogger
 	cmdContextFactory exec.CmdContextFactory
 	agentPath         string
+	testGlobs         []string
 }
 
-func NewPytestRunner(log *zap.SugaredLogger, fs filesystem.FileSystem, factory exec.CmdContextFactory, agentPath string) *pytestRunner {
+func NewPytestRunner(log *zap.SugaredLogger, fs filesystem.FileSystem, factory exec.CmdContextFactory, agentPath string, testGlobs []string) *pytestRunner {
 	return &pytestRunner{
 		fs:                fs,
 		log:               log,
 		cmdContextFactory: factory,
 		agentPath:         agentPath,
+		testGlobs:         testGlobs,
 	}
 }
 
@@ -80,13 +83,25 @@ func (b *pytestRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	set := make(map[types.RunnableTest]interface{})
 	ut := []string{}
 	for _, t := range tests {
-		w := types.RunnableTest{Class: t.Class}
-		if _, ok := set[w]; ok {
-			// The test has already been added
-			continue
+		// Only add tests matching test globs
+		testGlobs := b.testGlobs
+		// Don't filter if glob not specified
+		if len(b.testGlobs) == 0 {
+			testGlobs = []string{"**"}
 		}
-		set[w] = struct{}{}
-		ut = append(ut, t.Class)
+		for _, glob := range testGlobs {
+			if matched, _ := zglob.Match(glob, t.Class); matched {
+				w := types.RunnableTest{Class: t.Class}
+				if _, ok := set[w]; ok {
+					// The test has already been added
+					continue
+				}
+				set[w] = struct{}{}
+				ut = append(ut, t.Class)
+				break
+			}
+		}
+
 	}
 
 	if ignoreInstr {
