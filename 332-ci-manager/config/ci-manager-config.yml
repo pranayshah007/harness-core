@@ -377,11 +377,11 @@ ciExecutionServiceConfig:
       gitCloneConfig:
         name: github.com/wings-software/drone-git@refs/tags/v1.3.9
       dockerBuildxConfig:
-        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.1
+        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.2
       dockerBuildxEcrConfig:
-        name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
+        name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.2
       dockerBuildxGcrConfig:
-        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.1
+        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.2
       dockerBuildxAcrConfig:
         name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.0
   gitnessConfig:
