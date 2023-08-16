@@ -16,32 +16,32 @@ variable "projectId" {
 locals {
   qa_filter_prefix = join("\n", [
     "resource.type=\"k8s_container\"",
-    "resource.labels.project_id=\"qa-setup\""
-    "resource.labels.location=\"us-west1\""
+    "resource.labels.project_id=\"qa-setup\"",
+    "resource.labels.location=\"us-west1\"",
     "resource.labels.cluster_name=\"qa-private\"",
     "labels.k8s-pod/app=(\"ce-nextgen\" OR \"batch-processing\")"
   ])
 
   stress_filter_prefix = join("\n", [
     "resource.type=\"k8s_container\"",
-    "resource.labels.project_id=\"qa-setup\""
-    "resource.labels.location=\"us-west1\""
+    "resource.labels.project_id=\"qa-setup\"",
+    "resource.labels.location=\"us-west1\"",
     "resource.labels.cluster_name=\"qa-stress\"",
     "labels.k8s-pod/app=(\"ce-nextgen\" OR \"batch-processing\")"
   ])
 
   prod_filter_prefix = join("\n", [
     "resource.type=\"k8s_container\"",
-    "resource.labels.project_id=\"prod-setup-205416\""
-    "resource.labels.location=\"us-west1\""
+    "resource.labels.project_id=\"prod-setup-205416\"",
+    "resource.labels.location=\"us-west1\"",
     "resource.labels.cluster_name=\"prod-private-uswest1-primary\"",
     "labels.k8s-pod/app=(\"ce-nextgen\" OR \"batch-processing\")"
   ])
 
   dev_filter_prefix = join("\n", [
     "resource.type=\"k8s_container\"",
-    "resource.labels.project_id=\"ccm-play\""
-    "resource.labels.location=\"us-central1-c\""
+    "resource.labels.project_id=\"ccm-play\"",
+    "resource.labels.location=\"us-central1-c\"",
     "resource.labels.cluster_name=\"ce-dev\"",
     "labels.k8s-pod/app=(\"ce-nextgen\" OR \"batch-processing\")"
   ])
