@@ -41,7 +41,7 @@ public class EnableAidaValidator implements SettingValidator {
     SettingValueResponseDTO responseDTO = settingsService.get(settingIdentifier, accountIdentifier, null, null);
     if (!parseBoolean(responseDTO.getValue())) {
       throw new InvalidRequestException(
-          String.format("Setting %s cannot be enabled on current scope. Please first enable it on Account scope.",
+          String.format("Setting [%s] cannot be enabled on current scope. Please first enable it on Account scope.",
               settingIdentifier));
     }
   }
@@ -49,7 +49,7 @@ public class EnableAidaValidator implements SettingValidator {
   private void validateIfEulaIsSigned(String accountIdentifier, String settingIdentifier) {
     if (!eulaService.isSigned(AgreementType.AIDA, accountIdentifier)) {
       throw new InvalidRequestException(String.format(
-          "Setting %s cannot be enabled on current scope. Please sign End User License Agreement to enable it.",
+          "Setting [%s] cannot be enabled on current scope. Please sign End User License Agreement to enable it.",
           settingIdentifier));
     }
   }
