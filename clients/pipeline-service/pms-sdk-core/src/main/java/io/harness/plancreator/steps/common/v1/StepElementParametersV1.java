@@ -34,9 +34,9 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.plancreator.steps.common.v1.StepElementParametersV1")
 public class StepElementParametersV1 implements StepBaseParameters {
   String uuid;
-  String identifier;
+  String id;
   String name;
-  String description;
+  String desc;
   ParameterField<String> timeout;
   // TODO: change this to List<FailureStrategyConfigV1>
   List<FailureStrategyConfig> failureStrategies;
@@ -67,13 +67,18 @@ public class StepElementParametersV1 implements StepBaseParameters {
         .type(this.type)
         .name(this.name)
         .spec(includeSpec ? this.spec : null)
-        .description(this.description)
-        .identifier(this.identifier)
+        .desc(this.desc)
+        .id(this.id)
         .timeout(this.timeout)
         .enforce(this.enforce)
         .failureStrategies(this.failureStrategies)
         .when(this.when)
         .delegateSelectors(this.delegateSelectors)
         .build();
+  }
+
+  @Override
+  public String getIdentifier() {
+    return getId();
   }
 }

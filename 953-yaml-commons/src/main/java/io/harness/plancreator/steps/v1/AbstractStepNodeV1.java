@@ -21,7 +21,6 @@ import io.harness.plancreator.strategy.v1.StrategyConfigV1;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
@@ -31,7 +30,6 @@ import lombok.experimental.FieldDefaults;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
-@JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(PIPELINE)
 @JsonTypeInfo(use = NAME, property = "type", include = EXISTING_PROPERTY, visible = true)
@@ -39,7 +37,7 @@ public abstract class AbstractStepNodeV1 {
   @JsonProperty(YamlNode.UUID_FIELD_NAME) String uuid;
   String id;
   String name;
-  String description;
+  String desc;
   ParameterField<String> when;
   ParameterField<List<String>> delegateSelectors;
   ParameterField<StrategyConfigV1> strategy;

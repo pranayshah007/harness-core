@@ -23,9 +23,9 @@ public class StepParametersUtilsV1 {
   public StepElementParametersV1Builder getStepParameters(PmsAbstractStepNodeV1 stepElementConfig) {
     StepElementParametersV1Builder stepBuilder = StepElementParametersV1.builder();
     stepBuilder.name(stepElementConfig.getName());
-    stepBuilder.identifier(stepElementConfig.getId());
+    stepBuilder.id(stepElementConfig.getId());
     stepBuilder.delegateSelectors(stepElementConfig.getDelegateSelectors());
-    stepBuilder.description(stepElementConfig.getDescription());
+    stepBuilder.desc(stepElementConfig.getDesc());
     stepBuilder.failureStrategies(
         stepElementConfig.getFailureStrategies() != null ? stepElementConfig.getFailureStrategies().getValue() : null);
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepElementConfig.getTimeout())));

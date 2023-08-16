@@ -29,39 +29,26 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.http.HttpStepParameters;
 import io.harness.yaml.utils.NGVariablesUtils;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import lombok.Data;
-import lombok.Getter;
 
 @OwnedBy(PIPELINE)
 @JsonTypeName(StepSpecTypeConstants.HTTP)
 @Data
 public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
-  StepType type = StepType.Http;
+  String type = StepSpecTypeConstants.HTTP;
 
-  @JsonProperty("spec")
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  HttpStepInfo httpStepInfo;
-
-  // will re-iterate
-  enum StepType {
-    Http(StepSpecTypeConstants.HTTP);
-    @Getter String name;
-    StepType(String name) {
-      this.name = name;
-    }
-  }
+  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) HttpStepInfo spec;
 
   // TODO: set rollback parameters
   public StepElementParametersV1 getStepParameters(PlanCreationContext ctx) {
     StepElementParametersV1Builder stepBuilder = StepParametersUtilsV1.getStepParameters(this);
-    stepBuilder.spec(getSpecParameters(getHttpStepInfo()));
+    stepBuilder.spec(getSpecParameters(getSpec()));
     stepBuilder.type(StepSpecTypeConstants.HTTP);
-    StepUtils.appendDelegateSelectorsToSpecParameters(httpStepInfo, ctx);
+    StepUtils.appendDelegateSelectorsToSpecParameters(spec, ctx);
     return stepBuilder.build();
   }
 
