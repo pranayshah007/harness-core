@@ -14,4 +14,5 @@ import lombok.Data;
 @Builder
 public class OrchestrationLogConfiguration {
   @Builder.Default int orchestrationLogBatchSize = 5;
+  boolean shouldUseExpiredListener;
 }

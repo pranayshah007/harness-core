@@ -73,16 +73,15 @@ public class GraphStatusUpdateHelper {
       }
 
       Map<String, GraphVertex> graphVertexMap = orchestrationGraph.getAdjacencyList().getGraphVertexMap();
-      if (graphVertexMap.containsKey(nodeExecutionId)) {
-        if (nodeExecution.getOldRetry()) {
-          log.info("[PMS_GRAPH]  Removing graph vertex with id [{}] and status [{}]. PlanExecutionId: [{}]",
-              nodeExecutionId, nodeExecution.getStatus(), planExecutionId);
-          orchestrationAdjacencyListGenerator.removeVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
-        } else {
-          updateGraphVertex(graphVertexMap, nodeExecution, planExecutionId);
-        }
+      if (graphVertexMap.containsKey(nodeExecutionId) && nodeExecution.getOldRetry()) {
+        log.info("[PMS_GRAPH]  Removing graph vertex with id [{}] and status [{}]. PlanExecutionId: [{}]",
+            nodeExecutionId, nodeExecution.getStatus(), planExecutionId);
+        orchestrationAdjacencyListGenerator.removeVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
       } else if (!nodeExecution.getOldRetry()) {
-        orchestrationAdjacencyListGenerator.addVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
+        if (!graphVertexMap.containsKey(nodeExecutionId)) {
+          orchestrationAdjacencyListGenerator.addVertex(orchestrationGraph.getAdjacencyList(), nodeExecution);
+        }
+        updateGraphVertex(graphVertexMap, nodeExecution, planExecutionId);
       }
     } catch (Exception e) {
       log.error(

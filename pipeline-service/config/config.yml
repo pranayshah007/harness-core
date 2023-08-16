@@ -528,6 +528,7 @@ allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
 
 orchestrationLogConfiguration:
   orchestrationLogBatchSize: ${ORCHESTRATION_LOG_BATCH_SIZE:-5}
+  shouldUseExpiredListener: ${SHOULD_USE_ORCHESTRATION_LOG_EXPIRED_LISTENER:-true}
 
 planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}
 

@@ -258,9 +258,11 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
         versionInfoManager.getVersionInfo().getBuildNo());
     MutableConfiguration<String, Long> config = new MutableConfiguration<>();
     config.setTypes(String.class, Long.class);
-    cache.registerCacheEntryListener(
-        new MutableCacheEntryListenerConfiguration(FactoryBuilder.factoryOf(orchestrationLogCacheListener),
-            FactoryBuilder.factoryOf(orchestrationLogCacheListener), false, false));
+    if (this.config.getOrchestrationLogConfiguration().isShouldUseExpiredListener()) {
+      cache.registerCacheEntryListener(
+          new MutableCacheEntryListenerConfiguration(FactoryBuilder.factoryOf(orchestrationLogCacheListener),
+              FactoryBuilder.factoryOf(orchestrationLogCacheListener), false, false));
+    }
     return cache;
   }
 
