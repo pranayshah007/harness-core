@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 32
+version: 33
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -18,6 +18,7 @@ resourceTypes:
     permissionKey: secret
   - identifier: PIPELINE
     permissionKey: pipeline
+    isPublic: true
   - identifier: SERVICE
     permissionKey: service
   - identifier: ENVIRONMENT
