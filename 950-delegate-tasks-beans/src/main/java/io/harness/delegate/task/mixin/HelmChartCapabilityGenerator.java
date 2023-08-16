@@ -48,8 +48,7 @@ public class HelmChartCapabilityGenerator {
       GitStoreDelegateConfig gitStoreDelegateConfig =
           (GitStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
       capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-          ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),
-          gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+          gitStoreDelegateConfig, gitStoreDelegateConfig.getEncryptedDataDetails()));
       capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
           gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
     }
