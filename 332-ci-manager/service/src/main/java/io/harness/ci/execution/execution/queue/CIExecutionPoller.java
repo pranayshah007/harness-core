@@ -41,7 +41,7 @@ public class CIExecutionPoller implements Managed {
   @Inject AsyncWaitEngine asyncWaitEngine;
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
   private static final int WAIT_TIME_IN_SECONDS = 5;
-  private final int batchSize = 5;
+  private final int batchSize = 10;
 
   @Override
   public void start() {
