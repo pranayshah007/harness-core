@@ -453,7 +453,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
   '/v1/orgs/{org}/projects':
     post:
-      summary: Creates a project
+      summary: Create a project
       responses:
         '201':
           $ref: '#/components/responses/ProjectResponse'
