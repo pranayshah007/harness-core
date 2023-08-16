@@ -79,6 +79,8 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
+import io.harness.gitsync.scm.beans.ScmGetBatchFilesResponse;
+import io.harness.gitsync.scm.beans.ScmGetFileResponse;
 import io.harness.gitx.GitXSettingsHelper;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
@@ -93,7 +95,6 @@ import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.organization.remote.OrganizationClient;
-import io.harness.persistence.gitaware.GitAware;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -1772,7 +1773,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       String projectIdentifier, List<String> filePathList, String repoName, String branch, String connectorRef,
       boolean loadFromCache) {
     Map<String, GlobalTemplateEntity> batchTemplateEntities = new HashMap<>();
-    Map<String, GitAware> remoteEntities = new HashMap<>();
     GetFileGitContextRequestParams.GetFileGitContextRequestParamsBuilder getFileGitContextRequestParams =
         GetFileGitContextRequestParams.builder()
             .connectorRef(connectorRef)
@@ -1793,14 +1793,34 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                   .scope(io.harness.beans.Scope.of(accountId, orgIdentifier, projectIdentifier))
                   .getFileGitContextRequestParams(getFileGitContextRequestParams.filePath(filePath).build())
                   .build()));
-      remoteEntities.putAll(
-          gitAwareEntityHelper.fetchGlobalTemplateEntitiesFromRemote(accountId, fetchRemoteEntityRequestMap));
-    }
-
-    for (Map.Entry<String, GitAware> remoteEntity : remoteEntities.entrySet()) {
-      batchTemplateEntities.put(remoteEntity.getKey(), (GlobalTemplateEntity) remoteEntity.getValue());
+      ScmGetBatchFilesResponse scmGetBatchFilesResponse =
+          gitAwareEntityHelper.fetchGlobalTemplateEntitiesFromRemote(accountId, fetchRemoteEntityRequestMap);
+      batchTemplateEntities.putAll(processScmGetBatchFilesWithReadMe(
+          scmGetBatchFilesResponse.getBatchFilesResponse(), fetchRemoteEntityRequestMap));
     }
     return batchTemplateEntities;
+  }
+
+  private Map<String, GlobalTemplateEntity> processScmGetBatchFilesWithReadMe(
+      Map<String, ScmGetFileResponse> getBatchFilesResponse,
+      Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
+    Map<String, GlobalTemplateEntity> batchFilesResponse = new HashMap<>();
+
+    getBatchFilesResponse.forEach((identifier, scmGetFileResponse) -> {
+      GlobalTemplateEntity globalTemplateEntity =
+          (GlobalTemplateEntity) remoteTemplatesList.get(identifier).getEntity();
+      String filePath = scmGetFileResponse.getGitMetaData().getFilePath();
+      if (filePath.endsWith(".yaml") || filePath.endsWith(".yml")) {
+        globalTemplateEntity.setData(scmGetFileResponse.getFileContent());
+        String[] path = filePath.split("/");
+        String readMeFile = filePath.replace(path[path.length - 1], "README.md");
+        if (getBatchFilesResponse.containsKey(readMeFile)) {
+          globalTemplateEntity.setReadMe(getBatchFilesResponse.get(readMeFile).getFileContent());
+        }
+        batchFilesResponse.put(identifier, globalTemplateEntity);
+      }
+    });
+    return batchFilesResponse;
   }
 
   public GlobalTemplateEntity create(

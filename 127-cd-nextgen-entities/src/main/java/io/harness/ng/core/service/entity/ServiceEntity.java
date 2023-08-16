@@ -152,14 +152,4 @@ public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware {
   public void setData(String data) {
     this.yaml = data;
   }
-
-  @Override
-  public void setReadMe(String fileContent) {
-    return null;
-  }
-
-  @Override
-  public String getReadMe() {
-    return null;
-  }
 }

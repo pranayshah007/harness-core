@@ -101,7 +101,7 @@ public class GlobalTemplateEntity
   @Setter @NonFinal String branch;
   @Setter @NonFinal String yamlGitConfigRef;
   @Wither @Setter @NonFinal String filePath;
-  @Wither @NonFinal @Setter String readMe;
+  @Wither @Setter @NonFinal String readMe;
   @Setter @NonFinal String rootFolder;
   @Wither @NonFinal Boolean isEntityInvalid;
 
@@ -155,15 +155,5 @@ public class GlobalTemplateEntity
   @Override
   public void setData(String yaml) {
     this.yaml = yaml;
-  }
-
-  @Override
-  public void setReadMe(String fileContent) {
-    this.readMe = fileContent;
-  }
-
-  @Override
-  public String getReadMe() {
-    return readMe;
   }
 }
