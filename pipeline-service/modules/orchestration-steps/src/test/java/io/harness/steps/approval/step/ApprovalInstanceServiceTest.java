@@ -916,7 +916,6 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   }
 
   @Test
-<<<<<<< HEAD
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testUpdateLatestDelegateTaskId() {
@@ -936,7 +935,9 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
                                             ApprovalType.CUSTOM_APPROVAL, ApprovalType.JIRA_APPROVAL))));
     assertThat(updateArgumentCaptor.getValue())
         .isEqualTo(new Update().set(ServiceNowApprovalInstanceKeys.latestDelegateTaskId, TASK_ID));
-=======
+  }
+
+  @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testFindLatestApprovalInstanceByPlanExecutionIdAndType() {
@@ -1000,6 +1001,5 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
         () -> approvalInstanceServiceImpl.findLatestApprovalInstanceByPlanExecutionIdAndType(planExecutionId, null))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage("ApprovalType cannot be null");
->>>>>>> 025c2f71746 ([CDS-76988]: Getting Harness approval outcome from approvalInstances instead outcomeInstances collection)
   }
 }
