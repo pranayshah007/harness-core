@@ -155,29 +155,30 @@ public class NGTemplateDtoMapper {
         .build();
   }
 
-  public TemplateSummaryResponseDTO prepareTemplateSummaryResponseDto(GlobalTemplateEntity templateEntity) {
+  public TemplateSummaryResponseDTO prepareTemplateSummaryResponseDto(GlobalTemplateEntity globalTemplateEntity) {
     return TemplateSummaryResponseDTO.builder()
-        .accountId(templateEntity.getAccountId())
-        .orgIdentifier(templateEntity.getOrgIdentifier())
-        .projectIdentifier(templateEntity.getProjectIdentifier())
-        .yaml(templateEntity.getYaml())
-        .identifier(templateEntity.getIdentifier())
-        .description(templateEntity.getDescription())
-        .name(templateEntity.getName())
-        .isStableTemplate(templateEntity.isStableTemplate())
-        .childType(templateEntity.getChildType())
-        .templateEntityType(templateEntity.getTemplateEntityType())
-        .templateScope(templateEntity.getTemplateScope())
-        .versionLabel(templateEntity.getVersionLabel())
-        .tags(TagMapper.convertToMap(templateEntity.getTags()))
-        .version(templateEntity.getVersion())
-        .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
-        .lastUpdatedAt(templateEntity.getLastUpdatedAt())
-        .icon(templateEntity.getIcon())
-        .entityValidityDetails(templateEntity.isEntityInvalid()
-                ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
+        .accountId(globalTemplateEntity.getAccountId())
+        .orgIdentifier(globalTemplateEntity.getOrgIdentifier())
+        .projectIdentifier(globalTemplateEntity.getProjectIdentifier())
+        .yaml(globalTemplateEntity.getYaml())
+        .identifier(globalTemplateEntity.getIdentifier())
+        .description(globalTemplateEntity.getDescription())
+        .name(globalTemplateEntity.getName())
+        .isStableTemplate(globalTemplateEntity.isStableTemplate())
+        .childType(globalTemplateEntity.getChildType())
+        .templateEntityType(globalTemplateEntity.getTemplateEntityType())
+        .templateScope(globalTemplateEntity.getTemplateScope())
+        .versionLabel(globalTemplateEntity.getVersionLabel())
+        .tags(TagMapper.convertToMap(globalTemplateEntity.getTags()))
+        .version(globalTemplateEntity.getVersion())
+        .gitDetails(getEntityGitDetailsForListTemplates(globalTemplateEntity))
+        .lastUpdatedAt(globalTemplateEntity.getLastUpdatedAt())
+        .icon(globalTemplateEntity.getIcon())
+        .entityValidityDetails(globalTemplateEntity.isEntityInvalid()
+                ? EntityValidityDetails.builder().valid(false).invalidYaml(globalTemplateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
-        .createdAt(templateEntity.getCreatedAt())
+        .createdAt(globalTemplateEntity.getCreatedAt())
+        .readMe(isNotEmpty(globalTemplateEntity.getReadMe()) ? globalTemplateEntity.getReadMe() : "")
         .build();
   }
 
@@ -498,6 +499,7 @@ public class NGTemplateDtoMapper {
         .storeType(globalTemplateEntity.getStoreType())
         .connectorRef(globalTemplateEntity.getConnectorRef())
         .cacheResponseMetadata(getCacheResponse(globalTemplateEntity))
+        .readMe(isNotEmpty(globalTemplateEntity.getReadMe()) ? globalTemplateEntity.getReadMe() : "")
         .build();
   }
 
