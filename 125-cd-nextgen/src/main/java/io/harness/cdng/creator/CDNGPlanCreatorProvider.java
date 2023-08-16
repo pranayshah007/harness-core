@@ -150,6 +150,7 @@ import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkBootstrapStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkDiffStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.awscdk.AwsCdkSynthStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
@@ -262,6 +263,7 @@ import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkBootstrapVariableC
 import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkDeployVariableCreator;
 import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkDestroyVariableCreator;
 import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkDiffVariableCreator;
+import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkRollbackVariableCreator;
 import io.harness.cdng.provision.awscdk.variablecreator.AwsCdkSynthVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureARMRollbackStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateARMResourceStepVariableCreator;
@@ -338,8 +340,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
   private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER,
       CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA);
-  private static final List<String> AWS_CDK_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, AWS_CDK_STEP_METADATA,
-      HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA, PLUGIN);
+  private static final List<String> AWS_CDK_CATEGORY = Arrays.asList(AWS_CDK_STEP_METADATA, PLUGIN);
   private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS,
       SERVERLESS_AWS_LAMBDA, ASG, GOOGLE_CLOUD_FUNCTIONS, ServiceSpecType.AWS_LAMBDA, TAS);
   private static final List<String> TERRAGRUNT_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS,
@@ -534,6 +535,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AwsCdkDiffStepPlanCreator());
     planCreators.add(new AwsCdkDeployStepPlanCreator());
     planCreators.add(new AwsCdkDestroyStepPlanCreator());
+    planCreators.add(new AwsCdkRollbackStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -689,6 +691,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AwsCdkDiffVariableCreator());
     variableCreators.add(new AwsCdkDeployVariableCreator());
     variableCreators.add(new AwsCdkDestroyVariableCreator());
+    variableCreators.add(new AwsCdkRollbackVariableCreator());
 
     return variableCreators;
   }
@@ -1528,6 +1531,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
             .build();
 
+    StepInfo awsCdkRollback =
+        StepInfo.newBuilder()
+            .setName("AWS CDK Rollback")
+            .setType(StepSpecTypeConstants.AWS_CDK_ROLLBACK)
+            .setStepMetaData(
+                StepMetaData.newBuilder().addAllCategory(AWS_CDK_CATEGORY).setFolderPath(AWS_CDK_STEP_METADATA).build())
+            .setFeatureFlag(FeatureName.CDS_AWS_CDK.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsMergePR);
@@ -1628,6 +1640,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(awsCdkDiff);
     stepInfos.add(awsCdkDeploy);
     stepInfos.add(awsCdkDestroy);
+    stepInfos.add(awsCdkRollback);
     return stepInfos;
   }
 }

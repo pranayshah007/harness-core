@@ -74,6 +74,7 @@ import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepInfo;
 import io.harness.cdng.provision.awscdk.AwsCdkDeployStepInfo;
 import io.harness.cdng.provision.awscdk.AwsCdkDestroyStepInfo;
 import io.harness.cdng.provision.awscdk.AwsCdkDiffStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkRollbackStepInfo;
 import io.harness.cdng.provision.awscdk.AwsCdkSynthStepInfo;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo;
@@ -156,7 +157,7 @@ import io.swagger.annotations.ApiModel;
         ServerlessAwsLambdaPrepareRollbackV2StepInfo.class, ServerlessAwsLambdaDeployV2StepInfo.class,
         ServerlessAwsLambdaPackageV2StepInfo.class, ServerlessAwsLambdaRollbackV2StepInfo.class,
         AwsCdkBootstrapStepInfo.class, AwsCdkSynthStepInfo.class, AwsCdkDiffStepInfo.class, AwsCdkDeployStepInfo.class,
-        AwsCdkDestroyStepInfo.class})
+        AwsCdkDestroyStepInfo.class, AwsCdkRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

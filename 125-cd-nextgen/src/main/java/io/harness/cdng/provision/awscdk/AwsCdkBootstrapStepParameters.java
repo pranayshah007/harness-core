@@ -36,17 +36,13 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("awsCdkBootstrapStepParameters")
 @RecasterAlias("io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepParameters")
 public class AwsCdkBootstrapStepParameters extends AwsCdkBaseStepInfo implements SpecParameters, StepParameters {
-  ParameterField<Boolean> exportTemplate;
-
   @Builder(builderMethodName = "infoBuilder")
   public AwsCdkBootstrapStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
       ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<List<String>> commandOptions, ParameterField<String> appPath,
-      ParameterField<Boolean> exportTemplate) {
+      ParameterField<List<String>> commandOptions, ParameterField<String> appPath) {
     super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
         commandOptions, appPath);
-    this.exportTemplate = exportTemplate;
   }
 }

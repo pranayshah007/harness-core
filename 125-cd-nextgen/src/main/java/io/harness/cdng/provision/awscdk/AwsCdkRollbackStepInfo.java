@@ -7,13 +7,14 @@
 
 package io.harness.cdng.provision.awscdk;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.AwsCdkDiffStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.AwsCdkRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -23,13 +24,14 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.yaml.extended.ci.container.ContainerResource;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -40,34 +42,39 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = AwsCdkDiffStepInfoVisitorHelper.class)
-@JsonTypeName(StepSpecTypeConstants.AWS_CDK_DIFF)
-@TypeAlias("awsCdkDiffStepInfo")
-@RecasterAlias("io.harness.cdng.provision.awscdk.AwsCdkDiffStepInfo")
-public class AwsCdkDiffStepInfo extends AwsCdkBaseStepInfo implements CDAbstractStepInfo, Visitable {
+@EqualsAndHashCode
+@SimpleVisitorHelper(helperClass = AwsCdkRollbackStepInfoVisitorHelper.class)
+@JsonTypeName(StepSpecTypeConstants.AWS_CDK_ROLLBACK)
+@TypeAlias("awsCdkRollbackStepInfo")
+@RecasterAlias("io.harness.cdng.provision.awscdk.AwsCdkRollbackStepInfo")
+public class AwsCdkRollbackStepInfo implements CDAbstractStepInfo, Visitable {
+  @YamlSchemaTypes({expression})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH) ParameterField<List<String>> stackNames;
+
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> provisionerIdentifier;
+
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  ParameterField<Map<String, String>> envVariables;
 
   @Builder(builderMethodName = "infoBuilder")
-  public AwsCdkDiffStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> image,
-      ParameterField<String> connectorRef, ContainerResource resources,
-      ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
-      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<List<String>> commandOptions, ParameterField<String> appPath,
-      ParameterField<List<String>> stackNames) {
-    super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
-        commandOptions, appPath);
-    this.stackNames = stackNames;
+  public AwsCdkRollbackStepInfo(
+      ParameterField<Map<String, String>> envVariables, ParameterField<String> provisionerIdentifier) {
+    this.envVariables = envVariables;
+    this.provisionerIdentifier = provisionerIdentifier;
   }
+
   @Override
   public StepType getStepType() {
-    return AwsCdkDiffStep.STEP_TYPE;
+    return AwsCdkRollbackStep.STEP_TYPE;
   }
 
   @Override
@@ -77,18 +84,10 @@ public class AwsCdkDiffStepInfo extends AwsCdkBaseStepInfo implements CDAbstract
 
   @Override
   public SpecParameters getSpecParameters() {
-    return AwsCdkDiffStepParameters.infoBuilder()
+    return AwsCdkRollbackStepParameters.infoBuilder()
         .delegateSelectors(getDelegateSelectors())
-        .image(getImage())
-        .connectorRef(getConnectorRef())
-        .privileged(getPrivileged())
-        .runAsUser(getRunAsUser())
-        .imagePullPolicy(getImagePullPolicy())
-        .commandOptions(getCommandOptions())
-        .appPath(getAppPath())
-        .resources(getResources())
         .envVariables(getEnvVariables())
-        .stackNames(getStackNames())
+        .provisionerIdentifier(getProvisionerIdentifier())
         .build();
   }
 

@@ -71,7 +71,7 @@ public class PluginInfoProviderHelper {
     pluginDetailsBuilder.setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build());
   }
 
-  protected PluginDetails.Builder buildPluginDetails(
+  public PluginDetails.Builder buildPluginDetails(
       ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
     PluginDetails.Builder pluginDetailsBuilder = PluginDetails.newBuilder();
 
@@ -93,7 +93,7 @@ public class PluginInfoProviderHelper {
     return pluginDetailsBuilder;
   }
 
-  protected ImageDetails getImageDetails(ParameterField<String> connectorRef, ParameterField<String> image,
+  public ImageDetails getImageDetails(ParameterField<String> connectorRef, ParameterField<String> image,
       ParameterField<ImagePullPolicy> imagePullPolicy) {
     StringValue imagePullPolicyStr;
     if (ParameterField.isNull(imagePullPolicy) || isEmpty(imagePullPolicy.getValue().toString())) {

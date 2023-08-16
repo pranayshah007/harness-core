@@ -7,17 +7,15 @@
 
 package io.harness.cdng.plugininfoproviders;
 
-import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_APP_PATH;
-import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_COMMAND_OPTIONS;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_STACK_NAMES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkDeployStepInfo;
+import io.harness.cdng.provision.awscdk.AwsCdkHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ImageDetails;
@@ -26,57 +24,32 @@ import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.StepInfoProto;
-import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.YamlUtils;
 
-import com.google.common.annotations.VisibleForTesting;
-import java.io.IOException;
+import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AwsCdkDeployPluginInfoProvider implements CDPluginInfoProvider {
+public class AwsCdkDeployPluginInfoProvider extends AbstractPluginInfoProvider {
+  @Inject private AwsCdkHelper awsCdkStepHelper;
+
   @Override
   public PluginCreationResponseWrapper getPluginInfo(
       PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
-    String stepJsonNode = request.getStepJsonNode();
-    CdAbstractStepNode cdAbstractStepNode = getCdAbstractStepNode(request, stepJsonNode);
+    CdAbstractStepNode cdAbstractStepNode = getCdAbstractStepNode(request.getType(), request.getStepJsonNode());
     AwsCdkDeployStepInfo awsCdkDeployStepInfo = (AwsCdkDeployStepInfo) cdAbstractStepNode.getStepSpecType();
-    PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
-        awsCdkDeployStepInfo.getResources(), awsCdkDeployStepInfo.getRunAsUser(), usedPorts);
+    ImageDetails imageDetails = PluginInfoProviderHelper.getImageDetails(awsCdkDeployStepInfo.getConnectorRef(),
+        awsCdkDeployStepInfo.getImage(), awsCdkDeployStepInfo.getImagePullPolicy());
+    PluginDetails pluginDetails =
+        getPluginDetails(usedPorts, awsCdkDeployStepInfo.getRunAsUser(), awsCdkDeployStepInfo.getResources(),
+            awsCdkDeployStepInfo.getPrivileged(), getEnvironmentVariables(awsCdkDeployStepInfo), imageDetails);
+    PluginCreationResponse response = PluginCreationResponse.newBuilder().setPluginDetails(pluginDetails).build();
+    StepInfoProto stepInfoProto = getStepInfoProto(cdAbstractStepNode);
 
-    ImageDetails imageDetails = null;
-    if (ParameterField.isNotNull(awsCdkDeployStepInfo.getConnectorRef())
-        || isNotEmpty(awsCdkDeployStepInfo.getConnectorRef().getValue())) {
-      imageDetails = PluginInfoProviderHelper.getImageDetails(awsCdkDeployStepInfo.getConnectorRef(),
-          awsCdkDeployStepInfo.getImage(), awsCdkDeployStepInfo.getImagePullPolicy());
-    }
-
-    pluginDetailsBuilder.setImageDetails(imageDetails);
-    pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(awsCdkDeployStepInfo));
-    PluginCreationResponse response =
-        PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
-    StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
-                                      .setIdentifier(cdAbstractStepNode.getIdentifier())
-                                      .setName(cdAbstractStepNode.getName())
-                                      .setUuid(cdAbstractStepNode.getUuid())
-                                      .build();
     return PluginCreationResponseWrapper.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
-  }
-
-  @VisibleForTesting
-  protected CdAbstractStepNode getCdAbstractStepNode(PluginCreationRequest request, String stepJsonNode) {
-    CdAbstractStepNode cdAbstractStepNode;
-    try {
-      cdAbstractStepNode = YamlUtils.read(stepJsonNode, CdAbstractStepNode.class);
-    } catch (IOException e) {
-      throw new ContainerPluginParseException(
-          String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
-    }
-    return cdAbstractStepNode;
   }
 
   @Override
@@ -86,21 +59,13 @@ public class AwsCdkDeployPluginInfoProvider implements CDPluginInfoProvider {
 
   private Map<String, String> getEnvironmentVariables(AwsCdkDeployStepInfo awsCdkDeployStepInfo) {
     ParameterField<Map<String, String>> envVariables = awsCdkDeployStepInfo.getEnvVariables();
-    HashMap<String, String> environmentVariablesMap = new HashMap<>();
+    HashMap<String, String> environmentVariablesMap =
+        awsCdkStepHelper.getCommonEnvVariables(getParameterFieldValue(awsCdkDeployStepInfo.getAppPath()),
+            getParameterFieldValue(awsCdkDeployStepInfo.getCommandOptions()), envVariables);
 
-    environmentVariablesMap.put(PLUGIN_AWS_CDK_APP_PATH, getParameterFieldValue(awsCdkDeployStepInfo.getAppPath()));
-    List<String> commandOptions = getParameterFieldValue(awsCdkDeployStepInfo.getCommandOptions());
     List<String> stackNames = getParameterFieldValue(awsCdkDeployStepInfo.getStackNames());
-    if (isNotEmpty(commandOptions)) {
-      environmentVariablesMap.put(PLUGIN_AWS_CDK_COMMAND_OPTIONS, String.join(" ", commandOptions));
-    }
-
-    if (isNotEmpty(getParameterFieldValue(awsCdkDeployStepInfo.getStackNames()))) {
+    if (isNotEmpty(stackNames)) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_STACK_NAMES, String.join(" ", stackNames));
-    }
-
-    if (envVariables != null && envVariables.getValue() != null) {
-      environmentVariablesMap.putAll(envVariables.getValue());
     }
 
     return environmentVariablesMap;

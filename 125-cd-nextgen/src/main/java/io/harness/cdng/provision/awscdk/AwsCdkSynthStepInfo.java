@@ -96,6 +96,8 @@ public class AwsCdkSynthStepInfo extends AwsCdkBaseStepInfo implements CDAbstrac
         .appPath(getAppPath())
         .exportTemplate(getExportTemplate())
         .stackNames(getStackNames())
+        .resources(getResources())
+        .envVariables(getEnvVariables())
         .build();
   }
 

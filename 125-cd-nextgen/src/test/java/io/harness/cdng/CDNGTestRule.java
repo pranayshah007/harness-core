@@ -314,6 +314,9 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagServiceImpl.class));
         bind(CDStepHelper.class).toProvider(() -> mock(CDStepHelper.class)).asEagerSingleton();
         bind(LicenseService.class).toInstance(mock(DefaultLicenseServiceImpl.class));
+        bind(AccessControlClient.class)
+            .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
+            .to(NoOpAccessControlClientImpl.class);
       }
     });
 

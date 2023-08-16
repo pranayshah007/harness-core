@@ -148,4 +148,5 @@ public interface StepSpecTypeConstants {
   String AWS_CDK_DIFF = "AwsCdkDiff";
   String AWS_CDK_DEPLOY = "AwsCdkDeploy";
   String AWS_CDK_DESTROY = "AwsCdkDestroy";
+  String AWS_CDK_ROLLBACK = "AwsCdkRollback";
 }

@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
@@ -28,6 +29,7 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig;
+import io.harness.cdng.provision.awscdk.beans.ContainerResourceConfig;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
@@ -50,11 +52,9 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.PluginUtils;
 import io.harness.waiter.WaitNotifyEngine;
-import io.harness.yaml.extended.ci.container.ContainerResource;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.junit.Rule;
@@ -69,7 +69,7 @@ import org.mockito.junit.MockitoRule;
 import org.powermock.api.mockito.PowerMockito;
 
 @OwnedBy(HarnessTeam.CDP)
-public class AwsCdkDeployStepTest extends CategoryTest {
+public class AwsCdkRollbackStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private SerializedResponseDataHelper serializedResponseDataHelper;
@@ -84,8 +84,7 @@ public class AwsCdkDeployStepTest extends CategoryTest {
   @Mock private PluginUtils pluginUtils;
   @Mock private AwsCdkHelper awsCdkStepHelper;
   @Mock private AwsCdkConfigDAL awsCdkConfigDAL;
-
-  @InjectMocks AwsCdkDeployStep awsCdkDeployStep;
+  @InjectMocks AwsCdkRollbackStep awsCdkRollbackStep;
 
   @Test
   @Owner(developers = TMACARI)
@@ -98,10 +97,11 @@ public class AwsCdkDeployStepTest extends CategoryTest {
             .identifier("identifier")
             .name("stepName")
             .timeout(ParameterField.<String>builder().value("20m").build())
-            .spec(AwsCdkDeployStepParameters.infoBuilder()
-                      .image(ParameterField.<String>builder().value("image").build())
+            .spec(AwsCdkRollbackStepParameters.infoBuilder()
+                      .provisionerIdentifier(ParameterField.<String>builder().value("provisionerIdentifier").build())
                       .build())
             .build();
+    doReturn(AwsCdkConfig.builder().image("image").build()).when(awsCdkConfigDAL).getRollbackAwsCdkConfig(any(), any());
     MockedStatic<ContainerUnitStepUtils> containerUnitStepUtils = mockStatic(ContainerUnitStepUtils.class);
     PowerMockito
         .when(ContainerUnitStepUtils.serializeStepWithStepParameters(
@@ -109,7 +109,7 @@ public class AwsCdkDeployStepTest extends CategoryTest {
         .thenReturn(unitStep);
 
     UnitStep result =
-        awsCdkDeployStep.getSerialisedStep(ambiance, stepElementParameters, "accountId", "logKey", 6000, "taskId");
+        awsCdkRollbackStep.getSerialisedStep(ambiance, stepElementParameters, "accountId", "logKey", 6000, "taskId");
 
     containerUnitStepUtils.verify(
         ()
@@ -134,7 +134,7 @@ public class AwsCdkDeployStepTest extends CategoryTest {
                       .build())
             .build();
 
-    assertThat(awsCdkDeployStep.getTimeout(ambiance, stepElementParameters)).isEqualTo(1200000L);
+    assertThat(awsCdkRollbackStep.getTimeout(ambiance, stepElementParameters)).isEqualTo(1200000L);
   }
 
   @Test
@@ -142,36 +142,33 @@ public class AwsCdkDeployStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleAsyncResponse() {
     Ambiance ambiance = getAmbiance();
-    ContainerResource containerResource =
-        ContainerResource.builder()
-            .requests(ContainerResource.Limits.builder()
-                          .memory(ParameterField.<String>builder().value("400").build())
-                          .cpu(ParameterField.<String>builder().value("300").build())
-                          .build())
-            .limits(ContainerResource.Limits.builder()
-                        .memory(ParameterField.<String>builder().value("200").build())
-                        .cpu(ParameterField.<String>builder().value("100").build())
-                        .build())
-            .build();
     StepElementParameters stepElementParameters =
         StepElementParameters.builder()
             .identifier("identifier")
             .name("stepName")
             .timeout(ParameterField.<String>builder().value("20m").build())
-            .spec(
-                AwsCdkDeployStepParameters.infoBuilder()
-                    .image(ParameterField.<String>builder().value("image").build())
-                    .provisionerIdentifier(ParameterField.<String>builder().value("provisionerIdentifier").build())
-                    .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
-                    .imagePullPolicy(ParameterField.<ImagePullPolicy>builder().value(ImagePullPolicy.ALWAYS).build())
-                    .privileged(ParameterField.<Boolean>builder().value(true).build())
-                    .runAsUser(ParameterField.<Integer>builder().value(1).build())
-                    .resources(containerResource)
-                    .stackNames(ParameterField.<List<String>>builder().value(Arrays.asList("stack1", "stack2")).build())
-                    .build())
+            .spec(AwsCdkRollbackStepParameters.infoBuilder()
+                      .provisionerIdentifier(ParameterField.<String>builder().value("provisionerIdentifier").build())
+                      .envVariables(ParameterField.<Map<String, String>>builder()
+                                        .value(Collections.singletonMap("key1", "value1"))
+                                        .build())
+                      .build())
             .build();
+    ContainerResourceConfig containerResourceConfig = ContainerResourceConfig.builder().build();
+    Map<String, String> envVariables = new HashMap<>();
+    envVariables.put(PLUGIN_AWS_CDK_STACK_NAMES, "stack1 stack2");
+    AwsCdkConfig savedAwsCdkConfig = AwsCdkConfig.builder()
+                                         .image("image")
+                                         .provisionerIdentifier("provisionerIdentifier")
+                                         .connectorRef("connectorRef")
+                                         .imagePullPolicy(ImagePullPolicy.ALWAYS)
+                                         .privileged(true)
+                                         .runAsUser(1)
+                                         .resources(containerResourceConfig)
+                                         .envVariables(envVariables)
+                                         .commitId("testvaluee")
+                                         .build();
     ArgumentCaptor<Map<String, ResponseData>> captor = ArgumentCaptor.forClass(Map.class);
-    ArgumentCaptor<AwsCdkConfig> configCaptor = ArgumentCaptor.forClass(AwsCdkConfig.class);
     StepStatusTaskResponseData stepStatusTaskResponseData =
         StepStatusTaskResponseData.builder()
             .stepStatus(StepStatus.builder()
@@ -180,20 +177,19 @@ public class AwsCdkDeployStepTest extends CategoryTest {
                             .build())
             .build();
     Map<String, ResponseData> responseDataMap = new HashMap<>();
+    responseDataMap.put("test", stepStatusTaskResponseData);
     Map<String, String> processedOutput = new HashMap<>();
     processedOutput.put("GIT_COMMIT_ID", "testvaluee");
     processedOutput.put("CDK_OUTPUT", "testvaluee");
-    Map<String, String> envVariables = new HashMap<>();
-    envVariables.put("key1", "value1");
-    responseDataMap.put("test", stepStatusTaskResponseData);
     doReturn(StepResponse.builder().status(Status.SUCCEEDED).build())
         .when(containerStepExecutionResponseHelper)
         .handleAsyncResponseInternal(any(), any(), any());
     doReturn(stepStatusTaskResponseData).when(containerStepExecutionResponseHelper).filterK8StepResponse(any());
     doReturn(processedOutput).when(awsCdkStepHelper).processOutput(any());
-    doReturn(envVariables).when(awsCdkStepHelper).getCommonEnvVariables(any(), any(), any());
+    doReturn(savedAwsCdkConfig).when(awsCdkConfigDAL).getRollbackAwsCdkConfig(any(), any());
+    ArgumentCaptor<AwsCdkConfig> configCaptor = ArgumentCaptor.forClass(AwsCdkConfig.class);
 
-    awsCdkDeployStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
+    awsCdkRollbackStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
 
     verify(containerStepExecutionResponseHelper).handleAsyncResponseInternal(any(), captor.capture(), any());
     verify(awsCdkConfigDAL).saveAwsCdkConfig(configCaptor.capture());
@@ -201,19 +197,13 @@ public class AwsCdkDeployStepTest extends CategoryTest {
         (StepMapOutput) ((StepStatusTaskResponseData) captor.getValue().get("test")).getStepStatus().getOutput();
     assertThat(stepMapOutput.getMap().get("GIT_COMMIT_ID")).isEqualTo("testvaluee");
     assertThat(stepMapOutput.getMap().get("CDK_OUTPUT")).isEqualTo("testvaluee");
-    verify(awsCdkConfigDAL).getRollbackAwsCdkConfig(any(), any());
-    verify(awsCdkStepHelper).processOutput(any());
-
     AwsCdkConfig awsCdkConfig = configCaptor.getValue();
     assertThat(awsCdkConfig.getAccountId()).isEqualTo("test-account");
     assertThat(awsCdkConfig.getOrgId()).isEqualTo("org");
     assertThat(awsCdkConfig.getProjectId()).isEqualTo("project");
     assertThat(awsCdkConfig.getStageExecutionId()).isEqualTo("stageExecutionId");
     assertThat(awsCdkConfig.getProvisionerIdentifier()).isEqualTo("provisionerIdentifier");
-    assertThat(awsCdkConfig.getResources().getLimits().getCpu()).isEqualTo("100");
-    assertThat(awsCdkConfig.getResources().getLimits().getMemory()).isEqualTo("200");
-    assertThat(awsCdkConfig.getResources().getRequests().getCpu()).isEqualTo("300");
-    assertThat(awsCdkConfig.getResources().getRequests().getMemory()).isEqualTo("400");
+    assertThat(awsCdkConfig.getResources()).isEqualTo(containerResourceConfig);
     assertThat(awsCdkConfig.getRunAsUser()).isEqualTo(1);
     assertThat(awsCdkConfig.getConnectorRef()).isEqualTo("connectorRef");
     assertThat(awsCdkConfig.getImage()).isEqualTo("image");
@@ -222,6 +212,51 @@ public class AwsCdkDeployStepTest extends CategoryTest {
     assertThat(awsCdkConfig.getEnvVariables().get("key1")).isEqualTo("value1");
     assertThat(awsCdkConfig.getEnvVariables().get(PLUGIN_AWS_CDK_STACK_NAMES)).isEqualTo("stack1 stack2");
     assertThat(awsCdkConfig.getCommitId()).isEqualTo("testvaluee");
+    verify(awsCdkStepHelper).processOutput(any());
+    verify(awsCdkConfigDAL, times(2)).getRollbackAwsCdkConfig(any(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testHandleAsyncResponseSkip() {
+    Ambiance ambiance = getAmbiance();
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .identifier("identifier")
+            .name("stepName")
+            .timeout(ParameterField.<String>builder().value("20m").build())
+            .spec(AwsCdkRollbackStepParameters.infoBuilder()
+                      .provisionerIdentifier(ParameterField.<String>builder().value("provisionerIdentifier").build())
+                      .envVariables(ParameterField.<Map<String, String>>builder()
+                                        .value(Collections.singletonMap("key1", "value1"))
+                                        .build())
+                      .build())
+            .build();
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        StepStatusTaskResponseData.builder()
+            .stepStatus(StepStatus.builder()
+                            .stepExecutionStatus(StepExecutionStatus.SUCCESS)
+                            .output(StepMapOutput.builder().output("test", "notEncodedValue").build())
+                            .build())
+            .build();
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    responseDataMap.put("test", stepStatusTaskResponseData);
+    Map<String, String> processedOutput = new HashMap<>();
+    processedOutput.put("GIT_COMMIT_ID", "testvaluee");
+    processedOutput.put("CDK_OUTPUT", "testvaluee");
+    doReturn(StepResponse.builder().status(Status.SUCCEEDED).build())
+        .when(containerStepExecutionResponseHelper)
+        .handleAsyncResponseInternal(any(), any(), any());
+    doReturn(stepStatusTaskResponseData).when(containerStepExecutionResponseHelper).filterK8StepResponse(any());
+    doReturn(processedOutput).when(awsCdkStepHelper).processOutput(any());
+    doReturn(null).when(awsCdkConfigDAL).getRollbackAwsCdkConfig(any(), any());
+
+    StepResponse stepResponse =
+        awsCdkRollbackStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SKIPPED);
+    verify(awsCdkConfigDAL).getRollbackAwsCdkConfig(any(), any());
   }
 
   private Ambiance getAmbiance() {
