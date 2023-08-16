@@ -766,6 +766,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                                 scmCommitFileResponseDTO.getCommitId(), gitRepositoryDTO))
                             .setRepoUrl(scmFacilitatorService.getRepoUrl(
                                 scope, createFileRequest.getConnectorRef(), createFileRequest.getRepoName()))
+                            .setIsGitDefaultBranch(scmCommitFileResponseDTO.isGitDefaultBranch())
                             .build())
         .build();
   }
@@ -784,6 +785,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                             .setFileUrl(gitFilePathHelper.getFileUrl(scope, updateFileRequest.getConnectorRef(),
                                 updateFileRequest.getBranchName(), updateFileRequest.getFilePath(),
                                 scmCommitFileResponseDTO.getCommitId(), gitRepositoryDTO))
+                            .setIsGitDefaultBranch(scmCommitFileResponseDTO.isGitDefaultBranch())
                             .build())
         .build();
   }

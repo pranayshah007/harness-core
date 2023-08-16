@@ -672,6 +672,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return ScmCommitFileResponseDTO.builder()
         .commitId(createFileResponse.getCommitId())
         .blobId(createFileResponse.getBlobId())
+        .isGitDefaultBranch(gitDefaultBranchCacheHelper.isGitDefaultBranch(scope.getAccountIdentifier(), scmConnector,
+            scmCreateFileRequestDTO.getRepoName(), scmCreateFileRequestDTO.getBranchName()))
         .build();
   }
 
@@ -736,6 +738,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return ScmCommitFileResponseDTO.builder()
         .commitId(updateFileResponse.getCommitId())
         .blobId(updateFileResponse.getBlobId())
+        .isGitDefaultBranch(gitDefaultBranchCacheHelper.isGitDefaultBranch(scope.getAccountIdentifier(), scmConnector,
+            scmUpdateFileRequestDTO.getRepoName(), scmUpdateFileRequestDTO.getBranchName()))
         .build();
   }
 
