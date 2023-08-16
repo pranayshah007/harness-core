@@ -488,11 +488,21 @@ public class DiscoveryService {
 
   private void migrateSpecificType(MigrationContext context, CgEntityId entityId, NGMigrationEntityType entityType,
       List<NGYamlFile> files, List<NGSkipDetail> skipDetails) {
-    List<CgEntityId> specificEntities = context.getGraph()
-                                            .keySet()
-                                            .stream()
-                                            .filter(cgEntityId -> entityType.equals(cgEntityId.getType()))
-                                            .collect(Collectors.toList());
+    List<CgEntityId> specificEntities =
+        context.getGraph()
+            .entrySet()
+            .stream()
+            .filter(entry -> entityType.equals(entry.getKey().getType()))
+            .sorted((e1, e2) -> {
+              boolean hasChildrenOfSameType = e2.getValue().stream().anyMatch(
+                  childrenCgEntityId -> childrenCgEntityId.getType().equals(e2.getKey().getType()));
+              if (hasChildrenOfSameType) {
+                return -1;
+              }
+              return 1;
+            })
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
     for (CgEntityId entry : specificEntities) {
       generateYaml(context, entityId, files, skipDetails, entry);
     }
