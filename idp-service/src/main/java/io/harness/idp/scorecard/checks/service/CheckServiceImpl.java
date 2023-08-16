@@ -91,6 +91,9 @@ public class CheckServiceImpl implements CheckService {
     } else {
       checkEntity = checkRepository.findByAccountIdentifierAndIdentifier(GLOBAL_ACCOUNT_ID, identifier);
     }
+    if (checkEntity == null) {
+      throw new InvalidRequestException(String.format("Check details not found for checkId [%s]", identifier));
+    }
     return CheckDetailsMapper.toDTO(checkEntity);
   }
 
