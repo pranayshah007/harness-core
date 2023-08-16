@@ -1987,6 +1987,23 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return templateServiceHelper.listTemplate(accountIdentifier, criteria, pageable);
   }
 
+  @Override
+  public Page<GlobalTemplateEntity> getAllGlobalTemplate(
+      Criteria criteria, String accountId, Pageable pageable, boolean deleted) {
+    enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
+    try {
+      return templateServiceHelper.getGlobalTemplate(criteria, deleted, false, pageable);
+
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error("Error while retrieving Global template", e);
+      throw e;
+    } catch (Exception e) {
+      String errorMessage = "Error while retrieving Global template";
+      log.error(errorMessage, e);
+      throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, e.getMessage()));
+    }
+  }
+
   private void makePreviousStableGlobalTemplateFalse(
       String accountIdentifier, String templateIdentifier, String updatedStableTemplateVersion) {
     NGTemplateServiceHelper.validatePresenceOfRequiredFields(accountIdentifier, templateIdentifier);

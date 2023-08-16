@@ -8,18 +8,24 @@
 package io.harness.template.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.template.resources.NGTemplateResource.INCLUDE_ALL_TEMPLATES_ACCESSIBLE;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.TemplateListType;
+import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.resources.beans.NGTemplateConstants;
+import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 
 import io.swagger.annotations.Api;
@@ -27,6 +33,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -43,6 +50,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import org.springframework.data.domain.Page;
+import retrofit2.http.Body;
 
 @OwnedBy(CDC)
 @Api("globalTemplates")
@@ -111,4 +120,43 @@ public interface NGGlobalTemplateResource {
           description =
               "When isNewTemplate flag is set user will not be able to create a new version for an existing template")
       @QueryParam("isNewTemplate") @DefaultValue("false") @ApiParam(hidden = true) boolean isNewTemplate);
+
+  @POST
+  @Path("/list")
+  @ApiOperation(value = "Gets all Global template list", nickname = "listGlobalTemplates")
+  @Operation(operationId = "listGlobalTemplates", summary = "Get Global Templates",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a list of all the Global Templates")
+      })
+  @Hidden
+  // will return non deleted templates only
+  ResponseDTO<Page<TemplateSummaryResponseDTO>>
+  listGlobalTemplates(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("25") int size,
+      @Parameter(
+          description =
+              "Specifies sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
+      @QueryParam("sort") List<String> sort,
+      @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = "Filter Identifier") @QueryParam("filterIdentifier") String filterIdentifier,
+      @Parameter(description = "Template List Type") @NotNull @QueryParam(
+          "templateListType") TemplateListType templateListType,
+      @Parameter(description = "Specify true if all accessible Templates are to be included") @QueryParam(
+          INCLUDE_ALL_TEMPLATES_ACCESSIBLE) Boolean includeAllTemplatesAccessibleAtScope,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info")
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "This contains details of Template filters based on Template Types and Template Names ")
+      @Body TemplateFilterPropertiesDTO filterProperties,
+      @QueryParam("getDistinctFromBranches") Boolean getDistinctFromBranches);
 }

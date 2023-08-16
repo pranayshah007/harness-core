@@ -23,6 +23,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.resources.beans.FilterParamsDTO;
 import io.harness.template.resources.beans.PageParamsDTO;
@@ -123,4 +124,8 @@ public interface NGTemplateService {
   void populateSetupUsageAsync(TemplateEntity templateEntity);
   List<TemplateWrapperResponseDTO> createUpdateGlobalTemplate(String accountId, String orgId, String projectId,
       boolean setDefaultTemplate, String comments, boolean isNewTemplate, String connectorRef, String webhookEvent);
+  Page<GlobalTemplateEntity> listTemplateMetadata(
+      String accountIdentifier, FilterParamsDTO filterParamsDTO, PageParamsDTO pageParamsDTO);
+  Page<GlobalTemplateEntity> getAllGlobalTemplate(
+      Criteria criteria, String accountId, Pageable pageable, boolean deleted);
 }

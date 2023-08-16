@@ -155,6 +155,38 @@ public class NGTemplateDtoMapper {
         .build();
   }
 
+  public TemplateSummaryResponseDTO prepareTemplateSummaryResponseDto(GlobalTemplateEntity templateEntity) {
+    return TemplateSummaryResponseDTO.builder()
+        .accountId(templateEntity.getAccountId())
+        .orgIdentifier(templateEntity.getOrgIdentifier())
+        .projectIdentifier(templateEntity.getProjectIdentifier())
+        .yaml(templateEntity.getYaml())
+        .identifier(templateEntity.getIdentifier())
+        .description(templateEntity.getDescription())
+        .name(templateEntity.getName())
+        .isStableTemplate(templateEntity.isStableTemplate())
+        .childType(templateEntity.getChildType())
+        .templateEntityType(templateEntity.getTemplateEntityType())
+        .templateScope(templateEntity.getTemplateScope())
+        .versionLabel(templateEntity.getVersionLabel())
+        .tags(TagMapper.convertToMap(templateEntity.getTags()))
+        .version(templateEntity.getVersion())
+        .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
+        .lastUpdatedAt(templateEntity.getLastUpdatedAt())
+        .icon(templateEntity.getIcon())
+        .entityValidityDetails(templateEntity.isEntityInvalid()
+                ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
+                : EntityValidityDetails.builder().valid(true).build())
+        .createdAt(templateEntity.getCreatedAt())
+        .build();
+  }
+
+  public EntityGitDetails getEntityGitDetailsForListTemplates(GlobalTemplateEntity templateEntity) {
+    return templateEntity.getStoreType() == null            ? EntityGitDetailsMapper.mapEntityGitDetails(templateEntity)
+        : templateEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(templateEntity)
+                                                            : EntityGitDetails.builder().build();
+  }
+
   public TemplateMetadataSummaryResponseDTO prepareTemplateMetaDataSummaryResponseDto(TemplateEntity templateEntity) {
     return TemplateMetadataSummaryResponseDTO.builder()
         .accountId(templateEntity.getAccountId())
