@@ -156,14 +156,4 @@ public class GlobalTemplateEntity
   public void setData(String yaml) {
     this.yaml = yaml;
   }
-
-  @Override
-  public void setReadMe(String fileContent) {
-    this.readMe = fileContent;
-  }
-
-  @Override
-  public String getReadMe() {
-    return readMe;
-  }
 }

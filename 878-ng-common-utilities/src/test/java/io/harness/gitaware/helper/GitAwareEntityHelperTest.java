@@ -146,33 +146,6 @@ public class GitAwareEntityHelperTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testFetchReadMeFileFromRemote() {
-    gitContextRequestParams = GitContextRequestParams.builder()
-                                  .connectorRef(connectorRef)
-                                  .repoName(repoName)
-                                  .filePath(readMeFilePath)
-                                  .branchName(branch)
-                                  .entityType(EntityType.TEMPLATE)
-                                  .build();
-    ScmGetFileResponse getFileResponse =
-        ScmGetFileResponse.builder().fileContent(readMe).gitMetaData(scmGitMetaData).build();
-    doReturn(getFileResponse)
-        .when(scmGitSyncHelper)
-        .getFileByBranch(
-            scope, repoName, branch, "", readMeFilePath, connectorRef, false, EntityType.TEMPLATE, null, false, false);
-    DummyGitAware dummyGitAware = DummyGitAware.builder().build();
-    String file = gitAwareEntityHelper.fetchReadMeFileFromRemote(dummyGitAware, scope, gitContextRequestParams, null);
-    ScmGitMetaData scmGitMetaDataInContext = GitAwareContextHelper.getScmGitMetaData();
-    assertThat(file).isEqualTo(readMe);
-    assertThat(scmGitMetaDataInContext.getRepoName()).isEqualTo(repoName);
-    assertThat(scmGitMetaDataInContext.getBranchName()).isEqualTo(branch);
-    assertThat(scmGitMetaDataInContext.getFilePath()).isEqualTo(filePath);
-    assertThat(scmGitMetaDataInContext.getCommitId()).isEqualTo(commitId);
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
   public void testFetchEntityFromRemoteWithBranchAs__Default__() {
     ScmGetFileResponse getFileResponse =
         ScmGetFileResponse.builder().fileContent(data).gitMetaData(scmGitMetaData).build();
@@ -425,16 +398,6 @@ public class GitAwareEntityHelperTest extends CategoryTest {
     @Override
     public void setData(String data) {
       this.data = data;
-    }
-
-    @Override
-    public void setReadMe(String fileContent) {
-      return null;
-    }
-
-    @Override
-    public String getReadMe() {
-      return null;
     }
   }
 

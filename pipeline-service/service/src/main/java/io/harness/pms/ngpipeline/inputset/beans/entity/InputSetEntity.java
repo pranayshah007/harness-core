@@ -168,16 +168,6 @@ public class InputSetEntity implements GitAware, GitSyncableEntity, PersistentEn
   }
 
   @Override
-  public void setReadMe(String fileContent) {
-    return null;
-  }
-
-  @Override
-  public String getReadMe() {
-    return null;
-  }
-
-  @Override
   public String getAccountIdentifier() {
     return accountId;
   }

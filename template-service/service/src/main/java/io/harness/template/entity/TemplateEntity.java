@@ -230,12 +230,4 @@ public class TemplateEntity
   public void setData(String yaml) {
     this.yaml = yaml;
   }
-
-  @Override
-  public void setReadMe(String fileContent) {}
-
-  @Override
-  public String getReadMe() {
-    return null;
-  }
 }
