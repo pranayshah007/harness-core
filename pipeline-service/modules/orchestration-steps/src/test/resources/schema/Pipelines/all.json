@@ -2435,7 +2435,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3772,7 +3772,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -4403,7 +4403,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6185,7 +6185,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -7101,7 +7101,7 @@
                 }
               ]
             },
-            "spec": {},
+            "spec": { },
             "strategy": {
               "oneOf": [
                 {
@@ -8372,7 +8372,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
