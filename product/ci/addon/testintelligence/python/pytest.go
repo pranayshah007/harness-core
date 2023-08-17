@@ -54,7 +54,10 @@ func (b *pytestRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (b *pytestRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
-	return utils.GetTestsFromLocal(testGlobs, "py")
+	if len(testGlobs) == 0 {
+		testGlobs = utils.PYTHON_TEST_PATTERN
+	}
+	return utils.GetTestsFromLocal(testGlobs, "py", utils.LangType_PYTHON)
 }
 
 func (b *pytestRunner) ReadPackages(files []types.File) []types.File {

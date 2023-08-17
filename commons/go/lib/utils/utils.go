@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/harness/ti-client/types"
 	zglob "github.com/mattn/go-zglob"
 )
@@ -51,6 +52,16 @@ var (
 	kotlinTestRegex     = fmt.Sprintf("^.*%s", KOTLIN_TEST_PATH)
 	PYTHON_TEST_PATTERN = []string{"test_*.py", "*_test.py"}
 	RUBY_TEST_PATTERN   = []string{"*_spec.py"}
+	extensionMapping    = map[string]LangTypeAndTestPattern{
+		".py": LangTypeAndTestPattern{
+			LangType:    LangType_PYTHON,
+			TestPattern: PYTHON_TEST_PATTERN,
+		},
+		".rb": LangTypeAndTestPattern{
+			LangType:    LangType_RUBY,
+			TestPattern: RUBY_TEST_PATTERN,
+		},
+	}
 )
 
 //Node holds data about a source code
@@ -61,6 +72,11 @@ type Node struct {
 	File   string
 	Lang   LangType
 	Type   NodeType
+}
+
+type LangTypeAndTestPattern struct {
+	LangType    LangType
+	TestPattern []string
 }
 
 //TimeSince returns the number of milliseconds that have passed since the given time
@@ -127,30 +143,16 @@ func ParseCsharpNode(file types.File, testGlobs []string) (*Node, error) {
 	return &node, nil
 }
 
-// ParsePathBasedNode extracts the file name from a Python file path
+// ParsePathBasedNode extracts the file name from a file path
 // e.g., src/abc/def/A.py
 // will return class = src/abc/def/A.py file = src/abc/def/A.py
-func ParsePathBasedNode(file types.File, testGlobs []string) (*Node, error) {
+func ParsePathBasedNode(file types.File, testGlobs []string, langType LangType) (*Node, error) {
 	var node Node
 	node.Pkg = ""
-	node.Class = ""
-	node.Lang = LangType_UNKNOWN
+	node.Lang = langType
 	node.Type = NodeType_SOURCE
 
 	filename := strings.TrimSpace(file.Name)
-	if !strings.HasSuffix(filename, ".py") {
-		node.Lang = LangType_PYTHON
-		node.Type = NodeType_SOURCE
-		if len(testGlobs) == 0 {
-			testGlobs = PYTHON_TEST_PATTERN
-		}
-	} else if strings.HasSuffix(filename, ".rb") {
-		node.Lang = LangType_RUBY
-		node.Type = NodeType_SOURCE
-		if len(testGlobs) == 0 {
-			testGlobs = RUBY_TEST_PATTERN
-		}
-	}
 
 	for _, glob := range testGlobs {
 		if matched, _ := zglob.Match(glob, filename); !matched {
@@ -163,7 +165,30 @@ func ParsePathBasedNode(file types.File, testGlobs []string) (*Node, error) {
 	return &node, nil
 }
 
-func GetTestsFromLocal(testGlobs []string, extension string) ([]types.RunnableTest, error) {
+// ParsePathBasedNodeAndType extracts the file name from a file path of unknown language
+// e.g., src/abc/def/A.py
+// will return class = src/abc/def/A.py file = src/abc/def/A.py
+func ParsePathBasedNodeAndType(file types.File, testGlobs []string) (*Node, error) {
+	LangType := LangType_UNKNOWN
+
+	filename := strings.TrimSpace(file.Name)
+	for extension, langAndPattern := range extensionMapping {
+		if strings.HasSuffix(filename, extension) {
+			LangType = langAndPattern.LangType
+			if len(testGlobs) == 0 {
+				testGlobs = langAndPattern.TestPattern
+			}
+			break
+		}
+	}
+
+	return ParsePathBasedNode(file, testGlobs, LangType)
+}
+
+// GetTestsFromLocal creates list of RunnableTest within file system on given langauge and extension
+// e.g., extension: py
+// will return all files with .py, formatted to python node
+func GetTestsFromLocal(testGlobs []string, extension string, langType LangType) ([]types.RunnableTest, error) {
 	tests := make([]types.RunnableTest, 0)
 	wp, err := getWorkspace()
 	if err != nil {
@@ -176,7 +201,7 @@ func GetTestsFromLocal(testGlobs []string, extension string) ([]types.RunnableTe
 			continue
 		}
 		f := types.File{Name: path}
-		node, _ := ParsePathBasedNode(f, testGlobs)
+		node, _ := ParsePathBasedNode(f, testGlobs, langType)
 		if node.Type != NodeType_TEST {
 			continue
 		}
@@ -322,7 +347,7 @@ func ParseFileNames(files []types.File, testGlobs []string) ([]Node, error) {
 		} else if strings.HasSuffix(path, ".java") || strings.HasSuffix(path, ".kt") || strings.HasSuffix(path, ".sc") {
 			node, _ = ParseJavaNode(file)
 		} else {
-			node, _ = ParsePathBasedNode(file, testGlobs)
+			node, _ = ParsePathBasedNodeAndType(file, testGlobs)
 		}
 		nodes = append(nodes, *node)
 	}

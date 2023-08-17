@@ -45,7 +45,10 @@ func (b *rspecRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (b *rspecRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
-	return utils.GetTestsFromLocal(testGlobs, "rb")
+	if len(testGlobs) == 0 {
+		testGlobs = utils.RUBY_TEST_PATTERN
+	}
+	return utils.GetTestsFromLocal(testGlobs, "rb", utils.LangType_RUBY)
 }
 
 func (b *rspecRunner) ReadPackages(files []types.File) []types.File {

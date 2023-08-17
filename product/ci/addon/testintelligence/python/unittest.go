@@ -29,6 +29,8 @@ import (
 
 var (
 	unittestCmd = "unittest"
+	pythonCmd   = "python3"
+	currentDir  = "."
 )
 
 type unittestRunner struct {
@@ -52,7 +54,10 @@ func (b *unittestRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (b *unittestRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
-	return utils.GetTestsFromLocal(testGlobs, "py")
+	if len(testGlobs) == 0 {
+		testGlobs = utils.PYTHON_TEST_PATTERN
+	}
+	return utils.GetTestsFromLocal(testGlobs, "py", utils.LangType_PYTHON)
 }
 
 func (b *unittestRunner) ReadPackages(files []types.File) []types.File {
