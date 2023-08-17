@@ -1,6 +1,6 @@
 # access-control
 
-![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.79400](https://img.shields.io/badge/AppVersion-1.0.79400-informational?style=flat-square)
+![Version: 0.8.1](https://img.shields.io/badge/Version-0.8.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.79400](https://img.shields.io/badge/AppVersion-1.0.79400-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -59,7 +59,7 @@ A Helm chart for Kubernetes
 | progressDeadlineSeconds | int | `720` | set progressDealineSeconds in seconds, number of seconds the Deployment controller waits before indicating failure # ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/ |
 | readinessProbe | object | `{"enabled":true,"failureThreshold":10,"initialDelaySeconds":60,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":10}` | readinessProbe.successThreshold Success threshold for readinessProbe # |
 | replicaCount | int | `1` | replicaCount Number of pods # |
-| resources | object | `{"limits":{"memory":"8192Mi"},"requests":{"cpu":0.5,"memory":"512Mi"}}` | resources.requests The requested resources for the containers # |
+| resources | object | `{"limits":{"memory":"8192Mi"},"requests":{"cpu":1,"memory":"712Mi"}}` | resources.requests The requested resources for the containers # |
 | schedulerName | string | `""` | schedulerName Specifies the schedulerName, if it's nil uses kube-scheduler # https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/ # |
 | secrets.IDENTITY_SERVICE_SECRET | string | `"HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU="` |  |
 | secrets.MONGODB_USER | string | `"admin"` |  |
@@ -73,7 +73,7 @@ A Helm chart for Kubernetes
 | terminationGracePeriodSeconds | string | `"30"` | terminationGracePeriodSeconds In seconds, time the given to the pod needs to terminate gracefully # ref: https://kubernetes.io/docs/concepts/workloads/pods/pod/#termination-of-pods # |
 | tolerations | list | `[]` | tolerations Tolerations for pod assignment. Evaluated as a template. # ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/ # |
 | updateStrategy | object | `{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"}` | deployment.updateStrategy.type Deployment strategy type # ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#update-strategies # e.g: |
-| waitForInitContainer | object | `{"containerSecurityContext":{"runAsNonRoot":true,"runAsUser":65534},"image":{"digest":"","imagePullSecrets":[],"pullPolicy":"IfNotPresent","registry":"docker.io","repository":"harness/helm-init-container","tag":"latest"},"resources":{"limits":{"cpu":"128m","memory":"128Mi"},"requests":{"cpu":"128m","memory":"128Mi"}}}` | Wait-For-App initContainers details |
+| waitForInitContainer | object | `{"containerSecurityContext":{"runAsNonRoot":true,"runAsUser":65534},"image":{"digest":"","imagePullSecrets":[],"pullPolicy":"IfNotPresent","registry":"docker.io","repository":"harness/helm-init-container","tag":"latest"},"resources":{"limits":{"memory":"128Mi"},"requests":{"cpu":"128m","memory":"128Mi"}}}` | Wait-For-App initContainers details |
 | waitForInitContainer.image | object | `{"digest":"","imagePullSecrets":[],"pullPolicy":"IfNotPresent","registry":"docker.io","repository":"harness/helm-init-container","tag":"latest"}` | image.imagePullSecrets Specify docker-registry secret names as an array |
 
 ----------------------------------------------
