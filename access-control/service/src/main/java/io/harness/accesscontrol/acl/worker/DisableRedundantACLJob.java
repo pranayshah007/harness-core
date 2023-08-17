@@ -115,6 +115,7 @@ public class DisableRedundantACLJob implements Runnable {
             bulkOperations = mongoTemplate.bulkOps(UNORDERED, ACL.class);
             totalUpdated = 0;
             updateOffset(offset);
+            Thread.sleep(1000);
           }
         }
         if (totalUpdated != 0) {
