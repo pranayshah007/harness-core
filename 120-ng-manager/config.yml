@@ -129,10 +129,10 @@ managerClientConfig:
 
 errorTrackingClientConfig:
   errorTrackingServiceConfig:
-    baseUrl: ${ERROR_TRACKING_SERVICE_BASE_URL:-http://localhost:9191/api/}
+    baseUrl: http://localhost:9191/api/
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
-  errorTrackingServiceSecret: ${ERROR_TRACKING_SERVICE_SECRET:-LocalTestErrorTrackingServiceSecretLocalTestErrorTrackingServiceSecretLocalTestE}
+  errorTrackingServiceSecret: LocalTestErrorTrackingServiceSecretLocalTestErrorTrackingServiceSecretLocalTestE
 
 ngManagerClientConfig:
   baseUrl: http://localhost:7457/
