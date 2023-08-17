@@ -57,6 +57,13 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
   public List<Double> getTrainDataPoints() {
     return trainDataPointsList;
   }
+  public List<Instant> getTrainTimePointsList() {
+    return trainTimePointsList;
+  }
+
+  public List<Instant> getTestTimePointsList() {
+    return testTimePointsList;
+  }
 
   public boolean insert(Instant instant, Double cost) {
     return insertTrain(instant, cost) || insertTest(instant, cost);

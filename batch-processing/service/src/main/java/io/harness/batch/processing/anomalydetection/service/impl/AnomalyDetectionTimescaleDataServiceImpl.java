@@ -107,12 +107,16 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
 
     int i = 0;
 
-    log.info("currentTimeSeries : {} ", currentTimeSeries != null);
-    log.info("currentTimeSeries : {} ", currentTimeSeries.getTrainTimePointsList() != null);
+    if (currentTimeSeries != null) {
+      log.info("currentTimeSeries : {} ", currentTimeSeries != null);
+    }
 
-    log.info("Time : {}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0), 0);
-    log.info("Time : {}, Value{}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0),
-        currentTimeSeries.getValue(currentTimeSeries.getTrainTimePointsList().get(0)), 0);
+    if (currentTimeSeries.getTrainTimePointsList() != null) {
+      log.info("currentTimeSeries : {} ", currentTimeSeries.getTrainTimePointsList() != null);
+      log.info("Time : {}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0), 0);
+      log.info("Time : {}, Value{}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0),
+          currentTimeSeries.getValue(currentTimeSeries.getTrainTimePointsList().get(0)), 0);
+    }
 
     //    for(Instant cr : currentTimeSeries.getTrainTimePointsList()) {
     //      i++;
