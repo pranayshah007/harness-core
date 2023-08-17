@@ -3447,8 +3447,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
@@ -4901,8 +4900,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
@@ -5039,8 +5037,7 @@
           "enum": [
             "KubernetesDirect",
             "UseFromStage",
-            "VM",
-            "KubernetesHosted"
+            "VM"
           ]
         }
       },
@@ -5621,8 +5618,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
@@ -13616,8 +13612,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
