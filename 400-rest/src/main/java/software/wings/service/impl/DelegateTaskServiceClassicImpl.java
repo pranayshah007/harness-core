@@ -705,11 +705,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
         task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
 
-        // If FF is enabled, do evaluations and store delegateTaskPackage in database.
-        // Check for npe on .encryptionConfigs(delegateTaskPackage.getEncryptionConfigs())
+        // If FF is enabled, store delegateSecretTaskPackage in database.
         if (featureFlagService.isEnabled(EXPRESSION_EVAL_IN_TASK_SUBMIT, task.getAccountId())) {
-          //  DelegateTaskPackage delegateTaskPackage = resolvePreAssignmentExpressionsV2(task,
-          //  SecretManagerMode.APPLY);
           DelegateSecretTaskPackage delegateSecretTaskPackage =
               DelegateSecretTaskPackage.builder()
                   .encryptionConfigs(delegateTaskPackage.getEncryptionConfigs())
@@ -1068,8 +1065,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private DelegateTaskPackage buildDelegateSecretTaskPackage(DelegateTask delegateTask) {
-    // If delegateTaskPackage is present in database that means we did exp evaluation in submit task.
-    // Reuse delegateTaskPackage instead of doing evaluations again.
+    // If delegateSecretTaskPackage is present in database that means we did exp evaluation in submit task.
+    // Reuse delegateSecretTaskPackage instead of doing exp and secret evaluations again.
     if (delegateTask.getDelegateSecretTaskPackage() == null) {
       return resolvePreAssignmentExpressions(delegateTask, SecretManagerMode.APPLY);
     }
