@@ -14,10 +14,12 @@ import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
@@ -152,4 +154,19 @@ public interface PipelineServiceClient {
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(value = NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @Query(value = "stageNodeExecutionIds") String nodeExecutionIds);
+
+  @POST(PIPELINE_ENDPOINT + "execution/summary")
+  Call<ResponseDTO<Object>> getListOfExecutions(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(value = NGCommonEntityConstants.SEARCH_TERM) String searchTerm,
+      @Query(value = NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @Query(value = NGCommonEntityConstants.PAGE) int page,
+      @Query(value = NGCommonEntityConstants.SIZE) @DefaultValue("20") int size,
+      @Query(value = NGCommonEntityConstants.SORT) List<String> sort,
+      @Query(value = NGResourceFilterConstants.FILTER_KEY) String filterKey,
+      @Query(value = NGCommonEntityConstants.MODULE_TYPE) String moduleName, @Body FilterPropertiesDTO filterProperties,
+      @Query(value = NGCommonEntityConstants.STATUS) List<ExecutionStatus> statusesList,
+      @Query("myDeployments") boolean myDeployments);
 }

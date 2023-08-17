@@ -88,6 +88,8 @@ import io.harness.idp.scorecard.checks.service.CheckServiceImpl;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datapoints.service.DataPointServiceImpl;
 import io.harness.idp.scorecard.datapointsdata.resource.DataPointDataApiImpl;
+import io.harness.idp.scorecard.datapointsdata.service.DataPointDataValueService;
+import io.harness.idp.scorecard.datapointsdata.service.DataPointDataValueServiceImpl;
 import io.harness.idp.scorecard.datasourcelocations.service.DataSourceLocationService;
 import io.harness.idp.scorecard.datasourcelocations.service.DataSourceLocationServiceImpl;
 import io.harness.idp.scorecard.datasources.resources.DataSourceApiImpl;
@@ -124,6 +126,7 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
@@ -291,6 +294,8 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new EntitySetupUsageClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new PipelineRemoteClientModule(
+        appConfig.getPipelineServiceConfiguration(), appConfig.getPipelineServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, IDP_SERVICE.getServiceId(), false));
     install(new BackstageResourceClientModule());
     install(DelegateServiceDriverModule.getInstance(false, false));
@@ -363,6 +368,7 @@ public class IdpModule extends AbstractModule {
     bind(ScoreService.class).to(ScoreServiceImpl.class);
     bind(DataPointService.class).to(DataPointServiceImpl.class);
     bind(DataPointsDataApi.class).to(DataPointDataApiImpl.class);
+    bind(DataPointDataValueService.class).to(DataPointDataValueServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));
@@ -566,5 +572,12 @@ public class IdpModule extends AbstractModule {
   @Named("notificationConfigs")
   public HashMap<String, String> notificationConfigs() {
     return this.appConfig.getNotificationConfigs();
+  }
+
+  @Provides
+  @Singleton
+  @Named("pipelineServiceClientConfigs")
+  public ServiceHttpClientConfig pipelineServiceConfiguration() {
+    return this.appConfig.getPipelineServiceConfiguration();
   }
 }

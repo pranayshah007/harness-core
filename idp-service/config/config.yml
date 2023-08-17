@@ -122,6 +122,7 @@ idpServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7
 jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
 jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU
 idpEncryptionSecret: q7YdsdUoXTit5nqdBR1LdKQXE3beIGE6yiseIPM1WKg_iFE5C4oRxi1_Ao6XcKZvhCbtgZQliOkUO1cu
+pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 managerTarget: localhost:9880
 managerAuthority: localhost
@@ -207,3 +208,8 @@ notificationClient:
 
 notificationConfigs:
   pluginRequestsNotificationSlack: https://hooks.slack.com/services/dummy/dummy/dummy
+
+pipelineServiceClientConfig:
+  baseUrl: http://localhost:12001/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15

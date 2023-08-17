@@ -4,20 +4,23 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-
-package io.harness.idp.scorecard.datapoints.constants;
+package io.harness.idp.scorecard.datapoints.parser;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.experimental.UtilityClass;
+import java.util.Map;
+import java.util.Set;
 
-@UtilityClass
 @OwnedBy(HarnessTeam.IDP)
-public class DataPoints {
-  // Github
-  public static final String GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
-  public static final String GITHUB_IS_BRANCH_PROTECTED = "isBranchProtected";
+public class StoStageSetupParser implements DataPointParser {
+  @Override
+  public Object parseDataPoint(Map<String, Object> data, String dataPointIdentifier, Set<String> strings) {
+    throw new UnsupportedOperationException();
+  }
 
-  public static final String STO_SCAN_IN_PIPELINE = "stoStageAdded";
+  @Override
+  public String getReplaceKey() {
+    throw new UnsupportedOperationException();
+  }
 }
