@@ -86,9 +86,11 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
       if (previousHash == null || !previousHash.equals(currentHash)) {
         if (currentTimeSeries != null) {
           if (TimeSeriesUtils.validate(currentTimeSeries, timeSeriesMetaData)) {
+            log.info("Valid 1");
             AnomalyDetectionHelper.logValidTimeSeries(currentTimeSeries);
             listTimeSeries.add(currentTimeSeries);
           } else {
+            log.info("Invalid 1");
             AnomalyDetectionHelper.logInvalidTimeSeries(currentTimeSeries);
           }
         }
@@ -102,9 +104,11 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
 
     if (!resultSet.isBeforeFirst() && currentTimeSeries != null) {
       if (TimeSeriesUtils.validate(currentTimeSeries, timeSeriesMetaData)) {
+        log.info("Valid 2");
         AnomalyDetectionHelper.logValidTimeSeries(currentTimeSeries);
         listTimeSeries.add(currentTimeSeries);
       } else {
+        log.info("Invalid 2");
         AnomalyDetectionHelper.logInvalidTimeSeries(currentTimeSeries);
       }
     }

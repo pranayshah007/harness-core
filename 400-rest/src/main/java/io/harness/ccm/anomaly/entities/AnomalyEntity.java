@@ -85,11 +85,11 @@ public class AnomalyEntity {
     if (namespace != null) {
       return EntityType.NAMESPACE;
     }
-    if (clusterId != null) {
-      return EntityType.CLUSTER;
-    }
     if (service != null) {
       return EntityType.SERVICE;
+    }
+    if (clusterId != null) {
+      return EntityType.CLUSTER;
     }
     if (gcpSKUId != null) {
       return EntityType.GCP_SKU_ID;

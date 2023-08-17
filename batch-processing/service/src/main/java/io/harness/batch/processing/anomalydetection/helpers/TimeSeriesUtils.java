@@ -20,7 +20,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+@Slf4j
 
 @OwnedBy(CE)
 public class TimeSeriesUtils {
@@ -41,6 +43,11 @@ public class TimeSeriesUtils {
   }
 
   public static boolean validateTimeSeriesTestData(AnomalyDetectionTimeSeries anomalyDetectionTimeSeries) {
+    log.info("validateTimeSeriesTestData : {} ",
+        Collections.frequency(
+            anomalyDetectionTimeSeries.getTestDataPointsList(), AnomalyDetectionConstants.DEFAULT_COST)
+            == 0);
+
     return Collections.frequency(
                anomalyDetectionTimeSeries.getTestDataPointsList(), AnomalyDetectionConstants.DEFAULT_COST)
         == 0;
