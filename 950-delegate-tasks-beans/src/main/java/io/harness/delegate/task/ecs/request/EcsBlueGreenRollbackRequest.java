@@ -35,12 +35,17 @@ public class EcsBlueGreenRollbackRequest
   @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig ecsInfraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) EcsLoadBalancerConfig ecsLoadBalancerConfig;
-  String oldServiceName;
-  String newServiceName;
+  String oldServiceName; // Note: Here, old service refers to blue service before deployment
+  String newServiceName; // Note: Here, new service refers to green service before deployment
   boolean isFirstDeployment;
   boolean isNewServiceCreated;
   boolean isTargetShiftStarted;
   String oldServiceCreateRequestBuilderString;
   List<String> oldServiceScalableTargetManifestContentList;
   List<String> oldServiceScalingPolicyManifestContentList;
+  boolean greenServiceExisted;
+  String newServiceRequestBuilderString;
+  List<String> newServiceScalableTargetRequestBuilderStrings;
+  List<String> newServiceScalingPolicyRequestBuilderStrings;
+  boolean greenServiceRollbackEnabled;
 }

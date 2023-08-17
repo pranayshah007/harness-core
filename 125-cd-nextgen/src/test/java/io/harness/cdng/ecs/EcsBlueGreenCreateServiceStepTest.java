@@ -27,6 +27,7 @@ import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -100,6 +101,7 @@ public class EcsBlueGreenCreateServiceStepTest extends CategoryTest {
   @Spy private EcsStepCommonHelper ecsStepCommonHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private InstanceInfoService instanceInfoService;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Spy @InjectMocks private EcsBlueGreenCreateServiceStep ecsBlueGreenCreateServiceStep;
 
@@ -187,6 +189,7 @@ public class EcsBlueGreenCreateServiceStepTest extends CategoryTest {
     doReturn(taskChainResponseMock)
         .when(ecsStepCommonHelper)
         .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(any(), any());
     ecsBlueGreenCreateServiceStep.executeEcsPrepareRollbackTask(
         ambiance, stepElementParameters, ecsStepPassThroughData, unitProgressData);
     final String accountId = AmbianceUtils.getAccountId(ambiance);

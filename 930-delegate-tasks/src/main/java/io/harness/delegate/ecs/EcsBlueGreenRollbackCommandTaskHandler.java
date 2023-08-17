@@ -20,6 +20,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult.EcsBlueGreenRollbackResultBuilder;
+import io.harness.delegate.beans.ecs.EcsMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.EcsNGException;
@@ -41,9 +42,14 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
+import java.util.Optional;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
+import software.amazon.awssdk.services.ecs.model.Service;
+import software.amazon.awssdk.services.ecs.model.ServiceNotFoundException;
+import software.amazon.awssdk.services.ecs.model.UpdateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.UpdateServiceResponse;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
@@ -173,31 +179,35 @@ public class EcsBlueGreenRollbackCommandTaskHandler extends EcsCommandTaskNGHand
       rollbackCallback.saveExecutionLog(
           color(format("Successfully updated tag %n%n"), LogColor.White, LogWeight.Bold), LogLevel.INFO);
 
-      rollbackCallback.saveExecutionLog(
-          format("Removing green service:  %s scaling policies", ecsBlueGreenRollbackRequest.getNewServiceName()));
-      // deleting scaling policies for new service
-      ecsCommandTaskHelper.deleteScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(),
-          ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
-          rollbackCallback);
+      if (ecsBlueGreenRollbackRequest.isGreenServiceRollbackEnabled()) {
+        rollbackGreenService(ecsBlueGreenRollbackRequest, rollbackCallback);
+      } else {
+        rollbackCallback.saveExecutionLog(
+            format("Removing green service:  %s scaling policies", ecsBlueGreenRollbackRequest.getNewServiceName()));
+        // deleting scaling policies for new service
+        ecsCommandTaskHelper.deleteScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(),
+            ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
+            rollbackCallback);
 
-      rollbackCallback.saveExecutionLog(
-          format("Removing green service:  %s scalable targets", ecsBlueGreenRollbackRequest.getNewServiceName()));
-      // de-registering scalable target for new service
-      ecsCommandTaskHelper.deregisterScalableTargets(ecsInfraConfig.getAwsConnectorDTO(),
-          ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
-          rollbackCallback);
+        rollbackCallback.saveExecutionLog(
+            format("Removing green service:  %s scalable targets", ecsBlueGreenRollbackRequest.getNewServiceName()));
+        // de-registering scalable target for new service
+        ecsCommandTaskHelper.deregisterScalableTargets(ecsInfraConfig.getAwsConnectorDTO(),
+            ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(),
+            rollbackCallback);
 
-      rollbackCallback.saveExecutionLog(format(
-          "Downsizing green service:  %s with zero desired count", ecsBlueGreenRollbackRequest.getNewServiceName()));
-      // downsize new service desired count to zero
-      UpdateServiceResponse updateServiceResponse = ecsCommandTaskHelper.updateDesiredCount(
-          ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig, awsInternalConfig, 0);
+        rollbackCallback.saveExecutionLog(format(
+            "Downsizing green service:  %s with zero desired count", ecsBlueGreenRollbackRequest.getNewServiceName()));
+        // downsize new service desired count to zero
+        UpdateServiceResponse updateServiceResponse = ecsCommandTaskHelper.updateDesiredCount(
+            ecsBlueGreenRollbackRequest.getNewServiceName(), ecsInfraConfig, awsInternalConfig, 0);
 
-      if (updateServiceResponse.service() != null) {
-        rollbackCallback.saveExecutionLog(format("Current desired count for green service:  %s is %s",
-            ecsBlueGreenRollbackRequest.getNewServiceName(), updateServiceResponse.service().desiredCount()));
+        if (updateServiceResponse.service() != null) {
+          rollbackCallback.saveExecutionLog(format("Current desired count for green service:  %s is %s",
+              ecsBlueGreenRollbackRequest.getNewServiceName(), updateServiceResponse.service().desiredCount()));
+        }
+        rollbackCallback.saveExecutionLog("Waiting 30s for downsize to complete green service to synchronize");
       }
-      rollbackCallback.saveExecutionLog("Waiting 30s for downsize to complete green service to synchronize");
 
       EcsBlueGreenRollbackResultBuilder ecsBlueGreenRollbackResultBuilder =
           EcsBlueGreenRollbackResult.builder()
@@ -232,6 +242,77 @@ public class EcsBlueGreenRollbackCommandTaskHandler extends EcsCommandTaskNGHand
       rollbackCallback.saveExecutionLog(color(format("Rollback Failed. %n"), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new EcsNGException(e);
+    }
+  }
+  private void rollbackGreenService(
+      EcsBlueGreenRollbackRequest ecsBlueGreenRollbackRequest, LogCallback rollbackCallback) {
+    if (ecsBlueGreenRollbackRequest.isGreenServiceExisted()) {
+      // if green service existed before deployment, do rollback
+      CreateServiceRequest.Builder createServiceRequestBuilder =
+          ecsCommandTaskHelper.parseYamlAsObject(ecsBlueGreenRollbackRequest.getNewServiceRequestBuilderString(),
+              CreateServiceRequest.serializableBuilderClass());
+      Integer desiredCount = ecsCommandTaskHelper.getDesiredCountOfServiceForRollback(ecsInfraConfig,
+          createServiceRequestBuilder.build().desiredCount(), createServiceRequestBuilder.build().serviceName());
+      // replace cluster and desired count
+      CreateServiceRequest createServiceRequest =
+          createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster()).desiredCount(desiredCount).build();
+      rollbackCallback.saveExecutionLog(format("Rolling back green service: %s with desired count: %s",
+          ecsBlueGreenRollbackRequest.getNewServiceName(), desiredCount));
+      // if service exists create service, otherwise update service
+      Optional<Service> optionalService = ecsCommandTaskHelper.describeService(createServiceRequest.cluster(),
+          createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+      if (optionalService.isPresent() && ecsCommandTaskHelper.isServiceActive(optionalService.get())) {
+        Service service = optionalService.get();
+        ecsCommandTaskHelper.deleteScalingPolicies(ecsInfraConfig.getAwsConnectorDTO(), service.serviceName(),
+            ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), rollbackCallback);
+        ecsCommandTaskHelper.deregisterScalableTargets(ecsInfraConfig.getAwsConnectorDTO(), service.serviceName(),
+            ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), rollbackCallback);
+
+        UpdateServiceRequest updateServiceRequest =
+            EcsMapper.createServiceRequestToUpdateServiceRequest(createServiceRequest, false);
+
+        rollbackCallback.saveExecutionLog(
+            format("Updating Green Service %s with task definition %s and desired count %s %n",
+                updateServiceRequest.service(), updateServiceRequest.taskDefinition(),
+                updateServiceRequest.desiredCount()),
+            LogLevel.INFO);
+        UpdateServiceResponse updateServiceResponse = ecsCommandTaskHelper.updateService(
+            updateServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+        rollbackCallback.saveExecutionLog(format("Updated Service %s with Arn %s %n", updateServiceRequest.service(),
+                                              updateServiceResponse.service().serviceArn()),
+            LogLevel.INFO);
+
+        ecsCommandTaskHelper.registerScalableTargets(
+            ecsBlueGreenRollbackRequest.getNewServiceScalableTargetRequestBuilderStrings(),
+            ecsInfraConfig.getAwsConnectorDTO(), service.serviceName(), ecsInfraConfig.getCluster(),
+            ecsInfraConfig.getRegion(), rollbackCallback);
+
+        ecsCommandTaskHelper.attachScalingPolicies(
+            ecsBlueGreenRollbackRequest.getNewServiceScalingPolicyRequestBuilderStrings(),
+            ecsInfraConfig.getAwsConnectorDTO(), service.serviceName(), ecsInfraConfig.getCluster(),
+            ecsInfraConfig.getRegion(), rollbackCallback);
+      }
+    } else {
+      // if green service doesn't exist before deployment, delete it
+      String serviceName = ecsBlueGreenRollbackRequest.getNewServiceName();
+
+      rollbackCallback.saveExecutionLog(format("Deleting green service %s..", serviceName), LogLevel.INFO);
+
+      try {
+        ecsCommandTaskHelper.deleteService(
+            serviceName, ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+      } catch (Exception e) {
+        if (e.getCause() instanceof ServiceNotFoundException) {
+          rollbackCallback.saveExecutionLog(format("service %s doesn't exist, so "
+                                                    + "skipping deletion of service",
+                                                serviceName),
+              LogLevel.INFO);
+        } else {
+          throw e;
+        }
+      }
     }
   }
 }

@@ -25,4 +25,10 @@ public class EcsBlueGreenPrepareRollbackDataResult {
   List<String> registerScalingPolicyRequestBuilderStrings;
   boolean isFirstDeployment;
   EcsLoadBalancerConfig ecsLoadBalancerConfig;
+  String greenServiceName;
+  String greenServiceRequestBuilderString;
+  List<String> greenServiceScalableTargetRequestBuilderStrings;
+  List<String> greenServiceScalingPolicyRequestBuilderStrings;
+  boolean greenServiceExist;
+  boolean greenServiceRollbackDataExist;
 }
