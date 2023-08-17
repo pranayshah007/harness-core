@@ -10,6 +10,7 @@ import static io.harness.exception.WingsException.USER;
 
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupFactory;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.resources.resourcetypes.ResourceType;
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
@@ -49,6 +50,7 @@ public class PublicAccessServiceImpl implements PublicAccessService {
   private final HarnessResourceGroupService harnessResourceGroupService;
   private final ResourceGroupClient resourceGroupClient;
   private final ResourceGroupService resourceGroupService;
+  private final ResourceGroupFactory resourceGroupFactory;
 
   private final MongoTemplate mongoTemplate;
 
@@ -63,12 +65,13 @@ public class PublicAccessServiceImpl implements PublicAccessService {
   public PublicAccessServiceImpl(RoleAssignmentService roleAssignmentService,
       HarnessResourceGroupService harnessResourceGroupService,
       @Named("PRIVILEGED") ResourceGroupClient resourceGroupClient, ResourceGroupService resourceGroupService,
-      MongoTemplate mongoTemplate, ScopeService scopeService) {
+      ResourceGroupFactory resourceGroupFactory, MongoTemplate mongoTemplate, ScopeService scopeService) {
     this.roleAssignmentService = roleAssignmentService;
     this.harnessResourceGroupService = harnessResourceGroupService;
 
     this.resourceGroupClient = resourceGroupClient;
     this.resourceGroupService = resourceGroupService;
+    this.resourceGroupFactory = resourceGroupFactory;
     this.mongoTemplate = mongoTemplate;
     this.scopeService = scopeService;
   }
@@ -155,6 +158,7 @@ public class PublicAccessServiceImpl implements PublicAccessService {
     if (resourceGroupResponse.isEmpty()) {
       throw new InvalidRequestException("Unable to update public resource group", USER);
     }
+    resourceGroupService.upsert(resourceGroupFactory.buildResourceGroup(resourceGroupResponse.get()));
     return resourceGroupResponse.get();
   }
 
@@ -188,6 +192,7 @@ public class PublicAccessServiceImpl implements PublicAccessService {
     if (resourceGroupResponse.isEmpty()) {
       throw new InvalidRequestException("Unable to create public resource group", USER);
     }
+    resourceGroupService.upsert(resourceGroupFactory.buildResourceGroup(resourceGroupResponse.get()));
     return resourceGroupResponse.get();
   }
 
