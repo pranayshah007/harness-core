@@ -35,6 +35,8 @@ public interface DelegateNgTokenService extends OwnedByAccount {
    */
   DelegateTokenDetails getDelegateToken(String accountId, String name, boolean includeValue);
 
+  DelegateTokenDetails getDefaultTokenOrOldestActiveDelegateToken(String accountId, DelegateEntityOwner owner);
+
   /**
    * Get delegate token detailed information, exclude delegate token value
    * @param accountId
