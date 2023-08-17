@@ -66,8 +66,11 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
     int index = trainTimePointsList.indexOf(instant);
     if (index > -1) {
       trainDataPointsList.set(trainTimePointsList.indexOf(instant), cost);
+      log.info("currentTime : {} , currentValue : {}, index : {}, true", instant.toString(), cost, index);
       return true;
     }
+
+    log.info("currentTime : {} , currentValue : {}, index : {}, false", instant.toString(), cost, index);
     return false;
   }
 
@@ -75,8 +78,11 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
     int index = testTimePointsList.indexOf(instant);
     if (index > -1) {
       testDataPointsList.set(testTimePointsList.indexOf(instant), cost);
+      log.info("currentTime : {} , currentValue : {}, index : {}, true", instant.toString(), cost, index);
       return true;
     }
+
+    log.info("currentTime : {} , currentValue : {}, index : {}, false", instant.toString(), cost, index);
     return false;
   }
 

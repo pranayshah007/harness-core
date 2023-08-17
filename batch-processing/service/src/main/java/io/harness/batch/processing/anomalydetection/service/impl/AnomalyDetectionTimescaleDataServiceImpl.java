@@ -100,6 +100,8 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
         fillMetaInfoToTimeSeries(currentTimeSeries, timeSeriesMetaData, resultSet);
       }
       currentTimeSeries.insert(currentTime, currentValue);
+
+      log.info("currentTime : {} , currentValue ; {}", currentTime.toString(), currentValue);
       previousHash = currentHash;
     }
 
