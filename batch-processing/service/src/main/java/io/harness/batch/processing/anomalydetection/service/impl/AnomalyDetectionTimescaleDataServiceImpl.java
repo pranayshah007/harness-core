@@ -108,7 +108,7 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
 
       Double cv1 = currentTimeSeries.getValue(current);
 
-      log.info("Time : {}, Value{}, Index : {} ", current, cv1, i);
+      log.info("Time : {}, Value{}, Index : {} ", current.toString(), cv1, i);
     }
 
     int j = 0;
@@ -117,7 +117,7 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
 
       Double cv2 = currentTimeSeries.getValue(current);
 
-      log.info("Time : {}, Value{}, Index : {} ", current, cv2, j);
+      log.info("Time : {}, Value{}, Index : {} ", current.toString(), cv2, j);
     }
 
     if (!resultSet.isBeforeFirst() && currentTimeSeries != null) {
