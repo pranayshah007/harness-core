@@ -1376,26 +1376,6 @@ public class K8sTaskHelperBase {
     }
   }
 
-  private boolean doStatusCheckForWorkloads(Kubectl client, List<KubernetesResourceId> resourceIds,
-      K8sDelegateTaskParams k8sDelegateTaskParams, String statusFormat, LogCallback executionLogCallback,
-      boolean isErrorFrameworkEnabled) throws Exception {
-    boolean success = false;
-    for (KubernetesResourceId kubernetesResourceId : resourceIds) {
-      if (Kind.Job.name().equals(kubernetesResourceId.getKind())) {
-        success = doStatusCheckForJob(client, kubernetesResourceId, k8sDelegateTaskParams, statusFormat,
-            executionLogCallback, isErrorFrameworkEnabled);
-      } else {
-        success = doStatusCheckForWorkloads(client, kubernetesResourceId, k8sDelegateTaskParams, statusFormat,
-            executionLogCallback, isErrorFrameworkEnabled);
-      }
-
-      if (!success) {
-        break;
-      }
-    }
-    return success;
-  }
-
   public boolean doStatusCheckForWorkloads(Kubectl client, KubernetesResourceId resourceId,
       K8sDelegateTaskParams k8sDelegateTaskParams, String statusFormat, LogCallback executionLogCallback,
       boolean isErrorFrameworkEnabled) throws Exception {
@@ -1540,8 +1520,19 @@ public class K8sTaskHelperBase {
             k8sDelegateTaskParams.getWorkingDirectory(), getEventsCommand, watchInfoStream, watchErrorStream));
       }
 
-      success = doStatusCheckForWorkloads(
-          client, resourceIds, k8sDelegateTaskParams, statusFormat, executionLogCallback, isErrorFrameworkEnabled);
+      for (KubernetesResourceId kubernetesResourceId : resourceIds) {
+        if (Kind.Job.name().equals(kubernetesResourceId.getKind())) {
+          success = doStatusCheckForJob(client, kubernetesResourceId, k8sDelegateTaskParams, statusFormat,
+              executionLogCallback, isErrorFrameworkEnabled);
+        } else {
+          success = doStatusCheckForWorkloads(client, kubernetesResourceId, k8sDelegateTaskParams, statusFormat,
+              executionLogCallback, isErrorFrameworkEnabled);
+        }
+
+        if (!success) {
+          break;
+        }
+      }
 
       return success;
     } catch (Exception e) {
