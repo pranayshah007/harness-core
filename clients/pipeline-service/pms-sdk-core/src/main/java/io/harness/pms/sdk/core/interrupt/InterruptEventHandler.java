@@ -70,8 +70,8 @@ public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
     switch (interruptType) {
       case ABORT:
       case USER_MARKED_FAIL_ALL:
-        handleAbort(event);
-        log.info("Handled ABORT InterruptEvent Successfully");
+        handleAbortAndUserMarkedFailure(event, interruptType);
+        log.info(String.format("Handled %s InterruptEvent Successfully", interruptType));
         break;
       case MARK_EXPIRED:
         handleExpire(event);
@@ -102,20 +102,24 @@ public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
     }
   }
 
-  public void handleAbort(InterruptEvent event) {
+  public void handleAbortAndUserMarkedFailure(InterruptEvent event, InterruptType interruptType) {
     try {
       StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
       Step<?> step = stepRegistry.obtain(stepType);
       if (step instanceof Abortable) {
         StepParameters stepParameters =
             RecastOrchestrationUtils.fromJson(event.getStepParameters().toStringUtf8(), StepParameters.class);
-        ((Abortable) step).handleAbort(event.getAmbiance(), stepParameters, extractExecutableResponses(event));
+        ((Abortable) step)
+            .handleAbortAndUserMarkedFailure(event.getAmbiance(), stepParameters, extractExecutableResponses(event),
+                interruptType == InterruptType.USER_MARKED_FAIL_ALL);
         pmsInterruptService.handleAbort(event.getNotifyId());
       } else {
         pmsInterruptService.handleAbort(event.getNotifyId());
       }
     } catch (Exception ex) {
-      log.error("Handling abort at sdk failed with interrupt event - {} ", event.getInterruptUuid(), ex);
+      log.error(String.format(
+                    "Handling %s at sdk failed with interrupt event - %s} ", interruptType, event.getInterruptUuid()),
+          ex);
       // Even if error send feedback
       pmsInterruptService.handleAbort(event.getNotifyId());
     }
