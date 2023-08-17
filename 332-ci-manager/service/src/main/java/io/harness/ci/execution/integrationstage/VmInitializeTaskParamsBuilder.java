@@ -142,9 +142,13 @@ public class VmInitializeTaskParamsBuilder {
     vmInitializeUtils.validateDebug(hostedVmInfraYaml, ambiance);
     if (isBareMetalEnabled(accountId, hostedVmInfraYaml.getSpec().getPlatform(), initializeStepInfo)) {
       poolId = getHostedBareMetalPoolId(hostedVmInfraYaml.getSpec().getPlatform());
-      fallbackPoolIds.add(getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId));
+      fallbackPoolIds.add(getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId, false));
     } else {
-      poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId);
+      poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId, false);
+      String fallbackPoolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId, true);
+      if (!isEmpty(fallbackPoolId)) {
+        fallbackPoolIds.add(fallbackPoolId);
+      }
     }
     CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId, fallbackPoolIds);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params, ambiance);
@@ -539,9 +543,14 @@ public class VmInitializeTaskParamsBuilder {
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
 
-  public String getHostedPoolId(ParameterField<Platform> platform, String accountId) {
+  // getHostedPoolId returns a pool ID that can be used for GCP hosted builds. If fallback is set to true,
+  // it will try to find a fallback pool value instead. Fallback pools are currently only present for linux
+  // amd64 architecture.
+  public String getHostedPoolId(ParameterField<Platform> platform, String accountId, boolean fallback) {
     OSType os = OSType.Linux;
     ArchType arch = ArchType.Amd64;
+    String fallbackSuffix = "-fallback";
+    boolean fallbackEligible = false;
     if (platform != null && platform.getValue() != null) {
       os = resolveOSType(platform.getValue().getOs());
       arch = resolveArchType(platform.getValue().getArch());
@@ -551,6 +560,9 @@ public class VmInitializeTaskParamsBuilder {
     boolean isWindowsAmd = os == OSType.Windows && arch == ArchType.Amd64;
 
     if (isLinux || isMacArm || isWindowsAmd) {
+      if (arch == ArchType.Amd64) {
+        fallbackEligible = true;
+      }
       if (isMacArm && !featureFlagService.isEnabled(FeatureName.CIE_HOSTED_VMS_MAC, accountId)) {
         throw new CIStageExecutionException(format("Mac Arm64 platform is not enabled for accountId %s", accountId));
       }
@@ -574,9 +586,16 @@ public class VmInitializeTaskParamsBuilder {
 
       if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
         pool = format("%s-free-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
+        fallbackEligible = false;
       }
     }
 
+    if (fallback) {
+      if (fallbackEligible) {
+        return pool + fallbackSuffix;
+      }
+      return "";
+    }
     return pool;
   }
 
