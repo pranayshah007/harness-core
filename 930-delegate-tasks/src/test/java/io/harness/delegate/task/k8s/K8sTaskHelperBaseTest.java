@@ -1502,7 +1502,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     PowerMockito.when(InstallUtils.getLatestVersionPath(ClientTool.OC)).thenReturn("oc");
     assertThatThrownBy(()
                            -> spyK8sTaskHelperBase.doStatusCheckForAllResources(client, singletonList(deploymentConfig),
-                               k8sDelegateTaskParams, "name", executionLogCallback, false))
+                               k8sDelegateTaskParams, "name", executionLogCallback, false, true))
         .matches(throwable -> {
           KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
           assertThat(taskException.getProcessResponse().getProcessResult().outputUTF8())
@@ -1536,7 +1536,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> spyK8sTaskHelperBase.doStatusCheckForAllResources(client, singletonList(deploymentConfig),
-                               k8sDelegateTaskParams, "name", executionLogCallback, false))
+                               k8sDelegateTaskParams, "name", executionLogCallback, false, true))
         .matches(throwable -> {
           HintException hint = ExceptionUtils.cause(HintException.class, throwable);
           KubernetesTaskException taskException = ExceptionUtils.cause(KubernetesTaskException.class, throwable);

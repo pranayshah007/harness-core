@@ -477,7 +477,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllResources(nullable(Kubectl.class), any(), nullable(K8sDelegateTaskParams.class), any(),
-            nullable(ExecutionLogCallback.class), anyBoolean(), eq(false), eq(true));
+            nullable(ExecutionLogCallback.class), anyBoolean(), eq(false));
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllCustomResources(nullable(Kubectl.class), any(), nullable(K8sDelegateTaskParams.class),
@@ -500,7 +500,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
 
     verify(k8sTaskHelperBase, times(1))
         .doStatusCheckForAllResources(nullable(Kubectl.class), captor.capture(), any(K8sDelegateTaskParams.class),
-            any(), nullable(ExecutionLogCallback.class), anyBoolean(), eq(false), eq(true));
+            any(), nullable(ExecutionLogCallback.class), anyBoolean(), eq(false));
 
     @SuppressWarnings("unchecked")
     final List<KubernetesResourceId> capturedResources = (List<KubernetesResourceId>) captor.getValue();
@@ -516,8 +516,8 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllResources(nullable(Kubectl.class), nullable(List.class),
-            nullable(K8sDelegateTaskParams.class), any(), nullable(ExecutionLogCallback.class), anyBoolean(), eq(false),
-            eq(true));
+            nullable(K8sDelegateTaskParams.class), any(), nullable(ExecutionLogCallback.class), anyBoolean(),
+            eq(false));
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllCustomResources(nullable(Kubectl.class), nullable(List.class),

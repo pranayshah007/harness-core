@@ -80,8 +80,8 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     ArgumentCaptor<List> customResourceIdCaptor = ArgumentCaptor.forClass(List.class);
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .doStatusCheckForAllResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(namespace),
-            eq(logCallback), eq(true), eq(false), eq(true));
+        .doStatusCheckForAllResources(
+            any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(namespace), eq(logCallback), eq(true), eq(false));
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
@@ -92,7 +92,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
 
     verify(k8sTaskHelperBase, times(1))
         .doStatusCheckForAllResources(any(Kubectl.class), resourceIdCaptor.capture(), eq(delegateTaskParams),
-            eq(namespace), eq(logCallback), eq(true), eq(false), eq(true));
+            eq(namespace), eq(logCallback), eq(true), eq(false));
     List k8sResourceIds = resourceIdCaptor.getValue();
     assertThat(k8sResourceIds).containsExactly(deployment);
     verify(k8sTaskHelperBase, times(1))
@@ -120,7 +120,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(namespace),
-            eq(logCallback), eq(false), eq(false), eq(true));
+            eq(logCallback), eq(false), eq(false));
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
@@ -131,7 +131,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
 
     verify(k8sTaskHelperBase, times(1))
         .doStatusCheckForAllResources(any(Kubectl.class), resourceIdCaptor.capture(), eq(delegateTaskParams),
-            eq(namespace), eq(logCallback), eq(false), eq(false), eq(true));
+            eq(namespace), eq(logCallback), eq(false), eq(false));
     List k8sResourceIds = resourceIdCaptor.getValue();
     assertThat(k8sResourceIds).isEmpty();
     verify(k8sTaskHelperBase, times(1))
@@ -166,7 +166,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(namespace),
-            eq(logCallback), eq(false), eq(false), eq(true));
+            eq(logCallback), eq(false), eq(false));
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
@@ -177,7 +177,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
 
     verify(k8sTaskHelperBase, times(1))
         .doStatusCheckForAllResources(any(Kubectl.class), resourceIdCaptor.capture(), eq(delegateTaskParams),
-            eq(namespace), eq(logCallback), eq(false), eq(false), eq(true));
+            eq(namespace), eq(logCallback), eq(false), eq(false));
     List k8sResourceIds = resourceIdCaptor.getValue();
     assertThat(k8sResourceIds).containsExactly(deployment);
     verify(k8sTaskHelperBase, times(1))
@@ -211,7 +211,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     doReturn(false)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(namespace),
-            eq(logCallback), eq(false), eq(false), eq(true));
+            eq(logCallback), eq(false), eq(false));
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
@@ -222,7 +222,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
 
     verify(k8sTaskHelperBase, times(1))
         .doStatusCheckForAllResources(any(Kubectl.class), resourceIdCaptor.capture(), eq(delegateTaskParams),
-            eq(namespace), eq(logCallback), eq(false), eq(false), eq(true));
+            eq(namespace), eq(logCallback), eq(false), eq(false));
     List k8sResourceIds = resourceIdCaptor.getValue();
     assertThat(k8sResourceIds).containsExactly(deployment);
     verify(k8sTaskHelperBase, times(1))
@@ -256,7 +256,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(namespace),
-            eq(logCallback), eq(false), eq(false), eq(true));
+            eq(logCallback), eq(false), eq(false));
     doReturn(false)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllCustomResources(any(Kubectl.class), anyList(), eq(delegateTaskParams), eq(logCallback),
@@ -267,7 +267,7 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
 
     verify(k8sTaskHelperBase, times(1))
         .doStatusCheckForAllResources(any(Kubectl.class), resourceIdCaptor.capture(), eq(delegateTaskParams),
-            eq(namespace), eq(logCallback), eq(false), eq(false), eq(true));
+            eq(namespace), eq(logCallback), eq(false), eq(false));
     List k8sResourceIds = resourceIdCaptor.getValue();
     assertThat(k8sResourceIds).containsExactly(deployment);
     verify(k8sTaskHelperBase, times(1))

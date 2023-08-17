@@ -30,6 +30,7 @@ import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 import static io.harness.helm.HelmConstants.DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
+import static io.harness.k8s.model.Kind.HELM_STEADY_STATE_WORKLOAD_KINDS;
 import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILES_DIRECTORY;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.validation.Validator.notNullCheck;
@@ -330,6 +331,17 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         workloads = helmSteadyStateService.findEligibleWorkloadIds(resources);
       }
 
+      if (!useSteadyStateCheck && commandRequest.isDisableFabric8()) {
+        resources = helmSteadyStateService.readManifestFromHelmRelease(
+            HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest));
+        workloads =
+            resources.stream()
+                .map(KubernetesResource::getResourceId)
+                .filter(
+                    kubernetesResourceId -> HELM_STEADY_STATE_WORKLOAD_KINDS.contains(kubernetesResourceId.getKind()))
+                .collect(Collectors.toList());
+      }
+
       serviceHookHandler.addWorkloadContextForHooks(resources, Collections.emptyList());
       serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
           serviceHookDTO.getWorkingDirectory(), logCallback);
@@ -476,7 +488,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     if (!useSteadyStateCheck && !commandRequest.isDisableFabric8()) {
       return getFabric8ContainerInfos(commandRequest, logCallback, timeoutInMillis);
     }
-    return getKubectlContainerInfos(commandRequest, workloads, logCallback, timeoutInMillis, useSteadyStateCheck);
+    return getKubectlContainerInfos(commandRequest, workloads, logCallback, timeoutInMillis);
   }
 
   private List<ContainerInfo> getFabric8ContainerInfos(
@@ -500,8 +512,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   }
 
   private List<ContainerInfo> getKubectlContainerInfos(HelmCommandRequestNG commandRequest,
-      List<KubernetesResourceId> workloads, LogCallback logCallback, long timeoutInMillis,
-      boolean statusCheckAllResourcesForHelm) throws Exception {
+      List<KubernetesResourceId> workloads, LogCallback logCallback, long timeoutInMillis) throws Exception {
     Kubectl client = KubectlFactory.getKubectlClient(
         k8sGlobalConfigService.getKubectlPath(commandRequest.isUseLatestKubectlVersion()),
         commandRequest.getKubeConfigLocation(), commandRequest.getWorkingDir());
@@ -525,7 +536,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           success = success
               && doStatusCheckForHelm(client, entry.getValue(), commandRequest.getOcPath(),
                   commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(), logCallback,
-                  commandRequest.getGcpKeyPath(), statusCheckAllResourcesForHelm);
+                  commandRequest.getGcpKeyPath());
           logCallback.saveExecutionLog(
               format("Status check done with success [%s] for resources in namespace: [%s]", success, namespace));
         }
@@ -548,7 +559,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   private boolean doStatusCheckForHelm(Kubectl client, List<KubernetesResourceId> resourceIds, String ocPath,
       String workingDir, String namespace, String kubeconfigPath, LogCallback executionLogCallback,
-      String gcpKeyFilePath, boolean statusCheckAllResourcesForHelm) throws Exception {
+      String gcpKeyFilePath) throws Exception {
     return k8sTaskHelperBase.doStatusCheckForAllResources(client, resourceIds,
         K8sDelegateTaskParams.builder()
             .ocPath(ocPath)
@@ -556,7 +567,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
             .kubeconfigPath(kubeconfigPath)
             .gcpKeyFilePath(gcpKeyFilePath)
             .build(),
-        namespace, executionLogCallback, false, true, statusCheckAllResourcesForHelm);
+        namespace, executionLogCallback, false, true);
   }
 
   private Collection<? extends ContainerInfo> fetchContainerInfo(
@@ -658,6 +669,17 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         List<KubernetesResource> resources = helmSteadyStateService.readManifestFromHelmRelease(
             HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest));
         rollbackWorkloads = helmSteadyStateService.findEligibleWorkloadIds(resources);
+      }
+
+      if (!useSteadyStateCheck && commandRequest.isDisableFabric8()) {
+        List<KubernetesResource> resources = helmSteadyStateService.readManifestFromHelmRelease(
+            HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest));
+        rollbackWorkloads =
+            resources.stream()
+                .map(KubernetesResource::getResourceId)
+                .filter(
+                    kubernetesResourceId -> HELM_STEADY_STATE_WORKLOAD_KINDS.contains(kubernetesResourceId.getKind()))
+                .collect(Collectors.toList());
       }
 
       List<ContainerInfo> containerInfos = getContainerInfos(

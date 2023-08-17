@@ -120,7 +120,7 @@ public class K8sApplyBaseHandler {
 
       success = k8sTaskHelperBase.doStatusCheckForAllResources(k8sApplyHandlerConfig.getClient(), kubernetesResourceIds,
           k8sDelegateTaskParams, namespace, executionLogCallback,
-          denoteOverallSuccess && k8sApplyHandlerConfig.getCustomWorkloads().isEmpty(), isErrorFrameworkEnabled, true);
+          denoteOverallSuccess && k8sApplyHandlerConfig.getCustomWorkloads().isEmpty(), isErrorFrameworkEnabled);
     }
 
     boolean customResourcesStatusSuccess = k8sTaskHelperBase.doStatusCheckForAllCustomResources(
