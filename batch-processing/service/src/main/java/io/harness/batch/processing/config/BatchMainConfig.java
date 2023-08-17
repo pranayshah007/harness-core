@@ -36,6 +36,7 @@ import lombok.Data;
 @Builder
 public class BatchMainConfig {
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
+  @JsonProperty("batch-job-postgresdb") private TimeScaleDBConfig batchPostgresDBConfig;
   @JsonProperty("harness-mongo") private MongoConfig harnessMongo;
   @JsonProperty("events-mongo") private MongoConfig eventsMongo;
   @JsonProperty("batchQueryConfig") private BatchQueryConfig batchQueryConfig;

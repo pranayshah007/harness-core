@@ -29,6 +29,18 @@ timescaledb:
   sslMode: disable
   sslRootCert: ""
 
+batch-job-postgresdb:
+  timescaledbUrl: "jdbc:postgresql://localhost:5432/harness_batch_qa"
+  timescaledbUsername: "postgres"
+  timescaledbPassword: ""
+  connectTimeout: 300
+  socketTimeout: 900
+  logUnclosedConnections: false
+  loggerLevel: OFF
+  isHealthCheckNeeded: false
+  sslMode: disable
+  sslRootCert: ""
+
 batchQueryConfig:
   queryBatchSize: 1000
   billingDataQueryBatchSize: 4000

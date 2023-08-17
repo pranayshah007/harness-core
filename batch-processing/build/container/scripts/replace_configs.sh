@@ -60,6 +60,18 @@ if [[ "" != "$TIMESCALEDB_PASSWORD" ]]; then
   export TIMESCALEDB_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALEDB_PASSWORD)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BATCH_POSTGRESDB_URI" ]]; then
+  export BATCH_POSTGRESDB_URI; yq -i '.batch-job-postgresdb.timescaledbUrl=env(BATCH_POSTGRESDB_URI)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_POSTGRESDB_USERNAME" ]]; then
+  export BATCH_POSTGRESDB_USERNAME; yq -i '.batch-job-postgresdb.timescaledbUsername=env(BATCH_POSTGRESDB_USERNAME)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_POSTGRESDB_PASSWORD" ]]; then
+  export BATCH_POSTGRESDB_PASSWORD; yq -i '.batch-job-postgresdb.timescaledbPassword=env(BATCH_POSTGRESDB_PASSWORD)' $CONFIG_FILE
+fi
+
 if [[ "" != "$TIMESCALEDB_SSL_MODE" ]]; then
   export TIMESCALEDB_SSL_MODE; yq -i '.timescaledb.sslMode=env(TIMESCALEDB_SSL_MODE)' $CONFIG_FILE
 fi
