@@ -19,6 +19,7 @@ go_library(
         "//product/ci/common/external",
         "//product/ci/engine/logutil",
         "@com_github_alexflint_go_arg//:go-arg",
+        "@com_github_mattn_go_zglob//:go-zglob",
         "@org_uber_go_zap//:zap",
     ],
 )
