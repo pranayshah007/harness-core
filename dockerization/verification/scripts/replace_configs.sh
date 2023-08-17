@@ -63,6 +63,15 @@ if [[ "" != "$SG_ITERATOR_INTERVAL_SECS" ]]; then
   export SG_ITERATOR_INTERVAL_SECS; yq -i '.serviceGuardIteratorConfig.targetIntervalInSeconds=env(SG_ITERATOR_INTERVAL_SECS)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
 if [[ "" != "$DISTRIBUTED_LOCK_IMPLEMENTATION" ]]; then
   export DISTRIBUTED_LOCK_IMPLEMENTATION; yq -i '.distributedLockImplementation=env(DISTRIBUTED_LOCK_IMPLEMENTATION)' $CONFIG_FILE
 fi
