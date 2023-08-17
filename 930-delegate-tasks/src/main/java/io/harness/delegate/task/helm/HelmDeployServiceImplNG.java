@@ -534,7 +534,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           Optional<String> ocPath = setupPathOfOcBinaries(entry.getValue());
           ocPath.ifPresent(commandRequest::setOcPath);
           success = success
-              && doStatusCheckForHelm(client, entry.getValue(), commandRequest.getOcPath(),
+              && doStatusCheckAllResourcesForHelm(client, entry.getValue(), commandRequest.getOcPath(),
                   commandRequest.getWorkingDir(), namespace, commandRequest.getKubeConfigLocation(), logCallback,
                   commandRequest.getGcpKeyPath());
           logCallback.saveExecutionLog(
@@ -557,8 +557,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     }
   }
 
-  private boolean doStatusCheckForHelm(Kubectl client, List<KubernetesResourceId> resourceIds, String ocPath,
-      String workingDir, String namespace, String kubeconfigPath, LogCallback executionLogCallback,
+  private boolean doStatusCheckAllResourcesForHelm(Kubectl client, List<KubernetesResourceId> resourceIds,
+      String ocPath, String workingDir, String namespace, String kubeconfigPath, LogCallback executionLogCallback,
       String gcpKeyFilePath) throws Exception {
     return k8sTaskHelperBase.doStatusCheckForAllResources(client, resourceIds,
         K8sDelegateTaskParams.builder()
