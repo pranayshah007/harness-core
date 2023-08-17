@@ -84,8 +84,15 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
       currentTime = resultSet.getTimestamp(tableSchema.getStartTime().getName()).toInstant();
       currentValue = resultSet.getDouble("cost");
 
+      log.info("currentHash : {}", currentHash);
+      log.info("previousHash : {} , currentHash ; {}", previousHash, currentHash);
+
       if (previousHash == null || !previousHash.equals(currentHash)) {
+        log.info("Yes pos 1 secured");
+
         if (currentTimeSeries != null) {
+          log.info("Yes pos 2 secured");
+
           if (TimeSeriesUtils.validate(currentTimeSeries, timeSeriesMetaData)) {
             log.info("Valid 1");
             AnomalyDetectionHelper.logValidTimeSeries(currentTimeSeries);
@@ -105,18 +112,20 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
       previousHash = currentHash;
     }
 
-    int i = 0;
+    //    int i = 0;
 
     if (currentTimeSeries != null) {
-      log.info("currentTimeSeries1 : {} ", currentTimeSeries != null);
+      log.info("currentTimeSeries1isnull : {} ", currentTimeSeries != null);
+    } else {
+      log.info("currentTimeSeries1isnull : {} ", currentTimeSeries == null);
     }
 
-    if (currentTimeSeries.getTrainTimePointsList() != null) {
-      log.info("currentTimeSeries2 : {} ", currentTimeSeries.getTrainTimePointsList() != null);
-      log.info("Time : {}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0), 0);
-      log.info("Time : {}, Value{}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0),
-          currentTimeSeries.getValue(currentTimeSeries.getTrainTimePointsList().get(0)), 0);
-    }
+    //    if (currentTimeSeries.getTrainTimePointsList() != null) {
+    //      log.info("currentTimeSeries2 : {} ", currentTimeSeries.getTrainTimePointsList() != null);
+    //      log.info("Time : {}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0), 0);
+    //      log.info("Time : {}, Value{}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0),
+    //          currentTimeSeries.getValue(currentTimeSeries.getTrainTimePointsList().get(0)), 0);
+    //    }
 
     //    for(Instant cr : currentTimeSeries.getTrainTimePointsList()) {
     //      i++;
@@ -132,6 +141,8 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
     //    }
 
     if (!resultSet.isBeforeFirst() && currentTimeSeries != null) {
+      log.info("Yes pos 3 secured");
+
       if (TimeSeriesUtils.validate(currentTimeSeries, timeSeriesMetaData)) {
         log.info("Valid 2");
         AnomalyDetectionHelper.logValidTimeSeries(currentTimeSeries);
