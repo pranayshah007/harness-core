@@ -40,7 +40,9 @@ public class CIExecutionPoller implements Managed {
   @Inject InitializeTaskStepV2 initializeTaskStepV2;
   @Inject AsyncWaitEngine asyncWaitEngine;
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
-  private static final int WAIT_TIME_IN_SECONDS = 5;
+  private static final int THREAD_SLEEP_TIME_IN_MILLIS = 200;
+  private static final int THREAD_SLEEP_TIME_IN_MILLIS_BUSY = 10;
+
   private final int batchSize = 10;
 
   @Override
@@ -58,7 +60,6 @@ public class CIExecutionPoller implements Managed {
           sleep(ofSeconds(1));
         }
         readEventsFrameworkMessages();
-        TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
       } while (!Thread.currentThread().isInterrupted() && !shouldStop.get());
     } catch (Exception ex) {
       log.error("hsqs Consumer unexpectedly stopped", ex);
@@ -86,10 +87,15 @@ public class CIExecutionPoller implements Managed {
                                                                      .batchSize(batchSize)
                                                                      .consumerName(this.getModuleName())
                                                                      .topic(this.getModuleName())
-                                                                     .maxWaitDuration(100)
+                                                                     .maxWaitDuration(5)
                                                                      .build());
       for (DequeueResponse message : messages) {
         processMessage(message);
+      }
+      if (messages.size() < batchSize) {
+        TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_TIME_IN_MILLIS);
+      } else {
+        TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_TIME_IN_MILLIS_BUSY);
       }
     } catch (Exception e) {
       throw new RuntimeException(e);

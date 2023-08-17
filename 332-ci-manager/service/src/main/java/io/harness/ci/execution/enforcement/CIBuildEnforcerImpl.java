@@ -52,7 +52,7 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
       }
       log.info("overridden limits for account: {}, total: {}, mac: {}. Current count: total: {}, mac: {}", accountId,
           totalLimit, macLimit, currExecutionCount, macExecutionsCount);
-      return currExecutionCount <= totalLimit && macExecutionsCount <= macLimit;
+      return currExecutionCount < totalLimit && macExecutionsCount < macLimit;
     }
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);

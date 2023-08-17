@@ -131,6 +131,7 @@ public class VmInitializeTaskParamsBuilder {
   @Inject private SSCAServiceUtils sscaServiceUtils;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
+  private final String GCPStandard32 = "Standard-32";
 
   public DliteVmInitializeTaskParams getHostedVmInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
@@ -610,6 +611,14 @@ public class VmInitializeTaskParamsBuilder {
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
       if (featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL_FREE_ACCOUNT, accountID)) {
         return true;
+      }
+    }
+
+    if (initializeStepInfo != null && initializeStepInfo.getVariables() != null) {
+      for (NGVariable var : initializeStepInfo.getVariables()) {
+        if (var.getName().equals(GCPStandard32)) {
+          return false;
+        }
       }
     }
 

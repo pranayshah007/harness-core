@@ -15,4 +15,5 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.CI)
 public interface CIExecutionRepositoryCustom {
   void updateQueueId(String AccountID, String runtimeId, String queueId);
+  void updateExecutionStatus(String AccountID, String runtimeId, String Status);
 }

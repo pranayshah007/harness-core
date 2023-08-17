@@ -12,7 +12,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.CIExecutionRepository;
 
 import com.google.inject.Inject;
@@ -23,12 +23,11 @@ public class QueueExecutionUtils {
 
   public void addActiveExecutionBuild(InitializeStepInfo initializeStepInfo, String accountID, String stagExecutionID) {
     if (ciExecutionRepository.findByStageExecutionId(stagExecutionID) == null) {
-      IntegrationStageConfig stageConfig = initializeStepInfo.getStageElementConfig();
-
       Infrastructure.Type infraType = initializeStepInfo.getInfrastructure().getType();
       OSType buildType = IntegrationStageUtils.getBuildType(initializeStepInfo.getInfrastructure());
       CIExecutionMetadata ciAccountBuildMetadata = CIExecutionMetadata.builder()
                                                        .accountId(accountID)
+                                                       .status(Status.QUEUED.toString())
                                                        .buildType(buildType)
                                                        .stageExecutionId(stagExecutionID)
                                                        .infraType(infraType)
@@ -38,7 +37,7 @@ public class QueueExecutionUtils {
   }
 
   public long getActiveExecutionsCount(String accountID) {
-    return ciExecutionRepository.countByAccountId(accountID);
+    return ciExecutionRepository.countByAccountIdAndStatus(accountID, Status.RUNNING.toString());
   }
 
   public long getActiveMacExecutionsCount(String accountID) {
