@@ -38,6 +38,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.*;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -56,24 +57,27 @@ public class PublicAccessServiceImpl implements PublicAccessService {
 
   private final ScopeService scopeService;
 
+  private final PublicAccessUtil publicAccessUtil;
+
   private static final String PUBLIC_RESOURCE_GROUP_IDENTIFIER = "_public_resources";
   private static final String PUBLIC_RESOURCE_GROUP_NAME = "Public Resource Group";
-  private static final String ALL_USERS = "ALL_USERS";
-  private static final String ALL_AUTHENTICATED_USERS = "ALL_AUTHENTICATED_USERS";
+  List<PublicAccessRoleAssignmentMapping> publicAccessRoleAssignmentMappings;
 
   @Inject
   public PublicAccessServiceImpl(RoleAssignmentService roleAssignmentService,
       HarnessResourceGroupService harnessResourceGroupService,
       @Named("PRIVILEGED") ResourceGroupClient resourceGroupClient, ResourceGroupService resourceGroupService,
-      ResourceGroupFactory resourceGroupFactory, MongoTemplate mongoTemplate, ScopeService scopeService) {
+      ResourceGroupFactory resourceGroupFactory, MongoTemplate mongoTemplate, ScopeService scopeService,
+      PublicAccessUtil publicAccessUtil) {
     this.roleAssignmentService = roleAssignmentService;
     this.harnessResourceGroupService = harnessResourceGroupService;
-
     this.resourceGroupClient = resourceGroupClient;
     this.resourceGroupService = resourceGroupService;
     this.resourceGroupFactory = resourceGroupFactory;
     this.mongoTemplate = mongoTemplate;
     this.scopeService = scopeService;
+    this.publicAccessUtil = publicAccessUtil;
+    this.publicAccessRoleAssignmentMappings = publicAccessUtil.getPublicAccessRoleAssignmentMapping();
   }
 
   @Override
@@ -81,40 +85,45 @@ public class PublicAccessServiceImpl implements PublicAccessService {
     Optional<ResourceGroupResponse> existingResourceGroupOptional = Optional.ofNullable(NGRestUtils.getResponse(
         resourceGroupClient.getResourceGroup(PUBLIC_RESOURCE_GROUP_IDENTIFIER, resourceScope.getAccountIdentifier(),
             resourceScope.getOrgIdentifier(), resourceScope.getProjectIdentifier())));
-    ResourceGroupResponse newResourceGroup;
     if (existingResourceGroupOptional.isPresent()) {
       log.info("Public resource group already present in given scope");
-      newResourceGroup = updatePublicResourceGroup(
-          existingResourceGroupOptional.get(), resourceIdentifier, resourceType, resourceScope);
+      updatePublicResourceGroup(existingResourceGroupOptional.get(), resourceIdentifier, resourceType, resourceScope);
     } else {
-      newResourceGroup = createPublicResourceGroup(resourceIdentifier, resourceType, resourceScope);
-      createRoleAssignment(newResourceGroup, resourceScope);
+      createPublicResourceGroup(resourceIdentifier, resourceType, resourceScope);
+      createRoleAssignment(resourceType, resourceScope);
     }
   }
 
-  private void createRoleAssignment(ResourceGroupResponse newResourceGroup, ResourceScope resourceScope) {
+  private void createRoleAssignment(ResourceType resourceType, ResourceScope resourceScope) {
     HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder()
                                                 .accountIdentifier(resourceScope.getAccountIdentifier())
                                                 .orgIdentifier(resourceScope.getOrgIdentifier())
                                                 .projectIdentifier(resourceScope.getProjectIdentifier())
                                                 .build();
     Scope scope = scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams));
-    List<RoleDBO> publicRoles = getPublicRoles(scope.toString());
-    for (RoleDBO publicRole : publicRoles) {
-      RoleAssignment allUsersRoleAssignment =
-          buildRoleAssignment(scope.getLevel().toString(), scope.toString(), publicRole.getIdentifier(), ALL_USERS);
-      RoleAssignment allAuthenticatedUsersRoleAssignment = buildRoleAssignment(
-          scope.getLevel().toString(), scope.toString(), publicRole.getIdentifier(), ALL_AUTHENTICATED_USERS);
-      roleAssignmentService.create(allUsersRoleAssignment);
-      roleAssignmentService.create(allAuthenticatedUsersRoleAssignment);
+    List<String> publicRoles = getPublicRoles();
+    final List<PublicAccessRoleAssignmentMapping> filteredMappings =
+        publicAccessRoleAssignmentMappings.stream()
+            .filter(x -> resourceType.getIdentifier().equals(x.getResourceType()))
+            .collect(Collectors.toList());
+    List<String> mappedRoles = filteredMappings.stream()
+                                   .map(PublicAccessRoleAssignmentMapping::getRoleIdentifier)
+                                   .collect(Collectors.toList());
+    if (!publicRoles.containsAll(mappedRoles)) {
+      throw new InvalidRequestException("Unable to update public resource group", USER);
+    }
+    for (PublicAccessRoleAssignmentMapping publicAccessRoleAssignmentMapping : publicAccessRoleAssignmentMappings) {
+      RoleAssignment roleAssignment = buildRoleAssignment(scope.getLevel().toString(), scope.toString(),
+          publicAccessRoleAssignmentMapping.getRoleIdentifier(),
+          publicAccessRoleAssignmentMapping.getPrincipalIdentifier());
+      roleAssignmentService.create(roleAssignment);
     }
   }
 
-  private List<RoleDBO> getPublicRoles(String scopeIdentifier) {
+  private List<String> getPublicRoles() {
     Criteria criteria = Criteria.where(RoleDBO.RoleDBOKeys.isPublic).is(true);
     Query query = new Query(criteria);
-    //    query.fields().include(RoleDBO.RoleDBOKeys.identifier);
-    return mongoTemplate.find(query, RoleDBO.class);
+    return mongoTemplate.find(query, RoleDBO.class).stream().map(RoleDBO::getIdentifier).collect(Collectors.toList());
   }
 
   private RoleAssignment buildRoleAssignment(
@@ -134,7 +143,8 @@ public class PublicAccessServiceImpl implements PublicAccessService {
 
   private ResourceGroupResponse updatePublicResourceGroup(ResourceGroupResponse existingResourceGroup,
       String resourceIdentifier, ResourceType resourceType, ResourceScope resourceScope) {
-    ResourceFilter resourceFilter = existingResourceGroup.getResourceGroup().getResourceFilter();
+    final ResourceGroupDTO resourceGroup = existingResourceGroup.getResourceGroup();
+    ResourceFilter resourceFilter = resourceGroup.getResourceFilter();
     List<ResourceSelector> resourceSelectors = new ArrayList<>();
     if (resourceFilter != null) {
       resourceSelectors = resourceFilter.getResources();
@@ -146,6 +156,9 @@ public class PublicAccessServiceImpl implements PublicAccessService {
             .projectIdentifier(resourceScope.getProjectIdentifier())
             .orgIdentifier(resourceScope.getOrgIdentifier())
             .accountIdentifier(resourceScope.getAccountIdentifier())
+            .includedScopes(resourceGroup.getIncludedScopes())
+            .allowedScopeLevels(resourceGroup.getAllowedScopeLevels())
+
             .resourceFilter(
                 ResourceFilter.builder()
                     .resources(buildResourceGroupSelector(resourceSelectors, resourceIdentifier, resourceType))
@@ -158,7 +171,6 @@ public class PublicAccessServiceImpl implements PublicAccessService {
     if (resourceGroupResponse.isEmpty()) {
       throw new InvalidRequestException("Unable to update public resource group", USER);
     }
-    resourceGroupService.upsert(resourceGroupFactory.buildResourceGroup(resourceGroupResponse.get()));
     return resourceGroupResponse.get();
   }
 
@@ -192,7 +204,11 @@ public class PublicAccessServiceImpl implements PublicAccessService {
     if (resourceGroupResponse.isEmpty()) {
       throw new InvalidRequestException("Unable to create public resource group", USER);
     }
-    resourceGroupService.upsert(resourceGroupFactory.buildResourceGroup(resourceGroupResponse.get()));
+    try {
+      resourceGroupService.upsert(resourceGroupFactory.buildResourceGroup(resourceGroupResponse.get()));
+    } catch (Exception e) {
+      throw new InvalidRequestException("Unable to sync public resource group.", USER);
+    }
     return resourceGroupResponse.get();
   }
 
