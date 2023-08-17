@@ -158,13 +158,15 @@ public class BaseConnectorUtils {
     return getConnectorDetailsInternalWithRetries(ngAccess, identifierRef);
   }
 
-  public ConnectorDetails getHarnessConnectorDetails(NGAccess ngAccess, String baseUrl, String authToken) {
+  public ConnectorDetails getHarnessConnectorDetails(
+      NGAccess ngAccess, String baseUrl, String authToken, String apiUrl) {
     log.info("Generated harness scm baseurl : {}", baseUrl);
     String accountId = ngAccess.getAccountIdentifier();
     HarnessConnectorDTO connectorConfigDTO =
         HarnessConnectorDTO.builder()
             .connectionType(GitConnectionType.ACCOUNT)
             .url(baseUrl + "/" + accountId)
+            .apiUrl(apiUrl)
             .authentication(
                 HarnessAuthenticationDTO.builder()
                     .authType(GitAuthType.HTTP)

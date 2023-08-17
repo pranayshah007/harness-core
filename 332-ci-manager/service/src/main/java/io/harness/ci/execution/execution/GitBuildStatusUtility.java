@@ -15,6 +15,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.ConnectorType.HARNESS;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.pms.execution.utils.StatusUtils.isFinalStatus;
 import static io.harness.steps.StepUtils.buildAbstractions;
@@ -40,9 +41,12 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessUsernameTokenDTO;
 import io.harness.delegate.task.ci.CIBuildStatusPushParameters;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
 import io.harness.git.checks.GitStatusCheckHelper;
@@ -167,6 +171,8 @@ public class GitBuildStatusUtility {
 
       if (ciBuildStatusPushParameters.getState() != UNSUPPORTED) {
         ConnectorDetails connectorDetails = ciBuildStatusPushParameters.getConnectorDetails();
+        boolean isHarnessScm = connectorDetails.getConnectorType() == HARNESS;
+
         boolean executeOnDelegate =
             connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
         if (executeOnDelegate) {
@@ -279,6 +285,7 @@ public class GitBuildStatusUtility {
     GitSCMType gitSCMType = retrieveSCMType(gitConnector);
 
     String detailsUrl = getBuildDetailsUrl(ambiance);
+    ConnectorDetails finalConnectorDetails = modifyConnectorDetailsIfHarnessScm(gitConnector);
 
     return CIBuildStatusPushParameters.builder()
         .detailsUrl(detailsUrl)
@@ -295,6 +302,16 @@ public class GitBuildStatusUtility {
             ambiance.getMetadata().getPipelineIdentifier(), buildStatusUpdateParameter.getIdentifier()))
         .state(retrieveBuildStatusState(gitSCMType, status))
         .build();
+  }
+
+  private ConnectorDetails modifyConnectorDetailsIfHarnessScm(ConnectorDetails gitConnector) {
+    if (gitConnector.getConnectorType() == HARNESS) {
+      ((HarnessUsernameTokenDTO) ((HarnessConnectorDTO) gitConnector.getConnectorConfig())
+              .getAuthentication()
+              .getCredentials()
+              .getHttpCredentialsSpec())
+          .setTokenRef(SecretRefData.builder().decryptedValue().build());
+    }
   }
 
   private String generateDesc(String pipeline, String executionId, String stage, String status) {

@@ -57,6 +57,8 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
+import io.harness.cistatus.service.harness.HarnessCodeService;
+import io.harness.cistatus.service.harness.HarnessCodeServiceImpl;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.core.ci.services.BuildNumberService;
@@ -277,6 +279,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
+    bind(HarnessCodeService.class).to(HarnessCodeServiceImpl.class);
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);

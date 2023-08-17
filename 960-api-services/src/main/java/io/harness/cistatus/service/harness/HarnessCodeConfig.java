@@ -5,19 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.config;
-
-import io.harness.annotation.RecasterAlias;
+package io.harness.cistatus.service.harness;
 
 import lombok.Builder;
+import lombok.ToString;
 import lombok.Value;
-import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("gitnessConfig")
-@RecasterAlias("io.harness.ci.config.GitnessConfig")
-public class GitnessConfig {
-  String jwtSecret;
-  String internalUrl;
+@ToString(exclude = "authToken")
+public class HarnessCodeConfig {
+  String harnessCodeBaseUrl;
+  String authToken;
+  HarnessCodePayload harnessCodePayload;
 }

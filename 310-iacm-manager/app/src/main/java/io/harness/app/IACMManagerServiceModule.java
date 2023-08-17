@@ -50,6 +50,8 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
+import io.harness.cistatus.service.harness.HarnessCodeService;
+import io.harness.cistatus.service.harness.HarnessCodeServiceImpl;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.enforcement.client.EnforcementClientModule;
@@ -235,6 +237,7 @@ public class IACMManagerServiceModule extends AbstractModule {
     bind(GitlabService.class).to(GitlabServiceImpl.class); // same?
     bind(BitbucketService.class).to(BitbucketServiceImpl.class); // same?
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class); // same?
+    bind(HarnessCodeService.class).to(HarnessCodeServiceImpl.class); // same?
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class); // same?
     bind(AwsClient.class).to(AwsClientImpl.class); // same?
     registerEventListeners();

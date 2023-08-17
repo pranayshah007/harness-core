@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.app.modules;
+
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 
 import io.harness.annotations.dev.BreakDependencyOn;
@@ -81,6 +82,8 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
+import io.harness.cistatus.service.harness.HarnessCodeService;
+import io.harness.cistatus.service.harness.HarnessCodeServiceImpl;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.git.NGGitServiceImpl;
@@ -1471,6 +1474,7 @@ public class DelegateModule extends AbstractModule {
     bind(HttpService.class).to(HttpServiceImpl.class);
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
+    bind(HarnessCodeService.class).to(HarnessCodeServiceImpl.class);
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);

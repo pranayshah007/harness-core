@@ -11,10 +11,12 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.task.ci.GitSCMType;
 
 import lombok.Builder;
+import lombok.ToString;
 import lombok.Value;
 
 @Value
 @Builder
+@ToString(exclude = "token")
 public class GitStatusCheckParams {
   String title;
   String desc;
@@ -30,4 +32,6 @@ public class GitStatusCheckParams {
   String userName;
   ConnectorDetails connectorDetails; // Use connectorDetails to retrieve all information
   GitSCMType gitSCMType;
+
+  String token; // used only in case of harness code
 }

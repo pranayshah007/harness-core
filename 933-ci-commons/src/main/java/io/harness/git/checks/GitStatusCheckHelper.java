@@ -21,6 +21,9 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.gitlab.GitlabConfig;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
+import io.harness.cistatus.service.harness.HarnessCodeConfig;
+import io.harness.cistatus.service.harness.HarnessCodePayload;
+import io.harness.cistatus.service.harness.HarnessCodeService;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
@@ -29,6 +32,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenA
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.git.GitClientHelper;
@@ -55,6 +59,7 @@ public class GitStatusCheckHelper {
   @Inject private BitbucketService bitbucketService;
   @Inject private GitlabService gitlabService;
   @Inject private AzureRepoService azureRepoService;
+  @Inject private HarnessCodeService harnessCodeService;
 
   @Inject private GitTokenRetriever gitTokenRetriever;
   private static final String DESC = "description";
@@ -88,8 +93,7 @@ public class GitStatusCheckHelper {
       } else if (gitStatusCheckParams.getGitSCMType() == GitSCMType.AZURE_REPO) {
         statusSent = sendBuildStatusToAzureRepo(gitStatusCheckParams);
       } else if (gitStatusCheckParams.getGitSCMType() == GitSCMType.HARNESS) {
-        log.info("Status API not yet implemented for Harness inbuilt SCM");
-        return false;
+        statusSent = sendBuildStatusToHarnessCode(gitStatusCheckParams);
       } else {
         throw new UnsupportedOperationException("Not supported");
       }
@@ -276,6 +280,44 @@ public class GitStatusCheckHelper {
                        gitStatusCheckParams.getUserName(), token, gitStatusCheckParams.getSha(),
                        gitStatusCheckParams.getPrNumber(), gitStatusCheckParams.getOwner(), project, repo,
                        bodyObjectMap));
+    } else {
+      log.error("Not sending status because token is empty sha {}", gitStatusCheckParams.getSha());
+      return false;
+    }
+  }
+
+  private boolean sendBuildStatusToHarnessCode(GitStatusCheckParams gitStatusCheckParams) {
+    HarnessConnectorDTO harnessConnectorDTO =
+        (HarnessConnectorDTO) gitStatusCheckParams.getConnectorDetails().getConnectorConfig();
+    String endpoint = harnessConnectorDTO.getApiUrl();
+    String token = gitStatusCheckParams.getToken();
+    if (isNotEmpty(token)) {
+      HarnessCodePayload harnessCodePayload =
+          HarnessCodePayload.builder()
+              .status(HarnessCodePayload.CheckStatus.fromString(gitStatusCheckParams.getState()))
+              .link(gitStatusCheckParams.getDetailsUrl())
+              // todo(abhinav): add summary
+              .summary("Add status")
+              .payload(HarnessCodePayload.Payload.builder().kind(HarnessCodePayload.CheckPayloadKind.raw).build())
+              // todo(abhinav): find consistent check uid
+              .check_uid(gitStatusCheckParams.getRepo() + gitStatusCheckParams.getBuildNumber()
+                  + gitStatusCheckParams.getSha())
+              .build();
+      HarnessCodeConfig harnessCodeConfig = HarnessCodeConfig.builder()
+                                                .harnessCodeBaseUrl(endpoint)
+                                                .authToken(gitStatusCheckParams.getToken())
+                                                .harnessCodePayload(harnessCodePayload)
+                                                .build();
+      RetryPolicy<Object> retryPolicy =
+          getRetryPolicy(format("[Retrying failed call to send status for harness code check: [%s], attempt: {}",
+                             gitStatusCheckParams.getSha()),
+              format("Failed call to send status for harness code check: [%s] after retrying {} times",
+                  gitStatusCheckParams.getSha()));
+
+      return Failsafe.with(retryPolicy)
+          .get(()
+                   -> harnessCodeService.sendStatus(
+                       harnessCodeConfig, token, gitStatusCheckParams.getSha(), gitStatusCheckParams.getRepo()));
     } else {
       log.error("Not sending status because token is empty sha {}", gitStatusCheckParams.getSha());
       return false;
