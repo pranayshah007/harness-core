@@ -144,8 +144,8 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
           createServiceRequest.serviceName() + EcsCommandTaskNGHelper.DELIMITER, ecsInfraConfig);
       if (!optionalServiceName.isPresent() || EmptyPredicate.isEmpty(optionalServiceName.get())) {
         // If no blue version service found
-        return getFirstTimeDeploymentResponse(prepareRollbackDataLogCallback, prodTargetGroupArn,
-            ecsBlueGreenPrepareRollbackRequest, ecsLoadBalancerConfig);
+        return getFirstTimeDeploymentResponse(prepareRollbackDataLogCallback, createServiceRequest,
+            ecsLoadBalancerConfig, ecsBlueGreenPrepareRollbackRequest.isGreenServiceRollbackEnabled());
       }
       String serviceName = optionalServiceName.get();
 
@@ -195,13 +195,17 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
                 .ecsBlueGreenPrepareRollbackDataResult(ecsBlueGreenPrepareRollbackDataResult)
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                 .build();
+        if (ecsBlueGreenPrepareRollbackRequest.isGreenServiceRollbackEnabled()) {
+          prepareGreenServiceRollbackData(
+              createServiceRequest, prepareRollbackDataLogCallback, ecsBlueGreenPrepareRollbackDataResult);
+        }
         prepareRollbackDataLogCallback.saveExecutionLog(
             "Preparing Rollback Data complete", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
         log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
         return ecsBlueGreenPrepareRollbackDataResponse;
       } else { // If service doesn't exist
-        return getFirstTimeDeploymentResponse(prepareRollbackDataLogCallback, prodTargetGroupArn,
-            ecsBlueGreenPrepareRollbackRequest, ecsLoadBalancerConfig);
+        return getFirstTimeDeploymentResponse(prepareRollbackDataLogCallback, createServiceRequest,
+            ecsLoadBalancerConfig, ecsBlueGreenPrepareRollbackRequest.isGreenServiceRollbackEnabled());
       }
     } catch (Exception e) {
       prepareRollbackDataLogCallback.saveExecutionLog(
@@ -212,8 +216,8 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
   }
 
   private EcsBlueGreenPrepareRollbackDataResponse getFirstTimeDeploymentResponse(LogCallback logCallback,
-      String targetGroupArn, EcsBlueGreenPrepareRollbackRequest ecsBlueGreenPrepareRollbackRequest,
-      EcsLoadBalancerConfig ecsLoadBalancerConfig) {
+      CreateServiceRequest createServiceRequest, EcsLoadBalancerConfig ecsLoadBalancerConfig,
+      boolean prepareRollbackNewFlow) throws Exception {
     logCallback.saveExecutionLog("Blue version of Service doesn't exist. Skipping Prepare Rollback Data..",
         LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
@@ -223,10 +227,56 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
             .isFirstDeployment(true)
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .build();
+    if (prepareRollbackNewFlow) {
+      prepareGreenServiceRollbackData(createServiceRequest, logCallback, ecsBlueGreenPrepareRollbackDataResult);
+    }
 
     return EcsBlueGreenPrepareRollbackDataResponse.builder()
         .ecsBlueGreenPrepareRollbackDataResult(ecsBlueGreenPrepareRollbackDataResult)
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .build();
+  }
+
+  private void prepareGreenServiceRollbackData(CreateServiceRequest createServiceRequest, LogCallback logCallback,
+      EcsBlueGreenPrepareRollbackDataResult ecsBlueGreenPrepareRollbackDataResult) throws Exception {
+    String greenServiceName = ecsCommandTaskHelper.getNonBlueVersionServiceName(
+        createServiceRequest.serviceName() + EcsCommandTaskNGHelper.DELIMITER, ecsInfraConfig);
+    ecsBlueGreenPrepareRollbackDataResult.setGreenServiceName(greenServiceName);
+    ecsBlueGreenPrepareRollbackDataResult.setGreenServiceRollbackDataExist(true);
+
+    logCallback.saveExecutionLog(
+        format("Fetching Service Definition Details for Green Service %s..", greenServiceName), LogLevel.INFO);
+
+    // Describe ecs service and get service details
+    Optional<Service> optionalGreenService = ecsCommandTaskHelper.describeService(
+        ecsInfraConfig.getCluster(), greenServiceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+    if (optionalGreenService.isPresent()
+        && ecsCommandTaskHelper.isServiceActive(optionalGreenService.get())) { // If green service exists
+      Service greenService = optionalGreenService.get();
+
+      // Get createServiceRequestBuilderString from service
+      String greenServiceRequestBuilderString =
+          ecsCommandTaskHelper.toYaml(EcsMapper.createCreateServiceRequestBuilderFromService(greenService));
+      logCallback.saveExecutionLog(
+          format("Fetched Service Definition Details for Green Service %s", greenServiceName), LogLevel.INFO);
+
+      // Get registerScalableTargetRequestBuilderStrings if present
+      List<String> greenServiceScalableTargetRequestBuilderStrings =
+          ecsCommandTaskHelper.getScalableTargetsAsString(logCallback, greenServiceName, greenService, ecsInfraConfig);
+
+      // Get putScalingPolicyRequestBuilderStrings if present
+      List<String> greenServiceScalingPolicyRequestBuilderStrings =
+          ecsCommandTaskHelper.getScalingPoliciesAsString(logCallback, greenServiceName, greenService, ecsInfraConfig);
+      ecsBlueGreenPrepareRollbackDataResult.setGreenServiceExist(true);
+      ecsBlueGreenPrepareRollbackDataResult.setGreenServiceRequestBuilderString(greenServiceRequestBuilderString);
+      ecsBlueGreenPrepareRollbackDataResult.setGreenServiceScalableTargetRequestBuilderStrings(
+          greenServiceScalableTargetRequestBuilderStrings);
+      ecsBlueGreenPrepareRollbackDataResult.setGreenServiceScalingPolicyRequestBuilderStrings(
+          greenServiceScalingPolicyRequestBuilderStrings);
+    } else { // If green service doesn't exist
+      logCallback.saveExecutionLog("Green version of Service doesn't exist..", LogLevel.INFO);
+      ecsBlueGreenPrepareRollbackDataResult.setGreenServiceExist(false);
+    }
   }
 }

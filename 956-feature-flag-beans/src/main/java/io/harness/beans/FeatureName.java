@@ -860,7 +860,9 @@ public enum FeatureName {
   CDS_STORE_INSTANCE_STATS_ITERATOR_RUN_TIME(
       "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP),
   CDS_NG_FETCH_FILES_REFACTOR(
-      "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP);
+      "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP),
+  CDS_ECS_BG_GREEN_SERVICE_ROLLBACK(
+      "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated

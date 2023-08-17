@@ -1910,6 +1910,15 @@ public class EcsStepCommonHelper extends EcsStepUtils {
               .stageListenerRuleArn(
                   ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getStageListenerRuleArn())
               .stageTargetGroupArn(stageTargetGroupArn)
+              .greenServiceExist(ecsBlueGreenPrepareRollbackDataResult.isGreenServiceExist())
+              .greenServiceName(ecsBlueGreenPrepareRollbackDataResult.getGreenServiceName())
+              .greenServiceRequestBuilderString(
+                  ecsBlueGreenPrepareRollbackDataResult.getGreenServiceRequestBuilderString())
+              .greenServiceScalableTargetRequestBuilderStrings(
+                  ecsBlueGreenPrepareRollbackDataResult.getGreenServiceScalableTargetRequestBuilderStrings())
+              .greenServiceScalingPolicyRequestBuilderStrings(
+                  ecsBlueGreenPrepareRollbackDataResult.getGreenServiceScalingPolicyRequestBuilderStrings())
+              .greenServiceRollbackDataExist(ecsBlueGreenPrepareRollbackDataResult.isGreenServiceRollbackDataExist())
               .build();
 
       executionSweepingOutputService.consume(ambiance,
