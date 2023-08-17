@@ -6,6 +6,7 @@
  */
 
 package io.harness.when.utils;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.plan.ExecutionMode.NORMAL;
 
@@ -17,14 +18,10 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlUtils;
 import io.harness.when.beans.StageWhenCondition;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.when.beans.WhenConditionStatus;
 
-import java.io.IOException;
 import lombok.experimental.UtilityClass;
 
 @CodePulse(
@@ -123,18 +120,5 @@ public class RunInfoUtils {
 
   private String getStatusExpression(String status) {
     return "<+" + status + ">";
-  }
-
-  public String getStageWhenCondition(YamlField field) {
-    StageWhenCondition stageWhenCondition = null;
-    if (field.getNode().getField(YAMLFieldNameConstants.WHEN) != null) {
-      try {
-        stageWhenCondition = YamlUtils.read(
-            field.getNode().getField(YAMLFieldNameConstants.WHEN).getNode().toString(), StageWhenCondition.class);
-      } catch (IOException e) {
-        // Empty whenCondition. Default will be used.
-      }
-    }
-    return getRunConditionForStage(ParameterField.createValueField(stageWhenCondition));
   }
 }
