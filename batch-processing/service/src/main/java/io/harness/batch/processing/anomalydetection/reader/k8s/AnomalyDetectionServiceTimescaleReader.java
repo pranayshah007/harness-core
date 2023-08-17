@@ -69,6 +69,11 @@ public class AnomalyDetectionServiceTimescaleReader extends AnomalyDetectionTime
             .k8sQueryMetaData(k8sQueryMetaData)
             .build();
 
+    log.info("train start time : {}", endTime.minus(AnomalyDetectionConstants.DAYS_TO_CONSIDER, ChronoUnit.DAYS));
+    log.info("train end time : {}", endTime.minus(1, ChronoUnit.DAYS));
+    log.info("test start time : {}", endTime.minus(1, ChronoUnit.DAYS));
+    log.info("test end time : {}", endTime);
+
     // cost aggreation
     aggregationList.add(QLCCMAggregationFunction.builder()
                             .operationType(QLCCMAggregateOperation.SUM)

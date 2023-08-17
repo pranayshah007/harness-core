@@ -102,6 +102,24 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
       previousHash = currentHash;
     }
 
+    int i = 0;
+    for (Instant current : currentTimeSeries.getTrainTimePointsList()) {
+      i++;
+
+      Double cv1 = currentTimeSeries.getValue(current);
+
+      log.info("Time : {}, Value{}, Index : {} ", current, cv1, i);
+    }
+
+    int j = 0;
+    for (Instant current : currentTimeSeries.getTestTimePointsList()) {
+      j++;
+
+      Double cv2 = currentTimeSeries.getValue(current);
+
+      log.info("Time : {}, Value{}, Index : {} ", current, cv2, j);
+    }
+
     if (!resultSet.isBeforeFirst() && currentTimeSeries != null) {
       if (TimeSeriesUtils.validate(currentTimeSeries, timeSeriesMetaData)) {
         log.info("Valid 2");

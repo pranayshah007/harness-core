@@ -43,10 +43,11 @@ public class TimeSeriesUtils {
   }
 
   public static boolean validateTimeSeriesTestData(AnomalyDetectionTimeSeries anomalyDetectionTimeSeries) {
-    log.info("validateTimeSeriesTestData : {} ",
+    log.info("validateTimeSeriesTestData : {} , test data point {}",
         Collections.frequency(
             anomalyDetectionTimeSeries.getTestDataPointsList(), AnomalyDetectionConstants.DEFAULT_COST)
-            == 0);
+            == 0,
+        anomalyDetectionTimeSeries.getTestDataPointsList().get(0));
 
     return Collections.frequency(
                anomalyDetectionTimeSeries.getTestDataPointsList(), AnomalyDetectionConstants.DEFAULT_COST)

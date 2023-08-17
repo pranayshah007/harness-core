@@ -154,6 +154,17 @@ public class SlackMessageGenerator {
     return templateString;
   }
 
+  public String addServiceInfo(String templateString, AnomalyEntity anomaly) {
+    if (EmptyPredicate.isNotEmpty(anomaly.getService())) {
+      if (anomaly.getEntityType().equals(EntityType.SERVICE)) {
+        templateString = templateString + " \n> *Service* : <${SERVICE_URL}|${" + AnomalyEntityKeys.service + "}>";
+      } else {
+        templateString = templateString + " \n> *Service* : ${" + AnomalyEntityKeys.service + "}";
+      }
+    }
+    return templateString;
+  }
+
   public String addGcpProjectInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getGcpProject())) {
       if (anomaly.getEntityType().equals(EntityType.GCP_PROJECT)) {
@@ -219,6 +230,7 @@ public class SlackMessageGenerator {
     templateString = addClusterInfo(templateString, anomaly);
     templateString = addNamespaceInfo(templateString, anomaly);
     templateString = addWorkloadInfo(templateString, anomaly);
+    templateString = addServiceInfo(templateString, anomaly);
     templateString = addGcpProjectInfo(templateString, anomaly);
     templateString = addGcpProductInfo(templateString, anomaly);
     templateString = addGcpSkuInfo(templateString, anomaly);
@@ -241,6 +253,7 @@ public class SlackMessageGenerator {
     templateString = addClusterInfo(templateString, anomalyEntity);
     templateString = addNamespaceInfo(templateString, anomalyEntity);
     templateString = addWorkloadInfo(templateString, anomalyEntity);
+    templateString = addServiceInfo(templateString, anomalyEntity);
     templateString = addGcpProjectInfo(templateString, anomalyEntity);
     templateString = addGcpProductInfo(templateString, anomalyEntity);
     templateString = addGcpSkuInfo(templateString, anomalyEntity);
@@ -272,6 +285,7 @@ public class SlackMessageGenerator {
         .workloadName(anomaly.getEntity().getWorkloadName())
         .workloadType(anomaly.getEntity().getWorkloadType())
         .namespace(anomaly.getEntity().getNamespace())
+        .service(anomaly.getEntity().getService())
         .actualCost(anomaly.getActualAmount())
         .expectedCost(anomaly.getExpectedAmount())
         .build();
