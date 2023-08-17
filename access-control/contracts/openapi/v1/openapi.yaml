@@ -65,6 +65,23 @@ paths:
         - x-api-key: []
       tags:
         - Account Roles
+  /v1/public-access/enable:
+    parameters: []
+    post:
+      summary: Enable Public Access for a Resource
+      operationId: enable-public-access
+      description: Enable Public Access for a Resource
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/PublicAccessRequest'
+      responses:
+        '204':
+          description: No Content
+      security:
+        - x-api-key: []
+      tags:
+        - Public Access
   '/v1/roles/{role}':
     parameters:
       - $ref: '#/components/parameters/RoleParam'
@@ -701,6 +718,31 @@ components:
         harness_managed:
           type: boolean
           description: Is harness managed
+    ResourceScope:
+      title: ResourceScope
+      x-stoplight:
+        id: 4v6ruao9thtkh
+      type: object
+      properties:
+        accountIdentifier:
+          type: string
+        orgIdentifier:
+          type: string
+        projectIdentifier:
+          type: string
+    PublicAccessRequest:
+      title: PublicAccessRequest
+      x-stoplight:
+        id: iwewenxaom066
+      type: object
+      properties:
+        resourceIdentifier:
+          type: string
+        resourceType:
+          type: string
+        resourceScope:
+          $ref: '#/components/schemas/ResourceScope'
+      description: Request to mark a resource as public
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1064,3 +1106,8 @@ components:
                 managed: false
       description: Role Request body
       required: true
+    PublicAccessRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PublicAccessRequest'
