@@ -14,4 +14,5 @@ public class Constants {
   public static final String HARNESS_PROVIDER = "harness";
   public static final String GITHUB_PROVIDER = "github";
   public static final String CATALOG_PROVIDER = "catalog";
+  public static final String CUSTOM_PROVIDER = "custom";
 }

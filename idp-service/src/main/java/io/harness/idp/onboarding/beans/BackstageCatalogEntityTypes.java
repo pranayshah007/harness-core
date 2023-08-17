@@ -10,9 +10,6 @@ package io.harness.idp.onboarding.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import java.util.List;
-
 @OwnedBy(HarnessTeam.IDP)
 public enum BackstageCatalogEntityTypes {
   DOMAIN("Domain"),
@@ -40,26 +37,26 @@ public enum BackstageCatalogEntityTypes {
     throw new IllegalArgumentException(String.format("Could not find type for %s", text));
   }
 
-  public static TypeReference getTypeReference(String kind) {
+  public static Class<?> getTypeReference(String kind) {
     switch (BackstageCatalogEntityTypes.fromString(kind)) {
       case DOMAIN:
-        return new TypeReference<List<BackstageCatalogDomainEntity>>() {};
+        return BackstageCatalogDomainEntity.class;
       case SYSTEM:
-        return new TypeReference<List<BackstageCatalogSystemEntity>>() {};
+        return BackstageCatalogSystemEntity.class;
       case COMPONENT:
-        return new TypeReference<List<BackstageCatalogComponentEntity>>() {};
+        return BackstageCatalogComponentEntity.class;
       case API:
-        return new TypeReference<List<BackstageCatalogApiEntity>>() {};
+        return BackstageCatalogApiEntity.class;
       case USER:
-        return new TypeReference<List<BackstageCatalogUserEntity>>() {};
+        return BackstageCatalogUserEntity.class;
       case GROUP:
-        return new TypeReference<List<BackstageCatalogGroupEntity>>() {};
+        return BackstageCatalogGroupEntity.class;
       case RESOURCE:
-        return new TypeReference<List<BackstageCatalogResourceEntity>>() {};
+        return BackstageCatalogResourceEntity.class;
       case LOCATION:
-        return new TypeReference<List<BackstageCatalogLocationEntity>>() {};
+        return BackstageCatalogLocationEntity.class;
       case TEMPLATE:
-        return new TypeReference<List<BackstageCatalogTemplateEntity>>() {};
+        return BackstageCatalogTemplateEntity.class;
       default:
         throw new IllegalArgumentException(String.format("Could not get TypeReference for unknown kind %s", kind));
     }

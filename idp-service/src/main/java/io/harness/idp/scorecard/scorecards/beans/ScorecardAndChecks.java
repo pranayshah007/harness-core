@@ -5,21 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.scorecard.scorecards.mappers;
+package io.harness.idp.scorecard.scorecards.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
-import io.harness.idp.scorecard.scorecards.beans.ScorecardCheckFullDetails;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 
 import java.util.List;
-import lombok.experimental.UtilityClass;
+import lombok.Builder;
+import lombok.Data;
 
+@Data
+@Builder
 @OwnedBy(HarnessTeam.IDP)
-@UtilityClass
-public class ScorecardCheckFullDetailsMapper {
-  public ScorecardCheckFullDetails toDTO(ScorecardEntity scorecardEntity, List<CheckEntity> checksList) {
-    return ScorecardCheckFullDetails.builder().scorecard(scorecardEntity).checks(checksList).build();
-  }
+public class ScorecardAndChecks {
+  ScorecardEntity scorecard;
+  List<CheckEntity> checks;
 }

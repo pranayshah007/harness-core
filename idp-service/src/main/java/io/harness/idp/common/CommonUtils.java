@@ -7,6 +7,8 @@
 
 package io.harness.idp.common;
 
+import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -14,13 +16,16 @@ import io.harness.exception.InvalidRequestException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@UtilityClass
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
-@UtilityClass
 public class CommonUtils {
   public static String removeAccountFromIdentifier(String identifier) {
     String[] arrOfStr = identifier.split("[.]");
@@ -37,5 +42,9 @@ public class CommonUtils {
     } catch (IOException e) {
       throw new InvalidRequestException("Could not read resource file: " + filename, e);
     }
+  }
+
+  public static Set<String> addGlobalAccountIdentifierAlong(String accountIdentifier) {
+    return new HashSet<>(Arrays.asList(accountIdentifier, GLOBAL_ACCOUNT_ID));
   }
 }

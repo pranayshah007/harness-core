@@ -9,12 +9,13 @@ package io.harness.idp.scorecard.scores.service;
 
 import static io.harness.expression.common.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 import static io.harness.idp.common.JacksonUtils.convert;
+import static io.harness.idp.common.JacksonUtils.readValue;
 import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageResourceClient;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntityTypes;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
@@ -27,7 +28,7 @@ import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProvider;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProviderFactory;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
-import io.harness.idp.scorecard.scorecards.beans.ScorecardCheckFullDetails;
+import io.harness.idp.scorecard.scorecards.beans.ScorecardAndChecks;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
 import io.harness.idp.scorecard.scores.entities.ScoreEntity;
@@ -44,7 +45,6 @@ import io.harness.spec.server.idp.v1.model.ScorecardScore;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
 import io.harness.springdata.TransactionHelper;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -80,11 +80,11 @@ public class ScoreServiceImpl implements ScoreService {
   @Override
   public void populateData(
       String checkEntities, String datapointEntities, String datasourceEntities, String datasourceLocationEntities) {
-    List<CheckEntity> checks = convert(checkEntities, CheckEntity.class);
-    List<DataPointEntity> dataPoints = convert(datapointEntities, DataPointEntity.class);
-    List<DataSourceEntity> dataSources = convert(datasourceEntities, DataSourceEntity.class);
+    List<CheckEntity> checks = readValue(checkEntities, CheckEntity.class);
+    List<DataPointEntity> dataPoints = readValue(datapointEntities, DataPointEntity.class);
+    List<DataSourceEntity> dataSources = readValue(datasourceEntities, DataSourceEntity.class);
     List<DataSourceLocationEntity> dataSourceLocations =
-        convert(datasourceLocationEntities, DataSourceLocationEntity.class);
+        readValue(datasourceLocationEntities, DataSourceLocationEntity.class);
     log.info("Converted entities json string to corresponding list<> pojo's");
     saveAll(checks, dataPoints, dataSources, dataSourceLocations);
     log.info("Populated data into checks, dataPoints, dataSources, dataSourceLocations");
@@ -93,30 +93,26 @@ public class ScoreServiceImpl implements ScoreService {
   @Override
   public void computeScores(
       String accountIdentifier, List<String> scorecardIdentifiers, List<String> entityIdentifiers) {
-    List<ScorecardCheckFullDetails> scorecards =
-        scorecardService.getAllScorecardCheckFullDetails(accountIdentifier, scorecardIdentifiers);
-    if (scorecards.isEmpty()) {
+    List<ScorecardAndChecks> scorecardsAndChecks =
+        scorecardService.getAllScorecardAndChecks(accountIdentifier, scorecardIdentifiers);
+    if (scorecardsAndChecks.isEmpty()) {
       log.info("No scorecards configured for account: {}", accountIdentifier);
       return;
     }
 
-    List<ScorecardFilter> filters = getAllFilters(scorecards);
+    List<ScorecardFilter> filters = getAllFilters(scorecardsAndChecks);
     List<? extends BackstageCatalogEntity> entities = getAllEntities(accountIdentifier, entityIdentifiers, filters);
     if (entities.isEmpty()) {
       log.info("Account {} has no backstage entities", accountIdentifier);
       return;
     }
 
-    Map<String, Set<String>> dataPointsAndInputValues = getDataPointsAndInputValues(scorecards);
+    Map<String, Set<String>> dataPointsAndInputValues = getDataPointsAndInputValues(scorecardsAndChecks);
 
     for (BackstageCatalogEntity entity : entities) {
       Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, dataPointsAndInputValues);
-      compute(accountIdentifier, entity, scorecards, data);
+      compute(accountIdentifier, entity, scorecardsAndChecks, data);
     }
-  }
-
-  private List<ScorecardFilter> getAllFilters(List<ScorecardCheckFullDetails> scorecards) {
-    return scorecards.stream().map(scorecard -> scorecard.getScorecard().getFilter()).collect(Collectors.toList());
   }
 
   @Override
@@ -187,6 +183,12 @@ public class ScoreServiceImpl implements ScoreService {
     });
   }
 
+  private List<ScorecardFilter> getAllFilters(List<ScorecardAndChecks> scorecardsAndChecks) {
+    return scorecardsAndChecks.stream()
+        .map(scorecardAndChecks -> scorecardAndChecks.getScorecard().getFilter())
+        .collect(Collectors.toList());
+  }
+
   public List<? extends BackstageCatalogEntity> getAllEntities(
       String accountIdentifier, List<String> entityIdentifiers, List<ScorecardFilter> filters) {
     List<BackstageCatalogEntity> allEntities = new ArrayList<>();
@@ -207,9 +209,8 @@ public class ScoreServiceImpl implements ScoreService {
         String filterKind = entry.getValue();
         String url = String.format(CATALOG_API_SUFFIX, accountIdentifier, filterString);
         Object entitiesResponse = getGeneralResponse(backstageResourceClient.getCatalogEntities(url));
-        TypeReference<List<BackstageCatalogEntity>> typeReference =
-            BackstageCatalogEntityTypes.getTypeReference(filterKind);
-        List<BackstageCatalogEntity> entities = mapper.convertValue(entitiesResponse, typeReference);
+        Class<?> typeReference = BackstageCatalogEntityTypes.getTypeReference(filterKind);
+        List<BackstageCatalogEntity> entities = convert(mapper, entitiesResponse, typeReference);
         if (entityIdentifiers.isEmpty()) {
           allEntities.addAll(entities);
         } else {
@@ -218,18 +219,20 @@ public class ScoreServiceImpl implements ScoreService {
                                  .collect(Collectors.toList()));
         }
       } catch (Exception e) {
-        throw new RuntimeException("Error while fetch catalog details", e);
+        log.error(
+            "Error while fetch catalog details for account = {}, entityIdentifiers = {}, filters = {}, error = {}",
+            accountIdentifier, entityIdentifiers, filters, e.getMessage(), e);
+        throw new UnexpectedException("Error while fetch catalog details", e);
       }
     }
     return allEntities;
   }
 
-  private Map<String, Set<String>> getDataPointsAndInputValues(
-      List<ScorecardCheckFullDetails> scorecardCheckFullDetailsList) {
+  private Map<String, Set<String>> getDataPointsAndInputValues(List<ScorecardAndChecks> scorecardsAndChecks) {
     Map<String, Set<String>> dataPointIdentifiersAndInputValues = new HashMap<>();
 
-    for (ScorecardCheckFullDetails scorecardCheckFullDetails : scorecardCheckFullDetailsList) {
-      List<CheckEntity> checks = scorecardCheckFullDetails.getChecks();
+    for (ScorecardAndChecks scorecardAndChecks : scorecardsAndChecks) {
+      List<CheckEntity> checks = scorecardAndChecks.getChecks();
       for (CheckEntity check : checks) {
         if (check.isCustom() && !check.isHarnessManaged()) {
           // TODO: custom expressions to be handled in a different way.
@@ -252,25 +255,28 @@ public class ScoreServiceImpl implements ScoreService {
   private Map<String, Map<String, Object>> fetch(
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
     Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
-    for (DataSourceProvider provider : dataSourceProviderFactory.getProviders()) {
+    dataPointsAndInputValues.forEach((k, v) -> {
+      DataPointEntity dataPointEntity = datapointRepository.findByIdentifier(k);
+      DataSourceProvider provider = dataSourceProviderFactory.getProvider(dataPointEntity.getDataSourceIdentifier());
       try {
-        Map<String, Map<String, Object>> data = provider.fetchData(accountIdentifier, entity, dataPointsAndInputValues);
+        Map<String, Map<String, Object>> data =
+            provider.fetchData(accountIdentifier, entity, Map.of(k, dataPointsAndInputValues.get(k)));
         if (data != null) {
           aggregatedData.putAll(data);
         }
       } catch (Exception e) {
         log.warn("Error fetching data from {} provider", provider.getProviderIdentifier(), e);
       }
-    }
+    });
     return aggregatedData;
   }
 
   private void compute(String accountIdentifier, BackstageCatalogEntity entity,
-      List<ScorecardCheckFullDetails> scorecardCheckFullDetailsList, Map<String, Map<String, Object>> data) {
+      List<ScorecardAndChecks> scorecardsAndChecks, Map<String, Map<String, Object>> data) {
     IdpExpressionEvaluator evaluator = new IdpExpressionEvaluator(data);
 
-    for (ScorecardCheckFullDetails scorecardCheckFullDetails : scorecardCheckFullDetailsList) {
-      ScorecardEntity scorecard = scorecardCheckFullDetails.getScorecard();
+    for (ScorecardAndChecks scorecardAndChecks : scorecardsAndChecks) {
+      ScorecardEntity scorecard = scorecardAndChecks.getScorecard();
       try {
         if (!shouldComputeScore(scorecard.getFilter(), entity)) {
           return;
@@ -286,7 +292,7 @@ public class ScoreServiceImpl implements ScoreService {
         int totalScore = 0;
         int totalPossibleScore = 0;
         List<CheckStatus> checkStatuses = new ArrayList<>();
-        List<CheckEntity> checks = scorecardCheckFullDetails.getChecks();
+        List<CheckEntity> checks = scorecardAndChecks.getChecks();
 
         Map<String, ScorecardEntity.Check> scorecardCheckByIdentifier = scorecard.getChecks().stream().collect(
             Collectors.toMap(ScorecardEntity.Check::getIdentifier, Function.identity()));

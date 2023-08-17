@@ -4,7 +4,10 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
+
 package io.harness.idp.scorecard.datapoints.service;
+
+import static io.harness.idp.common.CommonUtils.addGlobalAccountIdentifierAlong;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,17 +25,17 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @com.google.inject.Inject }))
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
-@AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @com.google.inject.Inject }))
 public class DataPointServiceImpl implements DataPointService {
   DataPointsRepository dataPointsRepository;
 
   @Override
   public List<DataPoint> getAllDataPointsDetailsForAccountAndDataSource(
       String accountIdentifier, String dataSourceIdentifier) {
-    List<DataPointEntity> dataPointEntities =
-        dataPointsRepository.findAllByAccountIdentifierAndDataSourceIdentifier(accountIdentifier, dataSourceIdentifier);
+    List<DataPointEntity> dataPointEntities = dataPointsRepository.findAllByAccountIdentifierInAndDataSourceIdentifier(
+        addGlobalAccountIdentifierAlong(accountIdentifier), dataSourceIdentifier);
     return dataPointEntities.stream().map(DataPointMapper::toDto).collect(Collectors.toList());
   }
 
@@ -40,8 +43,8 @@ public class DataPointServiceImpl implements DataPointService {
   public Map<String, List<DataPointEntity>> getDslDataPointsInfo(
       String accountIdentifier, List<String> identifiers, String dataSourceIdentifier) {
     List<DataPointEntity> dataPoints =
-        dataPointsRepository.findByAccountIdentifierAndDataSourceIdentifierAndIdentifierIn(
-            accountIdentifier, dataSourceIdentifier, identifiers);
+        dataPointsRepository.findByAccountIdentifierInAndDataSourceIdentifierAndIdentifierIn(
+            addGlobalAccountIdentifierAlong(accountIdentifier), dataSourceIdentifier, identifiers);
     Map<String, List<DataPointEntity>> dslDataPointsInfo = new HashMap<>();
     for (DataPointEntity dataPoint : dataPoints) {
       List<DataPointEntity> dslDataPoints =
