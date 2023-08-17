@@ -49,6 +49,7 @@ public class CIExecutionMetadata {
   OSType buildType;
   String stageExecutionId;
   String queueId;
+  String status;
   Infrastructure.Type infraType;
   @Builder.Default
   @FdTtlIndex
@@ -65,6 +66,11 @@ public class CIExecutionMetadata {
                  .name("stageExecutionIdAndAccountId")
                  .field(CIExecutionMetadataKeys.stageExecutionId)
                  .field(CIExecutionMetadataKeys.accountId)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdAndStatus")
+                 .field(CIExecutionMetadataKeys.accountId)
+                 .field(CIExecutionMetadataKeys.status)
                  .build())
         .build();
   }
