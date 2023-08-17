@@ -6,6 +6,8 @@
  */
 
 package io.harness.ngmigration.service.entity;
+
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
@@ -215,19 +217,22 @@ public class TemplateMigrationService extends NgMigrationService {
     NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
     if (TemplateType.CUSTOM_DEPLOYMENT_TYPE.name().equals(template.getType())) {
       return configSpec;
-    } else {
-      return JsonUtils.asTree(ImmutableMap.<String, Object>builder()
-                                  .put("spec", configSpec)
-                                  .put("type", ngTemplateService.getNgTemplateStepName(template))
-                                  .put("timeout", ngTemplateService.getTimeoutString(template))
-                                  .put("failureStrategies", RUNTIME_INPUT)
-                                  .put("when",
-                                      ImmutableMap.<String, String>builder()
-                                          .put("stageStatus", "Success")
-                                          .put("condition", RUNTIME_INPUT)
-                                          .build())
-                                  .build());
     }
+    if (TemplateType.ARTIFACT_SOURCE.name().equals(template.getType())) {
+      return JsonUtils.asTree(
+          ImmutableMap.<String, Object>builder().put("spec", configSpec).put("type", CUSTOM_ARTIFACT_NAME).build());
+    }
+    return JsonUtils.asTree(ImmutableMap.<String, Object>builder()
+                                .put("spec", configSpec)
+                                .put("type", ngTemplateService.getNgTemplateStepName(template))
+                                .put("timeout", ngTemplateService.getTimeoutString(template))
+                                .put("failureStrategies", RUNTIME_INPUT)
+                                .put("when",
+                                    ImmutableMap.<String, String>builder()
+                                        .put("stageStatus", "Success")
+                                        .put("condition", RUNTIME_INPUT)
+                                        .build())
+                                .build());
   }
 
   @Override
