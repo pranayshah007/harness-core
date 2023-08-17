@@ -9,6 +9,7 @@ package io.harness.idp.scorecard.scorecards.resources;
 
 import static io.harness.idp.common.Constants.IDP_PERMISSION;
 import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
+import static io.harness.idp.common.Constants.SUCCESS_RESPONSE;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -19,6 +20,7 @@ import io.harness.idp.scorecard.scorecards.mappers.ScorecardMapper;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.ScorecardsApi;
+import io.harness.spec.server.idp.v1.model.DefaultSaveResponse;
 import io.harness.spec.server.idp.v1.model.Facets;
 import io.harness.spec.server.idp.v1.model.Scorecard;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
@@ -70,7 +72,9 @@ public class ScorecardsApiImpl implements ScorecardsApi {
   public Response createScorecard(@Valid ScorecardDetailsRequest body, @AccountIdentifier String harnessAccount) {
     try {
       scorecardService.saveScorecard(body, harnessAccount);
-      return Response.status(Response.Status.CREATED).build();
+      return Response.status(Response.Status.CREATED)
+          .entity(new DefaultSaveResponse().status(SUCCESS_RESPONSE))
+          .build();
     } catch (DuplicateKeyException e) {
       String errorMessage = String.format(
           "Scorecard [%s] already created for accountId [%s]", body.getScorecard().getIdentifier(), harnessAccount);
@@ -122,7 +126,7 @@ public class ScorecardsApiImpl implements ScorecardsApi {
       String scorecardId, @Valid ScorecardDetailsRequest body, @AccountIdentifier String harnessAccount) {
     try {
       scorecardService.updateScorecard(body, harnessAccount);
-      return Response.status(Response.Status.OK).build();
+      return Response.status(Response.Status.OK).entity(new DefaultSaveResponse().status(SUCCESS_RESPONSE)).build();
     } catch (Exception e) {
       log.error("Could not update scorecard", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

@@ -938,6 +938,10 @@ paths:
       parameters:
         - $ref: '#/components/parameters/CheckType'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/SearchTerm'
       tags:
         - Checks
       x-stoplight:
@@ -957,7 +961,7 @@ paths:
       operationId: create-check
       responses:
         '201':
-          description: Created
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: 3odk9i73co8ny
       description: Create a custom check
@@ -997,7 +1001,7 @@ paths:
       operationId: update-check
       responses:
         '200':
-          description: OK
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: 94y43314ia7cu
       description: Update check details for given checkId
@@ -1054,7 +1058,7 @@ paths:
       operationId: create-scorecard
       responses:
         '201':
-          description: Created
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: vs8mu57g6sy8h
       description: Create scorecard
@@ -1093,7 +1097,7 @@ paths:
       operationId: update-scorecard
       responses:
         '200':
-          description: OK
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: eifr2cushvum8
       description: Update scorecard details for given scorecardId
@@ -2997,6 +3001,19 @@ components:
           $ref: '#/components/schemas/DataSourceDataPointInfo'
       required:
         - request
+    DefaultSaveResponse:
+      title: DefaultSaveResponse
+      x-stoplight:
+        id: g3wczg3wjlmxq
+      type: object
+      description: 'Default response for Save/Edit operations '
+      properties:
+        status:
+          type: string
+          x-stoplight:
+            id: qh5qxx57312re
+      required:
+        - status
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -3588,6 +3605,19 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/CheckResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     CheckDetailsResponse:
       description: Response for check details
       content:
@@ -3634,6 +3664,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/DataSourceDataPointInfoResponse'
+    DefaultSaveResponse:
+      description: Default response for Save/Edit operations
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DefaultSaveResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/DefaultSaveResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

@@ -14,18 +14,30 @@ import io.harness.idp.scorecard.checks.entity.CheckEntity.CheckKeys;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.support.PageableExecutionUtils;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 public class CheckRepositoryCustomImpl implements CheckRepositoryCustom {
   private MongoTemplate mongoTemplate;
+
+  @Override
+  public Page<CheckEntity> findAll(Criteria criteria, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    List<CheckEntity> checkEntityList = mongoTemplate.find(query, CheckEntity.class);
+    return PageableExecutionUtils.getPage(
+        checkEntityList, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), CheckEntity.class));
+  }
 
   @Override
   public CheckEntity update(CheckEntity checkEntity) {

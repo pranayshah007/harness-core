@@ -19,9 +19,6 @@ import org.springframework.data.repository.CrudRepository;
 @HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
 public interface CheckRepository extends CrudRepository<CheckEntity, String>, CheckRepositoryCustom {
-  List<CheckEntity> findByAccountIdentifierInAndIsDeleted(List<String> accountIdentifier, boolean deleted);
-  List<CheckEntity> findByAccountIdentifierAndIsCustomAndIsDeleted(
-      String accountIdentifier, boolean custom, boolean deleted);
   List<CheckEntity> findByAccountIdentifierAndIsDeletedAndIdentifierIn(
       String accountIdentifier, boolean isDeleted, List<String> identifier);
   CheckEntity findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);

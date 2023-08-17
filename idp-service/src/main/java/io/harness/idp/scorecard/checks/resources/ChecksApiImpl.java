@@ -7,14 +7,18 @@
 
 package io.harness.idp.scorecard.checks.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.IDP_PERMISSION;
 import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
+import static io.harness.idp.common.Constants.SUCCESS_RESPONSE;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.idp.common.IdpCommonService;
+import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.mappers.CheckMapper;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -23,6 +27,8 @@ import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckDetailsRequest;
 import io.harness.spec.server.idp.v1.model.CheckDetailsResponse;
 import io.harness.spec.server.idp.v1.model.CheckListItem;
+import io.harness.spec.server.idp.v1.model.DefaultSaveResponse;
+import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -30,22 +36,35 @@ import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @NextGenManagerAuth
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
 public class ChecksApiImpl implements ChecksApi {
   private final CheckService checkService;
+  private final IdpCommonService idpCommonService;
 
   @Inject
-  public ChecksApiImpl(CheckService checkService) {
+  public ChecksApiImpl(CheckService checkService, IdpCommonService idpCommonService) {
     this.checkService = checkService;
+    this.idpCommonService = idpCommonService;
   }
 
   @Override
-  public Response getChecks(Boolean custom, String harnessAccount) {
-    List<CheckListItem> checks = checkService.getChecksByAccountId(custom, harnessAccount);
-    return Response.status(Response.Status.OK).entity(CheckMapper.toResponseList(checks)).build();
+  public Response getChecks(
+      Boolean custom, String harnessAccount, Integer page, Integer limit, String sort, String searchTerm) {
+    int pageIndex = page == null ? 0 : page;
+    int pageLimit = limit == null ? 1000 : limit;
+    Pageable pageRequest = isEmpty(sort)
+        ? PageRequest.of(pageIndex, pageLimit, Sort.by(Sort.Direction.DESC, CheckEntity.CheckKeys.lastUpdatedAt))
+        : PageUtils.getPageRequest(pageIndex, pageLimit, List.of(sort));
+    List<CheckListItem> checkListItems =
+        checkService.getChecksByAccountId(custom, harnessAccount, pageRequest, searchTerm);
+    return idpCommonService.buildPageResponse(
+        pageIndex, pageLimit, checkListItems.size(), CheckMapper.toResponseList(checkListItems));
   }
 
   @Override
@@ -70,7 +89,9 @@ public class ChecksApiImpl implements ChecksApi {
   public Response createCheck(@Valid CheckDetailsRequest body, @AccountIdentifier String harnessAccount) {
     try {
       checkService.createCheck(body.getCheckDetails(), harnessAccount);
-      return Response.status(Response.Status.CREATED).build();
+      return Response.status(Response.Status.CREATED)
+          .entity(new DefaultSaveResponse().status(SUCCESS_RESPONSE))
+          .build();
     } catch (DuplicateKeyException e) {
       String errorMessage = String.format(
           "Check [%s] already created for accountId [%s]", body.getCheckDetails().getIdentifier(), harnessAccount);
@@ -108,7 +129,7 @@ public class ChecksApiImpl implements ChecksApi {
       String checkId, @Valid CheckDetailsRequest body, @AccountIdentifier String harnessAccount) {
     try {
       checkService.updateCheck(body.getCheckDetails(), harnessAccount);
-      return Response.status(Response.Status.OK).build();
+      return Response.status(Response.Status.OK).entity(new DefaultSaveResponse().status(SUCCESS_RESPONSE)).build();
     } catch (Exception e) {
       log.error("Could not update check", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

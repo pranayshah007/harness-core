@@ -7,12 +7,15 @@
 
 package io.harness.idp.scorecard.checks.service;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.EntityType;
+import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -36,6 +39,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -62,17 +68,12 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
-  public List<CheckListItem> getChecksByAccountId(Boolean custom, String accountIdentifier) {
-    List<CheckEntity> entities;
-    if (custom == null) {
-      entities =
-          checkRepository.findByAccountIdentifierInAndIsDeleted(List.of(GLOBAL_ACCOUNT_ID, accountIdentifier), false);
-    } else {
-      String accountId = custom ? accountIdentifier : GLOBAL_ACCOUNT_ID;
-      entities = checkRepository.findByAccountIdentifierAndIsCustomAndIsDeleted(accountId, custom, false);
-    }
+  public List<CheckListItem> getChecksByAccountId(
+      Boolean custom, String accountIdentifier, Pageable pageRequest, String searchTerm) {
+    Criteria criteria = buildCriteriaForChecksList(accountIdentifier, custom, searchTerm);
+    Page<CheckEntity> entities = checkRepository.findAll(criteria, pageRequest);
     List<CheckListItem> checks = new ArrayList<>();
-    entities.forEach(entity -> checks.add(CheckMapper.toDTO(entity)));
+    entities.getContent().forEach(checkEntity -> checks.add(CheckMapper.toDTO(checkEntity)));
     return checks;
   }
 
@@ -147,5 +148,34 @@ public class CheckServiceImpl implements CheckService {
                             .getResponse(settingsClient.getSetting(
                                 SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
                             .getValue());
+  }
+
+  private Criteria buildCriteriaForChecksList(String accountIdentifier, Boolean custom, String searchTerm) {
+    Criteria criteria = new Criteria();
+    if (custom == null) {
+      criteria.and(CheckEntity.CheckKeys.accountIdentifier).in(GLOBAL_ACCOUNT_ID, accountIdentifier);
+    } else {
+      String accountId = custom ? accountIdentifier : GLOBAL_ACCOUNT_ID;
+      criteria.and(CheckEntity.CheckKeys.accountIdentifier)
+          .is(accountId)
+          .and(CheckEntity.CheckKeys.isCustom)
+          .is(custom);
+    }
+
+    if (isNotEmpty(searchTerm)) {
+      criteria.andOperator(buildSearchCriteria(searchTerm));
+    }
+
+    criteria.and(CheckEntity.CheckKeys.isDeleted).is(false);
+    return criteria;
+  }
+
+  private Criteria buildSearchCriteria(String searchTerm) {
+    return new Criteria().orOperator(
+        where(CheckEntity.CheckKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+        where(CheckEntity.CheckKeys.identifier)
+            .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+        where(CheckEntity.CheckKeys.labels)
+            .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
   }
 }
