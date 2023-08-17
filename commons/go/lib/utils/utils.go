@@ -33,7 +33,7 @@ const (
 	LangType_CSHARP  LangType = 1
 	LangType_PYTHON  LangType = 2
 	LangType_UNKNOWN LangType = 3
-	LangType_RUBY    LangType = 3
+	LangType_RUBY    LangType = 4
 )
 
 const (
