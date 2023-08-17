@@ -174,7 +174,7 @@ public class ApiCallLogDTOTest extends CategoryTest {
     ApiCallLogDTO apiCallLogDTO = ApiCallLogDTO.builder().accountId(accountId).build();
     int statusCode = 1;
     ApiCallLogDTO.FieldType fieldType = ApiCallLogDTO.FieldType.JSON;
-    assertThatThrownBy(() -> apiCallLogDTO.addFieldToResponse(statusCode, null, fieldType))
+    assertThatThrownBy(() -> apiCallLogDTO.addFieldToResponse(statusCode, 100, null, fieldType))
         .isInstanceOf(NullPointerException.class)
         .hasMessage("Api call log response field is null.");
   }
