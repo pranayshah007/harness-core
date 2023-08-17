@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.jdbc.Null;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -103,22 +104,26 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
     }
 
     int i = 0;
-    for (Instant current : currentTimeSeries.getTrainTimePointsList()) {
-      i++;
 
-      Double cv1 = currentTimeSeries.getValue(current);
+    log.info("currentTimeSeries : {} ", currentTimeSeries != null);
+    log.info("currentTimeSeries : {} ", currentTimeSeries.getTrainTimePointsList() != null);
 
-      log.info("Time : {}, Value{}, Index : {} ", current.toString(), cv1, i);
-    }
+    log.info("Time : {}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0), 0);
+    log.info("Time : {}, Value{}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0),
+        currentTimeSeries.getValue(currentTimeSeries.getTrainTimePointsList().get(0)), 0);
 
-    int j = 0;
-    for (Instant current : currentTimeSeries.getTestTimePointsList()) {
-      j++;
+    //    for(Instant cr : currentTimeSeries.getTrainTimePointsList()) {
+    //      i++;
+    //      Double cv1 = ;
+    //      log.info("Time : {}, Value{}, Index : {} ", cr.toString(), cv1, i);
+    //    }
 
-      Double cv2 = currentTimeSeries.getValue(current);
-
-      log.info("Time : {}, Value{}, Index : {} ", current.toString(), cv2, j);
-    }
+    //    int j = 0;
+    //    for (Instant cr2 : currentTimeSeries.getTestTimePointsList()) {
+    //      j++;
+    //      Double cv2 = currentTimeSeries.getValue(cr2);
+    //      log.info("Time : {}, Value{}, Index : {} ", cr2.toString(), cv2, j);
+    //    }
 
     if (!resultSet.isBeforeFirst() && currentTimeSeries != null) {
       if (TimeSeriesUtils.validate(currentTimeSeries, timeSeriesMetaData)) {
