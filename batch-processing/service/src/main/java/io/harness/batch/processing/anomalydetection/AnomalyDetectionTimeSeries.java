@@ -73,11 +73,11 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
     int index = trainTimePointsList.indexOf(instant);
     if (index > -1) {
       trainDataPointsList.set(trainTimePointsList.indexOf(instant), cost);
-      log.info("currentTime : {} , currentValue : {}, index : {}, true", instant.toString(), cost, index);
+      log.info(" insertTrain currentTime : {} , currentValue : {}, index : {}, true", instant.toString(), cost, index);
       return true;
     }
 
-    log.info("currentTime : {} , currentValue : {}, index : {}, false", instant.toString(), cost, index);
+    log.info("insertTrain currentTime : {} , currentValue : {}, index : {}, false", instant.toString(), cost, index);
     return false;
   }
 
@@ -85,11 +85,11 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
     int index = testTimePointsList.indexOf(instant);
     if (index > -1) {
       testDataPointsList.set(testTimePointsList.indexOf(instant), cost);
-      log.info("currentTime : {} , currentValue : {}, index : {}, true", instant.toString(), cost, index);
+      log.info("insertTest currentTime : {} , currentValue : {}, index : {}, true", instant.toString(), cost, index);
       return true;
     }
 
-    log.info("currentTime : {} , currentValue : {}, index : {}, false", instant.toString(), cost, index);
+    log.info("insertTest currentTime : {} , currentValue : {}, index : {}, false", instant.toString(), cost, index);
     return false;
   }
 
@@ -98,7 +98,9 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
     trainDataPointsList = new ArrayList<>();
     while (start.isBefore(end)) {
       trainTimePointsList.add(start);
+      log.info("initialiseTrainData trainTimePoints : {}", start.toString());
       trainDataPointsList.add(AnomalyDetectionConstants.DEFAULT_COST);
+      log.info("initialiseTrainData trainDataPoints : {}", AnomalyDetectionConstants.DEFAULT_COST);
       start = start.plus(1, unit);
     }
   }
@@ -108,7 +110,9 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
     testDataPointsList = new ArrayList<>();
     while (start.isBefore(end)) {
       testTimePointsList.add(start);
+      log.info("initialiseTestData testTimePoints : {}", start.toString());
       testDataPointsList.add(AnomalyDetectionConstants.DEFAULT_COST);
+      log.info("initialiseTestData testDataPoints : {}", AnomalyDetectionConstants.DEFAULT_COST);
       start = start.plus(1, unit);
     }
   }

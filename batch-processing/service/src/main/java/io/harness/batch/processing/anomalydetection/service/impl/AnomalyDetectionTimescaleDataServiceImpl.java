@@ -84,7 +84,6 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
       currentTime = resultSet.getTimestamp(tableSchema.getStartTime().getName()).toInstant();
       currentValue = resultSet.getDouble("cost");
 
-      log.info("currentHash : {}", currentHash);
       log.info("previousHash : {} , currentHash ; {}", previousHash, currentHash);
 
       if (previousHash == null || !previousHash.equals(currentHash)) {
