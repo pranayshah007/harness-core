@@ -63,6 +63,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.beans.FeatureName;
 import io.harness.cache.HarnessCacheManager;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.NoGlobalDelegateAccountException;
@@ -71,6 +72,7 @@ import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.DelegateSecretTaskPackage;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
@@ -132,6 +134,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.KryoSerializer;
@@ -201,11 +204,13 @@ import com.google.protobuf.ByteString;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -302,6 +307,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
+  @Inject private SimpleEncryption simpleEncryption;
 
   private LoadingCache<String, String> logStreamingAccountTokenCache =
       CacheBuilder.newBuilder()
@@ -647,7 +653,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     try (AutoLogContext ignore = DelegateLogContextHelper.getLogContext(task)) {
       try {
         // capabilities created,then appended to task.executionCapabilities to get eligible delegates
-        generateCapabilitiesForTaskV2(task);
+        DelegateTaskPackage delegateTaskPackage = generateCapabilitiesForTaskV2(task);
         convertToExecutionCapabilityV2(task);
 
         List<String> eligibleListOfDelegates = assignDelegateService.getEligibleDelegatesToExecuteTaskV2(task);
@@ -700,9 +706,17 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
 
         // If FF is enabled, do evaluations and store delegateTaskPackage in database.
+        // Check for npe on .encryptionConfigs(delegateTaskPackage.getEncryptionConfigs())
         if (featureFlagService.isEnabled(EXPRESSION_EVAL_IN_TASK_SUBMIT, task.getAccountId())) {
-          DelegateTaskPackage delegateTaskPackage = resolvePreAssignmentExpressionsV2(task, SecretManagerMode.APPLY);
-          task.setDelegateTaskPackage(delegateTaskPackage);
+          //  DelegateTaskPackage delegateTaskPackage = resolvePreAssignmentExpressionsV2(task,
+          //  SecretManagerMode.APPLY);
+          DelegateSecretTaskPackage delegateSecretTaskPackage =
+              DelegateSecretTaskPackage.builder()
+                  .encryptionConfigs(delegateTaskPackage.getEncryptionConfigs())
+                  .secretDetails(delegateTaskPackage.getSecretDetails())
+                  .secrets(encryptEvaluatedSecrets(delegateTaskPackage.getSecrets()))
+                  .build();
+          task.setDelegateSecretTaskPackage(delegateSecretTaskPackage);
         }
 
         saveDelegateTask(task, task.getAccountId());
@@ -720,6 +734,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         }
       }
     }
+  }
+
+  private Set<String> encryptEvaluatedSecrets(Set<String> decryptedSecrets) {
+    return decryptedSecrets.stream()
+        .map(secret -> EncodingUtils.encodeBase64(simpleEncryption.encrypt(secret.getBytes(StandardCharsets.UTF_8))))
+        .collect(Collectors.toSet());
   }
 
   private String getDelegateIdForFirstBroadcast(DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
@@ -849,7 +869,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     return delegateTaskResultsProvider.getDelegateTaskResults(taskId);
   }
 
-  private void generateCapabilitiesForTaskV2(DelegateTask task) {
+  private DelegateTaskPackage generateCapabilitiesForTaskV2(DelegateTask task) {
     addMergedParamsForCapabilityCheckV2(task);
 
     DelegateTaskPackage delegateTaskPackage = getDelegatePackageWithEncryptionConfigV2(task);
@@ -866,6 +886,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           CapabilityHelper.generateLogStringWithCapabilitiesGenerated(
               task.getTaskDataV2().getTaskType(), task.getExecutionCapabilities()));
     }
+    return delegateTaskPackage;
   }
 
   private void addMergedParamsForCapabilityCheckV2(DelegateTask task) {
@@ -1034,7 +1055,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       try (AutoLogContext ignore = DelegateLogContextHelper.getLogContext(delegateTask)) {
         if (assignDelegateService.shouldValidate(delegateTask, delegateId)) {
           setValidationStarted(delegateId, delegateTask);
-          return buildDelegateTaskPackage(delegateTask);
+          return buildDelegateSecretTaskPackage(delegateTask);
         } else if (assignDelegateService.isWhitelisted(delegateTask, delegateId)) {
           return assignTask(delegateId, taskId, delegateTask, delegateInstanceId);
         }
@@ -1046,13 +1067,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
-  private DelegateTaskPackage buildDelegateTaskPackage(DelegateTask delegateTask) {
+  private DelegateTaskPackage buildDelegateSecretTaskPackage(DelegateTask delegateTask) {
     // If delegateTaskPackage is present in database that means we did exp evaluation in submit task.
     // Reuse delegateTaskPackage instead of doing evaluations again.
-    if (delegateTask.getDelegateTaskPackage() == null) {
+    if (delegateTask.getDelegateSecretTaskPackage() == null) {
       return resolvePreAssignmentExpressions(delegateTask, SecretManagerMode.APPLY);
     }
-    log.info("Using Existing delegateTaskPackage for taskId {}", delegateTask.getUuid());
+    log.info("Using Existing delegateSecretTaskPackage for taskId {}", delegateTask.getUuid());
     List<ExecutionCapability> executionCapabilityList = emptyList();
     if (isNotEmpty(delegateTask.getExecutionCapabilities())) {
       executionCapabilityList = delegateTask.getExecutionCapabilities()
@@ -1069,8 +1090,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             .delegateTaskId(delegateTask.getUuid())
             .data(delegateTask.getData())
             .executionCapabilities(executionCapabilityList)
-            .delegateCallbackToken(delegateTask.getDriverId())
-            .serializationFormat(io.harness.beans.SerializationFormat.valueOf(SerializationFormat.KRYO.name()));
+            .delegateCallbackToken(delegateTask.getDriverId());
 
     boolean isTaskNg = !isEmpty(delegateTask.getSetupAbstractions())
         && Boolean.parseBoolean(delegateTask.getSetupAbstractions().get(NG));
@@ -1099,11 +1119,21 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return delegateTaskPackageBuilder.build();
     }
 
-    delegateTaskPackageBuilder.encryptionConfigs(delegateTask.getDelegateTaskPackage().getEncryptionConfigs());
-    delegateTaskPackageBuilder.secretDetails(delegateTask.getDelegateTaskPackage().getSecretDetails());
-    delegateTaskPackageBuilder.secrets(delegateTask.getDelegateTaskPackage().getSecrets());
+    delegateTaskPackageBuilder.encryptionConfigs(delegateTask.getDelegateSecretTaskPackage().getEncryptionConfigs());
+    delegateTaskPackageBuilder.secretDetails(delegateTask.getDelegateSecretTaskPackage().getSecretDetails());
+    delegateTaskPackageBuilder.secrets(
+        decryptEvaluatedSecrets(delegateTask.getDelegateSecretTaskPackage().getSecrets()));
 
     return delegateTaskPackageBuilder.build();
+  }
+
+  private Set<String> decryptEvaluatedSecrets(Set<String> secrets) {
+    if (secrets != null) {
+      return secrets.stream()
+          .map(secret -> new String(simpleEncryption.decrypt(Base64.getDecoder().decode(secret))))
+          .collect(Collectors.toSet());
+    }
+    return new HashSet<>();
   }
 
   @VisibleForTesting
@@ -1355,8 +1385,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
               .delegateTaskId(delegateTask.getUuid())
               .taskDataV2(delegateTask.getTaskDataV2())
               .executionCapabilities(executionCapabilityList)
-              .delegateCallbackToken(delegateTask.getDriverId())
-              .serializationFormat(io.harness.beans.SerializationFormat.valueOf(SerializationFormat.KRYO.name()));
+              .delegateCallbackToken(delegateTask.getDriverId());
 
       boolean isTaskNg = !isEmpty(delegateTask.getSetupAbstractions())
           && Boolean.parseBoolean(delegateTask.getSetupAbstractions().get(NG));
@@ -1479,8 +1508,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private DelegateTaskPackage getDelegatePackageWithEncryptionConfigV2(DelegateTask delegateTask) {
+    SecretManagerMode secretManagerMode =
+        featureFlagService.isEnabled(EXPRESSION_EVAL_IN_TASK_SUBMIT, delegateTask.getAccountId())
+        ? SecretManagerMode.APPLY
+        : SecretManagerMode.DRY_RUN;
     if (CapabilityHelper.isTaskParameterTypeV2(delegateTask.getTaskDataV2())) {
-      return resolvePreAssignmentExpressionsV2(delegateTask, SecretManagerMode.DRY_RUN);
+      return resolvePreAssignmentExpressionsV2(delegateTask, secretManagerMode);
     } else {
       // TODO: Ideally we should not land here, as we should always be passing TaskParameter only for
       // TODO: delegate task. But for now, this is needed. (e.g. Tasks containing Jenkinsonfig, BambooConfig etc.)
@@ -1611,7 +1644,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
       delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
 
-      return buildDelegateTaskPackage(task);
+      return buildDelegateSecretTaskPackage(task);
     }
     task = persistence.createQuery(DelegateTask.class, migrationEnabledForDelegateTask)
                .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
@@ -1628,7 +1661,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
     task.getData().setParameters(delegateTask.getData().getParameters());
     log.info("Returning previously assigned task to delegate");
-    return buildDelegateTaskPackage(task);
+    return buildDelegateSecretTaskPackage(task);
   }
 
   @Override

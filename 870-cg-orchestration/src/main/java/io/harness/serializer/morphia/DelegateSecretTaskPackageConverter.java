@@ -9,10 +9,10 @@ import dev.morphia.converters.SimpleValueConverter;
 import dev.morphia.converters.TypeConverter;
 import dev.morphia.mapping.MappedField;
 
-public class DelegateTaskPackageConverter extends TypeConverter implements SimpleValueConverter {
+public class DelegateSecretTaskPackageConverter extends TypeConverter implements SimpleValueConverter {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
-  public DelegateTaskPackageConverter() {
+  public DelegateSecretTaskPackageConverter() {
     super(DelegateTaskPackage.class);
   }
 

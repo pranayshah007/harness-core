@@ -42,6 +42,7 @@ import io.harness.cvng.beans.DataCollectionConnectorBundle;
 import io.harness.cvng.beans.DataCollectionType;
 import io.harness.delegate.InitializeExecutionInfraResponse;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
+import io.harness.delegate.beans.DelegateSecretTaskPackage;
 import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.DelegateStringResponseData;
 import io.harness.delegate.beans.DelegateTaskDetails;
@@ -1336,6 +1337,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(DelegateTaskDetails.class, 19044);
     kryo.register(DelegateTaskNotifyResponseData.class, 5373);
     kryo.register(DelegateTaskPackage.class, 7150);
+    kryo.register(DelegateSecretTaskPackage.class, 7157);
     kryo.register(DelegateTaskResponse.class, 5006);
     kryo.register(DelegateTaskResponse.ResponseCode.class, 5520);
     kryo.register(DirectK8sInfraDelegateConfig.class, 19102);

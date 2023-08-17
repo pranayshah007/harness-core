@@ -14,6 +14,7 @@ import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.DelegateSecretTaskPackage;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskRank;
 import io.harness.delegate.beans.NgSetupFields;
@@ -122,7 +123,8 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   // Will be marked deprecated after tasks are containerized
   private TaskDataV2 taskDataV2;
 
-  private DelegateTaskPackage delegateTaskPackage;
+  // This field is only for internal implementation, don't use this.
+  private DelegateSecretTaskPackage delegateSecretTaskPackage;
 
   private List<ExecutionCapability> executionCapabilities;
 

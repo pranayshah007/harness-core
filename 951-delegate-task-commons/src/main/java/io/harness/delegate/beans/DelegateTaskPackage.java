@@ -18,7 +18,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.SerializationFormat;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.security.encryption.EncryptionConfig;
 
@@ -31,14 +30,13 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
-import lombok.Data;
 import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 
 @CodePulse(
     module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
-@Data
+@Value
 @Builder
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "DelegateTaskPackageKeys")
@@ -64,5 +62,4 @@ public class DelegateTaskPackage {
   private LinkedHashMap<String, String> logStreamingAbstractions;
   private boolean shouldSkipOpenStream;
   private String baseLogKey;
-  @Builder.Default private SerializationFormat serializationFormat = SerializationFormat.KRYO;
 }
