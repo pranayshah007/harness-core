@@ -1730,6 +1730,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       connectorRef = optionalTemplateEntity.get().getConnectorRef();
     }
 
+    // To support Account and Org level entities
+    orgIdentifier = orgIdentifier == null ? "" : orgIdentifier;
+    projectIdentifier = projectIdentifier == null ? "" : projectIdentifier;
+
     gitAwareEntityHelper.validateRepo(
         accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, updateGitDetailsParams.getRepoName());
   }
