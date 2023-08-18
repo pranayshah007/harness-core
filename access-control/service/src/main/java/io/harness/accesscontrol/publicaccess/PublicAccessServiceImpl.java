@@ -9,7 +9,6 @@ package io.harness.accesscontrol.publicaccess;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.accesscontrol.principals.PrincipalType;
-import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupFactory;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.resources.resourcetypes.ResourceType;
@@ -48,7 +47,6 @@ import org.springframework.data.mongodb.core.query.Query;
 @Slf4j
 public class PublicAccessServiceImpl implements PublicAccessService {
   private final RoleAssignmentService roleAssignmentService;
-  private final HarnessResourceGroupService harnessResourceGroupService;
   private final ResourceGroupClient resourceGroupClient;
   private final ResourceGroupService resourceGroupService;
   private final ResourceGroupFactory resourceGroupFactory;
@@ -65,12 +63,10 @@ public class PublicAccessServiceImpl implements PublicAccessService {
 
   @Inject
   public PublicAccessServiceImpl(RoleAssignmentService roleAssignmentService,
-      HarnessResourceGroupService harnessResourceGroupService,
       @Named("PRIVILEGED") ResourceGroupClient resourceGroupClient, ResourceGroupService resourceGroupService,
       ResourceGroupFactory resourceGroupFactory, MongoTemplate mongoTemplate, ScopeService scopeService,
       PublicAccessUtil publicAccessUtil) {
     this.roleAssignmentService = roleAssignmentService;
-    this.harnessResourceGroupService = harnessResourceGroupService;
     this.resourceGroupClient = resourceGroupClient;
     this.resourceGroupService = resourceGroupService;
     this.resourceGroupFactory = resourceGroupFactory;
