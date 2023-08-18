@@ -8,8 +8,10 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.ngmigration.NGMigrationEntityType.ELASTIGROUP_CONFIGURATION;
+import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -26,17 +28,26 @@ import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.NgMigrationService;
+import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.CanaryOrchestrationWorkflow;
+import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowPhase;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgBasicInfo;
@@ -52,6 +63,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +76,8 @@ import org.apache.commons.lang3.StringUtils;
 public class ElastigroupConfigurationMigrationService extends NgMigrationService {
   @Inject InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private SecretRefUtils secretRefUtils;
+
+  @Inject private StepMapperFactory stepMapperFactory;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -109,7 +123,8 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     InfrastructureDefinition infrastructureDefinition = (InfrastructureDefinition) entities.get(entityId).getEntity();
-    MigratorExpressionUtils.render(migrationContext, infrastructureDefinition, inputDTO.getCustomExpressions());
+    Map<String, Object> custom = updateContextVariables(migrationContext, entities, infrastructureDefinition);
+    MigratorExpressionUtils.render(migrationContext, infrastructureDefinition, custom);
     NGYamlFile yamlFile = getYamlFile(infrastructureDefinition, inputDTO);
     if (yamlFile == null) {
       return null;
@@ -215,5 +230,41 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
                    .spec(HarnessStore.builder().files(files).build())
                    .build())
         .build();
+  }
+
+  private Map<String, Object> updateContextVariables(MigrationContext migrationContext,
+      Map<CgEntityId, CgEntityNode> entities, InfrastructureDefinition infrastructureDefinition) {
+    Map<String, Object> custom = new HashMap<>();
+    entities.entrySet().stream().filter(entry -> WORKFLOW.equals(entry.getValue().getType())).forEach(entry -> {
+      Workflow workflow = (Workflow) entry.getValue().getEntity();
+      WorkflowMigrationContext wfContext = WorkflowMigrationContext.newInstance(migrationContext, workflow);
+      if (workflow != null && wfContext != null) {
+        CanaryOrchestrationWorkflow orchestrationWorkflow =
+            (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+        if (orchestrationWorkflow != null) {
+          List<WorkflowPhase> phases = orchestrationWorkflow.getWorkflowPhases();
+          phases.stream()
+              .filter(phase -> infrastructureDefinition.getUuid().equals(phase.getInfraDefinitionId()))
+              .forEach(phase -> {
+                List<PhaseStep> phaseSteps = phase.getPhaseSteps();
+                phaseSteps.stream().filter(phaseStep -> isNotEmpty(phaseStep.getSteps())).forEach(phaseStep -> {
+                  List<GraphNode> steps = phaseStep.getSteps();
+                  steps.forEach(stepYaml -> {
+                    StepMapper stepMapper = stepMapperFactory.getStepMapper(stepYaml.getType());
+                    List<StepExpressionFunctor> expressionFunctors =
+                        stepMapper.getExpressionFunctor(wfContext, phase, phaseStep, stepYaml);
+                    if (isNotEmpty(expressionFunctors)) {
+                      wfContext.getStepExpressionFunctors().addAll(expressionFunctors);
+                    }
+                  });
+                });
+
+                custom.putAll(MigratorUtility.getExpressions(phase, wfContext.getStepExpressionFunctors(),
+                    migrationContext.getInputDTO().getIdentifierCaseFormat()));
+              });
+        }
+      }
+    });
+    return custom;
   }
 }
