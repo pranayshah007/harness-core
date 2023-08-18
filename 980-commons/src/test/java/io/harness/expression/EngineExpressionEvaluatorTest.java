@@ -380,6 +380,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                     .put("v5", "archit-harness")
                     .put("v6", "<+secrets.getValue('org.v2')>")
                     .put("v7", "<+secret1>")
+                    .put("v8", "<+company>/archit-<+f>")
+                    .put("v9", "<+company>/archit-<+f1>")
                     .build())
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
@@ -419,6 +421,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // Nested expression contains string concatenation
     assertThat(evaluator.resolve("<+variables.v3>", true)).isEqualTo("abcdefharness");
     assertThat(evaluator.evaluateExpression("<+variables.v3>")).isEqualTo("abcdefharness");
+    assertThat(evaluator.resolve("<+variables.v8>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-abc");
+    assertThat(evaluator.resolve("<+variables.v9>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-<+f1>");
 
     // OR operators
     assertThat(
@@ -545,6 +551,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                     .put("v5", "archit-harness")
                     .put("v6", "<+secrets.getValue('org.v2')>")
                     .put("v7", "<+secret1>")
+                    .put("v8", "<+company>/archit-<+f>")
+                    .put("v9", "<+company>/archit-<+f1>")
                     .build())
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
@@ -586,6 +594,11 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.evaluateExpression("<+variables.v3>")).isEqualTo("abcdef");
     assertThat(evaluator.resolve("harness<+variables.v4><+variables.v3>", true)).isEqualTo("harnessabcdefabcdef");
     assertThat(evaluator.evaluateExpression("harness<+variables.v4><+variables.v3>")).isEqualTo("harnessabcdefabcdef");
+    assertThat(evaluator.resolve("<+variables.v8>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-abc");
+    assertThat(evaluator.resolve("<+variables.v9>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-<+f1>");
+
     // Nested concatenate expression in script
     // Note In script mode -> concatenate expressions can be using + operator between them only
     assertThat(evaluator.evaluateExpression("<+ var traverse = function(key) {\n"
