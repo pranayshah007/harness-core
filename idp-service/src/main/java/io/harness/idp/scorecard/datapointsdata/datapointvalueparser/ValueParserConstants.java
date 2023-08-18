@@ -10,4 +10,10 @@ public class ValueParserConstants {
   public static final String STO_SCAN_SETUP_DATAPOINT_IDENTIFIER = "stoStageAdded";
 
   public static final String POLICY_EVALUATION_DATAPOINT_IDENTIFIER = "isPolicyEvaluationSuccessful";
+
+  public static final String CI_PIPELINE_SUCCESS_PERCENT_IN_SEVEN_DAYS = "%ofCIPipelinePassingInPast7Days";
+
+  public static final String CI_PIPELINE_TEST_FAILING_IS_ZERO = "testFailingOnCiPipelineIsZero";
+
+  public static final String CONTENT_KEY = "content";
 }

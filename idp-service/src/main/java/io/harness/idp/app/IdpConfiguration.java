@@ -15,6 +15,7 @@ import io.harness.AccessControlClientConfiguration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
+import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
@@ -99,6 +100,7 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("notificationConfigs") private HashMap<String, String> notificationConfigs;
   @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceConfiguration;
   @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
+  @JsonProperty("tiServiceConfig") private TIServiceConfig tiServiceConfig;
   private String managerTarget;
   private String managerAuthority;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();

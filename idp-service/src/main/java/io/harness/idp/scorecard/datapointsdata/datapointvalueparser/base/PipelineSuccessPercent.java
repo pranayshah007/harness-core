@@ -6,11 +6,11 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base;
 
-import io.harness.pms.pipeline.PMSPipelineResponseDTO;
+import io.harness.pms.dashboard.DashboardPipelineHealthInfo;
 
 import java.util.Map;
 
-public interface PipelineInfo {
-  Map<String, Object> getParsedValue(PMSPipelineResponseDTO ciPmsPipelineResponseDTO,
-      PMSPipelineResponseDTO cdPmsPipelineResponseDTO, String dataPointIdentifier);
+public interface PipelineSuccessPercent {
+  Map<String, Object> getParsedValue(
+      DashboardPipelineHealthInfo dashboardPipelineHealthInfo, String dataPointIdentifier);
 }

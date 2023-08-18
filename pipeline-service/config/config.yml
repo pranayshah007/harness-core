@@ -383,12 +383,12 @@ redisLockConfig:
 
 distributedLockImplementation: REDIS
 
-enableDashboardTimescale: false
+enableDashboardTimescale: true
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
-  timescaledbUsername: "postgres"
-  timescaledbPassword: ""
+  timescaledbUsername: "admin"
+  timescaledbPassword: "password"
   connectTimeout: 10
   socketTimeout: 30
   logUnclosedConnections: false

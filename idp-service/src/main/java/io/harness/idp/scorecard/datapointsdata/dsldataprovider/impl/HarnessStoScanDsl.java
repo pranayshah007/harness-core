@@ -8,10 +8,14 @@ package io.harness.idp.scorecard.datapointsdata.dsldataprovider.impl;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dashboard.DashboardResourceClient;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.factory.PipelineInfoResponseFactory;
+import io.harness.idp.scorecard.datapointsdata.dsldataprovider.DslConstants;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.base.DslDataProvider;
+import io.harness.idp.scorecard.datapointsdata.utils.DslUtils;
+import io.harness.ng.core.dashboard.DeploymentsInfo;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.remote.client.NGRestUtils;
@@ -34,23 +38,46 @@ public class HarnessStoScanDsl implements DslDataProvider {
   PipelineServiceClient pipelineServiceClient;
   DataPointParserFactory dataPointParserFactory;
   PipelineInfoResponseFactory pipelineInfoFactory;
+  DashboardResourceClient dashboardResourceClient;
 
   @Override
   public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
-    String ciBaseUrl = dataSourceDataPointInfo.getCiPipelineUrl();
-    String[] splitText = ciBaseUrl.split("/");
-    String sourceAccountIdentifier = splitText[5];
-    String orgIdentifier = splitText[8];
-    String projectIdentifier = splitText[10];
-    String pipelineIdentifier = splitText[12];
+    Map<String, Object> returnData = new HashMap<>();
+
+    // ci pipeline detail
+    Map<String, String> ciIdentifiers =
+        DslUtils.getCiPipelineUrlIdentifiers(dataSourceDataPointInfo.getCiPipelineUrl());
 
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();
 
-    PMSPipelineResponseDTO response = NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(
-        pipelineIdentifier, sourceAccountIdentifier, orgIdentifier, projectIdentifier, null, null, false));
+    PMSPipelineResponseDTO responseCI = NGRestUtils.getResponse(
+        pipelineServiceClient.getPipelineByIdentifier(ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY),
+            ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+            ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
+            ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY), null, null, false));
 
-    Map<String, Object> returnData = new HashMap<>();
+    // cd pipeline detail
+    Map<String, String> serviceIdentifiers =
+        DslUtils.getCdServiceUrlIdentifiers(dataSourceDataPointInfo.getServiceUrl());
+    long currentTime = System.currentTimeMillis();
+    DeploymentsInfo serviceDeploymentInfo = NGRestUtils
+                                                .getResponse(dashboardResourceClient.getDeploymentsByServiceId(
+                                                    serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
+                                                    serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
+                                                    serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY),
+                                                    serviceIdentifiers.get(DslConstants.CD_SERVICE_IDENTIFIER_KEY),
+                                                    currentTime - DslConstants.ThirtyDaysInMillis, currentTime))
+                                                .get();
+    String cdPipelineId = null;
+    if (!serviceDeploymentInfo.getDeployments().isEmpty()) {
+      cdPipelineId = serviceDeploymentInfo.getDeployments().get(0).getPipelineIdentifier();
+    }
+
+    PMSPipelineResponseDTO responseCD = NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(
+        cdPipelineId, serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
+        serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
+        serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY), null, null, false));
 
     for (DataPointInputValues dataPointInputValues : dataPointInputValuesList) {
       String dataPointIdentifier = dataPointInputValues.getDataPointIdentifier();
@@ -60,8 +87,8 @@ public class HarnessStoScanDsl implements DslDataProvider {
         String key = dataPointParser.getReplaceKey();
         log.info("replace key : {}, value: [{}]", key, inputValues);
       }
-      returnData.putAll(
-          pipelineInfoFactory.getResponseParser(dataPointIdentifier).getParsedValue(response, dataPointIdentifier));
+      returnData.putAll(pipelineInfoFactory.getResponseParser(dataPointIdentifier)
+                            .getParsedValue(responseCI, responseCD, dataPointIdentifier));
     }
     return returnData;
   }

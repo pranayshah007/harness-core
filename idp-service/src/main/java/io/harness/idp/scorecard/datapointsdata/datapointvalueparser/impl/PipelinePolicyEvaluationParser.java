@@ -6,6 +6,7 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl;
 
+import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineExecutionInfo;
 
 import com.google.gson.Gson;
@@ -15,23 +16,31 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class PipelinePolicyEvaluationParser implements PipelineExecutionInfo {
-  private static final String CONTENT_KEY = "content";
-
   @Override
-  public Map<String, Object> getParsedValue(Object response, String dataPointIdentifier) {
-    String jsonInString = new Gson().toJson(response);
-    JSONObject listOfPipelineExecutions = new JSONObject(jsonInString);
-    JSONArray jsonArray = listOfPipelineExecutions.getJSONArray(CONTENT_KEY);
+  public Map<String, Object> getParsedValue(Object responseCI, Object responseCD, String dataPointIdentifier) {
+    boolean policyEvaluationCI = false;
+    boolean policyEvaluationCD = false;
     Map<String, Object> returnData = new HashMap<>();
 
-    if (jsonArray.length() > 0) {
-      JSONObject latestPipelineExecution = jsonArray.getJSONObject(0);
+    String jsonInStringCI = new Gson().toJson(responseCI);
+    JSONObject listOfCIPipelineExecutions = new JSONObject(jsonInStringCI);
+    JSONArray ciPipelineExecutions = listOfCIPipelineExecutions.getJSONArray(ValueParserConstants.CONTENT_KEY);
+    if (ciPipelineExecutions.length() > 0) {
+      JSONObject latestPipelineExecution = ciPipelineExecutions.getJSONObject(0);
       JSONObject governanceMetadata = (JSONObject) latestPipelineExecution.get("governanceMetadata");
-      returnData.put(dataPointIdentifier, governanceMetadata.get("status").equals("pass"));
-    } else {
-      // no executions hence marking check as false
-      returnData.put(dataPointIdentifier, false);
+      policyEvaluationCI = governanceMetadata.get("status").equals("pass");
     }
+
+    String jsonInStringCD = new Gson().toJson(responseCD);
+    JSONObject listOfCDPipelineExecutions = new JSONObject(jsonInStringCD);
+    JSONArray cdPipelineExecutions = listOfCDPipelineExecutions.getJSONArray(ValueParserConstants.CONTENT_KEY);
+    if (cdPipelineExecutions.length() > 0) {
+      JSONObject latestPipelineExecution = cdPipelineExecutions.getJSONObject(0);
+      JSONObject governanceMetadata = (JSONObject) latestPipelineExecution.get("governanceMetadata");
+      policyEvaluationCD = governanceMetadata.get("status").equals("pass");
+    }
+
+    returnData.put(dataPointIdentifier, policyEvaluationCI && policyEvaluationCD);
     return returnData;
   }
 }
