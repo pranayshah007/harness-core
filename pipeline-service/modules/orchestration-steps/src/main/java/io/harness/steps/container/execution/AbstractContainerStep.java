@@ -1,7 +1,8 @@
 /*
  * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
+ * that can be found in the licenses directory at the root of this repository,
+ * also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
@@ -31,6 +32,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
+import io.harness.steps.container.utils.ContainerSpecUtils;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepSpec;
 import io.harness.tasks.BinaryResponseData;
@@ -50,7 +52,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<StepElementParameters> {
-  @Inject private ContainerStepCleanupHelper containerStepCleanupHelper;
   @Inject private ContainerRunStepHelper containerRunStepHelper;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
@@ -83,7 +84,9 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
         - (System.currentTimeMillis() - startTs);
     timeout = Math.max(timeout, 100);
     log.info("Timeout for container step left {}", timeout);
-    String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId);
+
+    String parkedTaskId = taskExecutor.queueParkedDelegateTask(
+        ambiance, timeout, accountId, ContainerSpecUtils.getDelegateSelectors(containerStepInfo));
     TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
         AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeout, parkedTaskId);
     String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId);
@@ -119,10 +122,10 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
     if (response instanceof K8sTaskExecutionResponse
         && (((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
             || ((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED)) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
     if (response instanceof ErrorNotifyResponseData) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
   }
 
@@ -141,7 +144,7 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
     LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STEP");
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
-  private void abortTasks(List<String> allCallbackIds, String callbackId, Ambiance ambiance) {
+  private void abortTasks(List<String> allCallbackIds, String callbackId) {
     List<String> callBackIds =
         allCallbackIds.stream().filter(cid -> !cid.equals(callbackId)).collect(Collectors.toList());
     callBackIds.forEach(callbackId1
