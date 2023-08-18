@@ -24,6 +24,7 @@ public class EntityInfo {
   String workloadName;
   String workloadType;
   String service;
+  String serviceName;
   String gcpProjectId;
   String gcpProduct;
   String gcpSKUId;

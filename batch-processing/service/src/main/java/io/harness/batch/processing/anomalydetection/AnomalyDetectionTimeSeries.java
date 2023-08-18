@@ -8,8 +8,12 @@
 package io.harness.batch.processing.anomalydetection;
 
 import io.harness.batch.processing.anomalydetection.helpers.AnomalyDetectionHelper;
+import io.harness.batch.processing.tasklet.support.HarnessEntitiesService;
 import io.harness.ccm.anomaly.entities.Anomaly;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.inject.Singleton;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -18,12 +22,17 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @Slf4j
+@Singleton
 public class AnomalyDetectionTimeSeries extends Anomaly {
+  @Autowired private HarnessEntitiesService harnessEntitiesService;
+  public static final long CACHE_SIZE = 10000;
+
   public static AnomalyDetectionTimeSeries initialiseNewTimeSeries(TimeSeriesMetaData timeSeriesMetaData) {
     AnomalyDetectionTimeSeries timeSeries = AnomalyDetectionTimeSeries.builder()
                                                 .accountId(timeSeriesMetaData.getAccountId())
@@ -32,6 +41,24 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
     timeSeries.initialiseTrainData(
         timeSeriesMetaData.getTrainStart(), timeSeriesMetaData.getTrainEnd(), ChronoUnit.DAYS);
     timeSeries.initialiseTestData(timeSeriesMetaData.getTestStart(), timeSeriesMetaData.getTestEnd(), ChronoUnit.DAYS);
+    return timeSeries;
+  }
+
+  public AnomalyDetectionTimeSeries initialiseServiceName(AnomalyDetectionTimeSeries timeSeries) {
+    LoadingCache<HarnessEntitiesService.CacheKey, String> entityIdToNameCache =
+        Caffeine.newBuilder()
+            .maximumSize(CACHE_SIZE)
+            .build(key -> harnessEntitiesService.fetchEntityName(key.getEntity(), key.getEntityId()));
+
+    if (timeSeries.getService() != null) {
+      timeSeries.setServiceName((entityIdToNameCache.get(new HarnessEntitiesService.CacheKey(
+                                     timeSeries.getService(), HarnessEntitiesService.HarnessEntities.SERVICE)))
+                                    .toString());
+    }
+
+    else {
+      timeSeries.setServiceName(null);
+    }
     return timeSeries;
   }
 

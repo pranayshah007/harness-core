@@ -286,6 +286,7 @@ public class SlackMessageGenerator {
         .workloadType(anomaly.getEntity().getWorkloadType())
         .namespace(anomaly.getEntity().getNamespace())
         .service(anomaly.getEntity().getService())
+        .serviceName(anomaly.getEntity().getServiceName())
         .actualCost(anomaly.getActualAmount())
         .expectedCost(anomaly.getExpectedAmount())
         .build();

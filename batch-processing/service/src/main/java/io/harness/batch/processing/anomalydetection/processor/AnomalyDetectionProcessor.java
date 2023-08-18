@@ -72,6 +72,7 @@ public class AnomalyDetectionProcessor
   @Override
   public Anomaly process(AnomalyDetectionTimeSeries timeSeries) throws Exception {
     Anomaly returnAnomaly;
+    timeSeries = timeSeries.initialiseServiceName(timeSeries);
     try (AutoLogContext ignore = new AnomalyDetectionLogContext(timeSeries.getId(), OVERRIDE_ERROR)) {
       AnomalyDetectionHelper.logProcessingTimeSeries("Stats Model");
       returnAnomaly = statsModel.detectAnomaly(timeSeries);

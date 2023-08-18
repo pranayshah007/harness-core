@@ -133,6 +133,15 @@ public class Anomalies extends TableImpl<AnomaliesRecord> {
 
    * The column <code>public.anomalies.region</code>.
    */
+
+  public final TableField<AnomaliesRecord, String> SERVICENAME =
+      createField(DSL.name("servicename"), SQLDataType.CLOB, this, "");
+
+  /**
+
+   * The column <code>public.anomalies.region</code>.
+   */
+
   public final TableField<AnomaliesRecord, String> REGION = createField(DSL.name("region"), SQLDataType.CLOB, this, "");
 
   /**

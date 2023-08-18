@@ -33,6 +33,7 @@ public class Anomalies implements Serializable {
   private String workloadtype;
   private String namespace;
   private String service;
+  private String servicename;
   private String region;
   private String gcpproduct;
   private String gcpskuid;
@@ -69,6 +70,7 @@ public class Anomalies implements Serializable {
     this.workloadtype = value.workloadtype;
     this.namespace = value.namespace;
     this.service = value.service;
+    this.servicename = value.servicename;
     this.region = value.region;
     this.gcpproduct = value.gcpproduct;
     this.gcpskuid = value.gcpskuid;
@@ -92,11 +94,11 @@ public class Anomalies implements Serializable {
 
   public Anomalies(String id, String accountid, Double actualcost, Double expectedcost, OffsetDateTime anomalytime,
       String timegranularity, String note, String clusterid, String clustername, String workloadname,
-      String workloadtype, String namespace, String service, String region, String gcpproduct, String gcpskuid,
-      String gcpskudescription, String gcpproject, String awsservice, String awsaccount, String awsinstancetype,
-      String awsusagetype, Double anomalyscore, String reportedby, String feedback, Boolean slackdailynotification,
-      Boolean slackinstantnotification, Boolean slackweeklynotification, Boolean newentity,
-      String azuresubscriptionguid, String azureresourcegroup, String azuremetercategory) {
+      String workloadtype, String namespace, String service, String servicename, String region, String gcpproduct,
+      String gcpskuid, String gcpskudescription, String gcpproject, String awsservice, String awsaccount,
+      String awsinstancetype, String awsusagetype, Double anomalyscore, String reportedby, String feedback,
+      Boolean slackdailynotification, Boolean slackinstantnotification, Boolean slackweeklynotification,
+      Boolean newentity, String azuresubscriptionguid, String azureresourcegroup, String azuremetercategory) {
     this.id = id;
     this.accountid = accountid;
     this.actualcost = actualcost;
@@ -110,6 +112,7 @@ public class Anomalies implements Serializable {
     this.workloadtype = workloadtype;
     this.namespace = namespace;
     this.service = service;
+    this.servicename = servicename;
     this.region = region;
     this.gcpproduct = gcpproduct;
     this.gcpskuid = gcpskuid;
@@ -323,6 +326,21 @@ public class Anomalies implements Serializable {
    */
   public Anomalies setService(String service) {
     this.service = service;
+    return this;
+  }
+
+  /**
+   * Getter for <code>public.anomalies.service</code>.
+   */
+  public String getServicename() {
+    return this.servicename;
+  }
+
+  /**
+   * Setter for <code>public.anomalies.service</code>.
+   */
+  public Anomalies setServicename(String servicename) {
+    this.servicename = servicename;
     return this;
   }
 
@@ -685,6 +703,11 @@ public class Anomalies implements Serializable {
         return false;
     } else if (!service.equals(other.service))
       return false;
+    if (servicename == null) {
+      if (other.servicename != null)
+        return false;
+    } else if (!servicename.equals(other.servicename))
+      return false;
     if (region == null) {
       if (other.region != null)
         return false;
@@ -800,6 +823,7 @@ public class Anomalies implements Serializable {
     result = prime * result + ((this.workloadtype == null) ? 0 : this.workloadtype.hashCode());
     result = prime * result + ((this.namespace == null) ? 0 : this.namespace.hashCode());
     result = prime * result + ((this.service == null) ? 0 : this.service.hashCode());
+    result = prime * result + ((this.servicename == null) ? 0 : this.servicename.hashCode());
     result = prime * result + ((this.region == null) ? 0 : this.region.hashCode());
     result = prime * result + ((this.gcpproduct == null) ? 0 : this.gcpproduct.hashCode());
     result = prime * result + ((this.gcpskuid == null) ? 0 : this.gcpskuid.hashCode());
@@ -839,6 +863,7 @@ public class Anomalies implements Serializable {
     sb.append(", ").append(workloadtype);
     sb.append(", ").append(namespace);
     sb.append(", ").append(service);
+    sb.append(", ").append(servicename);
     sb.append(", ").append(region);
     sb.append(", ").append(gcpproduct);
     sb.append(", ").append(gcpskuid);
