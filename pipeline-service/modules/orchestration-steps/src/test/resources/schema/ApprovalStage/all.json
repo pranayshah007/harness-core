@@ -3729,7 +3729,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -5789,7 +5789,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -7704,7 +7704,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
