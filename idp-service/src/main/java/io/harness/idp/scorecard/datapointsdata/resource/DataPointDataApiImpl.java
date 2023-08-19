@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @com.google.inject.Inject }))
-//@NextGenManagerAuth
+@NextGenManagerAuth
 @Slf4j
 public class DataPointDataApiImpl implements DataPointsDataApi {
   DataPointDataValueService dataPointDataValueService;
