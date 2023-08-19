@@ -72,7 +72,7 @@ public class HarnessTestPassingInCi implements DslDataProvider {
           e);
     }
 
-    String buildNo = DslDataProviderUtil.getRunSequenceForPipelineExecution(responseCI);
+    int buildNo = DslDataProviderUtil.getRunSequenceForPipelineExecution(responseCI);
 
     String token = null;
     try {

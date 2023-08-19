@@ -22,6 +22,6 @@ public interface TIServiceClient {
   @GET(CICommonEndpointConstants.TI_SERVICE_REPORT_SUMMARY_ENDPOINT)
   Call<JsonObject> getSummaryReport(@Header("Authorization") String token, @Query("accountId") String accountId,
       @Query("orgId") String orgId, @Query("projectId") String projectId, @Query("pipelineId") String pipelineId,
-      @Query("buildId") String buildId, @Query("report") String report, @Query("stageId") String stageId,
+      @Query("buildId") int buildId, @Query("report") String report, @Query("stageId") String stageId,
       @Query("stepId") String stepId);
 }

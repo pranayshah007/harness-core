@@ -14,7 +14,6 @@ import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.ng.beans.PageResponse;
