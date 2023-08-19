@@ -12,6 +12,8 @@ import io.harness.batch.processing.tasklet.ClusterDataToBigQueryTasklet;
 import io.harness.batch.processing.tasklet.support.HarnessEntitiesService;
 import io.harness.ccm.anomaly.entities.Anomaly;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.inject.Singleton;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -45,13 +47,20 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
 
   public AnomalyDetectionTimeSeries initialiseServiceName(AnomalyDetectionTimeSeries timeSeries) {
     log.info("Yes It  reached  here for service name");
+
+    final long CACHE_SIZE = 10000;
+
+    LoadingCache<HarnessEntitiesService.CacheKey, String> entityIdToNameCache =
+        Caffeine.newBuilder()
+            .maximumSize(CACHE_SIZE)
+            .build(key -> harnessEntitiesService.fetchEntityName(key.getEntity(), key.getEntityId()));
+
     if (timeSeries.getService() != null) {
       log.info("Yes It  reached inside if loop for service name");
 
-      timeSeries.setServiceName(
-          (clusterDataToBigQueryTasklet.entityIdToNameCache.get(new HarnessEntitiesService.CacheKey(
-               timeSeries.getService(), HarnessEntitiesService.HarnessEntities.SERVICE)))
-              .toString());
+      timeSeries.setServiceName((entityIdToNameCache.get(new HarnessEntitiesService.CacheKey(
+                                     timeSeries.getService(), HarnessEntitiesService.HarnessEntities.SERVICE)))
+                                    .toString());
     }
 
     else {

@@ -89,7 +89,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
   private static final String gcsObjectNameFormat = "%s/%s";
   public static final long CACHE_SIZE = 10000;
 
-  public LoadingCache<HarnessEntitiesService.CacheKey, String> entityIdToNameCache =
+  LoadingCache<HarnessEntitiesService.CacheKey, String> entityIdToNameCache =
       Caffeine.newBuilder()
           .maximumSize(CACHE_SIZE)
           .build(key -> harnessEntitiesService.fetchEntityName(key.getEntity(), key.getEntityId()));
@@ -422,8 +422,12 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     }
 
     if (instanceBillingData.getServiceId() != null) {
+      log.info("Service Id : {}", instanceBillingData.getServiceId());
       clusterBillingData.setServicename(entityIdToNameCache.get(
           new HarnessEntitiesService.CacheKey(instanceBillingData.getServiceId(), HarnessEntities.SERVICE)));
+
+      log.info("Service Name : {}", (clusterBillingData.getServicename()).toString());
+
     } else {
       clusterBillingData.setServicename(null);
     }
