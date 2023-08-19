@@ -6,22 +6,23 @@
  */
 package io.harness.pipeline.dashboards;
 
-import com.google.inject.Provider;
 import io.harness.remote.client.AbstractHttpClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
 
-public class PMSDashboardResourceClientFactory extends AbstractHttpClientFactory implements Provider<PMSDashboardResourceClient> {
+import com.google.inject.Provider;
 
-    public PMSDashboardResourceClientFactory(ServiceHttpClientConfig config, String serviceSecret,
-                                                    ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId) {
-        super(config, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false, ClientMode.PRIVILEGED);
-    }
+public class PMSDashboardResourceClientFactory
+    extends AbstractHttpClientFactory implements Provider<PMSDashboardResourceClient> {
+  public PMSDashboardResourceClientFactory(ServiceHttpClientConfig config, String serviceSecret,
+      ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId) {
+    super(config, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false, ClientMode.PRIVILEGED);
+  }
 
-    @Override
-    public PMSDashboardResourceClient get() {
-        return getRetrofit().create(PMSDashboardResourceClient.class);
-    }
+  @Override
+  public PMSDashboardResourceClient get() {
+    return getRetrofit().create(PMSDashboardResourceClient.class);
+  }
 }

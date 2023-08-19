@@ -6,19 +6,21 @@
  */
 package io.harness.dashboard;
 
-
 import io.harness.ng.core.dashboard.DeploymentsInfo;
 import io.harness.ng.core.dto.ResponseDTO;
+
+import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
-import javax.validation.constraints.NotEmpty;
-import java.util.Optional;
-
 public interface DashboardResourceClient {
-    String DASHBOARD_API = "dashboard";
+  String DASHBOARD_API = "dashboard";
 
-    @GET(DASHBOARD_API+"/getDeploymentsByServiceId")
-    Call<ResponseDTO<Optional<DeploymentsInfo>>> getDeploymentsByServiceId(@NotEmpty @Query("accountIdentifier") String accountIdentifier, @Query("orgIdentifier") String orgIdentifier, @Query("projectIdentifier") String projectIdentifier, @Query("serviceId") String serviceId,@Query("startTime") long startInterval, @Query("endTime") long endInterval);
+  @GET(DASHBOARD_API + "/getDeploymentsByServiceId")
+  Call<ResponseDTO<Optional<DeploymentsInfo>>> getDeploymentsByServiceId(
+      @NotEmpty @Query("accountIdentifier") String accountIdentifier, @Query("orgIdentifier") String orgIdentifier,
+      @Query("projectIdentifier") String projectIdentifier, @Query("serviceId") String serviceId,
+      @Query("startTime") long startInterval, @Query("endTime") long endInterval);
 }

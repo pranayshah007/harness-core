@@ -6,49 +6,50 @@
  */
 package io.harness.dashboard;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
 
-public class DashboardResourceClientModule extends AbstractModule{
-    private final ServiceHttpClientConfig ngManagerClientConfig;
-    private final String serviceSecret;
-    private final String clientId;
-    private final ClientMode clientMode;
+import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Provides;
+import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
-    @Inject
-    public DashboardResourceClientModule(
-            ServiceHttpClientConfig ngManagerClientConfig, String serviceSecret, String clientId, ClientMode clientMode) {
-        this.ngManagerClientConfig = ngManagerClientConfig;
-        this.serviceSecret = serviceSecret;
-        this.clientId = clientId;
-        this.clientMode = clientMode;
-    }
+public class DashboardResourceClientModule extends AbstractModule {
+  private final ServiceHttpClientConfig ngManagerClientConfig;
+  private final String serviceSecret;
+  private final String clientId;
+  private final ClientMode clientMode;
 
-    @Inject
-    public DashboardResourceClientModule(
-            ServiceHttpClientConfig ngManagerClientConfig, String serviceSecret, String clientId) {
-        this.ngManagerClientConfig = ngManagerClientConfig;
-        this.serviceSecret = serviceSecret;
-        this.clientId = clientId;
-        this.clientMode = ClientMode.NON_PRIVILEGED;
-    }
+  @Inject
+  public DashboardResourceClientModule(
+      ServiceHttpClientConfig ngManagerClientConfig, String serviceSecret, String clientId, ClientMode clientMode) {
+    this.ngManagerClientConfig = ngManagerClientConfig;
+    this.serviceSecret = serviceSecret;
+    this.clientId = clientId;
+    this.clientMode = clientMode;
+  }
 
-    @Provides
-    @Singleton
-    private DashboardResourceHttpClientFactory providesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
-        return new DashboardResourceHttpClientFactory(this.ngManagerClientConfig, this.serviceSecret,
-                new ServiceTokenGenerator(), kryoConverterFactory, clientId, clientMode);
-    }
+  @Inject
+  public DashboardResourceClientModule(
+      ServiceHttpClientConfig ngManagerClientConfig, String serviceSecret, String clientId) {
+    this.ngManagerClientConfig = ngManagerClientConfig;
+    this.serviceSecret = serviceSecret;
+    this.clientId = clientId;
+    this.clientMode = ClientMode.NON_PRIVILEGED;
+  }
 
-    @Override
-    protected void configure() {
-        this.bind(DashboardResourceClient.class).toProvider(DashboardResourceHttpClientFactory.class).in(Scopes.SINGLETON);
-    }
+  @Provides
+  @Singleton
+  private DashboardResourceHttpClientFactory providesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
+    return new DashboardResourceHttpClientFactory(this.ngManagerClientConfig, this.serviceSecret,
+        new ServiceTokenGenerator(), kryoConverterFactory, clientId, clientMode);
+  }
+
+  @Override
+  protected void configure() {
+    this.bind(DashboardResourceClient.class).toProvider(DashboardResourceHttpClientFactory.class).in(Scopes.SINGLETON);
+  }
 }

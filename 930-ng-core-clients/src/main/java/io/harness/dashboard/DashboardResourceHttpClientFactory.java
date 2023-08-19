@@ -6,32 +6,32 @@
  */
 package io.harness.dashboard;
 
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
 import io.harness.remote.client.AbstractHttpClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
+
+import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
-
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Singleton
 @Slf4j
-public class DashboardResourceHttpClientFactory extends AbstractHttpClientFactory implements Provider<DashboardResourceClient> {
+public class DashboardResourceHttpClientFactory
+    extends AbstractHttpClientFactory implements Provider<DashboardResourceClient> {
+  public DashboardResourceHttpClientFactory(ServiceHttpClientConfig ngManagerConfig, String serviceSecret,
+      ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId,
+      ClientMode clientMode) {
+    super(ngManagerConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false, clientMode);
+    log.info("secretManagerConfig {}", ngManagerConfig);
+  }
 
-    public DashboardResourceHttpClientFactory(ServiceHttpClientConfig ngManagerConfig, String serviceSecret,
-                                              ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId,
-                                              ClientMode clientMode) {
-        super(ngManagerConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false, clientMode);
-        log.info("secretManagerConfig {}", ngManagerConfig);
-    }
-
-    @Override
-    public DashboardResourceClient get() {
-        return getRetrofit().create(DashboardResourceClient.class);
-    }
+  @Override
+  public DashboardResourceClient get() {
+    return getRetrofit().create(DashboardResourceClient.class);
+  }
 }
