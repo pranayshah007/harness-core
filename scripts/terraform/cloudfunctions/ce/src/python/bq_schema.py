@@ -266,7 +266,32 @@ unifiedTableTableSchema = [
         {"name": "costCategoryName","type": "STRING"},
         {"name": "costBucketName","type": "STRING"}
     ], "mode": "REPEATED", "name": "costCategory", "type": "RECORD"
-    }
+    },
+    {"fields": [{"name": "name", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "amount", "mode": "NULLABLE", "type": "FLOAT64"},
+                {"name": "full_name", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "id", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "type", "mode": "NULLABLE", "type": "STRING"}
+                ], "mode": "REPEATED", "name": "gcpCredits", "type": "RECORD"},
+    {'mode': 'NULLABLE', 'name': 'gcpCostAtList', 'type': 'FLOAT64'},
+    {'mode': 'NULLABLE', 'name': 'gcpProjectNumber', 'type': 'STRING'},
+    {'mode': 'NULLABLE', 'name': 'gcpProjectName', 'type': 'STRING'},
+    {"fields": [{"mode": "NULLABLE", "name": "global_name", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "name", "type": "STRING"}
+                ], "mode": "NULLABLE", "name": "gcpResource", "type": "RECORD"},
+    {"fields": [{"mode": "NULLABLE", "name": "tier_start_amount", "type": "NUMERIC"},
+                {"mode": "NULLABLE", "name": "effective_price", "type": "NUMERIC"},
+                {"mode": "NULLABLE", "name": "unit", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "pricing_unit_quantity", "type": "NUMERIC"}
+                ], "mode": "NULLABLE", "name": "gcpPrice", "type": "RECORD"},
+    {"fields": [{"mode": "NULLABLE", "name": "amount", "type": "FLOAT64"},
+                {"mode": "NULLABLE", "name": "pricing_unit", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "unit", "type": "STRING"},
+                {"mode": "NULLABLE", "name": "amount_in_pricing_unit", "type": "FLOAT64"}
+                ], "mode": "NULLABLE", "name": "gcpUsage", "type": "RECORD"},
+    {"fields": [{"name": "key", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "valye", "mode": "NULLABLE", "type": "STRING"},
+                ], "mode": "REPEATED", "name": "gcpSystemLabels", "type": "RECORD"}
 ]
 
 currencyConversionFactorUserInputTableTableSchema = [
@@ -491,76 +516,388 @@ costAggregatedSchema = [{'mode': 'REQUIRED', 'name': 'accountId', 'type': 'STRIN
                         {'mode': 'REQUIRED', 'name': 'cost', 'type': 'FLOAT'},
                         {'mode': 'REQUIRED', 'name': 'day', 'type': 'TIMESTAMP'}
                         ]
-gcp_cost_export_table_schema = [
-    {"mode": "NULLABLE", "name": "fxRateSrcToDest", "type": "FLOAT64"},
-    {"mode": "NULLABLE", "name": "ccmPreferredCurrency", "type": "STRING"},
-    {"mode": "NULLABLE", "name": "billing_account_id", "type": "STRING"},
-    {"mode": "NULLABLE", "name": "usage_start_time", "type": "TIMESTAMP"},
-    {"mode": "NULLABLE", "name": "usage_end_time", "type": "TIMESTAMP"},
-    {"mode": "NULLABLE", "name": "export_time", "type": "TIMESTAMP"},
-    {"mode": "NULLABLE", "name": "cost", "type": "FLOAT64"},
-    {"mode": "NULLABLE", "name": "currency", "type": "STRING"},
-    {"mode": "NULLABLE", "name": "currency_conversion_rate", "type": "FLOAT64"},
-    {"mode": "NULLABLE", "name": "cost_type", "type": "STRING"},
-    {"fields": [{"mode": "NULLABLE", "name": "month", "type": "STRING"}
-                ], "mode": "NULLABLE", "name": "invoice", "type": "RECORD"},
-    {"fields": [{"mode": "NULLABLE", "name": "id", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "description", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "mode", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "type", "type": "STRING"}
-                ], "mode": "NULLABLE", "name": "adjustment_info", "type": "RECORD"},
-    {"fields": [{"mode": "NULLABLE", "name": "amount", "type": "FLOAT64"},
-                {"mode": "NULLABLE", "name": "unit", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "amount_in_pricing_units", "type": "FLOAT64"},
-                {"mode": "NULLABLE", "name": "pricing_unit", "type": "STRING"}
-                ], "mode": "NULLABLE", "name": "usage", "type": "RECORD"},
-    {"fields": [{"mode": "NULLABLE", "name": "id", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "description", "type": "STRING"}
-                ], "mode": "NULLABLE", "name": "service", "type": "RECORD"},
-    {"fields": [{"mode": "NULLABLE", "name": "id", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "description", "type": "STRING"}
-                ], "mode": "NULLABLE", "name": "sku", "type": "RECORD"},
-    {"fields": [{"mode": "NULLABLE", "name": "name", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "global_name", "type": "STRING"}
-                ], "mode": "NULLABLE", "name": "resource", "type": "RECORD"},
-    {"fields": [{"mode": "NULLABLE", "name": "location", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "country", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "region", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "zone", "type": "STRING"}
-                ], "mode": "NULLABLE", "name": "location", "type": "RECORD"},
-    {"fields": [{"mode": "NULLABLE", "name": "id", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "number", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "name", "type": "STRING"},
-                {"fields": [
-                    {"name": "key", "mode": "NULLABLE", "type": "STRING"},
-                    {"name": "value", "mode": "NULLABLE", "type": "STRING"
-                     }
-                ], "mode": "REPEATED", "name": "labels", "type": "RECORD"},
-                {"mode": "NULLABLE", "name": "ancestry_numbers", "type": "STRING"},
-                {"fields": [
-                    {"name": "resource_name", "mode": "NULLABLE", "type": "STRING"},
-                    {"name": "display_name", "mode": "NULLABLE", "type": "STRING"
-                     }
-                ], "mode": "REPEATED", "name": "ancestors", "type": "RECORD"}
-                ], "mode": "NULLABLE", "name": "project", "type": "RECORD"},
-    {"fields": [{"name": "key", "mode": "NULLABLE", "type": "STRING"},
-                {"name": "value", "mode": "NULLABLE", "type": "STRING"}
-                ], "mode": "REPEATED", "name": "labels", "type": "RECORD"},
-    {"fields": [{"name": "key", "mode": "NULLABLE", "type": "STRING"},
-                {"name": "value", "mode": "NULLABLE", "type": "STRING"}
-                ], "mode": "REPEATED", "name": "system_labels", "type": "RECORD"},
-    {"fields": [{"name": "key", "mode": "NULLABLE", "type": "STRING"},
-                {"name": "value", "mode": "NULLABLE", "type": "STRING"},
-                {"name": "inherited", "mode": "NULLABLE", "type": "BOOL"},
-                {"name": "namespace", "mode": "NULLABLE", "type": "STRING"}
-                ], "mode": "REPEATED", "name": "tags", "type": "RECORD"},
-    {"fields": [{"name": "name", "mode": "NULLABLE", "type": "STRING"},
-                {"name": "amount", "mode": "NULLABLE", "type": "FLOAT64"},
-                {"name": "full_name", "mode": "NULLABLE", "type": "STRING"},
-                {"name": "id", "mode": "NULLABLE", "type": "STRING"},
-                {"name": "type", "mode": "NULLABLE", "type": "STRING"}
-                ], "mode": "REPEATED", "name": "credits", "type": "RECORD"}
-]
+
+gcp_cost_export_table_schema = [{
+        "mode": "NULLABLE",
+        "name": "fxRateSrcToDest",
+        "type": "FLOAT64"
+        },
+        {
+            "mode": "NULLABLE",
+            "name": "ccmPreferredCurrency",
+            "type": "STRING"
+        },
+        {
+            "name": "billing_account_id",
+            "type": "STRING",
+            "mode": "NULLABLE"
+        },
+        {
+            "name": "service",
+            "type": "RECORD",
+            "mode": "NULLABLE",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "description",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "sku",
+            "type": "RECORD",
+            "mode": "NULLABLE",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "description",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "usage_start_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+        },
+        {
+            "name": "usage_end_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+        },
+        {
+            "name": "project",
+            "type": "RECORD",
+            "mode": "NULLABLE",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "number",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "name",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "labels",
+                    "type": "RECORD",
+                    "mode": "REPEATED",
+                    "fields": [
+                        {
+                            "name": "key",
+                            "type": "STRING",
+                            "mode": "NULLABLE"
+                        },
+                        {
+                            "name": "value",
+                            "type": "STRING",
+                            "mode": "NULLABLE"
+                        }
+                    ]
+                },
+                {
+                    "name": "ancestry_numbers",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "ancestors",
+                    "type": "RECORD",
+                    "mode": "REPEATED",
+                    "fields": [
+                        {
+                            "name": "resource_name",
+                            "type": "STRING",
+                            "mode": "NULLABLE"
+                        },
+                        {
+                            "name": "display_name",
+                            "type": "STRING",
+                            "mode": "NULLABLE"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "labels",
+            "type": "RECORD",
+            "mode": "REPEATED",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "value",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "system_labels",
+            "type": "RECORD",
+            "mode": "REPEATED",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "value",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "location",
+            "type": "RECORD",
+            "mode": "NULLABLE",
+            "fields": [
+                {
+                    "name": "location",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "country",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "region",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "zone",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "resource",
+            "type": "RECORD",
+            "mode": "NULLABLE",
+            "fields": [
+                {
+                    "name": "name",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "global_name",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "export_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+        },
+        {
+            "name": "cost",
+            "type": "FLOAT",
+            "mode": "NULLABLE"
+        },
+        {
+            "name": "currency",
+            "type": "STRING",
+            "mode": "NULLABLE"
+        },
+        {
+            "name": "currency_conversion_rate",
+            "type": "FLOAT",
+            "mode": "NULLABLE"
+        },
+        {
+            "name": "usage",
+            "type": "RECORD",
+            "mode": "NULLABLE",
+            "fields": [
+                {
+                    "name": "amount",
+                    "type": "FLOAT",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "unit",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "amount_in_pricing_units",
+                    "type": "FLOAT",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "pricing_unit",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "credits",
+            "type": "RECORD",
+            "mode": "REPEATED",
+            "fields": [
+                {
+                    "name": "name",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "amount",
+                    "type": "FLOAT",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "full_name",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "id",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "type",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "invoice",
+            "type": "RECORD",
+            "mode": "NULLABLE",
+            "fields": [
+                {
+                    "name": "month",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "cost_type",
+            "type": "STRING",
+            "mode": "NULLABLE"
+        },
+        {
+            "name": "adjustment_info",
+            "type": "RECORD",
+            "mode": "NULLABLE",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "description",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "mode",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "type",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "tags",
+            "type": "RECORD",
+            "mode": "REPEATED",
+            "fields": [
+                {
+                    "name": "key",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "value",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "inherited",
+                    "type": "BOOLEAN",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "namespace",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "price",
+            "type": "RECORD",
+            "mode": "NULLABLE",
+            "fields": [
+                {
+                    "name": "effective_price",
+                    "type": "NUMERIC",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "tier_start_amount",
+                    "type": "NUMERIC",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "unit",
+                    "type": "STRING",
+                    "mode": "NULLABLE"
+                },
+                {
+                    "name": "pricing_unit_quantity",
+                    "type": "NUMERIC",
+                    "mode": "NULLABLE"
+                }
+            ]
+        },
+        {
+            "name": "cost_at_list",
+            "type": "FLOAT",
+            "mode": "NULLABLE"
+        }
+    ]
 
 gcpInstanceInventorySchema = [
     {"mode": "REQUIRED", "name": "instanceId", "type": "STRING"},

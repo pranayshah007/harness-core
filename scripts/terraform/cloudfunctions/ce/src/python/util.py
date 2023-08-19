@@ -289,6 +289,7 @@ def createTable(client, table_ref):
         return False
     table = bigquery.Table("%s.%s.%s" % (table_ref.project, table_ref.dataset_id, tableName), schema=schema)
 
+    # Finalize the partitioning method per table
     if tableName in [UNIFIED, CURRENCYCONVERSIONFACTORUSERINPUT, PREAGGREGATED, AWSEC2INVENTORYMETRIC, AWSEBSINVENTORYMETRICS, COSTAGGREGATED, AZUREVMINVENTORYMETRIC] or \
             tableName.startswith(GCPINSTANCEINVENTORY) or tableName.startswith(GCPDISKINVENTORY) or \
             tableName.startswith(AWSCURPREFIX) or tableName.startswith(AZUREVMINVENTORY) or \
@@ -299,6 +300,7 @@ def createTable(client, table_ref):
         table.range_partitioning = partition
     elif clustering_fields:
         table.clustering_fields = clustering_fields
+
     try:
         if tableName == LABELKEYSTOCOLUMNMAPPING and table.dataset_id.split('BillingReport_')[-1] \
                 not in [flattening_enabled_account_id.replace('-','_').lower()
