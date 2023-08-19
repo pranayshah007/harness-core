@@ -215,5 +215,6 @@ pipelineServiceClientConfig:
   readTimeOutSeconds: 15
 
 tiServiceConfig:
+  internalUrl: ""
   baseUrl: http://localhost:8078
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
