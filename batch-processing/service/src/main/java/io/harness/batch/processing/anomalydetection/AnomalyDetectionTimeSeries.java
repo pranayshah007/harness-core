@@ -8,11 +8,10 @@
 package io.harness.batch.processing.anomalydetection;
 
 import io.harness.batch.processing.anomalydetection.helpers.AnomalyDetectionHelper;
+import io.harness.batch.processing.tasklet.ClusterDataToBigQueryTasklet;
 import io.harness.batch.processing.tasklet.support.HarnessEntitiesService;
 import io.harness.ccm.anomaly.entities.Anomaly;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.inject.Singleton;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -31,7 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Singleton
 public class AnomalyDetectionTimeSeries extends Anomaly {
   @Autowired private HarnessEntitiesService harnessEntitiesService;
-  public static final long CACHE_SIZE = 10000;
+  @Autowired private ClusterDataToBigQueryTasklet clusterDataToBigQueryTasklet;
 
   public static AnomalyDetectionTimeSeries initialiseNewTimeSeries(TimeSeriesMetaData timeSeriesMetaData) {
     AnomalyDetectionTimeSeries timeSeries = AnomalyDetectionTimeSeries.builder()
@@ -45,15 +44,14 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
   }
 
   public AnomalyDetectionTimeSeries initialiseServiceName(AnomalyDetectionTimeSeries timeSeries) {
-    LoadingCache<HarnessEntitiesService.CacheKey, String> entityIdToNameCache =
-        Caffeine.newBuilder()
-            .maximumSize(CACHE_SIZE)
-            .build(key -> harnessEntitiesService.fetchEntityName(key.getEntity(), key.getEntityId()));
-
+    log.info("Yes It  reached  here for service name");
     if (timeSeries.getService() != null) {
-      timeSeries.setServiceName((entityIdToNameCache.get(new HarnessEntitiesService.CacheKey(
-                                     timeSeries.getService(), HarnessEntitiesService.HarnessEntities.SERVICE)))
-                                    .toString());
+      log.info("Yes It  reached inside if loop for service name");
+
+      timeSeries.setServiceName(
+          (clusterDataToBigQueryTasklet.entityIdToNameCache.get(new HarnessEntitiesService.CacheKey(
+               timeSeries.getService(), HarnessEntitiesService.HarnessEntities.SERVICE)))
+              .toString());
     }
 
     else {

@@ -89,7 +89,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
   private static final String gcsObjectNameFormat = "%s/%s";
   public static final long CACHE_SIZE = 10000;
 
-  LoadingCache<HarnessEntitiesService.CacheKey, String> entityIdToNameCache =
+  public LoadingCache<HarnessEntitiesService.CacheKey, String> entityIdToNameCache =
       Caffeine.newBuilder()
           .maximumSize(CACHE_SIZE)
           .build(key -> harnessEntitiesService.fetchEntityName(key.getEntity(), key.getEntityId()));
