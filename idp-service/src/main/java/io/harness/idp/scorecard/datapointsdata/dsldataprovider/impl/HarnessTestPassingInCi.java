@@ -47,19 +47,38 @@ public class HarnessTestPassingInCi implements DslDataProvider {
 
     Map<String, String> ciIdentifiers =
         DslUtils.getCiPipelineUrlIdentifiers(dataSourceDataPointInfo.getCiPipelineUrl());
+    Object responseCI = null;
 
-    Object responseCI = NGRestUtils.getResponse(
-        pipelineServiceClient.getListOfExecutions(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY), null,
-            ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY), 0, 5, null, null, null, null, null, false));
+    try {
+      responseCI = NGRestUtils.getResponse(
+          pipelineServiceClient.getListOfExecutions(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY), null,
+              ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY), 0, 5, null, null, null, null, false));
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Error in getting the ci pipeline info of test passing on ci check in account - %s, org - %s, project - %s, and pipeline - %s",
+              ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
+          e);
+    }
 
     String buildNo = DslDataProviderUtil.getRunSequenceForPipelineExecution(responseCI);
 
-    String token =
-        tiServiceUtils.getTIServiceToken(ciIdentifiers.get(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY)));
-    String accessToken = "ApiKey " + token;
+    String token = null;
+    try {
+      token = tiServiceUtils.getTIServiceToken(
+          ciIdentifiers.get(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY)));
+    } catch (Exception e) {
+      log.error(String.format("Error in getting the token for ti-service in account - %s",
+                    ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY)),
+          e);
+    }
 
+    String accessToken = "ApiKey " + token;
     Call<JsonObject> summaryReportCall =
         tiServiceClient.getSummaryReport(accessToken, ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
             ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
@@ -67,13 +86,20 @@ public class HarnessTestPassingInCi implements DslDataProvider {
             ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY), buildNo, JUNIT_REPORT, null, null);
 
     Response<JsonObject> response = null;
+    JsonObject summaryReport = null;
     try {
       response = summaryReportCall.execute();
-    } catch (IOException e) {
-      throw new GeneralException("API request to TI service call failed", e);
+      summaryReport = response.body();
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Error in getting the summary report info  from ti service of test passing in ci check account - %s, org - %s, project - %s, and pipeline - %s",
+              ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
+          e);
     }
-
-    JsonObject summaryReport = response.body();
 
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();

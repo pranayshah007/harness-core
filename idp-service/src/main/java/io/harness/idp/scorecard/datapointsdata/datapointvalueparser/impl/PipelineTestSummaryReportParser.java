@@ -16,9 +16,12 @@ public class PipelineTestSummaryReportParser implements PipelineTestSummaryRepor
   @Override
   public Map<String, Object> getParsedValue(JsonObject reportSummary, String dataPointIdentifier) {
     Map<String, Object> map = new HashMap<>();
-    int totalTestCases = reportSummary.get("total_tests").getAsInt();
-    int failedTestCases = reportSummary.get("failed_tests").getAsInt();
-    map.put(dataPointIdentifier, totalTestCases > 0 && failedTestCases == 0);
+    map.put(dataPointIdentifier, false);
+    if (reportSummary != null) {
+      int totalTestCases = reportSummary.get("total_tests").getAsInt();
+      int failedTestCases = reportSummary.get("failed_tests").getAsInt();
+      map.put(dataPointIdentifier, totalTestCases > 0 && failedTestCases == 0);
+    }
     return map;
   }
 }

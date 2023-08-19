@@ -17,9 +17,12 @@ public class StoStageSetupParser implements PipelineInfo {
   public Map<String, Object> getParsedValue(PMSPipelineResponseDTO ciPmsPipelineResponseDTO,
       PMSPipelineResponseDTO cdPmsPipelineResponseDTO, String dataPointIdentifier) {
     Map<String, Object> map = new HashMap<>();
-    map.put(dataPointIdentifier,
-        ciPmsPipelineResponseDTO.getYamlPipeline().contains(STO_SCAN_STAGE_KEY_IN_YAML)
-            && cdPmsPipelineResponseDTO.getYamlPipeline().contains(STO_SCAN_STAGE_KEY_IN_YAML));
+    map.put(dataPointIdentifier, false);
+    if (ciPmsPipelineResponseDTO != null && cdPmsPipelineResponseDTO != null) {
+      map.put(dataPointIdentifier,
+          ciPmsPipelineResponseDTO.getYamlPipeline().contains(STO_SCAN_STAGE_KEY_IN_YAML)
+              && cdPmsPipelineResponseDTO.getYamlPipeline().contains(STO_SCAN_STAGE_KEY_IN_YAML));
+    }
     return map;
   }
 }

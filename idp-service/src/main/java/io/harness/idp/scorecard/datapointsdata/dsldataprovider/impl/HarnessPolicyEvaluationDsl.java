@@ -45,34 +45,73 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
     Map<String, String> ciIdentifiers =
         DslUtils.getCiPipelineUrlIdentifiers(dataSourceDataPointInfo.getCiPipelineUrl());
 
-    Object responseCI = NGRestUtils.getResponse(
-        pipelineServiceClient.getListOfExecutions(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY), null,
-            ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY), 0, 5, null, null, null, null, null, false));
+    Object responseCI = null;
+    try {
+      responseCI = NGRestUtils.getResponse(
+          pipelineServiceClient.getListOfExecutions(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY), null,
+              ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY), 0, 5, null, null, null, null, false));
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Error in getting the ci pipeline info of policy evaluation check in account - %s, org - %s, project - %s, and pipeline - %s",
+              ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
+          e);
+    }
 
     // cd pipeline detail
     Map<String, String> serviceIdentifiers =
         DslUtils.getCdServiceUrlIdentifiers(dataSourceDataPointInfo.getServiceUrl());
     long currentTime = System.currentTimeMillis();
-    DeploymentsInfo serviceDeploymentInfo = NGRestUtils
-                                                .getResponse(dashboardResourceClient.getDeploymentsByServiceId(
-                                                    serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
-                                                    serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
-                                                    serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY),
-                                                    serviceIdentifiers.get(DslConstants.CD_SERVICE_IDENTIFIER_KEY),
-                                                    currentTime - DslConstants.ThirtyDaysInMillis, currentTime))
-                                                .get();
+    DeploymentsInfo serviceDeploymentInfo = null;
+    try {
+      serviceDeploymentInfo = NGRestUtils
+                                  .getResponse(dashboardResourceClient.getDeploymentsByServiceId(
+                                      serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
+                                      serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
+                                      serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY),
+                                      serviceIdentifiers.get(DslConstants.CD_SERVICE_IDENTIFIER_KEY),
+                                      currentTime - DslConstants.ThirtyDaysInMillis, currentTime))
+                                  .get();
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Error in getting the service dashboard info of policy evaluation check in account - %s, org - %s, project - %s, and service - %s",
+              serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
+              serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
+              serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY),
+              serviceIdentifiers.get(DslConstants.CD_SERVICE_IDENTIFIER_KEY)),
+          e);
+    }
+
     String cdPipelineId = null;
-    if (!serviceDeploymentInfo.getDeployments().isEmpty()) {
+    if (serviceDeploymentInfo != null && !serviceDeploymentInfo.getDeployments().isEmpty()) {
       cdPipelineId = serviceDeploymentInfo.getDeployments().get(0).getPipelineIdentifier();
     }
 
-    Object responseCD = NGRestUtils.getResponse(
-        pipelineServiceClient.getListOfExecutions(serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
-            serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
-            serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY), null, cdPipelineId, 0, 5, null, null, null,
-            null, null, false));
+    Object responseCD = null;
+
+    if (cdPipelineId != null) {
+      try {
+        responseCD = NGRestUtils.getResponse(
+            pipelineServiceClient.getListOfExecutions(serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
+                serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
+                serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY), null, cdPipelineId, 0, 5, null, null,
+                null, null, false));
+      } catch (Exception e) {
+        log.error(
+            String.format(
+                "Error in getting the cd pipeline info of policy evaluation check in account - %s, org - %s, project - %s, and pipeline - %s",
+                serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
+                serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
+                serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY), cdPipelineId),
+            e);
+      }
+    }
 
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();

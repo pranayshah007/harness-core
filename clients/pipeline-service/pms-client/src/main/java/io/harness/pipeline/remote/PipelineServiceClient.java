@@ -166,7 +166,7 @@ public interface PipelineServiceClient {
       @Query(value = NGCommonEntityConstants.SIZE) @DefaultValue("20") int size,
       @Query(value = NGCommonEntityConstants.SORT) List<String> sort,
       @Query(value = NGResourceFilterConstants.FILTER_KEY) String filterKey,
-      @Query(value = NGCommonEntityConstants.MODULE_TYPE) String moduleName, @Body FilterPropertiesDTO filterProperties,
+      @Query(value = NGCommonEntityConstants.MODULE_TYPE) String moduleName,
       @Query(value = NGCommonEntityConstants.STATUS) List<ExecutionStatus> statusesList,
       @Query("myDeployments") boolean myDeployments);
 }

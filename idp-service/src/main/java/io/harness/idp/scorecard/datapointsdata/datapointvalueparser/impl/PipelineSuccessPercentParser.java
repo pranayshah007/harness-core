@@ -17,7 +17,10 @@ public class PipelineSuccessPercentParser implements PipelineSuccessPercent {
   public Map<String, Object> getParsedValue(
       DashboardPipelineHealthInfo dashboardPipelineHealthInfo, String dataPointIdentifier) {
     Map<String, Object> map = new HashMap<>();
-    map.put(dataPointIdentifier, dashboardPipelineHealthInfo.getExecutions().getSuccess().getPercent());
+    map.put(dataPointIdentifier, 0);
+    if (dashboardPipelineHealthInfo != null) {
+      map.put(dataPointIdentifier, dashboardPipelineHealthInfo.getExecutions().getSuccess().getPercent());
+    }
     return map;
   }
 }

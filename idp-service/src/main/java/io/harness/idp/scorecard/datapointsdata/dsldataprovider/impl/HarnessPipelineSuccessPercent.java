@@ -45,12 +45,26 @@ public class HarnessPipelineSuccessPercent implements DslDataProvider {
         DslUtils.getCiPipelineUrlIdentifiers(dataSourceDataPointInfo.getCiPipelineUrl());
 
     long currentTime = System.currentTimeMillis();
-    DashboardPipelineHealthInfo dashboard = NGRestUtils.getResponse(
-        pmsDashboardResourceClient.fetchPipelinedHealth(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY), null,
-            currentTime - DslConstants.SevenDaysInMillis, currentTime));
+
+    DashboardPipelineHealthInfo dashboard = null;
+
+    try {
+      dashboard = NGRestUtils.getResponse(
+          pmsDashboardResourceClient.fetchPipelinedHealth(ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY), null,
+              currentTime - DslConstants.SevenDaysInMillis, currentTime));
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Error in getting the ci pipeline dash board summary info of success percent in seven days check in account - %s, org - %s, project - %s, and pipeline - %s",
+              ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
+          e);
+    }
 
     Map<String, Object> returnData = new HashMap<>();
     List<DataPointInputValues> dataPointInputValuesList =

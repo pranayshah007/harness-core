@@ -22,12 +22,14 @@ import org.json.JSONObject;
 public class DslDataProviderUtil {
   public String getRunSequenceForPipelineExecution(Object executionResponse) {
     String runSequence = null;
-    String jsonInStringExecutions = new Gson().toJson(executionResponse);
-    JSONObject listOfPipelineExecutions = new JSONObject(jsonInStringExecutions);
-    JSONArray pipelineExecutions = listOfPipelineExecutions.getJSONArray(ValueParserConstants.CONTENT_KEY);
-    if (pipelineExecutions.length() > 0) {
-      JSONObject latestPipelineExecution = pipelineExecutions.getJSONObject(0);
-      runSequence = latestPipelineExecution.getString("runSequence");
+    if (executionResponse != null) {
+      String jsonInStringExecutions = new Gson().toJson(executionResponse);
+      JSONObject listOfPipelineExecutions = new JSONObject(jsonInStringExecutions);
+      JSONArray pipelineExecutions = listOfPipelineExecutions.getJSONArray(ValueParserConstants.CONTENT_KEY);
+      if (pipelineExecutions.length() > 0) {
+        JSONObject latestPipelineExecution = pipelineExecutions.getJSONObject(0);
+        runSequence = latestPipelineExecution.getString("runSequence");
+      }
     }
     return runSequence;
   }

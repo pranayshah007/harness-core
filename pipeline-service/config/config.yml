@@ -383,7 +383,7 @@ redisLockConfig:
 
 distributedLockImplementation: REDIS
 
-enableDashboardTimescale: true
+enableDashboardTimescale: false
 
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"

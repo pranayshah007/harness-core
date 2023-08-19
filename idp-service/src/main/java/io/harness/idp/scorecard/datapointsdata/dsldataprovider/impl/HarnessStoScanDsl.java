@@ -51,33 +51,70 @@ public class HarnessStoScanDsl implements DslDataProvider {
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();
 
-    PMSPipelineResponseDTO responseCI = NGRestUtils.getResponse(
-        pipelineServiceClient.getPipelineByIdentifier(ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
-            ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY), null, null, false));
+    PMSPipelineResponseDTO responseCI = null;
+    try {
+      responseCI = NGRestUtils.getResponse(
+          pipelineServiceClient.getPipelineByIdentifier(ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY), null, null, false));
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Error in getting the ci pipeline info of sto scan check in account - %s, org - %s, project - %s, and pipeline - %s",
+              ciIdentifiers.get(DslConstants.CI_ACCOUNT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_ORG_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PROJECT_IDENTIFIER_KEY),
+              ciIdentifiers.get(DslConstants.CI_PIPELINE_IDENTIFIER_KEY)),
+          e);
+    }
 
     // cd pipeline detail
     Map<String, String> serviceIdentifiers =
         DslUtils.getCdServiceUrlIdentifiers(dataSourceDataPointInfo.getServiceUrl());
     long currentTime = System.currentTimeMillis();
-    DeploymentsInfo serviceDeploymentInfo = NGRestUtils
-                                                .getResponse(dashboardResourceClient.getDeploymentsByServiceId(
-                                                    serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
-                                                    serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
-                                                    serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY),
-                                                    serviceIdentifiers.get(DslConstants.CD_SERVICE_IDENTIFIER_KEY),
-                                                    currentTime - DslConstants.ThirtyDaysInMillis, currentTime))
-                                                .get();
-    String cdPipelineId = null;
-    if (!serviceDeploymentInfo.getDeployments().isEmpty()) {
-      cdPipelineId = serviceDeploymentInfo.getDeployments().get(0).getPipelineIdentifier();
+    DeploymentsInfo serviceDeploymentInfo = null;
+    try {
+      serviceDeploymentInfo = NGRestUtils
+                                  .getResponse(dashboardResourceClient.getDeploymentsByServiceId(
+                                      serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
+                                      serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
+                                      serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY),
+                                      serviceIdentifiers.get(DslConstants.CD_SERVICE_IDENTIFIER_KEY),
+                                      currentTime - DslConstants.ThirtyDaysInMillis, currentTime))
+                                  .get();
+    } catch (Exception e) {
+      log.error(
+          String.format(
+              "Error in getting the service dashboard info of sto scan check in account - %s, org - %s, project - %s, and service - %s",
+              serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
+              serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
+              serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY),
+              serviceIdentifiers.get(DslConstants.CD_SERVICE_IDENTIFIER_KEY)),
+          e);
     }
 
-    PMSPipelineResponseDTO responseCD = NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(
-        cdPipelineId, serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
-        serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
-        serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY), null, null, false));
+    String cdPipelineId = null;
+    if (serviceDeploymentInfo != null && !serviceDeploymentInfo.getDeployments().isEmpty()) {
+      cdPipelineId = serviceDeploymentInfo.getDeployments().get(0).getPipelineIdentifier();
+    }
+    PMSPipelineResponseDTO responseCD = null;
+    if (cdPipelineId != null) {
+      try {
+        responseCD = NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(cdPipelineId,
+            serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
+            serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
+            serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY), null, null, false));
+      } catch (Exception e) {
+        log.error(
+            String.format(
+                "Error in getting the cd pipeline info of sto scan check in account - %s, org - %s, project - %s, and pipeline - %s",
+                serviceIdentifiers.get(DslConstants.CD_ACCOUNT_IDENTIFIER_KEY),
+                serviceIdentifiers.get(DslConstants.CD_ORG_IDENTIFIER_KEY),
+                serviceIdentifiers.get(DslConstants.CD_PROJECT_IDENTIFIER_KEY), cdPipelineId),
+            e);
+      }
+    }
 
     for (DataPointInputValues dataPointInputValues : dataPointInputValuesList) {
       String dataPointIdentifier = dataPointInputValues.getDataPointIdentifier();
