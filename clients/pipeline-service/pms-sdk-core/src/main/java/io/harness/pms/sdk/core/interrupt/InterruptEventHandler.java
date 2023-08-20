@@ -26,6 +26,7 @@ import io.harness.pms.sdk.core.steps.executables.Abortable;
 import io.harness.pms.sdk.core.steps.executables.Expirable;
 import io.harness.pms.sdk.core.steps.executables.Failable;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.common.collect.ImmutableMap;
@@ -36,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(
     module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
-public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
+public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent, Boolean> {
   @Inject private PMSInterruptService pmsInterruptService;
   @Inject private StepRegistry stepRegistry;
 
@@ -65,7 +66,7 @@ public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
   }
 
   @Override
-  protected void handleEventWithContext(InterruptEvent event) {
+  protected EventHandlerResult<Boolean> handleEventWithContext(InterruptEvent event) {
     InterruptType interruptType = event.getType();
     switch (interruptType) {
       case ABORT:
@@ -85,6 +86,7 @@ public class InterruptEventHandler extends PmsBaseEventHandler<InterruptEvent> {
         log.warn("No Handling present for Interrupt Event of type : {}", interruptType);
         noop();
     }
+    return EventHandlerResult.<Boolean>builder().success(true).build();
   }
 
   public void handleFailure(InterruptEvent event) {

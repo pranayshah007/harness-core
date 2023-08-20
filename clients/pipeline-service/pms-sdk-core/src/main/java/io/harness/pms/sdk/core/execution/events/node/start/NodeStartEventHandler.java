@@ -22,6 +22,7 @@ import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.common.collect.ImmutableMap;
@@ -33,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
-public class NodeStartEventHandler extends PmsBaseEventHandler<NodeStartEvent> {
+public class NodeStartEventHandler extends PmsBaseEventHandler<NodeStartEvent, String> {
   @Inject private ExecutableProcessorFactory executableProcessorFactory;
   @Inject private EngineObtainmentHelper engineObtainmentHelper;
   @Inject private SdkNodeExecutionService sdkNodeExecutionService;
@@ -54,7 +55,7 @@ public class NodeStartEventHandler extends PmsBaseEventHandler<NodeStartEvent> {
   }
 
   @Override
-  public void handleEventWithContext(NodeStartEvent nodeStartEvent) {
+  public EventHandlerResult<String> handleEventWithContext(NodeStartEvent nodeStartEvent) {
     try {
       ExecutableProcessor processor = executableProcessorFactory.obtainProcessor(nodeStartEvent.getMode());
       StepInputPackage inputPackage =
@@ -71,10 +72,12 @@ public class NodeStartEventHandler extends PmsBaseEventHandler<NodeStartEvent> {
                                 .stepParameters(stepParameters)
                                 .executionMode(nodeStartEvent.getMode())
                                 .build());
+      return EventHandlerResult.<String>builder().success(true).build();
     } catch (Exception ex) {
       log.error("Error while handle NodeStart event", ex);
-      sdkNodeExecutionService.handleStepResponse(
+      String messageId = sdkNodeExecutionService.handleStepResponse(
           nodeStartEvent.getAmbiance(), NodeExecutionUtils.constructStepResponse(ex));
+      return EventHandlerResult.<String>builder().success(true).data(messageId).build();
     }
   }
 }

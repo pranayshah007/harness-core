@@ -33,6 +33,7 @@ import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
@@ -51,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
-public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent> {
+public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent, String> {
   @Inject private SdkNodeExecutionService sdkNodeExecutionService;
   @Inject private EngineObtainmentHelper engineObtainmentHelper;
   @Inject private ExecutableProcessorFactory executableProcessorFactory;
@@ -75,7 +76,7 @@ public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent>
   }
 
   @Override
-  protected void handleEventWithContext(NodeResumeEvent event) {
+  protected EventHandlerResult<String> handleEventWithContext(NodeResumeEvent event) {
     ExecutableProcessor processor = executableProcessorFactory.obtainProcessor(event.getExecutionMode());
     Map<String, ResponseData> response = new HashMap<>();
     // Todo: Remove this after the deployment in first jan 23
@@ -97,9 +98,12 @@ public class NodeResumeEventHandler extends PmsBaseEventHandler<NodeResumeEvent>
     Preconditions.checkArgument(isNotBlank(nodeExecutionId), "nodeExecutionId is null or empty");
     try {
       processor.handleResume(buildResumePackage(event, response));
+      return EventHandlerResult.<String>builder().success(true).build();
     } catch (Exception ex) {
       log.error("Error while resuming execution", ex);
-      sdkNodeExecutionService.handleStepResponse(event.getAmbiance(), NodeExecutionUtils.constructStepResponse(ex));
+      String messageId =
+          sdkNodeExecutionService.handleStepResponse(event.getAmbiance(), NodeExecutionUtils.constructStepResponse(ex));
+      return EventHandlerResult.<String>builder().data(messageId).success(true).build();
     }
   }
 

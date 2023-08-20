@@ -10,11 +10,10 @@ package io.harness.execution;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
-import io.harness.engine.interrupts.InterruptService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.events.InitiateNodeEvent;
 import io.harness.pms.events.base.PmsBaseEventHandler;
-import io.harness.utils.PmsFeatureFlagService;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -23,11 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
-public class InitiateNodeHandler extends PmsBaseEventHandler<InitiateNodeEvent> {
+public class InitiateNodeHandler extends PmsBaseEventHandler<InitiateNodeEvent, PmsNodeExecution> {
   @Inject private OrchestrationEngine engine;
-  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
-  @Inject private InterruptService interruptService;
   @Override
   protected Map<String, String> extractMetricContext(Map<String, String> metadataMap, InitiateNodeEvent event) {
     return ImmutableMap.of("eventType", "TRIGGER_NODE");
@@ -49,8 +46,10 @@ public class InitiateNodeHandler extends PmsBaseEventHandler<InitiateNodeEvent> 
   }
 
   @Override
-  protected void handleEventWithContext(InitiateNodeEvent event) {
-    engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null,
-        event.hasStrategyMetadata() ? event.getStrategyMetadata() : null, event.getInitiateMode());
+  protected EventHandlerResult<PmsNodeExecution> handleEventWithContext(InitiateNodeEvent event) {
+    PmsNodeExecution pmsNodeExecution =
+        engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null,
+            event.hasStrategyMetadata() ? event.getStrategyMetadata() : null, event.getInitiateMode());
+    return EventHandlerResult.<PmsNodeExecution>builder().data(pmsNodeExecution).success(true).build();
   }
 }

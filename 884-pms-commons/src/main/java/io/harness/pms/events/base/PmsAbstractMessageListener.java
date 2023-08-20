@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.events.base;
+
 import static io.harness.pms.events.PmsEventFrameworkConstants.SERVICE_NAME;
 
 import io.harness.annotations.dev.CodePulse;
@@ -16,7 +17,10 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.event.HandleResult;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ng.core.event.MessageListenerWithFutures;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 import io.harness.pms.sdk.execution.events.PmsCommonsBaseEventHandler;
 import io.harness.serializer.ProtoUtils;
 
@@ -25,6 +29,7 @@ import com.google.protobuf.ByteString;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public abstract class PmsAbstractMessageListener<T extends com.google.protobuf.Message, H
-                                                     extends PmsCommonsBaseEventHandler<T>> implements MessageListener {
+                                                     extends PmsCommonsBaseEventHandler<T, ?>>
+    implements MessageListenerWithFutures, MessageListener {
   private static final Duration THRESHOLD_PROCESS_DURATION = Duration.ofMillis(100);
 
   public final String serviceName;
@@ -49,30 +55,36 @@ public abstract class PmsAbstractMessageListener<T extends com.google.protobuf.M
     this.executorService = executorService;
   }
 
+  @Override
+  public boolean handleMessage(Message message) {
+    throw new UnsupportedOperationException("handle message not supported");
+  }
+
   /**
    * We are always returning true from this method even if exception occurred. If we return false that means we are do
    * not ack the message and it would be delivered to the same consumer group again. This can lead to double
    * notifications
    */
-
   @Override
-  public boolean handleMessage(Message message) {
+  public CompletableFuture<HandleResult> handleMessageWithFuture(Message message) {
     long readTs = System.currentTimeMillis();
-    if (isProcessable(message)) {
-      executorService.submit(() -> {
-        try (AutoLogContext ignore = new MessageLogContext(message)) {
-          // Check and log for time taken to schedule the thread
-          checkAndLogSchedulingDelays(message.getId(), readTs);
-          T entity = extractEntity(message);
-          Long issueTimestamp = ProtoUtils.timestampToUnixMillis(message.getTimestamp());
-          processMessage(entity, message.getMessage().getMetadataMap(), issueTimestamp, readTs);
-        } catch (Exception ex) {
-          log.error("[PMS_MESSAGE_LISTENER] Exception occurred while processing {} event with messageId: {}",
-              entityClass.getSimpleName(), message.getId(), ex);
-        }
-      });
-    }
-    return true;
+
+    return CompletableFuture.supplyAsync(() -> {
+      try (AutoLogContext ignore = new MessageLogContext(message)) {
+        // Check and log for time taken to schedule the thread
+        checkAndLogSchedulingDelays(message.getId(), readTs);
+        T entity = extractEntity(message);
+        Long issueTimestamp = ProtoUtils.timestampToUnixMillis(message.getTimestamp());
+        EventHandlerResult<?> result =
+            processMessage(entity, message.getMessage().getMetadataMap(), issueTimestamp, readTs);
+        // TODO make these return type better. This true should originate from process messafe
+        return HandleResult.builder().messageId(message.getId()).ack(result.isSuccess()).build();
+      } catch (Exception ex) {
+        log.error("[PMS_MESSAGE_LISTENER] Exception occurred while processing {} event with messageId: {}",
+            entityClass.getSimpleName(), message.getId(), ex);
+        return HandleResult.builder().messageId(message.getId()).ack(true).build();
+      }
+    }, executorService);
   }
 
   private void checkAndLogSchedulingDelays(String messageId, long startTs) {
@@ -104,7 +116,8 @@ public abstract class PmsAbstractMessageListener<T extends com.google.protobuf.M
   /**
    * The boolean that we are returning here is just for logging purposes we should infer nothing from the responses
    */
-  public void processMessage(T event, Map<String, String> metadataMap, Long messageTimeStamp, Long readTs) {
-    handler.handleEvent(event, metadataMap, messageTimeStamp, readTs);
+  public EventHandlerResult<?> processMessage(
+      T event, Map<String, String> metadataMap, Long messageTimeStamp, Long readTs) {
+    return handler.handleEvent(event, metadataMap, messageTimeStamp, readTs);
   }
 }

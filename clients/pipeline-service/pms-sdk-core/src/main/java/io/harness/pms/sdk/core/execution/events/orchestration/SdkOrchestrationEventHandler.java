@@ -24,6 +24,7 @@ import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.sdk.core.registries.OrchestrationEventHandlerRegistry;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.execution.beans.PipelineModuleInfo;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.common.collect.ImmutableMap;
@@ -40,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 @Slf4j
 @Singleton
-public class SdkOrchestrationEventHandler extends PmsBaseEventHandler<OrchestrationEvent> {
+public class SdkOrchestrationEventHandler extends PmsBaseEventHandler<OrchestrationEvent, Boolean> {
   @Inject private OrchestrationEventHandlerRegistry handlerRegistry;
   @Inject @Named(PmsSdkModuleUtils.ORCHESTRATION_EVENT_EXECUTOR_NAME) private ExecutorService executorService;
 
@@ -69,18 +70,23 @@ public class SdkOrchestrationEventHandler extends PmsBaseEventHandler<Orchestrat
   }
 
   @Override
-  protected void handleEventWithContext(OrchestrationEvent event) {
+  protected EventHandlerResult<Boolean> handleEventWithContext(OrchestrationEvent event) {
     Set<OrchestrationEventHandler> handlers = handlerRegistry.obtain(event.getEventType());
     if (isNotEmpty(handlers)) {
       handlers.forEach(handler -> executorService.submit(() -> {
         try (PmsGitSyncBranchContextGuard ignore1 = gitSyncContext(event);
              AutoLogContext ignore2 = autoLogContext(event)) {
           handler.handleEvent(buildSdkOrchestrationEvent(event));
+          return EventHandlerResult.<Boolean>builder().success(true).build();
         } catch (Exception ex) {
+          // TODO: we might return success as false here to redeliver this message sticking ot true fro now to maintain
+          // existing behaviour
           log.warn("Exception occurred while handling orchestrationEvent", ex);
+          return EventHandlerResult.<Boolean>builder().success(true).build();
         }
       }));
     }
+    return EventHandlerResult.<Boolean>builder().success(true).data(true).build();
   }
 
   protected io.harness.pms.sdk.core.events.OrchestrationEvent buildSdkOrchestrationEvent(OrchestrationEvent event) {

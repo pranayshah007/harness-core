@@ -18,6 +18,7 @@ import io.harness.pms.sdk.core.execution.ExecutableProcessor;
 import io.harness.pms.sdk.core.execution.ExecutableProcessorFactory;
 import io.harness.pms.sdk.core.execution.ProgressPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ProgressData;
@@ -33,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 @Singleton
-public class ProgressEventHandler extends PmsBaseEventHandler<ProgressEvent> {
+public class ProgressEventHandler extends PmsBaseEventHandler<ProgressEvent, Boolean> {
   @Inject private ExecutableProcessorFactory executableProcessorFactory;
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
@@ -55,7 +56,7 @@ public class ProgressEventHandler extends PmsBaseEventHandler<ProgressEvent> {
   }
 
   @Override
-  protected void handleEventWithContext(ProgressEvent event) {
+  protected EventHandlerResult<Boolean> handleEventWithContext(ProgressEvent event) {
     try {
       StepParameters stepParameters =
           RecastOrchestrationUtils.fromJson(event.getStepParameters().toStringUtf8(), StepParameters.class);
@@ -78,5 +79,7 @@ public class ProgressEventHandler extends PmsBaseEventHandler<ProgressEvent> {
       log.error("Error while Handling progress NodeExecutionId [{}], PlanExecutionId [{}]",
           AmbianceUtils.obtainCurrentRuntimeId(event.getAmbiance()), event.getAmbiance().getPlanExecutionId(), ex);
     }
+
+    return EventHandlerResult.<Boolean>builder().success(true).data(true).build();
   }
 }

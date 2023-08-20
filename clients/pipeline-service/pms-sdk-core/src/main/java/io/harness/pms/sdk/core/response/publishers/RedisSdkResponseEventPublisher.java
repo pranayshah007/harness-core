@@ -23,7 +23,7 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RedisSdkResponseEventPublisher implements SdkResponseEventPublisher {
-  private Producer eventProducer;
+  private final Producer eventProducer;
 
   @Inject
   public RedisSdkResponseEventPublisher(@Named(SDK_RESPONSE_EVENT_PRODUCER) Producer producer) {
@@ -31,12 +31,12 @@ public class RedisSdkResponseEventPublisher implements SdkResponseEventPublisher
   }
 
   @Override
-  public void publishEvent(SdkResponseEventProto event) {
+  public String publishEvent(SdkResponseEventProto event) {
     Map<String, String> metadataMap = new HashMap<>();
 
     metadataMap.put("eventType", event.getSdkResponseEventType().name());
     metadataMap.put("nodeExecutionId", SdkResponseEventUtils.getNodeExecutionId(event));
     metadataMap.put("planExecutionId", SdkResponseEventUtils.getPlanExecutionId(event));
-    eventProducer.send(Message.newBuilder().putAllMetadata(metadataMap).setData(event.toByteString()).build());
+    return eventProducer.send(Message.newBuilder().putAllMetadata(metadataMap).setData(event.toByteString()).build());
   }
 }

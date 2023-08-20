@@ -6,6 +6,7 @@
  */
 
 package io.harness.async;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,6 +18,7 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 import io.harness.pms.sdk.execution.events.PmsCommonsBaseEventHandler;
 import io.harness.pms.yaml.YamlField;
 
@@ -31,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class AsyncCreatorBaseEventHandler<T extends Message, C extends AsyncCreatorContext>
-    implements PmsCommonsBaseEventHandler<T> {
+    implements PmsCommonsBaseEventHandler<T, Boolean> {
   @Inject public PmsGitSyncHelper pmsGitSyncHelper;
   @Inject public ExceptionManager exceptionManager;
 
@@ -42,7 +44,8 @@ public abstract class AsyncCreatorBaseEventHandler<T extends Message, C extends 
   protected abstract C extractContext(T message);
 
   @Override
-  public void handleEvent(T event, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
+  public EventHandlerResult<Boolean> handleEvent(
+      T event, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
     try {
       AsyncCreatorResponse finalResponse =
           handleDependenciesRecursive(extractDependencies(event), extractContext(event));
@@ -51,6 +54,7 @@ public abstract class AsyncCreatorBaseEventHandler<T extends Message, C extends 
       log.error(ExceptionUtils.getMessage(ex), ex);
       handleException(event, ex);
     }
+    return EventHandlerResult.<Boolean>builder().success(true).data(true).build();
   }
 
   protected abstract void handleResult(T event, AsyncCreatorResponse creatorResponse);

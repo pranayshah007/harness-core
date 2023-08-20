@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.events.base;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +23,7 @@ import io.harness.pms.events.PmsEventMonitoringConstants;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 import io.harness.pms.sdk.execution.events.PmsCommonsBaseEventHandler;
 
 import com.google.common.collect.ImmutableMap;
@@ -35,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
-public abstract class PmsBaseEventHandler<T extends Message> implements PmsCommonsBaseEventHandler<T> {
+public abstract class PmsBaseEventHandler<T extends Message, R> implements PmsCommonsBaseEventHandler<T, R> {
   public static String QUEUE_EVENT_TIME = "%s_queue_time";
 
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
@@ -62,7 +64,8 @@ public abstract class PmsBaseEventHandler<T extends Message> implements PmsCommo
 
   protected abstract String getMetricPrefix(T message);
 
-  public void handleEvent(T event, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
+  public EventHandlerResult<R> handleEvent(
+      T event, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
     try (PmsGitSyncBranchContextGuard ignore1 = gitSyncContext(event); AutoLogContext ignore2 = autoLogContext(event);
          PmsMetricContextGuard metricContext =
              new PmsMetricContextGuard(metadataMap, extractMetricContext(metadataMap, event))) {
@@ -75,7 +78,7 @@ public abstract class PmsBaseEventHandler<T extends Message> implements PmsCommo
                                           .accountId(AmbianceUtils.getAccountId(extractAmbiance(event)))
                                           .build();
       eventMonitoringService.sendMetric(QUEUE_EVENT_TIME, monitoringInfo, metadataMap);
-      handleEventWithContext(event);
+      return handleEventWithContext(event);
     } catch (Exception ex) {
       try (AutoLogContext autoLogContext = autoLogContext(event)) {
         log.error("Exception occurred while handling {}", event.getClass().getSimpleName(), ex);
@@ -89,7 +92,7 @@ public abstract class PmsBaseEventHandler<T extends Message> implements PmsCommo
     }
   }
 
-  protected abstract void handleEventWithContext(T event);
+  protected abstract EventHandlerResult<R> handleEventWithContext(T event);
 
   protected AutoLogContext autoLogContext(T event) {
     Map<String, String> logContext = new HashMap<>();

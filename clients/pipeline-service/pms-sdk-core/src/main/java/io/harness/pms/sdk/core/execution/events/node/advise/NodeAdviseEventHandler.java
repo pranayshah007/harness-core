@@ -25,6 +25,7 @@ import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.execution.NodeExecutionUtils;
 import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
 import io.harness.pms.sdk.core.registries.AdviserRegistry;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -37,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 @Singleton
-public class NodeAdviseEventHandler extends PmsBaseEventHandler<AdviseEvent> {
+public class NodeAdviseEventHandler extends PmsBaseEventHandler<AdviseEvent, String> {
   @Inject private AdviserRegistry adviserRegistry;
   @Inject private SdkNodeExecutionService sdkNodeExecutionService;
 
@@ -61,7 +62,7 @@ public class NodeAdviseEventHandler extends PmsBaseEventHandler<AdviseEvent> {
   }
 
   @Override
-  protected void handleEventWithContext(AdviseEvent event) {
+  protected EventHandlerResult<String> handleEventWithContext(AdviseEvent event) {
     try {
       Ambiance ambiance = event.getAmbiance();
       String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
@@ -87,22 +88,26 @@ public class NodeAdviseEventHandler extends PmsBaseEventHandler<AdviseEvent> {
         }
       }
 
+      String messageId;
       if (adviserResponse != null) {
         log.info("Calculated Adviser response is of type {}", adviserResponse.getType());
-        sdkNodeExecutionService.handleAdviserResponse(ambiance, event.getNotifyId(), adviserResponse);
+        messageId = sdkNodeExecutionService.handleAdviserResponse(ambiance, event.getNotifyId(), adviserResponse);
       } else {
         log.info("Calculated Adviser response is null. Proceeding with UNKNOWN adviser type.");
-        sdkNodeExecutionService.handleAdviserResponse(
+        messageId = sdkNodeExecutionService.handleAdviserResponse(
             ambiance, event.getNotifyId(), AdviserResponse.newBuilder().setType(AdviseType.UNKNOWN).build());
       }
+      return EventHandlerResult.<String>builder().data(messageId).success(true).build();
     } catch (Exception ex) {
       log.error("Error while advising execution", ex);
       if (EmptyPredicate.isEmpty(event.getNotifyId())) {
         log.info("NotifyId is empty for nodeExecutionId {} and planExecutionId {}. Nothing will happen.",
             AmbianceUtils.obtainCurrentRuntimeId(event.getAmbiance()), event.getAmbiance().getPlanExecutionId());
+        return EventHandlerResult.<String>builder().success(true).build();
       } else {
-        sdkNodeExecutionService.handleEventError(NodeExecutionEventType.ADVISE, event.getAmbiance(),
+        String messageId = sdkNodeExecutionService.handleEventError(NodeExecutionEventType.ADVISE, event.getAmbiance(),
             event.getNotifyId(), NodeExecutionUtils.constructFailureInfo(ex));
+        return EventHandlerResult.<String>builder().data(messageId).success(true).build();
       }
     }
   }

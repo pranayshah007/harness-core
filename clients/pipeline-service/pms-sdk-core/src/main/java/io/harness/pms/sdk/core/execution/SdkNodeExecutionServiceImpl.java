@@ -53,16 +53,16 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
   @Inject private SdkResponseEventPublisher sdkResponseEventPublisher;
 
   @Override
-  public void suspendChainExecution(Ambiance ambiance, SuspendChainRequest suspendChainRequest) {
-    sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
-                                               .setSdkResponseEventType(SdkResponseEventType.SUSPEND_CHAIN)
-                                               .setSuspendChainRequest(suspendChainRequest)
-                                               .setAmbiance(ambiance)
-                                               .build());
+  public String suspendChainExecution(Ambiance ambiance, SuspendChainRequest suspendChainRequest) {
+    return sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
+                                                      .setSdkResponseEventType(SdkResponseEventType.SUSPEND_CHAIN)
+                                                      .setSuspendChainRequest(suspendChainRequest)
+                                                      .setAmbiance(ambiance)
+                                                      .build());
   }
 
   @Override
-  public void addExecutableResponse(Ambiance ambiance, ExecutableResponse executableResponse) {
+  public String addExecutableResponse(Ambiance ambiance, ExecutableResponse executableResponse) {
     AddExecutableResponseRequest executableResponseRequest =
         AddExecutableResponseRequest.newBuilder().setExecutableResponse(executableResponse).build();
 
@@ -71,11 +71,11 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
                                                  .setAddExecutableResponseRequest(executableResponseRequest)
                                                  .setAmbiance(ambiance)
                                                  .build();
-    sdkResponseEventPublisher.publishEvent(sdkResponseEvent);
+    return sdkResponseEventPublisher.publishEvent(sdkResponseEvent);
   }
 
   @Override
-  public void handleStepResponse(
+  public String handleStepResponse(
       Ambiance ambiance, @NonNull StepResponseProto stepResponse, ExecutableResponse executableResponse) {
     HandleStepResponseRequest.Builder responseRequestBuilder =
         HandleStepResponseRequest.newBuilder().setStepResponse(stepResponse);
@@ -89,11 +89,11 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
             .setAmbiance(ambiance)
             .build();
 
-    sdkResponseEventPublisher.publishEvent(sdkResponseEventProto);
+    return sdkResponseEventPublisher.publishEvent(sdkResponseEventProto);
   }
 
   @Override
-  public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseData> response, boolean asyncError) {
+  public String resumeNodeExecution(Ambiance ambiance, Map<String, ResponseData> response, boolean asyncError) {
     Map<String, ResponseDataProto> responseDataBytes = responseDataMapper.toResponseDataProtoV2(response);
 
     ResumeNodeExecutionRequest resumeNodeExecutionRequest =
@@ -104,26 +104,27 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
                                                  .setAmbiance(ambiance)
                                                  .build();
 
-    sdkResponseEventPublisher.publishEvent(sdkResponseEvent);
+    return sdkResponseEventPublisher.publishEvent(sdkResponseEvent);
   }
 
   @Override
-  public void handleFacilitationResponse(
+  public String handleFacilitationResponse(
       Ambiance ambiance, @NonNull String notifyId, FacilitatorResponseProto facilitatorResponseProto) {
     FacilitatorResponseRequest facilitatorResponseRequest = FacilitatorResponseRequest.newBuilder()
                                                                 .setFacilitatorResponse(facilitatorResponseProto)
                                                                 .setNotifyId(notifyId)
                                                                 .build();
 
-    sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
-                                               .setFacilitatorResponseRequest(facilitatorResponseRequest)
-                                               .setSdkResponseEventType(SdkResponseEventType.HANDLE_FACILITATE_RESPONSE)
-                                               .setAmbiance(ambiance)
-                                               .build());
+    return sdkResponseEventPublisher.publishEvent(
+        SdkResponseEventProto.newBuilder()
+            .setFacilitatorResponseRequest(facilitatorResponseRequest)
+            .setSdkResponseEventType(SdkResponseEventType.HANDLE_FACILITATE_RESPONSE)
+            .setAmbiance(ambiance)
+            .build());
   }
 
   @Override
-  public void handleAdviserResponse(Ambiance ambiance, @NonNull String notifyId, AdviserResponse adviserResponse) {
+  public String handleAdviserResponse(Ambiance ambiance, @NonNull String notifyId, AdviserResponse adviserResponse) {
     SdkResponseEventProto handleAdviserResponseRequest =
         SdkResponseEventProto.newBuilder()
             .setSdkResponseEventType(SdkResponseEventType.HANDLE_ADVISER_RESPONSE)
@@ -131,11 +132,11 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
                 AdviserResponseRequest.newBuilder().setAdviserResponse(adviserResponse).setNotifyId(notifyId).build())
             .setAmbiance(ambiance)
             .build();
-    sdkResponseEventPublisher.publishEvent(handleAdviserResponseRequest);
+    return sdkResponseEventPublisher.publishEvent(handleAdviserResponseRequest);
   }
 
   @Override
-  public void handleEventError(
+  public String handleEventError(
       NodeExecutionEventType eventType, Ambiance ambiance, String eventNotifyId, FailureInfo failureInfo) {
     SdkResponseEventProto handleEventErrorRequest =
         SdkResponseEventProto.newBuilder()
@@ -148,30 +149,31 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
                                       .build())
 
             .build();
-    sdkResponseEventPublisher.publishEvent(handleEventErrorRequest);
+    return sdkResponseEventPublisher.publishEvent(handleEventErrorRequest);
   }
 
   @Override
-  public void spawnChild(Ambiance ambiance, SpawnChildRequest spawnChildRequest) {
-    sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
-                                               .setSdkResponseEventType(SdkResponseEventType.SPAWN_CHILD)
-                                               .setSpawnChildRequest(spawnChildRequest)
-                                               .setAmbiance(ambiance)
-                                               .build());
+  public String spawnChild(Ambiance ambiance, SpawnChildRequest spawnChildRequest) {
+    return sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
+                                                      .setSdkResponseEventType(SdkResponseEventType.SPAWN_CHILD)
+                                                      .setSpawnChildRequest(spawnChildRequest)
+                                                      .setAmbiance(ambiance)
+                                                      .build());
   }
 
   @Override
-  public void handleProgressResponse(Ambiance ambiance, ProgressData progressData) {
+  public String handleProgressResponse(Ambiance ambiance, ProgressData progressData) {
     String progressJson = RecastOrchestrationUtils.toJson(progressData);
-    sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
-                                               .setSdkResponseEventType(SdkResponseEventType.HANDLE_PROGRESS)
-                                               .setAmbiance(ambiance)
-                                               .setProgressRequest(HandleProgressRequest.newBuilder()
-                                                                       .setStatus(calculateRequestStatus(progressData))
-                                                                       .setProgressJson(progressJson)
-                                                                       .build())
+    return sdkResponseEventPublisher.publishEvent(
+        SdkResponseEventProto.newBuilder()
+            .setSdkResponseEventType(SdkResponseEventType.HANDLE_PROGRESS)
+            .setAmbiance(ambiance)
+            .setProgressRequest(HandleProgressRequest.newBuilder()
+                                    .setStatus(calculateRequestStatus(progressData))
+                                    .setProgressJson(progressJson)
+                                    .build())
 
-                                               .build());
+            .build());
   }
 
   private Status calculateRequestStatus(ProgressData progressData) {
@@ -179,20 +181,20 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
   }
 
   @Override
-  public void spawnChildren(Ambiance ambiance, SpawnChildrenRequest spawnChildrenRequest) {
-    sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
-                                               .setSdkResponseEventType(SdkResponseEventType.SPAWN_CHILDREN)
-                                               .setSpawnChildrenRequest(spawnChildrenRequest)
-                                               .setAmbiance(ambiance)
-                                               .build());
+  public String spawnChildren(Ambiance ambiance, SpawnChildrenRequest spawnChildrenRequest) {
+    return sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
+                                                      .setSdkResponseEventType(SdkResponseEventType.SPAWN_CHILDREN)
+                                                      .setSpawnChildrenRequest(spawnChildrenRequest)
+                                                      .setAmbiance(ambiance)
+                                                      .build());
   }
 
   @Override
-  public void queueTaskRequest(Ambiance ambiance, QueueTaskRequest queueTaskRequest) {
-    sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
-                                               .setSdkResponseEventType(SdkResponseEventType.QUEUE_TASK)
-                                               .setQueueTaskRequest(queueTaskRequest)
-                                               .setAmbiance(ambiance)
-                                               .build());
+  public String queueTaskRequest(Ambiance ambiance, QueueTaskRequest queueTaskRequest) {
+    return sdkResponseEventPublisher.publishEvent(SdkResponseEventProto.newBuilder()
+                                                      .setSdkResponseEventType(SdkResponseEventType.QUEUE_TASK)
+                                                      .setQueueTaskRequest(queueTaskRequest)
+                                                      .setAmbiance(ambiance)
+                                                      .build());
   }
 }

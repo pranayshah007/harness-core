@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.sdk.core.execution.events.orchestration.SdkOrchestrationEventHandler;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -27,12 +28,13 @@ public class CDSdkOrchestrationEventHandler extends SdkOrchestrationEventHandler
   private static final Set<OrchestrationEventType> ORCHESTRATION_START_AND_END_EVENTS =
       Set.of(OrchestrationEventType.ORCHESTRATION_START, OrchestrationEventType.ORCHESTRATION_END);
   @Override
-  protected void handleEventWithContext(OrchestrationEvent event) {
+  protected EventHandlerResult<Boolean> handleEventWithContext(OrchestrationEvent event) {
     // Handle the event if event.service name is equals to serviceName. Or if event.eventType is one of the
     // orchestrationStartEvent or orchestrationEndEvent.
     if (serviceName.equals(event.getServiceName())
         || ORCHESTRATION_START_AND_END_EVENTS.contains(event.getEventType())) {
       super.handleEventWithContext(event);
     }
+    return EventHandlerResult.<Boolean>builder().success(true).build();
   }
 }

@@ -30,6 +30,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.rule.Owner;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,7 +57,7 @@ public class PmsAbstractRedisConsumerTest extends PmsCommonsTestBase {
   @Test
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
-  public void shouldTestHandleMessageWithAmbiance() throws InterruptedException {
+  public void shouldTestHandleMessageWithAmbiance() throws InterruptedException, ExecutionException {
     NoopPmsMessageListener messageListener =
         spy(new NoopPmsMessageListener("RANDOM_SERVICE", eventHandler, MoreExecutors.newDirectExecutorService()));
     client = mock(RedissonClient.class);

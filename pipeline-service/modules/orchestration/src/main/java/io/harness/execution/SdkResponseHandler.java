@@ -14,6 +14,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.events.base.PmsBaseEventHandler;
 import io.harness.pms.execution.utils.SdkResponseEventUtils;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -22,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
-public class SdkResponseHandler extends PmsBaseEventHandler<SdkResponseEventProto> {
+public class SdkResponseHandler extends PmsBaseEventHandler<SdkResponseEventProto, Boolean> {
   @Inject private OrchestrationEngine engine;
 
   @Override
@@ -48,8 +49,10 @@ public class SdkResponseHandler extends PmsBaseEventHandler<SdkResponseEventProt
   }
 
   @Override
-  protected void handleEventWithContext(SdkResponseEventProto event) {
+  // TODO(prashant) make this return type better
+  protected EventHandlerResult<Boolean> handleEventWithContext(SdkResponseEventProto event) {
     // This is the event for new execution
     engine.handleSdkResponseEvent(event);
+    return EventHandlerResult.<Boolean>builder().success(true).build();
   }
 }

@@ -29,32 +29,32 @@ import lombok.NonNull;
 
 @OwnedBy(CDC)
 public interface SdkNodeExecutionService {
-  void suspendChainExecution(Ambiance ambiance, SuspendChainRequest suspendChainRequest);
+  String suspendChainExecution(Ambiance ambiance, SuspendChainRequest suspendChainRequest);
 
-  void addExecutableResponse(Ambiance ambiance, ExecutableResponse executableResponse);
+  String addExecutableResponse(Ambiance ambiance, ExecutableResponse executableResponse);
 
-  default void handleStepResponse(Ambiance ambiance, @NonNull StepResponseProto stepResponse) {
-    handleStepResponse(ambiance, stepResponse, null);
+  default String handleStepResponse(Ambiance ambiance, @NonNull StepResponseProto stepResponse) {
+    return handleStepResponse(ambiance, stepResponse, null);
   }
 
-  void handleStepResponse(
+  String handleStepResponse(
       Ambiance ambiance, @NonNull StepResponseProto stepResponse, ExecutableResponse executableResponse);
 
-  void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseData> response, boolean asyncError);
+  String resumeNodeExecution(Ambiance ambiance, Map<String, ResponseData> response, boolean asyncError);
 
-  void handleFacilitationResponse(
+  String handleFacilitationResponse(
       Ambiance ambiance, @NonNull String notifyId, FacilitatorResponseProto facilitatorResponseProto);
 
-  void handleAdviserResponse(Ambiance ambiance, @NonNull String notifyId, AdviserResponse adviserResponse);
+  String handleAdviserResponse(Ambiance ambiance, @NonNull String notifyId, AdviserResponse adviserResponse);
 
-  void handleEventError(
+  String handleEventError(
       NodeExecutionEventType eventType, Ambiance ambiance, String eventNotifyId, FailureInfo failureInfo);
 
-  void spawnChild(Ambiance ambiance, SpawnChildRequest spawnChildRequest);
+  String spawnChild(Ambiance ambiance, SpawnChildRequest spawnChildRequest);
 
-  void queueTaskRequest(Ambiance ambiance, QueueTaskRequest queueTaskRequest);
+  String queueTaskRequest(Ambiance ambiance, QueueTaskRequest queueTaskRequest);
 
-  void spawnChildren(Ambiance ambiance, SpawnChildrenRequest spawnChildrenRequest);
+  String spawnChildren(Ambiance ambiance, SpawnChildrenRequest spawnChildrenRequest);
 
-  void handleProgressResponse(Ambiance ambiance, ProgressData progressData);
+  String handleProgressResponse(Ambiance ambiance, ProgressData progressData);
 }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.sdk.execution.events;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -19,11 +20,13 @@ import java.util.Map;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
-public class NotifyEventHandler implements PmsCommonsBaseEventHandler<NotifyEventProto> {
+public class NotifyEventHandler implements PmsCommonsBaseEventHandler<NotifyEventProto, Boolean> {
   @Inject NotifyEventListenerHelper notifyEventListenerHelper;
 
   @Override
-  public void handleEvent(NotifyEventProto event, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
+  public EventHandlerResult<Boolean> handleEvent(
+      NotifyEventProto event, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
     notifyEventListenerHelper.onMessage(event.getWaitInstanceId());
+    return EventHandlerResult.<Boolean>builder().data(true).success(true).build();
   }
 }

@@ -14,12 +14,13 @@ import io.harness.annotations.dev.TargetModule;
 
 import java.util.Map;
 
+// TODO: Move this out of here to
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @TargetModule(HarnessModule._884_PMS_COMMONS)
-public interface PmsCommonsBaseEventHandler<T> {
+public interface PmsCommonsBaseEventHandler<T, R> {
   /*
    * messageTimeStamp: timeStamp when the message was inserted in the redis queue.
    * readTs: timeStamp when the message was read from the redis queue.
    */
-  void handleEvent(T event, Map<String, String> metadataMap, long messageTimeStamp, long readTs);
+  EventHandlerResult<R> handleEvent(T event, Map<String, String> metadataMap, long messageTimeStamp, long readTs);
 }

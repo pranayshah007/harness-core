@@ -11,12 +11,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.interrupts.InterruptEvent;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 
 import java.util.Collections;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class NoopPmsEventHandler extends PmsBaseEventHandler<InterruptEvent> {
+public class NoopPmsEventHandler extends PmsBaseEventHandler<InterruptEvent, Boolean> {
   @Override
   protected Map<String, String> extraLogProperties(InterruptEvent event) {
     return null;
@@ -38,5 +39,7 @@ public class NoopPmsEventHandler extends PmsBaseEventHandler<InterruptEvent> {
   }
 
   @Override
-  protected void handleEventWithContext(InterruptEvent event) {}
+  protected EventHandlerResult<Boolean> handleEventWithContext(InterruptEvent event) {
+    return EventHandlerResult.<Boolean>builder().data(true).success(true).build();
+  }
 }

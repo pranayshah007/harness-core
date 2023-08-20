@@ -21,6 +21,7 @@ import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
 import io.harness.pms.sdk.core.registries.FacilitatorRegistry;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.sdk.execution.events.EventHandlerResult;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.common.collect.ImmutableMap;
@@ -33,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
-public class FacilitatorEventHandler extends PmsBaseEventHandler<FacilitatorEvent> {
+public class FacilitatorEventHandler extends PmsBaseEventHandler<FacilitatorEvent, String> {
   @Inject private FacilitatorRegistry facilitatorRegistry;
   @Inject private SdkNodeExecutionService sdkNodeExecutionService;
   @Inject private EngineObtainmentHelper engineObtainmentHelper;
@@ -57,7 +58,7 @@ public class FacilitatorEventHandler extends PmsBaseEventHandler<FacilitatorEven
   }
 
   @Override
-  protected void handleEventWithContext(FacilitatorEvent event) {
+  protected EventHandlerResult<String> handleEventWithContext(FacilitatorEvent event) {
     try {
       Ambiance ambiance = event.getAmbiance();
       StepInputPackage inputPackage = obtainInputPackage(ambiance, event.getRefObjectsList());
@@ -72,19 +73,22 @@ public class FacilitatorEventHandler extends PmsBaseEventHandler<FacilitatorEven
           break;
         }
       }
+      String messageId;
       if (currFacilitatorResponse == null) {
         log.info("Calculated Facilitator response is null. Returning response Successful false");
-        sdkNodeExecutionService.handleFacilitationResponse(
+        messageId = sdkNodeExecutionService.handleFacilitationResponse(
             ambiance, event.getNotifyId(), FacilitatorResponseProto.newBuilder().setIsSuccessful(false).build());
-        return;
+      } else {
+        messageId = sdkNodeExecutionService.handleFacilitationResponse(ambiance, event.getNotifyId(),
+            FacilitatorResponseMapper.toFacilitatorResponseProto(currFacilitatorResponse));
       }
-      sdkNodeExecutionService.handleFacilitationResponse(
-          ambiance, event.getNotifyId(), FacilitatorResponseMapper.toFacilitatorResponseProto(currFacilitatorResponse));
       log.info("Facilitation Event Handled Successfully");
+      return EventHandlerResult.<String>builder().success(true).data(messageId).build();
     } catch (Exception ex) {
       log.error("Error while facilitating execution", ex);
-      sdkNodeExecutionService.handleFacilitationResponse(event.getAmbiance(), event.getNotifyId(),
+      String messageId = sdkNodeExecutionService.handleFacilitationResponse(event.getAmbiance(), event.getNotifyId(),
           FacilitatorResponseProto.newBuilder().setPassThroughData(ex.getMessage()).setIsSuccessful(false).build());
+      return EventHandlerResult.<String>builder().success(true).data(messageId).build();
     }
   }
 

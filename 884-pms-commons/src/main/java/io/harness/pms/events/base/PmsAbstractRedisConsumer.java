@@ -23,13 +23,18 @@ import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.impl.redis.RedisAbstractConsumer;
-import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumerWithFutures;
+import io.harness.ng.core.event.HandleResult;
 import io.harness.queue.QueueController;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
@@ -37,8 +42,8 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
-public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListener>
-    extends RedisTraceConsumer implements PmsRedisConsumer {
+public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListener<?, ?>>
+    extends RedisTraceConsumerWithFutures implements PmsRedisConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 1;
   private static final int THREAD_SLEEP_TIME_IN_MILLIS = 200;
   private static final int THREAD_SLEEP_MILLIS_WHEN_CONSUMER_IS_BUSY =
@@ -97,25 +102,33 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
   protected void readEventsFrameworkMessages() throws InterruptedException {
     try {
       pollAndProcessMessages();
-    } catch (EventsFrameworkDownException e) {
+    } catch (EventsFrameworkDownException | ExecutionException e) {
       log.error("Events framework is down for " + this.getClass().getSimpleName() + " consumer. Retrying again...", e);
       TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
     }
   }
 
   @VisibleForTesting
-  void pollAndProcessMessages() throws InterruptedException {
-    List<Message> messages;
-    String messageId;
-    boolean messageProcessed;
-    messages = redisConsumer.read(Duration.ofSeconds(WAIT_TIME_IN_SECONDS));
+  void pollAndProcessMessages() throws InterruptedException, ExecutionException {
+    List<Message> messages = redisConsumer.read(Duration.ofSeconds(WAIT_TIME_IN_SECONDS));
+    ;
+    List<CompletableFuture<HandleResult>> futures = new ArrayList<>();
     for (Message message : messages) {
-      messageId = message.getId();
-      messageProcessed = handleMessage(message);
-      if (messageProcessed) {
-        redisConsumer.acknowledge(messageId);
-      }
+      futures.add(handleMessageWithFutures(message));
     }
+
+    CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    try {
+      allFutures.get(5, TimeUnit.MINUTES); // This blocks until all futures are complete
+      log.info("All {} futures have completed in time", allFutures);
+      ackFutures(futures);
+    } catch (TimeoutException e) {
+      log.error("All {} futures did not completed in time", allFutures);
+      ackFutures(futures);
+    } catch (InterruptedException | ExecutionException e) {
+      e.printStackTrace();
+    }
+
     if (messages.size() < ((RedisAbstractConsumer) this.redisConsumer).getBatchSize()) {
       // Adding thread sleep when the events read are less than the batch-size. This way when the load is high, consumer
       // will query the events quickly. And in case of low load, thread will sleep for some time.
@@ -127,6 +140,31 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
         TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_MILLIS_WHEN_CONSUMER_IS_BUSY);
       }
     }
+  }
+
+  private void ackFutures(List<CompletableFuture<HandleResult>> futures)
+      throws ExecutionException, InterruptedException {
+    for (CompletableFuture<HandleResult> f : futures) {
+      if (f.isDone()) {
+        HandleResult r = f.get();
+        if (r.isAck()) {
+          redisConsumer.acknowledge(r.getMessageId());
+        }
+      } else {
+        // TODO: Add better handling here
+        log.info("Future is not completed");
+      }
+    }
+  }
+
+  @Override
+  protected CompletableFuture<HandleResult> processMessageWithFutures(Message message) {
+    if (messageListener.isProcessable(message) && !isAlreadyProcessed(message)) {
+      log.info("Read message with message id {} from redis", message.getId());
+      insertMessageInCache(message);
+      return messageListener.handleMessageWithFuture(message);
+    }
+    return CompletableFuture.completedFuture(HandleResult.builder().messageId(message.getId()).build());
   }
 
   @Override
