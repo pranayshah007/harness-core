@@ -111,23 +111,25 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
   @VisibleForTesting
   void pollAndProcessMessages() throws InterruptedException, ExecutionException {
     List<Message> messages = redisConsumer.read(Duration.ofSeconds(WAIT_TIME_IN_SECONDS));
-    ;
-    List<CompletableFuture<HandleResult>> futures = new ArrayList<>();
-    for (Message message : messages) {
-      futures.add(handleMessageWithFutures(message));
+    if (EmptyPredicate.isNotEmpty(messages)){
+      List<CompletableFuture<HandleResult>> futures = new ArrayList<>();
+      for (Message message : messages) {
+        futures.add(handleMessageWithFutures(message));
+      }
+
+      CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+      try {
+        allFutures.get(5, TimeUnit.MINUTES); // This blocks until all futures are complete
+        log.info("All {} futures have completed in time", futures.size());
+        ackFutures(futures);
+      } catch (TimeoutException e) {
+        log.error("All {} futures did not completed in time", futures.size());
+        ackFutures(futures);
+      } catch (InterruptedException | ExecutionException e) {
+        e.printStackTrace();
+      }
     }
 
-    CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-    try {
-      allFutures.get(5, TimeUnit.MINUTES); // This blocks until all futures are complete
-      log.info("All {} futures have completed in time", allFutures);
-      ackFutures(futures);
-    } catch (TimeoutException e) {
-      log.error("All {} futures did not completed in time", allFutures);
-      ackFutures(futures);
-    } catch (InterruptedException | ExecutionException e) {
-      e.printStackTrace();
-    }
 
     if (messages.size() < ((RedisAbstractConsumer) this.redisConsumer).getBatchSize()) {
       // Adding thread sleep when the events read are less than the batch-size. This way when the load is high, consumer
