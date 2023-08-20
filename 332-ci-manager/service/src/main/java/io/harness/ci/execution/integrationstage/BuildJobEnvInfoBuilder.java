@@ -49,9 +49,12 @@ public class BuildJobEnvInfoBuilder {
         return InitializeStepInfo.DEFAULT_TIMEOUT_WITH_QUEUE;
       }
       return VM_INIT_TIMEOUT_MILLIS;
+    } else {
+      if (queueEnabled) {
+        return InitializeStepInfo.DEFAULT_TIMEOUT_WITH_QUEUE;
+      }
+      return InitializeStepInfo.DEFAULT_TIMEOUT;
     }
-
-    return InitializeStepInfo.DEFAULT_TIMEOUT;
   }
 
   private int getK8Timeout(K8sDirectInfraYaml k8sDirectInfraYaml, boolean queueEnabled) {
