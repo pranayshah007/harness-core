@@ -42,6 +42,7 @@ import java.util.Set;
 public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<InitializeStepNode> {
   private final String InitializeDisplayName = "Initialize";
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
+  @Inject private io.harness.ci.ff.CIFeatureFlagService ffService;
 
   public PlanCreationResponse createPlan(PlanCreationContext ctx, AbstractStageNode abstractStageNode,
       CodeBase codebase, Infrastructure infrastructure, List<ExecutionWrapperConfig> executionWrapperConfigs,
@@ -80,16 +81,19 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
         .name(InitializeDisplayName)
         .uuid(generateUuid())
         .type(InitializeStepNode.StepType.liteEngineTask)
-        .timeout(getTimeout(infrastructure))
+        .timeout(getTimeout(infrastructure, ctx.getAccountIdentifier()))
         .initializeStepInfo(initializeStepInfo)
         .build();
   }
 
-  private ParameterField<Timeout> getTimeout(Infrastructure infrastructure) {
+  private ParameterField<Timeout> getTimeout(Infrastructure infrastructure, String accountId) {
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
-
+    boolean queueEnabled = ffService.isEnabled(io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
+    if (queueEnabled) {
+      return ParameterField.createValueField(Timeout.fromString("10h"));
+    }
     if (infrastructure.getType() == Infrastructure.Type.VM) {
       VmInitializeTaskParamsBuilder.validateInfrastructure(infrastructure);
       VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
