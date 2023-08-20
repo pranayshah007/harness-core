@@ -491,7 +491,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     return getKubectlContainerInfos(commandRequest, workloads, logCallback, timeoutInMillis);
   }
 
-  private List<ContainerInfo> getFabric8ContainerInfos(
+  @VisibleForTesting
+  List<ContainerInfo> getFabric8ContainerInfos(
       HelmCommandRequestNG commandRequest, LogCallback logCallback, long timeoutInMillis) throws Exception {
     List<ContainerInfo> containerInfos = new ArrayList<>();
 
@@ -511,7 +512,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
     return containerInfos;
   }
 
-  private List<ContainerInfo> getKubectlContainerInfos(HelmCommandRequestNG commandRequest,
+  @VisibleForTesting
+  List<ContainerInfo> getKubectlContainerInfos(HelmCommandRequestNG commandRequest,
       List<KubernetesResourceId> workloads, LogCallback logCallback, long timeoutInMillis) throws Exception {
     Kubectl client = KubectlFactory.getKubectlClient(
         k8sGlobalConfigService.getKubectlPath(commandRequest.isUseLatestKubectlVersion()),
@@ -672,10 +674,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
 
       if (!useSteadyStateCheck && commandRequest.isDisableFabric8()) {
-        List<KubernetesResource> resources = helmSteadyStateService.readManifestFromHelmRelease(
-            HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest));
         rollbackWorkloads =
-            resources.stream()
+            helmSteadyStateService.readManifestFromHelmRelease(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest))
+                .stream()
                 .map(KubernetesResource::getResourceId)
                 .filter(
                     kubernetesResourceId -> HELM_STEADY_STATE_WORKLOAD_KINDS.contains(kubernetesResourceId.getKind()))

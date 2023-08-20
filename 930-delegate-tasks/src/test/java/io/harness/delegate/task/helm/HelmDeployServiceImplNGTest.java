@@ -179,6 +179,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
   private HelmCliResponse helmCliListReleasesResponse;
 
   private TimeLimiter timeLimiter = new FakeTimeLimiter();
+  final private List<KubernetesResource> resources = new ArrayList<>();
 
   private HttpHelmStoreDelegateConfig httpHelmStoreDelegateConfig =
       HttpHelmStoreDelegateConfig.builder()
@@ -273,6 +274,49 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
         .downloadChartFilesFromHttpRepo(eq(helmChartManifestDelegateConfig.build()), anyString(), anyLong());
     doReturn(logCallback).when(k8sTaskHelperBase).getLogCallback(any(), any(), anyBoolean(), any());
     doReturn(-1).when(helmTaskHelperBase).skipDefaultHelmValuesYaml(anyString(), any(), anyBoolean(), any());
+    resources.add(KubernetesResource.builder()
+                      .resourceId(KubernetesResourceId.builder().namespace("default").kind(Kind.Job.name()).build())
+                      .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(KubernetesResourceId.builder().namespace("default").kind(Kind.Deployment.name()).build())
+            .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(KubernetesResourceId.builder().namespace("default").kind(Kind.DeploymentConfig.name()).build())
+            .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(KubernetesResourceId.builder().namespace("default").kind(Kind.StatefulSet.name()).build())
+            .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(KubernetesResourceId.builder().namespace("default").kind(Kind.DaemonSet.name()).build())
+            .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(KubernetesResourceId.builder().namespace("default").kind(Kind.ReplicaSet.name()).build())
+            .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(
+                KubernetesResourceId.builder().namespace("default").kind(Kind.ReplicationController.name()).build())
+            .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(KubernetesResourceId.builder().namespace("default").kind(Kind.ConfigMap.name()).build())
+            .build());
+    resources.add(KubernetesResource.builder()
+                      .resourceId(KubernetesResourceId.builder().namespace("default").kind(Kind.Secret.name()).build())
+                      .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(KubernetesResourceId.builder().namespace("default").kind(Kind.VirtualService.name()).build())
+            .build());
+    resources.add(
+        KubernetesResource.builder()
+            .resourceId(KubernetesResourceId.builder().namespace("default").kind(Kind.DestinationRule.name()).build())
+            .build());
   }
 
   @Test
@@ -478,32 +522,104 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
         .getContainerInfos(eq(kubernetesConfig), eq(helmInstallCommandRequestNG.getReleaseName()),
             eq(helmInstallCommandRequestNG.getNamespace()), eq(helmInstallCommandRequestNG.getTimeoutInMillis()));
 
-    assertThat(helmDeployService.getContainerInfos(helmInstallCommandRequestNG, Collections.emptyList(), true,
+    assertThat(spyHelmDeployService.getContainerInfos(helmInstallCommandRequestNG, Collections.emptyList(), true,
                    logCallback, helmInstallCommandRequestNG.getTimeoutInMillis()))
         .isNotNull();
+    verify(spyHelmDeployService, times(1))
+        .getKubectlContainerInfos(helmInstallCommandRequestNG, Collections.emptyList(), logCallback,
+            helmInstallCommandRequestNG.getTimeoutInMillis());
 
     // getKubectlContainerInfos -- steadyStateCheck fail
     doReturn(false)
         .when(k8sTaskHelperBase)
         .doStatusCheckForAllResources(any(), anyList(), any(), eq(helmInstallCommandRequestNG.getNamespace()),
             eq(helmInstallCommandRequestNG.getLogCallback()), eq(false));
-    assertThatThrownBy(
-        ()
-            -> helmDeployService.getContainerInfos(helmInstallCommandRequestNG,
-                Collections.singletonList(KubernetesResourceId.builder().namespace("default").name("abc").build()),
-                true, logCallback, helmInstallCommandRequestNG.getTimeoutInMillis()))
+    List<KubernetesResourceId> kubernetesResourceIds =
+        Collections.singletonList(KubernetesResourceId.builder().namespace("default").name("abc").build());
+    assertThatThrownBy(()
+                           -> spyHelmDeployService.getContainerInfos(helmInstallCommandRequestNG, kubernetesResourceIds,
+                               true, logCallback, helmInstallCommandRequestNG.getTimeoutInMillis()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Steady state check failed");
+    verify(spyHelmDeployService, times(1))
+        .getKubectlContainerInfos(helmInstallCommandRequestNG, kubernetesResourceIds, logCallback,
+            helmInstallCommandRequestNG.getTimeoutInMillis());
 
     // getFabric8ContainerInfo
     doReturn(Collections.emptyList())
         .when(containerDeploymentDelegateBaseHelper)
         .getContainerInfosWhenReadyByLabels(eq(kubernetesConfig), eq(logCallback), anyMap(), anyList());
 
-    assertThat(helmDeployService.getContainerInfos(helmInstallCommandRequestNG,
+    assertThat(spyHelmDeployService.getContainerInfos(helmInstallCommandRequestNG,
                    Collections.singletonList(KubernetesResourceId.builder().namespace("default").name("abc").build()),
                    false, logCallback, helmInstallCommandRequestNG.getTimeoutInMillis()))
         .isEmpty();
+    verify(spyHelmDeployService, times(1))
+        .getFabric8ContainerInfos(
+            helmInstallCommandRequestNG, logCallback, helmInstallCommandRequestNG.getTimeoutInMillis());
+  }
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetContainerInfosWithDisableFabric8FF() throws Exception {
+    setFakeTimeLimiter();
+    helmInstallCommandRequestNG.setDisableFabric8(true);
+    // getKubectlContainerInfos -- steadyStateCheck pass
+    doReturn("kubectl-path").when(k8sGlobalConfigService).getKubectlPath(anyBoolean());
+    doReturn(true)
+        .when(k8sTaskHelperBase)
+        .doStatusCheckForAllResources(any(), anyList(), any(), eq(helmInstallCommandRequestNG.getNamespace()),
+            eq(helmInstallCommandRequestNG.getLogCallback()), eq(false));
+    ContainerInfo containerInfo = ContainerInfo.builder().build();
+    doReturn(Collections.singletonList(containerInfo))
+        .when(k8sTaskHelperBase)
+        .getContainerInfos(eq(kubernetesConfig), eq(helmInstallCommandRequestNG.getReleaseName()),
+            eq(helmInstallCommandRequestNG.getNamespace()), eq(helmInstallCommandRequestNG.getTimeoutInMillis()));
+
+    assertThat(spyHelmDeployService.getContainerInfos(helmInstallCommandRequestNG, Collections.emptyList(), true,
+                   logCallback, helmInstallCommandRequestNG.getTimeoutInMillis()))
+        .isNotNull();
+    verify(spyHelmDeployService, times(1))
+        .getKubectlContainerInfos(helmInstallCommandRequestNG, Collections.emptyList(), logCallback,
+            helmInstallCommandRequestNG.getTimeoutInMillis());
+    assertThat(spyHelmDeployService.getContainerInfos(helmInstallCommandRequestNG, Collections.emptyList(), false,
+                   logCallback, helmInstallCommandRequestNG.getTimeoutInMillis()))
+        .isNotNull();
+    verify(spyHelmDeployService, times(2))
+        .getKubectlContainerInfos(helmInstallCommandRequestNG, Collections.emptyList(), logCallback,
+            helmInstallCommandRequestNG.getTimeoutInMillis());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetContainerInfosWithDisableFabric8Rollback() throws Exception {
+    setFakeTimeLimiter();
+    helmRollbackCommandRequestNG.setDisableFabric8(true);
+    // getKubectlContainerInfos -- steadyStateCheck pass
+    doReturn("kubectl-path").when(k8sGlobalConfigService).getKubectlPath(anyBoolean());
+    doReturn(true)
+        .when(k8sTaskHelperBase)
+        .doStatusCheckForAllResources(any(), anyList(), any(), eq(helmRollbackCommandRequestNG.getNamespace()),
+            eq(helmRollbackCommandRequestNG.getLogCallback()), eq(false));
+    ContainerInfo containerInfo = ContainerInfo.builder().build();
+    doReturn(Collections.singletonList(containerInfo))
+        .when(k8sTaskHelperBase)
+        .getContainerInfos(eq(kubernetesConfig), eq(helmRollbackCommandRequestNG.getReleaseName()),
+            eq(helmRollbackCommandRequestNG.getNamespace()), eq(helmRollbackCommandRequestNG.getTimeoutInMillis()));
+
+    assertThat(spyHelmDeployService.getContainerInfos(helmRollbackCommandRequestNG, Collections.emptyList(), true,
+                   logCallback, helmRollbackCommandRequestNG.getTimeoutInMillis()))
+        .isNotNull();
+    verify(spyHelmDeployService, times(1))
+        .getKubectlContainerInfos(helmRollbackCommandRequestNG, Collections.emptyList(), logCallback,
+            helmRollbackCommandRequestNG.getTimeoutInMillis());
+    assertThat(spyHelmDeployService.getContainerInfos(helmRollbackCommandRequestNG, Collections.emptyList(), false,
+                   logCallback, helmRollbackCommandRequestNG.getTimeoutInMillis()))
+        .isNotNull();
+    verify(spyHelmDeployService, times(2))
+        .getKubectlContainerInfos(helmRollbackCommandRequestNG, Collections.emptyList(), logCallback,
+            helmRollbackCommandRequestNG.getTimeoutInMillis());
   }
 
   private void initForDeploy() throws Exception {
@@ -548,6 +664,84 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
     doNothing().when(helmTaskHelperBase).revokeReadPermission(helmInstallCommandRequestNG.getKubeConfigLocation());
     spyHelmDeployService.deploy(helmInstallCommandRequestNG);
     verify(helmTaskHelperBase, times(1)).revokeReadPermission(helmInstallCommandRequestNG.getKubeConfigLocation());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testDeployInstallWithDisableFabric8() throws Exception {
+    helmInstallCommandRequestNG.setDisableFabric8(true);
+    initForDeploy();
+    doReturn(Collections.emptyList()).when(spyHelmDeployService).printHelmChartKubernetesResources(any());
+    doReturn(taskProgressCallback).when(k8sTaskHelperBase).getTaskProgressCallback(any(), any());
+    doReturn(resources).when(helmSteadyStateService).readManifestFromHelmRelease(any(HelmCommandData.class));
+    // K8SteadyStateCheckEnabled false
+    ArgumentCaptor<HelmCommandData> argumentCaptor = ArgumentCaptor.forClass(HelmCommandData.class);
+    doReturn(Collections.emptyList())
+        .when(spyHelmDeployService)
+        .getKubectlContainerInfos(eq(helmInstallCommandRequestNG), anyList(), eq(logCallback),
+            eq(helmInstallCommandRequestNG.getTimeoutInMillis()));
+    HelmCommandResponseNG helmCommandResponseNG = spyHelmDeployService.deploy(helmInstallCommandRequestNG);
+    assertThat(helmCommandResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(helmClient).install(argumentCaptor.capture(), eq(true));
+    verify(helmSteadyStateService, times(1)).readManifestFromHelmRelease(any(HelmCommandData.class));
+    verify(helmSteadyStateService, never()).findEligibleWorkloadIds(anyList());
+    verify(k8sTaskHelperBase, never())
+        .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
+    ArgumentCaptor<List> argumentCaptor2 = ArgumentCaptor.forClass(List.class);
+    verify(spyHelmDeployService, times(1))
+        .getKubectlContainerInfos(eq(helmInstallCommandRequestNG), argumentCaptor2.capture(), eq(logCallback),
+            eq(helmInstallCommandRequestNG.getTimeoutInMillis()));
+    assertThat(argumentCaptor2.getValue().size()).isEqualTo(6);
+
+    // K8SteadyStateCheckEnabled true
+    helmInstallCommandRequestNG.setK8SteadyStateCheckEnabled(true);
+    doReturn("1.16").when(kubernetesContainerService).getVersionAsString(eq(kubernetesConfig));
+    assertThat(spyHelmDeployService.deploy(helmInstallCommandRequestNG)).isEqualTo(helmCommandResponseNG);
+    verify(helmSteadyStateService, times(1)).readManifestFromHelmRelease(any(HelmCommandData.class));
+    verify(helmSteadyStateService, never()).findEligibleWorkloadIds(anyList());
+    verify(k8sTaskHelperBase, times(1))
+        .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
+
+    helmInstallCommandRequestNG.setSendTaskProgressEvents(true);
+
+    // Check if revokeReadPermission function called when Helm Version is V380
+    helmInstallCommandRequestNG.setHelmVersion(HelmVersion.V380);
+    doNothing().when(helmTaskHelperBase).revokeReadPermission(helmInstallCommandRequestNG.getKubeConfigLocation());
+    spyHelmDeployService.deploy(helmInstallCommandRequestNG);
+    verify(helmTaskHelperBase, times(1)).revokeReadPermission(helmInstallCommandRequestNG.getKubeConfigLocation());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testRollbackWithDisableFabric8() throws Exception {
+    setFakeTimeLimiter();
+    initForRollback();
+
+    helmRollbackCommandRequestNG.setK8SteadyStateCheckEnabled(false);
+    helmRollbackCommandRequestNG.setUseRefactorSteadyStateCheck(false);
+    helmRollbackCommandRequestNG.setDisableFabric8(true);
+    doReturn(resources).when(helmSteadyStateService).readManifestFromHelmRelease(any(HelmCommandData.class));
+    doReturn(Collections.emptyList())
+        .when(spyHelmDeployService)
+        .getKubectlContainerInfos(eq(helmRollbackCommandRequestNG), anyList(), eq(logCallback),
+            eq(helmRollbackCommandRequestNG.getTimeoutInMillis()));
+
+    HelmCommandResponseNG helmCommandResponseNG = spyHelmDeployService.rollback(helmRollbackCommandRequestNG);
+
+    verify(helmClient).rollback(any(HelmCommandData.class), eq(true));
+    assertThat(helmCommandResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    ArgumentCaptor<List> argumentCaptor2 = ArgumentCaptor.forClass(List.class);
+    verify(spyHelmDeployService, times(1))
+        .getKubectlContainerInfos(eq(helmRollbackCommandRequestNG), argumentCaptor2.capture(), eq(logCallback),
+            eq(helmInstallCommandRequestNG.getTimeoutInMillis()));
+    assertThat(argumentCaptor2.getValue().size()).isEqualTo(6);
+    verify(helmSteadyStateService, times(1)).readManifestFromHelmRelease(any(HelmCommandData.class));
+    verify(k8sTaskHelperBase, never()).getReleaseHistoryFromSecret(any(KubernetesConfig.class), anyString());
+    verify(k8sTaskHelperBase, never())
+        .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
   }
 
   @Test
