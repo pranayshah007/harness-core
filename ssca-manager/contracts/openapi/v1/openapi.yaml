@@ -40,6 +40,100 @@ paths:
         $ref: '#/components/requestBodies/SbomProcessRequestBody'
       tags:
         - sbomProcessor
+  '/v1/org/{org}/project/{project}/normalized_sbom_component/list':
+    parameters:
+      - name: org
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Organization Id
+      - in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Project Id
+        name: project
+    get:
+      summary: ''
+      operationId: list-normalized-sbom-component
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NormalizedSbomComponentDTO'
+          headers:
+            header-0:
+              schema:
+                type: string
+      description: Gives a paginated list of normalized SBOM Components.
+      tags:
+        - normalizeSbom
+      parameters:
+        - $ref: '#/components/parameters/PageNumberParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+  '/v1/org/{org}/project/{project}/enforcement_result':
+    parameters:
+      - name: org
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Organization Id
+      - in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Project Id
+        name: project
+    post:
+      summary: ''
+      operationId: save-enforcement-result
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnforcementResultDTO'
+        description: Enforcement Result to be saved.
+      tags:
+        - enforcementResult
+      description: save enforcement result details.
+  '/v1/org/{org}/project/{project}/enforcement_summary':
+    parameters:
+      - name: org
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Organization Id
+      - in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Project Id
+        name: project
+    post:
+      summary: Save Enforcement Summary Details
+      operationId: save-enforcement-summary
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnforcementSummaryDTO'
+        description: Enforcement Result to be saved.
+      description: save enforcement summary details.
+      tags:
+        - enforcementSummary
   '/v1/org/{org}/project/{project}/sbom/enforcement':
     parameters:
       - $ref: '#/components/parameters/OrgParam'
@@ -236,6 +330,143 @@ components:
           $ref: '#/components/schemas/Artifact'
         policy_file_id:
           type: string
+    NormalizedSbomComponentDTO:
+      title: NormalizedSbomComponentDTO
+      x-stoplight:
+        id: f4842caddn13n
+      type: object
+      properties:
+        orchestrationId:
+          type: string
+        sbomVersion:
+          type: string
+        artifactURL:
+          type: string
+        artifactId:
+          type: string
+        artifactName:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        createdOn:
+          type: string
+        toolVersion:
+          type: string
+        toolName:
+          type: string
+        toolVendor:
+          type: string
+        packageId:
+          type: string
+        packageName:
+          type: string
+        packageDescription:
+          type: string
+        packageLicense:
+          type: array
+          items:
+            type: string
+        packageSourceInfo:
+          type: string
+        packageVersion:
+          type: string
+        packageSupplierName:
+          type: string
+        packageOriginatorName:
+          type: string
+        originatorType:
+          type: string
+        packageType:
+          type: string
+        packageCPE:
+          type: string
+        packageProperties:
+          type: string
+        packageManager:
+          type: string
+        packageNamespace:
+          type: string
+        majorVersion:
+          type: number
+        minorVersion:
+          type: number
+        patchVersion:
+          type: number
+        pipelineIdentifier:
+          type: string
+        projectIdentifier:
+          type: string
+        orgIdentifier:
+          type: string
+        sequenceID:
+          type: string
+        accountId:
+          type: string
+      description: Normalized SBOM Component Details
+    EnforcementResultDTO:
+      title: EnforcementResultDTO
+      x-stoplight:
+        id: v717ytuxhkcp8
+      type: object
+      properties:
+        enforcementID:
+          type: string
+        artifactId:
+          type: string
+        tag:
+          type: string
+        imageName:
+          type: string
+        accountId:
+          type: string
+        orgIdentifier:
+          type: string
+        projectIdentifier:
+          type: string
+        orchestrationID:
+          type: string
+        violationType:
+          type: string
+        violationDetails:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        supplier:
+          type: string
+        supplierType:
+          type: string
+        packageManager:
+          type: string
+        license:
+          type: array
+          items:
+            type: string
+        purl:
+          type: string
+      description: Enforcement Result Details DTO
+    EnforcementSummaryDTO:
+      title: EnforcementSummaryDTO
+      x-stoplight:
+        id: r05pf7mpi8thi
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/Artifact'
+        enforcementId:
+          type: string
+        orchestrationId:
+          type: string
+        denyListViolationCount:
+          type: number
+        allowListViolationCount:
+          type: number
+        status:
+          type: string
+      description: Enforcement summary detail DTO
   parameters:
     OrgParam:
       name: org
@@ -258,6 +489,41 @@ components:
       schema:
         type: string
       description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+    PageNumberParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Required Page number
+    PageSizeParam:
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Required number of elements per page
+      name: limit
+    TotalElementHeader:
+      name: X-Total-Elements
+      in: header
+      required: false
+      schema:
+        type: integer
+      description: Total number of elements in the header
+    PageNumberHeader:
+      name: X-Page-Number
+      in: header
+      required: false
+      schema:
+        type: integer
+      description: Page number in response
+    PageSizeHeader:
+      name: X-Page-Size
+      in: header
+      required: false
+      schema:
+        type: integer
+      description: Page size in response
   requestBodies:
     SbomProcessRequestBody:
       content:
@@ -289,4 +555,7 @@ components:
           schema:
             $ref: '#/components/schemas/EnforceSbomResponseBody'
 tags:
+  - name: enforcementResult
+  - name: enforcementSummary
+  - name: normalizeSbom
   - name: sbomProcessor
