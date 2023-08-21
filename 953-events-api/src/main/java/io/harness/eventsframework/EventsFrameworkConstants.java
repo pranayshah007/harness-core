@@ -161,7 +161,7 @@ public final class EventsFrameworkConstants {
   public static final int GIT_BRANCH_HOOK_EVENT_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int GIT_CONFIG_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int FULL_SYNC_STREAM_MAX_TOPIC_SIZE = 10000;
-  public static final int ORCHESTRATION_LOG_MAX_TOPIC_SIZE = 100000;
+  public static final int ORCHESTRATION_LOG_MAX_TOPIC_SIZE = 300000;
 
   public static final Duration DEFAULT_MAX_PROCESSING_TIME = Duration.ofSeconds(10);
   public static final Duration ENTITY_CRUD_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
@@ -178,7 +178,7 @@ public final class EventsFrameworkConstants {
   public static final Duration HARNESS_TO_GIT_PUSH_MAX_PROCESSING_TIME = Duration.ofSeconds(50);
   public static final Duration GIT_CONFIG_STREAM_PROCESSING_TIME = Duration.ofSeconds(20);
   public static final Duration FULL_SYNC_STREAM_PROCESSING_TIME = Duration.ofSeconds(20);
-  public static final Duration ORCHESTRATION_LOG_MAX_PROCESSING_TIME = Duration.ofSeconds(30);
+  public static final Duration ORCHESTRATION_LOG_MAX_PROCESSING_TIME = Duration.ofSeconds(60);
   public static final Duration PLAN_NOTIFY_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
   public static final Duration CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
 
