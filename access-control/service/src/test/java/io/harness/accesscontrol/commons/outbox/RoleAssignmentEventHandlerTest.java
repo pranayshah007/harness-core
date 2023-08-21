@@ -8,6 +8,9 @@
 package io.harness.accesscontrol.commons.outbox;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.audit.Action.ROLE_ASSIGNMENT_CREATED;
+import static io.harness.audit.Action.ROLE_ASSIGNMENT_DELETED;
+import static io.harness.audit.Action.ROLE_ASSIGNMENT_UPDATED;
 import static io.harness.rule.OwnerRule.KARAN;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
@@ -135,7 +138,7 @@ public class RoleAssignmentEventHandlerTest extends CategoryTest {
     roleassignmentEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
-    assertAuditEntry(accountIdentifier, orgIdentifier, email, auditEntry, outboxEvent);
+    assertAuditEntry(accountIdentifier, orgIdentifier, email, auditEntry, outboxEvent, ROLE_ASSIGNMENT_CREATED);
     assertNull(auditEntry.getOldYaml());
     assertNotNull(auditEntry.getNewYaml());
   }
@@ -173,7 +176,8 @@ public class RoleAssignmentEventHandlerTest extends CategoryTest {
     roleassignmentEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
-    assertAuditEntry(accountIdentifier, orgIdentifier, principalIdentifier, auditEntry, outboxEvent);
+    assertAuditEntry(
+        accountIdentifier, orgIdentifier, principalIdentifier, auditEntry, outboxEvent, ROLE_ASSIGNMENT_UPDATED);
     assertNotNull(auditEntry.getOldYaml());
     assertNotNull(auditEntry.getNewYaml());
   }
@@ -213,13 +217,14 @@ public class RoleAssignmentEventHandlerTest extends CategoryTest {
     roleassignmentEventHandler.handle(outboxEvent);
     verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any());
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
-    assertAuditEntry(accountIdentifier, orgIdentifier, principalIdentifier, auditEntry, outboxEvent);
+    assertAuditEntry(
+        accountIdentifier, orgIdentifier, principalIdentifier, auditEntry, outboxEvent, ROLE_ASSIGNMENT_DELETED);
     assertNotNull(auditEntry.getOldYaml());
     assertNull(auditEntry.getNewYaml());
   }
 
   private void assertAuditEntry(String accountIdentifier, String orgIdentifier, String auditResourceIdentifier,
-      AuditEntry auditEntry, OutboxEvent outboxEvent) {
+      AuditEntry auditEntry, OutboxEvent outboxEvent, Action action) {
     assertNotNull(auditEntry);
     assertEquals(outboxEvent.getId(), auditEntry.getInsertId());
     switch (auditEntry.getResource().getType()) {
@@ -242,6 +247,6 @@ public class RoleAssignmentEventHandlerTest extends CategoryTest {
     assertEquals(ModuleType.CORE, auditEntry.getModule());
     assertEquals(outboxEvent.getCreatedAt().longValue(), auditEntry.getTimestamp());
     assertNull(auditEntry.getEnvironment());
-    assertEquals(Action.UPDATE, auditEntry.getAction());
+    assertEquals(action, auditEntry.getAction());
   }
 }
