@@ -12,6 +12,7 @@ import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.cdng.k8s.K8sStepHelper.MISSING_INFRASTRUCTURE_ERROR;
 import static io.harness.cdng.k8s.K8sStepHelper.RELEASE_NAME;
+import static io.harness.cdng.k8s.yaml.YamlUtility.REDACTED_BY_HARNESS;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AWS;
@@ -4939,6 +4940,74 @@ public class K8sStepHelperTest extends CDNGTestBase {
     assertThat(
         ((GitStore) k8sStepPassThroughData.getManifestOutcomeList().get(1).getStore()).getPaths().getValue().get(0))
         .isEqualTo("path/to/k8s/manifest/step-values.yaml");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testRenderAndRemoveCommentsIntegration() {
+    String yaml = "key: value1 # test-comment\n"
+        + "listOf:\n"
+        + "- # comment test\n"
+        + "  key: <+expr>\n"
+        + "  value: item1\n"
+        + "# test-comment\n"
+        + "<+expr-full>\n"
+        + "literalValue: |-\n"
+        + "  lorem <+expr>\n"
+        + "  lorem # <+expr>\n";
+
+    String expectedYaml = "key: value1 # " + REDACTED_BY_HARNESS + "\n"
+        + "listOf:\n"
+        + "- # " + REDACTED_BY_HARNESS + "\n"
+        + "  key: valuen\n"
+        + "  value: item1\n"
+        + "# " + REDACTED_BY_HARNESS + "\n"
+        + "inline: value\n"
+        + "literalValue: |-\n"
+        + "  lorem valuen\n"
+        + "  lorem # valuen\n";
+
+    doAnswer(invocation -> {
+      String value = invocation.getArgument(1);
+      return value.replaceAll("<\\+expr>", "valuen").replaceAll("<\\+expr-full>", "inline: value");
+    })
+        .when(engineExpressionService)
+        .renderExpression(any(Ambiance.class), any(), any(ExpressionMode.class));
+
+    List<String> result =
+        k8sStepHelper.removeCommentsAndRender(K8sManifestOutcome.builder().build(), ambiance, List.of(yaml));
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0)).isEqualTo(expectedYaml);
+    verify(engineExpressionService, times(1))
+        .renderExpression(any(Ambiance.class), any(), eq(ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED));
+    verify(engineExpressionService, times(1))
+        .renderExpression(any(Ambiance.class), eq(yaml), eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testRenderAndRemoveCommentsNoComments() {
+    String yaml = "key: value\n"
+        + "key1: <+expr>#/abc\n";
+    String expectedYaml = "key: value\n"
+        + "key1: value#/abc\n";
+
+    doAnswer(invocation -> {
+      String value = invocation.getArgument(1);
+      return value.replaceAll("<\\+expr>", "value");
+    })
+        .when(engineExpressionService)
+        .renderExpression(any(Ambiance.class), any(), eq(ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED));
+
+    List<String> result =
+        k8sStepHelper.removeCommentsAndRender(K8sManifestOutcome.builder().build(), ambiance, List.of(yaml));
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0)).isEqualTo(expectedYaml);
+
+    verify(engineExpressionService, times(1)).renderExpression(any(Ambiance.class), any(), any(ExpressionMode.class));
   }
 
   private FileStoreNodeDTO getFileStoreNode(String path, String name) {

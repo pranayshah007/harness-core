@@ -45,12 +45,13 @@ public class K8sStepPassThroughData implements PassThroughData {
   ManifestOutcome manifestOutcome;
   List<ManifestOutcome> manifestOutcomeList;
   InfrastructureOutcome infrastructure;
-  Map<String, HelmFetchFileResult> helmValuesFileMapContents;
-  Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents;
+
   String helmValuesFileContent;
   List<ManifestFiles> manifestFiles;
   ServiceHooksOutcome serviceHooksOutcome;
   // for custom source manifest and values files
+  Map<String, HelmFetchFileResult> helmValuesFileMapContents;
+  Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents;
   Map<String, Collection<CustomSourceFile>> customFetchContent;
   String zippedManifestFileId;
 
