@@ -75,7 +75,7 @@ func TestCreate(t *testing.T) {
 
 	rdb.Create(ctx, key)
 
-	assert.Equal(t, mr.Exists(key), true)
+	assert.Equal(t, mr.Exists(stream.Prefix+key), true)
 }
 
 func TestCreate_Error(t *testing.T) {
