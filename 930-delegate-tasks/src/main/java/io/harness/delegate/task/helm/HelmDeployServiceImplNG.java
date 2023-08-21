@@ -325,21 +325,22 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
 
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WaitForSteadyState);
-      if (useSteadyStateCheck && commandRequest.isUseRefactorSteadyStateCheck()) {
-        resources = helmSteadyStateService.readManifestFromHelmRelease(
-            HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest));
-        workloads = helmSteadyStateService.findEligibleWorkloadIds(resources);
-      }
 
-      if (!useSteadyStateCheck && commandRequest.isDisableFabric8()) {
+      boolean shouldFilterWorkloads =
+          useSteadyStateCheck ? commandRequest.isUseRefactorSteadyStateCheck() : commandRequest.isDisableFabric8();
+      if (shouldFilterWorkloads) {
         resources = helmSteadyStateService.readManifestFromHelmRelease(
             HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest));
-        workloads =
-            resources.stream()
-                .map(KubernetesResource::getResourceId)
-                .filter(
-                    kubernetesResourceId -> HELM_STEADY_STATE_WORKLOAD_KINDS.contains(kubernetesResourceId.getKind()))
-                .collect(Collectors.toList());
+        if (useSteadyStateCheck) {
+          workloads = helmSteadyStateService.findEligibleWorkloadIds(resources);
+        } else {
+          workloads =
+              resources.stream()
+                  .map(KubernetesResource::getResourceId)
+                  .filter(
+                      kubernetesResourceId -> HELM_STEADY_STATE_WORKLOAD_KINDS.contains(kubernetesResourceId.getKind()))
+                  .collect(Collectors.toList());
+        }
       }
 
       serviceHookHandler.addWorkloadContextForHooks(resources, Collections.emptyList());
@@ -667,20 +668,21 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WaitForSteadyState);
 
-      if (useSteadyStateCheck && commandRequest.isUseRefactorSteadyStateCheck()) {
+      boolean shouldFilterWorkloads =
+          useSteadyStateCheck ? commandRequest.isUseRefactorSteadyStateCheck() : commandRequest.isDisableFabric8();
+      if (shouldFilterWorkloads) {
         List<KubernetesResource> resources = helmSteadyStateService.readManifestFromHelmRelease(
             HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest));
-        rollbackWorkloads = helmSteadyStateService.findEligibleWorkloadIds(resources);
-      }
-
-      if (!useSteadyStateCheck && commandRequest.isDisableFabric8()) {
-        rollbackWorkloads =
-            helmSteadyStateService.readManifestFromHelmRelease(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest))
-                .stream()
-                .map(KubernetesResource::getResourceId)
-                .filter(
-                    kubernetesResourceId -> HELM_STEADY_STATE_WORKLOAD_KINDS.contains(kubernetesResourceId.getKind()))
-                .collect(Collectors.toList());
+        if (useSteadyStateCheck) {
+          rollbackWorkloads = helmSteadyStateService.findEligibleWorkloadIds(resources);
+        } else {
+          rollbackWorkloads =
+              resources.stream()
+                  .map(KubernetesResource::getResourceId)
+                  .filter(
+                      kubernetesResourceId -> HELM_STEADY_STATE_WORKLOAD_KINDS.contains(kubernetesResourceId.getKind()))
+                  .collect(Collectors.toList());
+        }
       }
 
       List<ContainerInfo> containerInfos = getContainerInfos(
