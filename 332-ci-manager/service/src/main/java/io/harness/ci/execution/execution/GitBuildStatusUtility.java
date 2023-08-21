@@ -177,7 +177,7 @@ public class GitBuildStatusUtility {
 
         boolean executeOnDelegate =
             connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
-        if (executeOnDelegate && !executeOnDelegate) {
+        if (executeOnDelegate && !isHarnessScm) {
           sendStatusViaDelegate(
               ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
         } else {

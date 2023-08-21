@@ -20,7 +20,6 @@ import lombok.Data;
 import lombok.Singular;
 
 @Data
-@Builder
 public class ConnectorDetails {
   @NotNull ConnectorConfigDTO connectorConfig;
   @NotNull ConnectorType connectorType;
@@ -32,6 +31,23 @@ public class ConnectorDetails {
   SSHKeyDetails sshKeyDetails;
   @Singular("envToSecretEntry") Map<EnvVariableEnum, String> envToSecretsMap;
   Boolean executeOnDelegate;
+
+  @Builder
+  public ConnectorDetails(ConnectorConfigDTO connectorConfig, ConnectorType connectorType, String identifier,
+      String orgIdentifier, String projectIdentifier, Set<String> delegateSelectors,
+      List<EncryptedDataDetail> encryptedDataDetails, SSHKeyDetails sshKeyDetails,
+      Map<EnvVariableEnum, String> envToSecretsMap, Boolean executeOnDelegate) {
+    this.connectorConfig = connectorConfig;
+    this.connectorType = connectorType;
+    this.identifier = identifier;
+    this.orgIdentifier = orgIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.delegateSelectors = delegateSelectors;
+    this.encryptedDataDetails = encryptedDataDetails;
+    this.sshKeyDetails = sshKeyDetails;
+    this.envToSecretsMap = envToSecretsMap;
+    this.executeOnDelegate = executeOnDelegate;
+  }
 
   public ConnectorDetails(ConnectorDetails other) {
     connectorConfig = other.getConnectorConfig();
