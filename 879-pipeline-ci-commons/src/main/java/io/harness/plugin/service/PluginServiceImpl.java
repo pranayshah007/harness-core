@@ -31,7 +31,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static java.lang.String.format;
 
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
-import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -44,8 +43,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.CiCodebaseUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
-import io.harness.yaml.extended.ci.codebase.Build;
-import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.GitCloneStepBuild;
 import io.harness.yaml.extended.ci.codebase.GitCloneStepBuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
