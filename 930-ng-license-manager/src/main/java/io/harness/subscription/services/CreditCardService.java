@@ -13,6 +13,7 @@ import io.harness.subscription.responses.CreditCardResponse;
 
 public interface CreditCardService {
   CreditCardResponse saveCreditCard(CreditCardDTO creditCardDTO);
+  CreditCardResponse deleteCreditCard(String accountIdentifier, String creditCardIdentifier);
   boolean hasValidCard(String accountIdentifier);
   CardDTO getDefaultCreditCard(String accountIdentifier);
 }
