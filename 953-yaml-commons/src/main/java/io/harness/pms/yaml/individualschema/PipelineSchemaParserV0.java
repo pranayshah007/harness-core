@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.yaml.schema.beans.SchemaConstants;
@@ -80,6 +81,11 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
       fqnToNodeMap.put(childNodeRefValue, stepGroupNode);
       return;
     }
+    ObjectNodeWithMetadata strategyNode = getRootStrategyNode(currentFqn, objectNode);
+    if (strategyNode != null) {
+      fqnToNodeMap.put(childNodeRefValue, strategyNode);
+      return;
+    }
   }
 
   private ObjectNodeWithMetadata getRootStageNode(String currentFqn, ObjectNode objectNode) {
@@ -105,6 +111,26 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
             .isRootNode(true)
             .nodeGroup(StepCategory.STEP.name().toLowerCase())
             .nodeType(stepType)
+            .objectNode(objectNode)
+            .build();
+      }
+    }
+    return null;
+  }
+
+  private ObjectNodeWithMetadata getRootStrategyNode(String currentFqn, ObjectNode objectNode) {
+    String StrategyNodeName = StrategyConfig.class.getSimpleName();
+    if (StrategyNodeName.equals(JsonPipelineUtils.getText(objectNode, "title"))) {
+      String[] fqnComponents = currentFqn.split("/");
+      if (fqnComponents.length >= 5) {
+        String stageName = fqnComponents[4];
+        // The currentFqn for the strategy node follows the pattern
+        // "#/definitions/pipeline/stages/iacm/IACMStageNode/strategy/oneOf" so 4 index will be stage name.
+        return ObjectNodeWithMetadata.builder()
+            .isRootNode(true)
+            .nodeGroup(StepCategory.STRATEGY.name().toLowerCase())
+            .nodeType(StepCategory.STRATEGY.name().toLowerCase())
+            .nodeGroupDifferentiator(stageName)
             .objectNode(objectNode)
             .build();
       }
