@@ -179,7 +179,8 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
   private HelmCliResponse helmCliListReleasesResponse;
 
   private TimeLimiter timeLimiter = new FakeTimeLimiter();
-  final private List<KubernetesResource> resources = new ArrayList<>();
+
+  private List<KubernetesResource> resources = new ArrayList<>();
 
   private HttpHelmStoreDelegateConfig httpHelmStoreDelegateConfig =
       HttpHelmStoreDelegateConfig.builder()
