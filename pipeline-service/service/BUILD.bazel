@@ -58,6 +58,7 @@ java_binary(
         "//clients/access-control/sdk:module",
         "//clients/audit:module",
         "//clients/ci:module",
+        "//clients/error-tracking:module",
         "//clients/ng-variables:module",
         "//clients/ngsettings:module",
         "//clients/notification:module",

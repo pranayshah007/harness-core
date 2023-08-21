@@ -779,7 +779,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     sdkFunctorMap.put(CONFIG_FILE_FUNCTOR, ConfigFileFunctor.class);
     sdkFunctorMap.put(FILE_STORE_FUNCTOR, FileStoreFunctor.class);
     sdkFunctorMap.put(KUBERNETES_RELEASE_FUNCTOR_NAME, KubernetesReleaseFunctor.class);
-    sdkFunctorMap.put(ErrorTrackingFunctor.CET, ErrorTrackingFunctor.class);
+//    sdkFunctorMap.put(ErrorTrackingFunctor.CET, ErrorTrackingFunctor.class);
     return sdkFunctorMap;
   }
 
