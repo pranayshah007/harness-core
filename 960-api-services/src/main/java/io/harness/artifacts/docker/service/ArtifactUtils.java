@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.artifacts.gar.service;
+package io.harness.artifacts.docker.service;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.CodePulse;
@@ -19,7 +19,7 @@ import retrofit2.Response;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
-public class GARUtils {
+public class ArtifactUtils {
   private static final String RESPONSE_NULL = "Response Is Null";
   public boolean checkIfResponseNull(Response<?> response) {
     if (response == null) {

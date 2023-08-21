@@ -9,12 +9,15 @@ package io.harness.nexus.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
-import io.harness.artifacts.gar.service.GARUtils;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.NestedExceptionUtils;
@@ -36,6 +39,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -174,7 +178,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
   }
 
   private String getImage(String repoName, String tag) {
-    if (GARUtils.isSHA(tag)) {
+    if (ArtifactUtils.isSHA(tag)) {
       return String.format("%s@%s", repoName, tag);
     }
     return String.format("%s:%s", repoName, tag);

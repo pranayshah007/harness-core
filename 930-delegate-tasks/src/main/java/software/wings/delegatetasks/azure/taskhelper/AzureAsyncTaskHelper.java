@@ -39,8 +39,8 @@ import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.artifacts.docker.service.DockerRegistryUtils;
-import io.harness.artifacts.gar.service.GARUtils;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureComputeClient;
@@ -601,7 +601,7 @@ public class AzureAsyncTaskHelper {
   }
 
   private String getBuildUrl(String imageUrl, String tag) {
-    if (GARUtils.isSHA(tag)) {
+    if (ArtifactUtils.isSHA(tag)) {
       return String.format("%s@%s", imageUrl, tag);
     }
     return String.format("%s:%s", imageUrl, tag);

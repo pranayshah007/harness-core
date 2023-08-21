@@ -24,8 +24,8 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.artifacts.docker.service.DockerRegistryUtils;
-import io.harness.artifacts.gar.service.GARUtils;
 import io.harness.artifacts.gcr.GcrImageTagResponse;
 import io.harness.artifacts.gcr.GcrRestClient;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
@@ -194,7 +194,7 @@ public class GcrApiServiceImpl implements GcrApiService {
     Map<String, String> metadata = new HashMap();
     metadata.put(ArtifactMetadataKeys.IMAGE,
         (registryUrl.endsWith("/") ? registryUrl : registryUrl.concat("/")) + imageName
-            + (GARUtils.isSHA(tag) ? "@" : ":") + tag);
+            + (ArtifactUtils.isSHA(tag) ? "@" : ":") + tag);
     metadata.put(ArtifactMetadataKeys.TAG, tag);
     return BuildDetailsInternal.builder()
         .uiDisplayName("Tag# " + tag)
