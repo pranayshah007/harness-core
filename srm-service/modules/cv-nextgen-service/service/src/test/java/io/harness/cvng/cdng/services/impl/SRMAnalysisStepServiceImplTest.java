@@ -284,6 +284,8 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     assertThat(firstPage.getContent().get(0).getAnalysisDuration())
         .isEqualTo(stepExecutionDetail.getAnalysisDuration());
     assertThat(firstPage.getContent().get(0).getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(firstPage.getContent().get(0).getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
+    assertThat(firstPage.getContent().get(0).getStageStepId()).isEqualTo(stepExecutionDetail.getStageStepId());
   }
 
   @Test
@@ -316,5 +318,7 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     assertThat(firstPage.getContent().get(0).getAnalysisDuration())
         .isEqualTo(stepExecutionDetail.getAnalysisDuration());
     assertThat(firstPage.getContent().get(0).getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(firstPage.getContent().get(0).getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
+    assertThat(firstPage.getContent().get(0).getStageStepId()).isEqualTo(stepExecutionDetail.getStageStepId());
   }
 }
