@@ -3,7 +3,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-load("//:tools/bazel/test-util.bzl", "DISTRIBUTE_TESTING_WORKER", "DISTRIBUTE_TESTING_WORKERS", "OPTIMIZED_PACKAGE_TESTS")
+load("//:test-util.bzl", "DISTRIBUTE_TESTING_WORKER", "DISTRIBUTE_TESTING_WORKERS", "OPTIMIZED_PACKAGE_TESTS")
 
 MAX_COMPILE_TESTS = 512
 MAX_EXECUTION_TESTS = 20
