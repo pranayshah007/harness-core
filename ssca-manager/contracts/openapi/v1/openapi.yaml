@@ -40,7 +40,7 @@ paths:
         $ref: '#/components/requestBodies/SbomProcessRequestBody'
       tags:
         - sbomProcessor
-  '/v1/org/{org}/project/{project}/normalized_sbom_component/list':
+  '/v1/org/{org}/project/{project}/normalized-sbom-component':
     parameters:
       - name: org
         in: path
@@ -55,7 +55,7 @@ paths:
         description: Harness Project Id
         name: project
     get:
-      summary: ''
+      summary: Get Normalised SBOM Components
       operationId: list-normalized-sbom-component
       responses:
         '200':
@@ -81,7 +81,7 @@ paths:
           in: query
           name: orchestrationId
           description: Required Orchestration step ID
-  '/v1/org/{org}/project/{project}/enforcement_result':
+  '/v1/org/{org}/project/{project}/enforcement-result':
     parameters:
       - name: org
         in: path
@@ -96,7 +96,7 @@ paths:
         description: Harness Project Id
         name: project
     post:
-      summary: ''
+      summary: Save Enforcement Result Details
       operationId: save-enforcement-result
       responses:
         '200':
@@ -110,7 +110,7 @@ paths:
       tags:
         - enforcementResult
       description: save enforcement result details.
-  '/v1/org/{org}/project/{project}/enforcement_summary':
+  '/v1/org/{org}/project/{project}/enforcement-summary':
     parameters:
       - name: org
         in: path
@@ -340,101 +340,102 @@ components:
       x-stoplight:
         id: f4842caddn13n
       type: object
+      description: Normalized SBOM Component Details
       properties:
-        orchestrationId:
+        orchestration_id:
           type: string
-        sbomVersion:
+        sbom_version:
           type: string
-        artifactURL:
+        artifact_url:
           type: string
-        artifactId:
+        artifact_id:
           type: string
-        artifactName:
+        artifact_name:
           type: string
         tags:
           type: array
           items:
             type: string
-        createdOn:
+        created:
           type: string
-        toolVersion:
+        tool_version:
           type: string
-        toolName:
+        tool_name:
           type: string
-        toolVendor:
+        tool_vendor:
           type: string
-        packageId:
+        package_id:
           type: string
-        packageName:
+        package_name:
           type: string
-        packageDescription:
+        package_description:
           type: string
-        packageLicense:
+        package_license:
           type: array
           items:
             type: string
-        packageSourceInfo:
+        package_source_info:
           type: string
-        packageVersion:
+        package_version:
           type: string
-        packageSupplierName:
+        package_supplier_name:
           type: string
-        packageOriginatorName:
+        package_originator_name:
           type: string
-        originatorType:
+        originator_type:
           type: string
-        packageType:
+        package_type:
           type: string
-        packageCPE:
+        package_cpe:
           type: string
-        packageProperties:
+        package_properties:
           type: string
-        packageManager:
+        package_manager:
           type: string
-        packageNamespace:
+        package_namespace:
           type: string
-        majorVersion:
+        major_version:
           type: number
-        minorVersion:
+        minor_version:
           type: number
-        patchVersion:
+        patch_version:
           type: number
-        pipelineIdentifier:
+        pipeline_identifier:
           type: string
-        projectIdentifier:
+        project_identifier:
           type: string
-        orgIdentifier:
+        org_identifier:
           type: string
-        sequenceID:
+        sequence_id:
           type: string
         accountId:
           type: string
-      description: Normalized SBOM Component Details
     EnforcementResultDTO:
       title: EnforcementResultDTO
       x-stoplight:
         id: v717ytuxhkcp8
       type: object
+      description: Enforcement Result Details DTO
       properties:
-        enforcementID:
+        enforcement_id:
           type: string
-        artifactId:
+        artifact_id:
           type: string
         tag:
           type: string
-        imageName:
+        image_name:
           type: string
-        accountId:
+        account_id:
           type: string
-        orgIdentifier:
+        org_identifier:
           type: string
-        projectIdentifier:
+        project_identifier:
           type: string
-        orchestrationID:
+        orchestration_id:
           type: string
-        violationType:
+        violation_type:
           type: string
-        violationDetails:
+        violation_details:
           type: string
         name:
           type: string
@@ -442,9 +443,9 @@ components:
           type: string
         supplier:
           type: string
-        supplierType:
+        supplier_type:
           type: string
-        packageManager:
+        package_manager:
           type: string
         license:
           type: array
@@ -452,26 +453,25 @@ components:
             type: string
         purl:
           type: string
-      description: Enforcement Result Details DTO
     EnforcementSummaryDTO:
       title: EnforcementSummaryDTO
       x-stoplight:
         id: r05pf7mpi8thi
       type: object
+      description: Enforcement summary detail DTO
       properties:
-        id:
+        artifact:
           $ref: '#/components/schemas/Artifact'
-        enforcementId:
+        enforcement_id:
           type: string
-        orchestrationId:
+        orchestration_id:
           type: string
-        denyListViolationCount:
+        deny_list_violation_count:
           type: number
-        allowListViolationCount:
+        allow_list_violation_count:
           type: number
         status:
           type: string
-      description: Enforcement summary detail DTO
   parameters:
     OrgParam:
       name: org
