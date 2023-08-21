@@ -23,6 +23,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface NGTriggerEventsService {
   Criteria formEventCriteria(String accountId, String eventCorrelationId, List<ExecutionStatus> statusList);
   ResponseDTO<PollingInfoForTriggers> getPollingInfo(String accountId, String pollingDocId);
+  Criteria formTriggerEventCriteria(
+      String accountId, String orgId, String projectId, String targetIdentifier, String artifactType);
+
   Criteria formTriggerEventCriteria(String accountId, String orgId, String projectId, String targetIdentifier,
       String identifier, String searchTerm, List<ExecutionStatus> statusList);
 

@@ -51,6 +51,25 @@ public class NGTriggerEventHistoryResourceImpl implements NGTriggerEventHistoryR
   private final NGTriggerEventsService ngTriggerEventsService;
 
   @Override
+  public ResponseDTO<Page<NGTriggerEventHistoryDTO>> listTriggerEventHistory(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String targetIdentifier, String artifactType, String searchTerm,
+      int page, int size, List<String> sort) {
+    Criteria criteria = ngTriggerEventsService.formTriggerEventCriteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, artifactType);
+    Pageable pageRequest;
+    if (EmptyPredicate.isEmpty(sort)) {
+      pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, TriggerEventHistoryKeys.createdAt));
+    } else {
+      pageRequest = PageUtils.getPageRequest(page, size, sort);
+    }
+    Page<TriggerEventHistory> eventHistoryList = ngTriggerEventsService.getEventHistory(criteria, pageRequest);
+
+    Page<NGTriggerEventHistoryDTO> ngTriggerEventHistoryDTOS =
+        eventHistoryList.map(eventHistory -> NGTriggerEventHistoryMapper.toTriggerEventHistoryDto(eventHistory));
+
+    return ResponseDTO.newResponse(ngTriggerEventHistoryDTOS);
+  }
+  @Override
   public ResponseDTO<Page<NGTriggerEventHistoryDTO>> getTriggerEventHistory(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String targetIdentifier, String triggerIdentifier,
       String searchTerm, int page, int size, List<String> sort) {
