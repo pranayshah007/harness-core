@@ -103,7 +103,17 @@ public class PolicyEvalUtilsTest extends CategoryTest {
     String string = "string";
     assertThat(PolicyEvalUtils.isInvalidPayload(string)).isTrue();
     String arrayOfObjects = "[{\"s\": \"d\"},{\"s\": \"d\"}]";
+    assertThat(PolicyEvalUtils.isInvalidPayload(arrayOfObjects)).isFalse();
+
+    // One of the array element is invalid
+    arrayOfObjects = "[{\"s\": \"d\"},{\"s\": \"d\"]";
     assertThat(PolicyEvalUtils.isInvalidPayload(arrayOfObjects)).isTrue();
+
+    String arrayOfArrayObjects = "[{\"s\": \"d\"},{\"s\": \"d\"}, [{\"s\": \"d\"},{\"s\": \"d\"}]]";
+    assertThat(PolicyEvalUtils.isInvalidPayload(arrayOfArrayObjects)).isFalse();
+
+    arrayOfArrayObjects = "[{\"s\": \"d\"},{\"s\": \"d\"}, [{\"s\": \"d\"},{\"s\": \"d\"]]";
+    assertThat(PolicyEvalUtils.isInvalidPayload(arrayOfArrayObjects)).isTrue();
   }
 
   @Test
