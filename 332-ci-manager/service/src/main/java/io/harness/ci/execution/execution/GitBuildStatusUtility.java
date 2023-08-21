@@ -33,6 +33,7 @@ import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStepParameters;
@@ -114,6 +115,7 @@ public class GitBuildStatusUtility {
   @Inject ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private CIExecutionServiceConfig cIExecutionServiceConfig;
 
   public boolean shouldSendStatus(StepCategory stepCategory) {
     return stepCategory == StepCategory.STAGE;
@@ -175,7 +177,7 @@ public class GitBuildStatusUtility {
 
         boolean executeOnDelegate =
             connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
-        if (executeOnDelegate) {
+        if (executeOnDelegate && !executeOnDelegate) {
           sendStatusViaDelegate(
               ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
         } else {
@@ -294,8 +296,8 @@ public class GitBuildStatusUtility {
         .sha(commitSha)
         .prNumber(prNumber)
         .gitSCMType(gitSCMType)
-        .connectorDetails(gitConnector)
-        .userName(connectorUtils.fetchUserName(gitConnector))
+        .connectorDetails(finalConnectorDetails)
+        .userName(connectorUtils.fetchUserName(finalConnectorDetails))
         .owner(ownerName)
         .repo(finalRepo)
         .identifier(generateIdentifier(ngAccess.getAccountIdentifier(), url,
@@ -306,12 +308,17 @@ public class GitBuildStatusUtility {
 
   private ConnectorDetails modifyConnectorDetailsIfHarnessScm(ConnectorDetails gitConnector) {
     if (gitConnector.getConnectorType() == HARNESS) {
-      ((HarnessUsernameTokenDTO) ((HarnessConnectorDTO) gitConnector.getConnectorConfig())
+      ConnectorDetails connectorDetailsClone = new ConnectorDetails(gitConnector);
+      ((HarnessUsernameTokenDTO) ((HarnessConnectorDTO) connectorDetailsClone.getConnectorConfig())
               .getAuthentication()
               .getCredentials()
               .getHttpCredentialsSpec())
-          .setTokenRef(SecretRefData.builder().decryptedValue().build());
+          .setTokenRef(SecretRefData.builder()
+                           .decryptedValue(cIExecutionServiceConfig.getGitnessConfig().getJwtSecret().toCharArray())
+                           .build());
+      return connectorDetailsClone;
     }
+    return gitConnector;
   }
 
   private String generateDesc(String pipeline, String executionId, String stage, String status) {

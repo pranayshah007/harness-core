@@ -32,4 +32,17 @@ public class ConnectorDetails {
   SSHKeyDetails sshKeyDetails;
   @Singular("envToSecretEntry") Map<EnvVariableEnum, String> envToSecretsMap;
   Boolean executeOnDelegate;
+
+  public ConnectorDetails(ConnectorDetails other) {
+    connectorConfig = other.getConnectorConfig();
+    connectorType = other.getConnectorType();
+    identifier = other.getIdentifier();
+    orgIdentifier = other.getOrgIdentifier();
+    projectIdentifier = other.getProjectIdentifier();
+    delegateSelectors = other.getDelegateSelectors();
+    encryptedDataDetails = other.getEncryptedDataDetails();
+    sshKeyDetails = other.getSshKeyDetails();
+    executeOnDelegate = other.getExecuteOnDelegate();
+    envToSecretsMap = other.getEnvToSecretsMap();
+  }
 }
