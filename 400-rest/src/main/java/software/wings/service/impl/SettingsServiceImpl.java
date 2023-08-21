@@ -502,9 +502,6 @@ public class SettingsServiceImpl implements SettingsService {
 
     Set<String> appsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, List<Base>> appIdEnvMap = envService.getAppIdEnvMap(appsByAccountId, accountId);
-    if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-      log.info("[GetAppIdEnvMap] SettingsServiceImpl:getFilteredSettingAttributes - debug log");
-    }
 
     Set<SettingAttribute> helmRepoSettingAttributes = new HashSet<>();
     boolean isAccountAdmin;

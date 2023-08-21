@@ -687,13 +687,12 @@ public enum FeatureName {
       "Enables validation of dot on pipeline and workflow name", HarnessTeam.SPG),
   SPG_ENFORCE_TIME_RANGE_DEPLOYMENTS_WITHOUT_APP_ID(
       "This feature flag enforces maximum time range for workflow execution queries without appId", HarnessTeam.SPG),
-  SPG_ENVIRONMENT_QUERY_LOGS(
-      "This is a debug FF, no behaviour will be changed. We are adding logs to help find a root cause", SPG),
   SPG_FETCH_ARTIFACT_FROM_DB("Fetch artifact from database if available in artifact collection step", HarnessTeam.SPG),
   SPG_GENERATE_CURL_WITHOUT_ARTIFACT(
       "Enable curl generation to trigger when last collected without artifacts.", HarnessTeam.SPG),
   SPG_GRAPHQL_VERIFY_APPLICATION_FROM_USER_GROUP(
       "Verify if application references from a user group still exist", HarnessTeam.SPG),
+  CD_JIRA_CG_FETCH_ISSUE_DEBUG("Enable debug logging for jira fetch issue", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
   SPG_LIVE_DASHBOARD_STATS_DEBUGGING("Live debugging for dashboard stats in CG", HarnessTeam.SPG),
   SPG_LOG_SERVICE_ENABLE_DOWNLOAD_LOGS("Enable download logs in ng. Only used by ui.", HarnessTeam.SPG),
