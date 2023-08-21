@@ -300,8 +300,8 @@ public class GitBuildStatusUtility {
         .sha(commitSha)
         .prNumber(prNumber)
         .gitSCMType(gitSCMType)
-        .connectorDetails(finalConnectorDetails)
-        .userName(connectorUtils.fetchUserName(finalConnectorDetails))
+        .connectorDetails(gitConnector)
+        .userName(connectorUtils.fetchUserName(gitConnector))
         .owner(ownerName)
         .repo(finalRepo)
         .identifier(generateIdentifier(ngAccess.getAccountIdentifier(), url,
