@@ -15,6 +15,7 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.dto.Log.Builder.aLog;
 
+import static com.google.common.primitives.Longs.max;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -87,6 +88,7 @@ import org.apache.http.conn.ConnectTimeoutException;
 @Slf4j
 public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<JenkinsArtifactDelegateRequest> {
   private static final int ARTIFACT_RETENTION_SIZE = 25;
+  private static final long MINIMUM_CONSOLE_LOG_POLL_FREQUENCY = 5;
   private final SecretDecryptionService secretDecryptionService;
   private final JenkinsRegistryService jenkinsRegistryService;
   @Inject private JenkinsRegistryUtils jenkinsRegistryUtils;
@@ -292,8 +294,9 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
               + (attributesRequest.getTimeout() - (System.currentTimeMillis() - attributesRequest.getStartTs())) / 1000,
           LogLevel.INFO);
 
-      BuildWithDetails jenkinsBuildWithDetails = waitForJobExecutionToFinish(
-          jenkinsBuild, attributesRequest.getUnitName(), jenkinsInternalConfig, executionLogCallback);
+      BuildWithDetails jenkinsBuildWithDetails =
+          waitForJobExecutionToFinish(jenkinsBuild, attributesRequest.getUnitName(), jenkinsInternalConfig,
+              executionLogCallback, attributesRequest.getConsoleLogFrequency());
       jenkinsBuildTaskNGResponse.setJobUrl(jenkinsBuildWithDetails.getUrl());
 
       executionLogCallback.saveExecutionLog("Collecting environment variables for Jenkins task", LogLevel.INFO);
@@ -384,7 +387,8 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
   }
 
   public BuildWithDetails waitForJobExecutionToFinish(Build jenkinsBuild, String unitName,
-      JenkinsInternalConfig jenkinsInternalConfig, LogCallback logCallback) throws IOException {
+      JenkinsInternalConfig jenkinsInternalConfig, LogCallback logCallback, Long consoleLogFrequency)
+      throws IOException {
     CustomBuildWithDetails jenkinsBuildWithDetails = null;
     AtomicInteger consoleLogsSent = new AtomicInteger();
 
@@ -394,7 +398,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
 
     do {
       log.info("Waiting for Job {} to finish execution", buildUrl);
-      sleep(Duration.ofSeconds(5));
+      sleep(Duration.ofSeconds(max(consoleLogFrequency, MINIMUM_CONSOLE_LOG_POLL_FREQUENCY)));
       Future<CustomBuildWithDetails> jenkinsBuildWithDetailsFuture = null;
       Future<Void> saveConsoleLogs = null;
       try {

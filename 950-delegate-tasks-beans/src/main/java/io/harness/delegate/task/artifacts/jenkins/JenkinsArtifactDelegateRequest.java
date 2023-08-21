@@ -72,6 +72,7 @@ public class JenkinsArtifactDelegateRequest implements ArtifactSourceDelegateReq
   private String buildFullDisplayName;
   private String description;
   private List<FilePathAssertionEntry> filePathAssertionMap;
+  private long consoleLogFrequency;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
