@@ -144,7 +144,7 @@ public class YamlNodeUtils {
           }
           // If the node is like parallel, a dummy node having another list.
           else if (field.getNode().isArray()) {
-            next = getNextNodeFromArray(yamlNode, currName);
+            next = getNextNodeFromArray(field.getNode(), currName);
           }
         }
       }
