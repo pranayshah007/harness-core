@@ -7,6 +7,7 @@
 
 package io.harness.ci.execution;
 
+import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -42,8 +43,10 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessType;
 import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
-import io.harness.delegate.beans.connector.scm.harness.HarnessUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessJWTTokenSpecDTO;
 import io.harness.delegate.task.ci.CIBuildStatusPushParameters;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.encryption.Scope;
@@ -66,6 +69,8 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.security.ServiceTokenGenerator;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;
@@ -116,6 +121,7 @@ public class GitBuildStatusUtility {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private CIExecutionServiceConfig cIExecutionServiceConfig;
+  @Inject private ServiceTokenGenerator tokenGenerator;
 
   public boolean shouldSendStatus(StepCategory stepCategory) {
     return stepCategory == StepCategory.STAGE;
@@ -173,11 +179,10 @@ public class GitBuildStatusUtility {
 
       if (ciBuildStatusPushParameters.getState() != UNSUPPORTED) {
         ConnectorDetails connectorDetails = ciBuildStatusPushParameters.getConnectorDetails();
-        boolean isHarnessScm = connectorDetails.getConnectorType() == HARNESS;
 
         boolean executeOnDelegate =
             connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
-        if (executeOnDelegate && !isHarnessScm) {
+        if (executeOnDelegate) {
           sendStatusViaDelegate(
               ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
         } else {
@@ -308,17 +313,23 @@ public class GitBuildStatusUtility {
 
   private ConnectorDetails modifyConnectorDetailsIfHarnessScm(ConnectorDetails gitConnector) {
     if (gitConnector.getConnectorType() == HARNESS) {
-      ConnectorDetails connectorDetailsClone = new ConnectorDetails(gitConnector);
-      ((HarnessUsernameTokenDTO) ((HarnessConnectorDTO) connectorDetailsClone.getConnectorConfig())
-              .getAuthentication()
-              .getCredentials()
-              .getHttpCredentialsSpec())
-          .setTokenRef(SecretRefData.builder()
-                           .decryptedValue(cIExecutionServiceConfig.getGitnessConfig().getJwtSecret().toCharArray())
-                           .build());
-      return connectorDetailsClone;
+      HarnessConnectorDTO harnessConnectorDTO = (HarnessConnectorDTO) gitConnector.getConnectorConfig();
+      gitConnector.withConnectorConfig(harnessConnectorDTO.withApiAccess(getApiAccess()));
     }
     return gitConnector;
+  }
+
+  private HarnessApiAccessDTO getApiAccess() {
+    // Using service principal
+    String serviceTokenWithDuration =
+        tokenGenerator.getServiceTokenWithDuration(cIExecutionServiceConfig.getGitnessConfig().getJwtSecret(),
+            Duration.ofHours(1), new ServicePrincipal(CI_MANAGER.getServiceId()));
+    return HarnessApiAccessDTO.builder()
+        .type(HarnessApiAccessType.JWT_TOKEN)
+        .spec(HarnessJWTTokenSpecDTO.builder()
+                  .tokenRef(SecretRefData.builder().decryptedValue(serviceTokenWithDuration.toCharArray()).build())
+                  .build())
+        .build();
   }
 
   private String generateDesc(String pipeline, String executionId, String stage, String status) {

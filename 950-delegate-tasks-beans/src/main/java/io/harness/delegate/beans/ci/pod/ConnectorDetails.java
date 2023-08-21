@@ -20,6 +20,7 @@ import lombok.Data;
 import lombok.Singular;
 
 @Data
+@Builder
 public class ConnectorDetails {
   @NotNull ConnectorConfigDTO connectorConfig;
   @NotNull ConnectorType connectorType;
@@ -32,33 +33,11 @@ public class ConnectorDetails {
   @Singular("envToSecretEntry") Map<EnvVariableEnum, String> envToSecretsMap;
   Boolean executeOnDelegate;
 
-  @Builder
-  public ConnectorDetails(ConnectorConfigDTO connectorConfig, ConnectorType connectorType, String identifier,
-      String orgIdentifier, String projectIdentifier, Set<String> delegateSelectors,
-      List<EncryptedDataDetail> encryptedDataDetails, SSHKeyDetails sshKeyDetails,
-      Map<EnvVariableEnum, String> envToSecretsMap, Boolean executeOnDelegate) {
-    this.connectorConfig = connectorConfig;
-    this.connectorType = connectorType;
-    this.identifier = identifier;
-    this.orgIdentifier = orgIdentifier;
-    this.projectIdentifier = projectIdentifier;
-    this.delegateSelectors = delegateSelectors;
-    this.encryptedDataDetails = encryptedDataDetails;
-    this.sshKeyDetails = sshKeyDetails;
-    this.envToSecretsMap = envToSecretsMap;
-    this.executeOnDelegate = executeOnDelegate;
-  }
-
-  public ConnectorDetails(ConnectorDetails other) {
-    connectorConfig = other.getConnectorConfig();
-    connectorType = other.getConnectorType();
-    identifier = other.getIdentifier();
-    orgIdentifier = other.getOrgIdentifier();
-    projectIdentifier = other.getProjectIdentifier();
-    delegateSelectors = other.getDelegateSelectors();
-    encryptedDataDetails = other.getEncryptedDataDetails();
-    sshKeyDetails = other.getSshKeyDetails();
-    executeOnDelegate = other.getExecuteOnDelegate();
-    envToSecretsMap = other.getEnvToSecretsMap();
+  public ConnectorDetails withConnectorConfig(@NotNull ConnectorConfigDTO connectorConfig) {
+    return this.connectorConfig == connectorConfig
+        ? this
+        : new ConnectorDetails(connectorConfig, this.connectorType, this.identifier, this.orgIdentifier,
+            this.projectIdentifier, this.delegateSelectors, this.encryptedDataDetails, this.sshKeyDetails,
+            this.envToSecretsMap, this.executeOnDelegate);
   }
 }

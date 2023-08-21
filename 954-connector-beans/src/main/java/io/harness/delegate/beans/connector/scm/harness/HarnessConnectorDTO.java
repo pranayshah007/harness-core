@@ -32,16 +32,19 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotBlank;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -52,15 +55,15 @@ public class HarnessConnectorDTO extends ConnectorConfigDTO implements ScmConnec
   @NotNull
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
-  GitConnectionType connectionType;
-  @NotBlank @NotNull String url;
-  String validationRepo;
-  @Valid @NotNull HarnessAuthenticationDTO authentication;
-  @Valid HarnessApiAccessDTO apiAccess;
-  Boolean executeOnDelegate = Boolean.FALSE;
-  String gitConnectionUrl;
-  @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) String apiUrl;
-  @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) String slug;
+  private GitConnectionType connectionType;
+  @NotBlank @NotNull private String url;
+  private String validationRepo;
+  @Valid @NotNull private HarnessAuthenticationDTO authentication;
+  @Valid @Wither private HarnessApiAccessDTO apiAccess;
+  private Boolean executeOnDelegate = Boolean.FALSE;
+  private String gitConnectionUrl;
+  @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) private String apiUrl;
+  @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) private String slug;
 
   @Builder
   public HarnessConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
