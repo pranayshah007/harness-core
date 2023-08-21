@@ -20,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.EngineFunctorException;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalType;
@@ -44,9 +43,9 @@ public class ApprovalFunctorTest extends CategoryTest {
   private static final String APPROVAL_NAME = "Admin";
   private static final String APPROVAL_EMAIL = "admin@harness.io";
   private static final String APPROVAL_COMMENT = "Approval comment";
+  private static final String PLAN_EXECUTION_ID = "execution_id";
   @Mock private ApprovalInstanceService approvalInstanceService;
   @InjectMocks private ApprovalFunctor approvalFunctor;
-  private final Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("execution_id").build();
 
   @Before
   public void setUp() {
@@ -57,9 +56,9 @@ public class ApprovalFunctorTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testBind() {
-    on(approvalFunctor).set("ambiance", ambiance);
+    on(approvalFunctor).set("planExecutionId", PLAN_EXECUTION_ID);
     when(approvalInstanceService.findLatestApprovalInstanceByPlanExecutionIdAndType(
-             ambiance.getPlanExecutionId(), ApprovalType.HARNESS_APPROVAL))
+             PLAN_EXECUTION_ID, ApprovalType.HARNESS_APPROVAL))
         .thenReturn(
             Optional.of(HarnessApprovalInstance.builder()
                             .approvalMessage(APPROVAL_COMMENT)
@@ -83,9 +82,9 @@ public class ApprovalFunctorTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testBindWithNotValidOutcome() {
-    on(approvalFunctor).set("ambiance", ambiance);
+    on(approvalFunctor).set("planExecutionId", PLAN_EXECUTION_ID);
     when(approvalInstanceService.findLatestApprovalInstanceByPlanExecutionIdAndType(
-             ambiance.getPlanExecutionId(), ApprovalType.HARNESS_APPROVAL))
+             PLAN_EXECUTION_ID, ApprovalType.HARNESS_APPROVAL))
         .thenReturn(Optional.of(CustomApprovalInstance.builder().build()));
 
     assertThatThrownBy(() -> approvalFunctor.bind())

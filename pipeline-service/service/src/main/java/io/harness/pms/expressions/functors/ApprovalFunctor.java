@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.EngineFunctorException;
 import io.harness.expression.LateBindingValue;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
@@ -24,11 +23,11 @@ import java.util.Optional;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(HarnessTeam.CDP)
 public class ApprovalFunctor implements LateBindingValue {
-  private final Ambiance ambiance;
+  private final String planExecutionId;
   private final ApprovalInstanceService approvalInstanceService;
 
-  public ApprovalFunctor(Ambiance ambiance, ApprovalInstanceService approvalInstanceService) {
-    this.ambiance = ambiance;
+  public ApprovalFunctor(String planExecutionId, ApprovalInstanceService approvalInstanceService) {
+    this.planExecutionId = planExecutionId;
     this.approvalInstanceService = approvalInstanceService;
   }
 
@@ -36,7 +35,7 @@ public class ApprovalFunctor implements LateBindingValue {
   public Object bind() {
     Optional<ApprovalInstance> latestApprovalInstance =
         approvalInstanceService.findLatestApprovalInstanceByPlanExecutionIdAndType(
-            ambiance.getPlanExecutionId(), ApprovalType.HARNESS_APPROVAL);
+            planExecutionId, ApprovalType.HARNESS_APPROVAL);
     if (latestApprovalInstance.isEmpty()) {
       return null;
     }
