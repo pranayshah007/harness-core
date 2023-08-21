@@ -123,14 +123,12 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
     if (StrategyNodeName.equals(JsonPipelineUtils.getText(objectNode, "title"))) {
       String[] fqnComponents = currentFqn.split("/");
       if (fqnComponents.length >= 5) {
-        String stageName = fqnComponents[4];
         // The currentFqn for the strategy node follows the pattern
-        // "#/definitions/pipeline/stages/iacm/IACMStageNode/strategy/oneOf" so 4 index will be stage name.
+        // "#/definitions/pipeline/stages/iacm/IACMStageNode/strategy/oneOf"
         return ObjectNodeWithMetadata.builder()
             .isRootNode(true)
             .nodeGroup(StepCategory.STRATEGY.name().toLowerCase())
             .nodeType(StepCategory.STRATEGY.name().toLowerCase())
-            .nodeGroupDifferentiator(stageName)
             .objectNode(objectNode)
             .build();
       }
