@@ -75,7 +75,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
   private final SecretManagerClientService secretManagerClientService;

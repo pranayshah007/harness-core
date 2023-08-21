@@ -35,7 +35,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Value
 @Data
 @Builder

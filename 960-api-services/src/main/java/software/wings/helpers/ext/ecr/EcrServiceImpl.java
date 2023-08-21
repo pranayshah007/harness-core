@@ -60,8 +60,7 @@ import org.apache.commons.lang3.StringUtils;
  * Created by brett on 7/15/17
  */
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j

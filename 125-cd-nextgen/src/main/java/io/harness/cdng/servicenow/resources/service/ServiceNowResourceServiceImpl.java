@@ -66,8 +66,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT,
-        HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_APPROVALS})
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 public class ServiceNowResourceServiceImpl implements ServiceNowResourceService {
   private static final Duration TIMEOUT = Duration.ofSeconds(30);
