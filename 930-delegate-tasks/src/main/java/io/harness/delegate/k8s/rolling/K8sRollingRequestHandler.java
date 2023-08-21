@@ -43,7 +43,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
@@ -125,7 +127,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     if (!(k8sDeployRequest instanceof K8sRollingDeployRequest)) {
       throw new InvalidArgumentsException(Pair.of("k8sDeployRequest", "Must be instance of K8sRollingDeployRequest"));
     }
-
+    HelmChartInfo helmChartInfo = null;
     K8sRollingDeployRequest k8sRollingDeployRequest = (K8sRollingDeployRequest) k8sDeployRequest;
 
     releaseName = k8sRollingDeployRequest.getReleaseName();
@@ -158,6 +160,10 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
         k8sRollingDeployRequest.isSkipResourceVersioning(),
         k8sRollingDeployRequest.isSkipAddingTrackSelectorToDeployment(), k8sRollingDeployRequest.isPruningEnabled());
 
+    if (k8sRollingDeployRequest.getManifestDelegateConfig() instanceof HelmChartManifestDelegateConfig) {
+      helmChartInfo = k8sTaskHelperBase.getHelmChartDetails(
+          k8sRollingDeployRequest.getManifestDelegateConfig(), manifestFilesDirectory);
+    }
     List<KubernetesResource> allWorkloads = ListUtils.union(managedWorkloads, customWorkloads);
     List<K8sPod> existingPodList = k8sRollingBaseHandler.getExistingPods(
         steadyStateTimeoutInMillis, allWorkloads, kubernetesConfig, releaseName, prepareLogCallback);
@@ -235,6 +241,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
                 k8sRollingBaseHandler.getPods(steadyStateTimeoutInMillis, allWorkloads, kubernetesConfig, releaseName),
                 existingPodList))
             .loadBalancer(loadBalancer)
+            .helmChartInfo(helmChartInfo)
             .build();
 
     saveRelease(Succeeded);

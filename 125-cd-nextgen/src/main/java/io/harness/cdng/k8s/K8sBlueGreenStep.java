@@ -227,8 +227,9 @@ public class K8sBlueGreenStep extends CdTaskChainExecutable implements K8sStepEx
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME, k8sBlueGreenOutcome, StepOutcomeGroup.STEP.name());
 
-    StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(
-        ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sBGDeployResponse.getK8sPodList()));
+    StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
+        K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(
+            k8sBGDeployResponse.getK8sPodList(), k8sBGDeployResponse.getHelmChartInfo()));
 
     return responseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).outcome(k8sBlueGreenOutcome).build())

@@ -44,4 +44,8 @@ public class GitStoreDelegateConfig implements StoreDelegateConfig {
   public StoreDelegateConfigType getType() {
     return StoreDelegateConfigType.GIT;
   }
+  @Override
+  public String getRepoUrl() {
+    return this.getGitConfigDTO().getUrl();
+  }
 }

@@ -50,6 +50,7 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
   public void testGetK8sDeploymentReleaseDetails() {
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add(NAMESPACE);
+    HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("haha").repoUrl("sample.com").version("0.2.0").build();
     DeploymentInfoDTO deploymentInfoDTO = K8sDeploymentInfoDTO.builder()
                                               .releaseName(RELEASE_NAME)
                                               .namespaces(namespaces)
@@ -60,6 +61,7 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
                                                                        .resourceGroup("resourceGroup")
                                                                        .useClusterAdminCredentials(true)
                                                                        .build())
+                                              .helmChartInfo(helmChartInfo)
                                               .build();
 
     K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails =
@@ -71,6 +73,7 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
     assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig().getResourceGroup()).isEqualTo("resourceGroup");
     assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig().getSubscriptionId()).isEqualTo("subscriptionId");
     assertThat(k8sDeploymentReleaseDetails.getK8sCloudClusterConfig().isUseClusterAdminCredentials()).isTrue();
+    assertThat(k8sDeploymentReleaseDetails.getHelmChartInfo()).isEqualTo(helmChartInfo);
   }
 
   @Test

@@ -49,7 +49,9 @@ import io.harness.beans.FileData;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sBGDeployRequest;
 import io.harness.delegate.task.k8s.K8sBGDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
@@ -155,7 +157,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     if (!(k8sDeployRequest instanceof K8sBGDeployRequest)) {
       throw new InvalidArgumentsException(Pair.of("k8sDeployRequest", "Must be instance of K8sBGDeployRequest"));
     }
-
+    HelmChartInfo helmChartInfo = null;
     K8sBGDeployRequest k8sBGDeployRequest = (K8sBGDeployRequest) k8sDeployRequest;
     deploymentSkipped = false;
     k8sRequestHandlerContext.setEnabledSupportHPAAndPDB(k8sBGDeployRequest.isEnabledSupportHPAAndPDB());
@@ -189,6 +191,10 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress),
         k8sBGDeployRequest.isSkipResourceVersioning(), k8sBGDeployRequest.isPruningEnabled());
 
+    if (k8sBGDeployRequest.getManifestDelegateConfig() instanceof HelmChartManifestDelegateConfig) {
+      helmChartInfo =
+          k8sTaskHelperBase.getHelmChartDetails(k8sBGDeployRequest.getManifestDelegateConfig(), manifestFilesDirectory);
+    }
     List<K8sPod> existingPodList =
         k8sBGBaseHandler.getExistingPods(timeoutInMillis, kubernetesConfig, releaseName, executionLogCallback);
 
@@ -273,7 +279,9 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
                                                   .stageServiceName(stageService.getResourceId().getName())
                                                   .stageColor(stageColor)
                                                   .primaryColor(primaryColor)
+                                                  .helmChartInfo(helmChartInfo)
                                                   .build();
+
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
     if (k8sBGDeployRequest.isPruningEnabled()) {

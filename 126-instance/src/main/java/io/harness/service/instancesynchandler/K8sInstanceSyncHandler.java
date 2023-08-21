@@ -141,6 +141,7 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .podIP(k8sServerInstanceInfo.getPodIP())
         .blueGreenColor(k8sServerInstanceInfo.getBlueGreenColor())
         .containerList(k8sServerInstanceInfo.getContainerList())
+        .helmChartInfo(k8sServerInstanceInfo.getHelmChartInfo())
         .build();
   }
 
@@ -172,6 +173,7 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .namespaces(namespaces)
         .releaseName(k8sServerInstanceInfo.getReleaseName())
         .blueGreenStageColor(k8sServerInstanceInfo.getBlueGreenColor())
+        .helmChartInfo(k8sServerInstanceInfo.getHelmChartInfo())
         .cloudConfigMetadata(k8sCloudConfigMetadata)
         .build();
   }

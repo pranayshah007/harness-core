@@ -28,4 +28,9 @@ public class OciHelmStoreDelegateConfig implements StoreDelegateConfig {
   public StoreDelegateConfigType getType() {
     return StoreDelegateConfigType.OCI_HELM;
   }
+
+  @Override
+  public String getRepoUrl() {
+    return this.getOciHelmConnector().getHelmRepoUrl();
+  }
 }

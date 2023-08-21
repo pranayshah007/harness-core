@@ -26,6 +26,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.instancesync.K8sInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -70,6 +71,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
   private static final String RELEASE_NAME_2 = "releaseName2";
   private static final String PERPETUAL_TASK_ID = "perpetualTaskId";
   private static final String ACCOUNT_ID = "accountId";
+  private static final HelmChartInfo HELM_CHART_INFO = HelmChartInfo.builder().build();
 
   @Inject private KryoSerializer kryoSerializer;
   @Mock private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
@@ -266,6 +268,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
         .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(k8sInfraDelegateConfig)))
         .addAllNamespaces(namespaces)
         .setReleaseName(releaseName)
+        .setHelmChartInfo(ByteString.copyFrom(kryoSerializer.asBytes(HELM_CHART_INFO)))
         .build();
   }
 

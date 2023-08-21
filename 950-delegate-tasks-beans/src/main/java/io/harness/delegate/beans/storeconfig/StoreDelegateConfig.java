@@ -11,4 +11,8 @@ import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 public interface StoreDelegateConfig extends NestedAnnotationResolver {
   StoreDelegateConfigType getType();
+
+  default String getRepoUrl() {
+    return "";
+  }
 }

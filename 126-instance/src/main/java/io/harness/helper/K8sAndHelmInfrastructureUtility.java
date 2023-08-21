@@ -66,6 +66,7 @@ public class K8sAndHelmInfrastructureUtility {
                                    .resourceGroup(resourceGroup)
                                    .useClusterAdminCredentials(useClusterAdminCredentials)
                                    .build())
+        .helmChartInfo(k8sDeploymentInfoDTO.getHelmChartInfo())
         .build();
   }
 

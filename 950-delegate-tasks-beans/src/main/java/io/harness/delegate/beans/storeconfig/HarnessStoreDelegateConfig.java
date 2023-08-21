@@ -31,4 +31,12 @@ public class HarnessStoreDelegateConfig implements StoreDelegateConfig, NestedAn
   public StoreDelegateConfigType getType() {
     return StoreDelegateConfigType.HARNESS;
   }
+
+  @Override
+  public String getRepoUrl() {
+    if (this.getConfigFiles().size() == 1) {
+      return new StringBuilder("harness://").append(this.getConfigFiles().get(0).getDestinationPath()).toString();
+    }
+    return "harness";
+  }
 }

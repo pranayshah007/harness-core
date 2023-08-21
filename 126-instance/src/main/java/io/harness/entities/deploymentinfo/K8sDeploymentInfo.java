@@ -9,6 +9,7 @@ package io.harness.entities.deploymentinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.helper.K8sCloudConfigMetadata;
 
 import java.util.LinkedHashSet;
@@ -25,5 +26,6 @@ public class K8sDeploymentInfo extends DeploymentInfo {
   @NotNull private LinkedHashSet<String> namespaces;
   @NotNull private String releaseName;
   private String blueGreenStageColor;
+  @EqualsAndHashCode.Exclude private HelmChartInfo helmChartInfo;
   @EqualsAndHashCode.Exclude private K8sCloudConfigMetadata cloudConfigMetadata;
 }

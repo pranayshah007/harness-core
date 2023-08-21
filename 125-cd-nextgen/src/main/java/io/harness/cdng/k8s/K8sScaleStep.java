@@ -121,7 +121,7 @@ public class K8sScaleStep extends CdTaskExecutable<K8sDeployResponse> {
 
     K8sScaleResponse k8sNGTaskResponse = (K8sScaleResponse) k8sTaskExecutionResponse.getK8sNGTaskResponse();
     StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(
-        ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sNGTaskResponse.getK8sPodList()));
+        ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sNGTaskResponse.getK8sPodList(), null));
 
     return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
   }
