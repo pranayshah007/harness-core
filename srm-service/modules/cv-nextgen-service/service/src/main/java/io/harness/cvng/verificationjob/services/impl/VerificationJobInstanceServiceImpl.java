@@ -40,6 +40,7 @@ import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.DataCollectionTask.Type;
@@ -55,6 +56,7 @@ import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
+import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.beans.VerifyStepMetricContext;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
@@ -690,11 +692,30 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         verificationJobInstance.getResolvedJob().getProjectIdentifier(), connectorIdentifier,
         monitoringSourceIdentifier);
   }
-
+  private static List<CVConfig> filterDeploymentCvConfigs(List<CVConfig> cvConfigs) {
+    if (CollectionUtils.isEmpty(cvConfigs)) {
+      return cvConfigs;
+    }
+    List<CVConfig> deploymentCvConfigs = new ArrayList<>();
+    for (CVConfig cvConfig : cvConfigs) {
+      if (cvConfig instanceof MetricCVConfig) {
+        MetricCVConfig<?> metricCVConfig = (MetricCVConfig<?>) cvConfig;
+        List<? extends AnalysisInfo> deploymentRelatedMetricInfos =
+            AnalysisInfoUtility.filterApplicableForDataCollection(metricCVConfig.getMetricInfos(), TaskType.DEPLOYMENT);
+        if (CollectionUtils.isNotEmpty(deploymentRelatedMetricInfos)) {
+          deploymentCvConfigs.add(cvConfig);
+        }
+      } else {
+        deploymentCvConfigs.add(cvConfig);
+      }
+    }
+    return deploymentCvConfigs;
+  }
   private void createDataCollectionTasks(
       VerificationJobInstance verificationJobInstance, VerificationJob verificationJob, List<CVConfig> cvConfigs) {
     List<TimeRange> timeRanges =
         verificationJob.getDataCollectionTimeRanges(roundDownTo1MinBoundary(verificationJobInstance.getStartTime()));
+    cvConfigs = filterDeploymentCvConfigs(cvConfigs);
     cvConfigs.forEach(cvConfig -> {
       populateMetricPack(cvConfig);
       List<DataCollectionTask> dataCollectionTasks = new ArrayList<>();

@@ -40,7 +40,8 @@ public class PrometheusDataCollectionInfoMapper
   @Override
   public PrometheusDataCollectionInfo toDeploymentDataCollectionInfo(
       PrometheusCVConfig cvConfig, List<String> serviceInstances) {
-    PrometheusDataCollectionInfo dataCollectionInfo = this.toDataCollectionInfo(cvConfig);
+    PrometheusDataCollectionInfo dataCollectionInfo =
+        this.toDataCollectionInfo(cvConfig, VerificationTask.TaskType.DEPLOYMENT);
     if (CollectionUtils.isNotEmpty(serviceInstances)) {
       dataCollectionInfo.getMetricCollectionInfoList().forEach(metricCollectionInfo -> {
         StringBuilder serviceInstanceFilterAdditionBuilder = new StringBuilder();
