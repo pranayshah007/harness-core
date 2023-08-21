@@ -9,8 +9,6 @@ package io.harness.idp.scorecard.datapointsdata.dsldataprovider.impl;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dashboard.DashboardResourceClient;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.factory.PipelineInfoResponseFactory;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.DslConstants;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.base.DslDataProvider;
@@ -24,10 +22,8 @@ import io.harness.spec.server.idp.v1.model.DataSourceDataPointInfo;
 
 import com.google.inject.Inject;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class HarnessStoScanDsl implements DslDataProvider {
   PipelineServiceClient pipelineServiceClient;
-  DataPointParserFactory dataPointParserFactory;
   PipelineInfoResponseFactory pipelineInfoFactory;
   DashboardResourceClient dashboardResourceClient;
 
@@ -118,12 +113,6 @@ public class HarnessStoScanDsl implements DslDataProvider {
 
     for (DataPointInputValues dataPointInputValues : dataPointInputValuesList) {
       String dataPointIdentifier = dataPointInputValues.getDataPointIdentifier();
-      Set<String> inputValues = new HashSet<>(dataPointInputValues.getValues());
-      if (!inputValues.isEmpty()) {
-        DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPointIdentifier);
-        String key = dataPointParser.getReplaceKey();
-        log.info("replace key : {}, value: [{}]", key, inputValues);
-      }
       returnData.putAll(pipelineInfoFactory.getResponseParser(dataPointIdentifier)
                             .getParsedValue(responseCI, responseCD, dataPointIdentifier));
     }

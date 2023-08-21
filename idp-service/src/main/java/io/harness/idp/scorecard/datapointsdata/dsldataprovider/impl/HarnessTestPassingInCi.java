@@ -11,8 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.tiserviceclient.TIServiceClient;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.factory.PipelineTestSummaryReportResponseFactory;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.DslConstants;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.base.DslDataProvider;
@@ -25,12 +23,9 @@ import io.harness.spec.server.idp.v1.model.DataSourceDataPointInfo;
 
 import com.google.gson.JsonObject;
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Call;
@@ -43,7 +38,6 @@ public class HarnessTestPassingInCi implements DslDataProvider {
   private TIServiceUtils tiServiceUtils;
   private TIServiceClient tiServiceClient;
   private PipelineServiceClient pipelineServiceClient;
-  private DataPointParserFactory dataPointParserFactory;
   private PipelineTestSummaryReportResponseFactory pipelineTestSummaryReportResponseFactory;
   private static final String JUNIT_REPORT = "junit";
 
@@ -112,12 +106,6 @@ public class HarnessTestPassingInCi implements DslDataProvider {
 
     for (DataPointInputValues dataPointInputValues : dataPointInputValuesList) {
       String dataPointIdentifier = dataPointInputValues.getDataPointIdentifier();
-      Set<String> inputValues = new HashSet<>(dataPointInputValues.getValues());
-      if (!inputValues.isEmpty()) {
-        DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPointIdentifier);
-        String key = dataPointParser.getReplaceKey();
-        log.info("replace key : {}, value: [{}]", key, inputValues);
-      }
       returnData.putAll(pipelineTestSummaryReportResponseFactory.getResponseParser(dataPointIdentifier)
                             .getParsedValue(summaryReport, dataPointIdentifier));
     }

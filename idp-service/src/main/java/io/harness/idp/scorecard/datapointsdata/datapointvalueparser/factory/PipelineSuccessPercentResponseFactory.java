@@ -6,9 +6,10 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.factory;
 
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.*;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineSuccessPercent;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl.PipelineSuccessPercentParser;
 
@@ -22,7 +23,7 @@ public class PipelineSuccessPercentResponseFactory {
 
   public PipelineSuccessPercent getResponseParser(String identifier) {
     switch (identifier) {
-      case ValueParserConstants.CI_PIPELINE_SUCCESS_PERCENT_IN_SEVEN_DAYS:
+      case PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS:
         return pipelineSuccessPercentParser;
       default:
         throw new UnsupportedOperationException(String.format("Could not find response parser for %s", identifier));

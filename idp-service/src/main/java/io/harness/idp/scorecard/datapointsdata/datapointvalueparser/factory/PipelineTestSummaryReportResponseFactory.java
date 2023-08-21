@@ -6,9 +6,10 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.factory;
 
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.*;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineTestSummaryReport;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl.PipelineTestSummaryReportParser;
 
@@ -22,7 +23,7 @@ public class PipelineTestSummaryReportResponseFactory {
 
   public PipelineTestSummaryReport getResponseParser(String identifier) {
     switch (identifier) {
-      case ValueParserConstants.CI_PIPELINE_TEST_FAILING_IS_ZERO:
+      case PIPELINE_TEST_FAILING_IN_CI_IS_ZERO:
         return pipelineTestSummaryReportParser;
       default:
         throw new UnsupportedOperationException(String.format("Could not find response parser for %s", identifier));
