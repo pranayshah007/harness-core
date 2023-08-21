@@ -131,7 +131,7 @@ public class VmInitializeTaskParamsBuilder {
   @Inject private SSCAServiceUtils sscaServiceUtils;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
-  private final String GCPStandard32 = "Standard-32";
+  private final String GCPStandard32 = "Standard_32";
 
   public DliteVmInitializeTaskParams getHostedVmInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
