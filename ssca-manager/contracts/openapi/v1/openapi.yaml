@@ -76,6 +76,11 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PageNumberParam'
         - $ref: '#/components/parameters/PageSizeParam'
+        - schema:
+            type: string
+          in: query
+          name: orchestrationId
+          description: Required Orchestration step ID
   '/v1/org/{org}/project/{project}/enforcement_result':
     parameters:
       - name: org
