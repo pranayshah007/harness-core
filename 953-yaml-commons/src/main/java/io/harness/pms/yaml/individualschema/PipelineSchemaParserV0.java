@@ -121,17 +121,12 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
   private ObjectNodeWithMetadata getRootStrategyNode(String currentFqn, ObjectNode objectNode) {
     String StrategyNodeName = StrategyConfig.class.getSimpleName();
     if (StrategyNodeName.equals(JsonPipelineUtils.getText(objectNode, "title"))) {
-      String[] fqnComponents = currentFqn.split("/");
-      if (fqnComponents.length >= 5) {
-        // The currentFqn for the strategy node follows the pattern
-        // "#/definitions/pipeline/stages/iacm/IACMStageNode/strategy/oneOf"
-        return ObjectNodeWithMetadata.builder()
-            .isRootNode(true)
-            .nodeGroup(StepCategory.STRATEGY.name().toLowerCase())
-            .nodeType(StepCategory.STRATEGY.name().toLowerCase())
-            .objectNode(objectNode)
-            .build();
-      }
+      return ObjectNodeWithMetadata.builder()
+          .isRootNode(true)
+          .nodeGroup(StepCategory.STRATEGY.name().toLowerCase())
+          .nodeType(StepCategory.STRATEGY.name().toLowerCase())
+          .objectNode(objectNode)
+          .build();
     }
     return null;
   }
