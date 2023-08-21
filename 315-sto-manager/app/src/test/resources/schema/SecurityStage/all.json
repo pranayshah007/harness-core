@@ -9762,6 +9762,15 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SbomFile": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SbomOrchestrationSpec": {
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -11065,12 +11074,21 @@
         {
           "type": "object",
           "required": [
-            "source",
-            "tool"
+            "source"
           ],
           "properties": {
             "attestation": {
               "$ref": "#/definitions/Attestation"
+            },
+            "ingestion": {
+              "$ref": "#/definitions/SbomFile"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "generation",
+                "ingestion"
+              ]
             },
             "resources": {
               "$ref": "#/definitions/ContainerResource"

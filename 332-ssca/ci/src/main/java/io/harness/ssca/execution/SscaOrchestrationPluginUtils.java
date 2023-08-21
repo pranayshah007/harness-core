@@ -47,6 +47,17 @@ public class SscaOrchestrationPluginUtils {
     String tool = stepInfo.getTool().getType().toString();
     String format = getFormat(stepInfo);
 
+    // set to generation by default for backwards compatibility
+    String mode = "generation";
+    if (stepInfo.getMode() != null) {
+      mode = stepInfo.getMode().toString();
+    }
+
+    String ingestion = null;
+    if (stepInfo.getIngestion() != null && stepInfo.getIngestion().getFile() != null) {
+      ingestion = stepInfo.getIngestion().getFile().getValue();
+    }
+
     String sbomSource = null;
     if (stepInfo.getSource().getType().equals(SbomSourceType.IMAGE)) {
       sbomSource = resolveStringParameter("source", SscaConstants.SSCA_ORCHESTRATION_STEP, identifier,
@@ -60,6 +71,8 @@ public class SscaOrchestrationPluginUtils {
             .sbomGenerationFormat(format)
             .sbomSource(sbomSource)
             .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getHttpClientConfig().getBaseUrl())
+            .sbomMode(mode)
+            .sbomDestination(ingestion)
             .stepExecutionId(runtimeId)
             .stepIdentifier(identifier)
             .sscaManagerEnabled(sscaServiceUtils.getSscaServiceConfig().isSscaManagerEnabled())
