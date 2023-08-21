@@ -17,6 +17,7 @@ import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.clienttools.InstallUtils.areClientToolsInstalled;
 import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
 import static io.harness.delegate.message.ManagerMessageConstants.MIGRATE;
+import static io.harness.delegate.message.ManagerMessageConstants.MONGO_TIMEOUT;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.message.ManagerMessageConstants.UPDATE_PERPETUAL_TASK;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_DASH;
@@ -1039,6 +1040,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } else if (StringUtils.contains(message, REVOKED_TOKEN.name())) {
       log.error("Delegate used revoked token. It will be frozen and drained.");
       freeze();
+    } else if (StringUtils.equals(message, MONGO_TIMEOUT + delegateId)) {
+      log.error(
+          "Manager was not able to verify the delegate status because it was not able to connect to dB. Will re-try again.");
     } else {
       log.warn("Delegate received unhandled message {}", message);
     }

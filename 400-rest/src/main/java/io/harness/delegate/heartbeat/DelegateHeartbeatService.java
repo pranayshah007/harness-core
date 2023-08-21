@@ -34,6 +34,7 @@ import software.wings.service.intfc.AccountService;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.mongodb.MongoTimeoutException;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -85,6 +86,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
 
   public abstract T buildHeartbeatResponseOnSuccess(DelegateHeartbeatParams params, Delegate existingDelegate);
   public abstract T buildHeartbeatResponseOnFailure(DelegateHeartbeatParams params, WingsException e);
+  public abstract T buildHeartBeatResponseOnMongoException(DelegateHeartbeatParams params, MongoTimeoutException e);
 
   public T processHeartbeatRequest(@NotNull final Delegate existingDelegate, @NotNull DelegateHeartbeatParams params) {
     logLastHeartbeatSkew(existingDelegate.getUuid(), params.getLastHeartBeat());
@@ -140,6 +142,11 @@ public abstract class DelegateHeartbeatService<T extends Object> {
       log.error("Heartbeat failed for delegate {}.", params.getDelegateId(), e);
       // If the exception is not handled, it will fail the process early
       final T failureResponse = Optional.ofNullable(buildHeartbeatResponseOnFailure(params, e)).orElseThrow(() -> e);
+      finish(failureResponse, params);
+      return failureResponse;
+    } catch (MongoTimeoutException e) {
+      final T failureResponse =
+          Optional.ofNullable(buildHeartBeatResponseOnMongoException(params, e)).orElseThrow(() -> e);
       finish(failureResponse, params);
       return failureResponse;
     }
