@@ -19,6 +19,8 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DuplicateKeyException;
+import java.time.Duration;
+import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -40,6 +42,7 @@ public class K8sYamlDao {
                           .uid(uid)
                           .resourceVersion(resourceVersion)
                           .yaml(yaml)
+                          .ttl(Instant.now().plus(Duration.ofDays(90)))
                           .build();
     saveIfNotPresent(k8sYaml);
     return k8sYaml.getHash();

@@ -18,4 +18,6 @@ public class DataPoints {
   // Github
   public static final String GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
   public static final String GITHUB_IS_BRANCH_PROTECTED = "isBranchProtected";
+
+  public static final String STO_SCAN_IN_PIPELINE = "stoStageAdded";
 }

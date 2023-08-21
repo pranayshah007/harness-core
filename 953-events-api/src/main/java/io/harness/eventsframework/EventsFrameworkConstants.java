@@ -164,7 +164,7 @@ public final class EventsFrameworkConstants {
   public static final int GIT_BRANCH_HOOK_EVENT_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int GIT_CONFIG_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int FULL_SYNC_STREAM_MAX_TOPIC_SIZE = 10000;
-  public static final int ORCHESTRATION_LOG_MAX_TOPIC_SIZE = 100000;
+  public static final int ORCHESTRATION_LOG_MAX_TOPIC_SIZE = 200000;
 
   public static final Duration DEFAULT_MAX_PROCESSING_TIME = Duration.ofSeconds(10);
   public static final Duration ENTITY_CRUD_MAX_PROCESSING_TIME = Duration.ofSeconds(20);

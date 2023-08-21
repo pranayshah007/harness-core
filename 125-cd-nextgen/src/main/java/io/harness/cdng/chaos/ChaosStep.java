@@ -75,7 +75,7 @@ public class ChaosStep extends AsyncExecutableWithCapabilities {
       if (response != null && response.isSuccessful()) {
         return response.getNotifyId();
       }
-      throw new ChaosRerunException("Error talking ot chaos service");
+      throw new ChaosRerunException("Error talking to chaos service");
     } catch (Exception ex) {
       log.error("Unable to trigger chaos experiment", ex);
       throw ex;

@@ -7,8 +7,7 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_BRANCH_PROTECTED;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.*;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +20,7 @@ import lombok.AllArgsConstructor;
 public class DataPointParserFactory {
   private GithubMeanTimeToMergeParser githubMeanTimeToMergeParser;
   private GithubIsBranchProtectedParser githubIsBranchProtectedParser;
+  private StoStageSetupParser stoStageSetupParser;
 
   public DataPointParser getParser(String identifier) {
     switch (identifier) {
@@ -29,6 +29,8 @@ public class DataPointParserFactory {
       case GITHUB_IS_BRANCH_PROTECTED:
         return githubIsBranchProtectedParser;
       // Add more cases for other parsers
+      case STO_SCAN_IN_PIPELINE:
+        return stoStageSetupParser;
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataPoint parser for %s", identifier));
     }

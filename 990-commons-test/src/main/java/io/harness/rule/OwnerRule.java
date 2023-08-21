@@ -325,6 +325,7 @@ public class OwnerRule implements TestRule {
   public static final String COREY = "corey.severino";
   public static final String MTRAN = "michael.tran";
   public static final String SHASHWAT_SACHAN = "shashwat.sachan";
+  public static final String AYUSHI_TIWARI = "ayushi.tiwari";
 
   @Deprecated public static final String UNKNOWN = "unknown";
 
@@ -577,6 +578,7 @@ public class OwnerRule implements TestRule {
           .put(COREY, defaultUserInfo(COREY).slack("U02N2QDLC9W").team(CET).build())
           .put(MTRAN, defaultUserInfo(MTRAN).slack("UCYBPAE3Y").team(PLG).build())
           .put(SHASHWAT_SACHAN, defaultUserInfo(SHASHWAT_SACHAN).slack("U05GP44JNJ2").team(CV).build())
+          .put(AYUSHI_TIWARI, defaultUserInfo(AYUSHI_TIWARI).slack("U05KLP7V9J5").team(SPG).build())
           .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));

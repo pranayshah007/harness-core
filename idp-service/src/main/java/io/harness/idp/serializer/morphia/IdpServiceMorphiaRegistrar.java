@@ -21,7 +21,10 @@ import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.idp.plugin.beans.PluginRequestEntity;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.datasourcelocations.entity.CustomHttpDataSourceLocationEntity;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
+import io.harness.idp.scorecard.datasourcelocations.entity.DirectHttpDataSourceLocationEntity;
+import io.harness.idp.scorecard.datasourcelocations.entity.NoopDataSourceLocationEntity;
 import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scores.entities.ScoreEntity;
@@ -55,6 +58,9 @@ public class IdpServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(DataSourceEntity.class);
     set.add(DataPointEntity.class);
     set.add(DataSourceLocationEntity.class);
+    set.add(DirectHttpDataSourceLocationEntity.class);
+    set.add(CustomHttpDataSourceLocationEntity.class);
+    set.add(NoopDataSourceLocationEntity.class);
     set.add(ScoreEntity.class);
   }
 

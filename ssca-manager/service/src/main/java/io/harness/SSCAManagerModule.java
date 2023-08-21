@@ -22,7 +22,9 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.SSCAManagerModuleRegistrars;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
+import io.harness.spec.server.ssca.v1.TokenApi;
 import io.harness.ssca.api.SbomProcessorApiImpl;
+import io.harness.ssca.api.TokenApiImpl;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
 import io.harness.ssca.services.EnforceSBOMWorkflowService;
@@ -74,6 +76,7 @@ public class SSCAManagerModule extends AbstractModule {
     install(new io.harness.SSCAManagerModulePersistence());
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(SbomProcessorApi.class).to(SbomProcessorApiImpl.class);
+    bind(TokenApi.class).to(TokenApiImpl.class);
     bind(ArtifactService.class).to(ArtifactServiceImpl.class);
     bind(ProcessSbomWorkflowService.class).to(ProcessSbomWorkflowServiceImpl.class);
     bind(EnforceSBOMWorkflowService.class).to(EnforceSBOMWorkflowServiceImpl.class);
@@ -96,6 +99,13 @@ public class SSCAManagerModule extends AbstractModule {
   @Named("ngManagerServiceSecret")
   public String ngManagerServiceSecret() {
     return this.configuration.getNgManagerServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  @Named("sscaManagerServiceSecret")
+  public String sscaManagerServiceSecret() {
+    return this.configuration.getSscaManagerServiceSecret();
   }
 
   @Provides

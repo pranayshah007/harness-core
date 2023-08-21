@@ -8,6 +8,7 @@
 package io.harness.idp.scorecard.checks.service;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.idp.common.CommonUtils.addGlobalAccountIdentifierAlong;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
 
 import static java.lang.Boolean.parseBoolean;
@@ -79,9 +80,8 @@ public class CheckServiceImpl implements CheckService {
 
   @Override
   public List<CheckEntity> getActiveChecks(String accountIdentifier, List<String> checkIdentifiers) {
-    // TODO: include GLOBALACCOUNT as well
-    return checkRepository.findByAccountIdentifierAndIsDeletedAndIdentifierIn(
-        accountIdentifier, false, checkIdentifiers);
+    return checkRepository.findByAccountIdentifierInAndIsDeletedAndIdentifierIn(
+        addGlobalAccountIdentifierAlong(accountIdentifier), false, checkIdentifiers);
   }
 
   @Override
@@ -99,9 +99,9 @@ public class CheckServiceImpl implements CheckService {
   }
 
   @Override
-  public List<CheckEntity> getChecksByAccountIdsAndIdentifiers(
-      List<String> accountIdentifiers, Set<String> identifiers) {
-    return checkRepository.findByAccountIdentifierInAndIdentifierIn(accountIdentifiers, identifiers);
+  public List<CheckEntity> getChecksByAccountIdAndIdentifiers(String accountIdentifier, Set<String> identifiers) {
+    return checkRepository.findByAccountIdentifierInAndIdentifierIn(
+        addGlobalAccountIdentifierAlong(accountIdentifier), identifiers);
   }
 
   @Override

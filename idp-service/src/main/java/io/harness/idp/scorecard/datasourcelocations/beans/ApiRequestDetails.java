@@ -5,18 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.scorecard.scorecards.beans;
+package io.harness.idp.scorecard.datasourcelocations.beans;
 
-import io.harness.idp.scorecard.checks.entity.CheckEntity;
-import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 
-import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
 @Data
-public class ScorecardCheckFullDetails {
-  ScorecardEntity scorecard;
-  List<CheckEntity> checks;
+@Builder
+@OwnedBy(HarnessTeam.IDP)
+public class ApiRequestDetails {
+  String method;
+  String url;
+  Map<String, String> headers;
+  String requestBody;
 }

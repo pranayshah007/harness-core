@@ -7,7 +7,7 @@
 
 package io.harness.cdng.ecs;
 
-import static io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStep.ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING;
+import static io.harness.cdng.ecs.EcsBlueGreenRollbackStep.ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +25,7 @@ import io.harness.cdng.ecs.beans.EcsBlueGreenCreateServiceDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenRollbackOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -89,6 +90,7 @@ public class EcsBlueGreenRollbackStepTest extends CategoryTest {
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private OutcomeService outcomeService;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Spy @InjectMocks private EcsBlueGreenRollbackStep ecsBlueGreenRollbackStep;
   @Test
@@ -192,7 +194,7 @@ public class EcsBlueGreenRollbackStepTest extends CategoryTest {
             .prodListenerRuleArn("lisRuleArn")
             .prodTargetGroupArn("grpArn")
             .isFirstDeployment(true)
-            .serviceName("service")
+            .serviceName("service__1")
             .build();
     OptionalSweepingOutput ecsBlueGreenPrepareRollbackDataOptionalOutput =
         OptionalSweepingOutput.builder().found(true).output(ecsBlueGreenPrepareRollbackDataOutcome).build();
@@ -204,7 +206,7 @@ public class EcsBlueGreenRollbackStepTest extends CategoryTest {
                 + OutcomeExpressionConstants.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME));
 
     EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
-        EcsBlueGreenCreateServiceDataOutcome.builder().build();
+        EcsBlueGreenCreateServiceDataOutcome.builder().serviceName("service__2").build();
     OptionalSweepingOutput ecsBlueGreenSwapTargetGroupsDataOptionalOutput =
         OptionalSweepingOutput.builder().found(true).output(ecsBlueGreenCreateServiceDataOutcome).build();
     doReturn(ecsBlueGreenSwapTargetGroupsDataOptionalOutput)
@@ -229,6 +231,8 @@ public class EcsBlueGreenRollbackStepTest extends CategoryTest {
     doReturn(taskChainResponseMock)
         .when(ecsStepCommonHelper)
         .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
+
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(any(), any());
 
     ecsBlueGreenRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, inputPackage);
 

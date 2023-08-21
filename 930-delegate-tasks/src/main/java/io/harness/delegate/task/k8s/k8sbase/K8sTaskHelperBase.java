@@ -19,6 +19,7 @@ import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
 import static io.harness.helm.HelmConstants.HELM_RELEASE_LABEL;
 import static io.harness.k8s.K8sConstants.KUBERNETES_CHANGE_CAUSE_ANNOTATION;
@@ -99,8 +100,11 @@ import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.progresstaskstreaming.NGDelegateTaskProgressCallback;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
+import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.beans.taskprogress.TaskProgressCallback;
@@ -110,6 +114,7 @@ import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sApiClient;
@@ -3252,5 +3257,16 @@ public class K8sTaskHelperBase {
           + ": true");
     }
     return kubernetesResourceIds.get(0);
+  }
+  public HelmChartInfo getHelmChartDetails(ManifestDelegateConfig manifestDelegateConfig, String manifestFileDir)
+      throws Exception {
+    HelmChartInfo helmChartInfo =
+        helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(Paths.get(manifestFileDir, CHARTS_YAML_KEY).toString());
+
+    if (helmChartInfo != null) {
+      helmChartInfo.setRepoUrl(manifestDelegateConfig.getStoreDelegateConfig().getRepoUrl());
+    }
+
+    return helmChartInfo;
   }
 }

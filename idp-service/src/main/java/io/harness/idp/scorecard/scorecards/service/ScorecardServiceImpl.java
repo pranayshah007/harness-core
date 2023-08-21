@@ -23,9 +23,9 @@ import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.idp.scorecard.scorecards.beans.BackstageCatalogEntityFacets;
-import io.harness.idp.scorecard.scorecards.beans.ScorecardCheckFullDetails;
+import io.harness.idp.scorecard.scorecards.beans.ScorecardAndChecks;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
-import io.harness.idp.scorecard.scorecards.mappers.ScorecardCheckFullDetailsMapper;
+import io.harness.idp.scorecard.scorecards.mappers.ScorecardAndChecksMapper;
 import io.harness.idp.scorecard.scorecards.mappers.ScorecardDetailsMapper;
 import io.harness.idp.scorecard.scorecards.mappers.ScorecardMapper;
 import io.harness.idp.scorecard.scorecards.repositories.ScorecardRepository;
@@ -84,7 +84,7 @@ public class ScorecardServiceImpl implements ScorecardService {
       uniqueCheckIds.addAll(checkIds);
     }
     Map<String, CheckEntity> checkEntityMap =
-        checkService.getChecksByAccountIdsAndIdentifiers(List.of(accountIdentifier, GLOBAL_ACCOUNT_ID), uniqueCheckIds)
+        checkService.getChecksByAccountIdAndIdentifiers(accountIdentifier, uniqueCheckIds)
             .stream()
             .collect(Collectors.toMap(checkEntity
                 -> checkEntity.getAccountIdentifier() + DOT_SEPARATOR + checkEntity.getIdentifier(),
@@ -96,7 +96,7 @@ public class ScorecardServiceImpl implements ScorecardService {
   }
 
   @Override
-  public List<ScorecardCheckFullDetails> getAllScorecardCheckFullDetails(
+  public List<ScorecardAndChecks> getAllScorecardAndChecks(
       String accountIdentifier, List<String> scorecardIdentifiers) {
     List<ScorecardEntity> scorecardEntities;
     if (scorecardIdentifiers.isEmpty()) {
@@ -113,14 +113,14 @@ public class ScorecardServiceImpl implements ScorecardService {
         checkService.getActiveChecks(accountIdentifier, checkIdentifiers)
             .stream()
             .collect(Collectors.toMap(CheckEntity::getIdentifier, Function.identity()));
-    List<ScorecardCheckFullDetails> scorecardDetailsList = new ArrayList<>();
+    List<ScorecardAndChecks> scorecardDetailsList = new ArrayList<>();
     for (ScorecardEntity scorecardEntity : scorecardEntities) {
       List<CheckEntity> checksList = scorecardEntity.getChecks()
                                          .stream()
                                          .filter(check -> checkEntityMap.containsKey(check.getIdentifier()))
                                          .map(check -> checkEntityMap.get(check.getIdentifier()))
                                          .collect(Collectors.toList());
-      scorecardDetailsList.add(ScorecardCheckFullDetailsMapper.toDTO(scorecardEntity, checksList));
+      scorecardDetailsList.add(ScorecardAndChecksMapper.toDTO(scorecardEntity, checksList));
     }
     return scorecardDetailsList;
   }
@@ -151,7 +151,7 @@ public class ScorecardServiceImpl implements ScorecardService {
     Set<String> checkIds =
         scorecardEntity.getChecks().stream().map(ScorecardEntity.Check::getIdentifier).collect(Collectors.toSet());
     Map<String, CheckEntity> checkEntityMap =
-        checkService.getChecksByAccountIdsAndIdentifiers(List.of(accountIdentifier, GLOBAL_ACCOUNT_ID), checkIds)
+        checkService.getChecksByAccountIdAndIdentifiers(accountIdentifier, checkIds)
             .stream()
             .collect(Collectors.toMap(checkEntity
                 -> checkEntity.getAccountIdentifier() + DOT_SEPARATOR + checkEntity.getIdentifier(),
@@ -162,7 +162,7 @@ public class ScorecardServiceImpl implements ScorecardService {
   private void validateChecks(List<ScorecardChecks> scorecardChecks, String harnessAccount) {
     Set<String> checkIds = scorecardChecks.stream().map(ScorecardChecks::getIdentifier).collect(Collectors.toSet());
     Map<String, CheckEntity> checkEntityMap =
-        checkService.getChecksByAccountIdsAndIdentifiers(List.of(harnessAccount, GLOBAL_ACCOUNT_ID), checkIds)
+        checkService.getChecksByAccountIdAndIdentifiers(harnessAccount, checkIds)
             .stream()
             .collect(Collectors.toMap(checkEntity
                 -> checkEntity.getAccountIdentifier() + DOT_SEPARATOR + checkEntity.getIdentifier(),

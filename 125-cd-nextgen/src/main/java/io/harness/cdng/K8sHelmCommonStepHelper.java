@@ -98,6 +98,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -684,6 +685,16 @@ public class K8sHelmCommonStepHelper {
         .filter(Objects::nonNull)
         .map(valuesFileContent -> engineExpressionService.renderExpression(ambiance, valuesFileContent, false))
         .collect(Collectors.toList());
+  }
+
+  public String renderValue(Ambiance ambiance, String value, boolean skipUnresolvedExpression) {
+    if (isEmpty(value)) {
+      return value;
+    }
+
+    return engineExpressionService.renderExpression(ambiance, value,
+        skipUnresolvedExpression ? ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED
+                                 : ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
   }
 
   public StepResponse handleCustomTaskFailure(CustomFetchResponsePassThroughData customFetchResponse) {

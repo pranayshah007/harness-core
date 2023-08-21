@@ -141,7 +141,7 @@ public class K8sInstanceSyncV2Helper {
 
     List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
         requestData.getKubernetesConfig(), requestData.getNamespace(), requestData.getReleaseName(), timeoutMillis);
-    return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList);
+    return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList, requestData.getHelmChartInfo());
   }
   public List<ServerInstanceInfo> getServerInstanceInfoList(
       NativeHelmInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest requestData) throws Exception {

@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
+import javax.persistence.Column;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -48,7 +49,7 @@ public class DataPointEntity implements PersistentEntity {
 
   @Id private String id;
   private String accountIdentifier;
-  private String identifier;
+  @Column(name = "identifier") private String identifier;
   private String name;
   private Type type;
   private String description;

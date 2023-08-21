@@ -77,8 +77,10 @@ k8sWorkloadRecommendation {"name": "accountId_dirty", "background": true} {"acco
 k8sWorkloadRecommendation {"name": "estimatedSavings_1", "background": true} {"estimatedSavings": 1}
 k8sWorkloadRecommendation {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
 k8sWorkloadRecommendation {"name": "unique_accountId_clusterId_namespace_workloadName_workloadType", "unique": true} {"accountId": 1, "clusterId": 1, "namespace": 1, "workloadName": 1, "workloadType": 1}
+k8sYaml {"name": "accountId_createdAt", "background": true} {"accountId": 1, "createdAt": 1}
 k8sYaml {"name": "accountId_hash", "background": true} {"accountId": 1, "hash": 1}
 k8sYaml {"name": "hash_1", "unique": true} {"hash": 1}
+k8sYaml {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
 lastReceivedPublishedMessage {"name": "no_dup", "unique": true} {"accountId": 1, "identifier": 1}
 managedAccount {"name": "accountId_mspAccountId", "unique": true} {"accountId": 1, "mspAccountId": 1}
 managedAccount {"name": "mspAccountId_1", "background": true} {"mspAccountId": 1}

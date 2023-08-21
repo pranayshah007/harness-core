@@ -47,7 +47,7 @@ public class CIDelegateTaskExecutorTest extends CIExecutionTestBase {
 
   private final StepStatusTaskParameters parameters = StepStatusTaskParameters.builder().build();
   private final DelegateTaskRequest expectedDelegateTaskRequest = DelegateTaskRequest.builder()
-                                                                      .taskSelectors(new ArrayList<>())
+                                                                      .selectors(new ArrayList<>())
                                                                       .eligibleToExecuteDelegateIds(new ArrayList<>())
                                                                       .parked(true)
                                                                       .accountId(ACCOUNT_ID)

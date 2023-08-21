@@ -20,6 +20,7 @@ import org.springframework.data.repository.CrudRepository;
 public interface CIExecutionRepository
     extends CrudRepository<CIExecutionMetadata, String>, CIExecutionRepositoryCustom {
   long countByAccountId(String AccountID);
+  long countByAccountIdAndStatus(String accountID, String status);
   long countByAccountIdAndBuildType(String AccountID, OSType BuildType);
 
   CIExecutionMetadata findByStageExecutionId(String stageExecutionId);

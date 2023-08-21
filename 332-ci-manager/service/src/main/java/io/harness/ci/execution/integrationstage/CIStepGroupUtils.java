@@ -7,6 +7,7 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
@@ -175,7 +176,7 @@ public class CIStepGroupUtils {
                                                                 .name(INITIALIZE_TASK)
                                                                 .uuid(generateUuid())
                                                                 .type(InitializeStepNode.StepType.liteEngineTask)
-                                                                .timeout(getTimeout(infrastructure))
+                                                                .timeout(getTimeout(infrastructure, accountId))
                                                                 .initializeStepInfo(initializeStepInfo)
                                                                 .build());
       JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
@@ -189,11 +190,15 @@ public class CIStepGroupUtils {
     return !isCIManagerStep(executionWrapper);
   }
 
-  private ParameterField<Timeout> getTimeout(Infrastructure infrastructure) {
+  private ParameterField<Timeout> getTimeout(Infrastructure infrastructure, String accountId) {
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
+    boolean queueEnabled = featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
+    if (queueEnabled) {
+      return ParameterField.createValueField(Timeout.fromString("10h"));
+    }
     if (infrastructure.getType() == Infrastructure.Type.VM) {
       vmInitializeTaskParamsBuilder.validateInfrastructure(infrastructure);
       VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
