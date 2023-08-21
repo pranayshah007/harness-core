@@ -13,6 +13,7 @@ import io.harness.delegate.task.ci.GitSCMType;
 import lombok.Builder;
 import lombok.ToString;
 import lombok.Value;
+import lombok.experimental.Wither;
 
 @Value
 @Builder
@@ -33,5 +34,5 @@ public class GitStatusCheckParams {
   ConnectorDetails connectorDetails; // Use connectorDetails to retrieve all information
   GitSCMType gitSCMType;
 
-  String token; // used only in case of harness code
+  @Wither String token; // used only in case of harness code
 }

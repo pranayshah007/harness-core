@@ -38,19 +38,15 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStepParameters;
+import io.harness.cistatus.service.harness.HarnessCodePayload;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
-import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessType;
-import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
-import io.harness.delegate.beans.connector.scm.harness.HarnessJWTTokenSpecDTO;
 import io.harness.delegate.task.ci.CIBuildStatusPushParameters;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.encryption.Scope;
-import io.harness.encryption.SecretRefData;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
 import io.harness.git.checks.GitStatusCheckHelper;
@@ -109,7 +105,8 @@ public class GitBuildStatusUtility {
   private static final int IDENTIFIER_LENGTH_BB_SAAS = 19;
 
   private static final int HASH_LENGTH_BB_SAAS = 5;
-  private static final List<ConnectorType> validConnectors = Arrays.asList(GITHUB, GITLAB, BITBUCKET, AZURE_REPO);
+  private static final List<ConnectorType> validConnectors =
+      Arrays.asList(GITHUB, GITLAB, BITBUCKET, AZURE_REPO, HARNESS);
 
   @Inject private ConnectorUtils connectorUtils;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -201,6 +198,9 @@ public class GitBuildStatusUtility {
     GitStatusCheckParams gitStatusCheckParams = convertParams(ciBuildStatusPushParameters);
     log.info("Sending git status update request for stage {}, planId {}, commitId {}, status {}", stageId,
         ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(), ciBuildStatusPushParameters.getState());
+    if (gitStatusCheckParams.getGitSCMType() == GitSCMType.HARNESS) {
+      gitStatusCheckParams = gitStatusCheckParams.withToken(getHarnessRepoToken());
+    }
     gitStatusCheckHelper.sendStatus(gitStatusCheckParams);
   }
 
@@ -292,7 +292,6 @@ public class GitBuildStatusUtility {
     GitSCMType gitSCMType = retrieveSCMType(gitConnector);
 
     String detailsUrl = getBuildDetailsUrl(ambiance);
-    ConnectorDetails finalConnectorDetails = modifyConnectorDetailsIfHarnessScm(gitConnector);
 
     return CIBuildStatusPushParameters.builder()
         .detailsUrl(detailsUrl)
@@ -311,25 +310,9 @@ public class GitBuildStatusUtility {
         .build();
   }
 
-  private ConnectorDetails modifyConnectorDetailsIfHarnessScm(ConnectorDetails gitConnector) {
-    if (gitConnector.getConnectorType() == HARNESS) {
-      HarnessConnectorDTO harnessConnectorDTO = (HarnessConnectorDTO) gitConnector.getConnectorConfig();
-      gitConnector.withConnectorConfig(harnessConnectorDTO.withApiAccess(getApiAccess()));
-    }
-    return gitConnector;
-  }
-
-  private HarnessApiAccessDTO getApiAccess() {
-    // Using service principal
-    String serviceTokenWithDuration =
-        tokenGenerator.getServiceTokenWithDuration(cIExecutionServiceConfig.getGitnessConfig().getJwtSecret(),
-            Duration.ofHours(1), new ServicePrincipal(CI_MANAGER.getServiceId()));
-    return HarnessApiAccessDTO.builder()
-        .type(HarnessApiAccessType.JWT_TOKEN)
-        .spec(HarnessJWTTokenSpecDTO.builder()
-                  .tokenRef(SecretRefData.builder().decryptedValue(serviceTokenWithDuration.toCharArray()).build())
-                  .build())
-        .build();
+  private String getHarnessRepoToken() {
+    return tokenGenerator.getServiceTokenWithDuration(cIExecutionServiceConfig.getGitnessConfig().getJwtSecret(),
+        Duration.ofHours(1), new ServicePrincipal(CI_MANAGER.getServiceId()));
   }
 
   private String generateDesc(String pipeline, String executionId, String stage, String status) {
@@ -366,6 +349,8 @@ public class GitBuildStatusUtility {
       return GitSCMType.GITLAB;
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       return GitSCMType.AZURE_REPO;
+    } else if (gitConnector.getConnectorType() == HARNESS) {
+      return GitSCMType.HARNESS;
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported");
     }
@@ -387,8 +372,30 @@ public class GitBuildStatusUtility {
         return getBitBucketStatus(status);
       case AZURE_REPO:
         return getAzureRepoStatus(status);
+      case HARNESS:
+        return getHarnessRepoStatus(status);
       default:
         unhandled(gitSCMType);
+        return UNSUPPORTED;
+    }
+  }
+
+  private String getHarnessRepoStatus(Status status) {
+    switch (status) {
+      case ERRORED:
+        return HarnessCodePayload.CheckStatus.error.name();
+      case ABORTED:
+      case FAILED:
+      case EXPIRED:
+        return HarnessCodePayload.CheckStatus.failure.name();
+      case SUCCEEDED:
+      case IGNORE_FAILED:
+        return HarnessCodePayload.CheckStatus.success.name();
+      case RUNNING:
+        return HarnessCodePayload.CheckStatus.running.name();
+      case QUEUED:
+        return HarnessCodePayload.CheckStatus.pending.name();
+      default:
         return UNSUPPORTED;
     }
   }

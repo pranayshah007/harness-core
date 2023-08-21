@@ -55,15 +55,15 @@ public class HarnessConnectorDTO extends ConnectorConfigDTO implements ScmConnec
   @NotNull
   @JsonProperty("type")
   @Schema(type = "string", allowableValues = {"Account", "Repo"})
-  private GitConnectionType connectionType;
-  @NotBlank @NotNull private String url;
-  private String validationRepo;
-  @Valid @NotNull private HarnessAuthenticationDTO authentication;
-  @Valid @Wither private HarnessApiAccessDTO apiAccess;
-  private Boolean executeOnDelegate = Boolean.FALSE;
-  private String gitConnectionUrl;
-  @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) private String apiUrl;
-  @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) private String slug;
+  GitConnectionType connectionType;
+  @NotBlank @NotNull String url;
+  String validationRepo;
+  @Valid @NotNull HarnessAuthenticationDTO authentication;
+  @Valid @Wither HarnessApiAccessDTO apiAccess;
+  Boolean executeOnDelegate = Boolean.FALSE;
+  String gitConnectionUrl;
+  @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) String apiUrl;
+  @ApiModelProperty(hidden = true) @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) String slug;
 
   @Builder
   public HarnessConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
