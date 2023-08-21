@@ -119,6 +119,7 @@ import io.harness.pms.event.triggerwebhookevent.TriggerExecutionEventStreamConsu
 import io.harness.pms.event.webhookevent.WebhookEventQueueProcessor;
 import io.harness.pms.event.webhookevent.WebhookEventStreamConsumer;
 import io.harness.pms.events.base.PipelineEventConsumerController;
+import io.harness.pms.expressions.functors.ErrorTrackingFunctor;
 import io.harness.pms.inputset.gitsync.InputSetEntityGitSyncHelper;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
 import io.harness.pms.instrumentaion.InstrumentationPipelineEndEventHandler;
@@ -148,6 +149,7 @@ import io.harness.pms.sdk.PmsSdkInitHelper;
 import io.harness.pms.sdk.PmsSdkInstanceCacheMonitor;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
+import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumer;
@@ -719,6 +721,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         .engineFacilitators(PipelineServiceFacilitatorRegistrar.getEngineFacilitators())
         .engineAdvisers(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers())
         .staticAliases(getStaticAliases())
+        .sdkFunctors(getSdkFunctors())
         .jsonExpansionHandlers(getJsonExpansionHandlers())
         .engineEventHandlersMap(OrchestrationExecutionPmsEventHandlerRegistrar.getEngineEventHandlers())
         .executionSummaryModuleInfoProviderClass(PmsExecutionServiceInfoProvider.class)
@@ -728,6 +731,12 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         .planCreatorServiceInternalConfig(config.getPmsPlanCreatorServicePoolConfig())
         .pipelineSdkRedisEventsConfig(config.getPipelineSdkRedisEventsConfig())
         .build();
+  }
+
+  private Map<String, Class<? extends SdkFunctor>> getSdkFunctors() {
+    Map<String, Class<? extends SdkFunctor>> sdkFunctorMap = new HashMap<>();
+    sdkFunctorMap.put(ErrorTrackingFunctor.CET, ErrorTrackingFunctor.class);
+    return sdkFunctorMap;
   }
 
   @VisibleForTesting

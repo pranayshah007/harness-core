@@ -44,6 +44,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -249,6 +250,11 @@ public class VariableCreatorMergeService {
     for (Map.Entry<String, List<String>> entry : serviceExpressionMap.entrySet()) {
       resultMap.put(entry.getKey(), entry.getValue());
     }
+
+    ArrayList<String> cetExpressions = new ArrayList<>();
+    cetExpressions.add("cet.collectorUrl");
+    cetExpressions.add("cet.defaultAgentToken");
+    resultMap.put("cet", cetExpressions);
 
     // Adding account expressions
     resultMap.put("account", VariableCreatorHelper.getExpressionsInObject(AccountDTO.builder().build(), "account"));
