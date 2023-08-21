@@ -16,17 +16,19 @@ import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @Data
 @Builder
 @ToString
 @OwnedBy(DEL)
+@Slf4j
 public class DelegateConfiguration {
   private String accountId;
   private String delegateName;
-  @ToString.Exclude private String accountSecret;
-  @ToString.Exclude private String delegateToken;
+  private String accountSecret;
+  private String delegateToken;
   private String managerUrl;
   private String verificationServiceUrl;
   private String cvNextGenUrl;
@@ -85,6 +87,7 @@ public class DelegateConfiguration {
   public String getDelegateToken() {
     if (StringUtils.isEmpty(delegateToken)) {
       // Return account secret only if delegate token is not available.
+        log.info("Fetching token value from account secret");
       return accountSecret;
     }
     return delegateToken;
