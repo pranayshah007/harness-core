@@ -85,6 +85,7 @@ public class DelegateConfiguration {
 
   // TODO: This method will get removed once we rolled out new delegate.
   public String getDelegateToken() {
+    log.info("Delegate token value: {} from delegate configuration", delegateToken);
     if (StringUtils.isEmpty(delegateToken)) {
       // Return account secret only if delegate token is not available.
         log.info("Fetching token value from account secret");

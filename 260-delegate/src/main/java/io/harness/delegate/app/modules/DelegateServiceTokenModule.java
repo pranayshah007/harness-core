@@ -13,13 +13,16 @@ import io.harness.security.ServiceTokenGenerator;
 
 import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RequiredArgsConstructor
+@Slf4j
 public class DelegateServiceTokenModule extends AbstractModule {
   private final DelegateConfiguration configuration;
 
   @Override
   protected void configure() {
+    log.info("Delegate token value: {}",configuration.getDelegateToken());
     bind(DelegateServiceTokenHelper.class)
         .toInstance(DelegateServiceTokenHelper.builder()
                         .serviceTokenGenerator(new ServiceTokenGenerator())

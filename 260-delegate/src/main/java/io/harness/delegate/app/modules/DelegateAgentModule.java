@@ -88,6 +88,7 @@ public class DelegateAgentModule extends AbstractModule {
       install(
           new DelegateGrpcServiceModule(configuration.getGrpcServiceConnectorPort(), configuration.getDelegateToken()));
     }
+    log.info("Delegate token value: {} from agent module",configuration.getDelegateToken());
   }
 
   private void configureCcmEventPublishing() {
