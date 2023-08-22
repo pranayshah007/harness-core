@@ -15,7 +15,6 @@ import io.harness.exception.SslContextBuilderException;
 import io.harness.network.FibonacciBackOff;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
-import io.harness.security.TokenGenerator;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
@@ -47,36 +46,35 @@ import retrofit2.converter.protobuf.ProtoConverterFactory;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateAgentManagerClientFactory implements Provider<DelegateAgentManagerClient> {
+  private static final ConnectionPool CONNECTION_POOL = new ConnectionPool(16, 5, TimeUnit.MINUTES);
   private final VersionInfoManager versionInfoManager;
   private final DelegateKryoConverterFactory kryoConverterFactory;
   private final String baseUrl;
-  private final TokenGenerator tokenGenerator;
   private final String clientCertificateFilePath;
   private final String clientCertificateKeyFilePath;
-  private final boolean trustAllCertificates;
   private final OkHttpClient httpClient;
-  private static final ConnectionPool connectionPool = new ConnectionPool(16, 5, TimeUnit.MINUTES);
+  private final DelegateAuthInterceptor authInterceptor;
 
   @Inject
   public DelegateAgentManagerClientFactory(final DelegateConfiguration configuration,
       final VersionInfoManager versionInfoManager, final DelegateKryoConverterFactory kryoConverterFactory,
-      final TokenGenerator tokenGenerator) {
+      final DelegateAuthInterceptor authInterceptor) {
     this.baseUrl = configuration.getManagerUrl();
-    this.tokenGenerator = tokenGenerator;
     this.clientCertificateFilePath = configuration.getClientCertificateFilePath();
     this.clientCertificateKeyFilePath = configuration.getClientCertificateKeyFilePath();
-    this.trustAllCertificates = configuration.isTrustAllCertificates();
     this.versionInfoManager = versionInfoManager;
     this.kryoConverterFactory = kryoConverterFactory;
-    this.httpClient = this.trustAllCertificates ? this.getUnsafeOkHttpClient() : this.getSafeOkHttpClient();
+    this.authInterceptor = authInterceptor;
+    this.httpClient =
+        configuration.isTrustAllCertificates() ? this.getUnsafeOkHttpClient() : this.getSafeOkHttpClient();
   }
 
   @Override
   public DelegateAgentManagerClient get() {
-    ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.registerModule(new Jdk8Module());
-    objectMapper.registerModule(new GuavaModule());
-    objectMapper.registerModule(new JavaTimeModule());
+    final ObjectMapper objectMapper = new ObjectMapper()
+                                          .registerModule(new Jdk8Module())
+                                          .registerModule(new GuavaModule())
+                                          .registerModule(new JavaTimeModule());
 
     ExtensionRegistryLite registryLite = ExtensionRegistryLite.newInstance();
     Retrofit retrofit = new Retrofit.Builder()
@@ -128,9 +126,9 @@ public class DelegateAgentManagerClientFactory implements Provider<DelegateAgent
     return Http.getOkHttpClientWithProxyAuthSetup()
         .hostnameVerifier(new NoopHostnameVerifier())
         .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
-        .connectionPool(connectionPool)
+        .connectionPool(CONNECTION_POOL)
         .retryOnConnectionFailure(true)
-        .addInterceptor(new io.harness.managerclient.DelegateAuthInterceptor(this.tokenGenerator))
+        .addInterceptor(authInterceptor)
         .addInterceptor(chain -> {
           Builder request = chain.request().newBuilder().addHeader(
               "User-Agent", "delegate/" + this.versionInfoManager.getVersionInfo().getVersion());
