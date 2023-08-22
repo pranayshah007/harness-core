@@ -9,7 +9,6 @@ package io.harness.ng;
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
 import static java.util.stream.Collectors.toSet;
-
 import io.harness.AccessControlClientConfiguration;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
@@ -24,6 +23,7 @@ import io.harness.cache.CacheConfig;
 import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
+import io.harness.errortracking.client.beans.ErrorTrackingClientConfig;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.file.FileServiceConfiguration;
@@ -186,6 +186,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("pmsSdkOrchestrationEventPoolConfig") private ThreadPoolConfig pmsSdkOrchestrationEventPoolConfig;
   @JsonProperty("allowedOrigins") private List<String> allowedOrigins = Lists.newArrayList();
   @JsonProperty("managerClientConfig") private ServiceHttpClientConfig managerClientConfig;
+  @JsonProperty("errorTrackingClientConfig") private ErrorTrackingClientConfig errorTrackingClientConfig;
   @JsonProperty("grpcClient") private GrpcClientConfig grpcClientConfig;
   @JsonProperty("grpcServer") private GrpcServerConfig grpcServerConfig;
   @JsonProperty("nextGen") @ConfigSecret private NextGenConfig nextGenConfig;

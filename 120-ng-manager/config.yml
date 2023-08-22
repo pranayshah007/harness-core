@@ -127,6 +127,13 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+errorTrackingClientConfig:
+  errorTrackingServiceConfig:
+    baseUrl: http://localhost:9191/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  errorTrackingServiceSecret: LocalTestErrorTrackingServiceSecretLocalTestErrorTrackingServiceSecretLocalTestE
+
 ngManagerClientConfig:
   baseUrl: http://localhost:7457/
   connectTimeOutSeconds: 15
