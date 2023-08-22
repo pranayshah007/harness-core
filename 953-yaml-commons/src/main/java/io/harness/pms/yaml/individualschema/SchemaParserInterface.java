@@ -7,6 +7,8 @@
 
 package io.harness.pms.yaml.individualschema;
 
-public abstract class IndividualSchemaRequest {
-  abstract IndividualSchemaMetadata getIndividualSchemaMetadata();
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+public interface SchemaParserInterface {
+  ObjectNode getIndividualSchema(IndividualSchemaRequest schemaRequest);
 }

@@ -50,7 +50,7 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
     fqnToNodeMap.forEach((fqn, node) -> {
       if (node.isRootNode()) {
         initIndividualSchema(node.getObjectNode(),
-            PipelineSchemaRequest.builder()
+            PipelineSchemaMetadata.builder()
                 .nodeGroup(node.getNodeGroup())
                 .nodeType(node.getNodeType())
                 .nodeGroupDifferentiator(node.getNodeGroupDifferentiator())
@@ -76,7 +76,7 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
       fqnToNodeMap.put(childNodeRefValue, stageNode);
       return;
     }
-    ObjectNodeWithMetadata stepGroupNode = getRootStageGroupNode(currentFqn, objectNode);
+    ObjectNodeWithMetadata stepGroupNode = getRootStepGroupNode(currentFqn, objectNode);
     if (stepGroupNode != null) {
       fqnToNodeMap.put(childNodeRefValue, stepGroupNode);
       return;
@@ -131,9 +131,9 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
     return null;
   }
 
-  private ObjectNodeWithMetadata getRootStageGroupNode(String currentFqn, ObjectNode objectNode) {
+  private ObjectNodeWithMetadata getRootStepGroupNode(String currentFqn, ObjectNode objectNode) {
     String stepGroupNodeName = StepGroupElementConfig.class.getSimpleName();
-    if (stepGroupNodeName.equals(JsonPipelineUtils.getText(objectNode, "title"))) {
+    if (stepGroupNodeName.equals(JsonPipelineUtils.getText(objectNode, SchemaConstants.TITLE))) {
       String[] fqnComponents = currentFqn.split("/");
       if (fqnComponents.length > 5) {
         // The currentFqn for the stepGroup node follows the pattern
@@ -173,8 +173,8 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
   // Generate unique key for the given nodeType/group/stageName. This key will be used to store the calculated results
   // in the map and for lookup.
   @Override
-  String generateSchemaKey(IndividualSchemaRequest individualSchemaMetadata) {
-    PipelineSchemaRequest schemaMetadata = (PipelineSchemaRequest) individualSchemaMetadata;
+  String generateSchemaKey(IndividualSchemaMetadata individualSchemaMetadata) {
+    PipelineSchemaMetadata schemaMetadata = (PipelineSchemaMetadata) individualSchemaMetadata;
     if (StepCategory.STEP_GROUP.name().equalsIgnoreCase(schemaMetadata.getNodeGroup())) {
       return schemaMetadata.getNodeGroupDifferentiator() + "/" + schemaMetadata.getNodeGroup();
     } else if (StepCategory.PIPELINE.name().equalsIgnoreCase(schemaMetadata.getNodeGroup())) {
