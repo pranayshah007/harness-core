@@ -1,4 +1,4 @@
-package io.harness.gitsync.gitwebhooks;
+package io.harness.gitsync.gitwebhooks.entity;
 
 /*
  * Copyright 2023 Harness Inc. All rights reserved.
