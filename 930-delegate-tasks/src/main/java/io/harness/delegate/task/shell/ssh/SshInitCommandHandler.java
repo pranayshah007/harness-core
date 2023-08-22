@@ -10,6 +10,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.shell.SshInitCommandTemplates.EXECLAUNCHERV2_SH_FTL;
+import static io.harness.delegate.task.shell.SshInitCommandTemplates.EXECLAUNCHERV3_SH_FTL;
 import static io.harness.delegate.task.shell.SshInitCommandTemplates.TAILWRAPPERV2_SH_FTL;
 
 import static java.util.stream.Collectors.toMap;
@@ -192,8 +193,24 @@ public class SshInitCommandHandler implements CommandHandler {
                                                .put("scriptWorkingDirectory", workingDir)
                                                .put("includeTailFunctions", includeTailFunctions)
                                                .build();
-      SshInitCommandTemplates.getTemplate(EXECLAUNCHERV2_SH_FTL).process(templateParams, stringWriter);
+      String templateFileLocation =
+          taskParameters.isDisableEvaluateExportVariable() ? EXECLAUNCHERV3_SH_FTL : EXECLAUNCHERV2_SH_FTL;
+      if (EXECLAUNCHERV3_SH_FTL.equals(templateFileLocation)) {
+        Map<String, String> envVariablesMap = (Map<String, String>) templateParams.get("envVariables");
+        if (envVariablesMap != null) {
+          escapeSingleQuotes(envVariablesMap);
+        }
+      }
+      SshInitCommandTemplates.getTemplate(templateFileLocation).process(templateParams, stringWriter);
       return stringWriter.toString();
+    }
+  }
+
+  private void escapeSingleQuotes(Map<String, String> envVariablesMap) {
+    for (Map.Entry<String, String> entry : envVariablesMap.entrySet()) {
+      String originalValue = entry.getValue();
+      String modifiedValue = originalValue.replace("'", "'\\''");
+      entry.setValue(modifiedValue);
     }
   }
 
