@@ -19,6 +19,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
+import io.harness.errortracking.client.beans.ErrorTrackingClientConfig;
 import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
@@ -117,6 +118,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;
   @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
+  @JsonProperty("errorTrackingClientConfig") private ErrorTrackingClientConfig errorTrackingClientConfig;
   @JsonProperty("ciServiceClientConfig") private ServiceHttpClientConfig ciServiceClientConfig;
   @JsonProperty("containerStepConfigureWithCi") private boolean containerStepConfigureWithCi;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;

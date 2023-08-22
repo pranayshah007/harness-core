@@ -40,6 +40,7 @@ import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
+import io.harness.errortracking.client.remote.ErrorTrackingClientModule;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.ff.FeatureFlagModule;
@@ -312,6 +313,7 @@ public class PipelineServiceModule extends AbstractModule {
     });
     install(PipelineServiceGrpcModule.getInstance());
     install(new PipelinePersistenceModule());
+    install(new ErrorTrackingClientModule(configuration.getErrorTrackingClientConfig()));
     install(DelegateServiceDriverModule.getInstance(true, false));
     install(OrchestrationModule.getInstance(
         OrchestrationModuleConfig.builder()
