@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.encoding.EncodingUtils.compressString;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
+import static io.harness.k8s.K8sConstants.KUBECONFIG_FILENAME;
 import static io.harness.k8s.KubernetesConvention.CompressedReleaseHistoryFlag;
 import static io.harness.k8s.KubernetesConvention.ReleaseHistoryKeyName;
 import static io.harness.k8s.model.KubernetesClusterAuthType.EXEC_OAUTH;
@@ -53,6 +54,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.concurent.HTimeLimiterMocker;
 import io.harness.container.ContainerInfo;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filesystem.FileIo;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesAzureConfig;
@@ -137,16 +139,21 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import okhttp3.Call;
 import okhttp3.internal.http2.ConnectionShutdownException;
+import org.assertj.core.api.Assertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -168,6 +175,8 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
   public static final String DUMMY_RELEASE_HISTORY = "dummyReleaseHistory";
   public static final char[] USERNAME = "username".toCharArray();
   public static final char[] PASSWORD = "PASSWORD".toCharArray();
+  final Path workingDir = Path.of("dir");
+  final Path configFilePath = Path.of(workingDir.toString(), KUBECONFIG_FILENAME);
   private static final KubernetesConfig KUBERNETES_CONFIG = KubernetesConfig.builder()
                                                                 .masterUrl(MASTER_URL)
                                                                 .username(USERNAME)
@@ -386,6 +395,11 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     service = new Service();
     configMap = new ConfigMap();
     horizontalPodAutoscaler = new HorizontalPodAutoscaler();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    FileIo.deleteDirectoryAndItsContentIfExists(workingDir.toString());
   }
 
   @Test
@@ -1694,6 +1708,31 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
                                       .build();
     String configFileContent = kubernetesContainerService.getConfigFileContent(kubeConfig);
     assertThat(expected).isEqualTo(configFileContent);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testKubeConfigFilePermissions() throws Exception {
+    FileIo.createDirectoryIfDoesNotExist(workingDir);
+    Files.createFile(configFilePath);
+    Set<PosixFilePermission> initialPermissions = new HashSet<>();
+    initialPermissions.add(PosixFilePermission.OWNER_READ);
+    initialPermissions.add(PosixFilePermission.OWNER_WRITE);
+    initialPermissions.add(PosixFilePermission.GROUP_READ);
+    initialPermissions.add(PosixFilePermission.OTHERS_READ);
+    Files.setPosixFilePermissions(configFilePath, initialPermissions);
+
+    kubernetesContainerService.modifyConfigFileReadableProperties(workingDir.toString());
+
+    try {
+      // Check if group and others read permissions are removed
+      Set<PosixFilePermission> updatedPermissions = Files.getPosixFilePermissions(configFilePath);
+      assertThat(updatedPermissions.contains(PosixFilePermission.GROUP_READ)).isFalse();
+      assertThat(updatedPermissions.contains(PosixFilePermission.OTHERS_READ)).isFalse();
+    } catch (Exception e) {
+      Assertions.fail("Exception thrown while checking permissions: " + e.getMessage());
+    }
   }
 
   private static final String EXPECTED_KUBECONFIG = "apiVersion: v1\n"
