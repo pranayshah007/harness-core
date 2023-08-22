@@ -1325,30 +1325,6 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<AccountDTO> getAllAccounts() {
-    Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
-                               .project(ID_KEY2, true)
-                               .project(AccountKeys.accountName, true)
-                               .project(AccountKeys.companyName, true)
-                               .project(AccountKeys.defaultExperience, true)
-                               .project(AccountKeys.authenticationMechanism, true)
-                               .project(AccountKeys.nextGenEnabled, true)
-                               .project(AccountKeys.serviceAccountConfig, true)
-                               .project(AccountKeys.isProductLed, true)
-                               .project(AccountKeys.twoFactorAdminEnforced, true)
-                               .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
-                               .limit(NO_LIMIT);
-
-    List<AccountDTO> accountDTOList = new ArrayList<>();
-    try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
-      for (Account account : iterator) {
-        accountDTOList.add(AccountMapper.toAccountDTO(account));
-      }
-    }
-    return accountDTOList;
-  }
-
-  @Override
   public PageResponse<AccountDTO> listAccounts(int offset, int pageSize) {
     Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
                                .project(ID_KEY2, true)
