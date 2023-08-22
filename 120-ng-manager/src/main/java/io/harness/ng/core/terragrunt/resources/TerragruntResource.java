@@ -23,7 +23,6 @@ import io.swagger.annotations.ApiResponses;
 import java.util.HashSet;
 import java.util.Set;
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -50,7 +49,7 @@ public class TerragruntResource {
   @Path("terragruntCmdFlags")
   @ApiOperation(value = "Get Command flags based on terragrunt Step Type", nickname = "terragruntCmdFlags")
   public ResponseDTO<Set<TerragruntCommandFlagType>> getTerragruntCommandFlags(
-      @QueryParam("stepType") @NotEmpty @NotNull String stepType) {
+      @QueryParam("stepType") @NotEmpty String stepType) {
     Set<TerragruntCommandFlagType> terragruntCmdFlags = new HashSet<>();
     for (TerragruntCommandFlagType terragruntCommandFlagType : TerragruntCommandFlagType.values()) {
       if (terragruntCommandFlagType.getTerragruntCommandAllowedStep().getStepsAllowed().stream().anyMatch(

@@ -919,4 +919,17 @@ public class TerragruntStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG)
         && isHarnessSecretManager((SecretManagerConfig) encryptionConfig);
   }
+
+  public Map<String, String> getTerragruntCliFlags(List<TerragruntCliOptionFlag> commandFlags) {
+    if (commandFlags == null) {
+      return new HashMap<>();
+    }
+
+    Map<String, String> commandsValueMap = new HashMap<>();
+    for (TerragruntCliOptionFlag commandFlag : commandFlags) {
+      commandsValueMap.put(commandFlag.getCommandType().name(), commandFlag.getFlag().getValue());
+    }
+
+    return commandsValueMap;
+  }
 }

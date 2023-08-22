@@ -28,6 +28,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.validation.Validator;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -65,6 +66,7 @@ public class TerragruntPlanExecutionData {
   @YamlSchemaTypes({string})
   ParameterField<Boolean> exportTerragruntPlanJson;
   @NotNull @JsonProperty("moduleConfig") TerragruntModuleConfig terragruntModuleConfig;
+  @VariableExpression(skipVariableExpression = true) List<TerragruntCliOptionFlag> commandFlags;
 
   public TerragruntPlanExecutionDataParameters toStepParameters() {
     validateParams();
@@ -91,6 +93,7 @@ public class TerragruntPlanExecutionData {
       });
     }
     builder.varFiles(varFiles);
+    builder.cliOptionFlags(commandFlags);
     return builder.build();
   }
 

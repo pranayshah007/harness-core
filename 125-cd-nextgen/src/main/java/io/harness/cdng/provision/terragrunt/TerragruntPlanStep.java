@@ -15,11 +15,9 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
-
+import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_CLI_OPTIONS_NG;
 import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
 import static io.harness.provision.TerragruntConstants.PLAN;
-
-import static software.wings.beans.TaskType.TERRAGRUNT_PLAN_TASK_NG;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.CodePulse;
@@ -64,6 +62,8 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -149,6 +149,11 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
         helper.isExportCredentialForSourceModule(configuration.getConfigFiles(), stepParameters.getType()));
     ParameterField<Boolean> exportTgPlanJsonField = planStepParameters.getConfiguration().getExportTerragruntPlanJson();
 
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_CLI_OPTIONS_NG)) {
+      builder.terragruntCommandFlags(
+          helper.getTerragruntCliFlags(planStepParameters.getConfiguration().getCliOptionFlags()));
+    }
+
     EncryptionConfig planSecretManagerConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
     builder.entityId(entityId)
         .workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()))
@@ -181,9 +186,10 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
         .encryptDecryptPlanForHarnessSMOnManager(helper.tfPlanEncryptionOnManager(accountId, planSecretManagerConfig))
         .build();
 
+    TaskType terragruntTaskType = builder.build().getDelegateTaskTypeForPlanStep();
     TaskData taskData = TaskData.builder()
                             .async(true)
-                            .taskType(TERRAGRUNT_PLAN_TASK_NG.name())
+                            .taskType(terragruntTaskType.name())
                             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
                             .parameters(new Object[] {builder.build()})
                             .build();
@@ -193,8 +199,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     commandUnitsList.add(PLAN);
 
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnitsList,
-        TERRAGRUNT_PLAN_TASK_NG.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(planStepParameters.getDelegateSelectors()),
+        terragruntTaskType.getDisplayName(), TaskSelectorYaml.toTaskSelector(planStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
 

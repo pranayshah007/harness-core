@@ -42,4 +42,5 @@ public class TerragruntPlanExecutionDataParameters {
   ParameterField<String> secretManagerRef;
   ParameterField<Boolean> exportTerragruntPlanJson;
   TerragruntModuleConfig terragruntModuleConfig;
+  List<TerragruntCliOptionFlag> cliOptionFlags;
 }

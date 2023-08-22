@@ -498,7 +498,10 @@ public enum TaskType {
   HELM_FETCH_CHART_MANIFEST_TASK(TaskGroup.HELM, "Fetch helm chart"),
   COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
   INSTANCE_SYNC_V2_NG_SUPPORT(TaskGroup.K8S_NG, "Instance sync V2 support for NG"),
-  COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task");
+  COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  TERRAGRUNT_PLAN_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Plan Task V2", false),
+  TERRAGRUNT_APPLY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task V2", false),
+  TERRAGRUNT_DESTROY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task V2", false);
 
   private final TaskGroup taskGroup;
   private final String displayName;
