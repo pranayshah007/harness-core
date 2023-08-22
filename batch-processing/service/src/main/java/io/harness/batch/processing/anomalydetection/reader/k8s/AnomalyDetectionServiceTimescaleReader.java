@@ -8,9 +8,11 @@
 package io.harness.batch.processing.anomalydetection.reader.k8s;
 
 import io.harness.batch.processing.anomalydetection.AnomalyDetectionConstants;
+import io.harness.batch.processing.anomalydetection.AnomalyDetectionTimeSeries;
 import io.harness.batch.processing.anomalydetection.K8sQueryMetaData;
 import io.harness.batch.processing.anomalydetection.TimeSeriesMetaData;
 import io.harness.batch.processing.ccm.CCMJobConstants;
+import io.harness.batch.processing.tasklet.support.HarnessEntitiesService;
 import io.harness.ccm.anomaly.entities.EntityType;
 import io.harness.ccm.anomaly.entities.TimeGranularity;
 
@@ -33,9 +35,11 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.StepExecution;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 public class AnomalyDetectionServiceTimescaleReader extends AnomalyDetectionTimescaleReader {
+  @Autowired HarnessEntitiesService harnessEntitiesService;
   @Override
   public void beforeStep(StepExecution stepExecution) {
     parameters = stepExecution.getJobExecution().getJobParameters();
@@ -123,6 +127,17 @@ public class AnomalyDetectionServiceTimescaleReader extends AnomalyDetectionTime
         EntityType.CLUSTER.toString(), TimeGranularity.DAILY.toString(), accountId, endTime.toString());
 
     listAnomalyDetectionTimeSeries = dataService.readData(timeSeriesMetaData);
+
+    for (AnomalyDetectionTimeSeries anomalyDetectionTimeSeries : listAnomalyDetectionTimeSeries) {
+      String servicename = harnessEntitiesService.fetchEntityName(
+          HarnessEntitiesService.HarnessEntities.SERVICE, anomalyDetectionTimeSeries.getService());
+
+      log.info("The service name is {}", servicename);
+
+      anomalyDetectionTimeSeries.setServiceName(servicename);
+
+      log.info("Yes the service name is finally available and is {}", anomalyDetectionTimeSeries.getServiceName());
+    }
 
     log.info("successfully read {} no of {}", listAnomalyDetectionTimeSeries.size(),
         timeSeriesMetaData.getEntityType().toString());

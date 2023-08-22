@@ -44,58 +44,6 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
     timeSeries.initialiseTestData(timeSeriesMetaData.getTestStart(), timeSeriesMetaData.getTestEnd(), ChronoUnit.DAYS);
     return timeSeries;
   }
-
-  public AnomalyDetectionTimeSeries initialiseServiceName(AnomalyDetectionTimeSeries timeSeries) {
-    log.info("Yes It  reached  here for service name");
-
-    final long CACHE_SIZE = 10000;
-
-    //    LoadingCache<HarnessEntitiesService.CacheKey, String> entityIdToNameCache =
-    //        Caffeine.newBuilder()
-    //            .maximumSize(CACHE_SIZE)
-    //            .build(key ->
-
-    if (timeSeries.getService() != null) {
-      log.info("Yes It  reached inside if loop for service name");
-      log.info("Service inside if is : {}", timeSeries.getService());
-
-      //      HarnessEntitiesService.CacheKey obj1 =
-      //          new HarnessEntitiesService.CacheKey(timeSeries.getService(),
-      //          HarnessEntitiesService.HarnessEntities.SERVICE);
-
-      //      log.info("The entity id is {}", obj1.entityId);
-      //      log.info("The entity id name is {}", (obj1.entity).name());
-
-      //      entityIdToNameCache.get(obj1);
-
-      //      log.info("Yes it passed the line for getting the value");
-      //
-      //      if (entityIdToNameCache.get(obj1) == null) {
-      //        log.info("Yes it's null");
-      //      } else {
-      //        log.info("It's not null");
-      //      }
-
-      String servicename = harnessEntitiesService.fetchEntityName(
-          HarnessEntitiesService.HarnessEntities.SERVICE, timeSeries.getService());
-
-      log.info("The service name is {}", servicename);
-
-      timeSeries.setServiceName(servicename);
-
-      //     (entityIdToNameCache.get(new HarnessEntitiesService.CacheKey(
-      //         , )));
-
-      log.info("Yes the service name is finally available and is {}", timeSeries.getServiceName());
-
-    }
-
-    else {
-      timeSeries.setServiceName(null);
-    }
-    return timeSeries;
-  }
-
   private List<Instant> trainTimePointsList;
   private List<Double> trainDataPointsList;
   private List<Instant> testTimePointsList;
