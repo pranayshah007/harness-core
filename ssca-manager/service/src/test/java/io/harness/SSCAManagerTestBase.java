@@ -7,7 +7,8 @@
 
 package io.harness;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.SSCA;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.rule.LifecycleRule;
 
@@ -15,8 +16,8 @@ import org.junit.Rule;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-@OwnedBy(HarnessTeam.SSCA)
-public class SSCAManagerTestBase extends CategoryTest {
+@OwnedBy(SSCA)
+public abstract class SSCAManagerTestBase extends CategoryTest {
   @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Rule public SSCAManagerTestRule coreTestRule = new SSCAManagerTestRule(lifecycleRule.getClosingFactory());

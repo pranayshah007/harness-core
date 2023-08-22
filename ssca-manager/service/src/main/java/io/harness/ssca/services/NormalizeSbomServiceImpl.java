@@ -13,14 +13,13 @@ import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 import io.harness.ssca.utils.transformers.NormalizeSbomComponentTransformer;
 import io.harness.utils.ApiUtils;
 
-import com.google.inject.Inject;
 import javax.ws.rs.core.Response;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 public class NormalizeSbomServiceImpl implements NormalizeSbomService {
-  @Inject SBOMComponentRepo sbomComponentRepo;
+  private SBOMComponentRepo sbomComponentRepo;
 
   @Override
   public Response listNormalizedSbomComponent(String orgIdentifier, String projectIdentifier, Integer page,
