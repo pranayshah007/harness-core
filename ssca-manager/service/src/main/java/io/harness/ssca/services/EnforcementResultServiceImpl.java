@@ -7,6 +7,8 @@
 
 package io.harness.ssca.services;
 
+import io.harness.repositories.EnforcementResultRepo;
+import io.harness.spec.server.ssca.v1.model.EnforcementResultDTO;
 import io.harness.ssca.beans.AllowLicense;
 import io.harness.ssca.beans.AllowList.AllowListItem;
 import io.harness.ssca.beans.AllowList.AllowListRuleType;
@@ -15,7 +17,9 @@ import io.harness.ssca.beans.Supplier;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
+import io.harness.ssca.utils.transformers.EnforcementResultTransformer;
 
+import com.google.inject.Inject;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +27,7 @@ import javax.ws.rs.BadRequestException;
 import org.eclipse.jgit.ignore.internal.Strings;
 
 public class EnforcementResultServiceImpl implements EnforcementResultService {
+  @Inject EnforcementResultRepo enforcementResultRepo;
   @Override
   public List<EnforcementResultEntity> getEnforcementResults(List<NormalizedSBOMComponentEntity> violatedComponents,
       String violationType, String violationDetails, ArtifactEntity artifact, String enforcementId) {
@@ -33,7 +38,7 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
                                            .artifactId(component.getArtifactId())
                                            .tag(artifact.getTag())
                                            .imageName(artifact.getName())
-                                           .accountId(component.getAccountID())
+                                           .accountId(component.getAccountId())
                                            .orgIdentifier(component.getOrgIdentifier())
                                            .projectIdentifier(component.getProjectIdentifier())
                                            .orchestrationID(artifact.getOrchestrationId())
@@ -90,6 +95,11 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
     }
 
     return violation.substring(0, violation.length() - 1);
+  }
+
+  @Override
+  public void create(EnforcementResultDTO enforcementResultDTO) {
+    enforcementResultRepo.save(EnforcementResultTransformer.toEntity(enforcementResultDTO));
   }
 
   private String getSupplierViolationDetails(String packageName, String packageSupplier, List<Supplier> suppliers) {

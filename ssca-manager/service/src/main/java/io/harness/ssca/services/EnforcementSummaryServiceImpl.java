@@ -8,11 +8,13 @@
 package io.harness.ssca.services;
 
 import io.harness.repositories.EnforcementSummaryRepo;
+import io.harness.spec.server.ssca.v1.model.EnforcementSummaryDTO;
 import io.harness.ssca.beans.Artifact;
 import io.harness.ssca.enforcement.constants.EnforcementStatus;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
+import io.harness.ssca.utils.transformers.EnforcementSummaryTransformer;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -43,5 +45,10 @@ public class EnforcementSummaryServiceImpl implements EnforcementSummaryService 
 
     EnforcementSummaryEntity savedEntity = enforcementSummaryRepo.save(summary);
     return savedEntity.getStatus();
+  }
+
+  @Override
+  public void create(EnforcementSummaryDTO enforcementSummaryDTO) {
+    enforcementSummaryRepo.save(EnforcementSummaryTransformer.toEntity(enforcementSummaryDTO));
   }
 }

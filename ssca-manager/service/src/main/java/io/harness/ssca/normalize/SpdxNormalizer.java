@@ -41,7 +41,7 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
               .toolVersion(settings.getTool().getVersion())
               .toolName(settings.getTool().getName())
               .toolVendor(settings.getTool().getVendor())
-              .packageID(spdxPackage.getSPDXID())
+              .packageId(spdxPackage.getSPDXID())
               .packageName(spdxPackage.getName())
               .packageDescription(spdxPackage.getDescription())
               .packageLicense(getPackageLicenses(spdxPackage.getLicenseDeclared()))
@@ -51,7 +51,7 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
               .pipelineIdentifier(settings.getPipelineIdentifier())
               .projectIdentifier(settings.getProjectIdentifier())
               .orgIdentifier(settings.getOrgIdentifier())
-              .accountID(settings.getAccountID());
+              .accountId(settings.getAccountID());
 
       if (spdxPackage.getOriginator() != null && spdxPackage.getOriginator().contains(":")) {
         String[] splitOriginator = Strings.split(spdxPackage.getOriginator(), ':');

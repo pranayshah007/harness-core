@@ -81,6 +81,8 @@ paths:
           in: query
           name: orchestrationId
           description: Required Orchestration step ID
+          required: true
+        - $ref: '#/components/parameters/AccountHeader'
   '/v1/org/{org}/project/{project}/enforcement-result':
     parameters:
       - name: org
@@ -110,6 +112,8 @@ paths:
       tags:
         - enforcementResult
       description: save enforcement result details.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
   '/v1/org/{org}/project/{project}/enforcement-summary':
     parameters:
       - name: org
@@ -139,6 +143,8 @@ paths:
       description: save enforcement summary details.
       tags:
         - enforcementSummary
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
   '/v1/org/{org}/project/{project}/sbom/enforcement':
     parameters:
       - $ref: '#/components/parameters/OrgParam'
@@ -357,7 +363,7 @@ components:
           items:
             type: string
         created:
-          type: string
+          type: number
         tool_version:
           type: string
         tool_name:
@@ -410,6 +416,8 @@ components:
           type: string
         accountId:
           type: string
+        purl:
+          type: string
     EnforcementResultDTO:
       title: EnforcementResultDTO
       x-stoplight:
@@ -453,6 +461,7 @@ components:
             type: string
         purl:
           type: string
+      x-examples: {}
     EnforcementSummaryDTO:
       title: EnforcementSummaryDTO
       x-stoplight:
@@ -472,6 +481,7 @@ components:
           type: number
         status:
           type: string
+      x-examples: {}
   parameters:
     OrgParam:
       name: org
@@ -499,13 +509,15 @@ components:
       in: query
       required: false
       schema:
-        type: string
+        type: integer
+        default: 0
       description: Required Page number
     PageSizeParam:
       in: query
       required: false
       schema:
-        type: string
+        type: integer
+        default: 10
       description: Required number of elements per page
       name: limit
     TotalElementHeader:

@@ -7,6 +7,7 @@
 
 package io.harness.ssca.services;
 
+import io.harness.spec.server.ssca.v1.model.EnforcementSummaryDTO;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 
@@ -15,4 +16,6 @@ import java.util.List;
 public interface EnforcementSummaryService {
   String persistEnforcementSummary(String enforcementId, List<EnforcementResultEntity> denyListResult,
       List<EnforcementResultEntity> allowListResult, ArtifactEntity artifact);
+
+  void create(EnforcementSummaryDTO enforcementSummaryDTO);
 }
