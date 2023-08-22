@@ -13,7 +13,9 @@ import io.harness.delegate.service.runners.itfc.Runner;
 
 import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 public class K8SRunnerModule extends AbstractModule {
   private final K8SRunnerConfig config;
@@ -24,7 +26,11 @@ public class K8SRunnerModule extends AbstractModule {
      * We don't need to re-install this module in immutable delegate
      install(new DelegateDecryptionModule());
      */
-    install(new ApiClientModule());
+    try {
+      install(new ApiClientModule());
+    } catch (Exception e) {
+      log.warn("Exception occurred when creating apiClient with k8sConfig.");
+    }
 
     bind(K8SRunnerConfig.class).toInstance(config);
     bind(Runner.class).to(K8SLiteRunner.class);

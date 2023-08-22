@@ -1,11 +1,11 @@
-{{- if and .Values.global.ingress.enabled .Values.global.ingress.nginx.create -}}
+{{- if .Values.nginx.create -}}
 apiVersion: v1
 kind: Service
 metadata:
   name: harness-ingress-controller
   namespace: {{ .Release.Namespace }}
-  {{- if .Values.global.ingress.nginx.controller.annotations}}
-  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.nginx.controller.annotations "context" $ ) | nindent 4 }}
+  {{- if .Values.nginx.controller.annotations}}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.nginx.controller.annotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   selector:
@@ -18,16 +18,27 @@ spec:
   {{- end }}
   externalTrafficPolicy: 'Cluster'
   ports:
-    - name: http
-      nodePort: {{ .Values.global.ingress.nginx.httpNodePort | default "" }}
-      port: 80
-      protocol: TCP
-      targetPort: http
-    - name: https
-      nodePort: {{ .Values.global.ingress.nginx.httpsNodePort | default "" }}
-      port: 443
-      protocol: TCP
-      targetPort: https
+  - name: health
+    protocol: TCP
+    port: {{ .Values.nginx.healthPort | default 10254 }}
+    targetPort: {{ .Values.nginx.healthPort | default 10254 }}
+    {{- if .Values.nginx.healthNodePort }}
+    nodePort: {{ .Values.nginx.healthNodePort }}
+    {{- end }}
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+    {{- if .Values.nginx.httpNodePort }}
+    nodePort: {{ .Values.nginx.httpNodePort }}
+    {{- end }}
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: https
+    {{- if .Values.nginx.httpsNodePort }}
+    nodePort: {{ .Values.nginx.httpsNodePort }}
+    {{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -51,78 +62,78 @@ metadata:
   name: harness-role
   namespace: {{ .Release.Namespace }}
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces
-    verbs:
-      - get
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-      - pods
-      - secrets
-      - endpoints
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - services
-    verbs:
-      - get
-      - list
-      - update
-      - watch
-  - apiGroups:
-      - extensions
-      - networking.k8s.io
-    resources:
-      - ingresses
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - extensions
-      - networking.k8s.io
-    resources:
-      - ingresses/status
-    verbs:
-      - update
-  - apiGroups:
-      - ""
-    resourceNames:
-      - ingress-controller-leader-{{ .Values.global.ingress.className }}
-    resources:
-      - configmaps
-    verbs:
-      - get
-      - update
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - create
-  - apiGroups:
-      - ""
-    resources:
-      - endpoints
-    verbs:
-      - create
-      - get
-      - update
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - create
-      - patch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - pods
+  - secrets
+  - endpoints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - extensions
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - extensions
+  - networking.k8s.io
+  resources:
+  - ingresses/status
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resourceNames:
+  - ingress-controller-leader-{{ .Values.global.ingress.className }}
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - create
+  - get
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -159,7 +170,6 @@ spec:
       labels:
         app: "harness-ingress-controller"
     spec:
-      #
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -167,62 +177,67 @@ spec:
                 matchLabels:
                   app: "harness-ingress-controller"
               topologyKey: kubernetes.io/hostname
-      #
+      {{- with .Values.nginx.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nginx.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nginx.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: harness-serviceaccount
       terminationGracePeriodSeconds: 60
       securityContext:
         runAsUser: 101
       containers:
-        - image: {{ include "common.images.image" (dict "imageRoot" .Values.global.ingress.nginx.image "global" .Values.global) }}
-          name: nginx-ingress-controller
-          imagePullPolicy: IfNotPresent
-          envFrom:
-            - configMapRef:
-                name: harness-ingress-controller
-          resources:
-            limits:
-              cpu: '0.5'
-              memory: '512Mi'
-            requests:
-              cpu: '0.5'
-              memory: '512Mi'
-          ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
-            - name: https
-              containerPort: 8443
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 10254
-              scheme: HTTP
-            initialDelaySeconds: 30
-            timeoutSeconds: 5
-          securityContext:
-            allowPrivilegeEscalation: false
-          env:
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.name
-            - name: POD_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.namespace
-          args:
-            - /nginx-ingress-controller
-            - --ingress-class={{ .Values.global.ingress.className }}
-            - --default-backend-service=$(POD_NAMESPACE)/default-backend
-            - --election-id=ingress-controller-leader
-            - --watch-namespace=$(POD_NAMESPACE)
-            - --update-status=true
-            - --configmap=$(POD_NAMESPACE)/harness-ingress-controller
-            - --http-port=8080
-            - --https-port=8443
-            - --default-ssl-certificate=$(POD_NAMESPACE)/{{ .Values.global.ingress.tls.secretName }}
-            - --publish-service=$(POD_NAMESPACE)/harness-ingress-controller
-  {{- end }}
+      - image: {{ include "common.images.image" (dict "imageRoot" .Values.nginx.image "global" .Values.global) }}
+        name: nginx-ingress-controller
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: harness-ingress-controller
+        resources:
+          {{- toYaml .Values.nginx.resources | nindent 10 }}
+        ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+          - name: https
+            containerPort: 8443
+            protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ .Values.nginx.healthPort | default 10254 }}
+            scheme: HTTP
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        args:
+        - /nginx-ingress-controller
+        - --ingress-class={{ .Values.global.ingress.className }}
+        - --default-backend-service=$(POD_NAMESPACE)/default-backend
+        - --election-id=ingress-controller-leader
+        - --watch-namespace=$(POD_NAMESPACE)
+        - --update-status=true
+        - --configmap=$(POD_NAMESPACE)/harness-ingress-controller
+        - --http-port=8080
+        - --https-port=8443
+        - --default-ssl-certificate=$(POD_NAMESPACE)/{{ .Values.global.ingress.tls.secretName }}
+        - --publish-service=$(POD_NAMESPACE)/harness-ingress-controller
+{{- end }}

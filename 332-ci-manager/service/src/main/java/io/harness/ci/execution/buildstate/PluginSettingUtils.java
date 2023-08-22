@@ -143,6 +143,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
   public static final String PLUGIN_CACHE_TO = "PLUGIN_CACHE_TO";
   public static final String PLUGIN_BUILDER_DRIVER_OPTS = "PLUGIN_BUILDER_DRIVER_OPTS";
   public static final String DOCKER_BUILDKIT_IMAGE = "harness/buildkit:1.0.1";
+  public static final String PLUGIN_METADATA_FILE = "PLUGIN_METADATA_FILE";
+  public static final String PLUGIN_METADATA_FILE_NAME = "buildx-metadata.json";
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
@@ -365,6 +367,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
           setOptionalEnvironmentVariable(
               map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
         }
+        setOptionalEnvironmentVariable(map, PLUGIN_METADATA_FILE, PLUGIN_METADATA_FILE_NAME);
       }
     }
 
@@ -556,6 +559,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
               map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
         }
       }
+      setOptionalEnvironmentVariable(map, PLUGIN_METADATA_FILE, PLUGIN_METADATA_FILE_NAME);
     }
 
     return map;
@@ -632,6 +636,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
           setOptionalEnvironmentVariable(
               map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
         }
+        setOptionalEnvironmentVariable(map, PLUGIN_METADATA_FILE, PLUGIN_METADATA_FILE_NAME);
       }
     }
 

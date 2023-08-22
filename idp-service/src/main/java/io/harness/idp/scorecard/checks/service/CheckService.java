@@ -13,13 +13,15 @@ import io.harness.spec.server.idp.v1.model.CheckListItem;
 
 import java.util.List;
 import java.util.Set;
+import org.springframework.data.domain.Pageable;
 
 public interface CheckService {
   void createCheck(CheckDetails checkDetails, String accountIdentifier);
   void updateCheck(CheckDetails checkDetails, String accountIdentifier);
-  List<CheckListItem> getChecksByAccountId(Boolean custom, String accountIdentifier);
+  List<CheckListItem> getChecksByAccountId(
+      Boolean custom, String accountIdentifier, Pageable pageRequest, String searchTerm);
   List<CheckEntity> getActiveChecks(String accountIdentifier, List<String> checkIdentifiers);
   void deleteCustomCheck(String accountIdentifier, String identifier, boolean forceDelete);
   CheckDetails getCheckDetails(String accountIdentifier, String identifier, Boolean custom);
-  List<CheckEntity> getChecksByAccountIdsAndIdentifiers(List<String> accountIdentifier, Set<String> identifiers);
+  List<CheckEntity> getChecksByAccountIdAndIdentifiers(String accountIdentifier, Set<String> identifiers);
 }

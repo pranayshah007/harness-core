@@ -63,8 +63,8 @@ spec:
           stepGroupInfra:
             type: KubernetesDirect
             spec:
+              connectorRef: <+input>
               namespace: "default"
-              harnessImageConnectorRef: account.harnessImage
     rollbackSteps:
       - stepGroup:
           identifier: serverless_rollback_step_group
@@ -85,5 +85,5 @@ spec:
           stepGroupInfra:
             type: KubernetesDirect
             spec:
+              connectorRef: <+input>
               namespace: "default"
-              harnessImageConnectorRef: account.harnessImage

@@ -377,6 +377,12 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     }
     TerraformInfrastructureProvisioner provisioner = (TerraformInfrastructureProvisioner) node.getEntity();
     GitStoreBuilder storeBuilder = GitStore.builder();
+    String repoName = provisioner.getRepoName();
+    if (repoName != null) {
+      boolean isExpression = repoName.startsWith("<+");
+      storeBuilder.repoName(isExpression ? ParameterField.createExpressionField(true, repoName, null, true)
+                                         : ParameterField.createValueField(repoName));
+    }
     if (StringUtils.isNotBlank(provisioner.getSourceRepoSettingId())) {
       storeBuilder.connectorRef(ParameterField.createValueField(
           MigratorUtility.getIdentifierWithScopeDefaults(migratedEntities, provisioner.getSourceRepoSettingId(),
@@ -435,6 +441,14 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     CaseFormat identifierCaseFormat = migrationContext.getInputDTO().getIdentifierCaseFormat();
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
+    CgEntityNode provisionerNode =
+        entities.getOrDefault(CgEntityId.builder().id(state.getProvisionerId()).type(INFRA_PROVISIONER).build(), null);
+    if (provisionerNode != null && provisionerNode.getEntity() instanceof TerraformInfrastructureProvisioner) {
+      TerraformInfrastructureProvisioner terraformProvisioner =
+          (TerraformInfrastructureProvisioner) provisionerNode.getEntity();
+      MigratorExpressionUtils.render(migrationContext, terraformProvisioner, new HashMap<>());
+    }
+
     if (state.isRunPlanOnly()) {
       TerraformPlanExecutionData executionData = getPlanExecutionData(entities, migratedEntities, state);
       TerraformPlanStepInfo stepInfo =
@@ -450,7 +464,9 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     } else {
       TerraformStepConfiguration stepConfiguration = new TerraformStepConfiguration();
       stepConfiguration.setTerraformExecutionData(getExecutionData(entities, migratedEntities, state));
-      stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
+      stepConfiguration.setTerraformStepConfigurationType(state.isInheritApprovedPlan()
+              ? TerraformStepConfigurationType.INHERIT_FROM_PLAN
+              : TerraformStepConfigurationType.INLINE);
       TerraformApplyStepInfo stepInfo =
           TerraformApplyStepInfo.infoBuilder()
               .delegateSelectors(getDelegateSelectors(state))

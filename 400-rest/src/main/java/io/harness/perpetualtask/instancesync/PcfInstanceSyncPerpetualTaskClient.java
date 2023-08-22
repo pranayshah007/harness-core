@@ -9,6 +9,7 @@ package io.harness.perpetualtask.instancesync;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.DelegateTask.DELEGATE_QUEUE_TIMEOUT;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.service.InstanceSyncConstants.HARNESS_APPLICATION_ID;
@@ -93,7 +94,7 @@ public class PcfInstanceSyncPerpetualTaskClient implements PerpetualTaskServiceC
         .accountId(pcfConfig.getAccountId())
         .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID)
         .data(TaskData.builder()
-                  .async(false)
+                  .async(true)
                   .taskType(TaskType.PCF_COMMAND_TASK.name())
                   .parameters(new Object[] {CfInstanceSyncRequest.builder()
                                                 .pcfConfig(pcfConfig)
@@ -107,6 +108,7 @@ public class PcfInstanceSyncPerpetualTaskClient implements PerpetualTaskServiceC
                   .timeout(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS))
                   .build())
         .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
+        .waitId(generateUuid())
         .build();
   }
 

@@ -97,6 +97,8 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("shouldConfigureWithNotification") private Boolean shouldConfigureWithNotification;
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
   @JsonProperty("notificationConfigs") private HashMap<String, String> notificationConfigs;
+  @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceConfiguration;
+  @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
   private String managerTarget;
   private String managerAuthority;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();

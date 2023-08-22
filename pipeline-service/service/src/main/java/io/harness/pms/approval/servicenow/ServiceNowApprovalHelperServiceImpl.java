@@ -9,7 +9,9 @@ package io.harness.pms.approval.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
-import static io.harness.pms.approval.ApprovalUtils.sendTaskIdProgressUpdate;
+import static io.harness.steps.approval.ApprovalUtils.SERVICENOW_DELEGATE_TASK_NAME;
+import static io.harness.steps.approval.ApprovalUtils.sendTaskIdProgressUpdate;
+import static io.harness.steps.approval.ApprovalUtils.updateTaskId;
 import static io.harness.steps.approval.step.entities.ApprovalInstance.ASYNC_DELEGATE_TIMEOUT;
 
 import static software.wings.beans.TaskType.SERVICENOW_TASK_NG;
@@ -182,11 +184,11 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
           orgIdentifier, projectIdentifier, ticketNumber, connectorRef, instance.getDelegateSelectors(), ticketType);
       logCallback.saveExecutionLog(String.format(
           "ServiceNow url: %s", serviceNowTaskNGParameters.getServiceNowConnectorDTO().getServiceNowUrl()));
-      String taskName = "ServiceNow Task: Get Ticket";
-      String taskId = queueTask(ambiance, instanceId, serviceNowTaskNGParameters, taskName,
+      String taskId = queueTask(ambiance, instanceId, serviceNowTaskNGParameters, SERVICENOW_DELEGATE_TASK_NAME,
           TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors()));
 
-      sendTaskIdProgressUpdate(taskId, taskName, instanceId, waitNotifyEngine);
+      sendTaskIdProgressUpdate(taskId, SERVICENOW_DELEGATE_TASK_NAME, instanceId, waitNotifyEngine);
+      updateTaskId(instanceId, taskId, approvalInstanceService);
 
       logCallback.saveExecutionLog(String.format("Created ServiceNow task with id: %s", taskId));
 

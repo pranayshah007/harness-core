@@ -93,6 +93,9 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   private static final Set<String> approvalStepSpecTypeConstants =
       new HashSet<>(Arrays.asList(StepSpecTypeConstants.HARNESS_APPROVAL, StepSpecTypeConstants.SERVICENOW_APPROVAL,
           StepSpecTypeConstants.JIRA_APPROVAL, StepSpecTypeConstants.CUSTOM_APPROVAL));
+  private static final ApprovalType[] approvalsWithDelegateTasksInPolling =
+      new ApprovalType[] {ApprovalType.SERVICENOW_APPROVAL, ApprovalType.CUSTOM_APPROVAL, ApprovalType.JIRA_APPROVAL};
+
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
 
   @Inject
@@ -456,6 +459,29 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
     approvalInstanceRepository.updateFirst(
         new Query(Criteria.where(Mapper.ID_KEY).is(approvalInstance.getId()))
             .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING)),
+        update);
+  }
+  @Override
+  public void updateLatestDelegateTaskId(@NotNull String approvalInstanceId, String latestDelegateTaskId) {
+    if (StringUtils.isBlank(approvalInstanceId)) {
+      log.warn("Skipping updating latest delegate task id as empty approval id received");
+      return;
+    }
+
+    if (StringUtils.isBlank(latestDelegateTaskId)) {
+      log.warn("Skipping updating latest delegate task id in approval instance as empty delegate task id received");
+      return;
+    }
+
+    // update task id in approval instance to latest delegate task id
+    Update update = new Update().set(ServiceNowApprovalInstanceKeys.latestDelegateTaskId, latestDelegateTaskId);
+    // it only makes sense to update delegate task id for instances in waiting state
+    // if the instance is aborted/expired etc., and a task is queued that task id will not be updated.
+    approvalInstanceRepository.updateFirst(
+        new Query(Criteria.where(Mapper.ID_KEY).is(approvalInstanceId))
+            .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING))
+            .addCriteria(
+                Criteria.where(ApprovalInstanceKeys.type).in(Arrays.asList(approvalsWithDelegateTasksInPolling))),
         update);
   }
 

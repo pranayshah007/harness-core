@@ -67,6 +67,9 @@ public class ServiceNowApprovalInstance extends ApprovalInstance implements Pers
   ParameterField<Timeout> retryInterval;
   List<Long> nextIterations;
 
+  // the id of the latest delegate task created while polling
+  String latestDelegateTaskId;
+
   public static ServiceNowApprovalInstance fromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
     if (stepParameters == null) {
       return null;

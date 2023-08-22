@@ -45,6 +45,14 @@ public class ScmResponseStatusUtils {
     }
   }
 
+  public void checkScmResponseStatusAndLogException(int statusCode, String errorMsg) {
+    if (statusCode >= 300) {
+      ErrorCode errorCode = convertScmStatusCodeToErrorCode(statusCode);
+      log.error("Encountered error code: [{}], original status code: [{}] with message: [{}] from scm", errorCode,
+          statusCode, errorMsg);
+    }
+  }
+
   public void checkScmResponseStatusAndThrowExceptionForUpsertWebhook(int statusCode, String errorMsg) {
     if (statusCode >= 300) {
       ErrorCode errorCode = convertScmStatusCodeToErrorCodeForUpsertWebhook(statusCode);

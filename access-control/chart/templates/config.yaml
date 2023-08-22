@@ -6,12 +6,14 @@ metadata:
 data:
   DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE }}
   LOGGING_LEVEL: {{ .Values.config.LOGGING_LEVEL}}
-  EVENTS_CONFIG_USE_SENTINEL: {{ .Values.config.EVENTS_CONFIG_USE_SENTINEL | quote }}
-  EVENTS_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_CONFIG_SENTINEL_MASTER_NAME }}
-  EVENTS_CONFIG_REDIS_SENTINELS: {{ .Values.config.EVENTS_CONFIG_REDIS_SENTINELS | default ("redis://redis-sentinel-harness-announce-0.NAMESPACE:26379,redis://redis-sentinel-harness-announce-1.NAMESPACE:26379,redis://redis-sentinel-harness-announce-2.NAMESPACE:26379" | replace "NAMESPACE" .Release.Namespace ) }}
-  LOCK_CONFIG_USE_SENTINEL: {{ .Values.config.LOCK_CONFIG_USE_SENTINEL | quote }}
-  LOCK_CONFIG_SENTINEL_MASTER_NAME: {{ .Values.config.LOCK_CONFIG_SENTINEL_MASTER_NAME }}
-  LOCK_CONFIG_REDIS_SENTINELS: {{ .Values.config.LOCK_CONFIG_REDIS_SENTINELS | default ("redis://redis-sentinel-harness-announce-0.NAMESPACE:26379,redis://redis-sentinel-harness-announce-1.NAMESPACE:26379,redis://redis-sentinel-harness-announce-2.NAMESPACE:26379" | replace "NAMESPACE" .Release.Namespace ) }}
+  EVENTS_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  EVENTS_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   RESOURCE_GROUP_ITERATOR_ENABLED: {{ .Values.config.RESOURCE_GROUP_ITERATOR_ENABLED | quote }}
   RESOURCE_GROUP_ITERATOR_INTERVAL: {{ .Values.config.RESOURCE_GROUP_ITERATOR_INTERVAL | quote }}
   USER_GROUP_ITERATOR_ENABLED: {{ .Values.config.USER_GROUP_ITERATOR_ENABLED | quote }}

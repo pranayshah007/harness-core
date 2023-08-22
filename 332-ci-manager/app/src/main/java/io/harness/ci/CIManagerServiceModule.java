@@ -288,7 +288,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciInitTaskExecutor"))
         .toInstance(ThreadPool.create(
-            10, 30, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Init-Task-Handler-%d").build()));
+            10, 50, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Init-Task-Handler-%d").build()));
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named(this.configurationOverride.getModulePrefix() + "TelemetryPublisherExecutor"))

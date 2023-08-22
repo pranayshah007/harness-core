@@ -298,10 +298,11 @@ public class NGLdapServiceImpl implements NGLdapService {
             userGroup.getIdentifier(), accountIdentifier);
 
         if (null != groupSearchResponse.getLdapGroupsResponse()) {
-          userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
-
-          if (!isUserGroupSsoStateValid(userGroup)) {
-            continue;
+          if (isUserGroupSsoStateValid(userGroup)) {
+            userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
+          } else {
+            log.error("NGLDAP: userGroup {} sync is not happening for account {} due to invalid SSO state",
+                userGroup.getIdentifier(), userGroup.getAccountIdentifier());
           }
         } else {
           log.error(
@@ -322,18 +323,19 @@ public class NGLdapServiceImpl implements NGLdapService {
     Optional<UserGroup> savedUserGroup = userGroupService.get(userGroup.getAccountIdentifier(),
         userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), userGroup.getIdentifier());
     if (!savedUserGroup.isPresent()) {
-      log.error("NGLDAP: User group {} no longer exists. Not syncing this user group.", userGroup.getIdentifier());
+      log.error("NGLDAP: User group {} for account {} no longer exists.", userGroup.getIdentifier(),
+          userGroup.getAccountIdentifier());
       return false;
     }
     if (!savedUserGroup.get().getIsSsoLinked()) {
-      log.error(
-          "NGLDAP: User group {} is no longer SSO linked. Not syncing this user group.", userGroup.getIdentifier());
+      log.error("NGLDAP: User group {} for account {} is no longer SSO linked ", userGroup.getIdentifier(),
+          userGroup.getAccountIdentifier());
       return false;
     }
     if (!savedUserGroup.get().getSsoGroupId().equals(userGroup.getSsoGroupId())) {
-      log.error(
-          "NGLDAP: User group {} is linked to SSO Group {} but sync happening for SSO Group {}. Not syncing this user group",
-          userGroup.getIdentifier(), savedUserGroup.get().getSsoGroupId(), userGroup.getSsoGroupId());
+      log.error("NGLDAP: User group {} for account {} is linked to SSO Group {} but sync happening for SSO Group {}.",
+          userGroup.getIdentifier(), userGroup.getAccountIdentifier(), savedUserGroup.get().getSsoGroupId(),
+          userGroup.getSsoGroupId());
       return false;
     }
 

@@ -86,4 +86,6 @@ public interface ApprovalInstanceService {
 
   HarnessApprovalInstance addHarnessApprovalActivityV2(@NotNull String approvalInstanceId, @NotNull EmbeddedUser user,
       @NotNull @Valid HarnessApprovalActivityRequestDTO request, boolean shouldCloseStep);
+
+  void updateLatestDelegateTaskId(@NotNull String approvalInstanceId, String latestDelegateTaskId);
 }

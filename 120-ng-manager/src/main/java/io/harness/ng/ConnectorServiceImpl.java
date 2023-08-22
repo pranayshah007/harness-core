@@ -93,6 +93,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
+import io.fabric8.utils.Strings;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -715,7 +716,8 @@ public class ConnectorServiceImpl implements ConnectorService {
   private void deletePTForGitConnector(
       ConnectorValidationResult connectorValidationResult, Connector connector, String accountIdentifier) {
     // Delete PT during connection failure if it exist
-    if (connectorValidationResult.getErrorSummary().contains(HINT_INVALID_GIT_API_AUTHORIZATION)
+    if (Strings.isNotBlank(connectorValidationResult.getErrorSummary())
+        && connectorValidationResult.getErrorSummary().contains(HINT_INVALID_GIT_API_AUTHORIZATION)
         && connector.getType() == ConnectorType.GITHUB && connector.getHeartbeatPerpetualTaskId() != null) {
       String fullyQualifiedIdentifier = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
           accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());

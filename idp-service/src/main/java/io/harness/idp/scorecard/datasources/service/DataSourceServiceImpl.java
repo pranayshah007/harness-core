@@ -7,36 +7,35 @@
 
 package io.harness.idp.scorecard.datasources.service;
 
+import static io.harness.idp.common.CommonUtils.addGlobalAccountIdentifierAlong;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
-import io.harness.idp.scorecard.datasourcelocations.service.DataSourceLocationService;
 import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
 import io.harness.idp.scorecard.datasources.mappers.DataSourceMapper;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.DataSource;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @com.google.inject.Inject }))
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
-@AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @com.google.inject.Inject }))
 public class DataSourceServiceImpl implements DataSourceService {
   DataSourceRepository dataSourceRepository;
   DataPointService dataPointService;
 
   @Override
   public List<DataSource> getAllDataSourcesDetailsForAnAccount(String accountIdentifier) {
-    List<DataSourceEntity> dataSourceEntities = dataSourceRepository.findAllByAccountIdentifier(accountIdentifier);
-    return dataSourceEntities.stream()
-        .map(dataSourceEntity -> DataSourceMapper.toDTO(dataSourceEntity))
-        .collect(Collectors.toList());
+    List<DataSourceEntity> dataSourceEntities =
+        dataSourceRepository.findAllByAccountIdentifierIn(addGlobalAccountIdentifierAlong(accountIdentifier));
+    return dataSourceEntities.stream().map(DataSourceMapper::toDTO).collect(Collectors.toList());
   }
 
   @Override

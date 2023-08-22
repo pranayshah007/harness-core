@@ -21,7 +21,6 @@ import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -33,6 +32,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
@@ -53,18 +53,18 @@ public class K8sBGStageScaleDownStep extends CdTaskExecutable<K8sDeployResponse>
   @Inject private K8sStepHelper k8sStepHelper;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
     InfrastructureOutcome infrastructure = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     String releaseName = cdStepHelper.getReleaseName(ambiance, infrastructure);
@@ -75,14 +75,14 @@ public class K8sBGStageScaleDownStep extends CdTaskExecutable<K8sDeployResponse>
             .releaseName(releaseName)
             .taskType(K8sTaskType.BLUE_GREEN_STAGE_SCALE_DOWN)
             .timeoutIntervalInMin(
-                NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
+                NGTimeConversionHelper.convertTimeStringToMinutes(StepBaseParameters.getTimeout().getValue()))
             .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(ambiance))
             .build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
     return k8sStepHelper
-        .queueK8sTask(stepElementParameters, request, ambiance,
+        .queueK8sTask(StepBaseParameters, request, ambiance,
             K8sExecutionPassThroughData.builder().infrastructure(infrastructure).build(),
             TaskType.K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK)
         .getTaskRequest();
@@ -90,8 +90,7 @@ public class K8sBGStageScaleDownStep extends CdTaskExecutable<K8sDeployResponse>
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier)
-      throws Exception {
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier) throws Exception {
     K8sDeployResponse k8sTaskExecutionResponse = responseSupplier.get();
     StepResponseBuilder stepResponseBuilder =
         StepResponse.builder().unitProgressList(k8sTaskExecutionResponse.getCommandUnitsProgress().getUnitProgresses());

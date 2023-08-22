@@ -15,6 +15,7 @@ import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.annotations.dev.HarnessModule._890_SM_CORE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -110,11 +111,12 @@ public class ConnectorHeartbeatPerpetualTaskClient implements PerpetualTaskServi
         .executionCapabilities(executionCapabilities)
         .setupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .data(TaskData.builder()
-                  .async(false)
+                  .async(true)
                   .taskType(TaskType.CAPABILITY_VALIDATION.name())
                   .parameters(nonSelectorExecutionCapabilities.toArray())
                   .timeout(TimeUnit.MINUTES.toMillis(1))
                   .build())
+        .waitId(generateUuid())
         .build();
   }
 

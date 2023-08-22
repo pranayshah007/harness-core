@@ -112,6 +112,8 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   private static final String PROJECT_ID = "PROJECT_ID";
   private static final String PIPELINE_ID = "PIPELINE_ID";
   private static final String APPROVAL_KEY = "key";
+  private static final String APPROVAL_ID = "approvalId";
+  private static final String TASK_ID = "taskId";
   private static final Long CREATED_AT = 1000L;
   @Spy @Inject @InjectMocks private ApprovalInstanceServiceImpl approvalInstanceServiceImpl;
 
@@ -905,5 +907,27 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
           "hello", embeddedUser, harnessApprovalActivityRequestDTO);
       verify(approvalInstanceRepository, times(1)).save(any());
     }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testUpdateLatestDelegateTaskId() {
+    approvalInstanceServiceImpl.updateLatestDelegateTaskId(APPROVAL_ID, "   ");
+    approvalInstanceServiceImpl.updateLatestDelegateTaskId("   ", TASK_ID);
+
+    approvalInstanceServiceImpl.updateLatestDelegateTaskId(APPROVAL_ID, TASK_ID);
+    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
+    ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
+    verify(approvalInstanceRepository, times(1))
+        .updateFirst(queryArgumentCaptor.capture(), updateArgumentCaptor.capture());
+    assertThat(queryArgumentCaptor.getValue())
+        .isEqualTo(new Query(Criteria.where(Mapper.ID_KEY).is(APPROVAL_ID))
+                       .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING))
+                       .addCriteria(Criteria.where(ApprovalInstanceKeys.type)
+                                        .in(Arrays.asList(ApprovalType.SERVICENOW_APPROVAL,
+                                            ApprovalType.CUSTOM_APPROVAL, ApprovalType.JIRA_APPROVAL))));
+    assertThat(updateArgumentCaptor.getValue())
+        .isEqualTo(new Update().set(ServiceNowApprovalInstanceKeys.latestDelegateTaskId, TASK_ID));
   }
 }

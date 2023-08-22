@@ -7,6 +7,8 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
+import static io.harness.idp.scorecard.datasources.constants.Constants.CUSTOM_PROVIDER;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
@@ -28,7 +30,7 @@ public class CustomProvider implements DataSourceProvider {
 
   @Override
   public String getProviderIdentifier() {
-    return "custom";
+    return CUSTOM_PROVIDER;
   }
 
   @Override

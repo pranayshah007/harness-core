@@ -66,6 +66,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -444,7 +445,7 @@ public class TerraformPlanStepTest extends CategoryTest {
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(terraformPlanStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(terraformPlanStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

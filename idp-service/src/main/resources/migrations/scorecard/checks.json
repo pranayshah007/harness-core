@@ -3,20 +3,80 @@
     "id": "64d4f1a9b308cf71096284be",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__bfeece93-8892-4459-be93-b7a647df7e5f",
-    "name": "Code coverage is more than 70%",
-    "description": "Code coverage is more than 70%",
+    "name": "Mean time to merge PR is less than 2 days",
+    "description": "Mean time to merge PR is less than 2 days",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
-        "data_source_identifier": "sonarqube",
-        "data_point_identifier": "coverage",
-        "operator": ">",
-        "value": "70"
+        "data_source_identifier": "github",
+        "data_point_identifier": "meanTimeToMergePRHours",
+        "operator": "<",
+        "value": "48"
       }
     ],
-    "expression": "sonarqube.coverage > 70",
+    "expression": "github.meanTimeToMergePRHours < 48",
     "labels": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "Code coverage is less than 70%"
+    "failMessage": "Mean time to merge PR is more than 2 days"
+  },
+  {
+    "id": "64d5c42b5e0ec884f30df85c",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__457c6903-8a02-46ae-a054-9397175fa3be",
+    "name": "Pagerduty is setup",
+    "description": "Pagerduty is setup",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "catalog",
+        "data_point_identifier": "pagerdutyAnnotation",
+        "operator": "!=",
+        "value": "null"
+      }
+    ],
+    "expression": "catalog.pagerdutyAnnotation != null",
+    "labels": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Pagerduty is not setup"
+  },
+  {
+    "id": "64d5f23eb90d6686d2a9a007",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__a9b98e87-d9c1-4c5e-9ba6-4485f171dbc4",
+    "name": "Branch protection is set",
+    "description": "Branch protection is set",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "github",
+        "data_point_identifier": "isBranchProtectionSet",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "github.isBranchProtectionSet == true",
+    "labels": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Branch protection is not set"
+  },
+  {
+    "id": "64d5f5119b82f2e2eb2bd6ce",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__953cc558-3035-4cd8-8c1c-7fb1b1382af6",
+    "name": "Tech Docs exists",
+    "description": "Tech Docs exists",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "catalog",
+        "data_point_identifier": "techDocsAnnotation",
+        "operator": "!=",
+        "value": "null"
+      }
+    ],
+    "expression": "catalog.techDocsAnnotation != null",
+    "labels": ["Software quality", "Development maturity" ,"DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Tech docs doesn't exists"
   }
 ]

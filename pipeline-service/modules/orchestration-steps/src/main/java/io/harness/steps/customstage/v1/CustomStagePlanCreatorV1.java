@@ -35,7 +35,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.customstage.CustomStageSpecParams;
 import io.harness.steps.customstage.CustomStageStep;
-import io.harness.when.utils.RunInfoUtils;
+import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -123,7 +123,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
             .group(StepOutcomeGroup.STAGE.name())
             .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, name))
             .skipUnresolvedExpressionsCheck(true)
-            .whenCondition(RunInfoUtils.getStageWhenCondition(config))
+            .whenCondition(RunInfoUtilsV1.getStageWhenCondition(config))
             .stepParameters(StageElementParameters.builder().specConfig(params).build())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()

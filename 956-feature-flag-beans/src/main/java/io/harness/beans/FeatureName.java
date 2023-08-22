@@ -433,7 +433,11 @@ public enum FeatureName {
   GCB_CI_SYSTEM,
   GCP_WORKLOAD_IDENTITY,
   GITHUB_WEBHOOK_AUTHENTICATION,
+  SPG_CG_ADDING_VALIDATION_OF_ENTITY_NULL(
+      "Enables the error return when the database transaction was not completed due to reaching the transaction limit.",
+      SPG),
   SPG_CG_FIXING_PIPELINE_RESUME("This fixes pipeline resume when a loop state is skipped", HarnessTeam.SPG),
+  GITOPS_FLUX_FLAMINGO("Support for flux via flamingo in GitOps", HarnessTeam.GITOPS),
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
   GITOPS_REVERT_PR("Support for Revert PR step in GitOps pipeline flow", HarnessTeam.GITOPS),
@@ -869,7 +873,9 @@ public enum FeatureName {
       "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP),
   CDS_YAML_SIMPLIFICATION("Feature flag for CD YAML Simplification.", PIPELINE),
   CDS_SERVICE_GITX("Onboard Service entity to GitX", HarnessTeam.CDC),
-  CDS_ENV_GITX("Onboard Environment entity to GitX", HarnessTeam.CDC);
+  CDS_ENV_GITX("Onboard Environment entity to GitX", HarnessTeam.CDC),
+  CDS_ECS_BG_GREEN_SERVICE_ROLLBACK(
+      "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated
