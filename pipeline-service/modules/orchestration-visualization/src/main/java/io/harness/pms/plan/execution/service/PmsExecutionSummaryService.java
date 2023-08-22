@@ -23,6 +23,7 @@ public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
   void update(String planExecutionId, Update update);
   // Saves PipelineExecutionSummaryEntity in planExecutionsSummary collection in harness-pms db
+  void updateNotes(String planExecutionId, Boolean notesExistForPlanExecutionId);
   PipelineExecutionSummaryEntity save(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity);
 
   /**
