@@ -7,6 +7,7 @@
 
 package io.harness.pms.pipeline.api;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.PIPELINE;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -43,13 +44,18 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.service.yamlschema.StaticSchemaParserFactory;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
+import io.harness.pms.yaml.individualschema.PipelineSchemaRequest;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateResponseBody;
+import io.harness.spec.server.pipeline.v1.model.IndividualSchemaResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
@@ -64,6 +70,7 @@ import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.validator.InvalidYamlException;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +99,7 @@ public class PipelinesApiImpl implements PipelinesApi {
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final PipelineMetadataService pipelineMetadataService;
   private final PipelineAsyncValidationService pipelineAsyncValidationService;
+  private final StaticSchemaParserFactory staticSchemaParserFactory;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
@@ -125,6 +133,22 @@ public class PipelinesApiImpl implements PipelinesApi {
         "Deleting Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     pmsPipelineService.delete(account, org, project, pipeline, null);
     return Response.status(204).build();
+  }
+
+  @Override
+  public Response getIndividualStaticSchema(String org, String project, String harnessAccount, String nodeGroup,
+      String nodeType, String nodeGroupDifferentiator) {
+    AbstractStaticSchemaParser abstractStaticSchemaParser =
+        staticSchemaParserFactory.getParser(PIPELINE, PipelineVersion.V0);
+    ObjectNode schema =
+        abstractStaticSchemaParser.getIndividualSchema(PipelineSchemaRequest.builder()
+                                                           .nodeGroup(nodeGroup)
+                                                           .nodeGroupDifferentiator(nodeGroupDifferentiator)
+                                                           .nodeType(nodeType)
+                                                           .build());
+    IndividualSchemaResponseBody responseBody = new IndividualSchemaResponseBody();
+    responseBody.setData(schema);
+    return Response.ok().entity(responseBody).build();
   }
 
   @Override
