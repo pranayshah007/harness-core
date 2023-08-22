@@ -23,6 +23,11 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.aws.sam.AwsSamBaseStepInfo;
+import io.harness.cdng.aws.sam.AwsSamBuildStepInfo;
+import io.harness.cdng.aws.sam.AwsSamBuildStepParameters;
+import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
+import io.harness.cdng.aws.sam.AwsSamDeployStepParameters;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -39,9 +44,14 @@ import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessV2ValuesYamlDataOutcome;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepParameters;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
@@ -146,6 +156,12 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
   private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+artifacts.sidecars.";
   private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "harnessArtifact/sidecar-artifact-";
+
+  private static String SERVERLESS_PREPARE_ROLLBACK_DEFAULT_IMAGE =
+      "harnessdev/serverless-preparerollback:1.82.0-latest";
+  private static String SERVERLESS_PACKAGE_DEFAULT_IMAGE = "harnessdev/serverless-package:1.82.0-latest";
+  private static String SERVERLESS_DEPLOY_DEFAULT_IMAGE = "harnessdev/serverless-deploy:1.82.0-latest";
+  private static String SERVERLESS_ROLLBACK_DEFAULT_IMAGE = "harnessdev/serverless-rollback:1.82.0-latest";
 
   public TaskChainResponse startChainLink(
       Ambiance ambiance, StepBaseParameters stepElementParameters, ServerlessStepHelper serverlessStepHelper) {
@@ -759,6 +775,41 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         envVarMap.put("PLUGIN_VALUES_YAML_CONTENT", valuesYamlContent);
         envVarMap.put("PLUGIN_VALUES_YAML_FILE_PATH", valuesYamlPath);
       }
+    }
+  }
+
+  public ParameterField<String> getImage(ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo) {
+    if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaPrepareRollbackV2StepInfo
+        || serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaPrepareRollbackV2StepParameters) {
+      if (EmptyPredicate.isNotEmpty(serverlessAwsLambdaV2BaseStepInfo.getImage().getValue())) {
+        return serverlessAwsLambdaV2BaseStepInfo.getImage();
+      } else {
+        return ParameterField.createValueField(SERVERLESS_PREPARE_ROLLBACK_DEFAULT_IMAGE);
+      }
+    } else if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaPackageV2StepInfo
+        || serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaPackageV2StepParameters) {
+      if (EmptyPredicate.isNotEmpty(serverlessAwsLambdaV2BaseStepInfo.getImage().getValue())) {
+        return serverlessAwsLambdaV2BaseStepInfo.getImage();
+      } else {
+        return ParameterField.createValueField(SERVERLESS_PACKAGE_DEFAULT_IMAGE);
+      }
+    } else if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaDeployV2StepInfo
+        || serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaDeployV2StepParameters) {
+      if (EmptyPredicate.isNotEmpty(serverlessAwsLambdaV2BaseStepInfo.getImage().getValue())) {
+        return serverlessAwsLambdaV2BaseStepInfo.getImage();
+      } else {
+        return ParameterField.createValueField(SERVERLESS_DEPLOY_DEFAULT_IMAGE);
+      }
+    } else if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaRollbackV2StepInfo
+        || serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaRollbackV2StepParameters) {
+      if (EmptyPredicate.isNotEmpty(serverlessAwsLambdaV2BaseStepInfo.getImage().getValue())) {
+        return serverlessAwsLambdaV2BaseStepInfo.getImage();
+      } else {
+        return ParameterField.createValueField(SERVERLESS_ROLLBACK_DEFAULT_IMAGE);
+      }
+    } else {
+      throw new InvalidRequestException(
+          "Default Images for Serverless V2 Prepare Rollback, Package, Deploy and Rollback Steps only supported");
     }
   }
 }

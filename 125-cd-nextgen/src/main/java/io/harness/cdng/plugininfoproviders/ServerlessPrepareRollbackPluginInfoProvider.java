@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
+import io.harness.cdng.serverless.ServerlessStepCommonHelper;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -40,6 +41,8 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfoProvider {
   @Inject private ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
+
+  @Inject private ServerlessStepCommonHelper serverlessStepCommonHelper;
 
   @Inject PluginExecutionConfig pluginExecutionConfig;
 
@@ -99,7 +102,7 @@ public class ServerlessPrepareRollbackPluginInfoProvider implements CDPluginInfo
   public ImageDetails getImageDetails(
       ServerlessAwsLambdaPrepareRollbackV2StepInfo serverlessAwsLambdaPrepareRollbackV2StepInfo) {
     return PluginInfoProviderHelper.getImageDetails(serverlessAwsLambdaPrepareRollbackV2StepInfo.getConnectorRef(),
-        serverlessAwsLambdaPrepareRollbackV2StepInfo.getImage(),
+        serverlessStepCommonHelper.getImage(serverlessAwsLambdaPrepareRollbackV2StepInfo),
         serverlessAwsLambdaPrepareRollbackV2StepInfo.getImagePullPolicy());
   }
 

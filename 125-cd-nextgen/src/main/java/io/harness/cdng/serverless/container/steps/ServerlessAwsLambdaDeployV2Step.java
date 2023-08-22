@@ -84,7 +84,8 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
         (ServerlessAwsLambdaDeployV2StepParameters) stepElementParameters.getSpec();
 
     // Check if image exists
-    serverlessStepCommonHelper.verifyPluginImageIsProvider(serverlessAwsLambdaDeployV2StepParameters.getImage());
+    serverlessStepCommonHelper.verifyPluginImageIsProvider(
+        serverlessStepCommonHelper.getImage(serverlessAwsLambdaDeployV2StepParameters));
     Map<String, String> envVarMap = new HashMap<>();
     serverlessStepCommonHelper.putValuesYamlEnvVars(ambiance, serverlessAwsLambdaDeployV2StepParameters, envVarMap);
 
@@ -99,7 +100,8 @@ public class ServerlessAwsLambdaDeployV2Step extends AbstractContainerStepV2<Ste
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
         stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
-        serverlessAwsLambdaDeployV2StepParameters.getImage().getValue(), Collections.EMPTY_LIST);
+        serverlessStepCommonHelper.getImage(serverlessAwsLambdaDeployV2StepParameters).getValue(),
+        Collections.EMPTY_LIST);
   }
 
   @Override

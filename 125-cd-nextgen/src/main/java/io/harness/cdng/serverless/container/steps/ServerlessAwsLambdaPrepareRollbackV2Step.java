@@ -80,7 +80,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
 
     // Check if image exists
     serverlessStepCommonHelper.verifyPluginImageIsProvider(
-        serverlessAwsLambdaPrepareRollbackV2StepParameters.getImage());
+        serverlessStepCommonHelper.getImage(serverlessAwsLambdaPrepareRollbackV2StepParameters));
 
     Map<String, String> envVarMap = new HashMap<>();
     serverlessStepCommonHelper.putValuesYamlEnvVars(
@@ -98,7 +98,8 @@ public class ServerlessAwsLambdaPrepareRollbackV2Step extends AbstractContainerS
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
         stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
-        serverlessAwsLambdaPrepareRollbackV2StepParameters.getImage().getValue(), Collections.EMPTY_LIST);
+        serverlessStepCommonHelper.getImage(serverlessAwsLambdaPrepareRollbackV2StepParameters).getValue(),
+        Collections.EMPTY_LIST);
   }
 
   @Override

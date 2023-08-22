@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
+import io.harness.cdng.serverless.ServerlessStepCommonHelper;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -40,6 +41,8 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginInfoProvider {
   @Inject private ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
+  @Inject private ServerlessStepCommonHelper serverlessStepCommonHelper;
+
   @Inject PluginExecutionConfig pluginExecutionConfig;
 
   @Override
@@ -99,7 +102,8 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProvider implements CDPluginIn
 
   public ImageDetails getImageDetails(ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo) {
     return PluginInfoProviderHelper.getImageDetails(serverlessAwsLambdaV2BaseStepInfo.getConnectorRef(),
-        serverlessAwsLambdaV2BaseStepInfo.getImage(), serverlessAwsLambdaV2BaseStepInfo.getImagePullPolicy());
+        serverlessStepCommonHelper.getImage(serverlessAwsLambdaV2BaseStepInfo),
+        serverlessAwsLambdaV2BaseStepInfo.getImagePullPolicy());
   }
 
   public Builder getPluginDetailsBuilder(
