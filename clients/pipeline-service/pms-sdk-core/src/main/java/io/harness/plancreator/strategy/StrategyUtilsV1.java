@@ -23,6 +23,8 @@ import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Struct;
+import com.google.protobuf.Value;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,33 +97,39 @@ public class StrategyUtilsV1 {
     return stageYamlFieldMap;
   }
 
-  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx,
-      String fieldUuid, Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap,
-      List<AdviserObtainment> adviserObtainments) {
-    addStrategyFieldDependencyIfPresent(
-        kryoSerializer, ctx, fieldUuid, dependenciesNodeMap, metadataMap, adviserObtainments, true);
+  public Struct addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx,
+      String fieldUuid, Map<String, YamlField> dependenciesNodeMap, List<AdviserObtainment> adviserObtainments) {
+    return addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, fieldUuid, dependenciesNodeMap, adviserObtainments, true);
   }
 
-  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx,
-      String fieldUuid, Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap,
-      List<AdviserObtainment> adviserObtainments, Boolean shouldProceedIfFailed) {
+  public Struct addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx,
+      String fieldUuid, Map<String, YamlField> dependenciesNodeMap, List<AdviserObtainment> adviserObtainments,
+      Boolean shouldProceedIfFailed) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
 
     if (strategyField != null) {
       dependenciesNodeMap.put(fieldUuid, strategyField);
       // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
       // strategy node
-      metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
-          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
-              StrategyMetadata.builder()
-                  .strategyNodeId(fieldUuid)
-                  .adviserObtainments(adviserObtainments)
-                  .childNodeId(strategyField.getNode().getUuid())
-                  .strategyNodeIdentifier(refineIdentifier(ctx.getCurrentField().getId()))
-                  .strategyNodeName(refineIdentifier(ctx.getCurrentField().getNodeName()))
-                  .shouldProceedIfFailed(shouldProceedIfFailed)
-                  .build())));
+      return Struct.newBuilder()
+          .putFields(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
+              Value.newBuilder()
+                  .setStringValue(ByteString
+                                      .copyFrom(kryoSerializer.asDeflatedBytes(
+                                          StrategyMetadata.builder()
+                                              .strategyNodeId(fieldUuid)
+                                              .adviserObtainments(adviserObtainments)
+                                              .childNodeId(strategyField.getNode().getUuid())
+                                              .strategyNodeIdentifier(refineIdentifier(ctx.getCurrentField().getId()))
+                                              .strategyNodeName(refineIdentifier(ctx.getCurrentField().getNodeName()))
+                                              .shouldProceedIfFailed(shouldProceedIfFailed)
+                                              .build()))
+                                      .toStringUtf8())
+                  .build())
+          .build();
     }
+    return Struct.newBuilder().build();
   }
 
   /**

@@ -38,7 +38,7 @@ import io.harness.when.utils.RunInfoUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
+import com.google.protobuf.Struct;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,10 +63,9 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
     ShellScriptStepNode stepNode = YamlUtils.read(field.getNode().toString(), ShellScriptStepNode.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
     StepParameters stepParameters = ((PMSStepInfo) stepNode.getStepSpecType()).getStepParameters(stepNode, null, ctx);
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap,
-        metadataMap, PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));
+    Struct metadataMap = StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(),
+        dependenciesNodeMap, PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepNode.getUuid()))
@@ -99,7 +98,7 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
         .dependencies(
             DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                 .toBuilder()
-                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().setMetadataV1(metadataMap).build())
                 .build())
         .build();
   }

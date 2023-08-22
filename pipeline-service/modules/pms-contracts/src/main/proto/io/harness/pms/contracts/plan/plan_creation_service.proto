@@ -17,6 +17,7 @@ import "io/harness/pms/contracts/triggers/trigger_payload.proto";
 import "io/harness/pms/contracts/plan/principal_info.proto";
 import "io/harness/pms/contracts/plan/trigger_info.proto";
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/entity_detail.proto";
+import "google/protobuf/struct.proto";
 
 service PlanCreationService {
   rpc createPlan(PlanCreationBlobRequest) returns (PlanCreationResponse);
@@ -162,6 +163,7 @@ message Dependencies {
 message Dependency {
   map<string, bytes> metadata = 2;
   RollbackModeBehaviour rollbackModeBehaviour = 3;
+  google.protobuf.Struct metadataV1 = 4;
 }
 
 enum RollbackModeBehaviour {

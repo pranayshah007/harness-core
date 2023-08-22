@@ -6,6 +6,7 @@
  */
 
 package io.harness.ci.plan.creator.step;
+
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
@@ -85,6 +86,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Struct;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -416,11 +418,10 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     stepElement = (T) getStepNode(stepElement);
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
     YamlField field = ctx.getCurrentField();
 
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
-        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, buildAdviserV1(ctx.getDependency()));
+    Struct metadataMap = StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, buildAdviserV1(ctx.getDependency()));
 
     PlanNodeBuilder builder =
         PlanNode.builder()
@@ -454,7 +455,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
         .dependencies(
             DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                 .toBuilder()
-                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().setMetadataV1(metadataMap).build())
                 .build())
         .build();
   }

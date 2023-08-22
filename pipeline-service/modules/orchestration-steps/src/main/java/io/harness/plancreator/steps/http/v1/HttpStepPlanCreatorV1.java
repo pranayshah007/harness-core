@@ -38,7 +38,7 @@ import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
+import com.google.protobuf.Struct;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,10 +64,10 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
     final boolean isStepInsideRollback = PlanCreatorUtilsV1.isStepInsideRollback(ctx.getDependency());
     HttpStepNodeV1 stepNode = YamlUtils.read(field.getNode().toString(), HttpStepNodeV1.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
+    Struct metadataMap =
 
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap,
-        metadataMap, PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));
+        StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap,
+            PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));
 
     PlanNodeBuilder builder =
         PlanNode.builder()
@@ -102,7 +102,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
         .dependencies(
             DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                 .toBuilder()
-                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().setMetadataV1(metadataMap).build())
                 .build())
         .build();
   }

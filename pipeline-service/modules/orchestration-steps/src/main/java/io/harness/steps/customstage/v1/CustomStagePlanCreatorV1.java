@@ -39,7 +39,7 @@ import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
+import com.google.protobuf.Struct;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -67,7 +67,6 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
       PlanCreationContext ctx, YamlField field) {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
 
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
@@ -80,15 +79,15 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     dependenciesNodeMap.put(stepsField.getNode().getUuid(), stepsField);
 
     // adding support for strategy
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
-        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, getBuild(ctx.getDependency()));
+    Struct metadataMap = StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, getBuild(ctx.getDependency()));
 
     planCreationResponseMap.put(stepsField.getNode().getUuid(),
         PlanCreationResponse.builder()
             .dependencies(
                 DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                     .toBuilder()
-                    .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                    .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().setMetadataV1(metadataMap).build())
                     .build())
             .build());
 
@@ -100,10 +99,10 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField stageYamlField = context.getCurrentField();
     String nextNodeUuid = null;
-    if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
-        && context.getDependency().getMetadataMap().containsKey("nextId")) {
-      nextNodeUuid =
-          (String) kryoSerializer.asObject(context.getDependency().getMetadataMap().get("nextId").toByteArray());
+    if (context.getDependency() != null
+        && !EmptyPredicate.isEmpty(context.getDependency().getMetadataV1().getFieldsMap())
+        && context.getDependency().getMetadataV1().getFieldsMap().containsKey("nextId")) {
+      nextNodeUuid = context.getDependency().getMetadataV1().getFieldsMap().get("nextId").getStringValue();
     }
     if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
       stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);

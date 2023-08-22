@@ -161,6 +161,15 @@ public class CIPlanCreatorUtils {
     return Optional.of(options);
   }
 
+  public Optional<Object> getDeserializedObjectFromDependencyV1(Dependency dependency, String key) {
+    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
+        || !dependency.getMetadataV1().getFieldsMap().containsKey(key)) {
+      return Optional.empty();
+    }
+    byte[] bytes = dependency.getMetadataV1().getFieldsMap().get(key).toByteArray();
+    return EmptyPredicate.isEmpty(bytes) ? Optional.empty() : Optional.of(kryoSerializer.asObject(bytes));
+  }
+
   public Optional<Object> getDeserializedObjectFromDependency(Dependency dependency, String key) {
     if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
         || !dependency.getMetadataMap().containsKey(key)) {

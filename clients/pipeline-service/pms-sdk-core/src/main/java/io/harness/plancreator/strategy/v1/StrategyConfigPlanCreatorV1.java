@@ -50,8 +50,12 @@ public class StrategyConfigPlanCreatorV1 extends ChildrenPlanCreator<StrategyCon
   @Override
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, StrategyConfigV1 config, List<String> childrenNodeIds) {
-    ByteString strategyMetadata = ctx.getDependency().getMetadataMap().get(
-        StrategyConstants.STRATEGY_METADATA + ctx.getCurrentField().getNode().getUuid());
+    ByteString strategyMetadata =
+        ctx.getDependency()
+            .getMetadataV1()
+            .getFieldsMap()
+            .get(StrategyConstants.STRATEGY_METADATA + ctx.getCurrentField().getNode().getUuid())
+            .getStringValueBytes();
     StrategyMetadata metadata = (StrategyMetadata) kryoSerializer.asInflatedObject(strategyMetadata.toByteArray());
     String childNodeId = metadata.getChildNodeId();
     String strategyNodeId = metadata.getStrategyNodeId();

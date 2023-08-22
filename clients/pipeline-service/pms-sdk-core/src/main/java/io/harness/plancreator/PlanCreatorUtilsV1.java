@@ -28,12 +28,13 @@ public class PlanCreatorUtilsV1 {
   // TODO:use https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto#L51 for metadataMap
   public List<AdviserObtainment> getAdviserObtainmentsForStage(KryoSerializer kryoSerializer, Dependency dependency) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
-    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
-        || !dependency.getMetadataMap().containsKey("nextId")) {
+    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataV1().getFieldsMap())
+        || !dependency.getMetadataV1().getFieldsMap().containsKey("nextId")) {
       return adviserObtainments;
     }
 
-    String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
+    String nextId =
+        (String) kryoSerializer.asObject(dependency.getMetadataV1().getFieldsMap().get("nextId").toByteArray());
     adviserObtainments.add(
         AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())

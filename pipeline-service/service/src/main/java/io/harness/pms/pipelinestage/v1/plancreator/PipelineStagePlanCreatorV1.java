@@ -58,7 +58,7 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
+import com.google.protobuf.Struct;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -144,10 +144,9 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
     }
 
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
 
     // This will be empty till we enable strategy support for Pipeline Stage
-    addDependencyForStrategy(ctx, stageNode, dependenciesNodeMap, metadataMap);
+    Struct metadataMap = addDependencyForStrategy(ctx, stageNode, dependenciesNodeMap);
 
     // Here planNodeId is used to support strategy. Same node id will be passed to child execution for navigation to
     // parent execution
@@ -190,15 +189,15 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
         .dependencies(
             DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                 .toBuilder()
-                .putDependencyMetadata(stageNode.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .putDependencyMetadata(stageNode.getUuid(), Dependency.newBuilder().setMetadataV1(metadataMap).build())
                 .build())
         .build();
   }
 
-  private void addDependencyForStrategy(PlanCreationContext ctx, YamlField stageNode,
-      Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap,
-        metadataMap, getAdviserObtainments(ctx.getDependency()));
+  private Struct addDependencyForStrategy(
+      PlanCreationContext ctx, YamlField stageNode, Map<String, YamlField> dependenciesNodeMap) {
+    return StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap, getAdviserObtainments(ctx.getDependency()));
   }
 
   private List<AdviserObtainment> getAdviserObtainments(Dependency dependency) {
@@ -210,10 +209,10 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField stageYamlField = context.getCurrentField();
     String nextNodeUuid = null;
-    if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
-        && context.getDependency().getMetadataMap().containsKey("nextId")) {
-      nextNodeUuid =
-          (String) kryoSerializer.asObject(context.getDependency().getMetadataMap().get("nextId").toByteArray());
+    if (context.getDependency() != null
+        && !EmptyPredicate.isEmpty(context.getDependency().getMetadataV1().getFieldsMap())
+        && context.getDependency().getMetadataV1().getFieldsMap().containsKey("nextId")) {
+      nextNodeUuid = context.getDependency().getMetadataV1().getFieldsMap().get("nextId").getStringValue();
     }
     if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
       stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);

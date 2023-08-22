@@ -27,7 +27,7 @@ public class IACMPluginStepPlanCretorV1 extends PluginStepPlanCreatorV1 {
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, PluginStepNodeV1 stepElement) {
     Optional<Object> workspaceIdMetadata =
-        ciPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), workspaceID);
+        ciPlanCreatorUtils.getDeserializedObjectFromDependencyV1(ctx.getDependency(), workspaceID);
     if (workspaceIdMetadata.isPresent()) {
       String workspaceId = (String) workspaceIdMetadata.get();
       addMetadataToIACMPluginStep(stepElement, workspaceId);

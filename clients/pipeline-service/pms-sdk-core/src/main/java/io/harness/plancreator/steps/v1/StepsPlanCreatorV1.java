@@ -31,7 +31,8 @@ import io.harness.steps.common.NGSectionStep;
 import io.harness.steps.common.NGSectionStepParameters;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
+import com.google.protobuf.Struct;
+import com.google.protobuf.Value;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,14 +62,18 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
       curr = stages.get(i);
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
-              .dependencies(Dependencies.newBuilder()
-                                .putDependencies(curr.getUuid(), curr.getYamlPath())
-                                .putDependencyMetadata(curr.getUuid(),
-                                    Dependency.newBuilder()
-                                        .putMetadata("nextId",
-                                            ByteString.copyFrom(kryoSerializer.asBytes(stages.get(i + 1).getUuid())))
-                                        .build())
-                                .build())
+              .dependencies(
+                  Dependencies.newBuilder()
+                      .putDependencies(curr.getUuid(), curr.getYamlPath())
+                      .putDependencyMetadata(curr.getUuid(),
+                          Dependency.newBuilder()
+                              .setMetadataV1(
+                                  Struct.newBuilder()
+                                      .putFields("nextId",
+                                          Value.newBuilder().setStringValue(stages.get(i + 1).getUuid()).build())
+                                      .build())
+                              .build())
+                      .build())
               .build());
     }
 
