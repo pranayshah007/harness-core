@@ -439,6 +439,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
           setOptionalEnvironmentVariable(
               map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
         }
+        setOptionalEnvironmentVariable(map, PLUGIN_METADATA_FILE, PLUGIN_METADATA_FILE_NAME);
       }
     }
     return map;

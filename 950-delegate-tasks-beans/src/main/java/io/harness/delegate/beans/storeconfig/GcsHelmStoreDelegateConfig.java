@@ -33,4 +33,9 @@ public class GcsHelmStoreDelegateConfig implements StoreDelegateConfig {
   public StoreDelegateConfigType getType() {
     return StoreDelegateConfigType.GCS_HELM;
   }
+
+  @Override
+  public String getRepoUrl() {
+    return new StringBuilder("gs://").append(this.getBucketName()).append("/").append(this.getFolderPath()).toString();
+  }
 }

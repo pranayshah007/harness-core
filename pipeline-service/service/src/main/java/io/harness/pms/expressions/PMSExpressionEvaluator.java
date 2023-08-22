@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.expressions;
+
 import io.harness.ModuleType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.CodePulse;
@@ -28,6 +29,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.expression.RemoteFunctorServiceGrpc.RemoteFunctorServiceBlockingStub;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.expressions.functors.AccountFunctor;
+import io.harness.pms.expressions.functors.ApprovalFunctor;
 import io.harness.pms.expressions.functors.ExecutionInputExpressionFunctor;
 import io.harness.pms.expressions.functors.InputSetFunctor;
 import io.harness.pms.expressions.functors.OrgFunctor;
@@ -44,6 +46,7 @@ import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.project.remote.ProjectClient;
+import io.harness.steps.approval.step.ApprovalInstanceService;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -67,6 +70,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject PmsExecutionSummaryService pmsExecutionSummaryService;
 
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
+  @Inject ApprovalInstanceService approvalInstanceService;
 
   public PMSExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
       Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
@@ -111,6 +115,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     });
 
     addToContext("serviceVariableOverrides", new ServiceVariableOverridesFunctor(ambiance, pmsEngineExpressionService));
+    addToContext("approval", new ApprovalFunctor(ambiance.getPlanExecutionId(), approvalInstanceService));
 
     // Group aliases
     // TODO: Replace with step category

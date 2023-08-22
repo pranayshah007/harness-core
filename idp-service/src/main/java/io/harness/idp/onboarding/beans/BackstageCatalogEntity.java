@@ -28,7 +28,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
-public class BackstageCatalogEntity {
+public abstract class BackstageCatalogEntity {
   private String apiVersion = "backstage.io/v1alpha1";
   private Metadata metadata;
   private String kind;

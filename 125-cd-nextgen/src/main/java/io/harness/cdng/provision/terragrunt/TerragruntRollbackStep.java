@@ -6,14 +6,11 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
-
+import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_CLI_OPTIONS_NG;
 import static io.harness.cdng.provision.terragrunt.TerragruntStepHelper.DEFAULT_TIMEOUT;
 import static io.harness.provision.TerragruntConstants.APPLY;
 import static io.harness.provision.TerragruntConstants.DESTROY;
 import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
-
-import static software.wings.beans.TaskType.TERRAGRUNT_APPLY_TASK_NG;
-import static software.wings.beans.TaskType.TERRAGRUNT_DESTROY_TASK_NG;
 
 import static java.lang.String.format;
 
@@ -25,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -82,6 +80,7 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private AccountService accountService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
@@ -146,14 +145,16 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
         TerragruntApplyTaskParametersBuilder<?, ?> builderApply =
             createApplyTaskParameters(rollbackConfig, ambiance, stepParameters, provisionerIdentifier);
         commandUnitsList.add(APPLY);
-        return prepareCDTaskRequest(ambiance, builderApply.build(), stepParameters, stepParametersSpec,
-            commandUnitsList, TERRAGRUNT_APPLY_TASK_NG);
+        TaskType applyTaskType = builderApply.build().getDelegateTaskTypeForApplyStep();
+        return prepareCDTaskRequest(
+            ambiance, builderApply.build(), stepParameters, stepParametersSpec, commandUnitsList, applyTaskType);
       } else {
         TerragruntDestroyTaskParametersBuilder<?, ?> builderDestroy =
             createDestroyTaskParameters(rollbackConfig, ambiance, stepParameters, provisionerIdentifier);
+        TaskType destroyTaskType = builderDestroy.build().getDelegateTaskTypeForDestroyStep();
         commandUnitsList.add(DESTROY);
-        return prepareCDTaskRequest(ambiance, builderDestroy.build(), stepParameters, stepParametersSpec,
-            commandUnitsList, TERRAGRUNT_DESTROY_TASK_NG);
+        return prepareCDTaskRequest(
+            ambiance, builderDestroy.build(), stepParameters, stepParametersSpec, commandUnitsList, destroyTaskType);
       }
     }
   }
@@ -233,6 +234,12 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
     TerragruntApplyTaskParametersBuilder<?, ?> builder = TerragruntApplyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = terragruntStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
+
+    TerragruntRollbackStepParameters stepParametersSpec = (TerragruntRollbackStepParameters) stepParameters.getSpec();
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_CLI_OPTIONS_NG)) {
+      builder.terragruntCommandFlags(terragruntStepHelper.getTerragruntCliFlags(stepParametersSpec.getCommandFlags()));
+    }
+
     builder.accountId(accountId)
         .entityId(entityId)
         .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())
@@ -261,6 +268,12 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
     TerragruntDestroyTaskParametersBuilder<?, ?> builder = TerragruntDestroyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = terragruntStepHelper.generateFullIdentifier(provisionerIdentifier, ambiance);
+
+    TerragruntRollbackStepParameters stepParametersSpec = (TerragruntRollbackStepParameters) stepParameters.getSpec();
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_CLI_OPTIONS_NG)) {
+      builder.terragruntCommandFlags(terragruntStepHelper.getTerragruntCliFlags(stepParametersSpec.getCommandFlags()));
+    }
+
     builder.accountId(accountId)
         .entityId(entityId)
         .tgModuleSourceInheritSSH(terragruntConfig.isUseConnectorCredentials())

@@ -25,6 +25,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDT
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sDeploymentReleaseData;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -57,6 +58,8 @@ public class K8SInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
   private static final String RELEASE_NAME = "releaseName";
   private static final String K8S_INSTANCE_SYNC_COMMAND_NAME = "Instance Sync";
   private static final String PROJECT_IDENTIFIER = "project";
+  private static final HelmChartInfo HELM_CHART_INFO = HelmChartInfo.builder().build();
+
   private static final String ACCOUNT_IDENTIFIER = "account";
   private static final String ORG_IDENTIFIER = "org";
 
@@ -80,8 +83,11 @@ public class K8SInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
                                                             .build();
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add(NAMESPACE);
-    DeploymentInfoDTO deploymentInfoDTO =
-        K8sDeploymentInfoDTO.builder().namespaces(namespaces).releaseName(RELEASE_NAME).build();
+    DeploymentInfoDTO deploymentInfoDTO = K8sDeploymentInfoDTO.builder()
+                                              .namespaces(namespaces)
+                                              .releaseName(RELEASE_NAME)
+                                              .helmChartInfo(HELM_CHART_INFO)
+                                              .build();
     List<DeploymentInfoDTO> deploymentInfoDTOList = Arrays.asList(deploymentInfoDTO);
     InfrastructureOutcome infrastructureOutcome = K8sDirectInfrastructureOutcome.builder().build();
     KubernetesCredentialDTO kubernetesCredentialDTO =
@@ -93,6 +99,7 @@ public class K8SInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
     K8sInfraDelegateConfig k8sInfraDelegateConfig =
         DirectK8sInfraDelegateConfig.builder().kubernetesClusterConfigDTO(kubernetesClusterConfigDTO).build();
     byte[] bytes = {70};
+    byte[] bytes2 = {71};
     byte[] bytes3 = {72};
     BaseNGAccess baseNGAccess = BaseNGAccess.builder()
                                     .accountIdentifier(ACCOUNT_IDENTIFIER)
@@ -104,10 +111,12 @@ public class K8SInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
             .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
             .namespaces(((K8sDeploymentInfoDTO) deploymentInfoDTO).getNamespaces())
             .releaseName(((K8sDeploymentInfoDTO) deploymentInfoDTO).getReleaseName())
+            .helmChartInfo(((K8sDeploymentInfoDTO) deploymentInfoDTO).getHelmChartInfo())
             .build();
 
     K8sDeploymentRelease k8sDeploymentRelease = K8sDeploymentRelease.newBuilder()
                                                     .setReleaseName(k8sDeploymentReleaseData.getReleaseName())
+                                                    .setHelmChartInfo(ByteString.copyFrom(bytes2))
                                                     .addAllNamespaces(k8sDeploymentReleaseData.getNamespaces())
                                                     .setK8SInfraDelegateConfig(ByteString.copyFrom(bytes))
                                                     .build();
@@ -129,6 +138,7 @@ public class K8SInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase {
     when(k8sEntityHelper.getK8sInfraDelegateConfig(infrastructureOutcome, baseNGAccess))
         .thenReturn(k8sInfraDelegateConfig);
     when(kryoSerializer.asBytes(k8sDeploymentReleaseData.getK8sInfraDelegateConfig())).thenReturn(bytes);
+    when(kryoSerializer.asBytes(k8sDeploymentReleaseData.getHelmChartInfo())).thenReturn(bytes2);
 
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     expectedExecutionCapabilityList.forEach(executionCapability

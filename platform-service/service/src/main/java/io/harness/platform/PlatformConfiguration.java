@@ -11,10 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
@@ -65,7 +62,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Getter
 @Slf4j
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -27,10 +27,12 @@ import io.harness.spec.server.ssca.v1.EnforcementResultApi;
 import io.harness.spec.server.ssca.v1.EnforcementSummaryApi;
 import io.harness.spec.server.ssca.v1.NormalizeSbomApi;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
+import io.harness.spec.server.ssca.v1.TokenApi;
 import io.harness.ssca.api.EnforcementResultApiImpl;
 import io.harness.ssca.api.EnforcementSummaryApiImpl;
 import io.harness.ssca.api.NormalizedSbomApiImpl;
 import io.harness.ssca.api.SbomProcessorApiImpl;
+import io.harness.ssca.api.TokenApiImpl;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
 import io.harness.ssca.services.EnforceSBOMWorkflowService;
@@ -147,6 +149,7 @@ public class SSCAManagerTestRule implements InjectorRuleMixin, MethodRule, Mongo
         bind(ArtifactRepository.class).toInstance(mock(ArtifactRepository.class));
         bind(EnforcementResultRepo.class).toInstance(mock(EnforcementResultRepo.class));
         bind(EnforcementSummaryRepo.class).toInstance(mock(EnforcementSummaryRepo.class));
+        bind(TokenApi.class).to(TokenApiImpl.class);
       }
     });
     modules.add(TimeModule.getInstance());

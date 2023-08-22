@@ -9,8 +9,12 @@ package io.harness.validator;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface NGRegexValidatorConstants {
   String IDENTIFIER_PATTERN = "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$";
@@ -22,6 +26,9 @@ public interface NGRegexValidatorConstants {
       "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$";
   String EXPRESSION_PATTERN_WITHOUT_EXECUTION_INPUT = "(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)";
   String TIMEOUT_PATTERN_WITHOUT_EXECUTION_INPUT = "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|"
+      + EXPRESSION_PATTERN_WITHOUT_EXECUTION_INPUT + "|(^$))$";
+  String POLL_FREQUENCY_PATTERN_WITHOUT_EXECUTION_INPUT =
+      "^(([1-9])+\\d+[s])|(([5-9])+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|"
       + EXPRESSION_PATTERN_WITHOUT_EXECUTION_INPUT + "|(^$))$";
   String VERSION_LABEL_PATTERN = "^[0-9a-zA-Z][^\\s/&]{0,63}$";
   String RUNTIME_OR_FIXED_IDENTIFIER_PATTERN = "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$";

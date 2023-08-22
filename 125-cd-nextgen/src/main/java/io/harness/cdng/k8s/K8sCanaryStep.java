@@ -226,8 +226,9 @@ public class K8sCanaryStep extends CdTaskChainExecutable implements K8sStepExecu
       return K8sStepHelper.getFailureResponseBuilder(k8sTaskExecutionResponse, responseBuilder).build();
     }
 
-    instanceInfoService.saveServerInstancesIntoSweepingOutput(
-        ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sCanaryDeployResponse.getK8sPodList()));
+    instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
+        K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(
+            k8sCanaryDeployResponse.getK8sPodList(), k8sCanaryDeployResponse.getHelmChartInfo()));
     return responseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)

@@ -34,5 +34,14 @@
     "type": "BOOLEAN",
     "dataSourceIdentifier": "catalog",
     "dataSourceLocationIdentifier": "__HARNESS__2cc456df-76cd-41c2-8013-60605f266b88"
+  },
+  {
+    "id": "64e44efc95107f65e31c51f7",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "specOwnerExists",
+    "name": "Spec Owner Exists",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "catalog",
+    "dataSourceLocationIdentifier": "__HARNESS__2cc456df-76cd-41c2-8013-60605f266b88"
   }
 ]

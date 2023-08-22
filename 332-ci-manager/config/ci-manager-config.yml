@@ -383,7 +383,7 @@ ciExecutionServiceConfig:
       dockerBuildxGcrConfig:
         name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.2
       dockerBuildxAcrConfig:
-        name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.0
+        name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.1
   gitnessConfig:
     jwtSecret: ${GITNESS_JWT_SECRET:-"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"}
 

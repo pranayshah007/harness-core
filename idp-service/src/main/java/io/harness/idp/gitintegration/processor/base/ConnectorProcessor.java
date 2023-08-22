@@ -23,7 +23,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.connector.ConnectorDTO;
@@ -82,7 +81,6 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
-import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -104,9 +102,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.IDP)
 public abstract class ConnectorProcessor {
   @Inject public ConnectorResourceClient connectorResourceClient;
-  @Inject NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject @Named("PRIVILEGED") public SecretManagerClientService ngSecretService;
-  @Inject SecretManagerClientService ngSecretServiceNonPrivileged;
   @Inject DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject ExceptionManager exceptionManager;
   @Inject public GitClientV2Impl gitClientV2;
@@ -459,10 +455,7 @@ public abstract class ConnectorProcessor {
     }
     NGAccess basicNGAccessObject =
         BaseNGAccess.builder().accountIdentifier(accountIdentifier).orgIdentifier(null).projectIdentifier(null).build();
-    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL)) {
-      return ngSecretService.getEncryptionDetails(basicNGAccessObject, decryptableEntity);
-    }
-    return ngSecretServiceNonPrivileged.getEncryptionDetails(basicNGAccessObject, decryptableEntity);
+    return ngSecretService.getEncryptionDetails(basicNGAccessObject, decryptableEntity);
   }
 
   private List<EncryptedDataDetail> getApiAccessEncryptedDataDetail(ScmConnector scmConnector, NGAccess ngAccess) {

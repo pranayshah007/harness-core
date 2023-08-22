@@ -13,9 +13,5 @@ import lombok.Data;
 @Data
 @Builder
 public class PipelineSchemaRequest extends IndividualSchemaRequest {
-  private String nodeGroupDifferentiator; // It can be any differentiator for the nodeGroup/nodeType when there are
-                                          // multiple nodeGroup/nodeType present under different paths. Example
-                                          // stepGroupElementConfig would be different in cd and ci sages.
-  private String nodeGroup; // Group of the node. eg; Step, Stage, stepGroup
-  private String nodeType; // type of the node eg: Http, Custom, Deployment
+  private IndividualSchemaMetadata individualSchemaMetadata;
 }

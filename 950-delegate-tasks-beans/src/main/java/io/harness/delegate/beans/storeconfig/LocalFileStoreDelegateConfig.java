@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.storeconfig;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.localstore.ManifestFiles;
@@ -28,5 +30,13 @@ public class LocalFileStoreDelegateConfig implements StoreDelegateConfig {
   @Override
   public StoreDelegateConfigType getType() {
     return StoreDelegateConfigType.HARNESS;
+  }
+
+  @Override
+  public String getRepoUrl() {
+    if (isNotEmpty(this.folder)) {
+      return new StringBuilder("harness://").append(this.folder).toString();
+    }
+    return new StringBuilder("harness").toString();
   }
 }

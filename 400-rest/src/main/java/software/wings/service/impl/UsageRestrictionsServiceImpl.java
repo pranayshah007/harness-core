@@ -26,7 +26,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
@@ -895,9 +894,6 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
 
     Set<String> appIdsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId, accountId);
-    if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-      log.info("[GetAppIdEnvMap] UsageRestrictionsServiceImpl:userHasPermissionsToChangeEntity - debug log");
-    }
     return userHasPermissions(accountId, permissionType, entityUsageRestrictions, restrictionsFromUserPermissions,
         appIdEnvMap, scopedToAccount);
   }
@@ -919,9 +915,6 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
       UsageRestrictions entityUsageRestrictions, boolean scopedToAccount) {
     Set<String> appIdsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId, accountId);
-    if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-      log.info("[GetAppIdEnvMap] UsageRestrictionsServiceImpl:userHasPermissionsToChangeEntity - debug log");
-    }
     return userHasPermissionsToChangeEntity(accountId, permissionType, entityUsageRestrictions,
         getRestrictionsAndAppEnvMapFromCache(accountId, Action.UPDATE).getUsageRestrictions(), appIdEnvMap,
         scopedToAccount);
@@ -978,9 +971,6 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
     }
     Set<String> appIdsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId, accountId);
-    if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-      log.info("[GetAppIdEnvMap] UsageRestrictionsServiceImpl:isUsageRestrictionsSubset - debug log");
-    }
     Map<String, Set<String>> appEnvMap = getAppEnvMap(usageRestrictions.getAppEnvRestrictions(), appIdEnvMap);
     Map<String, Set<String>> parentAppEnvMap = getAppEnvMap(parentRestrictions.getAppEnvRestrictions(), appIdEnvMap);
     return isUsageRestrictionsSubsetInternal(usageRestrictions, appEnvMap, parentRestrictions, parentAppEnvMap);
@@ -1047,9 +1037,6 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
 
     Set<String> appIdsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId, accountId);
-    if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-      log.info("[GetAppIdEnvMap] UsageRestrictionsServiceImpl:validateUsageRestrictionsOnEntitySave - debug log");
-    }
     boolean canUpdateEntity = userHasPermissionsToChangeEntity(
         accountId, permissionType, usageRestrictions, restrictionsFromUserPermissions, appIdEnvMap, scopedToAccount);
 
@@ -1122,9 +1109,6 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
 
     Set<String> appIdsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, List<Base>> appIdEnvMap = environmentService.getAppIdEnvMap(appIdsByAccountId, accountId);
-    if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-      log.info("[GetAppIdEnvMap] UsageRestrictionsServiceImpl:validateUsageRestrictionsOnEntityUpdate - debug log");
-    }
     boolean canAddNewRestrictions = userHasPermissionsToChangeEntity(
         accountId, permissionType, newUsageRestrictions, restrictionsFromUserPermissions, appIdEnvMap, scopedToAccount);
 
@@ -1141,13 +1125,6 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
         ? new HashMap<>()
         : getAppEnvMap(newUsageRestrictions.getAppEnvRestrictions(),
             environmentService.getAppIdEnvMap(appsByAccountId, accountId));
-
-    if (newUsageRestrictions != null) {
-      if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-        log.info(
-            "[GetAppIdEnvMap] UsageRestrictionsServiceImpl:validateSetupUsagesOnUsageRestrictionsUpdate - debug log");
-      }
-    }
 
     for (Entry<String, Set<String>> setupUsage : setupUsages.entrySet()) {
       String appId = setupUsage.getKey();

@@ -5,12 +5,6 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.service.core.runner;
+package io.harness.pms.yaml.individualschema;
 
-import io.harness.delegate.core.beans.InputData;
-
-public interface TaskRunner {
-  void init(String taskGroupId, InputData infra);
-  void execute(String taskGroupId, InputData tasks);
-  void cleanup(String taskGroupId);
-}
+public abstract class IndividualSchemaMetadata {}

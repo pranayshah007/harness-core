@@ -6,12 +6,10 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
-
+import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_CLI_OPTIONS_NG;
 import static io.harness.cdng.provision.terragrunt.TerragruntStepHelper.DEFAULT_TIMEOUT;
 import static io.harness.provision.TerragruntConstants.APPLY;
 import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
-
-import static software.wings.beans.TaskType.TERRAGRUNT_APPLY_TASK_NG;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.CodePulse;
@@ -53,6 +51,8 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -154,6 +154,10 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
     builder.tgModuleSourceInheritSSH(
         helper.isExportCredentialForSourceModule(spec.getConfigFiles(), StepBaseParameters.getType()));
 
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_CLI_OPTIONS_NG)) {
+      builder.terragruntCommandFlags(helper.getTerragruntCliFlags(configuration.getCommandFlags()));
+    }
+
     builder.stateFileId(helper.getLatestFileId(entityId))
         .entityId(entityId)
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
@@ -195,6 +199,11 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
     TerragruntApplyTaskParametersBuilder<?, ?> builder = TerragruntApplyTaskParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
+
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_CLI_OPTIONS_NG)) {
+      builder.terragruntCommandFlags(helper.getTerragruntCliFlags(stepParameters.getConfiguration().getCommandFlags()));
+    }
+
     builder.accountId(accountId)
         .entityId(entityId)
         .tgModuleSourceInheritSSH(inheritOutput.isUseConnectorCredentials())
@@ -291,9 +300,10 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
 
   private TaskRequest prepareCDTaskRequest(Ambiance ambiance, TerragruntApplyTaskParametersBuilder<?, ?> builder,
       StepBaseParameters StepBaseParameters, TerragruntApplyStepParameters stepParameters) {
+    TaskType terragruntTaskType = builder.build().getDelegateTaskTypeForApplyStep();
     TaskData taskData = TaskData.builder()
                             .async(true)
-                            .taskType(TERRAGRUNT_APPLY_TASK_NG.name())
+                            .taskType(terragruntTaskType.name())
                             .timeout(StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), DEFAULT_TIMEOUT))
                             .parameters(new Object[] {builder.build()})
                             .build();
@@ -303,8 +313,7 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
     commandUnitsList.add(APPLY);
 
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnitsList,
-        TERRAGRUNT_APPLY_TASK_NG.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(stepParameters.getDelegateSelectors()),
+        terragruntTaskType.getDisplayName(), TaskSelectorYaml.toTaskSelector(stepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
 

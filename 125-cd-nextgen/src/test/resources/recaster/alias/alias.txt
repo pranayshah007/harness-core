@@ -1183,3 +1183,4 @@ io.harness.cdng.provision.awscdk.AwsCdkRollbackStepInfo
 io.harness.cdng.provision.awscdk.AwsCdkRollbackStepNode
 io.harness.cdng.provision.awscdk.AwsCdkRollbackStepParameters
 io.harness.plancreator.steps.common.v1.StepElementParametersV1
+io.harness.cdng.provision.terragrunt.TerragruntCliOptionFlag

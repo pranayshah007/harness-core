@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution.service;
+
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.OrchestrationStepTypes;
@@ -243,6 +244,13 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
     Query query = new Query(criteria);
     pmsExecutionSummaryRepository.update(query, update);
+  }
+
+  @Override
+  public void updateNotes(String planExecutionId, Boolean notesExistForPlanExecutionId) {
+    Update update = new Update();
+    update.set(PlanExecutionSummaryKeys.notesExistForPlanExecutionId, notesExistForPlanExecutionId);
+    update(planExecutionId, update);
   }
 
   @Override

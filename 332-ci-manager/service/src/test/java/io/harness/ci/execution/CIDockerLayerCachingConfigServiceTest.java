@@ -119,10 +119,10 @@ public class CIDockerLayerCachingConfigServiceTest {
   @Category(UnitTests.class)
   public void testGetCacheTo() {
     CIDockerLayerCachingConfig config = getConfig();
-    String expectedCacheFrom =
-        "type=s3,endpoint_url=endpoint,bucket=bucket,mode=max,region=region,access_key_id=access_key,secret_access_key=secret_key";
-    String cacheFrom = ciDockerLayerCachingConfigService.getCacheToArg(config, "");
-    assertThat(expectedCacheFrom).isEqualTo(cacheFrom);
+    String expectedCacheTo =
+        "type=s3,endpoint_url=endpoint,bucket=bucket,mode=max,region=region,access_key_id=access_key,secret_access_key=secret_key,ignore-error=true";
+    String cacheTo = ciDockerLayerCachingConfigService.getCacheToArg(config, "");
+    assertThat(expectedCacheTo).isEqualTo(cacheTo);
   }
 
   @Test
@@ -130,9 +130,9 @@ public class CIDockerLayerCachingConfigServiceTest {
   @Category(UnitTests.class)
   public void testGetCacheToPrefix() {
     CIDockerLayerCachingConfig config = getConfig();
-    String expectedCacheFrom =
-        "type=s3,endpoint_url=endpoint,bucket=bucket,mode=max,region=region,access_key_id=access_key,secret_access_key=secret_key,prefix=test-account-id/test-prefix/";
-    String cacheFrom = ciDockerLayerCachingConfigService.getCacheToArg(config, accountId + "/test-prefix/");
-    assertThat(expectedCacheFrom).isEqualTo(cacheFrom);
+    String expectedCacheTo =
+        "type=s3,endpoint_url=endpoint,bucket=bucket,mode=max,region=region,access_key_id=access_key,secret_access_key=secret_key,ignore-error=true,prefix=test-account-id/test-prefix/";
+    String cacheTo = ciDockerLayerCachingConfigService.getCacheToArg(config, accountId + "/test-prefix/");
+    assertThat(expectedCacheTo).isEqualTo(cacheTo);
   }
 }

@@ -7,10 +7,16 @@
 
 package io.harness.subscription.services.impl;
 
+import io.harness.account.AccountClient;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnauthorizedException;
+import io.harness.exception.WingsException;
+import io.harness.manage.GlobalContextManager;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CreditCardRepository;
 import io.harness.repositories.StripeCustomerRepository;
+import io.harness.security.SourcePrincipalContextData;
 import io.harness.subscription.dto.CardDTO;
 import io.harness.subscription.dto.CreditCardDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
@@ -30,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CreditCardServiceImpl implements CreditCardService {
+  private final AccountClient accountClient;
   private final CreditCardRepository creditCardRepository;
   private final StripeCustomerRepository stripeCustomerRepository;
   private final StripeHelper stripeHelper;
@@ -41,8 +48,9 @@ public class CreditCardServiceImpl implements CreditCardService {
   private final String CARD_NOT_FOUND = "No card found with identifier %s";
 
   @Inject
-  public CreditCardServiceImpl(CreditCardRepository creditCardRepository,
+  public CreditCardServiceImpl(AccountClient accountClient, CreditCardRepository creditCardRepository,
       StripeCustomerRepository stripeCustomerRepository, StripeHelper stripeHelper) {
+    this.accountClient = accountClient;
     this.creditCardRepository = creditCardRepository;
     this.stripeCustomerRepository = stripeCustomerRepository;
     this.stripeHelper = stripeHelper;
@@ -96,6 +104,35 @@ public class CreditCardServiceImpl implements CreditCardService {
                                       .creditCardIdentifier(newDefaultPaymentMethod.get().getId())
                                       .fingerprint(newDefaultPaymentMethod.get().getFingerPrint())
                                       .build()));
+  }
+
+  @Override
+  public CreditCardResponse deleteCreditCard(String accountIdentifier, String creditCardIdentifier) {
+    SourcePrincipalContextData sourcePrincipalContextData =
+        GlobalContextManager.get(SourcePrincipalContextData.SOURCE_PRINCIPAL);
+    String userId = sourcePrincipalContextData.getPrincipal().getName();
+    boolean isHarnessSupportEnabled = false;
+    try {
+      isHarnessSupportEnabled = CGRestUtils.getResponse(accountClient.isHarnessSupportUserId(userId));
+    } catch (Exception e) {
+      log.error("client call to cg-manager failed due to: ", e);
+      throw e;
+    }
+    if (!isHarnessSupportEnabled) {
+      String errorMessage = String.format(
+          "User with ID %s is not authorized to delete credit cards. Only Harness support users can delete credit cards.",
+          userId);
+      log.error(errorMessage);
+      throw new UnauthorizedException(errorMessage, WingsException.USER);
+    }
+    CreditCard creditCard = creditCardRepository.findByCreditCardIdentifier(creditCardIdentifier);
+    if (creditCard == null) {
+      String errorMessage = String.format("Could not find a credit card with identifier %s", creditCardIdentifier);
+      log.error(errorMessage);
+      throw new InvalidArgumentsException(errorMessage);
+    }
+    creditCardRepository.delete(creditCard);
+    return toCreditCardResponse(creditCard);
   }
 
   @Override

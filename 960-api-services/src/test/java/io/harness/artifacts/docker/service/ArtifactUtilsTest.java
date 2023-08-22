@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.artifacts.gar.service;
+package io.harness.artifacts.docker.service;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
 
@@ -19,19 +19,19 @@ import io.harness.rule.Owner;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class GARUtilsTest {
+public class ArtifactUtilsTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void checkIfResponseNullTest() {
-    assertThatThrownBy(() -> { GARUtils.checkIfResponseNull(null); }).isInstanceOf(HintException.class);
+    assertThatThrownBy(() -> { ArtifactUtils.checkIfResponseNull(null); }).isInstanceOf(HintException.class);
   }
 
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void isSHATest_Version() {
-    boolean isSHA = GARUtils.isSHA("version");
+    boolean isSHA = ArtifactUtils.isSHA("version");
     assertThat(isSHA).isEqualTo(false);
   }
 
@@ -39,7 +39,7 @@ public class GARUtilsTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void isSHATest_SHA() {
-    boolean isSHA = GARUtils.isSHA("sha256:5322342");
+    boolean isSHA = ArtifactUtils.isSHA("sha256:5322342");
     assertThat(isSHA).isEqualTo(true);
   }
 }

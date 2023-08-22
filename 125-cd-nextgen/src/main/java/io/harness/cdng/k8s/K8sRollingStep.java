@@ -229,8 +229,9 @@ public class K8sRollingStep extends CdTaskChainExecutable implements K8sStepExec
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_ROLL_OUT, k8sRollingOutcome, StepOutcomeGroup.STEP.name());
 
-    StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(
-        ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sTaskResponse.getK8sPodList()));
+    StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
+        K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(
+            k8sTaskResponse.getK8sPodList(), k8sTaskResponse.getHelmChartInfo()));
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).outcome(k8sRollingOutcome).build())

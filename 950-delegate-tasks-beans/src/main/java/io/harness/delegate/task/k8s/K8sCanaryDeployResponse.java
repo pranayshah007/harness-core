@@ -12,6 +12,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.K8sPod;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public class K8sCanaryDeployResponse implements K8sNGTaskResponse {
   Integer currentInstances;
   String canaryWorkload;
   boolean canaryWorkloadDeployed;
+  HelmChartInfo helmChartInfo;
 
   public List<K8sPod> getPreviousK8sPodList() {
     return previousK8sPodList;

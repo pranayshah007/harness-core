@@ -58,6 +58,10 @@ global:
       userKey: "redis-user"
       passwordKey: "redis-password"
       extraArgs: ""
+  monitoring:
+    enabled: false
+    port: 8889
+    path: /metrics
 
   ingress:
     # -- create ingress objects

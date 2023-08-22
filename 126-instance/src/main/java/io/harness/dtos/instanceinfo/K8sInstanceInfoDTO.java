@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.util.InstanceSyncKey;
 
@@ -33,6 +34,7 @@ public class K8sInstanceInfoDTO extends InstanceInfoDTO {
   private String podIP;
   private String blueGreenColor;
   @NotNull private List<K8sContainer> containerList;
+  private HelmChartInfo helmChartInfo;
 
   @Override
   public String prepareInstanceKey() {
