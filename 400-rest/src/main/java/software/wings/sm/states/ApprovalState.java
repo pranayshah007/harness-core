@@ -658,22 +658,22 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     executionData.setIssueKey(jiraExecutionData.getIssueKey());
     executionData.setCurrentStatus(jiraExecutionData.getCurrentStatus());
 
-    if (jiraExecutionData.getExecutionStatus() != null) {
+    if (jiraExecutionData.getCurrentStatus() != null) {
       if (jiraExecutionData.getCurrentStatus().equalsIgnoreCase(jiraApprovalParams.getApprovalValue())) {
         return respondWithStatus(context, executionData, null,
-                ExecutionResponse.builder()
-                        .executionStatus(SUCCESS)
-                        .errorMessage("Approval provided on ticket: " + jiraExecutionData.getIssueKey())
-                        .stateExecutionData(executionData));
+            ExecutionResponse.builder()
+                .executionStatus(SUCCESS)
+                .errorMessage("Approval provided on ticket: " + jiraExecutionData.getIssueKey())
+                .stateExecutionData(executionData));
       }
 
       if (jiraApprovalParams.getRejectionValue() != null
-              && jiraExecutionData.getCurrentStatus().equalsIgnoreCase(jiraApprovalParams.getRejectionValue())) {
+          && jiraExecutionData.getCurrentStatus().equalsIgnoreCase(jiraApprovalParams.getRejectionValue())) {
         return respondWithStatus(context, executionData, null,
-                ExecutionResponse.builder()
-                        .executionStatus(REJECTED)
-                        .errorMessage("Rejection provided on ticket: " + jiraExecutionData.getIssueKey())
-                        .stateExecutionData(executionData));
+            ExecutionResponse.builder()
+                .executionStatus(REJECTED)
+                .errorMessage("Rejection provided on ticket: " + jiraExecutionData.getIssueKey())
+                .stateExecutionData(executionData));
       }
     }
 

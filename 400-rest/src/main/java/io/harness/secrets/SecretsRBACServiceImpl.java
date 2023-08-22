@@ -22,7 +22,6 @@ import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretScopeMetadata;
 import io.harness.exception.SecretManagementException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.secrets.setupusage.SecretSetupUsageService;
 
 import software.wings.beans.Base;
