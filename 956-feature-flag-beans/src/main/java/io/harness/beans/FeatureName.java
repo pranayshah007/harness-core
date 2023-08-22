@@ -851,6 +851,7 @@ public enum FeatureName {
   PIE_ERROR_ENHANCEMENTS("Enhance error framework for pipeline exceptions", PIPELINE),
   CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", PIPELINE),
   CDS_GITHUB_PACKAGES("Used for SSH/WinRm copy and download Github packages artifacts", HarnessTeam.CDP),
+  CDS_DISABLE_FIRST_GEN_CD("Used to disable/block customer access to CG after the migration cut-over", SPG),
   CDS_HELM_SEND_TASK_PROGRESS_NG("For Helm tasks we will be "
           + "sending task progress event via log streaming client which will be received and handled by handleProgress handler in the ng-manager step class",
       HarnessTeam.CDP),
