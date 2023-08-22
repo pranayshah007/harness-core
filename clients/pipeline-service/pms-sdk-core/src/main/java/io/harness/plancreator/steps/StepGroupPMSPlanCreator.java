@@ -229,7 +229,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
             adviserObtainmentBuilder, retrySGAction, retrySGCount, currentField));
         break;
       default:
-        Switch.unhandled(actionType);
+        // do nothing
     }
   }
 
