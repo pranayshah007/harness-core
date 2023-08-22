@@ -9,6 +9,7 @@ package io.harness.repositories.service.custom;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 
 import com.mongodb.client.result.DeleteResult;
@@ -36,4 +37,6 @@ public interface ServiceRepositoryCustom {
       boolean deleted);
 
   List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  ServiceEntity save(ServiceEntity serviceToSave) throws InvalidRequestException;
 }

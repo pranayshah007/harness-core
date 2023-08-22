@@ -8,10 +8,12 @@
 package io.harness.repositories.service.spring;
 
 import io.harness.annotation.HarnessRepo;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.repositories.service.custom.ServiceRepositoryCustom;
 
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
@@ -22,4 +24,6 @@ public interface ServiceRepository extends PagingAndSortingRepository<ServiceEnt
 
   Optional<ServiceEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
+
+  @NotNull ServiceEntity save(@NotNull ServiceEntity serviceToSave) throws InvalidRequestException;
 }

@@ -11,9 +11,19 @@ import static io.harness.springdata.PersistenceUtils.getRetryPolicyWithDuplicate
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
+import io.harness.ng.core.utils.CDGitXService;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
@@ -45,6 +55,9 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
   private final MongoTemplate mongoTemplate;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(10);
   private final int MAX_ATTEMPTS = 3;
+  private final CDGitXService cdGitXService;
+  private final GitAwareEntityHelper gitAwareEntityHelper;
+  private final GitAwarePersistence gitAwarePersistence;
 
   @Override
   public Page<ServiceEntity> findAll(Criteria criteria, Pageable pageable) {
@@ -172,5 +185,45 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
+  }
+
+  @Override
+  public ServiceEntity save(ServiceEntity serviceToSave) throws InvalidRequestException {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    if (gitEntityInfo == null || StoreType.INLINE.equals(gitEntityInfo.getStoreType())
+        || gitEntityInfo.getStoreType() == null) {
+      serviceToSave.setStoreType(StoreType.INLINE);
+
+      ServiceEntity savedServiceEntity = mongoTemplate.save(serviceToSave);
+      return savedServiceEntity;
+    }
+
+    if (cdGitXService.isNewGitXEnabledAndIsRemoteEntity(serviceToSave, gitEntityInfo)) {
+      addGitParamsToServiceEntity(serviceToSave, gitEntityInfo);
+      Scope scope = Scope.of(
+          serviceToSave.getAccountId(), serviceToSave.getOrgIdentifier(), serviceToSave.getProjectIdentifier());
+      String yamlToPush = serviceToSave.getYaml();
+
+      gitAwareEntityHelper.createEntityOnGit(serviceToSave, yamlToPush, scope);
+    } else {
+      // checks for git x settings?
+    }
+
+    ServiceEntity savedServiceEntity = mongoTemplate.save(serviceToSave);
+    return savedServiceEntity;
+  }
+
+  private void addGitParamsToServiceEntity(ServiceEntity serviceEntity, GitEntityInfo gitEntityInfo) {
+    serviceEntity.setStoreType(StoreType.REMOTE);
+    if (EmptyPredicate.isEmpty(serviceEntity.getRepoURL())) {
+      serviceEntity.setRepoURL(gitAwareEntityHelper.getRepoUrl(
+          serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier()));
+    }
+    serviceEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    serviceEntity.setRepo(gitEntityInfo.getRepoName());
+    serviceEntity.setFilePath(gitEntityInfo.getFilePath());
+    serviceEntity.setFallBackBranch(gitEntityInfo.getBranch());
   }
 }
