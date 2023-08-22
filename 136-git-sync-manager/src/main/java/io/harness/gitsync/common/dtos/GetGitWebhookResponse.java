@@ -19,6 +19,4 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class CreateWebhookResponse {
-  String webhookIdentifier;
-}
+public class GetGitWebhookResponse {}

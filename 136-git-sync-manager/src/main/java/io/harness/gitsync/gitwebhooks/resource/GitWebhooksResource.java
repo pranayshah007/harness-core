@@ -19,8 +19,9 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.gitsync.common.dtos.CreateWebhookRequestDTO;
-import io.harness.gitsync.common.dtos.CreateWebhookResponse;
+import io.harness.gitsync.common.dtos.CreateGitWebhookRequestDTO;
+import io.harness.gitsync.common.dtos.CreateGitWebhookResponse;
+import io.harness.gitsync.common.dtos.GetGitWebhookResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -36,8 +37,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
@@ -73,20 +77,54 @@ public class GitWebhooksResource {
   // TODO:Need to add rbac
 
   @POST
-  @ApiOperation(value = "Create a webhook", nickname = "createWebhook")
-  @Operation(operationId = "postWebhook", description = "Creates a Webhook", summary = "Create a Webhook",
+  @ApiOperation(value = "Create a webhook", nickname = "createGitWebhook")
+  @Operation(operationId = "postGitWebhook", description = "Creates a Git Webhook", summary = "Create a Git Webhook",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns created Webhook")
+        ApiResponse(responseCode = "default", description = "Returns created Git Webhook")
       },
       deprecated = true)
-  public ResponseDTO<CreateWebhookResponse>
-  createWebhook(@QueryParam("accountIdentifier") String accountIdentifier,
+  public ResponseDTO<CreateGitWebhookResponse>
+  createGitWebhook(@QueryParam("accountIdentifier") String accountIdentifier,
       @QueryParam("webhookIdentifier") String webhookIdentifier, @QueryParam("connectorRef") String connectorRef,
       @QueryParam("repoName") String repoName,
       @RequestBody(required = true,
-          description = "Request Body for Creating a webhook") CreateWebhookRequestDTO createWebhookRequestDTO) {
-    return ResponseDTO.newResponse(CreateWebhookResponse.builder().build());
+          description = "Request Body for Creating a webhook") CreateGitWebhookRequestDTO createGitWebhookRequestDTO) {
+    return ResponseDTO.newResponse(CreateGitWebhookResponse.builder().build());
+  }
+
+  @GET
+  @Path("/{webhookIdentifier}")
+  @ApiOperation(value = "Gets a git webhook by identifier", nickname = "getGitWebhook")
+  @Operation(operationId = "getGitWebhook", description = "Returns a git webhook by Identifier",
+      summary = "Fetch a git webhook",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns git webhook")
+      })
+  public ResponseDTO<GetGitWebhookResponse>
+  getGitWebhookByIdentifier(@QueryParam("accountIdentifier") String accountIdentifier,
+      @PathParam("webhookIdentifier") String webhookIdentifier) {
+    return ResponseDTO.newResponse(GetGitWebhookResponse.builder().build());
+  }
+
+  @PUT
+  @ApiOperation(value = "Update a webhook", nickname = "updateGitWebhook")
+  @Operation(operationId = "putWebhook", description = "Update a git Webhook", summary = "Update a Git Webhook",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns Update Git Webhook")
+      },
+      deprecated = true)
+  public ResponseDTO<String>
+  updateGitWebhook(@QueryParam("accountIdentifier") String accountIdentifier,
+      @QueryParam("webhookIdentifier") String webhookIdentifier, @QueryParam("connectorRef") String connectorRef,
+      @QueryParam("repoName") String repoName,
+      @RequestBody(required = true,
+          description = "Request Body for Creating a webhook") CreateGitWebhookRequestDTO createGitWebhookRequestDTO) {
+    return ResponseDTO.newResponse();
   }
 }

@@ -28,9 +28,9 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@ApiModel("CreateWebhookProperties")
+@ApiModel("CreateGitWebhookProperties")
 @OwnedBy(PIPELINE)
-@Schema(name = "CreateWebhookProperties", description = "Properties of the Create Webhook")
-public class CreateWebhookRequestDTO {
+@Schema(name = "CreateWebhookProperties", description = "Properties of the Git Webhook")
+public class CreateGitWebhookRequestDTO {
   @Schema(description = "List of folder paths that needs be tracked") List<String> folderPaths;
 }
