@@ -246,8 +246,9 @@ public class TerragruntStepHelper {
       return format("%s/%s/%s/%s", AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
           AmbianceUtils.getProjectIdentifier(ambiance), provisionerIdentifier);
     } else {
-      throw new InvalidRequestException(
-          format("Provisioner Identifier cannot contain special characters or spaces: [%s]", provisionerIdentifier));
+      throw new InvalidRequestException(format(
+          "Provisioner Identifier must start with a letter or _ and can then be followed by alphanumerics or _: [%s]",
+          provisionerIdentifier));
     }
   }
 
