@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.yaml.schema.beans.SchemaConstants;
@@ -80,6 +81,11 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
       fqnToNodeMap.put(childNodeRefValue, stepGroupNode);
       return;
     }
+    ObjectNodeWithMetadata strategyNode = getRootStrategyNode(currentFqn, objectNode);
+    if (strategyNode != null) {
+      fqnToNodeMap.put(childNodeRefValue, strategyNode);
+      return;
+    }
   }
 
   private ObjectNodeWithMetadata getRootStageNode(String currentFqn, ObjectNode objectNode) {
@@ -108,6 +114,19 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
             .objectNode(objectNode)
             .build();
       }
+    }
+    return null;
+  }
+
+  private ObjectNodeWithMetadata getRootStrategyNode(String currentFqn, ObjectNode objectNode) {
+    String StrategyNodeName = StrategyConfig.class.getSimpleName();
+    if (StrategyNodeName.equals(JsonPipelineUtils.getText(objectNode, "title"))) {
+      return ObjectNodeWithMetadata.builder()
+          .isRootNode(true)
+          .nodeGroup(StepCategory.STRATEGY.name().toLowerCase())
+          .nodeType(StepCategory.STRATEGY.name().toLowerCase())
+          .objectNode(objectNode)
+          .build();
     }
     return null;
   }
