@@ -75,9 +75,11 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
         log.info("It's not null");
       }
 
-      timeSeries.setServiceName((entityIdToNameCache.get(new HarnessEntitiesService.CacheKey(
-                                     timeSeries.getService(), HarnessEntitiesService.HarnessEntities.SERVICE)))
-                                    .toString());
+      timeSeries.setServiceName(entityIdToNameCache.get(new HarnessEntitiesService.CacheKey(
+          timeSeries.getService(), HarnessEntitiesService.HarnessEntities.SERVICE)));
+
+      log.info("Yes the service name is finally available and is {}", timeSeries.getServiceName());
+
     }
 
     else {
