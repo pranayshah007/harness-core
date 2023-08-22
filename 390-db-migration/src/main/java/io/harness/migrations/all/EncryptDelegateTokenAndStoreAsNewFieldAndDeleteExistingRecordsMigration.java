@@ -7,6 +7,7 @@
 
 package io.harness.migrations.all;
 
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -35,13 +36,16 @@ public class EncryptDelegateTokenAndStoreAsNewFieldAndDeleteExistingRecordsMigra
   @Inject private DelegateSecretManager delegateSecretManager;
   @Inject private SecretsDao secretsDao;
   private static final String MIGRATE_DELEGATE_TOKENS = "MigrateDelegateTokens: ";
+  private static final int QUERY_LIMIT = 180000;
 
   @Override
   public void migrate() {
     log.info(MIGRATE_DELEGATE_TOKENS + "Start migration to upsert encrypted delegateToken");
     List<String> updateList = new ArrayList<>();
-    Query<DelegateToken> query =
-        persistence.createQuery(DelegateToken.class, excludeAuthority).field(DelegateTokenKeys.value).exists();
+    Query<DelegateToken> query = persistence.createQuery(DelegateToken.class, excludeAuthority)
+                                     .field(DelegateTokenKeys.value)
+                                     .exists()
+                                     .limit(NO_LIMIT);
     try (HIterator<DelegateToken> iterator = new HIterator<>(query.fetch())) {
       while (iterator.hasNext()) {
         updateList.add(iterator.next().getUuid());
