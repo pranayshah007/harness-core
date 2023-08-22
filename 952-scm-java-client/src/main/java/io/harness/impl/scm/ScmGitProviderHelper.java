@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cistatus.service.GithubAppConfig;
 import io.harness.cistatus.service.GithubService;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -64,6 +65,13 @@ public class ScmGitProviderHelper {
     String repoName = gitClientHelper.getGitRepo(url);
     String ownerName = gitClientHelper.getGitOwner(url, false);
     return ownerName + "/" + repoName;
+  }
+
+  private String getOwnerFromUrl(GithubConnectorDTO githubConnectorDTO) {
+    if (githubConnectorDTO.getConnectionType() == GitConnectionType.ACCOUNT) {
+      return gitClientHelper.getGitOwner(githubConnectorDTO.getUrl(), true);
+    }
+    return gitClientHelper.getGitOwner(githubConnectorDTO.getUrl(), false);
   }
 
   // An unclean method which might change/mature with time but we need to maintain bg compatibilty.
@@ -135,10 +143,19 @@ public class ScmGitProviderHelper {
   }
 
   public String getRepoOwner(ScmConnector scmConnector) {
-    String slug = getSlug(scmConnector);
-    if (isEmpty(slug)) {
-      return "";
+    if (scmConnector instanceof GithubConnectorDTO) {
+      return getOwnerFromUrl(((GithubConnectorDTO) scmConnector));
+    } else if (scmConnector instanceof GitlabConnectorDTO) {
+      return getSlugFromUrlForGitlab((GitlabConnectorDTO) scmConnector);
+    } else if (scmConnector instanceof BitbucketConnectorDTO) {
+      return getSlugFromUrlForBitbucket(((BitbucketConnectorDTO) scmConnector).getUrl());
+    } else if (scmConnector instanceof AzureRepoConnectorDTO) {
+      return getSlugFromUrlForAzureRepo(((AzureRepoConnectorDTO) scmConnector).getUrl());
+    } else if (scmConnector instanceof HarnessConnectorDTO) {
+      return getSlugFromHarnessUrl((HarnessConnectorDTO) scmConnector);
+    } else {
+      throw new NotImplementedException(
+          String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
     }
-    return slug.split("/")[0];
   }
 }
