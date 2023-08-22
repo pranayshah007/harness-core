@@ -3273,17 +3273,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/IndividualSchemaResponseBody'
-        application/xml:
-          schema:
-            type: object
-            properties:
-              data:
-                type: object
-                x-stoplight:
-                  id: hwxeuqg9ay8nk
-        multipart/form-data:
-          schema:
-            $ref: '#/components/schemas/IndividualSchemaResponseBody'
   requestBodies:
     PipelineCreateRequestBody:
       content:

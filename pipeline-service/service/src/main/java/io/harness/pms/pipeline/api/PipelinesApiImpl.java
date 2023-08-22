@@ -51,6 +51,7 @@ import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationS
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
+import io.harness.pms.yaml.individualschema.PipelineSchemaMetadata;
 import io.harness.pms.yaml.individualschema.PipelineSchemaRequest;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateRequestBody;
@@ -140,12 +141,14 @@ public class PipelinesApiImpl implements PipelinesApi {
       String nodeType, String nodeGroupDifferentiator) {
     AbstractStaticSchemaParser abstractStaticSchemaParser =
         staticSchemaParserFactory.getParser(PIPELINE, PipelineVersion.V0);
-    ObjectNode schema =
-        abstractStaticSchemaParser.getIndividualSchema(PipelineSchemaRequest.builder()
-                                                           .nodeGroup(nodeGroup)
-                                                           .nodeGroupDifferentiator(nodeGroupDifferentiator)
-                                                           .nodeType(nodeType)
-                                                           .build());
+    ObjectNode schema = abstractStaticSchemaParser.getIndividualSchema(
+        PipelineSchemaRequest.builder()
+            .individualSchemaMetadata(PipelineSchemaMetadata.builder()
+                                          .nodeGroup(nodeGroup)
+                                          .nodeGroupDifferentiator(nodeGroupDifferentiator)
+                                          .nodeType(nodeType)
+                                          .build())
+            .build());
     IndividualSchemaResponseBody responseBody = new IndividualSchemaResponseBody();
     responseBody.setData(schema);
     return Response.ok().entity(responseBody).build();
