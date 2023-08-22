@@ -9,6 +9,7 @@ package io.harness.delegate.task.k8s;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResourceId;
 
@@ -25,7 +26,7 @@ public class K8sRollingDeployResponse implements K8sNGTaskResponse {
   List<K8sPod> previousK8sPodList;
   String loadBalancer;
   List<KubernetesResourceId> prunedResourceIds;
-
+  HelmChartInfo helmChartInfo;
   public List<K8sPod> getPreviousK8sPodList() {
     return previousK8sPodList;
   }

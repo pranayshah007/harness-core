@@ -86,15 +86,6 @@ cimanager-mongo:
   connectionsPerHost: 300
   indexManagerMode: AUTO
   aliasDBName: harnessci
-pmsMongo:
-  uri: mongodb://localhost:27017/pms-harness
-  connectTimeout: 30000
-  serverSelectionTimeout: 90000
-  socketTimeout: 360000
-  maxConnectionIdleTime: 600000
-  connectionsPerHost: 300
-  indexManagerMode: AUTO
-  aliasDBName: pms-harness
 
 enableAuth: false
 
@@ -116,6 +107,7 @@ sscaServiceConfig:
     baseUrl: http://localhost:8186
     connectTimeOutSeconds: 40
     readTimeOutSeconds: 40
+  sscaManagerEnabled: ${SSCA_MANAGER_ENABLED:-false}
   serviceSecret: secret
 
 stoServiceConfig:
@@ -379,17 +371,17 @@ ciExecutionServiceConfig:
       gcsUploadConfig:
         name: github.com/drone-plugins/drone-gcs@refs/tags/v1.3.1
       cacheS3Config:
-        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.12
       cacheGCSConfig:
-        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
+        name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.12
       gitCloneConfig:
         name: github.com/wings-software/drone-git@refs/tags/v1.3.9
       dockerBuildxConfig:
-        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.1
+        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.2
       dockerBuildxEcrConfig:
-        name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
+        name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.2
       dockerBuildxGcrConfig:
-        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.1
+        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.2
       dockerBuildxAcrConfig:
         name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.0
   gitnessConfig:

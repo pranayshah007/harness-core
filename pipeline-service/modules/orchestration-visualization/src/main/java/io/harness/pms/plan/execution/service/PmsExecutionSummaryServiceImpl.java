@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution.service;
+
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.OrchestrationStepTypes;
@@ -39,6 +40,7 @@ import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNod
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 
 import com.google.inject.Inject;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -245,6 +247,13 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   }
 
   @Override
+  public void updateNotes(String planExecutionId, Boolean notesExistForPlanExecutionId) {
+    Update update = new Update();
+    update.set(PlanExecutionSummaryKeys.notesExistForPlanExecutionId, notesExistForPlanExecutionId);
+    update(planExecutionId, update);
+  }
+
+  @Override
   public boolean handleNodeExecutionUpdateFromGraphUpdate(
       String planExecutionId, NodeExecution nodeExecution, Update update) {
     // Update strategy node data if it is not an identity node and strategy node
@@ -298,6 +307,18 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       pmsExecutionSummaryRepository.deleteAllByPlanExecutionIdIn(planExecutionIds);
       return true;
     });
+  }
+
+  @Override
+  public void updateTTL(String planExecutionId, Date ttlDate) {
+    if (EmptyPredicate.isEmpty(planExecutionId)) {
+      return;
+    }
+    Criteria planExecutionIdCriteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
+    Query query = new Query(planExecutionIdCriteria);
+    Update ops = new Update();
+    ops.set(PlanExecutionSummaryKeys.validUntil, ttlDate);
+    pmsExecutionSummaryRepository.multiUpdate(query, ops);
   }
 
   /**

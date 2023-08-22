@@ -105,6 +105,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                               .renewable(true)
                                               .build();
     when(NGVaultTaskHelper.getVaultAwmIamAuthLoginResult(vaultConfig)).thenReturn(loginResult);
+    when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(vaultConfig.authToken);
     VaultK8sLoginResult vaultK8sLoginResult = VaultK8sLoginResult.builder()
                                                   .clientToken(K8s_AUTH_TOKEN)
                                                   .policies(new ArrayList<>())
@@ -147,6 +148,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
     when(vaultRestClient.writeSecret(
              AWS_IAM_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), fullPath, plainText))
         .thenAnswer(invocationOnMock -> true);
+    when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(AWS_IAM_TOKEN);
     EncryptedRecord encryptedRecord =
         hashicorpVaultEncryptor.createSecret(vaultConfig.getAccountId(), name, plainText, vaultConfig);
     assertThat(encryptedRecord).isNotNull();
@@ -165,6 +167,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
     when(vaultRestClient.writeSecret(
              K8s_AUTH_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), fullPath, plainText))
         .thenAnswer(invocationOnMock -> true);
+    when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(K8s_AUTH_TOKEN);
     EncryptedRecord encryptedRecord =
         hashicorpVaultEncryptor.createSecret(vaultConfig.getAccountId(), name, plainText, vaultConfig);
     assertThat(encryptedRecord).isNotNull();
@@ -282,6 +285,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
+    when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(AWS_IAM_TOKEN);
     EncryptedRecord encryptedRecord =
         hashicorpVaultEncryptor.updateSecret(vaultConfig.getAccountId(), name, plainText, oldRecord, vaultConfig);
     assertThat(encryptedRecord).isNotNull();
@@ -304,6 +308,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .build();
+    when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(K8s_AUTH_TOKEN);
     EncryptedRecord encryptedRecord =
         hashicorpVaultEncryptor.updateSecret(vaultConfig.getAccountId(), name, plainText, oldRecord, vaultConfig);
     assertThat(encryptedRecord).isNotNull();
@@ -443,6 +448,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
     when(vaultRestClient.readSecret(AWS_IAM_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
              vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
         .thenAnswer(invocationOnMock -> plainText);
+    when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(AWS_IAM_TOKEN);
     EncryptedRecord encryptedRecord =
         hashicorpVaultEncryptor.renameSecret(vaultConfig.getAccountId(), name, oldRecord, vaultConfig);
     assertThat(encryptedRecord).isNotNull();
@@ -468,6 +474,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
     when(vaultRestClient.readSecret(K8s_AUTH_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(),
              vaultConfig.getBasePath() + "/" + oldRecord.getEncryptionKey()))
         .thenAnswer(invocationOnMock -> plainText);
+    when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(K8s_AUTH_TOKEN);
     EncryptedRecord encryptedRecord =
         hashicorpVaultEncryptor.renameSecret(vaultConfig.getAccountId(), name, oldRecord, vaultConfig);
     assertThat(encryptedRecord).isNotNull();
@@ -659,6 +666,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
     when(vaultRestClient.readSecret(
              AWS_IAM_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), record.getPath()))
         .thenAnswer(invocationOnMock -> plainText);
+    when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(AWS_IAM_TOKEN);
     char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), record, vaultConfig);
     assertThat(value).isEqualTo(plainText.toCharArray());
   }
@@ -674,6 +682,7 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
     when(vaultRestClient.readSecret(
              K8s_AUTH_TOKEN, vaultConfig.getNamespace(), vaultConfig.getSecretEngineName(), record.getPath()))
         .thenAnswer(invocationOnMock -> plainText);
+    when(NGVaultTaskHelper.getToken(vaultConfig)).thenReturn(K8s_AUTH_TOKEN);
     char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), record, vaultConfig);
     assertThat(value).isEqualTo(plainText.toCharArray());
   }

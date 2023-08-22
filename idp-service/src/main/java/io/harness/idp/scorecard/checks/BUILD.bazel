@@ -21,6 +21,7 @@ java_library(
         "//clients/access-control/sdk:module",
         "//idp-service/contracts/openapi/v1:idp-service-server-spec-module",
         "//idp-service/src/main/java/io/harness/idp/common:module",
+        "//idp-service/src/main/java/io/harness/idp/events/producers:module",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_springframework_data_spring_data_commons",
         "@maven//:org_springframework_data_spring_data_mongodb",

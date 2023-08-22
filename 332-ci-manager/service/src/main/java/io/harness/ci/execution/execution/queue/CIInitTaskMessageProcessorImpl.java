@@ -15,10 +15,12 @@ import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.repositories.CIExecutionRepository;
 import io.harness.tasks.FailureResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -35,7 +37,7 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
   @Inject @Named("ciInitTaskExecutor") ExecutorService initTaskExecutor;
   @Inject AsyncWaitEngine asyncWaitEngine;
   @Inject WaitNotifyEngine waitNotifyEngine;
-
+  @Inject CIExecutionRepository ciExecutionRepository;
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   @Override
@@ -51,6 +53,8 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
             AmbianceUtils.getAccountId(ambiance)));
         return builder.success(false).build();
       }
+      ciExecutionRepository.updateExecutionStatus(
+          AmbianceUtils.getAccountId(ambiance), ambiance.getStageExecutionId(), Status.RUNNING.toString());
       initTaskExecutor.submit(() -> {
         try {
           asyncWaitEngine.taskAcquired(ciInitTaskArgs.getCallbackId());

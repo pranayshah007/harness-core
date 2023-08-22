@@ -78,7 +78,8 @@ public abstract class AbstractK8sStepExecutorTestBase extends CategoryTest {
         .getDelegateK8sCommandFlag(Collections.singletonList(K8sStepCommandFlag.builder()
                                                                  .commandType(K8sCommandFlagType.Apply)
                                                                  .flag(ParameterField.createValueField("--server-side"))
-                                                                 .build()));
+                                                                 .build()),
+            ambiance);
     doReturn(releaseName).when(cdStepHelper).getReleaseName(ambiance, infrastructureOutcome);
     doReturn(TaskChainResponse.builder().chainEnd(true).build())
         .when(k8sStepHelper)

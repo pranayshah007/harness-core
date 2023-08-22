@@ -26,6 +26,14 @@ public interface PlanExecutionRepositoryCustom {
    */
   PlanExecution updatePlanExecution(Query query, Update updateOps, boolean upsert);
 
+  /**
+   * Update multiple records of Plan execution with given find query and updateOperations
+   * @param query
+   * @param updateOps
+   * @return
+   */
+  void multiUpdatePlanExecution(Query query, Update updateOps);
+
   PlanExecution getPlanExecutionWithProjections(String planExecutionId, List<String> excludedFieldNames);
 
   PlanExecution getPlanExecutionWithIncludedProjections(String planExecutionId, List<String> includedFieldNames);

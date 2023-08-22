@@ -35,8 +35,10 @@ import io.harness.springdata.PersistenceUtils;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.mongodb.DuplicateKeyException;
+import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -49,6 +51,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
@@ -170,6 +173,25 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
         PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting ExecutionSweepingOutputInstance; attempt: {}",
             "[Failed]: Failed deleting ExecutionSweepingOutputInstance; attempt: {}");
     Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, ExecutionSweepingOutputInstance.class));
+  }
+
+  @Override
+  public void updateTTL(String planExecutionId, Date ttlDate) {
+    Criteria criteria = where(ExecutionSweepingOutputKeys.planExecutionId).is(planExecutionId);
+    Query query = new Query(criteria);
+    Update ops = new Update();
+    ops.set(ExecutionSweepingOutputKeys.validUntil, ttlDate);
+    RetryPolicy<Object> retryPolicy =
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed updating TTL ExecutionSweepingOutputInstance; attempt: {}",
+            "[Failed]: Failed updating TTL ExecutionSweepingOutputInstance; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> {
+      UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, ExecutionSweepingOutputInstance.class);
+      if (!updateResult.wasAcknowledged()) {
+        log.warn("No ExecutionSweepingOutputInstance could be marked as updated TTL for given planExecutionIds - "
+            + planExecutionId);
+      }
+      return true;
+    });
   }
 
   private RawOptionalSweepingOutput resolveOptionalUsingRuntimeId(Ambiance ambiance, RefObject refObject) {

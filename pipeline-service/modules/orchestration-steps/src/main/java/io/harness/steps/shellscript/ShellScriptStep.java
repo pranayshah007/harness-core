@@ -25,7 +25,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.TaskExecutableResponse;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -34,6 +33,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.OutputExpressionConstants;
@@ -63,13 +63,13 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     ShellScriptStepParameters shellScriptStepParameters = (ShellScriptStepParameters) stepParameters.getSpec();
     TaskParameters taskParameters =
         shellScriptHelperService.buildShellScriptTaskParametersNG(ambiance, shellScriptStepParameters);
@@ -84,7 +84,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
     }
   }
 
-  private TaskRequest obtainBashTask(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskRequest obtainBashTask(Ambiance ambiance, StepBaseParameters stepParameters,
       ShellScriptStepParameters shellScriptStepParameters, TaskParameters taskParameters) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     final List<String> units = shellScriptStepParameters.getAllCommandUnits();
@@ -102,7 +102,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
         stepHelper.getEnvironmentType(ambiance));
   }
 
-  private TaskRequest obtainPowerShellTask(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskRequest obtainPowerShellTask(Ambiance ambiance, StepBaseParameters stepParameters,
       ShellScriptStepParameters shellScriptStepParameters, TaskParameters taskParameters) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
 
@@ -123,7 +123,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<ShellScriptTaskResponseNG> responseSupplier) throws Exception {
     try {
       StepResponseBuilder stepResponseBuilder = StepResponse.builder();
@@ -163,17 +163,17 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
 
   @Override
   public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, TaskExecutableResponse executableResponse) {
+      Ambiance ambiance, StepBaseParameters stepParameters, TaskExecutableResponse executableResponse) {
     closeLogStream(ambiance, stepParameters);
   }
 
   @Override
   public void handleExpire(
-      Ambiance ambiance, StepElementParameters stepParameters, TaskExecutableResponse executableResponse) {
+      Ambiance ambiance, StepBaseParameters stepParameters, TaskExecutableResponse executableResponse) {
     closeLogStream(ambiance, stepParameters);
   }
 
-  private void closeLogStream(Ambiance ambiance, StepElementParameters stepParameters) {
+  private void closeLogStream(Ambiance ambiance, StepBaseParameters stepParameters) {
     try {
       Thread.sleep(500, 0);
     } catch (InterruptedException e) {

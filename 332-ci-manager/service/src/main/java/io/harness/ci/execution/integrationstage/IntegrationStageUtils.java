@@ -13,7 +13,6 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.HOSTED_VM;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
-import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_BUILD_MULTIPLIER;
 import static io.harness.ci.commonconstants.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
@@ -854,9 +853,6 @@ public class IntegrationStageUtils {
     } else if (type == VM || type == Infrastructure.Type.DOCKER) {
       infraOSType = InfraInfoUtils.getInfraOS(infrastructure).toString();
       infraHostType = SELF_HOSTED;
-    } else if (infrastructure.getType() == KUBERNETES_HOSTED) {
-      infraOSType = getK8OS(infrastructure).toString();
-      infraHostType = HARNESS_HOSTED;
     } else if (infrastructure.getType() == HOSTED_VM) {
       infraOSType = VmInitializeUtils.getOS(infrastructure).toString();
       infraOSArchType = VmInitializeUtils.getArchType(infrastructure).toString();
@@ -880,7 +876,7 @@ public class IntegrationStageUtils {
   }
 
   public static Long getStageTtl(CILicenseService ciLicenseService, String accountId, Infrastructure infrastructure) {
-    if (infrastructure.getType() != HOSTED_VM && infrastructure.getType() != KUBERNETES_HOSTED) {
+    if (infrastructure.getType() != HOSTED_VM) {
       return CIConstants.STAGE_MAX_TTL_SECS;
     }
 
@@ -899,7 +895,6 @@ public class IntegrationStageUtils {
   public static Double getBuildTimeMultiplierForHostedInfra(Infrastructure infrastructure) {
     CIInfraDetails ciInfraDetails = getCiInfraDetails(infrastructure);
     switch (infrastructure.getType()) {
-      case KUBERNETES_HOSTED:
       case HOSTED_VM:
         if (isNotEmpty(ciInfraDetails.getInfraOSType())) {
           OSType osType = OSType.fromString(ciInfraDetails.getInfraOSType());

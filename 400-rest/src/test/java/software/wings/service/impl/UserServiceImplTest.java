@@ -23,6 +23,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HEN;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.NANDAN;
@@ -1154,5 +1155,18 @@ public class UserServiceImplTest extends WingsBaseTest {
             expectedQuery.criteria(UserKeys.email).containsIgnoreCase(searchTerm)),
         expectedQuery.criteria(UserKeys.disabled).notEqual(true));
     assertThat(expectedQuery).isEqualTo(resultantQuery);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testRemoveEmailDomainFromUserName() {
+    String userName = "User Name";
+    String userNameWithoutEmailDomain = userServiceImpl.removeEmailDomainFromUserName(userName);
+    assertThat(userNameWithoutEmailDomain).isEqualTo(userName);
+
+    String userNameAsEmail = "user.name@harness.io";
+    userNameWithoutEmailDomain = userServiceImpl.removeEmailDomainFromUserName(userNameAsEmail);
+    assertThat(userNameWithoutEmailDomain).isEqualTo("user.name");
   }
 }

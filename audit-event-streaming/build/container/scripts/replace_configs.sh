@@ -46,6 +46,10 @@ if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
   export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.auditDbConfig.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.auditDbConfig.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$EVENT_COLLECTION_BATCH_JOB_CRON" ]]; then
   export EVENT_COLLECTION_BATCH_JOB_CRON; yq -i '.jobCommonConfig.eventCollectionBatchJob.cron=env(EVENT_COLLECTION_BATCH_JOB_CRON)' $CONFIG_FILE
 fi

@@ -41,6 +41,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.mongodb.MongoTimeoutException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -64,6 +65,7 @@ import org.redisson.api.RLocalCachedMap;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateCacheImpl implements DelegateCache {
   private static final int MAX_DELEGATE_META_INFO_ENTRIES = 10000;
+  private static final String MONGO_TIMEOUT_MESSAGE = "Failed to connect to mongodb when fetching delegate from cache.";
 
   @Inject private HPersistence persistence;
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
@@ -188,7 +190,13 @@ public class DelegateCacheImpl implements DelegateCache {
     } catch (ExecutionException e) {
       log.error("Execution exception", e);
     } catch (UncheckedExecutionException e) {
-      log.error("Delegate not found exception", e);
+      if (e.getCause() instanceof MongoTimeoutException
+          || (null != e.getCause() && e.getCause().getCause() instanceof MongoTimeoutException)) {
+        log.error(MONGO_TIMEOUT_MESSAGE, e.getCause());
+        throw new MongoTimeoutException(MONGO_TIMEOUT_MESSAGE);
+      } else {
+        log.error("Delegate not found exception", e);
+      }
     }
     return null;
   }

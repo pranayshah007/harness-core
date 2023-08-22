@@ -100,6 +100,7 @@ sscaServiceConfig:
     baseUrl: http://localhost:8186
     connectTimeOutSeconds: 40
     readTimeOutSeconds: 40
+  sscaManagerEnabled: ${SSCA_MANAGER_ENABLED:-false}
   serviceSecret: secret
 
 managerTarget: localhost:9880

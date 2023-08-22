@@ -14,4 +14,5 @@ import lombok.Data;
 @Builder
 public class ManifestTriggerEventInfo implements NGTriggerEventInfo {
   PollingDocumentInfo pollingDocumentInfo;
+  String build;
 }

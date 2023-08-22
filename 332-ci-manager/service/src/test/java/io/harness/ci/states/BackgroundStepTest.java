@@ -19,6 +19,7 @@ import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -189,7 +190,7 @@ public class BackgroundStepTest extends CIExecutionTestBase {
         .thenReturn(liteEnginePodDetailsOutcome);
     when(ciExecutionServiceConfig.isLocal()).thenReturn(false);
 
-    when(ciDelegateTaskExecutor.queueParkedDelegateTask(any(), anyLong(), any())).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueParkedDelegateTask(any(), anyLong(), any(), anyList())).thenReturn(callbackId);
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     when(backgroundStepProtobufSerializer.serializeStepWithStepParameters(

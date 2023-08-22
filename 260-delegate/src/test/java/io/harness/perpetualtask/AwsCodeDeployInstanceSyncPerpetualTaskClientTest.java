@@ -135,7 +135,7 @@ public class AwsCodeDeployInstanceSyncPerpetualTaskClientTest extends CategoryTe
 
     assertThat(validationTask.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(validationTask.getSetupAbstractions().get(Cd1SetupFields.APP_ID_FIELD)).isEqualTo(GLOBAL_APP_ID);
-    assertThat(validationTask.getData().isAsync()).isFalse();
+    assertThat(validationTask.getData().isAsync()).isTrue();
     assertThat(validationTask.getData().getParameters()).isNotEmpty();
     assertThat(validationTask.getData().getParameters()[0]).isInstanceOf(AwsEc2ListInstancesRequest.class);
     AwsEc2ListInstancesRequest awsRequest = (AwsEc2ListInstancesRequest) validationTask.getData().getParameters()[0];

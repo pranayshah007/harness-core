@@ -20,6 +20,7 @@ import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_IP_ALLOWLIST;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_TRIGGERS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NG_USER_CLEANUP_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SYNC_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
@@ -95,6 +96,7 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
+import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
@@ -397,7 +399,29 @@ public class AccountServiceImpl implements AccountService {
       log.error(format("Failed to publish account %s event for accountId %s via event framework.", action, accountId));
     }
   }
-
+  private String publishAccountChangeEventViaEventFramework(
+      String accountId, String orgIdentifier, String projectIdentifier, String action) {
+    log.info("testDeletionLog: producing event to events framework for account {}, action {}", accountId, action);
+    try {
+      return eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(ImmutableMap.of(EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                  EventsFrameworkMetadataConstants.PROJECT_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
+              .setData(ProjectEntityChangeDTO.newBuilder()
+                           .setAccountIdentifier(accountId)
+                           .setOrgIdentifier(orgIdentifier == null ? "" : orgIdentifier)
+                           .setIdentifier(projectIdentifier == null ? "" : projectIdentifier)
+                           .build()
+                           .toByteString())
+              .build());
+    } catch (Exception ex) {
+      log.error(format("Failed to publish account %s event for accountId %s , org %s , project %s via event framework.",
+          action, accountId, orgIdentifier, projectIdentifier));
+      throw new InvalidRequestException(
+          format("Failed to publish account %s event for accountId %s , org %s , project %s via event framework.",
+              action, accountId, orgIdentifier, projectIdentifier));
+    }
+  }
   private void publishAccountChangeEvent(Account account) {
     EventData eventData = EventData.builder().eventInfo(new AccountEntityEvent(account)).build();
     eventPublisher.publishEvent(
@@ -599,6 +623,13 @@ public class AccountServiceImpl implements AccountService {
     log.info("Publish disable ip event for account" + accountId);
     publishAccountChangeEventViaEventFramework(accountId, DISABLE_IP_ALLOWLIST);
     return true;
+  }
+
+  @Override
+  public String disableTriggers(String accountId, String orgIdentifier, String projectIdentifier) {
+    log.info("Publish disable triggers event for account " + accountId + " orgIdentifier " + orgIdentifier
+        + " projectIdentifier " + projectIdentifier);
+    return publishAccountChangeEventViaEventFramework(accountId, orgIdentifier, projectIdentifier, DISABLE_TRIGGERS);
   }
 
   @Override

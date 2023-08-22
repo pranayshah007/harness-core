@@ -37,6 +37,8 @@ public class AwsCdkDestroyStep extends AbstractContainerStepV2<StepElementParame
 
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
+  @Inject private AwsCdkHelper awsCdkStepHelper;
+
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_CDK_DESTROY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -58,12 +60,10 @@ public class AwsCdkDestroyStep extends AbstractContainerStepV2<StepElementParame
     AwsCdkDestroyStepParameters awsCdkDestroyStepParameters =
         (AwsCdkDestroyStepParameters) stepElementParameters.getSpec();
 
-    Map<String, String> envVarMap = new HashMap<>();
-
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
         awsCdkDestroyStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
@@ -75,6 +75,7 @@ public class AwsCdkDestroyStep extends AbstractContainerStepV2<StepElementParame
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    // we need to check if rbac check is req or not.
+    awsCdkStepHelper.validateFeatureEnabled(ambiance);
+    awsCdkStepHelper.validateRuntimePermissions(ambiance, (AwsCdkBaseStepInfo) stepParameters.getSpec());
   }
 }

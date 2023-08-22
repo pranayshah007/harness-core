@@ -170,7 +170,7 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
     }
 
     Map<String, String> k8sCommandFlag =
-        k8sStepHelper.getDelegateK8sCommandFlag(k8sApplyStepParameters.getCommandFlags());
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sApplyStepParameters.getCommandFlags(), ambiance);
     applyRequestBuilder.k8sCommandFlags(k8sCommandFlag);
 
     K8sApplyRequest k8sApplyRequest = applyRequestBuilder.build();

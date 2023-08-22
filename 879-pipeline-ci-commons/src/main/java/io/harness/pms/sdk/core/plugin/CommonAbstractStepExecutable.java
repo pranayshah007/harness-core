@@ -12,6 +12,7 @@ import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DET
 import static io.harness.ci.commonconstants.CIExecutionConstants.UNDERSCORE_SEPARATOR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_PORT;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.TMP_PATH;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
@@ -39,7 +40,6 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
@@ -205,7 +205,8 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
   private AsyncExecutableResponse executeK8AsyncAfterRbac(Ambiance ambiance, String stepIdentifier, String runtimeId,
       CIStepInfo ciStepInfo, String stepParametersName, String accountId, String logKey, long timeoutInMillis,
       String stringTimeout, K8StageInfraDetails k8StageInfraDetails, StageDetails stageDetails) {
-    String parkedTaskId = ciDelegateTaskExecutor.queueParkedDelegateTask(ambiance, timeoutInMillis, accountId);
+    String parkedTaskId =
+        ciDelegateTaskExecutor.queueParkedDelegateTask(ambiance, timeoutInMillis, accountId, List.of());
     OSType os = getK8OS(k8StageInfraDetails.getInfrastructure());
     String podName = k8StageInfraDetails.getPodName();
     UnitStep unitStep =
@@ -229,7 +230,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(parkedTaskId)
         .addCallbackIds(liteEngineTaskId)
-        .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
+        .addAllLogKeys(emptyIfNull(singletonList(logKey)))
         .build();
   }
 
@@ -274,12 +275,12 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     Optional<CIStageOutput> ciStageOutputResponse =
         ciStageOutputRepository.findFirstByStageExecutionId(stageExecutionId);
     CIStageOutput ciStageOutput =
-        CIStageOutput.builder().outputs(new HashMap<String, String>()).stageExecutionId(stageExecutionId).build();
+        CIStageOutput.builder().outputs(new HashMap<>()).stageExecutionId(stageExecutionId).build();
     if (ciStageOutputResponse.isPresent()) {
       ciStageOutput = ciStageOutputResponse.get();
     }
     Map<String, String> outputs = ciStageOutput.getOutputs();
-    outputVariables.entrySet().stream().forEach(entry -> outputs.put(entry.getKey(), entry.getValue()));
+    outputs.putAll(outputVariables);
     ciStageOutputRepository.save(ciStageOutput);
   }
 
@@ -326,31 +327,30 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       VmTaskExecutionResponse vmTaskExecutionResponse = (VmTaskExecutionResponse) responseData;
       if (vmTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
           || vmTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
-        abortTasks(allCallbackIds, callbackId, ambiance);
+        abortTasks(allCallbackIds, callbackId);
       }
     }
     if (responseData instanceof K8sTaskExecutionResponse) {
       K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
       if (k8sTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
           || k8sTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
-        abortTasks(allCallbackIds, callbackId, ambiance);
+        abortTasks(allCallbackIds, callbackId);
       }
     }
 
     if (responseData instanceof ErrorNotifyResponseData) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
   }
 
-  private void abortTasks(List<String> allCallbackIds, String callbackId, Ambiance ambiance) {
+  private void abortTasks(List<String> allCallbackIds, String callbackId) {
     List<String> callBackIds =
         allCallbackIds.stream().filter(cid -> !cid.equals(callbackId)).collect(Collectors.toList());
-    callBackIds.forEach(callbackId1 -> {
-      waitNotifyEngine.doneWith(callbackId1,
-          ErrorNotifyResponseData.builder()
-              .errorMessage("Delegate is not able to connect to created build farm")
-              .build());
-    });
+    callBackIds.forEach(callbackId1
+        -> waitNotifyEngine.doneWith(callbackId1,
+            ErrorNotifyResponseData.builder()
+                .errorMessage("Delegate is not able to connect to created build farm")
+                .build()));
   }
 
   @Override
@@ -525,7 +525,12 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
                                            .build();
     List<TaskSelector> taskSelectors = fetchDelegateSelector(ambiance);
     return queueDelegateTask(ambiance, timeout, accountId, executor, params,
-        taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>());
+        emptyIfNull(taskSelectors)
+            .stream()
+            // maintaining backward compatibility here
+            .map(ts -> TaskSelector.newBuilder().setSelector(ts.getSelector()).build())
+            .collect(Collectors.toList()),
+        new ArrayList<>());
   }
 
   protected abstract String getDelegateSvcEndpoint(Ambiance ambiance);
@@ -533,7 +538,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
   protected abstract boolean getIsLocal(Ambiance ambiance);
 
   private String queueDelegateTask(Ambiance ambiance, long timeout, String accountId, CIDelegateTaskExecutor executor,
-      CIExecuteStepTaskParams ciExecuteStepTaskParams, List<String> taskSelectors,
+      CIExecuteStepTaskParams ciExecuteStepTaskParams, List<TaskSelector> taskSelectors,
       List<String> eligibleToExecuteDelegateIds) {
     String taskType = CI_EXECUTE_STEP;
     boolean executeOnHarnessHostedDelegates = false;

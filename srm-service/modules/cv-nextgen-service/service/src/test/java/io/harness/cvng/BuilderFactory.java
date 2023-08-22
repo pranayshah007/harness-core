@@ -1708,6 +1708,22 @@ public class BuilderFactory {
     return testVerificationJob;
   }
 
+  public VerificationJob getAutoVerificationJob(List<CVConfig> cvConfigs) {
+    AutoVerificationJob autoVerificationJob = new AutoVerificationJob();
+    autoVerificationJob.setAccountId(context.getAccountId());
+    autoVerificationJob.setIdentifier("identifier");
+    autoVerificationJob.setJobName(generateUuid());
+    autoVerificationJob.setSensitivity(Sensitivity.MEDIUM);
+    autoVerificationJob.setServiceIdentifier(context.getServiceIdentifier(), false);
+    autoVerificationJob.setEnvIdentifier(context.getEnvIdentifier(), false);
+    autoVerificationJob.setDuration(Duration.ofMinutes(5));
+    autoVerificationJob.setMonitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
+    autoVerificationJob.setProjectIdentifier(context.getProjectIdentifier());
+    autoVerificationJob.setOrgIdentifier(context.getOrgIdentifier());
+    autoVerificationJob.setCvConfigs(cvConfigs);
+    return autoVerificationJob;
+  }
+
   public VerificationJob getDeploymentVerificationJob() {
     CanaryVerificationJob canaryVerificationJob = new CanaryVerificationJob();
     canaryVerificationJob.setAccountId(context.getAccountId());

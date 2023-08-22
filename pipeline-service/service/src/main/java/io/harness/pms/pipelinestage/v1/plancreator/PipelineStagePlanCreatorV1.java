@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipelinestage.v1.plancreator;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -54,7 +55,7 @@ import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
 import io.harness.steps.pipelinestage.PipelineStageOutputs;
 import io.harness.utils.PmsFeatureFlagService;
-import io.harness.when.utils.RunInfoUtils;
+import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -166,7 +167,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
                     .getNode()
                     .getField(YAMLFieldNameConstants.INPUTS),
                 planNodeId, childPipelineEntity.get().getHarnessVersion(), ctx.getAccountIdentifier()))
-            .whenCondition(RunInfoUtils.getStageWhenCondition(stageNode))
+            .whenCondition(RunInfoUtilsV1.getStageWhenCondition(stageNode))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())

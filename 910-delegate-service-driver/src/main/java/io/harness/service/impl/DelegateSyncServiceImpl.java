@@ -135,6 +135,7 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
       WingsException exception = ((ErrorNotifyResponseData) response).getException();
       // if task registered to error handling framework on delegate, then exception won't be null
       if (exception != null) {
+        exception.addParam("taskId", taskId);
         throw exception;
       }
     }

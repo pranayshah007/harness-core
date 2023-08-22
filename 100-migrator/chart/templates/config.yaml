@@ -15,8 +15,6 @@ data:
   BACKGROUND_SCHEDULER_CLUSTERED: {{ .Values.config.BACKGROUND_SCHEDULER_CLUSTERED | quote }}
   CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND }}
   CAPSULE_JAR: {{ .Values.config.CAPSULE_JAR }}
-  IMMUTABLE_DELEGATE_ENABLED: {{ .Values.config.IMMUTABLE_DELEGATE_ENABLED | default .Values.global.useImmutableDelegate | quote }}
-  IMMUTABLE_DELEGATE_DOCKER_IMAGE: {{ include "migrator.immutable_delegate_docker_image" . }}
   UPGRADER_DOCKER_IMAGE: {{ include "migrator.upgrader_docker_image" . }}
   DELEGATE_SERVICE_TARGET: {{ .Values.config.DELEGATE_SERVICE_TARGET }}
   DELEGATE_SERVICE_AUTHORITY: {{ .Values.config.DELEGATE_SERVICE_AUTHORITY }}
@@ -31,10 +29,10 @@ data:
   HZ_CLUSTER_NAME: {{ .Values.config.HZ_CLUSTER_NAME }}
   LOGGING_LEVEL: {{ .Values.config.LOGGING_LEVEL }}
   MEMORY: {{ .Values.config.MEMORY | quote }}
-  REDIS_SENTINEL: {{ .Values.config.REDIS_SENTINEL | quote }}
-  REDIS_URL: {{ .Values.config.REDIS_URL }}
-  REDIS_MASTER_NAME: {{ .Values.config.REDIS_MASTER_NAME }}
-  REDIS_SENTINELS: {{ .Values.config.REDIS_SENTINELS | default ("redis://redis-sentinel-harness-announce-0.NAMESPACE:26379,redis://redis-sentinel-harness-announce-1.NAMESPACE:26379,redis://redis-sentinel-harness-announce-2.NAMESPACE:26379" | replace "NAMESPACE" .Release.Namespace ) }}
+  REDIS_SENTINEL: {{ .Values.global.database.redis.installed  | quote }}
+  REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  REDIS_MASTER_NAME: 'harness-redis'
+  REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   SERVER_PORT: {{ .Values.config.SERVER_PORT | quote }}
   SERVICE_ACC: {{ .Values.config.SERVICE_ACC }}
   VERSION: {{ .Values.config.VERSION | quote }}

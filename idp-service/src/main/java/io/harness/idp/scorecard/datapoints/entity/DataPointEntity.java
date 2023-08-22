@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
+import javax.persistence.Column;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -40,6 +41,7 @@ public class DataPointEntity implements PersistentEntity {
                  .name("unique_account_identifier")
                  .unique(true)
                  .field(DataPointKeys.accountIdentifier)
+                 .field(DataPointKeys.dataSourceIdentifier)
                  .field(DataPointKeys.identifier)
                  .build())
         .build();
@@ -47,54 +49,14 @@ public class DataPointEntity implements PersistentEntity {
 
   @Id private String id;
   private String accountIdentifier;
-  private String identifier;
+  @Column(name = "identifier") private String identifier;
   private String name;
   private Type type;
-  private String expression;
+  private String description;
   private boolean isConditional;
-
-  // {DS}.{DP}.{INV}{OP}{VALUE}
-  //       isConditional = true             isConditional = false
-  // github.isBranchProtected.main=true && catalog.spec.owner=true
-  // DS -> github, DP -> isBranchProtected, INV -> main, OP -> =, value = true
-
-  // github.isBranchProtected.main=true && github.isBranchProtected.develop=true
-  /*
-
-  isBranchProtected -> parser
-
-
-    {
-      github: {
-        isBranchProtected: {
-          main: true
-        }
-      }
-    }
-    {
-      github: {
-        isBranchProtected: {
-          develop: true
-        }
-      }
-    }
-
-    MERGE -> Github DS response
-    {
-      github: {
-        isBranchProtected: {
-          main: true
-          develop: true
-        }
-      }
-    }
-  * */
-
-  // isConditional = false
-  // {DS}.{DP}{OP}{VALUE}
-  // github.readme.size>5000
-
+  private String conditionalInputValueDescription;
   private String dataSourceLocationIdentifier;
+  private String dataSourceIdentifier;
 
   public enum Type { NUMBER, BOOLEAN, STRING }
 }

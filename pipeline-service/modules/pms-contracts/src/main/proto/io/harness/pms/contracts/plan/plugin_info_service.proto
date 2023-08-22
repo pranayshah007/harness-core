@@ -35,6 +35,7 @@ message PluginCreationResponseList {
 message PluginCreationResponseWrapper {
   StepInfoProto stepInfo = 1;
   PluginCreationResponse response = 2;
+  bool shouldSkip = 3;
 }
 
 message StepInfoProto {

@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.approval.step.entities;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
@@ -77,6 +78,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 public abstract class ApprovalInstance implements PersistentEntity, PersistentRegularIterable {
   public static final long TTL_MONTHS = 6;
+  public static final long ASYNC_DELEGATE_TIMEOUT = 20000l;
+  public static final long APPROVAL_LEEWAY_IN_MILLIS = 30000l;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -221,5 +224,14 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
       return FailureInfo.newBuilder().addFailureData(failureData).build();
     }
     return null;
+  }
+  public static ParameterField<Timeout> getTimeout(String fieldName, Object objectParameterField) {
+    if (objectParameterField instanceof String) {
+      return ParameterField.createValueField(Timeout.fromString(objectParameterField.toString()));
+    }
+    if (objectParameterField instanceof Timeout) {
+      return ParameterField.createValueField((Timeout) objectParameterField);
+    }
+    throw new IllegalArgumentException(String.format("Invalid value for %s", fieldName));
   }
 }

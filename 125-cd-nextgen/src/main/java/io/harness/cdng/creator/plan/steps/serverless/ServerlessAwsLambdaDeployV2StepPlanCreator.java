@@ -6,6 +6,9 @@
  */
 
 package io.harness.cdng.creator.plan.steps.serverless;
+
+import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_MANIFESTS;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -48,6 +51,8 @@ public class ServerlessAwsLambdaDeployV2StepPlanCreator
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
     ServerlessAwsLambdaDeployV2StepParameters serverlessAwsLambdaDeployV2StepParameters =
         (ServerlessAwsLambdaDeployV2StepParameters) ((StepElementParameters) stepParameters).getSpec();
+    String downloadManifestsFqn = getExecutionStepFqn(ctx.getCurrentField(), DOWNLOAD_MANIFESTS);
+    serverlessAwsLambdaDeployV2StepParameters.setDownloadManifestsFqn(downloadManifestsFqn);
     serverlessAwsLambdaDeployV2StepParameters.setDelegateSelectors(
         stepNode.getServerlessAwsLambdaDeployV2StepInfo().getDelegateSelectors());
     return stepParameters;

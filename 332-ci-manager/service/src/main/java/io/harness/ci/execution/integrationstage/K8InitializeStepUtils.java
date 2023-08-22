@@ -13,19 +13,11 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveNumberParameterWithDefaultValue;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
-import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_ARCHIVE_TYPE_TAR;
-import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_GCS_BACKEND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CPU;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MEMORY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
-import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
-import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
-import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
@@ -60,19 +52,16 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
-import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.buildstate.StepContainerUtils;
-import io.harness.ci.config.CICacheIntelligenceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.PortFinder;
 import io.harness.ci.utils.QuantityUtils;
-import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
@@ -100,9 +89,6 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.utils.Strings;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -384,7 +370,6 @@ public class K8InitializeStepUtils {
       envVarMap.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
       envVarMap.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
       envVarMap.putAll(PluginSettingUtils.getBuildEnvironmentVariables(stepInfo, ciExecutionArgs));
-      setEnvVariablesForHostedBuids(stageNode, stepInfo, envVarMap);
     }
     envVarMap.putAll(pluginSettingUtils.getPluginCompatibleEnvVariables(
         stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8, false, true));
@@ -423,49 +408,6 @@ public class K8InitializeStepUtils {
         .privileged(privileged)
         .runAsUser(runAsUser)
         .build();
-  }
-
-  private void setEnvVariablesForHostedBuids(
-      IntegrationStageNode stageNode, PluginCompatibleStep stepInfo, Map<String, String> envVarMap) {
-    IntegrationStageConfig stage = stageNode.getIntegrationStageConfig();
-    if (stage != null && stage.getInfrastructure() != null
-        && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-      switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
-        case ECR:
-        case ACR:
-        case GCR:
-        case DOCKER:
-          envVarMap.put("container", "docker");
-          break;
-        default:
-          break;
-      }
-    }
-  }
-
-  private void setEnvVariablesForHostedCachingSteps(
-      IntegrationStageNode stageNode, String identifier, Map<String, String> envVarMap) {
-    IntegrationStageConfig stage = stageNode.getIntegrationStageConfig();
-    if (stage != null && stage.getInfrastructure() != null
-        && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-      switch (identifier) {
-        case SAVE_CACHE_STEP_ID:
-        case RESTORE_CACHE_STEP_ID:
-          CICacheIntelligenceConfig cacheIntelligenceConfig = ciExecutionServiceConfig.getCacheIntelligenceConfig();
-          try {
-            String cacheKeyString = new String(Files.readAllBytes(Paths.get(cacheIntelligenceConfig.getServiceKey())));
-            envVarMap.put(PLUGIN_JSON_KEY, cacheKeyString);
-          } catch (IOException e) {
-            log.error("Cannot read storage key file for Cache Intelligence steps");
-          }
-          envVarMap.put(PLUGIN_BUCKET, cacheIntelligenceConfig.getBucket());
-          envVarMap.put(PLUGIN_BACKEND, CACHE_GCS_BACKEND);
-          envVarMap.put(PLUGIN_ARCHIVE_FORMAT, CACHE_ARCHIVE_TYPE_TAR);
-          break;
-        default:
-          break;
-      }
-    }
   }
 
   private ContainerDefinitionInfo createRunStepContainerDefinition(RunStepInfo runStepInfo,
@@ -668,7 +610,6 @@ public class K8InitializeStepUtils {
 
     envVarMap.putAll(resolveMapParameterV2("envs", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
 
-    setEnvVariablesForHostedCachingSteps(stageNode, identifier, envVarMap);
     Integer runAsUser = resolveIntegerParameter(pluginStepInfo.getRunAsUser(), null);
 
     Map<String, SecretNGVariable> secretVarMap = new HashMap<>();

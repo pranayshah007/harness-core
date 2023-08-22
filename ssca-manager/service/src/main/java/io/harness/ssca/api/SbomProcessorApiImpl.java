@@ -7,6 +7,7 @@
 
 package io.harness.ssca.api;
 
+import io.harness.annotations.SSCAServiceAuth;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
@@ -28,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.SSCA)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
+@SSCAServiceAuth
 public class SbomProcessorApiImpl implements SbomProcessorApi {
   @Inject ProcessSbomWorkflowService processSbomWorkflowService;
 

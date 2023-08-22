@@ -118,6 +118,7 @@ public class SRMLicenseUsageResource {
         ApiResponse(description = "Returns a list of active services Monitored")
       })
   @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  @Deprecated
   public ResponseDTO<Page<ActiveServiceMonitoredDTO>>
   listSRMActiveServicesMonitored(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                                      ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -136,6 +137,38 @@ public class SRMLicenseUsageResource {
         DefaultPageableUsageRequestParams.builder().filterParams(filterParams).pageRequest(pageRequest).build();
 
     return ResponseDTO.newResponse((Page<ActiveServiceMonitoredDTO>) licenseUsageInterface.listLicenseUsage(
+        accountIdentifier, ModuleType.SRM, currentTsInMs, requestParams));
+  }
+
+  @POST
+  @Path("/SRM/active-monitored-services")
+  @ApiOperation(value = "List Active Services in SRM Module", nickname = "listSRMActiveMonitoredServices")
+  @Hidden
+  @Operation(operationId = "listSRMActiveMonitoredServices",
+      summary = "Returns a List of active monitored services along with identifier,lastUpdatedBy and other details",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns a list of active monitored services")
+      })
+  @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  public ResponseDTO<Page<ActiveMonitoredServiceDTO>>
+  listSRMActiveMonitoredServices(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                                     ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = PAGE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PAGE) @DefaultValue(
+          "0") int page,
+      @Parameter(description = SIZE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("20")
+      @Max(50) int size, @Parameter(description = SORT_PARAM_MESSAGE) @QueryParam(SORT) List<String> sort,
+      @QueryParam(TIMESTAMP) @DefaultValue("0") long currentTsInMs,
+      @Valid @RequestBody(description = ACTIVE_SERVICES_MONITORED_FILTER_PARAM_MESSAGE)
+      ActiveServiceMonitoredFilterParams filterParams) {
+    Pageable pageRequest =
+        PageableUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, SERVICE_INSTANCE_ID));
+    validateSort(pageRequest.getSort(), ACTIVE_SERVICES_MONITORED_SORT_QUERY_PROPERTIES);
+    DefaultPageableUsageRequestParams requestParams =
+        DefaultPageableUsageRequestParams.builder().filterParams(filterParams).pageRequest(pageRequest).build();
+
+    return ResponseDTO.newResponse((Page<ActiveMonitoredServiceDTO>) licenseUsageInterface.listLicenseUsage(
         accountIdentifier, ModuleType.SRM, currentTsInMs, requestParams));
   }
 

@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.approval.step.servicenow;
+
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 
 import io.harness.annotations.dev.CodePulse;
@@ -29,10 +30,12 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.servicenow.beans.ServiceNowApprovalResponseData;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 import io.harness.steps.executables.PipelineAsyncExecutable;
@@ -54,6 +57,7 @@ public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
   @Inject private ServiceNowApprovalHelperService serviceNowApprovalHelperService;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
 
   @Override
@@ -67,6 +71,9 @@ public class ServiceNowApprovalStep extends PipelineAsyncExecutable {
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
         approvalInstance.getConnectorRef());
     approvalInstance = (ServiceNowApprovalInstance) approvalInstanceService.save(approvalInstance);
+    if (ParameterField.isNotNull(approvalInstance.getRetryInterval())) {
+      irregularApprovalInstanceHandler.wakeup();
+    }
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(approvalInstance.getId())
         .addAllLogKeys(CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(

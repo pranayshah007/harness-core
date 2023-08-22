@@ -61,7 +61,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.CUSTOM_APPROVAL_STEP_TYPE;
 
   @Inject private ApprovalInstanceService approvalInstanceService;
-  @Inject private CustomApprovalInstanceHandler customApprovalInstanceHandler;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
@@ -72,7 +72,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
     CustomApprovalInstance approvalInstance = CustomApprovalInstance.fromStepParameters(ambiance, stepParameters);
     openLogStream(ambiance, approvalInstance);
     approvalInstance = (CustomApprovalInstance) approvalInstanceService.save(approvalInstance);
-    customApprovalInstanceHandler.wakeup();
+    irregularApprovalInstanceHandler.wakeup();
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(approvalInstance.getId())
         .addAllLogKeys(CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(

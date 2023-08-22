@@ -148,7 +148,7 @@ public class VerificationJobInstanceServiceInstanceUtils {
   }
 
   public boolean isValidCanaryDeployment(ServiceInstanceDetails serviceInstanceDetails) {
-    if (serviceInstanceDetails == null
+    if (serviceInstanceDetails == null || !serviceInstanceDetails.isShouldUseNodesFromCD()
         || CollectionUtils.isEmpty(serviceInstanceDetails.getDeployedServiceInstances())) {
       return false;
     }

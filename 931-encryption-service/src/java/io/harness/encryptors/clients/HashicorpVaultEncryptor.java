@@ -12,9 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultAppRoleLoginResult;
-import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultAwmIamAuthLoginResult;
-import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultK8sAuthLoginResult;
+import static io.harness.helpers.vault.NGVaultTaskHelper.getToken;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.helpers.ext.vault.VaultRestClientFactory.getFullPath;
@@ -26,14 +24,11 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
-import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
-import io.harness.security.encryption.AccessType;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.beans.VaultConfig;
-import software.wings.helpers.ext.vault.VaultK8sLoginResult;
 import software.wings.helpers.ext.vault.VaultRestClientFactory;
 
 import com.google.common.util.concurrent.TimeLimiter;
@@ -41,9 +36,6 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.Duration;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
@@ -248,29 +240,6 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
       log.error(errorMsg);
       throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, errorMsg, USER);
     }
-  }
-
-  private String getToken(VaultConfig vaultConfig) {
-    if (vaultConfig.isUseVaultAgent()) {
-      try {
-        byte[] content = Files.readAllBytes(Paths.get(URI.create("file://" + vaultConfig.getSinkPath())));
-        String authToken = new String(content);
-        vaultConfig.setAuthToken(authToken);
-      } catch (IOException e) {
-        throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR,
-            "Using Vault Agent Cannot read Token From Sink Path:" + vaultConfig.getSinkPath(), e, USER);
-      }
-    } else if (vaultConfig.isUseAwsIam()) {
-      VaultAppRoleLoginResult vaultAwmIamAuthLoginResult = getVaultAwmIamAuthLoginResult(vaultConfig);
-      vaultConfig.setAuthToken(vaultAwmIamAuthLoginResult.getClientToken());
-    } else if (vaultConfig.isUseK8sAuth()) {
-      VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
-      vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
-    } else if (AccessType.APP_ROLE.equals(vaultConfig.getAccessType()) && !vaultConfig.getRenewAppRoleToken()) {
-      VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
-      vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
-    }
-    return vaultConfig.getAuthToken();
   }
 
   @Override

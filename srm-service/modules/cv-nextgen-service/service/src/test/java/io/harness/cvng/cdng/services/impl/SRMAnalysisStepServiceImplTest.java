@@ -8,6 +8,8 @@
 package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
+import static io.harness.rule.OwnerRule.SHASHWAT_SACHAN;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +27,7 @@ import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepInstanceDetails;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
@@ -39,6 +42,11 @@ import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
+import io.harness.cvng.utils.ScopedInformation;
+import io.harness.ng.beans.PageRequest;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.rule.Owner;
@@ -50,8 +58,10 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -226,5 +236,89 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     assertThat(analysisStepDetailDTO.getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
     assertThat(analysisStepDetailDTO.getStepName()).isEqualTo(stepName);
     assertThat(analysisStepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetInstanceByUuids() {
+    String analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, "stepName",
+        serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
+
+    SecondaryEventDetailsResponse eventDetailsResponse =
+        ((SRMAnalysisStepServiceImpl) srmAnalysisStepService)
+            .getInstanceByUuids(List.of(analysisExecutionDetailsId), SecondaryEventsType.SRM_ANALYSIS_IMPACT);
+    assertThat(eventDetailsResponse.getType()).isEqualTo(SecondaryEventsType.SRM_ANALYSIS_IMPACT);
+    assertThat(eventDetailsResponse.getStartTime()).isEqualTo(clock.instant().getEpochSecond());
+    SRMAnalysisStepInstanceDetails stepInstanceDetails =
+        (SRMAnalysisStepInstanceDetails) eventDetailsResponse.getDetails();
+    assertThat(stepInstanceDetails.getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
+    assertThat(stepInstanceDetails.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetReportListProject() {
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
+    PageResponse<SRMAnalysisStepDetailDTO> firstPage =
+        srmAnalysisStepService.getReportList(builderFactory.getProjectParams(), new ArrayList<>(),
+            Collections.emptyList(), Collections.singletonList(monitoredServiceIdentifier), false, clock.instant(),
+            clock.instant().plus(4, ChronoUnit.DAYS), PageRequest.builder().pageIndex(0).pageSize(2).build());
+    assertThat(firstPage.getPageIndex()).isEqualTo(0);
+    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
+    assertThat(firstPage.getTotalItems()).isEqualTo(1);
+    assertThat(firstPage.getTotalPages()).isEqualTo(1);
+    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
+    assertThat(firstPage.getContent().get(0).getAccountId()).isEqualTo(stepExecutionDetail.getAccountId());
+    assertThat(firstPage.getContent().get(0).getOrgIdentifier()).isEqualTo(stepExecutionDetail.getOrgIdentifier());
+    assertThat(firstPage.getContent().get(0).getProjectIdentifier())
+        .isEqualTo(stepExecutionDetail.getProjectIdentifier());
+    assertThat(firstPage.getContent().get(0).getStepName()).isEqualTo(stepExecutionDetail.getStepName());
+    assertThat(firstPage.getContent().get(0).getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
+    assertThat(firstPage.getContent().get(0).getAnalysisStartTime())
+        .isEqualTo(stepExecutionDetail.getAnalysisStartTime());
+    assertThat(firstPage.getContent().get(0).getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
+    assertThat(firstPage.getContent().get(0).getAnalysisDuration())
+        .isEqualTo(stepExecutionDetail.getAnalysisDuration());
+    assertThat(firstPage.getContent().get(0).getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(firstPage.getContent().get(0).getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
+    assertThat(firstPage.getContent().get(0).getStageStepId()).isEqualTo(stepExecutionDetail.getStageStepId());
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetReportListAccount() {
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
+    PageResponse<SRMAnalysisStepDetailDTO> firstPage = srmAnalysisStepService.getReportList(
+        builderFactory.getProjectParams(), new ArrayList<>(), Collections.emptyList(),
+        Collections.singletonList(ScopedInformation.getScopedInformation(builderFactory.getContext().getAccountId(),
+            builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+            builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier())),
+        true, clock.instant(), clock.instant().plus(4, ChronoUnit.DAYS),
+        PageRequest.builder().pageIndex(0).pageSize(2).build());
+    assertThat(firstPage.getPageIndex()).isEqualTo(0);
+    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
+    assertThat(firstPage.getTotalItems()).isEqualTo(1);
+    assertThat(firstPage.getTotalPages()).isEqualTo(1);
+    assertThat(firstPage.getPageItemCount()).isEqualTo(1);
+    assertThat(firstPage.getContent().get(0).getAccountId()).isEqualTo(stepExecutionDetail.getAccountId());
+    assertThat(firstPage.getContent().get(0).getOrgIdentifier()).isEqualTo(stepExecutionDetail.getOrgIdentifier());
+    assertThat(firstPage.getContent().get(0).getProjectIdentifier())
+        .isEqualTo(stepExecutionDetail.getProjectIdentifier());
+    assertThat(firstPage.getContent().get(0).getStepName()).isEqualTo(stepExecutionDetail.getStepName());
+    assertThat(firstPage.getContent().get(0).getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
+    assertThat(firstPage.getContent().get(0).getAnalysisStartTime())
+        .isEqualTo(stepExecutionDetail.getAnalysisStartTime());
+    assertThat(firstPage.getContent().get(0).getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
+    assertThat(firstPage.getContent().get(0).getAnalysisDuration())
+        .isEqualTo(stepExecutionDetail.getAnalysisDuration());
+    assertThat(firstPage.getContent().get(0).getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(firstPage.getContent().get(0).getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
+    assertThat(firstPage.getContent().get(0).getStageStepId()).isEqualTo(stepExecutionDetail.getStageStepId());
   }
 }

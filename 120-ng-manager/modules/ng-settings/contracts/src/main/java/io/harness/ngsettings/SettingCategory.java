@@ -26,5 +26,6 @@ public enum SettingCategory {
   CHAOS,
   SCIM,
   GIT_EXPERIENCE,
-  CONNECTORS
+  CONNECTORS,
+  EULA
 }

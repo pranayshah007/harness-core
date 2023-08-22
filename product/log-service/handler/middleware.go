@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"time"
 
@@ -218,7 +219,18 @@ func RequiredQueryParams(params ...string) func(handler http.Handler) http.Handl
 func ValidatePrefixRequest() func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			containRunSequence, err := regexp.MatchString("runSequence:[\\d+]", r.URL.String())
+			unescapedUrl, err := url.QueryUnescape(r.URL.String())
+			if err != nil {
+				WriteInternalError(w, err)
+				logger.FromRequest(r).
+					WithField("url", r.URL.String()).
+					WithField("time", time.Now().Format(time.RFC3339)).
+					WithError(err).
+					Errorln("middleware validate: cannot match execution in prefix")
+				return
+			}
+
+			containRunSequence, err := regexp.MatchString("runSequence:[\\d+]", unescapedUrl)
 			if err != nil {
 				WriteInternalError(w, err)
 				logger.FromRequest(r).

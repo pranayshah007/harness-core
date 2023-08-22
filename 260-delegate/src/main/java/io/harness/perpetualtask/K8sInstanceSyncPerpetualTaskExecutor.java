@@ -21,6 +21,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.instancesync.K8sInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.mapper.K8sPodToServiceInstanceInfoMapper;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sDeploymentReleaseData;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -75,9 +76,7 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
       PerpetualTaskId taskId, K8sInstanceSyncPerpetualTaskParams taskParams) {
     List<K8sDeploymentReleaseData> deploymentReleaseDataList =
         fixK8sDeploymentReleaseData(getK8sDeploymentReleaseData(taskParams));
-
     List<PodDetailsRequest> distinctPodDetailsRequestList = getDistinctPodDetailsRequestList(deploymentReleaseDataList);
-
     List<ServerInstanceInfo> serverInstanceInfos = distinctPodDetailsRequestList.stream()
                                                        .map(this::getServerInstanceInfoList)
                                                        .flatMap(Collection::stream)
@@ -103,6 +102,7 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
         .namespaces(new LinkedHashSet<>(k8SDeploymentRelease.getNamespacesList()))
         .k8sInfraDelegateConfig((K8sInfraDelegateConfig) kryoSerializer.asObject(
             k8SDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
+        .helmChartInfo((HelmChartInfo) kryoSerializer.asObject(k8SDeploymentRelease.getHelmChartInfo().toByteArray()))
         .build();
   }
 
@@ -133,12 +133,14 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
         containerBaseHelper.createKubernetesConfig(releaseData.getK8sInfraDelegateConfig(), null);
     LinkedHashSet<String> namespaces = releaseData.getNamespaces();
     String releaseName = releaseData.getReleaseName();
+    HelmChartInfo helmChartInfo = releaseData.getHelmChartInfo();
     return namespaces.stream()
         .map(namespace
             -> PodDetailsRequest.builder()
                    .kubernetesConfig(kubernetesConfig)
                    .namespace(namespace)
                    .releaseName(releaseName)
+                   .helmChartInfo(helmChartInfo)
                    .build())
         .collect(Collectors.toList());
   }
@@ -153,7 +155,7 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
     try {
       List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
           requestData.getKubernetesConfig(), requestData.getNamespace(), requestData.getReleaseName(), timeoutMillis);
-      return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList);
+      return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList, requestData.getHelmChartInfo());
     } catch (Exception ex) {
       log.warn("Unable to get list of server instances, namespace: {}, releaseName: {}", requestData.getNamespace(),
           requestData.getReleaseName(), ex);
@@ -190,5 +192,6 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
     private KubernetesConfig kubernetesConfig;
     @NotNull private String namespace;
     @NotNull private String releaseName;
+    private HelmChartInfo helmChartInfo;
   }
 }

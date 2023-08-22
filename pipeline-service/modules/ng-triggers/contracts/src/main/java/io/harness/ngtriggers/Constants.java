@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -82,6 +83,9 @@ public interface Constants {
   String GIT_USER = "gitUser";
   String TAG = "tag";
   String PR_TITLE = "prTitle";
+  String SOURCE = "source";
+  String CONNECTOR_REF = "connectorRef";
+  String IMAGE_PATH = "imagePath";
   String SOURCE_TYPE = "sourceType";
   String ARTIFACT_EXPR = "artifact";
   String MANIFEST_EXPR = "manifest";

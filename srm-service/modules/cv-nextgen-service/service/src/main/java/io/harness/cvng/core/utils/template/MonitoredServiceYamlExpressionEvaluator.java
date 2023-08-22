@@ -19,29 +19,29 @@ import lombok.Builder;
 import lombok.Value;
 
 @Value
-@Builder
 public class MonitoredServiceYamlExpressionEvaluator extends EngineExpressionEvaluator {
-  protected final String yaml;
+  private MonitoredServiceYamlExpressionFunctor monitoredServiceYamlExpressionFunctor;
 
+  @Builder
   public MonitoredServiceYamlExpressionEvaluator(String yaml) {
     super(null);
-    this.yaml = yaml;
+    monitoredServiceYamlExpressionFunctor =
+        MonitoredServiceYamlExpressionFunctor.builder().rootYamlField(getMonitoredServiceYamlField(yaml)).build();
   }
 
   @Override
   protected void initialize() {
     super.initialize();
-    addToContext("__yamlExpression",
-        MonitoredServiceYamlExpressionFunctor.builder().rootYamlField(getMonitoredServiceYamlField()).build());
+    addToContext("monitoredService", monitoredServiceYamlExpressionFunctor);
   }
 
   @Override
   protected List<String> fetchPrefixes() {
     ImmutableList.Builder<String> listBuilder = ImmutableList.builder();
-    return listBuilder.add("__yamlExpression").addAll(super.fetchPrefixes()).build();
+    return listBuilder.add("monitoredService").addAll(super.fetchPrefixes()).build();
   }
 
-  private YamlField getMonitoredServiceYamlField() {
+  private YamlField getMonitoredServiceYamlField(String yaml) {
     try {
       YamlField yamlField = YamlUtils.readTree(yaml);
       return yamlField.getNode().getField("monitoredService");

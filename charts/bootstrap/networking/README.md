@@ -14,24 +14,51 @@ A Helm chart for Kubernetes
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| defaultbackend.affinity | object | `{}` |  |
+| defaultbackend.create | bool | `false` | Create will deploy a default backend into your cluster |
+| defaultbackend.image.digest | string | `""` |  |
+| defaultbackend.image.pullPolicy | string | `"IfNotPresent"` |  |
+| defaultbackend.image.registry | string | `"registry.k8s.io"` |  |
+| defaultbackend.image.repository | string | `"defaultbackend-amd64"` |  |
+| defaultbackend.image.tag | string | `"1.5"` |  |
+| defaultbackend.nodeSelector | object | `{}` |  |
+| defaultbackend.resources.limits.memory | string | `"20Mi"` |  |
+| defaultbackend.resources.requests.cpu | string | `"10m"` |  |
+| defaultbackend.resources.requests.memory | string | `"20Mi"` |  |
+| defaultbackend.tolerations | list | `[]` |  |
 | global.ingress.className | string | `"harness"` |  |
-| global.ingress.defaultbackend.create | bool | `false` | Create will deploy a default backend into your cluster |
-| global.ingress.defaultbackend.image.digest | string | `""` |  |
-| global.ingress.defaultbackend.image.pullPolicy | string | `"IfNotPresent"` |  |
-| global.ingress.defaultbackend.image.registry | string | `"registry.k8s.io"` |  |
-| global.ingress.defaultbackend.image.repository | string | `"defaultbackend-amd64"` |  |
-| global.ingress.defaultbackend.image.tag | string | `"1.5"` |  |
 | global.ingress.enabled | bool | `false` |  |
 | global.ingress.hosts[0] | string | `"myhost.example.com"` |  |
 | global.ingress.loadBalancerEnabled | bool | `false` |  |
 | global.ingress.loadBalancerIP | string | `"0.0.0.0"` |  |
-| global.ingress.nginx | object | `{"controller":{"annotations":{}},"create":false,"image":{"digest":"","pullPolicy":"IfNotPresent","registry":"us.gcr.io","repository":"k8s-artifacts-prod/ingress-nginx/controller","tag":"v1.0.0-alpha.2"},"objects":{"annotations":{}}}` | Section to provide configuration on an NGINX ingress controller. |
-| global.ingress.nginx.controller.annotations | object | `{}` | annotations to be addded to ingress Controller |
-| global.ingress.nginx.create | bool | `false` | Create Nginx Controller.  True will deploy a controller into your cluster |
-| global.ingress.nginx.objects.annotations | object | `{}` | annotations to be added to ingress Objects |
 | global.ingress.tls.enabled | bool | `true` |  |
 | global.ingress.tls.secretName | string | `"harness-cert"` |  |
-| global.istio | object | `{"enabled":false,"gateway":{"create":true,"namespace":"istio-system","port":443,"protocol":"HTTPS","selector":"ingressgateway"},"hosts":["*"],"strict":false,"tls":{"credentialName":"harness-cert","minProtocolVersion":"TLSV1_2","mode":"SIMPLE"},"virtualService":{"hosts":["myhostname.example.com"]}}` | Istio Ingress Settings |
+| global.istio | object | `{"enabled":false,"gateway":{"create":true,"name":"","namespace":"","port":443,"protocol":"HTTPS","selector":{"istio":"ingressgateway"}},"hosts":["*"],"istioGatewayServiceUrl":"","strict":false,"tls":{"credentialName":null,"minProtocolVersion":"TLSV1_2","mode":"SIMPLE"},"virtualService":{"gateways":[""],"hosts":null}}` | Istio Ingress Settings |
+| global.istio.gateway.create | bool | `true` | Enable to create istio-system gateway |
+| global.istio.gateway.name | string | `""` | override the name of gateway |
+| global.istio.gateway.namespace | string | `""` | override the name of namespace to deploy gateway |
+| global.istio.gateway.selector | object | `{"istio":"ingressgateway"}` | adds a gateway selector |
+| global.istio.hosts | list | `["*"]` | add global.istio.istioGatewayServiceUrl in hosts if global.istio.istioGatewayServiceUrl is not empty. |
+| global.istio.istioGatewayServiceUrl | string | `""` | set to istio gateway's k8s service FQDN for internal use case. eg "internal-istio-gateway.istio-system.svc.cluster.local" If not set, internal request routing would happen via global.loadbalancerUrl |
+| global.istio.virtualService.hosts | string | `nil` | add global.istio.istioGatewayServiceUrl in hosts if global.istio.istioGatewayServiceUrl is not empty. |
+| nginx.affinity | object | `{}` |  |
+| nginx.controller.annotations | object | `{}` | annotations to be addded to ingress Controller |
+| nginx.create | bool | `false` | Create Nginx Controller.  True will deploy a controller into your cluster |
+| nginx.healthNodePort | string | `""` |  |
+| nginx.healthPort | string | `""` |  |
+| nginx.httpNodePort | string | `""` |  |
+| nginx.httpsNodePort | string | `""` |  |
+| nginx.image.digest | string | `""` |  |
+| nginx.image.pullPolicy | string | `"IfNotPresent"` |  |
+| nginx.image.registry | string | `"us.gcr.io"` |  |
+| nginx.image.repository | string | `"k8s-artifacts-prod/ingress-nginx/controller"` |  |
+| nginx.image.tag | string | `"v1.0.0-alpha.2"` |  |
+| nginx.nodeSelector | object | `{}` |  |
+| nginx.objects.annotations | object | `{}` | annotations to be added to ingress Objects |
+| nginx.resources.limits.memory | string | `"512Mi"` |  |
+| nginx.resources.requests.cpu | string | `"0.5"` |  |
+| nginx.resources.requests.memory | string | `"512Mi"` |  |
+| nginx.tolerations | list | `[]` |  |
 
 ----------------------------------------------
 Autogenerated from chart metadata using [helm-docs v1.11.0](https://github.com/norwoodj/helm-docs/releases/v1.11.0)

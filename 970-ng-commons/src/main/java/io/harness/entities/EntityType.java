@@ -642,7 +642,14 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.AWS_CDK_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DEPLOY),
   @JsonProperty(EntityTypeConstants.AWS_CDK_DESTROY)
   AWS_CDK_DESTROY(
-      ModuleType.CD, EntityTypeConstants.AWS_CDK_DESTROY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DESTROY);
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_DESTROY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DESTROY),
+  @JsonProperty(EntityTypeConstants.IDP_SCORECARD)
+  IDP_SCORECARD(ModuleType.IDP, EntityTypeConstants.IDP_SCORECARD, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.IDP_CHECK)
+  IDP_CHECK(ModuleType.IDP, EntityTypeConstants.IDP_CHECK, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_ROLLBACK)
+  AWS_CDK_ROLLBACK(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

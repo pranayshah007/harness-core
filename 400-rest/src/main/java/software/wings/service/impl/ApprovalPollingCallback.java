@@ -31,14 +31,14 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 @Slf4j
 public class ApprovalPollingCallback implements OldNotifyCallback {
-  @Inject private StateExecutionService stateExecutionService;
-  @Inject private WorkflowExecutionService workflowExecutionService;
+  @Inject private transient StateExecutionService stateExecutionService;
+  @Inject private transient WorkflowExecutionService workflowExecutionService;
 
   private String workflowExecutionId;
   private String stateExecutionInstanceId;
   private ApprovalPollingJobEntity entity;
 
-  @Inject private WaitNotifyEngine waitNotifyEngine;
+  @Inject private transient WaitNotifyEngine waitNotifyEngine;
   @Override
   public void notify(Map<String, ResponseData> response) {
     JiraExecutionData jiraExecutionData = (JiraExecutionData) response.values().iterator().next();

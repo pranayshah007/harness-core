@@ -12,6 +12,7 @@ import static io.harness.delegate.beans.connector.docker.DockerRegistryProviderT
 import static io.harness.delegate.beans.connector.docker.DockerRegistryProviderType.OTHER;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
@@ -42,6 +43,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.docker.DockerImageTagResponse;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
@@ -757,5 +759,29 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
     BuildDetailsInternal buildDetailsInternal =
         dockerRegistryService.verifyBuildNumber(dockerConfig, "image", "latest");
     assertThat(buildDetailsInternal.getNumber()).isEqualTo("latest");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testVerifyImageTag_SHAToTagField() {
+    int port = wireMockRule.port();
+    doReturn(dockerRegistryRestClient).when(dockerRestClientFactory).getDockerRegistryRestClient(dockerConfig);
+    wireMockRule.stubFor(get(urlEqualTo("/v2/image/manifests/sha256:1234"))
+                             .willReturn(aResponse().withStatus(401).withHeader("Www-Authenticate",
+                                 "Bearer realm=\"http://localhost:" + port
+                                     + "/oauth2/token\",service=\"test.azurecr.io\",scope=\"somevalue\"")));
+    wireMockRule.stubFor(
+        get(urlEqualTo("/v2/image/manifests/sha256:1234"))
+            .withHeader("Authorization", equalTo("Bearer dockerRegistryToken"))
+            .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerImageTagResponse))));
+    wireMockRule.stubFor(get(urlEqualTo("/oauth2/token?service=test.azurecr.io&scope=somevalue"))
+                             .willReturn(aResponse().withStatus(200).withBody(JsonUtils.asJson(dockerRegistryToken))));
+
+    BuildDetailsInternal buildDetailsInternal =
+        dockerRegistryService.verifyBuildNumber(dockerConfig, "image", "sha256:1234");
+    assertThat(buildDetailsInternal.getNumber()).isEqualTo("sha256:1234");
+    assertThat(buildDetailsInternal.getMetadata().get(ArtifactMetadataKeys.IMAGE))
+        .isEqualTo(String.format("localhost:%s/image@sha256:1234", port));
   }
 }

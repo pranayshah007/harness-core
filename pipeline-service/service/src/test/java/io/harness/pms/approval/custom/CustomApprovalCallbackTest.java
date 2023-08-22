@@ -60,7 +60,7 @@ import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.beans.JexlCriteriaSpecDTO;
 import io.harness.steps.approval.step.beans.KeyValuesCriteriaSpecDTO;
 import io.harness.steps.approval.step.beans.Operator;
-import io.harness.steps.approval.step.custom.CustomApprovalInstanceHandler;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalTicketNG;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.shellscript.ShellScriptHelperService;
@@ -99,7 +99,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Mock private KryoSerializer kryoSerializer;
   @Mock private KryoSerializer referenceFalseKryoSerializer;
   @Mock private ShellScriptHelperService shellScriptHelperService;
-  @Mock private CustomApprovalInstanceHandler customApprovalInstanceHandler;
+  @Mock private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
   @Mock private ApprovalInstanceService approvalInstanceService;
   @Mock private NGErrorHelper ngErrorHelper;
   private MockedStatic<ShellScriptHelperService> shellScriptHelperServiceMockedStatic;
@@ -122,7 +122,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     on(customApprovalCallback).set("kryoSerializer", kryoSerializer);
     on(customApprovalCallback).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     on(customApprovalCallback).set("shellScriptHelperService", shellScriptHelperService);
-    on(customApprovalCallback).set("customApprovalInstanceHandler", customApprovalInstanceHandler);
+    on(customApprovalCallback).set("irregularApprovalInstanceHandler", irregularApprovalInstanceHandler);
     on(customApprovalCallback).set("approvalInstanceService", approvalInstanceService);
     on(customApprovalCallback).set("ngErrorHelper", ngErrorHelper);
 
@@ -159,7 +159,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
 
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.EXPIRED), nullable(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -180,7 +180,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     customApprovalCallback.push(null);
     verify(approvalInstanceService, never()).finalizeStatus(anyString(), any(), nullable(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -203,7 +203,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
     verify(approvalInstanceService, never()).finalizeStatus(anyString(), any(), nullable(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -226,7 +226,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     customApprovalCallback.push(Map.of("xyz", BinaryResponseData.builder().usingKryoWithoutReference(true).build()));
     verify(approvalInstanceService, never()).finalizeStatus(anyString(), any(), nullable(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -271,7 +271,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.APPROVED), any(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -317,7 +317,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
 
     customApprovalCallback.push(ImmutableMap.of("xyz", ErrorNotifyResponseData.builder().build()));
     verify(approvalInstanceService, times(2)).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler, times(2)).wakeup();
+    verify(irregularApprovalInstanceHandler, times(2)).wakeup();
     verifyNoInteractions(kryoSerializer);
   }
 
@@ -363,7 +363,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     customApprovalCallback.push(Map.of("xyz", BinaryResponseData.builder().usingKryoWithoutReference(true).build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.APPROVED), any(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -406,7 +406,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.FAILED), anyString());
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -449,7 +449,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     customApprovalCallback.push(Map.of("xyz", BinaryResponseData.builder().usingKryoWithoutReference(true).build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.FAILED), anyString());
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -496,7 +496,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
         .hasMessageContaining("Error while evaluating approval/rejection criteria");
     verify(approvalInstanceService, never()).finalizeStatus(anyString(), any(), any(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -545,7 +545,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
         .hasMessageContaining("Error while evaluating approval/rejection criteria");
     verify(approvalInstanceService, never()).finalizeStatus(anyString(), any(), any(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -600,7 +600,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.REJECTED), any(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test
@@ -655,7 +655,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     customApprovalCallback.push(Map.of("xyz", BinaryResponseData.builder().usingKryoWithoutReference(true).build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.REJECTED), any(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
   }
 
   @Test

@@ -42,6 +42,7 @@ public class RoleAssignmentTestUtils {
         .resourceGroupIdentifier(rgId)
         .principalIdentifier(principal.getPrincipalIdentifier())
         .principalType(principal.getPrincipalType())
+        .principalScopeLevel(principal.getPrincipalScopeLevel())
         .build();
   }
 }

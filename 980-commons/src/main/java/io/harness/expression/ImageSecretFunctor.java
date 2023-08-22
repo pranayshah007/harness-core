@@ -19,7 +19,7 @@ import io.harness.expression.functors.ExpressionFunctor;
 
 import java.util.concurrent.Future;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDC)
 public class ImageSecretFunctor implements ExpressionFunctor {
   public static final String FUNCTOR_NAME = "imageSecret";

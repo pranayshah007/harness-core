@@ -6,13 +6,13 @@
  */
 
 package io.harness.cdng.provision.awscdk;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.SwaggerConstants;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AwsCdkBootstrapStepInfoVisitorHelper;
@@ -57,18 +57,14 @@ public class AwsCdkBootstrapStepInfo extends AwsCdkBaseStepInfo implements CDAbs
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) ParameterField<Boolean> exportTemplate;
-
   @Builder(builderMethodName = "infoBuilder")
   public AwsCdkBootstrapStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> image,
       ParameterField<String> connectorRef, ContainerResource resources,
       ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<List<String>> commandOptions, ParameterField<String> appPath,
-      ParameterField<Boolean> exportTemplate) {
+      ParameterField<List<String>> commandOptions, ParameterField<String> appPath) {
     super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
         commandOptions, appPath);
-    this.exportTemplate = exportTemplate;
   }
   @Override
   public StepType getStepType() {
@@ -91,7 +87,8 @@ public class AwsCdkBootstrapStepInfo extends AwsCdkBaseStepInfo implements CDAbs
         .imagePullPolicy(getImagePullPolicy())
         .commandOptions(getCommandOptions())
         .appPath(getAppPath())
-        .exportTemplate(getExportTemplate())
+        .envVariables(getEnvVariables())
+        .resources(getResources())
         .build();
   }
 

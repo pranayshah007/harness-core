@@ -8,6 +8,7 @@
 package io.harness.accesscontrol.clients;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static java.util.Collections.emptyList;
@@ -134,13 +135,10 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
 
     accessCheckResponseDTOs.forEach(res -> accessControlList.addAll(res.getAccessControlList()));
     if (accessControlList.stream().noneMatch(AccessControlDTO::isPermitted)) {
-      String finalMessage;
-      if (!StringUtils.isEmpty(exceptionMessage)) {
-        finalMessage = exceptionMessage;
-      } else {
-        finalMessage = String.format("Missing permission %s on %s", accessControlList.get(0).getPermission(),
-            accessControlList.get(0).getResourceType().toLowerCase());
-      }
+      AccessCheckResponseDTO accessCheckResponseDTO =
+          isNotEmpty(accessCheckResponseDTOs) ? accessCheckResponseDTOs.get(0) : null;
+      String finalMessage = generateAccessDeniedExceptionMessage(
+          exceptionMessage, accessCheckResponseDTO, accessControlList.get(0), false);
       throw new NGAccessDeniedException(finalMessage, USER, emptyList());
     }
     return AccessCheckResponseDTO.builder()
@@ -169,19 +167,35 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
     AccessCheckResponseDTO accessCheckResponseDTO =
         checkForAccess(principal, Collections.singletonList(permissionCheckDTO));
     AccessControlDTO accessControlDTO = accessCheckResponseDTO.getAccessControlList().get(0);
-    String finalMessage;
-    if (!StringUtils.isEmpty(exceptionMessage)) {
-      finalMessage = exceptionMessage;
-    } else {
-      finalMessage = String.format("Missing permission %s on %s", accessControlDTO.getPermission(),
-          accessControlDTO.getResourceType().toLowerCase());
-      if (!StringUtils.isEmpty(accessControlDTO.getResourceIdentifier())) {
-        finalMessage =
-            finalMessage.concat(String.format(" with identifier %s", accessControlDTO.getResourceIdentifier()));
-      }
-    }
     if (!accessControlDTO.isPermitted()) {
+      String finalMessage =
+          generateAccessDeniedExceptionMessage(exceptionMessage, accessCheckResponseDTO, accessControlDTO, true);
       throw new NGAccessDeniedException(finalMessage, USER, Collections.singletonList(permissionCheckDTO));
     }
+  }
+
+  private String generateAccessDeniedExceptionMessage(String exceptionMessage,
+      AccessCheckResponseDTO accessCheckResponseDTO, AccessControlDTO accessControlDTO,
+      boolean withResourceIdentifier) {
+    StringBuilder message = new StringBuilder();
+    if (!StringUtils.isEmpty(exceptionMessage)) {
+      message.append(exceptionMessage);
+    } else {
+      if (accessCheckResponseDTO != null && accessCheckResponseDTO.getPrincipal() != null) {
+        message.append("Principal of type ")
+            .append(accessCheckResponseDTO.getPrincipal().getPrincipalType())
+            .append(" with identifier ")
+            .append(accessCheckResponseDTO.getPrincipal().getPrincipalIdentifier())
+            .append(" : ");
+      }
+      message.append("Missing permission ")
+          .append(accessControlDTO.getPermission())
+          .append(" on ")
+          .append(accessControlDTO.getResourceType().toLowerCase());
+      if (withResourceIdentifier && !StringUtils.isEmpty(accessControlDTO.getResourceIdentifier())) {
+        message.append(" with identifier ").append(accessControlDTO.getResourceIdentifier());
+      }
+    }
+    return message.toString();
   }
 }

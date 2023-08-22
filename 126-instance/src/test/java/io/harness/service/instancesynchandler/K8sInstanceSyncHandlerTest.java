@@ -19,6 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
@@ -49,6 +50,9 @@ public class K8sInstanceSyncHandlerTest extends InstancesTestBase {
   private static final String NAMESPACE = "namespace";
   private static final String POD_IP = "podIP";
   private static final String RELEASE_NAME = "releaseName";
+  private static final HelmChartInfo HELM_CHART_INFO =
+      HelmChartInfo.builder().name("haha").repoUrl("sample.com").version("0.2.0").build();
+
   @InjectMocks private K8sInstanceSyncHandler k8sInstanceSyncHandler;
 
   @Test
@@ -122,6 +126,7 @@ public class K8sInstanceSyncHandlerTest extends InstancesTestBase {
     assertThat(k8sDeploymentInfoDTO.getBlueGreenStageColor()).isEqualTo(BLUE_GREEN_COLOR);
     assertThat(k8sDeploymentInfoDTO.getReleaseName()).isEqualTo(RELEASE_NAME);
     assertThat(k8sDeploymentInfoDTO.getNamespaces()).contains(NAMESPACE);
+    assertThat(k8sDeploymentInfoDTO.getHelmChartInfo()).isEqualTo(HELM_CHART_INFO);
   }
 
   @Test
@@ -168,6 +173,7 @@ public class K8sInstanceSyncHandlerTest extends InstancesTestBase {
                                          .namespace(NAMESPACE)
                                          .releaseName(RELEASE_NAME)
                                          .blueGreenColor(BLUE_GREEN_COLOR)
+                                         .helmChartInfo(HELM_CHART_INFO)
                                          .build());
   }
 }

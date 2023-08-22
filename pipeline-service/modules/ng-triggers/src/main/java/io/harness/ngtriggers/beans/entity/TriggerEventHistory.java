@@ -79,6 +79,15 @@ public class TriggerEventHistory implements PersistentEntity {
                  .field(TriggerEventHistoryKeys.accountId)
                  .field(TriggerEventHistoryKeys.eventCorrelationId)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("build_source_type")
+                 .field(TriggerEventHistoryKeys.accountId)
+                 .field(TriggerEventHistoryKeys.orgIdentifier)
+                 .field(TriggerEventHistoryKeys.projectIdentifier)
+                 .field(TriggerEventHistoryKeys.targetIdentifier)
+                 .field(TriggerEventHistoryKeys.buildSourceType)
+                 .descSortField(TriggerEventHistoryKeys.createdAt)
+                 .build())
         .build();
   }
 
@@ -90,6 +99,8 @@ public class TriggerEventHistory implements PersistentEntity {
   String eventCorrelationId;
   @Nullable String pollingDocId;
   String payload;
+  @Nullable String buildSourceType;
+  @Nullable String build;
   Long eventCreatedAt;
   String finalStatus;
   String message;

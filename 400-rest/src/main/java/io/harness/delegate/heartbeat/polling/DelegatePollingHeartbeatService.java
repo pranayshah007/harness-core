@@ -23,6 +23,7 @@ import software.wings.licensing.LicenseService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.MongoTimeoutException;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,12 @@ public class DelegatePollingHeartbeatService extends DelegateHeartbeatService<De
           .build();
     }
     // If the heartbeat processing hit unknown exception, fail early.
+    return null;
+  }
+
+  @Override
+  public DelegateHeartbeatResponse buildHeartBeatResponseOnMongoException(
+      DelegateHeartbeatParams params, MongoTimeoutException e) {
     return null;
   }
 

@@ -131,7 +131,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   private static final long WHITELIST_REFRESH_INTERVAL = TimeUnit.MINUTES.toMillis(10);
 
   private static final String NO_ACTIVE_DELEGATES = "Account has no active delegates";
-  private static final String NON_CONNECTED_DELEGATES = "Non active delegates";
+  public static final String NON_CONNECTED_DELEGATES = "Non active delegates";
 
   public static final String PIPELINE = "pipeline";
   public static final String STAGE = "stage";
@@ -200,6 +200,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
                   .project(DelegateKeys.delegateGroupId, true)
                   .project(DelegateKeys.owner, true)
                   .project(DelegateKeys.ng, true)
+                  .project(DelegateKeys.hostName, true)
                   .asList();
             }
           });
@@ -941,7 +942,8 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     for (String delegateId : activeDelegates) {
       Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId);
       boolean canAssignSelector = canAssignSelectors(delegate, delegateTask.getExecutionCapabilities());
-      if (!canAssignSelector) {
+      boolean canAssignOwner = canAssignOwner(delegate, delegateTask.getSetupAbstractions());
+      if (!canAssignSelector && canAssignOwner) {
         selectorMismatchedDelegates.add(delegate.getHostName());
       }
     }

@@ -84,9 +84,9 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
                                       .uuid(generateUuid())
                                       .ambiance(Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build())
                                       .status(Status.SUCCEEDED)
-                                      .timeoutInstanceIds(timeoutInstanceIds)
                                       .build();
-    NodeUpdateInfo nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(nodeExecution).build();
+    NodeUpdateInfo nodeUpdateInfo =
+        NodeUpdateInfo.builder().nodeExecution(nodeExecution).timeoutInstanceIds(timeoutInstanceIds).build();
 
     doNothing().when(timeoutEngine).deleteTimeouts(anyList());
 
@@ -115,9 +115,9 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
                                       .uuid(generateUuid())
                                       .ambiance(Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build())
                                       .status(Status.SUCCEEDED)
-                                      .timeoutInstanceIds(timeoutInstanceIds)
                                       .build();
-    NodeUpdateInfo nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(nodeExecution).build();
+    NodeUpdateInfo nodeUpdateInfo =
+        NodeUpdateInfo.builder().nodeExecution(nodeExecution).timeoutInstanceIds(timeoutInstanceIds).build();
 
     doAnswer(invocation -> { throw new Exception(); }).when(timeoutEngine).deleteTimeouts(anyList());
 

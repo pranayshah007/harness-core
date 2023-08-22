@@ -12,8 +12,10 @@ shared_dependencies = [
     "@maven//:io_netty_netty_all",
 ] + [
     "//:lombok",
+    "//ssca-manager/modules/contracts:module",
     "//950-ng-core:module",
     "//960-persistence:module",
+    "//965-api-key-filter:module",
     "//980-commons:module",
     "//999-annotations:module",
     "//ssca-manager/contracts/openapi/v1:ssca-manager-server-spec-module",

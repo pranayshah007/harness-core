@@ -1,6 +1,6 @@
 openapi: 3.0.0
 x-stoplight:
-  id: 10b13m9ois913
+  id: rpu4zlxgyni04
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -40,6 +40,8 @@ paths:
         $ref: '#/components/requestBodies/SbomProcessRequestBody'
       tags:
         - sbomProcessor
+      security:
+        - x-api-key: []
   '/v1/org/{org}/project/{project}/sbom/enforcement':
     parameters:
       - $ref: '#/components/parameters/OrgParam'
@@ -69,12 +71,31 @@ paths:
         $ref: '#/components/requestBodies/EnforceSbomRequestBody'
       tags:
         - sbomProcessor
+      security:
+        - x-api-key: []
+  /v1/token:
+    get:
+      summary: Issue a cross-service token
+      tags:
+        - Token
+      responses:
+        '200':
+          $ref: '#/components/responses/TokenIssueResponseBody'
+      operationId: Token#IssueToken
+      x-stoplight:
+        id: 65dvz43ksx8pa
+      description: Issue a cross-service token
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+      security:
+        - x-api-key: []
 components:
   schemas:
     Artifact:
       title: Artifact
       x-stoplight:
-        id: fqe8lmbnl4wc2
+        id: tbty2c77aatne
       type: object
       x-examples: {}
       properties:
@@ -105,7 +126,7 @@ components:
     SbomProcess:
       title: SbomProcess
       x-stoplight:
-        id: esexulw5knsro
+        id: 1govts3jx2is9
       type: object
       properties:
         name:
@@ -130,7 +151,7 @@ components:
     Attestation:
       title: Attestation
       x-stoplight:
-        id: hd4vm6rbwq0ko
+        id: njovnnucx1sdp
       type: object
       properties:
         is_attested:
@@ -144,7 +165,7 @@ components:
     SbomMetadata:
       title: SbomMetadata
       x-stoplight:
-        id: zgyi72n8vcd2j
+        id: mt82ebxc3v3d3
       type: object
       properties:
         format:
@@ -190,7 +211,7 @@ components:
     SbomProcessRequestBody:
       title: SbomProcessRequestBody
       x-stoplight:
-        id: afu4qmuw8kkzv
+        id: 91ee84xa33smg
       type: object
       properties:
         artifact:
@@ -204,7 +225,7 @@ components:
     SbomProcessResponseBody:
       title: SbomProcessResponseBody
       x-stoplight:
-        id: 0t1bvoejl6lw4
+        id: j2g9ex2135vmo
       type: object
       properties:
         artifact_id:
@@ -213,7 +234,7 @@ components:
     EnforceSbomResponseBody:
       title: SbomEnforceResponseBody
       x-stoplight:
-        id: f15827644558e
+        id: 4ezyuvxap426s
       type: object
       properties:
         enforcement_id:
@@ -227,7 +248,7 @@ components:
     EnforceSbomRequestBody:
       title: SbomEnforceRequestBody
       x-stoplight:
-        id: f13c698c0fe30
+        id: o83d681ynx177
       type: object
       properties:
         enforcement_id:
@@ -236,6 +257,30 @@ components:
           $ref: '#/components/schemas/Artifact'
         policy_file_id:
           type: string
+    TokenIssueResponseBody:
+      title: TokenIssueResponseBody
+      x-stoplight:
+        id: fd8797fcac677
+      type: object
+      x-internal: true
+      properties:
+        token:
+          type: string
+          description: Issued cross-service JWT
+      required:
+        - token
+    TokenIssueTokenResponseBody:
+      type: object
+      properties:
+        token:
+          type: string
+          x-stoplight:
+            id: hll76gq8nz4sz
+          description: Issued cross-service JWT
+      required:
+        - token
+      title: ''
+      x-internal: true
   parameters:
     OrgParam:
       name: org
@@ -288,5 +333,11 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/EnforceSbomResponseBody'
+    TokenIssueResponseBody:
+      description: Response body for token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TokenIssueResponseBody'
 tags:
   - name: sbomProcessor

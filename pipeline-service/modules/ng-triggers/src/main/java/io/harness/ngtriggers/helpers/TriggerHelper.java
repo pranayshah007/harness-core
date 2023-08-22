@@ -15,10 +15,12 @@ import static io.harness.ngtriggers.Constants.ARTIFACT_TYPE;
 import static io.harness.ngtriggers.Constants.BASE_COMMIT_SHA;
 import static io.harness.ngtriggers.Constants.BRANCH;
 import static io.harness.ngtriggers.Constants.COMMIT_SHA;
+import static io.harness.ngtriggers.Constants.CONNECTOR_REF;
 import static io.harness.ngtriggers.Constants.CUSTOM_TYPE;
 import static io.harness.ngtriggers.Constants.EVENT;
 import static io.harness.ngtriggers.Constants.GIT_USER;
 import static io.harness.ngtriggers.Constants.HEADER;
+import static io.harness.ngtriggers.Constants.IMAGE_PATH;
 import static io.harness.ngtriggers.Constants.MANIFEST_EXPR;
 import static io.harness.ngtriggers.Constants.MANIFEST_TYPE;
 import static io.harness.ngtriggers.Constants.MANIFEST_VERSION_EXPR;
@@ -26,8 +28,10 @@ import static io.harness.ngtriggers.Constants.PR;
 import static io.harness.ngtriggers.Constants.PR_NUMBER;
 import static io.harness.ngtriggers.Constants.PR_TITLE;
 import static io.harness.ngtriggers.Constants.PUSH;
+import static io.harness.ngtriggers.Constants.RELEASE_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.REPO_URL;
 import static io.harness.ngtriggers.Constants.SCHEDULED_TYPE;
+import static io.harness.ngtriggers.Constants.SOURCE;
 import static io.harness.ngtriggers.Constants.SOURCE_BRANCH;
 import static io.harness.ngtriggers.Constants.SOURCE_TYPE;
 import static io.harness.ngtriggers.Constants.TAG;
@@ -115,6 +119,15 @@ public class TriggerHelper {
           jsonObject.put(TAG, parsedPayload.getPush().getRef().replaceFirst("refs/tags/", ""));
         }
         break;
+      case RELEASE:
+        jsonObject.put(BRANCH, parsedPayload.getRelease().getRepo().getBranch());
+        jsonObject.put(TARGET_BRANCH, parsedPayload.getRelease().getRepo().getBranch());
+        jsonObject.put(EVENT, RELEASE_EVENT_TYPE);
+        jsonObject.put(TYPE, WEBHOOK_TYPE);
+        jsonObject.put(REPO_URL, parsedPayload.getRelease().getRepo().getLink());
+        jsonObject.put(GIT_USER, parsedPayload.getRelease().getSender().getLogin());
+        jsonObject.put(TAG, parsedPayload.getRelease().getRelease().getTag());
+        break;
       default:
         if (SCHEDULED == triggerPayload.getType()) {
           jsonObject.put(TYPE, SCHEDULED_TYPE);
@@ -133,6 +146,20 @@ public class TriggerHelper {
     return jsonObject;
   }
 
+  /*
+  Exposing expression - <+trigger.artifact.source.connectorRef>
+                      - <+trigger.artifact.source.imagePath>
+   */
+  private static void addConnectorAndImageData(Map<String, Object> jsonObject, TriggerPayload triggerPayload) {
+    HashMap<String, Object> sourceMap = new HashMap<>();
+    if (jsonObject.containsKey(SOURCE) && jsonObject.get(SOURCE) instanceof Map) {
+      sourceMap = (HashMap<String, Object>) jsonObject.get(ARTIFACT_EXPR);
+    }
+    sourceMap.put(CONNECTOR_REF, triggerPayload.getConnectorRef());
+    sourceMap.put(IMAGE_PATH, triggerPayload.getImagePath());
+    jsonObject.put(SOURCE, sourceMap);
+  }
+
   private void addBuildData(Map<String, Object> jsonObject, TriggerPayload triggerPayload) {
     HashMap<String, Object> map = new HashMap<>();
     if (triggerPayload.hasArtifactData()) {
@@ -142,6 +169,9 @@ public class TriggerHelper {
       jsonObject.put(TYPE, ARTIFACT_TYPE);
       jsonObject.remove(SOURCE_TYPE);
       jsonObject.put(ARTIFACT_EXPR, map);
+
+      // add expression supporting connectorRef and imagePath
+      addConnectorAndImageData((Map<String, Object>) jsonObject.get(ARTIFACT_EXPR), triggerPayload);
     } else if (triggerPayload.hasManifestData()) {
       // <+trigger.manifest.version>
       map.put(MANIFEST_VERSION_EXPR, triggerPayload.getManifestData().getVersion());

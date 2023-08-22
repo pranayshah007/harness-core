@@ -349,7 +349,10 @@ public enum NGStepType {
       "Infrastructure Provisioners/AWS CDK Deploy", StepSpecTypeConstants.AWS_CDK_DEPLOY),
   @JsonProperty(StepSpecTypeConstants.AWS_CDK_DESTROY)
   AWS_CDK_DESTROY("AWS CDK Destroy", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/AWS CDK Destroy", StepSpecTypeConstants.AWS_CDK_DESTROY);
+      "Infrastructure Provisioners/AWS CDK Destroy", StepSpecTypeConstants.AWS_CDK_DESTROY),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_ROLLBACK)
+  AWS_CDK_ROLLBACK("AWS CDK Rollback", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Rollback", StepSpecTypeConstants.AWS_CDK_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

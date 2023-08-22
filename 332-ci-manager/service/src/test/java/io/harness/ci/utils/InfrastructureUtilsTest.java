@@ -16,7 +16,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
@@ -66,15 +65,5 @@ public class InfrastructureUtilsTest {
         InfrastructureUtils.getHarnessImageConnector(infrastructure);
     assertThat(true).isEqualTo(optionalHarnessImageConnector.isPresent());
     assertThat(connectorRefValue).isEqualTo(optionalHarnessImageConnector.get().getValue());
-  }
-
-  @Test
-  @Owner(developers = RAGHAV_GUPTA)
-  @Category(UnitTests.class)
-  public void testGetHarnessImageConnectorForUnsupportedInfra() {
-    Infrastructure infrastructure = K8sHostedInfraYaml.builder().build();
-    Optional<ParameterField<String>> optionalHarnessImageConnector =
-        InfrastructureUtils.getHarnessImageConnector(infrastructure);
-    assertThat(false).isEqualTo(optionalHarnessImageConnector.isPresent());
   }
 }

@@ -98,7 +98,7 @@ public class AwsAmiInstanceSyncPerpetualTaskClientTest extends WingsBaseTest {
                 .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, GLOBAL_APP_ID)
                 .tags(singletonList("tag"))
                 .data(TaskData.builder()
-                          .async(false)
+                          .async(true)
                           .taskType(TaskType.AWS_ASG_TASK.name())
                           .parameters(new Object[] {AwsAsgListInstancesRequest.builder()
                                                         .awsConfig(awsConfig)
@@ -109,7 +109,7 @@ public class AwsAmiInstanceSyncPerpetualTaskClientTest extends WingsBaseTest {
                           .timeout(TimeUnit.MINUTES.toMillis(InstanceSyncConstants.VALIDATION_TIMEOUT_MINUTES))
                           .build())
                 .build(),
-            DelegateTaskKeys.expiry, DelegateTaskKeys.validUntil);
+            DelegateTaskKeys.expiry, DelegateTaskKeys.validUntil, DelegateTaskKeys.waitId);
   }
 
   private void prepareTaskData(AwsConfig awsConfig) {

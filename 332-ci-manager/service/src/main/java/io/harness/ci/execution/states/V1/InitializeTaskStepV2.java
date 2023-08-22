@@ -430,8 +430,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
   private void sanitizeExecution(InitializeStepInfo initializeStepInfo, String accountIdentifier) {
     List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
-    if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED
-        || initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
+    if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
       sanitizationService.validate(steps);
     }
   }
@@ -777,14 +776,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       }
       return entityDetails;
     }
-
-    if (infrastructure.getType() != Infrastructure.Type.KUBERNETES_HOSTED) {
-      if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
-        throw new CIStageExecutionException("Input infrastructure can not be empty");
-      }
-      String infraConnectorRef = ((K8sDirectInfraYaml) infrastructure).getSpec().getConnectorRef().getValue();
-      entityDetails.add(createEntityDetails(infraConnectorRef, accountIdentifier, projectIdentifier, orgIdentifier));
+    if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
+      throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
+    String infraConnectorRef = ((K8sDirectInfraYaml) infrastructure).getSpec().getConnectorRef().getValue();
+    entityDetails.add(createEntityDetails(infraConnectorRef, accountIdentifier, projectIdentifier, orgIdentifier));
 
     entityDetails.addAll(connectorRefs.stream()
                              .map(connectorIdentifier -> {

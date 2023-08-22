@@ -51,6 +51,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -129,7 +130,7 @@ public class AwsLambdaRollbackStepTest extends CDNGTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(awsLambdaRollbackStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(awsLambdaRollbackStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

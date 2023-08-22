@@ -83,6 +83,9 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
                                                                       .build();
               accessControlChangeConsumer.consumeEvent(UPDATE_ACTION, null, userGroupUpdateEventData);
               userGroupService.upsert(userGroup);
+            } else {
+              log.info(
+                  "[HarnessUserGroupServiceImpl]: Skipping User Group update as state is same in NGManager and ACS");
             }
           } else {
             userGroupService.upsert(userGroup);

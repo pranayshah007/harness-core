@@ -26,6 +26,7 @@ import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
+import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
@@ -84,11 +85,22 @@ import io.harness.idp.proxy.services.ProxyApiImpl;
 import io.harness.idp.scorecard.checks.resources.ChecksApiImpl;
 import io.harness.idp.scorecard.checks.service.CheckService;
 import io.harness.idp.scorecard.checks.service.CheckServiceImpl;
+import io.harness.idp.scorecard.datapoints.service.DataPointService;
+import io.harness.idp.scorecard.datapoints.service.DataPointServiceImpl;
+import io.harness.idp.scorecard.datapointsdata.resource.DataPointDataApiImpl;
+import io.harness.idp.scorecard.datapointsdata.service.DataPointDataValueService;
+import io.harness.idp.scorecard.datapointsdata.service.DataPointDataValueServiceImpl;
+import io.harness.idp.scorecard.datasourcelocations.service.DataSourceLocationService;
+import io.harness.idp.scorecard.datasourcelocations.service.DataSourceLocationServiceImpl;
 import io.harness.idp.scorecard.datasources.resources.DataSourceApiImpl;
+import io.harness.idp.scorecard.datasources.service.DataSourceService;
+import io.harness.idp.scorecard.datasources.service.DataSourceServiceImpl;
 import io.harness.idp.scorecard.scorecards.resources.ScorecardsApiImpl;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
 import io.harness.idp.scorecard.scorecards.service.ScorecardServiceImpl;
 import io.harness.idp.scorecard.scores.resources.ScoreApiImpl;
+import io.harness.idp.scorecard.scores.service.ScoreService;
+import io.harness.idp.scorecard.scores.service.ScoreServiceImpl;
 import io.harness.idp.serializer.IdpServiceRegistrars;
 import io.harness.idp.settings.resources.BackstagePermissionsApiImpl;
 import io.harness.idp.settings.service.BackstagePermissionsService;
@@ -106,12 +118,15 @@ import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
@@ -129,6 +144,7 @@ import io.harness.spec.server.idp.v1.BackstageEnvVariableApi;
 import io.harness.spec.server.idp.v1.BackstagePermissionsApi;
 import io.harness.spec.server.idp.v1.ChecksApi;
 import io.harness.spec.server.idp.v1.ConnectorInfoApi;
+import io.harness.spec.server.idp.v1.DataPointsDataApi;
 import io.harness.spec.server.idp.v1.DataSourceApi;
 import io.harness.spec.server.idp.v1.LayoutProxyApi;
 import io.harness.spec.server.idp.v1.MergedPluginsConfigApi;
@@ -186,6 +202,7 @@ public class IdpModule extends AbstractModule {
     install(VersionModule.getInstance());
     install(new IdpPersistenceModule());
     install(IdpGrpcModule.getInstance());
+    install(EntitySetupUsageModule.getInstance());
     install(new AbstractMongoModule() {
       @Provides
       @Singleton
@@ -273,6 +290,12 @@ public class IdpModule extends AbstractModule {
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ServiceResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new NGSettingsClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new EntitySetupUsageClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new PipelineRemoteClientModule(
+        appConfig.getPipelineServiceConfiguration(), appConfig.getPipelineServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, IDP_SERVICE.getServiceId(), false));
     install(new BackstageResourceClientModule());
     install(DelegateServiceDriverModule.getInstance(false, false));
@@ -339,6 +362,13 @@ public class IdpModule extends AbstractModule {
     bind(CheckService.class).to(CheckServiceImpl.class);
     bind(ScoresApi.class).to(ScoreApiImpl.class);
     bind(DataSourceApi.class).to(DataSourceApiImpl.class);
+    bind(DataSourceService.class).to(DataSourceServiceImpl.class);
+    bind(DataPointService.class).to(DataPointServiceImpl.class);
+    bind(DataSourceLocationService.class).to(DataSourceLocationServiceImpl.class);
+    bind(ScoreService.class).to(ScoreServiceImpl.class);
+    bind(DataPointService.class).to(DataPointServiceImpl.class);
+    bind(DataPointsDataApi.class).to(DataPointDataApiImpl.class);
+    bind(DataPointDataValueService.class).to(DataPointDataValueServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("backstageEnvVariableSyncer"))
         .toInstance(new ManagedScheduledExecutorService("backstageEnvVariableSyncer"));
@@ -542,5 +572,12 @@ public class IdpModule extends AbstractModule {
   @Named("notificationConfigs")
   public HashMap<String, String> notificationConfigs() {
     return this.appConfig.getNotificationConfigs();
+  }
+
+  @Provides
+  @Singleton
+  @Named("pipelineServiceClientConfigs")
+  public ServiceHttpClientConfig pipelineServiceConfiguration() {
+    return this.appConfig.getPipelineServiceConfiguration();
   }
 }

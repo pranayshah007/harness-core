@@ -30,15 +30,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class DelegateDisconnectAlertHelper implements DelegateObserver {
   @Inject private AlertService alertService;
   @Inject DelegateCache delegateCache;
   @Inject private DelegateDao delegateDao;
-
-  private static final long MAX_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
 
   public void checkIfAnyDelegatesAreDown(String accountId, List<Delegate> delegates) {
     for (Delegate delegate : delegates) {

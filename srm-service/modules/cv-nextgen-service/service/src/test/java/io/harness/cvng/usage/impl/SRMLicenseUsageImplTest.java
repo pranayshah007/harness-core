@@ -37,6 +37,7 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
@@ -81,6 +82,7 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = OwnerRule.ARPITJ)
   @Category(UnitTests.class)
+  @Ignore(value = "Deprecated for now")
   public void testListLicenseUsage() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms1", "service1", "env1").build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
@@ -114,6 +116,7 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = OwnerRule.ARPITJ)
   @Category(UnitTests.class)
+  @Ignore(value = "Deprecated as of now")
   public void testListLicenseUsage_serviceFilter() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms1", "service1", "env1").build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
@@ -145,6 +148,7 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = OwnerRule.ARPITJ)
   @Category(UnitTests.class)
+  @Ignore(value = "Deprecated as of now")
   public void testListLicenseUsage_projectFilter() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms1", "service1", "env1").build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
@@ -183,6 +187,7 @@ public class SRMLicenseUsageImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = OwnerRule.ARPITJ)
   @Category(UnitTests.class)
+  @Ignore(value = "Deprecated as of now")
   public void testListLicenseUsage_orgFilter() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms1", "service1", "env1").build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);

@@ -156,7 +156,7 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
     }
 
     if (build == null) {
-      if (isEmpty(artifactPath)) {
+      if (isNotEmpty(artifactPathFilter)) {
         throw NestedExceptionUtils.hintWithExplanationException(
             "Please check artifactPathFilter or artifactDirectory or repository field in Artifactory artifact .",
             String.format("Could not find any Artifact that match artifactPathFilter [%s] for Artifactory repository"

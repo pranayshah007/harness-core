@@ -228,9 +228,10 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testExecuteDefault_createActivity() {
     Ambiance ambiance = getAmbiance();
-    monitoredServiceDTO.setEnabled(true);
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getProjectParams(), monitoredServiceDTO.getIdentifier(), true);
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     StepElementParameters stepElementParameters = getDefaultStepElementParameters();
     StepResponse stepResponse =
@@ -263,9 +264,10 @@ public class CVNGAnalyzeDeploymentStepTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testExecuteDefault_createEntity() {
     Ambiance ambiance = getAmbiance();
-    monitoredServiceDTO.setEnabled(true);
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getProjectParams(), monitoredServiceDTO.getIdentifier(), true);
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     StepElementParameters stepElementParameters = getDefaultStepElementParameters();
     Duration analysisDuration = CVNGAnalyzeDeploymentStep.getDurationFromString(duration);

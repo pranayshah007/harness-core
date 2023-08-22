@@ -7,6 +7,7 @@
 
 package io.harness.delegate.heartbeat.stream;
 
+import static io.harness.delegate.message.ManagerMessageConstants.MONGO_TIMEOUT;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.utils.DelegateServiceConstants.STREAM_DELEGATE;
 import static io.harness.eraro.ErrorCode.DELEGATE_NOT_REGISTERED;
@@ -23,6 +24,7 @@ import io.harness.service.intfc.DelegateCache;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.MongoTimeoutException;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +72,15 @@ public class DelegateStreamHeartbeatService
     }
     // If the heartbeat processing hit unknown exception, fail early.
     return null;
+  }
+
+  @Override
+  public DelegateHeartbeatResponseStreamingWrapper buildHeartBeatResponseOnMongoException(
+      DelegateHeartbeatParams params, MongoTimeoutException e) {
+    return DelegateHeartbeatResponseStreamingWrapper.builder()
+        .isHeartbeatAsObject(false)
+        .responseMessage(MONGO_TIMEOUT + params.getDelegateId())
+        .build();
   }
 
   @Override
