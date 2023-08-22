@@ -13,6 +13,7 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.spec.server.ssca.v1.model.TokenIssueResponseBody;
 import io.harness.ssca.beans.SscaExecutionConstants;
 import io.harness.ssca.beans.entities.SSCAServiceConfig;
 import io.harness.ssca.client.beans.SBOMArtifactResponse;
@@ -73,17 +74,38 @@ public class SSCAServiceUtils {
     return response.body().getToken();
   }
 
+  public String getSscaManagerToken(String accountId) {
+    Call<TokenIssueResponseBody> call = sscaServiceClient.generateSSCAAuthToken(accountId);
+    TokenIssueResponseBody response;
+    try {
+      response = NGRestUtils.getGeneralResponse(sscaServiceClient.generateSSCAAuthToken(accountId));
+    } catch (InvalidRequestException e) {
+      throw new GeneralException("Could not fetch token from SSCA manager.");
+    }
+
+    return response.getToken();
+  }
+
   public Map<String, String> getSSCAServiceEnvVariables(String accountId, String orgId, String projectId) {
     Map<String, String> envVars = new HashMap<>();
     final String sscaServiceBaseUrl = sscaServiceConfig.getHttpClientConfig().getBaseUrl();
 
     String sscaServiceToken = "token";
 
-    // Make a call to the SSCA service and get back the token.
-    try {
-      sscaServiceToken = getSscaServiceToken(accountId, orgId, projectId);
-    } catch (Exception e) {
-      log.error("Could not call token endpoint for SSCA service", e);
+    if (sscaServiceConfig.isSscaManagerEnabled()) {
+      // Make a call to the SSCA manager and get back the token.
+      try {
+        sscaServiceToken = getSscaManagerToken(accountId);
+      } catch (Exception e) {
+        log.error("Could not call token endpoint for SSCA service", e);
+      }
+    } else {
+      // Make a call to the SSCA service and get back the token.
+      try {
+        sscaServiceToken = getSscaServiceToken(accountId, orgId, projectId);
+      } catch (Exception e) {
+        log.error("Could not call token endpoint for SSCA service", e);
+      }
     }
 
     envVars.put(SscaExecutionConstants.SSCA_SERVICE_TOKEN_VARIABLE, sscaServiceToken);

@@ -9,6 +9,7 @@ package io.harness.ssca.client;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.spec.server.ssca.v1.model.TokenIssueResponseBody;
 import io.harness.ssca.client.beans.SBOMArtifactResponse;
 import io.harness.ssca.client.beans.SscaAuthToken;
 import io.harness.ssca.client.beans.enforcement.SscaEnforcementSummary;
@@ -16,6 +17,7 @@ import io.harness.ssca.utils.SSCACommonEndpointConstants;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -32,4 +34,7 @@ public interface SSCAServiceClient {
 
   @GET(SSCACommonEndpointConstants.SSCA_SERVICE_ENFORCEMENT_ENDPOINT + "{enforcementId}/summary")
   Call<SscaEnforcementSummary> getEnforcementSummary(@Path("enforcementId") String enforcementId);
+
+  @GET(SSCACommonEndpointConstants.SSCA_MANAGER_TOKEN_ENDPOINT)
+  Call<TokenIssueResponseBody> generateSSCAAuthToken(@Header("Harness-Account") String accountIdentifier);
 }
