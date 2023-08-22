@@ -20,7 +20,7 @@ global:
     virtualService:
       hosts:
       - ''
-      gateways: {}
+      gateways: []
   ingress:
     enabled: false
     objects:
