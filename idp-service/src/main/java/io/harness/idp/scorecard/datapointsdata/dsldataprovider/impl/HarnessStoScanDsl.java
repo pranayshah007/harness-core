@@ -40,8 +40,8 @@ public class HarnessStoScanDsl implements DslDataProvider {
     Map<String, Object> returnData = new HashMap<>();
 
     // ci pipeline detail
-    Map<String, String> ciIdentifiers =
-        DslUtils.getCiPipelineUrlIdentifiers(dataSourceDataPointInfo.getCiPipelineUrl());
+    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
+        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
 
     List<DataPointInputValues> dataPointInputValuesList =
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints();
@@ -65,8 +65,8 @@ public class HarnessStoScanDsl implements DslDataProvider {
     }
 
     // cd pipeline detail
-    Map<String, String> serviceIdentifiers =
-        DslUtils.getCdServiceUrlIdentifiers(dataSourceDataPointInfo.getServiceUrl());
+    Map<String, String> serviceIdentifiers = DslUtils.getCdServiceUrlIdentifiers(
+        DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
     long currentTime = System.currentTimeMillis();
     DeploymentsInfo serviceDeploymentInfo = null;
     try {

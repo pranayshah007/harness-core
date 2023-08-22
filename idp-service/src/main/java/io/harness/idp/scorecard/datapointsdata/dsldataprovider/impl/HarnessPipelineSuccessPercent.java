@@ -36,8 +36,8 @@ public class HarnessPipelineSuccessPercent implements DslDataProvider {
 
   @Override
   public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
-    Map<String, String> ciIdentifiers =
-        DslUtils.getCiPipelineUrlIdentifiers(dataSourceDataPointInfo.getCiPipelineUrl());
+    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
+        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
 
     long currentTime = System.currentTimeMillis();
 

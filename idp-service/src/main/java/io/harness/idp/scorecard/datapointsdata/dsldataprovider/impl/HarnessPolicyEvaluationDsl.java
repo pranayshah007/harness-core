@@ -37,8 +37,8 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
   @Override
   public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
     // ci pipeline detail
-    Map<String, String> ciIdentifiers =
-        DslUtils.getCiPipelineUrlIdentifiers(dataSourceDataPointInfo.getCiPipelineUrl());
+    Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
+        DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
 
     Object responseCI = null;
     try {
@@ -59,8 +59,8 @@ public class HarnessPolicyEvaluationDsl implements DslDataProvider {
     }
 
     // cd pipeline detail
-    Map<String, String> serviceIdentifiers =
-        DslUtils.getCdServiceUrlIdentifiers(dataSourceDataPointInfo.getServiceUrl());
+    Map<String, String> serviceIdentifiers = DslUtils.getCdServiceUrlIdentifiers(
+        DslUtils.getServiceUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
     long currentTime = System.currentTimeMillis();
     DeploymentsInfo serviceDeploymentInfo = null;
     try {
