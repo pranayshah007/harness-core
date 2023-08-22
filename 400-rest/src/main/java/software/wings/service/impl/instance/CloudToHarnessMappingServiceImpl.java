@@ -366,8 +366,10 @@ public class CloudToHarnessMappingServiceImpl implements CloudToHarnessMappingSe
     try {
       Service service = persistence.get(Service.class, entityId);
       if (service != null) {
+        log.info("Yes service name is returned");
         return service.getName();
       } else {
+        log.info("Yes entity id is returned in place of service name");
         return entityId;
       }
     } catch (Exception e) {

@@ -25,6 +25,10 @@ public class HarnessEntitiesService {
   public static class CacheKey {
     public String entityId;
     public HarnessEntities entity;
+    public CacheKey(String entityId, HarnessEntities entity) {
+      this.entityId = entityId;
+      this.entity = entity;
+    }
   }
 
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;

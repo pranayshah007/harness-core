@@ -57,6 +57,23 @@ public class AnomalyDetectionTimeSeries extends Anomaly {
 
     if (timeSeries.getService() != null) {
       log.info("Yes It  reached inside if loop for service name");
+      log.info("Service inside if is : {}", timeSeries.getService());
+
+      HarnessEntitiesService.CacheKey obj1 =
+          new HarnessEntitiesService.CacheKey(timeSeries.getService(), HarnessEntitiesService.HarnessEntities.SERVICE);
+
+      log.info("The entity id is {}", obj1.entityId);
+      log.info("The entity id name is {}", (obj1.entity).name());
+
+      entityIdToNameCache.get(obj1);
+
+      log.info("Yes it passed the line for getting the value");
+
+      if (entityIdToNameCache.get(obj1) == null) {
+        log.info("Yes it's null");
+      } else {
+        log.info("It's not null");
+      }
 
       timeSeries.setServiceName((entityIdToNameCache.get(new HarnessEntitiesService.CacheKey(
                                      timeSeries.getService(), HarnessEntitiesService.HarnessEntities.SERVICE)))
