@@ -38,6 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
+import io.harness.NGCommonEntityConstants;
 import io.harness.TemplateServiceTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -126,6 +127,9 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.collect.Sets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -137,6 +141,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -2165,6 +2170,76 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
                                         .build();
     doNothing().when(templateAsyncSetupUsageService).populateAsyncSetupUsage(any());
     templateService.populateSetupUsageAsync(templateEntity);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testImportTemplate() throws JsonProcessingException {
+    String templateYaml = "template:\n"
+        + "  name: ddd\n"
+        + "  identifier: ddd\n"
+        + "  versionLabel: ddd\n"
+        + "  type: Step\n"
+        + "  tags: {}\n"
+        + "  spec:\n"
+        + "    timeout: 10s\n"
+        + "    type: AsgCanaryDeploy\n"
+        + "    spec:\n"
+        + "      instanceSelection:\n"
+        + "        type: Count\n"
+        + "        spec:\n"
+        + "          count: 1\n";
+    ObjectMapper objectMapper = new YAMLMapper();
+    String importYaml = templateService.importTemplateFromGlobalTemplateMarketPlace(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateYaml);
+    Map<String, Object> importYamlObject = objectMapper.readValue(importYaml, new TypeReference<>() {});
+    Map<String, Object> templateNode = (Map<String, Object>) importYamlObject.get(NGCommonEntityConstants.TEMPLATE);
+    assertThat(templateNode.get(NGCommonEntityConstants.ORG_KEY)).isEqualTo(ORG_IDENTIFIER);
+    assertThat(templateNode.get(NGCommonEntityConstants.PROJECT_KEY)).isEqualTo(PROJ_IDENTIFIER);
+
+    templateYaml = "template:\n"
+        + "  name: ddd\n"
+        + "  identifier: ddd\n"
+        + "  versionLabel: ddd\n"
+        + "  type: Step\n"
+        + "  tags: {}\n"
+        + "  spec:\n"
+        + "    timeout: 10s\n"
+        + "    type: AsgCanaryDeploy\n"
+        + "    spec:\n"
+        + "      instanceSelection:\n"
+        + "        type: Count\n"
+        + "        spec:\n"
+        + "          count: 1\n";
+    objectMapper = new YAMLMapper();
+    importYaml =
+        templateService.importTemplateFromGlobalTemplateMarketPlace(ACCOUNT_ID, ORG_IDENTIFIER, null, templateYaml);
+    importYamlObject = objectMapper.readValue(importYaml, new TypeReference<>() {});
+    templateNode = (Map<String, Object>) importYamlObject.get(NGCommonEntityConstants.TEMPLATE);
+    assertThat(templateNode.get(NGCommonEntityConstants.ORG_KEY)).isEqualTo(ORG_IDENTIFIER);
+    assertThat(templateNode.get(NGCommonEntityConstants.PROJECT_KEY)).isNull();
+
+    templateYaml = "template:\n"
+        + "  name: ddd\n"
+        + "  identifier: ddd\n"
+        + "  versionLabel: ddd\n"
+        + "  type: Step\n"
+        + "  tags: {}\n"
+        + "  spec:\n"
+        + "    timeout: 10s\n"
+        + "    type: AsgCanaryDeploy\n"
+        + "    spec:\n"
+        + "      instanceSelection:\n"
+        + "        type: Count\n"
+        + "        spec:\n"
+        + "          count: 1\n";
+    objectMapper = new YAMLMapper();
+    importYaml = templateService.importTemplateFromGlobalTemplateMarketPlace(ACCOUNT_ID, null, null, templateYaml);
+    importYamlObject = objectMapper.readValue(importYaml, new TypeReference<>() {});
+    templateNode = (Map<String, Object>) importYamlObject.get(NGCommonEntityConstants.TEMPLATE);
+    assertThat(templateNode.get(NGCommonEntityConstants.ORG_KEY)).isNull();
+    assertThat(templateNode.get(NGCommonEntityConstants.PROJECT_KEY)).isNull();
   }
 
   @Test

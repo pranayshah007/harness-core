@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.CodePulse;
@@ -223,4 +224,5 @@ public class NGCommonEntityConstants {
   public static final String NOTES_FOR_PIPELINE_EXECUTION = "notesForPipelineExecution";
   public static final String APPLY_GITX_REPO_ALLOW_LIST_FILTER = "applyGitXRepoAllowListFilter";
   public static final String ACTIVITY_TYPES = "activityTypes";
+  public static final String TEMPLATE = "template";
 }

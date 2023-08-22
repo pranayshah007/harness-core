@@ -5,6 +5,7 @@ package io.harness.template.resources;
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -562,5 +563,41 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
             .connectorRef(request.getConnectorRef())
             .build());
     return ResponseDTO.newResponse(TemplateUpdateGitMetadataResponse.builder().status(true).build());
+  }
+
+  @Override
+  public ResponseDTO<TemplateWrapperResponseDTO> importTemplate(@NotNull String accountId, @OrgIdentifier String orgId,
+      @ProjectIdentifier String projectId, GitEntityCreateInfoDTO gitEntityCreateInfo, @NotNull String templateYaml,
+      boolean setDefaultTemplate, String comments, boolean isNewTemplate) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+    templateYaml =
+        templateService.importTemplateFromGlobalTemplateMarketPlace(accountId, orgId, projectId, templateYaml);
+    TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, templateYaml);
+    log.info(String.format(
+        "Importing Template from global template list with identifier %s with label %s in project %s, org %s, account %s",
+        templateEntity.getIdentifier(), templateEntity.getVersionLabel(), projectId, orgId, accountId));
+
+    if (gitEntityCreateInfo != null && StoreType.REMOTE.equals(gitEntityCreateInfo.getStoreType())) {
+      comments = templateServiceHelper.getComment(
+          "created", templateEntity.getIdentifier(), gitEntityCreateInfo.getCommitMsg());
+    }
+
+    GovernanceMetadata governanceMetadata = templateService.validateGovernanceRules(templateEntity);
+    if (governanceMetadata.getDeny()) {
+      TemplateWrapperResponseDTO templateWrapperResponseDTO =
+          TemplateWrapperResponseDTO.builder().isValid(true).governanceMetadata(governanceMetadata).build();
+      return ResponseDTO.newResponse(templateWrapperResponseDTO);
+    }
+
+    TemplateEntity createdTemplate =
+        templateService.create(templateEntity, setDefaultTemplate, comments, isNewTemplate);
+    TemplateWrapperResponseDTO templateWrapperResponseDTO =
+        TemplateWrapperResponseDTO.builder()
+            .isValid(true)
+            .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(createdTemplate))
+            .governanceMetadata(governanceMetadata)
+            .build();
+    return ResponseDTO.newResponse(createdTemplate.getVersion().toString(), templateWrapperResponseDTO);
   }
 }

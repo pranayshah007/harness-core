@@ -684,4 +684,35 @@ public interface NGTemplateResource {
           NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
       @Parameter(description = "This contains details of Git Entity like Git Branch info to be updated")
       TemplateUpdateGitMetadataRequest request);
+
+  @POST
+  @ApiOperation(value = "Import Global Template", nickname = "importGlobalTemplate")
+  @Operation(operationId = "importGlobalTemplate", summary = "Import Global Template",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the created Template")
+      })
+  ResponseDTO<TemplateWrapperResponseDTO>
+  importTemplate(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created")
+      @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo,
+      @RequestBody(required = true, description = "Template YAML",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Create Template YAML",
+                         value = NGTemplateConstants.API_SAMPLE_TEMPLATE_YAML, description = "Sample Template YAML"))
+          }) @NotNull String templateYaml,
+      @Parameter(description = "Specify true if Default Template is to be set") @QueryParam(
+          "setDefaultTemplate") @DefaultValue("false") boolean setDefaultTemplate,
+      @Parameter(description = "Comments") @QueryParam("comments") String comments,
+      @Parameter(
+          description =
+              "When isNewTemplate flag is set user will not be able to create a new version for an existing template")
+      @QueryParam("isNewTemplate") @DefaultValue("false") @ApiParam(hidden = true) boolean isNewTemplate);
 }
