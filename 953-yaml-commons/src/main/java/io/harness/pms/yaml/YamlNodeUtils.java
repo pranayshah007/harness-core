@@ -103,7 +103,7 @@ public class YamlNodeUtils {
     return curr;
   }
 
-  private JsonNode getNextNodeFromArray(YamlNode yamlNode, String currName) {
+  public JsonNode getNextNodeFromArray(YamlNode yamlNode, String currName) {
     JsonNode next = null;
     for (YamlNode arrayElement : yamlNode.asArray()) {
       /* For nodes such as variables where only value field is associated with name, key.
@@ -144,7 +144,7 @@ public class YamlNodeUtils {
           }
           // If the node is like parallel, a dummy node having another list.
           else if (field.getNode().isArray()) {
-            next = getNextNodeFromArray(yamlNode, currName);
+            next = getNextNodeFromArray(field.getNode(), currName);
           }
         }
       }
