@@ -972,7 +972,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   public GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest,
       SCMGrpc.SCMBlockingStub scmBlockingStub, RepoFilterParamsDTO repoFilterParamsDTO) {
     GetUserReposRequest getUserReposRequest =
-        buildGetUserReposRequest(scmConnector, pageRequest, repoFilterParamsDTO, LIST_REPO_API_VERSION_TWO);
+        buildGetUserReposRequest(scmConnector, pageRequest, null, LIST_REPO_DEFAULT_API_VERSION);
     return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::getUserRepos, getUserReposRequest);
   }
 
