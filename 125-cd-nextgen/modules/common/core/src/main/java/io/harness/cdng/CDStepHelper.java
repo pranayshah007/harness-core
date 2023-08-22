@@ -479,8 +479,8 @@ public class CDStepHelper {
     List<EncryptedDataDetail> apiAuthEncryptedDataDetails = null;
     GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO((ScmConnector) connectorDTO.getConnectorConfig());
     SSHKeySpecDTO sshKeySpecDTO = getSshKeySpecDTO(gitConfigDTO, ambiance);
-    List<EncryptedDataDetail> encryptedDataDetails =
-        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
+    List<EncryptedDataDetail> encryptedDataDetails = gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(
+        (ScmConnector) connectorDTO.getConnectorConfig(), sshKeySpecDTO, basicNGAccessObject);
 
     scmConnector = gitConfigDTO;
     boolean githubAppAuthentication =
