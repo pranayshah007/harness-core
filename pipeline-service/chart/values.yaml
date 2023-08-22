@@ -2,6 +2,10 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  monitoring:
+    enabled: false
+    port: 8889
+    path: /metrics
   kubeVersion: ""
   loadbalancerURL: ""
   stackDriverLoggingEnabled: false
