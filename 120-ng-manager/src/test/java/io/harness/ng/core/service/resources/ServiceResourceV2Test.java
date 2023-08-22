@@ -145,7 +145,7 @@ public class ServiceResourceV2Test extends CategoryTest {
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
     when(serviceEntityService.create(any())).thenReturn(entity);
-    serviceResourceV2.create(ACCOUNT_ID, serviceRequestDTO);
+    serviceResourceV2.create(ACCOUNT_ID, serviceRequestDTO, null);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, serviceRequestDTO.getOrgIdentifier(),
                                    serviceRequestDTO.getProjectIdentifier()),
@@ -174,7 +174,7 @@ public class ServiceResourceV2Test extends CategoryTest {
                             .name(NAME)
                             .yaml(yaml)
                             .build();
-    assertThatThrownBy(() -> serviceResourceV2.create(ACCOUNT_ID, serviceRequestDTO))
+    assertThatThrownBy(() -> serviceResourceV2.create(ACCOUNT_ID, serviceRequestDTO, null))
         .isInstanceOf(InvalidRequestException.class);
     verify(serviceSchemaHelper, times(1)).validateSchema(ACCOUNT_ID, serviceRequestDTO.getYaml());
   }
@@ -244,8 +244,8 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testListTemplate() {
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
-    ResponseDTO<ServiceResponse> serviceResponseResponseDTO =
-        serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false, false);
+    ResponseDTO<ServiceResponse> serviceResponseResponseDTO = serviceResourceV2.get(
+        IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false, false, null, "false", false);
     assertThat(serviceResponseResponseDTO.getEntityTag()).isNull();
   }
 
@@ -254,8 +254,9 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testListTemplateForNotFoundException() {
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.empty());
-    assertThatThrownBy(
-        () -> serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false, false))
+    assertThatThrownBy(()
+                           -> serviceResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false,
+                               false, null, "false", false))
         .hasMessage("Service with identifier [identifier] in project [projId], org [orgId] not found");
   }
 
@@ -267,7 +268,7 @@ public class ServiceResourceV2Test extends CategoryTest {
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
     when(serviceEntityService.update(any())).thenReturn(entity);
-    serviceResourceV2.update("IF_MATCH", ACCOUNT_ID, serviceRequestDTO);
+    serviceResourceV2.update("IF_MATCH", ACCOUNT_ID, serviceRequestDTO, null);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, serviceRequestDTO.getOrgIdentifier(),
                                    serviceRequestDTO.getProjectIdentifier()),
@@ -285,7 +286,7 @@ public class ServiceResourceV2Test extends CategoryTest {
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
     when(serviceEntityService.update(any())).thenReturn(entity);
-    serviceResourceV2.update("IF_MATCH", ACCOUNT_ID, serviceRequestDTO);
+    serviceResourceV2.update("IF_MATCH", ACCOUNT_ID, serviceRequestDTO, null);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, serviceRequestDTO.getOrgIdentifier(),
                                    serviceRequestDTO.getProjectIdentifier()),
@@ -392,7 +393,7 @@ public class ServiceResourceV2Test extends CategoryTest {
                             .yaml("")
                             .build();
 
-    serviceResourceV2.create(ACCOUNT_ID, serviceRequestDTO);
+    serviceResourceV2.create(ACCOUNT_ID, serviceRequestDTO, null);
     verify(serviceSchemaHelper, times(2)).validateSchema(any(), any());
   }
 
@@ -464,7 +465,7 @@ public class ServiceResourceV2Test extends CategoryTest {
                                                .projectIdentifier(PROJ_IDENTIFIER)
                                                .name(NAME)
                                                .build();
-    serviceResourceV2.update("IF_MATCH", ACCOUNT_ID, serviceRequestDTO1);
+    serviceResourceV2.update("IF_MATCH", ACCOUNT_ID, serviceRequestDTO1, null);
     verify(serviceSchemaHelper, times(2)).validateSchema(any(), any());
   }
 
