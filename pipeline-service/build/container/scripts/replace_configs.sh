@@ -532,6 +532,9 @@ replace_key_value enableAudit "$ENABLE_AUDIT"
 replace_key_value auditClientConfig.baseUrl "$AUDIT_SERVICE_BASE_URL"
 replace_key_value notificationClient.secrets.notificationClientSecret "$NOTIFICATION_CLIENT_SECRET"
 
+replace_key_value errorTrackingClientConfig.errorTrackingServiceConfig.baseUrl "$ERROR_TRACKING_SERVICE_BASE_URL"
+replace_key_value errorTrackingClientConfig.errorTrackingServiceSecret "$ERROR_TRACKING_SERVICE_SECRET"
+
 replace_key_value triggerConfig.webhookBaseUrl "$WEBHOOK_TRIGGER_BASEURL"
 replace_key_value triggerConfig.customBaseUrl "$CUSTOM_TRIGGER_BASEURL"
 
