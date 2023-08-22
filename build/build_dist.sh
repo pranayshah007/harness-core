@@ -85,7 +85,6 @@ function copy_ng_dashboard_jars(){
 	cp ../../290-dashboard-service/config.yml .
 	cp ../../290-dashboard-service/src/main/resources/jfr/default.jfc .
 	cp ../../290-dashboard-service/src/main/resources/jfr/profile.jfc .
-	cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-cie-jdk Dockerfile-cie-jdk
 	cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 	cp -r ../../dockerization/ng-dashboard-service/scripts/ .
@@ -222,4 +221,6 @@ elif [ "${SERVICE_NAME}" == "verification-service" ]; then
     copy_verification_service_jars
 elif [ "${SERVICE_NAME}" == "event-server" ]; then
     copy_event_server_jars
+elif [ "${SERVICE_NAME}" == "ng-dashboard-aggregator" ]; then
+    copy_ng_dashboard_jars
 fi
