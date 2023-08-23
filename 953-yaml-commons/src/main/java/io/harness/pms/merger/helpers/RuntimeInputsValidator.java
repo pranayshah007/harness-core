@@ -159,15 +159,15 @@ public class RuntimeInputsValidator {
             nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForEnvironment.get());
             continue;
           }
-//           TODO: Please uncomment below code-block to handle environment.infrastructureDefinitions once the useFromStage for them is implemented.
-//           This is to handle if sourceYaml has environment.infrastructureDefinitions as input but user choose
-//           useFromStage in nodeToRefresh
-//          Optional<FQN> nodeFQNOneOfForInfraDefinition =
-//              isNodeToValidationKeyIsOneOfForInfraDefinition(nodeToValidateFqnToValueMap, key);
-//          if (nodeFQNOneOfForInfraDefinition.isPresent()) {
-//            nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForInfraDefinition.get());
-//            continue;
-//          }
+          //           TODO: Please uncomment below code-block to handle environment.infrastructureDefinitions once the
+          //           useFromStage for them is implemented. This is to handle if sourceYaml has
+          //           environment.infrastructureDefinitions as input but user choose useFromStage in nodeToRefresh
+          //          Optional<FQN> nodeFQNOneOfForInfraDefinition =
+          //              isNodeToValidationKeyIsOneOfForInfraDefinition(nodeToValidateFqnToValueMap, key);
+          //          if (nodeFQNOneOfForInfraDefinition.isPresent()) {
+          //            nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForInfraDefinition.get());
+          //            continue;
+          //          }
           return false;
         }
         // remove the subMap from nodeToValidateFqnToValueMap
