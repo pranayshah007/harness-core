@@ -49,12 +49,13 @@ public class AnomalyQueryHelper {
         CCMField.CLUSTER_NAME, CCMOperator.IN, anomalyFilterPropertiesDTO.getK8sClusterNames(), stringFilters);
     addStringFilter(CCMField.NAMESPACE, CCMOperator.IN, anomalyFilterPropertiesDTO.getK8sNamespaces(), stringFilters);
     addStringFilter(CCMField.WORKLOAD, CCMOperator.IN, anomalyFilterPropertiesDTO.getK8sWorkloadNames(), stringFilters);
+    addStringFilter(
+        CCMField.SERVICE_NAME, CCMOperator.IN, anomalyFilterPropertiesDTO.getK8sServiceNames(), stringFilters);
 
     addStringFilter(CCMField.GCP_PROJECT, CCMOperator.IN, anomalyFilterPropertiesDTO.getGcpProjects(), stringFilters);
     addStringFilter(CCMField.GCP_PRODUCT, CCMOperator.IN, anomalyFilterPropertiesDTO.getGcpProducts(), stringFilters);
     addStringFilter(CCMField.GCP_SKU_DESCRIPTION, CCMOperator.IN, anomalyFilterPropertiesDTO.getGcpSKUDescriptions(),
         stringFilters);
-
     addStringFilter(CCMField.AWS_ACCOUNT, CCMOperator.IN, anomalyFilterPropertiesDTO.getAwsAccounts(), stringFilters);
     addStringFilter(CCMField.AWS_SERVICE, CCMOperator.IN, anomalyFilterPropertiesDTO.getAwsServices(), stringFilters);
     addStringFilter(

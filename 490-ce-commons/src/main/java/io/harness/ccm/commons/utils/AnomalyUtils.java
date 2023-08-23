@@ -66,9 +66,9 @@ public class AnomalyUtils {
         builder.append(SEPARATOR);
         builder.append(anomaly.getWorkloadname());
       }
-      if (anomaly.getService() != null) {
+      if (anomaly.getServicename() != null) {
         builder.append(SEPARATOR);
-        builder.append(anomaly.getService());
+        builder.append(anomaly.getServicename());
       }
     } else if (anomaly.getGcpproject() != null) {
       builder.append(anomaly.getGcpproject());
@@ -116,7 +116,7 @@ public class AnomalyUtils {
         builder.append(SEPARATOR);
         builder.append(ViewFieldConstants.WORKLOAD_NAME_FIELD_ID);
       }
-      if (anomaly.getService() != null) {
+      if (anomaly.getServicename() != null) {
         builder.append(SEPARATOR);
         builder.append(ViewFieldConstants.SERVICE_NAME_FIELD_ID);
       }
@@ -245,6 +245,7 @@ public class AnomalyUtils {
         .workloadName(anomaly.getWorkloadname())
         .workloadType(anomaly.getWorkloadtype())
         .service(anomaly.getService())
+        .serviceName(anomaly.getServicename())
         .gcpProjectId(anomaly.getGcpproject())
         .gcpSKUId(anomaly.getGcpskuid())
         .gcpSKUDescription(anomaly.getGcpskudescription())

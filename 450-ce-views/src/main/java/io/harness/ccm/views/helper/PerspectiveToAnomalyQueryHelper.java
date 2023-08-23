@@ -65,7 +65,7 @@ public class PerspectiveToAnomalyQueryHelper {
             convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.WORKLOAD).build());
             break;
           case SERVICE_NAME_FIELD_ID:
-            convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.SERVICE).build());
+            convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.SERVICE_NAME).build());
             break;
           case GCP_PROJECT_FIELD_ID:
             convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.GCP_PROJECT).build());
@@ -128,7 +128,7 @@ public class PerspectiveToAnomalyQueryHelper {
             break;
           case SERVICE_NAME_FIELD_ID:
             stringFilters.add(buildStringFilter(
-                CCMField.SERVICE, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
+                CCMField.SERVICE_NAME, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
             break;
           case GCP_PROJECT_FIELD_ID:
             stringFilters.add(buildStringFilter(

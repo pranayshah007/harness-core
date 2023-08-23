@@ -225,12 +225,12 @@ public class AnomalyQueryBuilder {
         return ANOMALIES.WORKLOADTYPE;
       case NAMESPACE:
         return ANOMALIES.NAMESPACE;
-      case CLUSTER_ID:
-        return ANOMALIES.CLUSTERID;
       case SERVICE:
         return ANOMALIES.SERVICE;
       case SERVICE_NAME:
         return ANOMALIES.SERVICENAME;
+      case CLUSTER_ID:
+        return ANOMALIES.CLUSTERID;
       case CLUSTER_NAME:
         return ANOMALIES.CLUSTERNAME;
       case AWS_ACCOUNT:
