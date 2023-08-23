@@ -5,21 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.plancreator.steps.internal.v1;
+package io.harness.yaml.core.failurestrategy.manualintervention.v1;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
+import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.v1.AbstractStepNodeV1;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 import io.harness.yaml.core.timeout.Timeout;
 
-import lombok.Data;
+import lombok.Builder;
+import lombok.Value;
 
-@Data
-@OwnedBy(PIPELINE)
-public abstract class PmsAbstractStepNodeV1 extends AbstractStepNodeV1 {
-  ParameterField<OnConfigV1> on;
+@Value
+@Builder
+@OwnedBy(HarnessTeam.PIPELINE)
+public class ManualFailureSpecConfigV1 {
   ParameterField<Timeout> timeout;
+  FailureConfigV1 timeout_action;
 }
