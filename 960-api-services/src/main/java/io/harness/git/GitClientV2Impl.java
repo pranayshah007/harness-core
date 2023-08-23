@@ -166,6 +166,8 @@ public class GitClientV2Impl implements GitClientV2 {
   private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
   private static final String REFS_HEADS = "refs/heads/";
   private static final String ORIGIN = "origin/";
+  private static final String REPOSITORY_NOT_FOUND = "Repository not found";
+  private static final String INVALID_PRIVATE_KEY = "invalid privatekey";
 
   @Inject private GitClientHelper gitClientHelper;
   /**
@@ -417,22 +419,12 @@ public class GitClientV2Impl implements GitClientV2 {
         throw new JGitRuntimeException(e.getMessage(), e);
       } else if (e instanceof FailsafeException) {
         String message = e.getMessage();
-        if (message.contains("not authorized")) {
-          throw SCMRuntimeException.builder()
-              .message("Please check your credentials (potential token expiration issue)")
-              .errorCode(ErrorCode.SCM_UNAUTHORIZED)
-              .build();
-        } else if (containsUrlError(message)) {
-          throw SCMRuntimeException.builder()
-              .message("Couldn't connect to given repo")
-              .errorCode(ErrorCode.GIT_CONNECTION_ERROR)
-              .build();
-        } else if (message.contains(TIMEOUT_ERROR)) {
-          throw SCMRuntimeException.builder()
-              .message("Git connection timed out")
-              .errorCode(ErrorCode.CONNECTION_TIMEOUT)
-              .build();
-        }
+        SCMRuntimeException ex = getSCMRuntimeException(message);
+        throw ex;
+      } else if (e instanceof TransportException) {
+        String message = e.getMessage();
+        SCMRuntimeException ex = getSCMRuntimeException(message);
+        throw ex;
       }
       throw new GeneralException(e.getMessage(), e);
     }
@@ -440,10 +432,41 @@ public class GitClientV2Impl implements GitClientV2 {
 
   private boolean containsUrlError(String message) {
     if (message.contains(UPLOAD_PACK_ERROR) || message.contains(INVALID_ADVERTISEMENT_ERROR)
-        || message.contains(REDIRECTION_BLOCKED_ERROR)) {
+        || message.contains(REDIRECTION_BLOCKED_ERROR) || message.contains(REPOSITORY_NOT_FOUND)) {
       return true;
     }
     return false;
+  }
+
+  private SCMRuntimeException getSCMRuntimeException(String message) {
+    if (message.contains("not authorized")) {
+      return SCMRuntimeException.builder()
+          .message("Please check your credentials (potential token expiration issue)")
+          .errorCode(ErrorCode.SCM_UNAUTHORIZED)
+          .build();
+    } else if (containsUrlError(message)) {
+      return SCMRuntimeException.builder()
+          .message("Couldn't connect to given repo")
+          .errorCode(ErrorCode.GIT_CONNECTION_ERROR)
+          .build();
+    } else if (message.contains(TIMEOUT_ERROR)) {
+      return SCMRuntimeException.builder()
+          .message("Git connection timed out")
+          .errorCode(ErrorCode.CONNECTION_TIMEOUT)
+          .build();
+    } else if (message.contains(INVALID_PRIVATE_KEY)) {
+      return SCMRuntimeException.builder()
+          .message("Private key is either malformed or not correct")
+          .errorCode(ErrorCode.INVALID_KEY)
+          .build();
+    } else if (message.contains("Auth fail for methods 'publickey'")) {
+      return SCMRuntimeException.builder()
+          .message("Authorization not successful.")
+          .errorCode(ErrorCode.SSH_CONNECTION_ERROR)
+          .build();
+    } else {
+      return SCMRuntimeException.builder().message(message).errorCode(ErrorCode.GENERAL_ERROR).build();
+    }
   }
 
   private RetryPolicy<Object> getRetryPolicyForCommand(String failedAttemptMessage, String failureMessage) {
