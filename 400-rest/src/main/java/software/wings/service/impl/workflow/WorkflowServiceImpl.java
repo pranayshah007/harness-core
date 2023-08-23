@@ -4341,6 +4341,18 @@ public class WorkflowServiceImpl implements WorkflowService {
         .get();
   }
 
+  public WorkflowExecution getLastWorkflowExecutionByInfrastructure(String accountId, String appId, String infraId) {
+    if (isEmpty(infraId)) {
+      return null;
+    }
+    return wingsPersistence.createQuery(WorkflowExecution.class)
+        .filter(WorkflowExecutionKeys.accountId, accountId)
+        .filter(WorkflowExecutionKeys.appId, appId)
+        .filter(WorkflowExecutionKeys.infraDefinitionIds, infraId)
+        .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+        .get();
+  }
+
   @Override
   public boolean isStateValid(String appId, String stateExecutionId) {
     StateExecutionInstance stateExecutionInstance =
