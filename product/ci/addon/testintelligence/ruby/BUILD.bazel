@@ -6,10 +6,9 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "python",
+    name = "ruby",
     srcs = [
-        "pytest.go",
-        "unittest.go",
+        "rspec.go",
     ],
     importpath = "github.com/harness/harness-core/product/ci/addon/testintelligence/python",
     visibility = ["//visibility:public"],
