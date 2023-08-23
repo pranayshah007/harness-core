@@ -10,7 +10,7 @@ go_library(
     srcs = [
         "rspec.go",
     ],
-    importpath = "github.com/harness/harness-core/product/ci/addon/testintelligence/python",
+    importpath = "github.com/harness/harness-core/product/ci/addon/testintelligence/ruby",
     visibility = ["//visibility:public"],
     deps = [
         "//commons/go/lib/exec",

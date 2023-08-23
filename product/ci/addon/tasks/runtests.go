@@ -22,6 +22,7 @@ import (
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/csharp"
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/java"
 	"github.com/harness/harness-core/product/ci/addon/testintelligence/python"
+	"github.com/harness/harness-core/product/ci/addon/testintelligence/ruby"
 	"github.com/harness/harness-core/product/ci/common/external"
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	stutils "github.com/harness/harness-core/product/ci/split_tests/utils"
