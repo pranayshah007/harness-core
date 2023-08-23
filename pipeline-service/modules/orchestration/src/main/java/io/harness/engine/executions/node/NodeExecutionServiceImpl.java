@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.executions.node;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
@@ -1058,12 +1059,13 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> fetchAllWithPlanExecutionId(String planExecutionId, Set<String> fieldsToBeIncluded) {
+  public CloseableIterator<NodeExecution> fetchAllWithPlanExecutionId(
+      String planExecutionId, Set<String> fieldsToBeIncluded) {
     Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId).is(planExecutionId);
     Query query = query(criteria);
     for (String field : fieldsToBeIncluded) {
       query.fields().include(field);
     }
-    return nodeExecutionReadHelper.fetchNodeExecutionsWithoutProjections(query);
+    return nodeExecutionReadHelper.fetchNodeExecutionsFromAnalytics(query);
   }
 }
