@@ -93,7 +93,7 @@ image:
   repository: harness/pipeline-service-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.37.12"
+  tag: "1.41.3"
   imagePullSecrets: []
 
 waitForInitContainer:
