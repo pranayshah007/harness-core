@@ -427,6 +427,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
 
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    long lastUpdatedAtTimestampFirst = verificationJobInstance.getLastUpdatedAt();
     assertThat(verificationJobInstance.getProgressLogs()).isEmpty();
     AnalysisProgressLog progressLog = AnalysisProgressLog.builder()
                                           .startTime(verificationJobInstance.getStartTime())
@@ -439,6 +440,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     verificationJobInstanceService.logProgress(progressLog);
     assertThat(progressLog.getCreatedAt()).isEqualTo(clock.instant());
     verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    long lastUpdatedAtTimestampSecond = verificationJobInstance.getLastUpdatedAt();
+    assertThat(lastUpdatedAtTimestampFirst).isLessThan(lastUpdatedAtTimestampSecond);
     assertThat(verificationJobInstance.getProgressLogs()).hasSize(1);
     assertThat(((AnalysisProgressLog) verificationJobInstance.getProgressLogs().get(0)).getAnalysisStatus())
         .isEqualTo(AnalysisStatus.SUCCESS);
@@ -457,6 +460,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
                       .build();
     verificationJobInstanceService.logProgress(progressLog);
     verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    long lastUpdatedAtTimestampThird = verificationJobInstance.getLastUpdatedAt();
+    assertThat(lastUpdatedAtTimestampSecond).isLessThan(lastUpdatedAtTimestampThird);
     assertThat(verificationJobInstance.getProgressLogs()).hasSize(2);
     assertThat(((AnalysisProgressLog) verificationJobInstance.getProgressLogs().get(1)).getAnalysisStatus())
         .isEqualTo(AnalysisStatus.SUCCESS);
@@ -474,6 +479,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
                       .build();
     verificationJobInstanceService.logProgress(progressLog);
     verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    long lastUpdatedAtTimestampFourth = verificationJobInstance.getLastUpdatedAt();
+    assertThat(lastUpdatedAtTimestampThird).isLessThan(lastUpdatedAtTimestampFourth);
     assertThat(verificationJobInstance.getProgressLogs()).hasSize(3);
     assertThat(((AnalysisProgressLog) verificationJobInstance.getProgressLogs().get(2)).getAnalysisStatus())
         .isEqualTo(AnalysisStatus.SUCCESS);
