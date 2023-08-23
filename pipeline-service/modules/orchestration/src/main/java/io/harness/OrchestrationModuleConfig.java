@@ -17,7 +17,9 @@ import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.repositories.planExecutionJson.ExpandedJsonLockConfig;
+import io.harness.threading.ThreadPoolConfig;
 
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -28,11 +30,20 @@ import lombok.Value;
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationModuleConfig {
+  private static final ThreadPoolConfig defaultPoolConfig =
+      ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(5).idleTime(10).timeUnit(TimeUnit.SECONDS).build();
+
   @NonNull String serviceName;
   @NonNull ExpressionEvaluatorProvider expressionEvaluatorProvider;
-  @Default int corePoolSize = 1;
-  @Default int maxPoolSize = 5;
-  @Default long idleTimeInSecs = 10;
+
+  @Default ThreadPoolConfig engineExecutorPoolConfig = defaultPoolConfig;
+
+  @Default ThreadPoolConfig initiateNodePoolConfig = defaultPoolConfig;
+  @Default int initiateNodeQueueSize = 20;
+
+  @Default ThreadPoolConfig sdkResponseHandlerPoolConfig = defaultPoolConfig;
+  @Default int sdkResponseHandlerQueueSize = 40;
+
   @Default String publisherName = PMS_ORCHESTRATION;
   @Default
   EventsFrameworkConfiguration eventsFrameworkConfiguration =
@@ -42,7 +53,7 @@ public class OrchestrationModuleConfig {
   boolean withPMS;
   boolean isPipelineService;
   boolean useFeatureFlagService;
-  @Nullable io.harness.remote.client.ServiceHttpClientConfig accountServiceHttpClientConfig;
+  @Nullable ServiceHttpClientConfig accountServiceHttpClientConfig;
   @Nullable String accountServiceSecret;
   @Nullable String accountClientId;
   @Default

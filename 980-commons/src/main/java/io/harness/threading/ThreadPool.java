@@ -58,6 +58,11 @@ public class ThreadPool {
         poolConfig.getTimeUnit(), threadFactory, queueSize, rejectedExecutionHandler);
   }
 
+  public static ThreadPoolExecutor create(ThreadPoolConfig poolConfig, int queueSize, ThreadFactory threadFactory) {
+    return create(poolConfig.getCorePoolSize(), poolConfig.getMaxPoolSize(), poolConfig.getIdleTime(),
+        poolConfig.getTimeUnit(), threadFactory, queueSize, new ForceQueuePolicy());
+  }
+
   public static ThreadPoolExecutor create(
       int corePoolSize, int maxPoolSize, long idleTime, TimeUnit unit, ThreadFactory threadFactory) {
     return create(corePoolSize, maxPoolSize, idleTime, unit, threadFactory, -1, new ForceQueuePolicy());

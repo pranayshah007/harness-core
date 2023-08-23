@@ -30,7 +30,7 @@ public class SdkResponseEventRedisConsumer extends PmsAbstractRedisConsumer<SdkR
   public SdkResponseEventRedisConsumer(@Named(SDK_RESPONSE_EVENT_CONSUMER) Consumer redisConsumer,
       SdkResponseEventMessageListener sdkResponseMessageListener,
       @Named("pmsEventsCache") Cache<String, Integer> eventsCache, QueueController queueController,
-      @Named("EngineExecutorService") ExecutorService executorService) {
+      @Named("SdkResponseEventExecutor") ExecutorService executorService) {
     super(redisConsumer, sdkResponseMessageListener, eventsCache, queueController, executorService);
   }
 }

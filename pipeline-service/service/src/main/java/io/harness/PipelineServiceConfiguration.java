@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
@@ -112,6 +113,13 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("pmsSdkOrchestrationEventPoolConfig") private ThreadPoolConfig pmsSdkOrchestrationEventPoolConfig;
   @JsonProperty("debeziumConsumersConfigs") DebeziumConsumersConfig debeziumConsumersConfigs;
   @JsonProperty("orchestrationPoolConfig") private ThreadPoolConfig orchestrationPoolConfig;
+
+  @JsonProperty("initiateNodePoolConfig") private ThreadPoolConfig initiateNodePoolConfig;
+  @JsonProperty("initiateNodeQueueSize") private int initiateNodeQueueSize;
+
+  @JsonProperty("sdkResponseHandlerPoolConfig") private ThreadPoolConfig sdkResponseHandlerPoolConfig;
+  @JsonProperty("sdkResponseHandlerQueueSize") private int sdkResponseHandlerQueueSize;
+
   @JsonProperty("grpcServerConfig") private GrpcServerConfig grpcServerConfig;
   @JsonProperty("grpcClientConfigs") private Map<String, GrpcClientConfig> grpcClientConfigs;
   @JsonProperty("ngManagerServiceHttpClientConfig") private ServiceHttpClientConfig ngManagerServiceHttpClientConfig;

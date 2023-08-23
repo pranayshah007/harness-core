@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
@@ -320,9 +321,11 @@ public class PipelineServiceModule extends AbstractModule {
             .expressionEvaluatorProvider(new PMSExpressionEvaluatorProvider())
             .withPMS(false)
             .isPipelineService(true)
-            .corePoolSize(configuration.getOrchestrationPoolConfig().getCorePoolSize())
-            .maxPoolSize(configuration.getOrchestrationPoolConfig().getMaxPoolSize())
-            .idleTimeInSecs(configuration.getOrchestrationPoolConfig().getIdleTime())
+            .engineExecutorPoolConfig(configuration.getOrchestrationPoolConfig())
+            .initiateNodePoolConfig(configuration.getInitiateNodePoolConfig())
+            .initiateNodeQueueSize(configuration.getInitiateNodeQueueSize())
+            .sdkResponseHandlerPoolConfig(configuration.getSdkResponseHandlerPoolConfig())
+            .sdkResponseHandlerQueueSize(configuration.getSdkResponseHandlerQueueSize())
             .eventsFrameworkConfiguration(configuration.getEventsFrameworkConfiguration())
             .accountClientId(PIPELINE_SERVICE.getServiceId())
             .accountServiceHttpClientConfig(configuration.getManagerClientConfig())

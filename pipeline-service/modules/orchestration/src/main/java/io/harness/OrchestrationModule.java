@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.OrchestrationPublisherName.PERSISTENCE_LAYER;
 import static io.harness.OrchestrationPublisherName.PUBLISHER_NAME;
 
@@ -214,8 +215,26 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
   @Singleton
   @Named("EngineExecutorService")
   public ExecutorService engineExecutionServiceThreadPool() {
-    return ThreadPool.create(config.getCorePoolSize(), config.getMaxPoolSize(), config.getIdleTimeInSecs(),
-        TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("EngineExecutorService-%d").build());
+    return ThreadPool.create(config.getEngineExecutorPoolConfig(),
+        new ThreadFactoryBuilder().setNameFormat("EngineExecutorService-%d").build());
+  }
+
+  @Provides
+  @Singleton
+  @Named("InitiateNodeExecutor") // Events framework Executor
+  public ExecutorService initiateNodeExecutor() {
+    int qs = config.getInitiateNodeQueueSize() == 0 ? -1 : config.getInitiateNodeQueueSize();
+    return ThreadPool.create(config.getInitiateNodePoolConfig(), qs,
+        new ThreadFactoryBuilder().setNameFormat("InitiateNodeExecutor-%d").build());
+  }
+
+  @Provides
+  @Singleton
+  @Named("SdkResponseHandlerExecutor") // Events framework Executor
+  public ExecutorService efExecutor() {
+    int qs = config.getSdkResponseHandlerQueueSize() == 0 ? -1 : config.getSdkResponseHandlerQueueSize();
+    return ThreadPool.create(config.getSdkResponseHandlerPoolConfig(), qs,
+        new ThreadFactoryBuilder().setNameFormat("SdkResponseEventExecutor-%d").build());
   }
 
   @Provides

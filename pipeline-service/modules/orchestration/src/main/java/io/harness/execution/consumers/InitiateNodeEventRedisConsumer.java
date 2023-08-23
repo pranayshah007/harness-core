@@ -30,7 +30,7 @@ public class InitiateNodeEventRedisConsumer extends PmsAbstractRedisConsumer<Ini
   public InitiateNodeEventRedisConsumer(@Named(INITIATE_NODE_EVENT_CONSUMER) Consumer redisConsumer,
       InitiateNodeEventMessageListener initiateNodeEventMessageListener,
       @Named("pmsEventsCache") Cache<String, Integer> eventsCache, QueueController queueController,
-      @Named("EngineExecutorService") ExecutorService executorService) {
+      @Named("InitiateNodeExecutor") ExecutorService executorService) {
     super(redisConsumer, initiateNodeEventMessageListener, eventsCache, queueController, executorService);
   }
 }
