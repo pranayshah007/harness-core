@@ -63,6 +63,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
@@ -407,6 +408,6 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
                   .field(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime)
                   .lessThanOrEq(endTime.toEpochMilli());
     }
-    return query;
+    return query.order(Sort.descending(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime));
   }
 }
