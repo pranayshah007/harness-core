@@ -87,6 +87,7 @@ public class RedisProducer extends AbstractProducer {
       redisData.put(REDIS_STREAM_INTERNAL_KEY, Base64.getEncoder().encodeToString(message.getData().toByteArray()));
       populateOtherProducerSpecificData(redisData);
 
+      log.info("Inserting events framework message - metadata: {} in the topic: {}", redisData, this.getTopicName());
       StreamMessageId messageId = stream.addAll(redisData, maxTopicSize, false);
       redisData.remove(REDIS_STREAM_INTERNAL_KEY);
       log.info("Events framework message inserted - messageId: {}, metaData: {} in the topic: {}", messageId, redisData,
