@@ -232,9 +232,11 @@ public class VmInitializeUtils {
       envVars.put(DRONE_STAGE_ARCH, arch.toString());
     }
     envVars.put(DRONE_STAGE_OS, os.toString());
-    envVars.put(DRONE_WORKSPACE, workDir);
     envVars.put(DRONE_STAGE_MACHINE, poolID);
     envVars.put(DRONE_STAGE_TYPE, infrastructure.getType().toString());
+    if (infrastructure.getType() != Infrastructure.Type.DOCKER) {
+      envVars.put(DRONE_WORKSPACE, workDir);
+    }
 
     return envVars;
   }
