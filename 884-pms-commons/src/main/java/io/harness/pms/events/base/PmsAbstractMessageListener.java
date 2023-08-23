@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.events.base;
+
 import static io.harness.pms.events.PmsEventFrameworkConstants.SERVICE_NAME;
 
 import io.harness.annotations.dev.CodePulse;
@@ -15,17 +16,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.AutoLogContext;
-import io.harness.ng.core.event.MessageListener;
 import io.harness.pms.sdk.execution.events.PmsCommonsBaseEventHandler;
 import io.harness.serializer.ProtoUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 import java.lang.reflect.InvocationTargetException;
-import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,20 +30,16 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public abstract class PmsAbstractMessageListener<T extends com.google.protobuf.Message, H
-                                                     extends PmsCommonsBaseEventHandler<T>> implements MessageListener {
-  private static final Duration THRESHOLD_PROCESS_DURATION = Duration.ofMillis(100);
-
+                                                     extends PmsCommonsBaseEventHandler<T>>
+    implements PmsMessageListener {
   public final String serviceName;
   public final Class<T> entityClass;
   public final H handler;
-  public final ExecutorService executorService;
 
-  public PmsAbstractMessageListener(
-      String serviceName, Class<T> entityClass, H handler, ExecutorService executorService) {
+  public PmsAbstractMessageListener(String serviceName, Class<T> entityClass, H handler) {
     this.serviceName = serviceName;
     this.entityClass = entityClass;
     this.handler = handler;
-    this.executorService = executorService;
   }
 
   /**
@@ -56,31 +49,11 @@ public abstract class PmsAbstractMessageListener<T extends com.google.protobuf.M
    */
 
   @Override
-  public boolean handleMessage(Message message) {
-    long readTs = System.currentTimeMillis();
-    if (isProcessable(message)) {
-      executorService.submit(() -> {
-        try (AutoLogContext ignore = new MessageLogContext(message)) {
-          // Check and log for time taken to schedule the thread
-          checkAndLogSchedulingDelays(message.getId(), readTs);
-          T entity = extractEntity(message);
-          Long issueTimestamp = ProtoUtils.timestampToUnixMillis(message.getTimestamp());
-          processMessage(entity, message.getMessage().getMetadataMap(), issueTimestamp, readTs);
-        } catch (Exception ex) {
-          log.error("[PMS_MESSAGE_LISTENER] Exception occurred while processing {} event with messageId: {}",
-              entityClass.getSimpleName(), message.getId(), ex);
-        }
-      });
-    }
+  public boolean handleMessage(Message message, Long readTs) {
+    T entity = extractEntity(message);
+    Long issueTimestamp = ProtoUtils.timestampToUnixMillis(message.getTimestamp());
+    processMessage(entity, message.getMessage().getMetadataMap(), issueTimestamp, readTs);
     return true;
-  }
-
-  private void checkAndLogSchedulingDelays(String messageId, long startTs) {
-    Duration scheduleDuration = Duration.ofMillis(System.currentTimeMillis() - startTs);
-    if (THRESHOLD_PROCESS_DURATION.compareTo(scheduleDuration) < 0) {
-      log.warn("[PMS_MESSAGE_LISTENER] Handler for {} event with messageId {} called after {} delay",
-          entityClass.getSimpleName(), messageId, scheduleDuration);
-    }
   }
 
   @VisibleForTesting

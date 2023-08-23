@@ -62,7 +62,7 @@ public class PollingEventStreamListenerTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testHandleMessage() {
-    assertTrue(pollingEventStreamListener.handleMessage(Message.newBuilder().build()));
+    assertTrue(pollingEventStreamListener.handleMessage(Message.newBuilder().build(), System.currentTimeMillis()));
     doReturn(WebhookEventMappingResponse.builder().failedToFindTrigger(false).build())
         .when(mapper)
         .consumeBuildTriggerEvent(any());
@@ -74,14 +74,14 @@ public class PollingEventStreamListenerTest extends CategoryTest {
                             .setData(InterruptEvent.newBuilder().setType(InterruptType.ABORT).build().toByteString())
                             .build())
             .build();
-    pollingEventStreamListener.handleMessage(message);
+    pollingEventStreamListener.handleMessage(message, System.currentTimeMillis());
     verify(triggerEventHistoryRepository, times(0)).save(any());
     doReturn(Collections.singletonList(TriggerEventResponse.builder().build()))
         .when(triggerEventExecutionHelper)
         .processTriggersForActivation(any(), any());
-    assertThatThrownBy(() -> pollingEventStreamListener.handleMessage(message));
+    assertThatThrownBy(() -> pollingEventStreamListener.handleMessage(message, System.currentTimeMillis()));
     Mockito.mockStatic(TriggerEventResponseHelper.class);
-    pollingEventStreamListener.handleMessage(message);
+    pollingEventStreamListener.handleMessage(message, System.currentTimeMillis());
     verify(triggerEventHistoryRepository, times(1)).save(any());
   }
 }
