@@ -15,6 +15,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.beans.DelegateAccountMetricContext;
 import io.harness.metrics.beans.DelegateTaskTypeMetricContext;
+import io.harness.metrics.beans.HeartbeatMetricContext;
 import io.harness.metrics.beans.PerpetualTaskMetricContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.metrics.service.api.MetricService;
@@ -56,6 +57,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String PERPETUAL_TASK_UNASSIGNED = "perpetual_task_unassigned";
   public static final String PERPETUAL_TASK_NONASSIGNABLE = "perpetual_task_nonassignable";
   public static final String TASK_TYPE_SUFFIX = "_by_type";
+  public static final String HEARTBEAT_RECEIVED = "heartbeat_received";
 
   public static final String DELEGATE_JWT_CACHE_HIT = "delegate_auth_cache_hit";
   public static final String DELEGATE_JWT_CACHE_MISS = "delegate_auth_cache_miss";
@@ -125,6 +127,18 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   @Override
   public void recordDelegateMetricsPerAccount(String accountId, String metricName) {
     try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(accountId)) {
+      metricService.incCounter(metricName);
+    }
+  }
+
+  @Override
+  public void recordDelegateHeartBeatMetricsPerAccount(long time, String accountId, String orgId, String projectId,
+      String delegateName, String delegateId, String delegateVersion, String delegateConnectionStatus,
+      String delegateEventType, boolean isNg, boolean isImmutable, String cpuUsage, String memeUsage, long lastHB,
+      String metricName) {
+    try (HeartbeatMetricContext ignore =
+             new HeartbeatMetricContext(time, accountId, orgId, projectId, delegateName, delegateId, delegateVersion,
+                 delegateConnectionStatus, delegateEventType, isNg, isImmutable, cpuUsage, memeUsage, lastHB)) {
       metricService.incCounter(metricName);
     }
   }

@@ -23,4 +23,9 @@ public interface DelegateMetricsService {
   void recordPerpetualTaskMetrics(String accountId, String perpetualTaskType, String metricName);
 
   void recordDelegateMetricsPerAccount(String accountId, String metricName);
+
+  void recordDelegateHeartBeatMetricsPerAccount(long time, String accountId, String orgId, String projectId,
+      String delegateName, String delegateId, String delegateVersion, String delegateConnectionStatus,
+      String delegateEventType, boolean isNg, boolean isImmutable, String cpuUsage, String memeUsage, long lastHB,
+      String metricName);
 }

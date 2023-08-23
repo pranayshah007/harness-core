@@ -13,6 +13,7 @@ import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME;
 import static io.harness.delegate.utils.DelegateServiceConstants.STREAM_DELEGATE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DESTROYED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RECEIVED;
 
 import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.delegate.beans.Delegate;
@@ -20,6 +21,7 @@ import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateNotRegisteredException;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.DuplicateDelegateException;
+import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.exception.WingsException;
 import io.harness.logging.Misc;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -132,11 +134,26 @@ public abstract class DelegateHeartbeatService<T extends Object> {
       final T response =
           precheck(existingDelegate, params).orElseGet(() -> processHeartbeatRequest(existingDelegate, params));
       finish(response, params);
+      long currentTime = clock.millis();
+      String orgId = (null != existingDelegate.getOwner())
+          ? DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(existingDelegate.getOwner().getIdentifier())
+          : null;
+      String projectId = (null != existingDelegate.getOwner())
+          ? DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(existingDelegate.getOwner().getIdentifier())
+          : null;
       boolean isDelegateReconnectingAfterLongPause =
-          clock.millis() > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
+          currentTime > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
       if (isDelegateReconnectingAfterLongPause) {
+        delegateMetricsService.recordDelegateHeartBeatMetricsPerAccount(currentTime, existingDelegate.getAccountId(),
+            orgId, projectId, existingDelegate.getDelegateName(), existingDelegate.getUuid(),
+            existingDelegate.getVersion(), "RE_CONNECTED", "report", existingDelegate.isNg(),
+            existingDelegate.isImmutable(), "50", "50", existingDelegate.getLastHeartBeat(), HEARTBEAT_RECEIVED);
         subject.fireInform(DelegateObserver::onReconnected, existingDelegate);
       }
+      delegateMetricsService.recordDelegateHeartBeatMetricsPerAccount(currentTime, existingDelegate.getAccountId(),
+          orgId, projectId, existingDelegate.getDelegateName(), existingDelegate.getUuid(),
+          existingDelegate.getVersion(), "CONNECTED", "report", existingDelegate.isNg(), existingDelegate.isImmutable(),
+          "50", "50", existingDelegate.getLastHeartBeat(), HEARTBEAT_RECEIVED);
       return response;
     } catch (WingsException e) {
       log.error("Heartbeat failed for delegate {}.", params.getDelegateId(), e);
