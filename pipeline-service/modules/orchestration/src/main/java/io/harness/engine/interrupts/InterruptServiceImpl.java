@@ -113,9 +113,9 @@ public class InterruptServiceImpl implements InterruptService {
         if (!ExecutionModeUtils.isParentMode(nodeExecution.getMode())
             && StatusUtils.resumableStatuses().contains(nodeExecution.getStatus())) {
           if (interrupt.getType() == InterruptType.ABORT_ALL) {
-            abortInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
+            abortInterruptHandler.handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, false);
           } else {
-            markExpiredInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
+            markExpiredInterruptHandler.handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, false);
           }
           return ExecutionCheck.builder()
               .proceed(false)

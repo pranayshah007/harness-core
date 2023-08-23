@@ -1636,7 +1636,8 @@ public class HelmTaskHelperBase {
     }
     URI uri = new URI(ociUrl);
     if (uri.getPort() < 0) {
-      uri = URI.create(uri + ":" + DEFAULT_PORT);
+      uri = new URI(uri.getScheme(), uri.getRawUserInfo(), uri.getHost(), DEFAULT_PORT, uri.getRawPath(),
+          uri.getRawQuery(), uri.getRawFragment());
     }
     return uri;
   }

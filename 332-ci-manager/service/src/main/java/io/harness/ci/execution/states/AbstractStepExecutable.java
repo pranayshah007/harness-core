@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.states;
+package io.harness.ci.execution.states;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -40,19 +40,19 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.integrationstage.CIStepGroupUtils;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.serializer.BackgroundStepProtobufSerializer;
-import io.harness.ci.serializer.PluginCompatibleStepSerializer;
-import io.harness.ci.serializer.PluginStepProtobufSerializer;
-import io.harness.ci.serializer.RunStepProtobufSerializer;
-import io.harness.ci.serializer.RunTestsStepProtobufSerializer;
-import io.harness.ci.serializer.vm.VmStepSerializer;
-import io.harness.ci.utils.GithubApiFunctor;
-import io.harness.ci.utils.GithubApiTokenEvaluator;
-import io.harness.ci.utils.HostedVmSecretResolver;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.integrationstage.CIStepGroupUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.serializer.BackgroundStepProtobufSerializer;
+import io.harness.ci.execution.serializer.PluginCompatibleStepSerializer;
+import io.harness.ci.execution.serializer.PluginStepProtobufSerializer;
+import io.harness.ci.execution.serializer.RunStepProtobufSerializer;
+import io.harness.ci.execution.serializer.RunTestsStepProtobufSerializer;
+import io.harness.ci.execution.serializer.vm.VmStepSerializer;
+import io.harness.ci.execution.utils.GithubApiFunctor;
+import io.harness.ci.execution.utils.GithubApiTokenEvaluator;
+import io.harness.ci.execution.utils.HostedVmSecretResolver;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;

@@ -21,7 +21,7 @@ import io.harness.beans.licensing.api.CIDevelopersFilterParams;
 import io.harness.beans.licensing.api.CILicenseHistoryDTO;
 import io.harness.beans.licensing.api.CILicenseType;
 import io.harness.beans.licensing.api.CILicenseUsageResource;
-import io.harness.licensing.CILicenseUsageImpl;
+import io.harness.ci.licensing.CILicenseUsageImpl;
 import io.harness.licensing.usage.params.DefaultPageableUsageRequestParams;
 import io.harness.licensing.usage.utils.PageableUtils;
 import io.harness.ng.core.dto.ResponseDTO;

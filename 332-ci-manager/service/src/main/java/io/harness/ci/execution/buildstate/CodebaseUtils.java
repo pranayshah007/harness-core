@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI;
@@ -86,9 +86,9 @@ import static org.apache.commons.lang3.StringUtils.stripStart;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
-import io.harness.ci.execution.GitBuildStatusUtility;
-import io.harness.ci.integrationstage.BuildEnvironmentUtils;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.execution.GitBuildStatusUtility;
+import io.harness.ci.execution.integrationstage.BuildEnvironmentUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
