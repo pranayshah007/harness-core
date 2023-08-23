@@ -106,10 +106,17 @@ public class AnomalyResource {
     DefaultViewIdDto defaultViewIds = null;
     HashMap<String, CEView> allowedAnomaliesIdAndPerspectives = null;
     if (rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, ceViewService.getSampleFolderId(accountId))) {
+      log.info("Yes I am here after checking account permission");
+      log.info("{}", AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO));
       anomalyData = anomalyService.listAnomalies(accountId,
           AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO), Collections.emptyList(),
           Collections.emptySet(), true);
       defaultViewIds = ceViewService.getDefaultViewIds(accountId);
+
+      for (AnomalyData an : anomalyData) {
+        log.info("{}", an.getResourceName());
+        log.info("{}", an.getResourceInfo());
+      }
     } else {
       List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
       Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,

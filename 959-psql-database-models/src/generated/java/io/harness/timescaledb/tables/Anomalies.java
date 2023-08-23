@@ -131,7 +131,7 @@ public class Anomalies extends TableImpl<AnomaliesRecord> {
 
   /**
 
-   * The column <code>public.anomalies.region</code>.
+   * The column <code>public.anomalies.servicename</code>.
    */
 
   public final TableField<AnomaliesRecord, String> SERVICENAME =
