@@ -57,6 +57,6 @@ public class DataPointServiceImpl implements DataPointService {
 
   @Override
   public List<DataPointEntity> getAllDataPointsForAccount(String accountIdentifier) {
-    return dataPointsRepository.findAllByAccountIdentifier(accountIdentifier);
+    return dataPointsRepository.findAllByAccountIdentifierIn(addGlobalAccountIdentifierAlong(accountIdentifier));
   }
 }

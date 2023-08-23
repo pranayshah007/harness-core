@@ -50,7 +50,8 @@ public class DataSourceServiceImpl implements DataSourceService {
   @Override
   public List<DataSourceDataPointsMap> getDataPointsForDataSources(String accountIdentifier) {
     List<DataPointEntity> dataPointsInAccount = dataPointService.getAllDataPointsForAccount(accountIdentifier);
-    List<DataSourceEntity> dataSourcesInAccount = dataSourceRepository.findAllByAccountIdentifier(accountIdentifier);
+    List<DataSourceEntity> dataSourcesInAccount =
+        dataSourceRepository.findAllByAccountIdentifierIn(addGlobalAccountIdentifierAlong(accountIdentifier));
     return dataSourcesInAccount.stream()
         .map(dataSourceEntity -> {
           return DataSourceDataPointsMapMapper.toDto(DataSourceMapper.toDTO(dataSourceEntity),
