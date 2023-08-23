@@ -86,7 +86,7 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
         accountIdentifier, projectIdentifier, orgIdentifier, identifier, entityType, scope);
   }
 
-  private ResponseDTO<JsonNode> getStaticYamlSchemaFromResource(String accountIdentifier, String projectIdentifier,
+  public ResponseDTO<JsonNode> getStaticYamlSchemaFromResource(String accountIdentifier, String projectIdentifier,
       String orgIdentifier, String identifier, EntityType entityType, Scope scope) {
     String filePath;
     switch (entityType) {

@@ -43,6 +43,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.pipeline.service.yamlschema.StaticSchemaParserFactory;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
@@ -102,6 +103,7 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Mock private OrganizationClient organizationClient;
   @Mock ProjectClient projectClient;
   @Mock StaticSchemaParserFactory staticSchemaParserFactory;
+  @Mock SchemaFetcher schemaFetcher;
 
   String identifier = "basichttpFail";
   String name = "basichttpFail";
@@ -121,7 +123,7 @@ public class PipelinesApiImplTest extends CategoryTest {
   public void setup() throws IOException {
     MockitoAnnotations.openMocks(this);
     pipelinesApiImpl = new PipelinesApiImpl(pmsPipelineService, pipelineServiceHelper, pipelineTemplateHelper,
-        pipelineMetadataService, pipelineAsyncValidationService, staticSchemaParserFactory);
+        pipelineMetadataService, pipelineAsyncValidationService, staticSchemaParserFactory, schemaFetcher);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "simplified-yaml.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);

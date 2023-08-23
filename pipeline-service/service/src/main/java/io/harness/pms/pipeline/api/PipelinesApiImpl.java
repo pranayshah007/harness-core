@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.pipeline.api;
+import static io.harness.EntityType.PIPELINES;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PIPELINE;
 
+import io.harness.EntityType;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
@@ -19,6 +21,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.encryption.Scope;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
@@ -44,6 +47,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.pipeline.service.yamlschema.StaticSchemaParserFactory;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
@@ -71,6 +75,7 @@ import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.validator.InvalidYamlException;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.util.List;
@@ -79,6 +84,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.NotSupportedException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
@@ -95,12 +102,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @PipelineServiceAuth
 @Slf4j
 public class PipelinesApiImpl implements PipelinesApi {
+  private final String PRE_QA = "stress";
   private final PMSPipelineService pmsPipelineService;
   private final PMSPipelineServiceHelper pipelineServiceHelper;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final PipelineMetadataService pipelineMetadataService;
   private final PipelineAsyncValidationService pipelineAsyncValidationService;
   private final StaticSchemaParserFactory staticSchemaParserFactory;
+  private final SchemaFetcher schemaFetcher;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
@@ -260,6 +269,35 @@ public class PipelinesApiImpl implements PipelinesApi {
     PipelineValidationResponseBody pipelineValidationResponseBody =
         PipelinesApiUtils.buildPipelineValidationResponseBody(pipelineValidationEvent);
     return Response.ok().entity(pipelineValidationResponseBody).build();
+  }
+
+  @Override
+  public Response getStaticSchema(String org, String project, @NotNull String entityType, @NotNull String identifier,
+      @NotNull String scope, String harnessAccount, String version) {
+    String env = System.getenv("ENV");
+    EntityType entityTypeEnum = PipelinesApiUtils.getEntityTypeEnum(entityType);
+    if (null == entityTypeEnum) {
+      throw new NotSupportedException(String.format("Entity type %s is not supported", entityType));
+    }
+    Scope scopeEnum = PipelinesApiUtils.getScopeEnum(scope);
+    if (null == scopeEnum) {
+      throw new NotSupportedException(String.format("Scope %s is not supported", scope));
+    }
+    try {
+      if (PRE_QA.equals(env) && entityType.equals(PIPELINES)) {
+        JsonNode jsonNode = schemaFetcher.fetchSchemaFromRepo(entityTypeEnum, version);
+        IndividualSchemaResponseBody responseBody = new IndividualSchemaResponseBody();
+        responseBody.setData(jsonNode);
+        return Response.ok().entity(responseBody).build();
+      }
+    } catch (Exception e) {
+      log.error("Could not able to fetch schema for stress env");
+    }
+    JsonNode jsonNode = PipelinesApiUtils.getStaticYamlSchemaFromResource(
+        harnessAccount, project, org, identifier, entityTypeEnum, scopeEnum);
+    IndividualSchemaResponseBody responseBody = new IndividualSchemaResponseBody();
+    responseBody.setData(jsonNode);
+    return Response.ok().entity(responseBody).build();
   }
 
   @Override

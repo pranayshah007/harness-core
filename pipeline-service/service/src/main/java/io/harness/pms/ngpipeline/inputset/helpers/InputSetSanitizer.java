@@ -47,7 +47,6 @@ public class InputSetSanitizer {
 
   private String sanitizeInputSet(String pipelineYaml, String runtimeInput, boolean isInputSet) {
     String templateYaml = InputSetTemplateHelper.createTemplateFromPipeline(pipelineYaml);
-
     if (templateYaml == null) {
       return "";
     }

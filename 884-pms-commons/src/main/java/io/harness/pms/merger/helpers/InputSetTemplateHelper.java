@@ -84,7 +84,7 @@ public class InputSetTemplateHelper {
   }
 
   public String removeRuntimeInputFromYaml(String pipelineYaml, String runtimeInputYaml) {
-    return RuntimeInputFormHelper.removeRuntimeInputsFromYaml(pipelineYaml, runtimeInputYaml, false);
+    return RuntimeInputFormHelper.removeRuntimeInputsFromYaml(pipelineYaml, runtimeInputYaml, true);
   }
 
   public String removeNonRequiredStages(

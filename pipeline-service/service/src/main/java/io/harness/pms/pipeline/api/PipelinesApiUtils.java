@@ -7,12 +7,16 @@
 
 package io.harness.pms.pipeline.api;
 
+import static io.harness.EntityType.PIPELINES;
+import static io.harness.EntityType.TRIGGERS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.NodeErrorInfo;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
@@ -24,6 +28,7 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.PolicyMetadata;
 import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
@@ -34,6 +39,8 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
+import io.harness.pms.pipeline.service.PMSYamlSchemaService;
+import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.spec.server.commons.v1.model.GovernanceMetadata;
 import io.harness.spec.server.commons.v1.model.GovernanceStatus;
@@ -62,6 +69,9 @@ import io.harness.spec.server.pipeline.v1.model.TemplateValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
 import io.harness.utils.ApiUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,10 +79,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotSupportedException;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class PipelinesApiUtils {
+  private static final String PIPELINE_JSON_PATH = "static-schema/pipeline.json";
+  @Inject static SchemaFetcher schemaFetcher;
+  @Inject static PMSYamlSchemaService pmsYamlSchemaService;
+  @Inject static NGTriggerYamlSchemaService ngTriggerYamlSchemaService;
   public static GitDetails getGitDetails(EntityGitDetails entityGitDetails) {
     if (entityGitDetails == null) {
       return null;
@@ -340,6 +357,38 @@ public class PipelinesApiUtils {
     }
   }
 
+  public static JsonNode getStaticYamlSchemaFromResource(String accountIdentifier, String projectIdentifier,
+      String orgIdentifier, String identifier, EntityType entityType, Scope scope) {
+    String filePath;
+    switch (entityType) {
+      case PIPELINES:
+        filePath = PIPELINE_JSON_PATH;
+        break;
+      default:
+        return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
+    }
+
+    try {
+      return schemaFetcher.fetchFile(filePath);
+    } catch (IOException ex) {
+      log.error("Not able to read json from {} path", filePath);
+    }
+    return getYamlSchema(entityType, projectIdentifier, orgIdentifier, scope, identifier, accountIdentifier);
+  }
+
+  private static JsonNode getYamlSchema(EntityType entityType, String projectIdentifier, String orgIdentifier,
+      Scope scope, String identifier, String accountIdentifier) {
+    JsonNode schema = null;
+    if (entityType == PIPELINES) {
+      schema = pmsYamlSchemaService.getPipelineYamlSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope);
+    } else if (entityType == TRIGGERS) {
+      schema = ngTriggerYamlSchemaService.getTriggerYamlSchema(projectIdentifier, orgIdentifier, identifier, scope);
+    } else {
+      throw new NotSupportedException(String.format("Entity type %s is not supported", entityType.getYamlName()));
+    }
+    return schema;
+  }
+
   public static List<String> getSorting(String field, String order) {
     if (field == null) {
       if (order != null) {
@@ -534,5 +583,28 @@ public class PipelinesApiUtils {
       default:
         throw new InvalidRequestException("Invalid move config type provided.");
     }
+  }
+
+  public static EntityType getEntityTypeEnum(String entityType) {
+    if (entityType.equals(EntityType.PIPELINES)) {
+      return EntityType.PIPELINES;
+    }
+    if (entityType.equals(EntityType.TRIGGERS)) {
+      return EntityType.TRIGGERS;
+    }
+    return null;
+  }
+
+  public static Scope getScopeEnum(String scope) {
+    if (scope.equals(Scope.ACCOUNT)) {
+      return Scope.ACCOUNT;
+    }
+    if (scope.equals(Scope.PROJECT)) {
+      return Scope.PROJECT;
+    }
+    if (scope.equals(Scope.ORG)) {
+      return Scope.ORG;
+    }
+    return null;
   }
 }
