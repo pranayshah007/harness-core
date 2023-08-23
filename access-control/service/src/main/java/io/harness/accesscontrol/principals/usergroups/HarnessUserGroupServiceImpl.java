@@ -85,7 +85,8 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
               userGroupService.upsert(userGroup);
             } else {
               log.info(
-                  "[HarnessUserGroupServiceImpl]: Skipping User Group update as state is same in NGManager and ACS");
+                  "[HarnessUserGroupServiceImpl]: Skipping User Group update for identifier: {}, scope: {} as state is same in NGManager and ACS",
+                  userGroup.getIdentifier(), userGroup.getScopeIdentifier());
             }
           } else {
             userGroupService.upsert(userGroup);
