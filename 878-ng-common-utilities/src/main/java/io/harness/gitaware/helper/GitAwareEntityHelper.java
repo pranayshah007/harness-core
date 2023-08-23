@@ -241,22 +241,22 @@ public class GitAwareEntityHelper {
 
   public Map<String, GitAware> fetchEntitiesFromRemote(
       String accountIdentifier, Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
-    ScmGetBatchFileRequest scmGetBatchFileRequest = prepareScmGetBatchFilesRequest(remoteTemplatesList);
+    ScmGetBatchFileRequest scmGetBatchFileRequest = prepareScmGetBatchFilesRequest(remoteTemplatesList, false);
     ScmGetBatchFilesResponse scmGetBatchFilesResponse =
         scmGitSyncHelper.getBatchFilesByBranch(accountIdentifier, scmGetBatchFileRequest);
     return processScmGetBatchFiles(scmGetBatchFilesResponse.getBatchFilesResponse(), remoteTemplatesList);
   }
 
-  public ScmGetBatchFilesResponse fetchGlobalTemplateEntitiesFromRemote(
+  public ScmGetBatchFilesResponse fetchEntitiesFromRemoteIncludingReadMeFile(
       String accountIdentifier, Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
-    ScmGetBatchFileRequest scmGetBatchFileRequest = prepareScmGetBatchFilesRequestWithReadMe(remoteTemplatesList);
+    ScmGetBatchFileRequest scmGetBatchFileRequest = prepareScmGetBatchFilesRequest(remoteTemplatesList, true);
     ScmGetBatchFilesResponse scmGetBatchFilesResponse =
         scmGitSyncHelper.getBatchFilesByBranch(accountIdentifier, scmGetBatchFileRequest);
     return scmGetBatchFilesResponse;
   }
 
-  private ScmGetBatchFileRequest prepareScmGetBatchFilesRequestWithReadMe(
-      Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
+  private ScmGetBatchFileRequest prepareScmGetBatchFilesRequest(
+      Map<String, FetchRemoteEntityRequest> remoteTemplatesList, boolean fetchReadMeFile) {
     Map<String, ScmGetFileRequest> scmGetBatchFilesRequestMap = new HashMap<>();
 
     for (Map.Entry<String, FetchRemoteEntityRequest> remoteTemplateRequestEntry : remoteTemplatesList.entrySet()) {
@@ -276,55 +276,11 @@ public class GitAwareEntityHelper {
       String filePath = getFileGitContextRequestParams.getFilePath();
       if (isNullOrDefault(filePath)) {
         throw new InvalidRequestException("No file path provided.");
+      }
+      if (!fetchReadMeFile) {
+        validateFilePathHasCorrectExtension(filePath);
       }
       validateFilePathHasCorrectExtensionWithReadMe(filePath);
-      String connectorRef = getFileGitContextRequestParams.getConnectorRef();
-      boolean loadFromCache = getFileGitContextRequestParams.isLoadFromCache();
-      EntityType entityType = getFileGitContextRequestParams.getEntityType();
-      boolean getOnlyFileContent = getFileGitContextRequestParams.isGetOnlyFileContent();
-      contextMap = GitSyncLogContextHelper.setContextMap(
-          scope, repoName, branchName, commitId, filePath, GitOperation.GET_FILE, contextMap);
-
-      ScmGetFileRequest scmGetFileRequest = ScmGetFileRequest.builder()
-                                                .scope(scope)
-                                                .repoName(repoName)
-                                                .branchName(branchName)
-                                                .filePath(filePath)
-                                                .connectorRef(connectorRef)
-                                                .loadFromCache(loadFromCache)
-                                                .entityType(entityType)
-                                                .contextMap(contextMap)
-                                                .getOnlyFileContent(getOnlyFileContent)
-                                                .build();
-
-      scmGetBatchFilesRequestMap.put(remoteTemplateRequestEntry.getKey(), scmGetFileRequest);
-    }
-    return ScmGetBatchFileRequest.builder().scmGetBatchFilesRequestMap(scmGetBatchFilesRequestMap).build();
-  }
-
-  private ScmGetBatchFileRequest prepareScmGetBatchFilesRequest(
-      Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
-    Map<String, ScmGetFileRequest> scmGetBatchFilesRequestMap = new HashMap<>();
-
-    for (Map.Entry<String, FetchRemoteEntityRequest> remoteTemplateRequestEntry : remoteTemplatesList.entrySet()) {
-      GetFileGitContextRequestParams getFileGitContextRequestParams =
-          remoteTemplateRequestEntry.getValue().getGetFileGitContextRequestParams();
-      Scope scope = remoteTemplateRequestEntry.getValue().getScope();
-      Map<String, String> contextMap = remoteTemplateRequestEntry.getValue().getContextMap();
-      String repoName = getFileGitContextRequestParams.getRepoName();
-
-      String branchName = isNullOrDefault(getFileGitContextRequestParams.getBranchName())
-          ? ""
-          : getFileGitContextRequestParams.getBranchName();
-
-      String commitId = isNullOrDefault(getFileGitContextRequestParams.getCommitId())
-          ? ""
-          : getFileGitContextRequestParams.getCommitId();
-      String filePath = getFileGitContextRequestParams.getFilePath();
-      if (isNullOrDefault(filePath)) {
-        throw new InvalidRequestException("No file path provided.");
-      }
-      validateFilePathHasCorrectExtension(filePath);
       String connectorRef = getFileGitContextRequestParams.getConnectorRef();
       boolean loadFromCache = getFileGitContextRequestParams.isLoadFromCache();
       EntityType entityType = getFileGitContextRequestParams.getEntityType();

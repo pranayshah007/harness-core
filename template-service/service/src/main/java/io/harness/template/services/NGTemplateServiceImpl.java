@@ -1794,7 +1794,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                   .getFileGitContextRequestParams(getFileGitContextRequestParams.filePath(filePath).build())
                   .build()));
       ScmGetBatchFilesResponse scmGetBatchFilesResponse =
-          gitAwareEntityHelper.fetchGlobalTemplateEntitiesFromRemote(accountId, fetchRemoteEntityRequestMap);
+          gitAwareEntityHelper.fetchEntitiesFromRemoteIncludingReadMeFile(accountId, fetchRemoteEntityRequestMap);
       batchTemplateEntities.putAll(processScmGetBatchFilesWithReadMe(
           scmGetBatchFilesResponse.getBatchFilesResponse(), fetchRemoteEntityRequestMap));
     }
