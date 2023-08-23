@@ -29,7 +29,6 @@ import (
 
 var (
 	unittestCmd = "unittest"
-	pythonCmd   = "python3"
 	currentDir  = "."
 )
 
