@@ -13,13 +13,15 @@ import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 import io.harness.ssca.utils.transformers.NormalizeSbomComponentTransformer;
 import io.harness.utils.ApiUtils;
 
+import com.google.inject.Inject;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 public class NormalizeSbomServiceImpl implements NormalizeSbomService {
-  private SBOMComponentRepo sbomComponentRepo;
+  @Inject SBOMComponentRepo sbomComponentRepo;
 
   @Override
   public Response listNormalizedSbomComponent(String orgIdentifier, String projectIdentifier, Integer page,
@@ -29,8 +31,8 @@ public class NormalizeSbomServiceImpl implements NormalizeSbomService {
         sbomComponentRepo.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndOrchestrationId(
             accountId, orgIdentifier, projectIdentifier, orchestrationId, pageRequest);
     Page<NormalizedSbomComponentDTO> result = entities.map(entity -> NormalizeSbomComponentTransformer.toDTO(entity));
-    Response.ResponseBuilder responseBuilder = Response.ok();
-    Response.ResponseBuilder responseBuilderWithLinks =
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks =
         ApiUtils.addLinksHeader(responseBuilder, entities.getTotalElements(), page, limit);
     return responseBuilderWithLinks.entity(result.getContent()).build();
   }

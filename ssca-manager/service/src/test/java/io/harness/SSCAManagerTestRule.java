@@ -127,6 +127,13 @@ public class SSCAManagerTestRule implements InjectorRuleMixin, MethodRule, Mongo
       public boolean getSerializationForDelegate() {
         return false;
       }
+
+      @Provides
+      @Singleton
+      @Named("sscaManagerServiceSecret")
+      public String sscaManagerServiceSecret() {
+        return "sscaManagerServiceSecret";
+      }
     });
 
     modules.add(new AbstractModule() {
