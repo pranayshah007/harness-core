@@ -19,9 +19,11 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.gitsync.common.dtos.CreateGitWebhookRequestDTO;
 import io.harness.gitsync.common.dtos.CreateGitWebhookResponse;
 import io.harness.gitsync.common.dtos.GetGitWebhookResponse;
+import io.harness.gitsync.common.dtos.GitWebhookRequestDTO;
+import io.harness.gitsync.common.dtos.ListGitWebhookResponse;
+import io.harness.gitsync.common.dtos.UpdateGitWebhookResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -31,12 +33,15 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -85,12 +90,13 @@ public class GitWebhooksResource {
         ApiResponse(responseCode = "default", description = "Returns created Git Webhook")
       },
       deprecated = true)
+  @Hidden
   public ResponseDTO<CreateGitWebhookResponse>
   createGitWebhook(@QueryParam("accountIdentifier") String accountIdentifier,
       @QueryParam("webhookIdentifier") String webhookIdentifier, @QueryParam("connectorRef") String connectorRef,
       @QueryParam("repoName") String repoName,
       @RequestBody(required = true,
-          description = "Request Body for Creating a webhook") CreateGitWebhookRequestDTO createGitWebhookRequestDTO) {
+          description = "Request Body for Creating a git webhook") GitWebhookRequestDTO gitWebhookRequestDTO) {
     return ResponseDTO.newResponse(CreateGitWebhookResponse.builder().build());
   }
 
@@ -104,6 +110,7 @@ public class GitWebhooksResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns git webhook")
       })
+  @Hidden
   public ResponseDTO<GetGitWebhookResponse>
   getGitWebhookByIdentifier(@QueryParam("accountIdentifier") String accountIdentifier,
       @PathParam("webhookIdentifier") String webhookIdentifier) {
@@ -111,20 +118,46 @@ public class GitWebhooksResource {
   }
 
   @PUT
+  @Path("/{webhookIdentifier}")
   @ApiOperation(value = "Update a webhook", nickname = "updateGitWebhook")
-  @Operation(operationId = "putWebhook", description = "Update a git Webhook", summary = "Update a Git Webhook",
+  @Operation(operationId = "putGitWebhook", description = "Update a git Webhook", summary = "Update a Git Webhook",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns Update Git Webhook")
       },
       deprecated = true)
-  public ResponseDTO<String>
+  @Hidden
+  public ResponseDTO<UpdateGitWebhookResponse>
   updateGitWebhook(@QueryParam("accountIdentifier") String accountIdentifier,
-      @QueryParam("webhookIdentifier") String webhookIdentifier, @QueryParam("connectorRef") String connectorRef,
-      @QueryParam("repoName") String repoName,
+      @PathParam("webhookIdentifier") String webhookIdentifier, @QueryParam("connectorRef") String connectorRef,
+      @QueryParam("repoName") String repoName, @QueryParam("enable") Boolean isEnabled,
       @RequestBody(required = true,
-          description = "Request Body for Creating a webhook") CreateGitWebhookRequestDTO createGitWebhookRequestDTO) {
+          description = "Request Body for Updating a git webhook") GitWebhookRequestDTO gitWebhookRequestDTO) {
+    return ResponseDTO.newResponse(UpdateGitWebhookResponse.builder().build());
+  }
+
+  @GET
+  @ApiOperation(value = "List Git Webhooks", nickname = "listGitWebhooks")
+  @Operation(operationId = "getGitWebhookList", summary = "Lists all the git webhooks",
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Lists all the git webhooks") })
+  @Hidden
+  public ResponseDTO<ListGitWebhookResponse>
+  listGitWebhooks(@QueryParam("accountIdentifier") String accountIdentifier,
+      @QueryParam("page") @DefaultValue("0") int page, @QueryParam("size") @DefaultValue("25") int size,
+      @QueryParam("webhookSearchTerm") String webhookSearchTerm) {
+    return ResponseDTO.newResponse(ListGitWebhookResponse.builder().build());
+  }
+
+  @DELETE
+  @Path("/{webhookIdentifier}")
+  @ApiOperation(value = "Delete a Git Webhook", nickname = "deleteGitWebhook")
+  @Operation(operationId = "deleteGitWebhook", summary = "Delete a git webhook",
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Delete a git webhook") })
+  @Hidden
+  public ResponseDTO<Boolean>
+  deleteGitWebhook(@QueryParam("accountIdentifier") String accountIdentifier,
+      @PathParam("webhookIdentifier") String webhookIdentifier) {
     return ResponseDTO.newResponse();
   }
 }
