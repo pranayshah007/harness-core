@@ -103,6 +103,7 @@ public class AnomalyResource {
                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(description = "Anomaly Filter Properties") AnomalyFilterPropertiesDTO anomalyFilterPropertiesDTO) {
     List<AnomalyData> anomalyData;
+
     DefaultViewIdDto defaultViewIds = null;
     HashMap<String, CEView> allowedAnomaliesIdAndPerspectives = null;
     if (rbacHelper.hasPerspectiveViewOnResources(accountId, null, null, ceViewService.getSampleFolderId(accountId))) {
