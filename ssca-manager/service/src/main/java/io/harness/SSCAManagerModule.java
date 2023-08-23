@@ -115,6 +115,13 @@ public class SSCAManagerModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("sscaManagerServiceSecret")
+  public String sscaManagerServiceSecret() {
+    return this.configuration.getSscaManagerServiceSecret();
+  }
+
+  @Provides
+  @Singleton
   public Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
     return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
         .addAll(SSCAManagerModuleRegistrars.kryoRegistrars)
