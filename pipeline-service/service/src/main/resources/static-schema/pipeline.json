@@ -30674,7 +30674,7 @@
                 "buildTool" : {
                   "oneOf" : [ {
                     "type" : "string",
-                    "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest", "Rspec" ]
+                    "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest" ]
                   }, {
                     "type" : "string",
                     "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -30723,7 +30723,7 @@
                 "language" : {
                   "oneOf" : [ {
                     "type" : "string",
-                    "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python", "Ruby" ]
+                    "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python" ]
                   }, {
                     "type" : "string",
                     "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -30851,7 +30851,7 @@
               "buildTool" : {
                 "oneOf" : [ {
                   "type" : "string",
-                  "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest", "Rspec" ]
+                  "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest" ]
                 }, {
                   "type" : "string",
                   "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -30900,7 +30900,7 @@
               "language" : {
                 "oneOf" : [ {
                   "type" : "string",
-                  "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python", "Ruby" ]
+                  "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python" ]
                 }, {
                   "type" : "string",
                   "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",

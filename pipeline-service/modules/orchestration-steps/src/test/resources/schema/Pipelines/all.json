@@ -4137,8 +4137,7 @@
             "Kotlin",
             "Scala",
             "Csharp",
-            "Python",
-            "Ruby"
+            "Python"
           ]
         },
         "executionInput": {
@@ -4169,8 +4168,7 @@
             "Kotlin",
             "Scala",
             "Csharp",
-            "Python",
-            "Ruby"
+            "Python"
           ]
         }
       },
@@ -5556,8 +5554,7 @@
                     "Nunitconsole",
                     "SBT",
                     "Pytest",
-                    "Unittest",
-                    "Rspec"
+                    "Unittest"
                   ]
                 },
                 {
@@ -5631,8 +5628,7 @@
                     "Kotlin",
                     "Scala",
                     "Csharp",
-                    "Python",
-                    "Ruby"
+                    "Python"
                   ]
                 },
                 {
@@ -8584,8 +8580,7 @@
                     "nunit_console",
                     "sbt",
                     "pytest",
-                    "unittest",
-                    "rspec"
+                    "unittest"
                   ]
                 },
                 {
