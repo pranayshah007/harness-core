@@ -1170,6 +1170,23 @@ paths:
         name: data-source
         in: path
         required: true
+  /v1/data-sources/data-points/map:
+    get:
+      summary: Get Data Sources and Data Points Map for Account
+      tags:
+        - DataSource
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointsMapResponse'
+      operationId: get-data-sources-data-points-map
+      x-stoplight:
+        id: 8ksgpo0pm5604
+      description: API for getting the map of data sources and data points for account
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
 components:
   schemas:
     BackstageEnvVariable:
@@ -3014,6 +3031,39 @@ components:
             id: qh5qxx57312re
       required:
         - status
+    DataSourceDataPointsMap:
+      title: DataSourceDataPointsMap
+      x-stoplight:
+        id: z77fv6vcnfg4b
+      type: object
+      properties:
+        data_source:
+          $ref: '#/components/schemas/DataSource'
+        data_points:
+          type: array
+          x-stoplight:
+            id: 4dmhbjlkx46p9
+          items:
+            $ref: '#/components/schemas/DataPoint'
+      required:
+        - data_source
+        - data_points
+      description: Mapping of data source with data points
+    DataSourceDataPointsMapResponse:
+      title: DataSourceDataPointsMapResponse
+      x-stoplight:
+        id: tsydrbfqm03z1
+      type: object
+      properties:
+        data_source_data_points_map:
+          x-stoplight:
+            id: 19okloss3p3sr
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSourceDataPointsMap'
+      required:
+        - data_source_data_points_map
+      description: Response for getting the data sources and data points map
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -3673,6 +3723,16 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/DefaultSaveResponse'
+    DataSourceDataPointsMapResponse:
+      description: Response for getting the data source and data point map
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointsMapResponse'
+        application/xml:
+          schema:
+            type: object
+            properties: {}
   securitySchemes:
     x-api-key:
       name: x-api-key

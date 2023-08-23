@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
@@ -57,7 +58,7 @@ public class DataSourceEntity
   }
 
   @Id private String id;
-  private String accountIdentifier;
+  @FdIndex private String accountIdentifier;
   private String identifier;
   private String name;
   private String description;

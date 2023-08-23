@@ -16,6 +16,8 @@ import io.harness.spec.server.idp.v1.DataSourceApi;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.DataPointsResponse;
 import io.harness.spec.server.idp.v1.model.DataSource;
+import io.harness.spec.server.idp.v1.model.DataSourceDataPointsMap;
+import io.harness.spec.server.idp.v1.model.DataSourceDataPointsMapResponse;
 import io.harness.spec.server.idp.v1.model.DataSourcesResponse;
 
 import java.util.List;
@@ -54,6 +56,22 @@ public class DataSourceApiImpl implements DataSourceApi {
     } catch (Exception e) {
       log.error(
           "Error in getting data points details for account - {} and datasource - {}", harnessAccount, dataSource);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
+  }
+
+  @Override
+  public Response getDataSourcesDataPointsMap(String harnessAccount) {
+    try {
+      List<DataSourceDataPointsMap> dataSourceDataPointsMaps =
+          dataSourceService.getDataPointsForDataSources(harnessAccount);
+      DataSourceDataPointsMapResponse dataSourceDataPointsMapResponse = new DataSourceDataPointsMapResponse();
+      dataSourceDataPointsMapResponse.dataSourceDataPointsMap(dataSourceDataPointsMaps);
+      return Response.status(Response.Status.OK).entity(dataSourceDataPointsMapResponse).build();
+    } catch (Exception e) {
+      log.error("Error in getting data source data points map for account - {}", harnessAccount);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

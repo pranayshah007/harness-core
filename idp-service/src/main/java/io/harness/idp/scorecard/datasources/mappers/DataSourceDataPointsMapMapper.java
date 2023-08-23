@@ -4,7 +4,8 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.idp.scorecard.datasources.service;
+
+package io.harness.idp.scorecard.datasources.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -13,12 +14,15 @@ import io.harness.spec.server.idp.v1.model.DataSource;
 import io.harness.spec.server.idp.v1.model.DataSourceDataPointsMap;
 
 import java.util.List;
+import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.IDP)
-public interface DataSourceService {
-  List<DataSource> getAllDataSourcesDetailsForAnAccount(String accountIdentifier);
-
-  List<DataPoint> getAllDataPointsDetailsForDataSource(String accountIdentifier, String dataSourceIdentifier);
-
-  List<DataSourceDataPointsMap> getDataPointsForDataSources(String accountIdentifier);
+@UtilityClass
+public class DataSourceDataPointsMapMapper {
+  public DataSourceDataPointsMap toDto(DataSource dataSource, List<DataPoint> dataPointList) {
+    DataSourceDataPointsMap dataSourceDataPointsMap = new DataSourceDataPointsMap();
+    dataSourceDataPointsMap.dataSource(dataSource);
+    dataSourceDataPointsMap.dataPoints(dataPointList);
+    return dataSourceDataPointsMap;
+  }
 }
