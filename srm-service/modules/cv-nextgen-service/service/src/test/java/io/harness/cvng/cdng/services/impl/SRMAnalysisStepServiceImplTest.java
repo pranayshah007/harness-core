@@ -28,6 +28,7 @@ import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepInstanceDetails;
+import io.harness.cvng.beans.change.HarnessCDEventMetadata;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
@@ -255,6 +256,22 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
         (SRMAnalysisStepInstanceDetails) eventDetailsResponse.getDetails();
     assertThat(stepInstanceDetails.getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
     assertThat(stepInstanceDetails.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSRMAnalysisStepDetails() {
+    List<HarnessCDEventMetadata.SRMAnalysisStepDetails> analysisStepDetails =
+        srmAnalysisStepService.getSRMAnalysisStepDetails(List.of(analysisExecutionDetailsId));
+
+    assertThat(analysisStepDetails.size()).isEqualTo(1);
+    assertThat(analysisStepDetails.get(0).getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
+    assertThat(analysisStepDetails.get(0).getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
+    assertThat(analysisStepDetails.get(0).getAnalysisStartTime()).isEqualTo(clock.instant().toEpochMilli());
+    assertThat(analysisStepDetails.get(0).getStepName()).isEqualTo(stepName);
+    assertThat(analysisStepDetails.get(0).getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(analysisStepDetails.get(0).getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
   }
 
   @Test
