@@ -44,7 +44,9 @@ public class CheckRepositoryCustomImpl implements CheckRepositoryCustom {
     Criteria criteria = Criteria.where(CheckKeys.accountIdentifier)
                             .is(checkEntity.getAccountIdentifier())
                             .and(CheckKeys.identifier)
-                            .is(checkEntity.getIdentifier());
+                            .is(checkEntity.getIdentifier())
+                            .and(CheckKeys.isCustom)
+                            .is(true);
     Query query = new Query(criteria);
     Update update = new Update();
     update.set(CheckKeys.name, checkEntity.getName());

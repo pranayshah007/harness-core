@@ -225,6 +225,7 @@ public class ScorecardServiceImpl implements ScorecardService {
                              .stream()
                              .map(BackstageCatalogEntityFacets.FacetType::getValue)
                              .collect(Collectors.toList()));
+          break;
         case OWNERS_FILTER:
           facets.setOwners(entry.getValue()
                                .stream()

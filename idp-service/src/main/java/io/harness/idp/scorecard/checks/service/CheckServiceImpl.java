@@ -65,7 +65,10 @@ public class CheckServiceImpl implements CheckService {
 
   @Override
   public void updateCheck(CheckDetails checkDetails, String accountIdentifier) {
-    checkRepository.update(CheckDetailsMapper.fromDTO(checkDetails, accountIdentifier));
+    CheckEntity checkEntity = checkRepository.update(CheckDetailsMapper.fromDTO(checkDetails, accountIdentifier));
+    if (checkEntity == null) {
+      throw new InvalidRequestException("Default checks cannot be updated");
+    }
   }
 
   @Override
@@ -153,7 +156,7 @@ public class CheckServiceImpl implements CheckService {
   private Criteria buildCriteriaForChecksList(String accountIdentifier, Boolean custom, String searchTerm) {
     Criteria criteria = new Criteria();
     if (custom == null) {
-      criteria.and(CheckEntity.CheckKeys.accountIdentifier).in(GLOBAL_ACCOUNT_ID, accountIdentifier);
+      criteria.and(CheckEntity.CheckKeys.accountIdentifier).in(addGlobalAccountIdentifierAlong(accountIdentifier));
     } else {
       String accountId = custom ? accountIdentifier : GLOBAL_ACCOUNT_ID;
       criteria.and(CheckEntity.CheckKeys.accountIdentifier)
