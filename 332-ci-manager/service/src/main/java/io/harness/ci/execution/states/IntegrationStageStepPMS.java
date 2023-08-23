@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.states;
+package io.harness.ci.execution.states;
 
 import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.beans.FeatureName.CODE_ENABLED;
@@ -32,10 +32,10 @@ import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
 import io.harness.beans.sweepingoutputs.UniqueStepIdentifiersSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.utils.CompletableFutures;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.utils.CompletableFutures;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.CIStageExecutionException;

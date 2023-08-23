@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.states;
+package io.harness.ci.execution.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
@@ -38,17 +38,17 @@ import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.ci.buildstate.BuildSetupUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.buildstate.BuildSetupUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.integrationstage.BuildJobEnvInfoBuilder;
+import io.harness.ci.execution.integrationstage.DockerInitializeTaskParamsBuilder;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.K8InitializeServiceUtils;
+import io.harness.ci.execution.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.execution.utils.CIStagePlanCreationUtils;
+import io.harness.ci.execution.validation.CIYAMLSanitizationService;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
-import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.integrationstage.K8InitializeServiceUtils;
-import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
-import io.harness.ci.utils.CIStagePlanCreationUtils;
-import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
@@ -30,8 +30,8 @@ import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.StageDetails;
-import io.harness.ci.buildstate.CodebaseUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.CodebaseUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStepParameters;

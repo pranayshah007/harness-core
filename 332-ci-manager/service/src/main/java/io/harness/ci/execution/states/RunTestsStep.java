@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.states;
+package io.harness.ci.execution.states;
 
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.pms.contracts.steps.StepType;

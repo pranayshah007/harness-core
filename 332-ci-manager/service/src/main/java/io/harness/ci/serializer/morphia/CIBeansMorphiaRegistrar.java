@@ -26,7 +26,7 @@ import io.harness.ci.beans.entities.BuildNumberDetails;
 import io.harness.ci.beans.entities.CIBuild;
 import io.harness.ci.beans.entities.CIExecutionConfig;
 import io.harness.ci.beans.entities.CITelemetrySentStatus;
-import io.harness.ci.execution.CIExecutionMetadata;
+import io.harness.ci.execution.execution.CIExecutionMetadata;
 import io.harness.ci.stdvars.BuildStandardVariables;
 import io.harness.ci.stdvars.GitVariables;
 import io.harness.morphia.MorphiaRegistrar;

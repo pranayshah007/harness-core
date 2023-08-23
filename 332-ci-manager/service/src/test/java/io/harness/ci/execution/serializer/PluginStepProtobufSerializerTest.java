@@ -23,8 +23,6 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.category.element.UnitTests;
-import io.harness.ci.serializer.PluginStepProtobufSerializer;
-import io.harness.ci.serializer.SerializerUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;

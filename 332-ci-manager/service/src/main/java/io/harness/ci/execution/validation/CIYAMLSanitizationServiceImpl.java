@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.validation;
+package io.harness.ci.execution.validation;
 
 import static io.harness.beans.steps.CIStepInfoType.RUN;
 import static io.harness.beans.steps.CIStepInfoType.RUN_TESTS;
@@ -14,7 +14,7 @@ import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.yaml.ParameterField;

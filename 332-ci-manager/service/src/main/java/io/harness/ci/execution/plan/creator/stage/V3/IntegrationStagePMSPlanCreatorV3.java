@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.plan.creator.stage.V3;
+package io.harness.ci.execution.plan.creator.stage.V3;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -16,10 +16,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
-import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
-import io.harness.ci.states.IntegrationStageStepPMS;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.V1.CIPlanCreatorUtils;
+import io.harness.ci.execution.plan.creator.codebase.CodebasePlanCreator;
+import io.harness.ci.execution.states.IntegrationStageStepPMS;
 import io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1;
 import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
 import io.harness.data.structure.EmptyPredicate;
