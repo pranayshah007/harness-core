@@ -531,6 +531,7 @@ public enum FeatureName {
       "FF to optimise the execution flow to fetch only file content for remote entities", HarnessTeam.PIPELINE),
   PIE_GITX_OAUTH("Use users' oauth creds to fetch and commit in git", HarnessTeam.PIPELINE),
   PIE_GIT_DEFAULT_BRANCH_CACHE("FF to fetch the default branch from the git default branch cache", PIPELINE),
+  PIE_GIT_BI_DIRECTIONAL_SYNC("FF to show account level setting for enabling/disabling bi-directional sync", PIPELINE),
   PIE_MULTISELECT_AND_COMMA_IN_ALLOWED_VALUES(
       "Will allow comma and multi-selection in runtime input allowed values", PIPELINE),
   PIE_NG_BATCH_GET_TEMPLATES(
