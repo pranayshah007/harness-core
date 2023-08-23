@@ -119,6 +119,7 @@ public class AnomalyResource {
         log.info("{}", an.getResourceInfo());
       }
     } else {
+      log.info("I am here at else after checking account permission");
       List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
       Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
           ceViewsList.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
