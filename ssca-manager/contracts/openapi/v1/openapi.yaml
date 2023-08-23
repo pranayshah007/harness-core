@@ -1,6 +1,6 @@
 openapi: 3.0.0
 x-stoplight:
-  id: rpu4zlxgyni04
+  id: nf3qya0lfm394
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -83,11 +83,67 @@ paths:
           $ref: '#/components/responses/TokenIssueResponseBody'
       operationId: Token#IssueToken
       x-stoplight:
-        id: 65dvz43ksx8pa
+        id: lfdnr4gsxm6xy
       description: Issue a cross-service token
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
+      security:
+        - x-api-key: []
+  '/v1/org/{org}/project/{project}/stepExecution/{stepExecutionId}/info':
+    parameters:
+      - name: org
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Organization Id
+      - in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Project Id
+        name: project
+      - schema:
+          type: string
+        name: stepExecutionId
+        in: path
+        required: true
+        description: Stage step execution Id
+    get:
+      summary: Get Step Execution Info
+      tags: []
+      responses:
+        '200':
+          $ref: '#/components/responses/StepExecutionResponseBody'
+      operationId: getStepExecutionInfo
+      x-stoplight:
+        id: 1n9aed40nyr4e
+      description: Get Step Execution Info
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+  '/v1/org/{org}/project/{project}/enforcement/{enforcementId}/summary':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - schema:
+          type: string
+        name: enforcementId
+        in: path
+        required: true
+        description: Enforcement Id
+    get:
+      summary: Get Enforcement Summary
+      tags: []
+      responses:
+        '200':
+          $ref: '#/components/responses/EnforcementSummaryResponseBody'
+      operationId: getEnforcementSummary
+      x-stoplight:
+        id: jzq85doo8tlk5
+      description: Get Enforcement Summary
       security:
         - x-api-key: []
 components:
@@ -95,7 +151,7 @@ components:
     Artifact:
       title: Artifact
       x-stoplight:
-        id: tbty2c77aatne
+        id: 5aekk9m4lzej8
       type: object
       x-examples: {}
       properties:
@@ -126,7 +182,7 @@ components:
     SbomProcess:
       title: SbomProcess
       x-stoplight:
-        id: 1govts3jx2is9
+        id: y2hb3u4kauit0
       type: object
       properties:
         name:
@@ -151,7 +207,7 @@ components:
     Attestation:
       title: Attestation
       x-stoplight:
-        id: njovnnucx1sdp
+        id: 3b6pbyc78i7wd
       type: object
       properties:
         is_attested:
@@ -165,7 +221,7 @@ components:
     SbomMetadata:
       title: SbomMetadata
       x-stoplight:
-        id: mt82ebxc3v3d3
+        id: 3x3lrzy9yzqub
       type: object
       properties:
         format:
@@ -211,7 +267,7 @@ components:
     SbomProcessRequestBody:
       title: SbomProcessRequestBody
       x-stoplight:
-        id: 91ee84xa33smg
+        id: 2ej147flnmxhw
       type: object
       properties:
         artifact:
@@ -225,7 +281,7 @@ components:
     SbomProcessResponseBody:
       title: SbomProcessResponseBody
       x-stoplight:
-        id: j2g9ex2135vmo
+        id: kfjzcnavg7zfn
       type: object
       properties:
         artifact_id:
@@ -234,7 +290,7 @@ components:
     EnforceSbomResponseBody:
       title: SbomEnforceResponseBody
       x-stoplight:
-        id: 4ezyuvxap426s
+        id: 2ch2vh1kcu4yj
       type: object
       properties:
         enforcement_id:
@@ -248,7 +304,7 @@ components:
     EnforceSbomRequestBody:
       title: SbomEnforceRequestBody
       x-stoplight:
-        id: o83d681ynx177
+        id: xlwx0g2swgery
       type: object
       properties:
         enforcement_id:
@@ -260,7 +316,7 @@ components:
     TokenIssueResponseBody:
       title: TokenIssueResponseBody
       x-stoplight:
-        id: fd8797fcac677
+        id: m3cidf4usfgo5
       type: object
       x-internal: true
       properties:
@@ -275,12 +331,53 @@ components:
         token:
           type: string
           x-stoplight:
-            id: hll76gq8nz4sz
+            id: 62vk4wkhrtc0e
           description: Issued cross-service JWT
       required:
         - token
       title: ''
       x-internal: true
+    StepExecutionResponse:
+      title: StepExecutionResponse
+      x-stoplight:
+        id: t0sjc6cfwopbr
+      type: object
+      properties:
+        step_execution_id:
+          type: string
+          x-stoplight:
+            id: jftxdzy4rhm3y
+        attestation:
+          $ref: '#/components/schemas/Attestation'
+        artifact:
+          $ref: '#/components/schemas/Artifact'
+        sbom:
+          $ref: '#/components/schemas/SbomProcess'
+    EnforcementSummary:
+      title: EnforcementSummary
+      x-stoplight:
+        id: 76lz28i62f144
+      type: object
+      properties:
+        artifact:
+          $ref: '#/components/schemas/Artifact'
+        enforcement_id:
+          type: string
+          x-stoplight:
+            id: 1brcqnddmncyn
+        allow_list_violation_count:
+          type: integer
+          x-stoplight:
+            id: 8dtpohq70jks7
+        deny_list_violation_count:
+          type: integer
+          x-stoplight:
+            id: 9zh0hehjoqujw
+        status:
+          type: string
+          x-stoplight:
+            id: f6yugk26rrsad
+      description: Enforcement Summary
   parameters:
     OrgParam:
       name: org
@@ -339,5 +436,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/TokenIssueResponseBody'
+    StepExecutionResponseBody:
+      description: Step Execution Response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StepExecutionResponse'
+    EnforcementSummaryResponseBody:
+      description: Enforcement Summary Response Body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnforcementSummary'
 tags:
   - name: sbomProcessor
