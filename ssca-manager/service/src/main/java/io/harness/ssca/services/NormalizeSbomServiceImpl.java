@@ -10,12 +10,12 @@ package io.harness.ssca.services;
 import io.harness.repositories.SBOMComponentRepo;
 import io.harness.spec.server.ssca.v1.model.NormalizedSbomComponentDTO;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
+import io.harness.ssca.utils.PageUtils;
 import io.harness.ssca.utils.transformers.NormalizeSbomComponentTransformer;
-import io.harness.utils.ApiUtils;
+import io.harness.ssca.utils.transformers.Transformer;
 
 import com.google.inject.Inject;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,10 +30,9 @@ public class NormalizeSbomServiceImpl implements NormalizeSbomService {
     Page<NormalizedSBOMComponentEntity> entities =
         sbomComponentRepo.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndOrchestrationId(
             accountId, orgIdentifier, projectIdentifier, orchestrationId, pageRequest);
-    Page<NormalizedSbomComponentDTO> result = entities.map(entity -> NormalizeSbomComponentTransformer.toDTO(entity));
-    ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks =
-        ApiUtils.addLinksHeader(responseBuilder, entities.getTotalElements(), page, limit);
-    return responseBuilderWithLinks.entity(result.getContent()).build();
+    Transformer<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO> transformer =
+        new NormalizeSbomComponentTransformer();
+    Page<NormalizedSbomComponentDTO> result = entities.map(entity -> transformer.toDTO(entity));
+    return PageUtils.pageResponse(result, entities.getTotalElements(), page, limit);
   }
 }

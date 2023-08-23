@@ -15,6 +15,7 @@ import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
 import io.harness.ssca.utils.transformers.EnforcementSummaryTransformer;
+import io.harness.ssca.utils.transformers.Transformer;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -49,6 +50,7 @@ public class EnforcementSummaryServiceImpl implements EnforcementSummaryService 
 
   @Override
   public void create(EnforcementSummaryDTO enforcementSummaryDTO) {
-    enforcementSummaryRepo.save(EnforcementSummaryTransformer.toEntity(enforcementSummaryDTO));
+    Transformer<EnforcementSummaryEntity, EnforcementSummaryDTO> transformer = new EnforcementSummaryTransformer();
+    enforcementSummaryRepo.save(transformer.toEntity(enforcementSummaryDTO));
   }
 }

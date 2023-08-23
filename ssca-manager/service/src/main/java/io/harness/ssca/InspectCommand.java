@@ -16,7 +16,7 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serializer.SSCAManagerModuleRegistrars;
+import io.harness.ssca.serializer.SSCAManagerModuleRegistrars;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

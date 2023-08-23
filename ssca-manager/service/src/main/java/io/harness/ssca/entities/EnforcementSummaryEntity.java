@@ -18,15 +18,17 @@ import io.harness.ssca.beans.Artifact;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 @OwnedBy(SSCA)
-@Value
+@Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "EnforcementSummaryEntityKeys")
@@ -35,6 +37,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Document("enforcementResultSummary")
 @TypeAlias("enforcementResultSummary")
 @HarnessEntity(exportable = true)
+@AllArgsConstructor
+@NoArgsConstructor
 public class EnforcementSummaryEntity implements PersistentEntity {
   Artifact artifact;
   @Field("enforcementid") String enforcementId;

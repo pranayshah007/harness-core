@@ -19,15 +19,17 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
 import java.time.Instant;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 @OwnedBy(SSCA)
-@Value
+@Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "NormalizedSBOMEntityKeys")
@@ -36,6 +38,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Document("sbomComponent")
 @TypeAlias("sbomComponent")
 @HarnessEntity(exportable = true)
+@AllArgsConstructor
+@NoArgsConstructor
 public class NormalizedSBOMComponentEntity implements PersistentEntity {
   @Field("orchestrationid") String orchestrationId;
   @Field("sbomversion") String sbomVersion;

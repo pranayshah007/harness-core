@@ -19,7 +19,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
 import java.time.Instant;
 import javax.validation.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.Id;
@@ -28,7 +31,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 @OwnedBy(SSCA)
-@Value
+@Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "ArtifactEntityKeys")
@@ -37,6 +40,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Document("sscaArtefact")
 @TypeAlias("sscaArtefact")
 @HarnessEntity(exportable = true)
+@AllArgsConstructor
+@NoArgsConstructor
 public class ArtifactEntity implements PersistentEntity {
   @Id String id;
   @Field("artifactid") String artifactId;

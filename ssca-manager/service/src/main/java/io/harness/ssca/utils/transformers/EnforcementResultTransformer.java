@@ -10,17 +10,28 @@ package io.harness.ssca.utils.transformers;
 import io.harness.spec.server.ssca.v1.model.EnforcementResultDTO;
 import io.harness.ssca.entities.EnforcementResultEntity;
 
-public class EnforcementResultTransformer {
-  public static EnforcementResultEntity toEntity(EnforcementResultDTO dto) {
+public class EnforcementResultTransformer implements Transformer<EnforcementResultEntity, EnforcementResultDTO> {
+  @Override
+  public EnforcementResultEntity toEntity(EnforcementResultDTO dto) {
+    // modelMapper.createTypeMap(dto, EnforcementResultEntity.class).addMappings(dto.g);
+    return modelMapper.map(dto, EnforcementResultEntity.class);
+  }
+
+  @Override
+  public EnforcementResultDTO toDTO(EnforcementResultEntity entity) {
+    return modelMapper.map(entity, EnforcementResultDTO.class);
+  }
+
+  /*public static EnforcementResultEntity toEntity(EnforcementResultDTO dto) {
     return EnforcementResultEntity.builder()
         .accountId(dto.getAccountId())
         .purl(dto.getPurl())
-        .enforcementID(dto.getEnforcementId())
+        .enforcementId(dto.getEnforcementId())
         .artifactId(dto.getArtifactId())
         .imageName(dto.getImageName())
         .license(dto.getLicense())
         .name(dto.getName())
-        .orchestrationID(dto.getOrchestrationId())
+        .orchestrationId(dto.getOrchestrationId())
         .orgIdentifier(dto.getOrgIdentifier())
         .packageManager(dto.getPackageManager())
         .projectIdentifier(dto.getProjectIdentifier())
@@ -31,5 +42,5 @@ public class EnforcementResultTransformer {
         .violationDetails(dto.getViolationDetails())
         .violationType(dto.getViolationType())
         .build();
-  }
+  }*/
 }

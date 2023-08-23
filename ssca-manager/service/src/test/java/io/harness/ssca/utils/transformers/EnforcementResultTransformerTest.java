@@ -27,18 +27,20 @@ public class EnforcementResultTransformerTest extends SSCAManagerTestBase {
   private EnforcementResultDTO dto;
   private EnforcementResultEntity entity;
 
+  Transformer<EnforcementResultEntity, EnforcementResultDTO> transformer;
+
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     entity = EnforcementResultEntity.builder()
                  .accountId("accountId")
                  .purl("purl")
-                 .enforcementID("enforcementId")
+                 .enforcementId("enforcementId")
                  .artifactId("artifactId")
                  .imageName("imageName")
                  .license(Arrays.asList("license1", "license2"))
                  .name("name")
-                 .orchestrationID("orchestrationId")
+                 .orchestrationId("orchestrationId")
                  .orgIdentifier("orgIdentifier")
                  .packageManager("packageManager")
                  .projectIdentifier("projectIdentifier")
@@ -68,13 +70,23 @@ public class EnforcementResultTransformerTest extends SSCAManagerTestBase {
               .version("version")
               .violationDetails("violationDetails")
               .violationType("violationType");
+
+    transformer = new EnforcementResultTransformer();
   }
 
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToEntity() {
-    EnforcementResultEntity enforcementResultEntity = EnforcementResultTransformer.toEntity(dto);
+    EnforcementResultEntity enforcementResultEntity = transformer.toEntity(dto);
     assertThat(enforcementResultEntity.equals(entity)).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testToDTO() {
+    EnforcementResultDTO enforcementResultDTO = transformer.toDTO(entity);
+    assertThat(enforcementResultDTO.equals(dto)).isEqualTo(true);
   }
 }

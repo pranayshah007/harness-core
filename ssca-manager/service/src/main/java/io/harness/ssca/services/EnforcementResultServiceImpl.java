@@ -18,6 +18,7 @@ import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 import io.harness.ssca.utils.transformers.EnforcementResultTransformer;
+import io.harness.ssca.utils.transformers.Transformer;
 
 import com.google.inject.Inject;
 import java.lang.reflect.Field;
@@ -34,14 +35,14 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
     List<EnforcementResultEntity> result = new ArrayList<>();
     for (NormalizedSBOMComponentEntity component : violatedComponents) {
       EnforcementResultEntity entity = EnforcementResultEntity.builder()
-                                           .enforcementID(enforcementId)
+                                           .enforcementId(enforcementId)
                                            .artifactId(component.getArtifactId())
                                            .tag(artifact.getTag())
                                            .imageName(artifact.getName())
                                            .accountId(component.getAccountId())
                                            .orgIdentifier(component.getOrgIdentifier())
                                            .projectIdentifier(component.getProjectIdentifier())
-                                           .orchestrationID(artifact.getOrchestrationId())
+                                           .orchestrationId(artifact.getOrchestrationId())
                                            .violationType(violationType)
                                            .violationDetails(violationDetails)
                                            .name(component.getPackageName())
@@ -99,7 +100,8 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
 
   @Override
   public void create(EnforcementResultDTO enforcementResultDTO) {
-    enforcementResultRepo.save(EnforcementResultTransformer.toEntity(enforcementResultDTO));
+    Transformer<EnforcementResultEntity, EnforcementResultDTO> transformer = new EnforcementResultTransformer();
+    enforcementResultRepo.save(transformer.toEntity(enforcementResultDTO));
   }
 
   private String getSupplierViolationDetails(String packageName, String packageSupplier, List<Supplier> suppliers) {

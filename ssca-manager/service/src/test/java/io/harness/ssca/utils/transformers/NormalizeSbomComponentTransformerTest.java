@@ -27,8 +27,9 @@ import org.mockito.MockitoAnnotations;
 
 public class NormalizeSbomComponentTransformerTest extends SSCAManagerTestBase {
   private NormalizedSBOMComponentEntity entity;
-
   private NormalizedSbomComponentDTO dto;
+
+  Transformer<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO> transformer;
 
   @Before
   public void setup() {
@@ -104,13 +105,16 @@ public class NormalizeSbomComponentTransformerTest extends SSCAManagerTestBase {
               .toolName("toolName")
               .toolVendor("toolVendor")
               .toolVersion("toolVersion");
+
+    transformer = new NormalizeSbomComponentTransformer();
   }
 
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToEntity() {
-    NormalizedSBOMComponentEntity normalizedSBOMComponentEntity = NormalizeSbomComponentTransformer.toEntity(dto);
+    NormalizedSBOMComponentEntity normalizedSBOMComponentEntity = transformer.toEntity(dto);
+
     assertThat(normalizedSBOMComponentEntity.equals(entity)).isEqualTo(true);
   }
 
@@ -118,7 +122,7 @@ public class NormalizeSbomComponentTransformerTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToDTO() {
-    NormalizedSbomComponentDTO normalizedSbomComponentDTO = NormalizeSbomComponentTransformer.toDTO(entity);
+    NormalizedSbomComponentDTO normalizedSbomComponentDTO = transformer.toDTO(entity);
     assertThat(normalizedSbomComponentDTO.equals(dto)).isEqualTo(true);
   }
 }

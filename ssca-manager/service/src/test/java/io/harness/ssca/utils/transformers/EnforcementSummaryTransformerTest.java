@@ -28,6 +28,8 @@ public class EnforcementSummaryTransformerTest extends SSCAManagerTestBase {
   private EnforcementSummaryDTO dto;
   private EnforcementSummaryEntity entity;
 
+  private Transformer<EnforcementSummaryEntity, EnforcementSummaryDTO> transformer;
+
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
@@ -58,13 +60,14 @@ public class EnforcementSummaryTransformerTest extends SSCAManagerTestBase {
                                .artifactId("artifactIdentifier")
                                .build())
                  .build();
+    transformer = new EnforcementSummaryTransformer();
   }
 
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToEntity() {
-    EnforcementSummaryEntity enforcementSummaryEntity = EnforcementSummaryTransformer.toEntity(dto);
+    EnforcementSummaryEntity enforcementSummaryEntity = transformer.toEntity(dto);
     assertThat(enforcementSummaryEntity.equals(entity)).isEqualTo(true);
   }
 
@@ -72,7 +75,7 @@ public class EnforcementSummaryTransformerTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToDTO() {
-    EnforcementSummaryDTO enforcementSummaryDTO = EnforcementSummaryTransformer.toDTO(entity);
+    EnforcementSummaryDTO enforcementSummaryDTO = transformer.toDTO(entity);
     assertThat(enforcementSummaryDTO.equals(dto)).isEqualTo(true);
   }
 }

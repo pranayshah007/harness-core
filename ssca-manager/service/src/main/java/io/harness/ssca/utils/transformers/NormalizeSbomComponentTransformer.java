@@ -10,11 +10,25 @@ package io.harness.ssca.utils.transformers;
 import io.harness.spec.server.ssca.v1.model.NormalizedSbomComponentDTO;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 
-import java.math.BigDecimal;
-import java.time.Instant;
+import org.modelmapper.TypeMap;
 
-public class NormalizeSbomComponentTransformer {
-  public static NormalizedSBOMComponentEntity toEntity(NormalizedSbomComponentDTO dto) {
+public class NormalizeSbomComponentTransformer
+    implements Transformer<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO> {
+  @Override
+  public NormalizedSBOMComponentEntity toEntity(NormalizedSbomComponentDTO dto) {
+    TypeMap<NormalizedSbomComponentDTO, NormalizedSBOMComponentEntity> propertyMap =
+        modelMapper.createTypeMap(NormalizedSbomComponentDTO.class, NormalizedSBOMComponentEntity.class);
+    // propertyMap.addMappings(Instant.ofEpochMilli(dto.getCreated().longValue()),
+    // NormalizedSBOMComponentEntity::setCreatedOn);
+    return modelMapper.map(dto, NormalizedSBOMComponentEntity.class);
+  }
+
+  @Override
+  public NormalizedSbomComponentDTO toDTO(NormalizedSBOMComponentEntity entity) {
+    return modelMapper.map(entity, NormalizedSbomComponentDTO.class);
+  }
+
+  /*public static NormalizedSBOMComponentEntity toEntity(NormalizedSbomComponentDTO dto) {
     return NormalizedSBOMComponentEntity.builder()
         .packageManager(dto.getPackageManager())
         .packageNamespace(dto.getPackageNamespace())
@@ -87,5 +101,5 @@ public class NormalizeSbomComponentTransformer {
         .toolName(entity.getToolName())
         .toolVendor(entity.getToolVendor())
         .toolVersion(entity.getToolVersion());
-  }
+  }*/
 }

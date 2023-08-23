@@ -18,15 +18,17 @@ import io.harness.persistence.PersistentEntity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 @OwnedBy(SSCA)
-@Value
+@Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "EnforcementResultEntityKeys")
@@ -35,15 +37,17 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Document("enforcementResult")
 @TypeAlias("enforcementResult")
 @HarnessEntity(exportable = true)
+@AllArgsConstructor
+@NoArgsConstructor
 public class EnforcementResultEntity implements PersistentEntity {
-  @Field("enforcement_id") String enforcementID;
+  @Field("enforcement_id") String enforcementId;
   @Field("artifactid") String artifactId;
   String tag;
   @Field("imagename") String imageName;
   @Field("accountid") String accountId;
   @Field("orgidentifier") String orgIdentifier;
   @Field("projectidentifier") String projectIdentifier;
-  @Field("orchestrationid") String orchestrationID;
+  @Field("orchestrationid") String orchestrationId;
   @Field("violationtype") String violationType;
   @Field("violationdetails") String violationDetails;
   String name;

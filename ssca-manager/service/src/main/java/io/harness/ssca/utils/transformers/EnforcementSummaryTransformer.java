@@ -8,13 +8,25 @@
 package io.harness.ssca.utils.transformers;
 
 import io.harness.spec.server.ssca.v1.model.EnforcementSummaryDTO;
-import io.harness.ssca.beans.Artifact;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
 
-import java.math.BigDecimal;
+import org.modelmapper.TypeMap;
 
-public class EnforcementSummaryTransformer {
-  public static EnforcementSummaryEntity toEntity(EnforcementSummaryDTO dto) {
+public class EnforcementSummaryTransformer implements Transformer<EnforcementSummaryEntity, EnforcementSummaryDTO> {
+  @Override
+  public EnforcementSummaryEntity toEntity(EnforcementSummaryDTO dto) {
+    TypeMap<EnforcementSummaryDTO, EnforcementSummaryEntity> propertyMap =
+        modelMapper.createTypeMap(dto, EnforcementSummaryEntity.class);
+    // propertyMap.addMappings();
+    return modelMapper.map(dto, EnforcementSummaryEntity.class);
+  }
+
+  @Override
+  public EnforcementSummaryDTO toDTO(EnforcementSummaryEntity entity) {
+    return modelMapper.map(entity, EnforcementSummaryDTO.class);
+  }
+
+  /*public static EnforcementSummaryEntity toEntity(EnforcementSummaryDTO dto) {
     return EnforcementSummaryEntity.builder()
         .status(dto.getStatus())
         .allowListViolationCount(dto.getAllowListViolationCount().intValue())
@@ -44,5 +56,5 @@ public class EnforcementSummaryTransformer {
                       .tag(entity.getArtifact().getTag())
                       .type(entity.getArtifact().getType())
                       .registryUrl(entity.getArtifact().getUrl()));
-  }
+  }*/
 }
