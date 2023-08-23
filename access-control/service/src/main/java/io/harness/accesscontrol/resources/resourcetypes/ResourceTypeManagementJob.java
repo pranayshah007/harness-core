@@ -67,8 +67,9 @@ public class ResourceTypeManagementJob {
 
     Set<ResourceType> currentResourceTypes = new HashSet<>(resourceTypeService.list());
     Set<ResourceType> latestResourceTypes = resourceTypesConfig.getResourceTypes();
-    Set<ResourceType> newResourceTypes = Sets.difference(latestResourceTypes, currentResourceTypes);
-    newResourceTypes.forEach(resourceTypeService::save);
+    Set<ResourceType> addedOrUpdatedResourceTypes = Sets.difference(latestResourceTypes, currentResourceTypes);
+
+    addedOrUpdatedResourceTypes.forEach(resourceTypeService::save);
 
     ConfigurationState configurationState =
         optional.orElseGet(() -> ConfigurationState.builder().identifier(resourceTypesConfig.getName()).build());

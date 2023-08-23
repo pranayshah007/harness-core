@@ -795,4 +795,17 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     Query query = new Query(criteria);
     return secondaryMongoTemplate.find(query, Instance.class);
   }
+
+  @Override
+  public List<Instance> getInstancesForProject(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectIdentifier);
+
+    return secondaryMongoTemplate.find(new Query(criteria), Instance.class);
+  }
 }

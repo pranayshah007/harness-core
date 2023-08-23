@@ -5,10 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer;
+package io.harness.ci.execution.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_MACHINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -22,8 +23,9 @@ import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.utils.CIStepInfoUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.utils.CIStepInfoUtils;
+import io.harness.ci.serializer.ProtobufStepSerializer;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -51,10 +53,11 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private SerializerUtils serializerUtils;
 
   public UnitStep serializeStepWithStepParameters(RunStepInfo runStepInfo, Integer port, String callbackId,
       String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout, String accountId,
-      String stepName, Ambiance ambiance) {
+      String stepName, Ambiance ambiance, String podName) {
     if (callbackId == null) {
       throw new CIStageExecutionException("CallbackId can not be null");
     }
@@ -63,8 +66,8 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
       throw new CIStageExecutionException("Port can not be null");
     }
 
-    String gitSafeCMD =
-        SerializerUtils.getSafeGitDirectoryCmd(RunTimeInputHandler.resolveShellType(runStepInfo.getShell()));
+    String gitSafeCMD = SerializerUtils.getSafeGitDirectoryCmd(
+        RunTimeInputHandler.resolveShellType(runStepInfo.getShell()), accountId, featureFlagService);
 
     String command = null;
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -86,10 +89,12 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
     Map<String, String> envvars =
         resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
     envvars = CIStepInfoUtils.injectAndResolveLoopingVariables(ambiance, accountId, featureFlagService, envvars);
+    envvars.put(DRONE_STAGE_MACHINE, podName);
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envvars.putAll(statusEnvVars);
     if (!isEmpty(envvars)) {
       runStepBuilder.putAllEnvironment(envvars);
     }
-
     UnitTestReport reports = runStepInfo.getReports().getValue();
     if (reports != null) {
       if (reports.getType() == UnitTestReportType.JUNIT) {

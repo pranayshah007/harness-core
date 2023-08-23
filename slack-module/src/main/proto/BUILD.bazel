@@ -1,0 +1,28 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//:tools/bazel/protos/harness_grpc_library.bzl", "harness_grpc_library")
+
+proto_library(
+    name = "slack-service_proto",
+    srcs = glob(["**/*.proto"]),
+    strip_import_prefix = "",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//product/ci/scm/proto:ciscmpb_proto",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+harness_grpc_library(
+    name = "slack-service_java_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":slack-service_proto",
+    ],
+)

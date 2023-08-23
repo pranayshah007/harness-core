@@ -10,6 +10,7 @@ package io.harness.delegate.task.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.helm.HelmChartInfo;
 
 import java.util.LinkedHashSet;
 import lombok.Builder;
@@ -22,4 +23,5 @@ public class K8sDeploymentReleaseData {
   private K8sInfraDelegateConfig k8sInfraDelegateConfig;
   private LinkedHashSet<String> namespaces;
   private String releaseName;
+  HelmChartInfo helmChartInfo;
 }

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
@@ -46,17 +46,17 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
-import io.harness.ci.buildstate.CodebaseUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.buildstate.CodebaseUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.InfraInfoUtils;
+import io.harness.ci.execution.utils.CIVmSecretEvaluator;
+import io.harness.ci.execution.utils.HostedVmSecretResolver;
+import io.harness.ci.execution.utils.InfrastructureUtils;
+import io.harness.ci.execution.utils.ValidationUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
-import io.harness.ci.utils.CIVmSecretEvaluator;
-import io.harness.ci.utils.HostedVmSecretResolver;
-import io.harness.ci.utils.InfrastructureUtils;
-import io.harness.ci.utils.ValidationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.connector.SecretSpecBuilder;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -131,6 +131,7 @@ public class VmInitializeTaskParamsBuilder {
   @Inject private SSCAServiceUtils sscaServiceUtils;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
+  private final String GCPStandard32 = "Standard_32";
 
   public DliteVmInitializeTaskParams getHostedVmInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
@@ -141,9 +142,13 @@ public class VmInitializeTaskParamsBuilder {
     vmInitializeUtils.validateDebug(hostedVmInfraYaml, ambiance);
     if (isBareMetalEnabled(accountId, hostedVmInfraYaml.getSpec().getPlatform(), initializeStepInfo)) {
       poolId = getHostedBareMetalPoolId(hostedVmInfraYaml.getSpec().getPlatform());
-      fallbackPoolIds.add(getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId));
+      fallbackPoolIds.add(getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId, false));
     } else {
-      poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId);
+      poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId, false);
+      String fallbackPoolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId, true);
+      if (!isEmpty(fallbackPoolId)) {
+        fallbackPoolIds.add(fallbackPoolId);
+      }
     }
     CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId, fallbackPoolIds);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params, ambiance);
@@ -215,6 +220,9 @@ public class VmInitializeTaskParamsBuilder {
         gitConnector, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
 
     Map<String, String> envVars = new HashMap<>();
+    Map<String, String> stageEnvVars =
+        vmInitializeUtils.getStageEnvVars(integrationStageConfig.getPlatform(), os, workDir, poolId, infrastructure);
+    envVars.putAll(stageEnvVars);
     envVars.putAll(codebaseEnvVars);
     envVars.putAll(gitEnvVars);
 
@@ -535,9 +543,14 @@ public class VmInitializeTaskParamsBuilder {
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
 
-  public String getHostedPoolId(ParameterField<Platform> platform, String accountId) {
+  // getHostedPoolId returns a pool ID that can be used for GCP hosted builds. If fallback is set to true,
+  // it will try to find a fallback pool value instead. Fallback pools are currently only present for linux
+  // amd64 architecture.
+  public String getHostedPoolId(ParameterField<Platform> platform, String accountId, boolean fallback) {
     OSType os = OSType.Linux;
     ArchType arch = ArchType.Amd64;
+    String fallbackSuffix = "-fallback";
+    boolean fallbackEligible = false;
     if (platform != null && platform.getValue() != null) {
       os = resolveOSType(platform.getValue().getOs());
       arch = resolveArchType(platform.getValue().getArch());
@@ -547,6 +560,9 @@ public class VmInitializeTaskParamsBuilder {
     boolean isWindowsAmd = os == OSType.Windows && arch == ArchType.Amd64;
 
     if (isLinux || isMacArm || isWindowsAmd) {
+      if (arch == ArchType.Amd64) {
+        fallbackEligible = true;
+      }
       if (isMacArm && !featureFlagService.isEnabled(FeatureName.CIE_HOSTED_VMS_MAC, accountId)) {
         throw new CIStageExecutionException(format("Mac Arm64 platform is not enabled for accountId %s", accountId));
       }
@@ -570,9 +586,16 @@ public class VmInitializeTaskParamsBuilder {
 
       if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
         pool = format("%s-free-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
+        fallbackEligible = false;
       }
     }
 
+    if (fallback) {
+      if (fallbackEligible) {
+        return pool + fallbackSuffix;
+      }
+      return "";
+    }
     return pool;
   }
 
@@ -607,6 +630,14 @@ public class VmInitializeTaskParamsBuilder {
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
       if (featureFlagService.isEnabled(FeatureName.CI_ENABLE_BARE_METAL_FREE_ACCOUNT, accountID)) {
         return true;
+      }
+    }
+
+    if (initializeStepInfo != null && initializeStepInfo.getVariables() != null) {
+      for (NGVariable var : initializeStepInfo.getVariables()) {
+        if (var.getName().equals(GCPStandard32)) {
+          return false;
+        }
       }
     }
 

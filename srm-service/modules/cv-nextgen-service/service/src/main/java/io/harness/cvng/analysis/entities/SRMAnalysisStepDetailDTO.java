@@ -21,6 +21,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SRMAnalysisStepDetailDTO {
+  @NotNull String accountId;
+  @NotNull String orgIdentifier;
+  @NotNull String projectIdentifier;
   @NotNull private long analysisStartTime;
   @NotNull private long analysisEndTime;
 
@@ -29,17 +32,32 @@ public class SRMAnalysisStepDetailDTO {
   @NotNull private SRMAnalysisStatus analysisStatus;
 
   @NotNull private String monitoredServiceIdentifier;
+  private String serviceIdentifier;
+  String serviceName;
+  @NotNull private String envIdentifier;
+  String environmentName;
 
   @NotNull private String executionDetailIdentifier;
+  @NotNull private String stepName;
+  @NotNull String stageStepId;
+  @NotNull String planExecutionId;
 
   public static SRMAnalysisStepDetailDTO getDTOFromEntity(SRMAnalysisStepExecutionDetail stepExecutionDetail) {
     return SRMAnalysisStepDetailDTO.builder()
         .analysisStatus(stepExecutionDetail.getAnalysisStatus())
         .monitoredServiceIdentifier(stepExecutionDetail.getMonitoredServiceIdentifier())
+        .serviceIdentifier(stepExecutionDetail.getServiceIdentifier())
+        .envIdentifier(stepExecutionDetail.getEnvIdentifier())
         .analysisStartTime(stepExecutionDetail.getAnalysisStartTime())
         .analysisEndTime(stepExecutionDetail.getAnalysisEndTime())
         .analysisDuration(stepExecutionDetail.getAnalysisDuration())
         .executionDetailIdentifier(stepExecutionDetail.getUuid())
+        .accountId(stepExecutionDetail.getAccountId())
+        .orgIdentifier(stepExecutionDetail.getOrgIdentifier())
+        .projectIdentifier(stepExecutionDetail.getProjectIdentifier())
+        .stepName(stepExecutionDetail.getStepName())
+        .stageStepId(stepExecutionDetail.getStageStepId())
+        .planExecutionId(stepExecutionDetail.getPlanExecutionId())
         .build();
   }
 }

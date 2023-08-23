@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsBlueGreenCreateServiceDataOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
@@ -20,6 +21,7 @@ import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -74,6 +76,7 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
   @Inject private EcsStepHelperImpl ecsStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public TaskChainResponse executeEcsTask(Ambiance ambiance, StepElementParameters stepParameters,
@@ -146,6 +149,8 @@ public class EcsBlueGreenCreateServiceStep extends TaskChainExecutableWithRollba
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+            .greenServiceRollbackEnabled(cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_ECS_BG_GREEN_SERVICE_ROLLBACK))
             .build();
     return ecsStepCommonHelper.queueEcsTask(stepParameters, ecsBlueGreenPrepareRollbackRequest, ambiance,
         ecsStepPassThroughData, false, TaskType.ECS_COMMAND_TASK_NG);

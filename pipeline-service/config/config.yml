@@ -344,7 +344,7 @@ orchestrationStepConfig:
           - /bin/ssca-plugin
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
-      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth", "AwsCdkDiff", "ServerlessAwsLambdaRollbackV2", "AwsCdkDeploy"]
+      cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth", "AwsCdkDiff", "ServerlessAwsLambdaRollbackV2", "AwsCdkDeploy", "AwsCdkDestroy", "AwsCdkRollback"]
       ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
 
 
@@ -528,6 +528,7 @@ allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
 
 orchestrationLogConfiguration:
   orchestrationLogBatchSize: ${ORCHESTRATION_LOG_BATCH_SIZE:-5}
+  shouldUseExpiredListener: ${SHOULD_USE_ORCHESTRATION_LOG_EXPIRED_LISTENER:-true}
 
 planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}
 
@@ -632,6 +633,7 @@ sscaServiceConfig:
     baseUrl: http://localhost:8186
     connectTimeOutSeconds: 40
     readTimeOutSeconds: 40
+  sscaManagerEnabled: ${SSCA_MANAGER_ENABLED:-false}
   serviceSecret: secret
 
 pipelineAsyncValidationPoolConfig:

@@ -15,7 +15,10 @@ import static io.harness.logging.LogLevel.INFO;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -49,6 +52,8 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @OwnedBy(CDP)
 @Slf4j
 public class FetchInstanceScriptTaskNG extends AbstractDelegateRunnableTask {

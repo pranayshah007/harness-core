@@ -83,7 +83,9 @@ import io.harness.cdng.manifest.steps.task.ManifestTaskService;
 import io.harness.cdng.manifest.steps.task.ManifestTaskServiceImpl;
 import io.harness.cdng.plugininfoproviders.AwsCdkBootstrapPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsCdkDeployPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.AwsCdkDestroyPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsCdkDiffPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.AwsCdkRollbackPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsCdkSynthPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
@@ -252,6 +254,8 @@ public class NGModule extends AbstractModule {
     pluginInfoProviderMultibinder.addBinding().to(AwsCdkDiffPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(ServerlessRollbackV2PluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsCdkDeployPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(AwsCdkDestroyPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(AwsCdkRollbackPluginInfoProvider.class);
 
     Multibinder<ManifestGroupingStrategy> groupingStrategyMultiBinder =
         Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});

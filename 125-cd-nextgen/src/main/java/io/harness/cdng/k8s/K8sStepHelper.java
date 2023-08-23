@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.k8s;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -100,6 +101,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -148,7 +150,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private AccountClient accountClient;
 
-  public TaskChainResponse queueK8sTask(StepElementParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
+  public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {k8sDeployRequest})
@@ -170,7 +172,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
         .build();
   }
 
-  public TaskChainResponse queueK8sTask(StepElementParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
+  public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData) {
     TaskType taskType = getK8sTaskType(k8sDeployRequest, ambiance);
     return queueK8sTask(stepElementParameters, k8sDeployRequest, ambiance, executionPassThroughData, taskType);
@@ -193,18 +195,59 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       return emptyList();
     }
 
-    List<String> valuesFilesContentsWithoutComments = new ArrayList<>();
+    List<String> renderedValuesFileContents;
     if (cdFeatureFlagHelper.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_REMOVE_COMMENTS_FROM_VALUES_YAML)) {
-      valuesFilesContentsWithoutComments =
-          K8sValuesFilesCommentsHandler.removeComments(valuesFileContents, manifestOutcome.getType());
+      renderedValuesFileContents = removeCommentsAndRender(manifestOutcome, ambiance, valuesFileContents);
+    } else {
+      renderedValuesFileContents = getValuesFileContents(ambiance, valuesFileContents);
     }
-
-    List<String> renderedValuesFileContents = getValuesFileContents(ambiance,
-        isEmpty(valuesFilesContentsWithoutComments) ? valuesFileContents : valuesFilesContentsWithoutComments);
 
     if (ManifestType.OpenshiftTemplate.equals(manifestOutcome.getType())) {
       Collections.reverse(renderedValuesFileContents);
+    }
+
+    return renderedValuesFileContents;
+  }
+
+  public List<String> removeCommentsAndRender(
+      ManifestOutcome manifest, Ambiance ambiance, List<String> valuesFileContents) {
+    // This check is to prevent fallback logic to apply to non values.yaml, should be removed once the fallback
+    // logic is removed as K8sFilesCommentsHandler#removeComments is already handling the same
+    if (!ManifestType.K8Manifest.equals(manifest.getType()) && !ManifestType.HelmChart.equals(manifest.getType())) {
+      return getValuesFileContents(ambiance, valuesFileContents);
+    }
+
+    List<String> valuesFilesContentsWithoutComments =
+        K8sFilesCommentsHandler.removeComments(valuesFileContents, manifest.getType());
+
+    // fallback logic in case if output of the values without comments is different than the value with comments
+    // if the size is different then there is no point to continue
+    if (valuesFileContents.size() != valuesFilesContentsWithoutComments.size()) {
+      log.warn("Size of values files without comments [{}] doesn't match the original size [{}]",
+          valuesFilesContentsWithoutComments.size(), valuesFileContents.size());
+
+      return valuesFileContents;
+    }
+
+    List<String> renderedValuesFileContents = new ArrayList<>();
+    for (int index = 0; index < valuesFileContents.size(); index++) {
+      // render only once if the output is the same
+      if (valuesFilesContentsWithoutComments.get(index).equals(valuesFileContents.get(index))) {
+        renderedValuesFileContents.add(renderValue(ambiance, valuesFileContents.get(index), false));
+        continue;
+      }
+
+      String renderedValueWithoutComments = renderValue(ambiance, valuesFilesContentsWithoutComments.get(index), false);
+      String renderedValue = renderValue(ambiance, valuesFileContents.get(index), true);
+
+      // prevent parsing yaml to check if matches if the rendered output is already the same
+      if (renderedValueWithoutComments.equals(renderedValue)) {
+        renderedValuesFileContents.add(renderedValue);
+      } else {
+        renderedValuesFileContents.add(
+            K8sFilesCommentsHandler.matchOrFallback(renderedValueWithoutComments, renderedValue));
+      }
     }
 
     return renderedValuesFileContents;
@@ -994,14 +1037,19 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     return Collections.emptyList();
   }
 
-  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags) {
+  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags, Ambiance ambiance) {
     if (commandFlags == null) {
       return new HashMap<>();
     }
 
     Map<String, String> commandsValueMap = new HashMap<>();
     for (K8sStepCommandFlag commandFlag : commandFlags) {
-      commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), commandFlag.getFlag().getValue());
+      if (ParameterField.isNotNull(commandFlag.getFlag())) {
+        String flagValue = commandFlag.getFlag().isExpression()
+            ? cdExpressionResolver.renderExpression(ambiance, commandFlag.getFlag().getExpressionValue())
+            : commandFlag.getFlag().getValue();
+        commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), flagValue);
+      }
     }
 
     return commandsValueMap;

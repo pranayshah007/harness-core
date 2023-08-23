@@ -5,11 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import static io.harness.beans.sweepingoutputs.PodCleanupDetails.CLEANUP_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
-import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,7 +21,7 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
@@ -111,9 +110,6 @@ public class StageCleanupUtility {
       K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) infrastructure;
       clusterConnectorRef = k8sDirectInfraYaml.getSpec().getConnectorRef().getValue();
       namespace = (String) k8sDirectInfraYaml.getSpec().getNamespace().fetchFinalValue();
-    } else if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-      namespace = "account-" + getAccountIdentifier(ngAccess.getAccountIdentifier());
-      clusterConnectorRef = "account.Harness_Kubernetes_Cluster";
     } else {
       throw new CIStageExecutionException("Infra type:" + infrastructure.getType().name() + "is not of k8s type");
     }

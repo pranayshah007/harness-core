@@ -13,32 +13,38 @@ import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.security.TokenGenerator;
 
 import java.io.IOException;
+import java.util.function.Supplier;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
 
+@RequiredArgsConstructor
 public class DelegateAuthInterceptor implements Interceptor {
   private static final String HOST_NAME = getLocalHostName();
 
-  private TokenGenerator tokenGenerator;
+  private final TokenGenerator tokenGenerator;
+  private final Supplier<String> delegateIdSupplier;
 
-  public DelegateAuthInterceptor(TokenGenerator tokenGenerator) {
-    this.tokenGenerator = tokenGenerator;
+  public DelegateAuthInterceptor(final TokenGenerator tokenGenerator) {
+    this(tokenGenerator, DelegateAgentCommonVariables::getDelegateId);
   }
 
   @Override
+  @NonNull
   public Response intercept(Chain chain) throws IOException {
-    String scheme = chain.request().url().scheme();
-    String host = chain.request().url().host();
-    int port = chain.request().url().port();
+    final String scheme = chain.request().url().scheme();
+    final String host = chain.request().url().host();
+    final int port = chain.request().url().port();
 
-    String token = this.tokenGenerator.getToken(scheme, host, port, HOST_NAME);
+    final String token = tokenGenerator.getToken(scheme, host, port, HOST_NAME);
 
-    Request request = chain.request();
+    final Request request = chain.request();
     return chain.proceed(request.newBuilder()
                              .header("Authorization", "Delegate " + token)
-                             .addHeader("accountId", this.tokenGenerator.getAccountId())
-                             .addHeader("delegateId", DelegateAgentCommonVariables.getDelegateId())
+                             .addHeader("accountId", tokenGenerator.getAccountId())
+                             .addHeader("delegateId", delegateIdSupplier.get())
                              .addHeader("delegateTokenName", DelegateAgentCommonVariables.getDelegateTokenName())
                              .build());
   }

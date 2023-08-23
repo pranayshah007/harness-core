@@ -39,10 +39,10 @@ import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
-import io.harness.steps.approval.step.custom.CustomApprovalInstanceHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalOutcome;
 import io.harness.steps.approval.step.custom.CustomApprovalSpecParameters;
 import io.harness.steps.approval.step.custom.CustomApprovalStep;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalResponseData;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalTicketNG;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
@@ -68,7 +68,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class CustomApprovalStepTest extends CategoryTest {
   @Mock ApprovalInstanceService approvalInstanceService;
-  @Mock private CustomApprovalInstanceHandler customApprovalInstanceHandler;
+  @Mock private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   private static final String STATUS = "status";
   @Mock ExecutorService dashboardExecutorService;
@@ -106,7 +106,7 @@ public class CustomApprovalStepTest extends CategoryTest {
     AsyncExecutableResponse response = customApprovalStep.executeAsync(ambiance, stepElementParameters, null, null);
     verify(logStreamingStepClient).openStream(ShellScriptTaskNG.COMMAND_UNIT);
     verify(approvalInstanceService).save(any());
-    verify(customApprovalInstanceHandler).wakeup();
+    verify(irregularApprovalInstanceHandler).wakeup();
     assertThat(response).isNotNull();
   }
 

@@ -411,7 +411,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
       String orgIdentifier, String projectIdentifier, boolean getDistinctFromBranches) {
     if (getDistinctFromBranches) {
       return EntityDistinctElementHelper.getDistinctElementPage(mongoTemplate, criteria, pageable, TemplateEntity.class,
-          TemplateEntityKeys.accountId, TemplateEntityKeys.orgIdentifier, TemplateEntityKeys.projectIdentifier,
+          false, TemplateEntityKeys.accountId, TemplateEntityKeys.orgIdentifier, TemplateEntityKeys.projectIdentifier,
           TemplateEntityKeys.identifier, TemplateEntityKeys.versionLabel);
     }
     List<TemplateEntity> templateEntities = gitAwarePersistence.find(

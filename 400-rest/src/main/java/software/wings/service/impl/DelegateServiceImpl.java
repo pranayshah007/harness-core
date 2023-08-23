@@ -8,7 +8,6 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.beans.FeatureName.DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST;
 import static io.harness.beans.FeatureName.REDUCE_DELEGATE_MEMORY_SIZE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -254,8 +253,6 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -263,7 +260,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -344,6 +340,9 @@ public class DelegateServiceImpl implements DelegateService {
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
 
   private static final long AUTO_UPGRADE_CHECK_TIME_IN_MINUTES = 90;
+
+  private static final int DELEGATE_EXPIRY_TIME_IN_WEEKS = 24;
+
   private long now() {
     return clock.millis();
   }
@@ -845,10 +844,20 @@ public class DelegateServiceImpl implements DelegateService {
         .collect(toList());
   }
 
+  /**
+   *
+   * @param delegates
+   * @return Delegate group expiration time which is minimum of expiration time of individual delegates.
+   */
   private long setDelegateScalingGroupExpiration(List<Delegate> delegates) {
-    return isNotEmpty(delegates)
-        ? delegates.stream().min(Comparator.comparing(Delegate::getExpirationTime)).get().getExpirationTime()
-        : 0;
+    List<Delegate> connectedDelegates = delegates.stream()
+                                            .filter(delegate -> !delegate.isDisconnected() && isDelegateAlive(delegate))
+                                            .collect(toList());
+    return connectedDelegates.stream()
+        .mapToLong(
+            delegate -> delegateSetupService.getDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()))
+        .min()
+        .orElse(0);
   }
 
   private List<Delegate> getDelegatesWithoutScalingGroup(String accountId) {
@@ -904,7 +913,8 @@ public class DelegateServiceImpl implements DelegateService {
                   .tokenActive(delegate.getDelegateTokenName() == null
                       || (delegateTokenStatusMap.containsKey(delegate.getDelegateTokenName())
                           && delegateTokenStatusMap.get(delegate.getDelegateTokenName())))
-                  .delegateExpirationTime(delegate.getExpirationTime())
+                  .delegateExpirationTime(
+                      delegateSetupService.getDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()))
                   .version(delegate.getVersion());
           // Set autoUpgrade as true for legacy delegate.
           if (!delegate.isImmutable()) {
@@ -989,11 +999,6 @@ public class DelegateServiceImpl implements DelegateService {
     setUnset(updateOperations, DelegateKeys.validUntil,
         Date.from(OffsetDateTime.now().plus(delegate.ttlMillis(), ChronoUnit.MILLIS).toInstant()));
     setUnset(updateOperations, DelegateKeys.version, delegate.getVersion());
-    // expiration time is only valid for immutable delegates.
-    if (delegate.isImmutable()) {
-      setUnset(updateOperations, DelegateKeys.expirationTime,
-          getDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()));
-    }
     setUnset(updateOperations, DelegateKeys.description, delegate.getDescription());
     if (delegate.getDelegateType() != null) {
       setUnset(updateOperations, DelegateKeys.delegateType, delegate.getDelegateType());
@@ -1150,10 +1155,6 @@ public class DelegateServiceImpl implements DelegateService {
     if (existingDelegate == null) {
       register(delegate);
       existingDelegate = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), true);
-    } else if (existingDelegate.isImmutable() && existingDelegate.getExpirationTime() == 0) {
-      existingDelegate.setExpirationTime(
-          getDelegateExpirationTime(existingDelegate.getVersion(), existingDelegate.getUuid()));
-      updateDelegateExpirationTime(existingDelegate);
     }
 
     if (licenseService.isAccountDeleted(existingDelegate.getAccountId())) {
@@ -1164,14 +1165,6 @@ public class DelegateServiceImpl implements DelegateService {
 
     existingDelegate.setUseJreVersion(jreVersionHelper.getTargetJreVersion());
     return existingDelegate;
-  }
-
-  private void updateDelegateExpirationTime(Delegate delegate) {
-    persistence.update(persistence.createQuery(Delegate.class)
-                           .filter(DelegateKeys.accountId, delegate.getAccountId())
-                           .filter(DelegateKeys.uuid, delegate.getUuid()),
-        persistence.createUpdateOperations(Delegate.class)
-            .set(DelegateKeys.expirationTime, delegate.getExpirationTime()));
   }
 
   @Override
@@ -1462,9 +1455,7 @@ public class DelegateServiceImpl implements DelegateService {
             .put("delegateGrpcServicePort", String.valueOf(delegateGrpcConfig.getPort()))
             .put("kubernetesAccountLabel", getAccountIdentifier(templateParameters.getAccountId()))
             .put("runAsRoot", String.valueOf(templateParameters.isRunAsRoot()))
-            .put("dynamicHandlingOfRequestEnabled",
-                String.valueOf(featureFlagService.isEnabled(
-                    DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
+            .put("dynamicHandlingOfRequestEnabled", String.valueOf(false));
 
     final boolean isOnPrem = DeployMode.isOnPrem(mainConfiguration.getDeployMode().name());
     params.put("isOnPrem", String.valueOf(isOnPrem));
@@ -2519,9 +2510,6 @@ public class DelegateServiceImpl implements DelegateService {
       log.info("Registering delegate for Hostname: {} IP: {}", delegate.getHostName(), delegate.getIp());
     }
 
-    if (delegate.isImmutable() && delegate.getExpirationTime() == 0) {
-      delegate.setExpirationTime(getDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()));
-    }
     if (ECS.equals(delegate.getDelegateType())) {
       return registerResponseFromDelegate(handleEcsDelegateRequest(delegate));
     } else {
@@ -2531,14 +2519,20 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateRegisterResponse register(final DelegateParams delegateParams, final boolean isConnectedUsingMtls) {
-    delegateMetricsService.recordDelegateMetrics(
-        Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
+    delegateMetricsService.recordDelegateMetrics(Delegate.builder()
+                                                     .accountId(delegateParams.getAccountId())
+                                                     .version(delegateParams.getVersion())
+                                                     .delegateType(delegateParams.getDelegateType())
+                                                     .build(),
         DELEGATE_REGISTRATION);
     // TODO: remove broadcasts from the flow of this function. Because it's called only in the first registration,
     // which is before the open of websocket connection.
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
-      delegateMetricsService.recordDelegateMetrics(
-          Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
+      delegateMetricsService.recordDelegateMetrics(Delegate.builder()
+                                                       .accountId(delegateParams.getAccountId())
+                                                       .version(delegateParams.getVersion())
+                                                       .delegateType(delegateParams.getDelegateType())
+                                                       .build(),
           DELEGATE_DESTROYED);
       broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true).broadcast(SELF_DESTRUCT);
       log.warn("Sending self destruct command from register delegate parameters because the account is deleted.");
@@ -2686,11 +2680,6 @@ public class DelegateServiceImpl implements DelegateService {
             .immutable(delegateParams.isImmutable())
             .mtls(isConnectedUsingMtls);
 
-    // ExpirationTime is not applicable for mutable delegates.
-    if (delegateParams.isImmutable()) {
-      delegateBuilder.expirationTime(
-          getDelegateExpirationTime(delegateParams.getVersion(), delegateParams.getDelegateId()));
-    }
     final Delegate delegate = delegateBuilder.build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {
@@ -2709,26 +2698,6 @@ public class DelegateServiceImpl implements DelegateService {
     }
   }
 
-  /**
-   * Get expiration time. The time will be 3 months after the time parsed from version.
-   * If no time can be parsed from version, it will be 3 months after the current time.
-   *
-   * @param version version of the immutable delegate
-   * @param delegateId delegate id, for logging
-   * @return expiration time
-   */
-  private long getDelegateExpirationTime(@NotBlank final String version, String delegateId) {
-    Calendar calendar = Calendar.getInstance();
-    SimpleDateFormat sdf = new SimpleDateFormat("yy.MM");
-    try {
-      calendar.setTime(sdf.parse(version));
-    } catch (ParseException e) {
-      log.error("Unable to parse version {} for delegateId {}", version, delegateId, e);
-    }
-    calendar.add(Calendar.MONTH, 3);
-    return calendar.getTimeInMillis();
-  }
-
   @VisibleForTesting
   protected Delegate getExistingDelegate(
       final String accountId, final String hostName, final boolean ng, final String delegateType, final String ip) {
@@ -2743,6 +2712,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     return delegateQuery.project(DelegateKeys.status, true)
+        .project(DelegateKeys.accountId, true)
         .project(DelegateKeys.delegateProfileId, true)
         .project(DelegateKeys.ng, true)
         .project(DelegateKeys.hostName, true)

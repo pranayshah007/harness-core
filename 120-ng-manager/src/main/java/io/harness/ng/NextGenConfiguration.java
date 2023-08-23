@@ -161,6 +161,7 @@ public class NextGenConfiguration extends Configuration {
 
   public static final String IP_ALLOWLIST_PACKAGE = "io.harness.ipallowlist.resource";
   public static final String FAVORITES_PACKAGE = "io.harness.favorites.remote";
+  public static final String EULA_PACKAGE = "io.harness.eula.resource";
   public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
   public static final String FREEZE_RESOURCE_PACKAGE = "io.harness.ng.freeze.resource";
   public static final String MANIFEST_RESOURCE_PACKAGE = "io.harness.ng.core.manifests.resources";
@@ -173,6 +174,7 @@ public class NextGenConfiguration extends Configuration {
   private static final String TERRAFORM_CLOUD_RESOURCE_PACKAGE = "io.harness.ng.core.terraformcloud.resources";
   private static final String EOL_BANNER_RESOURCE_PACKAGE = "io.harness.ng.core.eolbanner.resources";
   private static final String TERRAFORM_RESOURCE_PACKAGE = "io.harness.ng.core.terraform.resources";
+  private static final String TERRAGRUNT_RESOURCE_PACKAGE = "io.harness.ng.core.terragrunt.resources";
 
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
@@ -336,7 +338,8 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.TERRAFORM_CLOUD_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE,
                 NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE, NextGenConfiguration.TERRAFORM_RESOURCE_PACKAGE,
                 NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE,
-                NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE))
+                NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE,
+                NextGenConfiguration.EULA_PACKAGE, NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE))
         .collect(Collectors.toSet());
   }
 

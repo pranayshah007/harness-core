@@ -20,9 +20,9 @@ public class Constants {
   public static final String IDP_PREFIX = "idp_";
   public static final String IDP_RESOURCE_TYPE = "IDP_SETTINGS";
   public static final String IDP_PERMISSION = "idp_idpsettings_manage";
-  public static final List<String> pluginIds =
-      List.of("circleci", "confluence", "firehydrant", "github-actions", "github-insights", "github-pull-requests",
-          "harness-ci-cd", "harness-feature-flags", "jenkins", "jira", "kubernetes", "pager-duty", "todo");
+  public static final List<String> pluginIds = List.of("circleci", "confluence", "firehydrant", "github-actions",
+      "github-catalog-discovery", "github-insights", "github-pull-requests", "harness-ci-cd", "harness-feature-flags",
+      "jenkins", "jira", "kubernetes", "pager-duty", "todo");
   public static final String GITHUB_TOKEN = "HARNESS_GITHUB_TOKEN";
   public static final String GITHUB_APP_ID = "HARNESS_GITHUB_APP_APPLICATION_ID";
   public static final String GITHUB_APP_PRIVATE_KEY_REF = "HARNESS_GITHUB_APP_PRIVATE_KEY_REF";
@@ -54,4 +54,8 @@ public class Constants {
   public static final String SOURCE_FORMAT = "blob";
   public static final String LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES = "LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES";
   public static final String PLUGIN_REQUEST_NOTIFICATION_SLACK_WEBHOOK = "pluginRequestsNotificationSlack";
+  public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
+  public static final String DOT_SEPARATOR = ".";
+  public static final String SPACE_SEPARATOR = " ";
+  public static final String SUCCESS_RESPONSE = "SUCCESS";
 }

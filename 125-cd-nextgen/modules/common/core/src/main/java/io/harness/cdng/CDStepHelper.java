@@ -21,7 +21,6 @@ import static io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAcce
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
-import static io.harness.logging.UnitStatus.RUNNING;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AWS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
@@ -160,7 +159,6 @@ import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -176,6 +174,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.ExpressionUtils;
@@ -480,8 +479,8 @@ public class CDStepHelper {
     List<EncryptedDataDetail> apiAuthEncryptedDataDetails = null;
     GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO((ScmConnector) connectorDTO.getConnectorConfig());
     SSHKeySpecDTO sshKeySpecDTO = getSshKeySpecDTO(gitConfigDTO, ambiance);
-    List<EncryptedDataDetail> encryptedDataDetails =
-        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
+    List<EncryptedDataDetail> encryptedDataDetails = gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(
+        (ScmConnector) connectorDTO.getConnectorConfig(), sshKeySpecDTO, basicNGAccessObject);
 
     scmConnector = gitConfigDTO;
     boolean githubAppAuthentication =
@@ -563,7 +562,7 @@ public class CDStepHelper {
 
   // ParamterFieldBoolean methods:
   public static boolean getParameterFieldBooleanValue(
-      ParameterField<?> fieldValue, String fieldName, StepElementParameters stepElement) {
+      ParameterField<?> fieldValue, String fieldName, StepBaseParameters stepElement) {
     return getParameterFieldBooleanValue(fieldValue, fieldName,
         String.format("%s step with identifier: %s", stepElement.getType(), stepElement.getIdentifier()));
   }
@@ -645,17 +644,17 @@ public class CDStepHelper {
   }
 
   // TimeOut methods:
-  public static int getTimeoutInMin(StepElementParameters stepParameters) {
+  public static int getTimeoutInMin(StepBaseParameters stepParameters) {
     String timeout = getTimeoutValue(stepParameters);
     return NGTimeConversionHelper.convertTimeStringToMinutes(timeout);
   }
 
-  public static long getTimeoutInMillis(StepElementParameters stepParameters) {
+  public static long getTimeoutInMillis(StepBaseParameters stepParameters) {
     String timeout = getTimeoutValue(stepParameters);
     return NGTimeConversionHelper.convertTimeStringToMilliseconds(timeout);
   }
 
-  public static String getTimeoutValue(StepElementParameters stepParameters) {
+  public static String getTimeoutValue(StepBaseParameters stepParameters) {
     return stepParameters.getTimeout() == null || isEmpty(stepParameters.getTimeout().getValue())
         ? StepConstants.defaultTimeout
         : stepParameters.getTimeout().getValue();
@@ -776,6 +775,10 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_HPA_AND_PDB_NG);
   }
 
+  public boolean shouldDisableFabric8(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_DISABLE_FABRIC8_NG);
+  }
+
   public boolean isSkipUnchangedManifest(String accountId, boolean value) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG) && value;
   }
@@ -798,7 +801,7 @@ public class CDStepHelper {
         currentProgressData.getUnitProgresses()
             .stream()
             .map(unitProgress -> {
-              if (unitProgress.getStatus() == RUNNING) {
+              if (unitProgress.getStatus() != UnitStatus.SUCCESS && unitProgress.getStatus() != UnitStatus.FAILURE) {
                 LogCallback logCallback = getLogCallback(unitProgress.getUnitName(), ambiance, false);
                 logCallback.saveExecutionLog(exceptionMessage, LogLevel.ERROR, FAILURE);
                 return UnitProgress.newBuilder(unitProgress)

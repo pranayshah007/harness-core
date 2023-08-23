@@ -64,7 +64,7 @@ public class BatchProcessingApplication {
 
   @NotNull
   private BasicDataSource getBasicDataSource() {
-    TimeScaleDBConfig timeScaleDBConfig = batchMainConfig.getTimeScaleDBConfig();
+    TimeScaleDBConfig timeScaleDBConfig = batchMainConfig.getBatchPostgresDBConfig();
 
     BasicDataSource basicDataSource = new BasicDataSource();
     basicDataSource.setUrl(timeScaleDBConfig.getTimescaledbUrl());

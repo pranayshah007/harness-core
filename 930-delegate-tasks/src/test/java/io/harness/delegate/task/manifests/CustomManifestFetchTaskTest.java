@@ -10,6 +10,7 @@ package io.harness.delegate.task.manifests;
 import static io.harness.eraro.ErrorCode.GIT_ERROR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static java.lang.String.format;
@@ -102,6 +103,7 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
   private static final String ACCOUNT_ID = "accountId";
   private static final String DEFAULT_DIR = "DEFAULT_DIR";
   private static final String TEMP_DIR = "TEMP_DIR";
+  private static final String INNER_DIR = "INNER_DIR";
 
   private static final Map<String, Collection<CustomSourceFile>> valuesFilesContentMap =
       singletonMap("Service", singletonList(CustomSourceFile.builder().build()));
@@ -160,6 +162,53 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRunFetchTask() throws IOException {
     CustomManifestSource customManifestSource =
+        CustomManifestSource.builder().script("test script").filePaths(singletonList(INNER_DIR)).build();
+    CustomManifestValuesFetchParams taskParams =
+        createTaskParams(singletonList(CustomManifestFetchConfig.builder().key("value").build()), customManifestSource);
+    CustomManifestValuesFetchResponse fetchValueFileResponse = CustomManifestValuesFetchResponse.builder()
+                                                                   .commandExecutionStatus(SUCCESS)
+                                                                   .valuesFilesContentMap(valuesFilesContentMap)
+                                                                   .build();
+    FileIo.createDirectoryIfDoesNotExist(DEFAULT_DIR + "/" + INNER_DIR);
+    FileIo.createDirectoryIfDoesNotExist(TEMP_DIR);
+    Files.createFile(Paths.get(DEFAULT_DIR, INNER_DIR, "test1.yaml"));
+
+    doReturn(DEFAULT_DIR)
+        .when(customManifestService)
+        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true);
+
+    doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
+
+    doReturn(fetchValueFileResponse)
+        .when(customManifestFetchTaskHelper)
+        .fetchValuesTask(taskParams, logCallback, DEFAULT_DIR, true);
+    doReturn(DelegateFile.Builder.aDelegateFile().withFileId("FILE_ID").build())
+        .when(delegateFileManagerBase)
+        .uploadAsFile(any(DelegateFile.class), any(File.class));
+
+    CustomManifestValuesFetchResponse response = doRun(taskParams);
+
+    ArgumentCaptor<DelegateFile> fileArgumentCaptor = ArgumentCaptor.forClass(DelegateFile.class);
+    verify(delegateFileManagerBase, times(1)).uploadAsFile(fileArgumentCaptor.capture(), any(File.class));
+    DelegateFile fileArgumentCaptorValue = fileArgumentCaptor.getValue();
+    assertThat(fileArgumentCaptorValue.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(fileArgumentCaptorValue.getBucket()).isEqualTo(FileBucket.CUSTOM_MANIFEST);
+    assertThat(fileArgumentCaptorValue.getFileName())
+        .isEqualTo(format("zippedCustomManifestFiles%s", taskParams.getActivityId()));
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(response.getValuesFilesContentMap()).isEqualTo(valuesFilesContentMap);
+
+    // clean up
+    FileIo.deleteDirectoryAndItsContentIfExists(DEFAULT_DIR + "/" + INNER_DIR);
+    FileIo.deleteDirectoryAndItsContentIfExists(TEMP_DIR);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testRunFetchTaskWithManifestFile() throws IOException {
+    CustomManifestSource customManifestSource =
         CustomManifestSource.builder().script("test script").filePaths(singletonList("test1.yaml")).build();
     CustomManifestValuesFetchParams taskParams =
         createTaskParams(singletonList(CustomManifestFetchConfig.builder().key("value").build()), customManifestSource);
@@ -173,13 +222,14 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
 
     doReturn(DEFAULT_DIR)
         .when(customManifestService)
-        .executeCustomSourceScript(taskParams.getActivityId(), logCallback, customManifestSource, true);
+        .executeCustomSourceScript(
+            eq(taskParams.getActivityId()), any(LogCallback.class), eq(customManifestSource), eq(true));
 
     doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
 
     doReturn(fetchValueFileResponse)
         .when(customManifestFetchTaskHelper)
-        .fetchValuesTask(taskParams, logCallback, DEFAULT_DIR, true);
+        .fetchValuesTask(eq(taskParams), any(LogCallback.class), eq(DEFAULT_DIR), eq(true));
     doReturn(DelegateFile.Builder.aDelegateFile().withFileId("FILE_ID").build())
         .when(delegateFileManagerBase)
         .uploadAsFile(any(DelegateFile.class), any(File.class));
@@ -241,13 +291,13 @@ public class CustomManifestFetchTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testRunZipAndUploadTaskFail() throws IOException {
     CustomManifestSource customManifestSource =
-        CustomManifestSource.builder().script("test script").filePaths(singletonList("test1.yaml")).build();
+        CustomManifestSource.builder().script("test script").filePaths(singletonList(INNER_DIR)).build();
     CustomManifestValuesFetchParams taskParams =
         createTaskParams(singletonList(CustomManifestFetchConfig.builder().key("value").build()), customManifestSource);
 
-    FileIo.createDirectoryIfDoesNotExist(DEFAULT_DIR);
+    FileIo.createDirectoryIfDoesNotExist(DEFAULT_DIR + "/" + INNER_DIR);
     FileIo.createDirectoryIfDoesNotExist(TEMP_DIR);
-    Files.createFile(Paths.get(DEFAULT_DIR, "test1.yaml"));
+    Files.createFile(Paths.get(DEFAULT_DIR, INNER_DIR, "test1.yaml"));
 
     doReturn(TEMP_DIR).when(customManifestService).getWorkingDirectory();
     doReturn(DEFAULT_DIR)

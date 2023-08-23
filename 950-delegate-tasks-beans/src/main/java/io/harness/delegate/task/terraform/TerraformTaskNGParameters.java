@@ -143,7 +143,7 @@ public class TerraformTaskNGParameters
           ((RemoteTerraformBackendConfigFileInfo) backendConfigFileInfo).getFilestoreFetchFilesConfig();
       capabilities.addAll(getCapabilities(maskingEvaluator, gitFetchFilesConfig, fileStoreFetchConfig));
     }
-    if (encryptionConfig != null) {
+    if (encryptionConfig != null && !isEncryptDecryptPlanForHarnessSMOnManager()) {
       capabilities.addAll(
           EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilityForSecretManager(encryptionConfig, null));
     }
@@ -162,7 +162,7 @@ public class TerraformTaskNGParameters
               .build());
 
       GitConfigDTO gitConfigDTO =
-          ScmConnectorMapper.toGitConfigDTO(configFile.getGitStoreDelegateConfig().getGitConfigDTO());
+          ScmConnectorMapper.toGitConfigDTO(gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO());
       if (isNotEmpty(gitConfigDTO.getDelegateSelectors())) {
         capabilities.add(SelectorCapability.builder().selectors(gitConfigDTO.getDelegateSelectors()).build());
       }

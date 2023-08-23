@@ -28,9 +28,10 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
-public class BackstageCatalogEntity {
+public abstract class BackstageCatalogEntity {
   private String apiVersion = "backstage.io/v1alpha1";
   private Metadata metadata;
+  private String kind;
 
   @Data
   @Builder
@@ -40,8 +41,10 @@ public class BackstageCatalogEntity {
     @JsonIgnore private String identifier;
     @JsonIgnore private String absoluteIdentifier;
     private String name;
+    private String namespace;
     private String description;
     private List<String> tags;
+    private String uid;
     @JsonInclude(JsonInclude.Include.NON_EMPTY) private Map<String, String> annotations;
 
     public void setMetadata(String identifier, String absoluteIdentifier, String name, String description,

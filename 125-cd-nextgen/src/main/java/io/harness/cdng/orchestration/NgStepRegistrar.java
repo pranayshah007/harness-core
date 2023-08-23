@@ -108,7 +108,9 @@ import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildrenStep;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStep;
 import io.harness.cdng.provision.awscdk.AwsCdkDeployStep;
+import io.harness.cdng.provision.awscdk.AwsCdkDestroyStep;
 import io.harness.cdng.provision.awscdk.AwsCdkDiffStep;
+import io.harness.cdng.provision.awscdk.AwsCdkRollbackStep;
 import io.harness.cdng.provision.awscdk.AwsCdkSynthStep;
 import io.harness.cdng.provision.azure.AzureARMRollbackStep;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStep;
@@ -346,6 +348,8 @@ public class NgStepRegistrar {
     engineSteps.put(AwsCdkSynthStep.STEP_TYPE, AwsCdkSynthStep.class);
     engineSteps.put(AwsCdkDiffStep.STEP_TYPE, AwsCdkDiffStep.class);
     engineSteps.put(AwsCdkDeployStep.STEP_TYPE, AwsCdkDeployStep.class);
+    engineSteps.put(AwsCdkDestroyStep.STEP_TYPE, AwsCdkDestroyStep.class);
+    engineSteps.put(AwsCdkRollbackStep.STEP_TYPE, AwsCdkRollbackStep.class);
 
     return engineSteps;
   }

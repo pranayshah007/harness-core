@@ -26,6 +26,7 @@ import io.harness.dtos.InstanceDTO;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.persistence.HPersistence;
+import io.harness.repositories.instancestatsiterator.InstanceStatsIteratorRepository;
 import io.harness.rule.Owner;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instancestats.InstanceStatsService;
@@ -49,6 +50,7 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
   private static final int SYNC_INTERVAL_MINUTES = 30;
   private static final int MAX_CALLS_PER_SERVICE = 48;
 
+  @Mock private InstanceStatsIteratorRepository instanceStatsIteratorRepository;
   @Mock private InstanceStatsService instanceStatsService;
   @Mock private InstanceService instanceService;
   @Mock private HPersistence persistence;
@@ -69,6 +71,8 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
              eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong()))
         .thenReturn(Collections.singletonList(instanceDTO));
     assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isTrue();
+    verify(instanceStatsIteratorRepository, times(1))
+        .updateTimestampForIterator(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong());
     verify(instanceService, times(1))
         .getActiveInstancesByAccountOrgProjectAndService(
             eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong());
@@ -77,13 +81,15 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void createStatsTestForANewService() {
+  public void createStatsTestForANewService() throws InterruptedException {
     InstanceDTO instanceDTO = InstanceDTO.builder().build();
     mockServices();
     when(instanceService.getActiveInstancesByAccountOrgProjectAndService(
              eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong()))
         .thenReturn(Collections.singletonList(instanceDTO));
     assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isTrue();
+    verify(instanceStatsIteratorRepository, times(1))
+        .updateTimestampForIterator(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong());
     verify(instanceService, times(1))
         .getActiveInstancesByAccountOrgProjectAndService(
             eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong());
@@ -116,6 +122,8 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
              eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong()))
         .thenReturn(Collections.singletonList(instanceDTO));
     assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isTrue();
+    verify(instanceStatsIteratorRepository, times(1 + MAX_CALLS_PER_SERVICE))
+        .updateTimestampForIterator(eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong());
     verify(instanceService, times(MAX_CALLS_PER_SERVICE))
         .getActiveInstancesByAccountOrgProjectAndService(
             eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong());

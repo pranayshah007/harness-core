@@ -357,10 +357,6 @@ if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
   export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
 fi
 
-if [[ "" != "$PMS_MONGO_URI" ]]; then
-  export PMS_MONGO_URI=${PMS_MONGO_URI//\\&/&}; yq -i '.pmsMongo.uri=env(PMS_MONGO_URI)' $CONFIG_FILE
-fi
-
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then
   export GRPC_SERVER_PORT; yq -i '.pmsSdkGrpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
 fi

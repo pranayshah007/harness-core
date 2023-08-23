@@ -27,12 +27,11 @@ import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.api.streaming.impl.AggregateStreamingServiceImpl;
 import io.harness.audit.api.streaming.impl.StreamingServiceImpl;
 import io.harness.audit.client.remote.AuditClientModule;
-import io.harness.audit.eventframework.AccountEntityCrudStreamListener;
+import io.harness.audit.eventframework.AuditEntityCrudStreamListener;
 import io.harness.audit.repositories.streaming.StreamingBatchRepository;
 import io.harness.audit.repositories.streaming.StreamingBatchRepositoryImpl;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.govern.ProviderModule;
-import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -111,7 +110,6 @@ public class AuditServiceModule extends AbstractModule {
       }
     });
 
-    install(new MetricsModule());
     install(ExecutorModule.getInstance());
     bind(PlatformConfiguration.class).toInstance(appConfig);
     install(new AbstractMongoModule() {
@@ -165,7 +163,7 @@ public class AuditServiceModule extends AbstractModule {
   private void registerEventListeners() {
     bind(MessageListener.class)
         .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
-        .to(AccountEntityCrudStreamListener.class);
+        .to(AuditEntityCrudStreamListener.class);
   }
 
   @Provides

@@ -6,6 +6,7 @@
  */
 
 package io.harness.repositories.executions;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -28,6 +29,9 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(PIPELINE)
 public interface PmsExecutionSummaryRepositoryCustom {
   PipelineExecutionSummaryEntity update(Query query, Update update);
+
+  // updates multiple records and doesnt return any record
+  void multiUpdate(Query query, Update update);
   UpdateResult deleteAllExecutionsWhenPipelineDeleted(Query query, Update update);
   Page<PipelineExecutionSummaryEntity> findAll(Criteria criteria, Pageable pageable);
 
@@ -40,9 +44,9 @@ public interface PmsExecutionSummaryRepositoryCustom {
   long getCountOfExecutionSummary(Criteria criteria);
   String fetchRootRetryExecutionId(String planExecutionId);
 
-  List<String> findListOfUniqueBranches(Criteria criteria);
+  CloseableIterator<PipelineExecutionSummaryEntity> findListOfBranches(Criteria criteria);
 
-  List<String> findListOfUniqueRepositories(Criteria criteria);
+  CloseableIterator<PipelineExecutionSummaryEntity> findListOfRepositories(Criteria criteria);
 
   /**
    * Returns iterator on PipelineExecutionSummaryEntity for given query having projection fields else throws exception

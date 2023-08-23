@@ -10,11 +10,14 @@ package io.harness.engine.interrupts.handlers;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.interrupts.Interrupt.State.DISCARDED;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
+import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -157,5 +160,58 @@ public class AbortInterruptHandlerTest extends OrchestrationTestBase {
         .thenReturn(Collections.singletonList(interruptWithNodeUuid));
     abortInterruptHandler.validateAndSave(interruptWithNodeUuid);
     verify(interruptService, times(1)).markProcessed(interruptUuid, PROCESSED_SUCCESSFULLY);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testHandleAndMarkInterruptForNodeExecution() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    Interrupt interrupt = Interrupt.builder()
+                              .uuid(generateUuid())
+                              .type(InterruptType.ABORT)
+                              .interruptConfig(InterruptConfig.newBuilder().build())
+                              .planExecutionId(planExecutionId)
+                              .state(State.REGISTERED)
+                              .build();
+    assertThatThrownBy(
+        () -> abortInterruptHandler.handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, false))
+        .isInstanceOf(InterruptProcessingFailedException.class);
+    // No interaction with the interruptService.markProcessed because `markInterruptAsProcessed` was passed as false.
+    verify(interruptService, times(0)).markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+
+    assertThatThrownBy(
+        () -> abortInterruptHandler.handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, true))
+        .isInstanceOf(InterruptProcessingFailedException.class);
+    // 1 interaction with the interruptService.markProcessed because `markInterruptAsProcessed` was passed as true.
+    verify(interruptService, times(1)).markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+
+    Interrupt returnedInterrupt;
+    NodeExecution nodeExecution = NodeExecution.builder().build();
+    doReturn(nodeExecution)
+        .when(nodeExecutionService)
+        .updateStatusWithOps(nodeExecutionId, Status.DISCONTINUING, null, EnumSet.noneOf(Status.class));
+    doReturn(Interrupt.builder()
+                 .uuid(generateUuid())
+                 .type(InterruptType.ABORT)
+                 .interruptConfig(InterruptConfig.newBuilder().build())
+                 .planExecutionId(planExecutionId)
+                 .state(PROCESSED_SUCCESSFULLY)
+                 .build())
+        .when(interruptService)
+        .markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+
+    returnedInterrupt = abortInterruptHandler.handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, false);
+    verify(abortHelper, times(1)).discontinueMarkedInstance(nodeExecution, interrupt);
+    // No interaction with the interruptService.markProcessed because `markInterruptAsProcessed` was passed as false.
+    verify(interruptService, times(0)).markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    assertThat(returnedInterrupt.getState()).isEqualTo(interrupt.getState());
+
+    returnedInterrupt = abortInterruptHandler.handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, true);
+    verify(abortHelper, times(2)).discontinueMarkedInstance(nodeExecution, interrupt);
+    // 1 interaction with the interruptService.markProcessed because `markInterruptAsProcessed` was passed as true.
+    verify(interruptService, times(1)).markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    assertThat(returnedInterrupt.getState()).isEqualTo(PROCESSED_SUCCESSFULLY);
   }
 }

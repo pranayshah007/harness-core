@@ -32,6 +32,8 @@ message ExpressionEvaluateBlobRequest {
   io.harness.pms.contracts.ambiance.Ambiance ambiance = 1;
   string expression = 2;
   io.harness.pms.contracts.plan.ExpressionMode expressionMode = 3;
+  // Added boolean to see if new recast flow for primitives needs to be handled or not
+  bool newRecastFlow = 4;
 }
 
 message ExpressionEvaluateBlobResponse {

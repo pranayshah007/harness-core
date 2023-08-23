@@ -47,7 +47,7 @@ public class GraphVertexConverter {
 
     return GraphVertex.builder()
         .uuid(nodeExecution.getUuid())
-        .ambiance(nodeExecution.getAmbiance())
+        .currentLevel(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()))
         .planNodeId(level.getSetupId())
         .identifier(level.getIdentifier())
         .name(nodeExecution.getName())
@@ -80,7 +80,7 @@ public class GraphVertexConverter {
     Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
     return GraphVertex.builder()
         .uuid(nodeExecution.getUuid())
-        .ambiance(nodeExecution.getAmbiance())
+        .currentLevel(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()))
         .planNodeId(level.getSetupId())
         .identifier(level.getIdentifier())
         .name(nodeExecution.getName())
@@ -91,8 +91,9 @@ public class GraphVertexConverter {
         .stepType(level.getStepType().getType())
         .status(nodeExecution.getStatus())
         .failureInfo(nodeExecution.getFailureInfo())
-        .stepParameters(
-            nodeExecutionsInfo == null ? nodeExecution.getPmsStepParameters() : nodeExecutionsInfo.getResolvedInputs())
+        .stepParameters(nodeExecutionsInfo != null && nodeExecutionsInfo.getResolvedInputs() != null
+                ? nodeExecutionsInfo.getResolvedInputs()
+                : nodeExecution.getResolvedStepParameters())
         .nodeRunInfo(nodeExecution.getNodeRunInfo())
         .mode(nodeExecution.getMode())
         .executableResponses(CollectionUtils.emptyIfNull(nodeExecution.getExecutableResponses()))
@@ -109,6 +110,7 @@ public class GraphVertexConverter {
                 ? new HashMap<>()
                 : nodeExecutionsInfo.getNodeExecutionDetailsInfoList().stream().collect(
                     Collectors.toMap(NodeExecutionDetailsInfo::getName, NodeExecutionDetailsInfo::getStepDetails)))
+        .baseFqn(AmbianceUtils.getFQNUsingLevels(nodeExecution.getAmbiance().getLevelsList()))
         .build();
   }
 }

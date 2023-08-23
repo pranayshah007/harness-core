@@ -258,6 +258,10 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(224, "AWS_CDK_SYNTH");
     entityTypeOrdinalMapping.put(225, "AWS_CDK_DIFF");
     entityTypeOrdinalMapping.put(226, "AWS_CDK_DEPLOY");
+    entityTypeOrdinalMapping.put(227, "AWS_CDK_DESTROY");
+    entityTypeOrdinalMapping.put(228, "IDP_SCORECARD");
+    entityTypeOrdinalMapping.put(229, "IDP_CHECK");
+    entityTypeOrdinalMapping.put(230, "AWS_CDK_ROLLBACK");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

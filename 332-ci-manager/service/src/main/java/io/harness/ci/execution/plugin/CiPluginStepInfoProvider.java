@@ -17,8 +17,8 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.ci.buildstate.PluginSettingUtils;
-import io.harness.ci.integrationstage.K8InitializeStepUtils;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.integrationstage.K8InitializeStepUtils;
 import io.harness.ci.utils.PortFinder;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -39,6 +39,7 @@ import io.harness.pms.sdk.core.plugin.SecretNgVariableUtils;
 import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
+import com.google.protobuf.BoolValue;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -77,6 +78,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
     PluginDetails.Builder pluginDetailsBuilder =
         PluginDetails.newBuilder()
             .putAllEnvVariables(containerDefinitionInfo.getEnvVars())
+            .setIsHarnessManaged(BoolValue.of(containerDefinitionInfo.isHarnessManagedImage()))
             .setImageDetails(
                 ImageDetails.newBuilder()
                     .setImageInformation(ImageDetailsUtils.getImageDetails(

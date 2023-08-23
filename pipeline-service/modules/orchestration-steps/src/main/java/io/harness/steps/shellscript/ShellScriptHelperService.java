@@ -45,7 +45,7 @@ public interface ShellScriptHelperService {
       @Nonnull ShellScriptStepParameters shellScriptStepParameters,
       @Nonnull ShellScriptTaskParametersNGBuilder taskParametersNGBuilder);
 
-  String getShellScript(@Nonnull ShellScriptStepParameters stepParameters);
+  String getShellScript(@Nonnull ShellScriptStepParameters stepParameters, Ambiance ambiance);
 
   String getWorkingDirectory(
       ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate);

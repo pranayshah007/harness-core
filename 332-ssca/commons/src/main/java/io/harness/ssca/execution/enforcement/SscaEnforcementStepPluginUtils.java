@@ -28,6 +28,7 @@ public class SscaEnforcementStepPluginUtils {
   public static final String PLUGIN_TYPE = "PLUGIN_TYPE";
   public static final String STEP_EXECUTION_ID = "STEP_EXECUTION_ID";
   public static final String POLICY_FILE_IDENTIFIER = "POLICY_FILE_IDENTIFIER";
+  public static final String SSCA_MANAGER_ENABLED = "SSCA_MANAGER_ENABLED";
 
   public static final String COSIGN_PUBLIC_KEY = "COSIGN_PUBLIC_KEY";
 
@@ -36,6 +37,7 @@ public class SscaEnforcementStepPluginUtils {
     envMap.put(STEP_EXECUTION_ID, envVariables.getStepExecutionId());
     envMap.put(PLUGIN_SBOMSOURCE, envVariables.getSbomSource());
     envMap.put(PLUGIN_TYPE, "Enforce");
+    envMap.put(SSCA_MANAGER_ENABLED, String.valueOf(envVariables.isSscaManagerEnabled()));
     envMap.put(POLICY_FILE_IDENTIFIER, envVariables.getHarnessPolicyFileId());
     return envMap;
   }

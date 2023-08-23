@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.mapper;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.constants.Constants.AMZ_SUBSCRIPTION_CONFIRMATION_TYPE;
@@ -519,7 +520,6 @@ public class NGTriggerElementMapper {
       }
       webhookTriggerType = CUSTOM;
     }
-
     TriggerWebhookEventBuilder triggerWebhookEventBuilder =
         TriggerWebhookEvent.builder()
             .accountId(accountIdentifier)
@@ -551,16 +551,23 @@ public class NGTriggerElementMapper {
       List<HeaderConfig> headerConfigs) {
     WebhookTriggerType webhookTriggerType = CUSTOM;
 
-    return TriggerWebhookEvent.builder()
-        .accountId(accountIdentifier)
-        .orgIdentifier(orgIdentifier)
-        .projectIdentifier(projectIdentifier)
-        .triggerIdentifier(triggerIdentifier)
-        .pipelineIdentifier(pipelineIdentifier)
-        .sourceRepoType(webhookTriggerType.getEntityMetadataName())
-        .headers(headerConfigs)
-        .payload(payload)
-        .principal(SecurityContextBuilder.getPrincipal());
+    TriggerWebhookEventBuilder triggerWebhookEventBuilder =
+        TriggerWebhookEvent.builder()
+            .accountId(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .triggerIdentifier(triggerIdentifier)
+            .pipelineIdentifier(pipelineIdentifier)
+            .sourceRepoType(webhookTriggerType.getEntityMetadataName())
+            .headers(headerConfigs)
+            .payload(payload);
+    if (!pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.CDS_NG_SERVICE_PRINCIPAL_FOR_CUSTOM_WEBHOOK)) {
+      /* If Feature flag CDS_NG_SERVICE_PRINCIPAL_FOR_CUSTOM_WEBHOOK is enabled, it means we should not set
+         user's principal for trigger execution.
+       */
+      triggerWebhookEventBuilder.principal(SecurityContextBuilder.getPrincipal());
+    }
+    return triggerWebhookEventBuilder;
   }
 
   public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(NGTriggerEntity ngTriggerEntity, boolean includeYaml,

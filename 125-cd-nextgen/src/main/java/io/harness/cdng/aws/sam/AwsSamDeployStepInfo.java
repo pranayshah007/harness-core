@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.aws.sam;
+
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
@@ -64,10 +65,7 @@ public class AwsSamDeployStepInfo extends AwsSamBaseStepInfo implements CDAbstra
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> deployCommandOptions;
 
-  @NotNull
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  ParameterField<String> stackName;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> stackName;
 
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> image,

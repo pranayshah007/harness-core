@@ -40,7 +40,7 @@ public interface NGTriggerService {
       String targetIdentifier, String identifier, boolean deleted);
 
   NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, NGTriggerEntity oldNgTriggerEntity);
-
+  TriggerUpdateCount disableTriggers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status);
 
   boolean updateTriggerPollingStatus(String accountId, PollingTriggerStatusUpdateDTO statusUpdate);

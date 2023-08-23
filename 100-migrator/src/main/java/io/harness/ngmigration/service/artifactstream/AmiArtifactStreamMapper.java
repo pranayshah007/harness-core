@@ -8,7 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -86,11 +86,11 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
   public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     String connectorRef = getConnectorRef(migratedEntities, artifactStream);
-    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
     String region = "us-east-1";
     List<AMITag> tags = Collections.emptyList();
     List<AMIFilter> filters = Collections.emptyList();
-    String version = PLEASE_FIX_ME;
+    String version = TRIGGER_TAG_VALUE_DEFAULT;
 
     if (artifactStream != null) {
       AmiArtifactStream amiArtifactStream = (AmiArtifactStream) artifactStream;

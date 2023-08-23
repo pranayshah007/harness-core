@@ -23,7 +23,8 @@ import io.harness.licensing.interfaces.clients.CIModuleLicenseClient;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(
+    module = ProductModule.PLG, unitCoverageRequired = true, components = {HarnessModuleComponent.CI_PLG_LICENSING})
 public class CILocalClient implements CIModuleLicenseClient {
   private static final int ENTERPRISE_TRIAL_DEVELOPERS = 200;
   private static final int TEAM_TRIAL_DEVELOPERS = 200;

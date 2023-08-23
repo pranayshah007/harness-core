@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.provision.awscdk;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -35,6 +37,8 @@ import java.util.function.Supplier;
 @OwnedBy(HarnessTeam.CDP)
 public class AwsCdkBootstrapStep extends AbstractContainerStepV2<StepElementParameters> {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject private AwsCdkHelper awsCdkStepHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_CDK_BOOTSTRAP.getYamlType())
@@ -57,12 +61,10 @@ public class AwsCdkBootstrapStep extends AbstractContainerStepV2<StepElementPara
     AwsCdkBootstrapStepParameters awsCdkBootstrapStepParameters =
         (AwsCdkBootstrapStepParameters) stepElementParameters.getSpec();
 
-    Map<String, String> envVarMap = new HashMap<>();
-
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
         awsCdkBootstrapStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
@@ -75,6 +77,7 @@ public class AwsCdkBootstrapStep extends AbstractContainerStepV2<StepElementPara
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    // we need to check if rbac check is req or not.
+    awsCdkStepHelper.validateFeatureEnabled(ambiance);
+    awsCdkStepHelper.validateRuntimePermissions(ambiance, (AwsCdkBaseStepInfo) stepParameters.getSpec());
   }
 }

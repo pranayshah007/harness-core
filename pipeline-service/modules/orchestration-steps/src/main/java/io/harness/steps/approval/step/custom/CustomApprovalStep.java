@@ -61,7 +61,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.CUSTOM_APPROVAL_STEP_TYPE;
 
   @Inject private ApprovalInstanceService approvalInstanceService;
-  @Inject private CustomApprovalInstanceHandler customApprovalInstanceHandler;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepExecutionEntityService stepExecutionEntityService;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;
@@ -72,7 +72,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
     CustomApprovalInstance approvalInstance = CustomApprovalInstance.fromStepParameters(ambiance, stepParameters);
     openLogStream(ambiance, approvalInstance);
     approvalInstance = (CustomApprovalInstance) approvalInstanceService.save(approvalInstance);
-    customApprovalInstanceHandler.wakeup();
+    irregularApprovalInstanceHandler.wakeup();
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(approvalInstance.getId())
         .addAllLogKeys(CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
@@ -113,8 +113,8 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
                                                           .build())
                                       .build();
         dashboardExecutorService.submit(()
-                                            -> stepExecutionEntityService.updateStepExecutionEntity(ambiance,
-                                                failureInfo, null, stepParameters.getName(), Status.APPROVAL_WAITING));
+                                            -> stepExecutionEntityService.updateStepExecutionEntity(
+                                                ambiance, failureInfo, null, stepParameters.getName(), Status.FAILED));
         throw new ApprovalStepNGException(errorMsg);
       }
       CustomApprovalOutcome outcome = instance.toCustomApprovalOutcome(customApprovalResponseData.getTicket());
@@ -122,7 +122,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
           ()
               -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, instance.getFailureInfo(),
                   createCustomApprovalStepExecutionDetailsFromCustomApprovalOutcome(outcome), stepParameters.getName(),
-                  Status.APPROVAL_WAITING));
+                  instance.getStatus().toFinalExecutionStatus()));
       return StepResponse.builder()
           .status(instance.getStatus().toFinalExecutionStatus())
           .failureInfo(instance.getFailureInfo())

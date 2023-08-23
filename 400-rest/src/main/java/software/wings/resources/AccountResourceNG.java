@@ -84,14 +84,6 @@ public class AccountResourceNG {
   }
 
   @GET
-  @Path("/list")
-  @Deprecated
-  public RestResponse<List<AccountDTO>> getAllAccounts() {
-    List<AccountDTO> accountList = accountService.getAllAccounts();
-    return new RestResponse<>(accountList);
-  }
-
-  @GET
   @Path("/listV2")
   public RestResponse<PageResponse<AccountDTO>> listAccounts(
       @QueryParam("offset") int offset, @QueryParam("pageSize") int pageSize) {
@@ -289,5 +281,19 @@ public class AccountResourceNG {
   public RestResponse<Boolean> updateAccountTrustLevel(
       @QueryParam("accountId") String accountId, @QueryParam("trustLevel") Integer trustLevel) {
     return new RestResponse<>(accountService.updateTrustLevel(accountId, trustLevel));
+  }
+
+  @GET
+  @Path("public-access")
+  public RestResponse<Boolean> getPublicAccessEnabled(@QueryParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse(accountService.getPublicAccessEnabled(accountId));
+  }
+
+  @PUT
+  @Path("public-access")
+  public RestResponse<Boolean> setPublicAccessEnabled(
+      @QueryParam("accountId") @NotEmpty String accountId, @Valid @NotNull Boolean publicAccessEnabled) {
+    accountService.setPublicAccessEnabled(accountId, Boolean.TRUE.equals(publicAccessEnabled));
+    return new RestResponse(Boolean.TRUE);
   }
 }

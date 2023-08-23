@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
@@ -20,6 +20,7 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.BaseConnectorUtils;
@@ -118,8 +119,6 @@ public class ConnectorUtils extends BaseConnectorUtils {
           K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) k8StageInfraDetails.getInfrastructure();
 
           clusterConnectorRef = k8sDirectInfraYaml.getSpec().getConnectorRef().getValue();
-        } else if (k8StageInfraDetails.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-          clusterConnectorRef = "account.Harness_Kubernetes_Cluster";
         } else {
           throw new CIStageExecutionException("Wrong k8s type");
         }

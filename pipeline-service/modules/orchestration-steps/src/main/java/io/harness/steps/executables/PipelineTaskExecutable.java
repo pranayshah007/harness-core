@@ -11,10 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.opaclient.OpaServiceClient;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.executable.TaskExecutableWithCapabilities;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.PolicyEvalUtils;
@@ -29,7 +29,7 @@ public abstract class PipelineTaskExecutable<R extends ResponseData> extends Tas
   // evaluating policies added in advanced section of the steps and updating status and failure info in the step
   // response
   public StepResponse postTaskValidate(
-      Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepResponse stepResponse) {
     if (Status.SUCCEEDED.equals(stepResponse.getStatus())) {
       return PolicyEvalUtils.evalPolicies(ambiance, stepParameters, stepResponse, opaServiceClient);
     }
@@ -37,5 +37,5 @@ public abstract class PipelineTaskExecutable<R extends ResponseData> extends Tas
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 }

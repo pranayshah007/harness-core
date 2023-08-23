@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -72,7 +73,7 @@ public class GCRArtifactStreamMapper implements ArtifactStreamMapper {
       imagePath = gcrArtifactStream.getDockerImageName();
     }
     return GcrSpec.builder()
-        .tag(PLEASE_FIX_ME)
+        .tag(TRIGGER_TAG_VALUE_DEFAULT)
         .connectorRef(getConnectorRef(migratedEntities, artifactStream))
         .eventConditions(Collections.emptyList())
         .registryHostname(registryHostname)

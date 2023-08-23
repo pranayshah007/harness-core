@@ -14,6 +14,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -155,8 +156,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     when(k8sTaskHelper.renderTemplate(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(Collections.emptyList());
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(Collections.emptyList());
-    when(istioTaskHelper.updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any())).thenReturn(null);
-    when(istioTaskHelper.updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any())).thenReturn(null);
+    doNothing().when(istioTaskHelper).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
+    doNothing().when(istioTaskHelper).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
 
     k8sCanaryDeployTaskHandler.init(canaryDeployTaskParams, delegateTaskParams, executionLogCallback);
     verify(k8sTaskHelperBase, times(0)).dryRunManifests(any(), any(), any(), any(), anyBoolean());
@@ -183,8 +184,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     when(containerDeploymentDelegateHelper.getKubernetesConfig(any(), eq(false)))
         .thenReturn(KubernetesConfig.builder().build());
     doNothing().when(k8sTaskHelperBase).deleteSkippedManifestFiles(any(), any());
-    when(istioTaskHelper.updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any())).thenReturn(null);
-    when(istioTaskHelper.updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any())).thenReturn(null);
+    doNothing().when(istioTaskHelper).updateDestinationRuleManifestFilesWithSubsets(any(), any(), any(), any());
+    doNothing().when(istioTaskHelper).updateVirtualServiceManifestFilesWithRoutesForCanary(any(), any(), any());
 
     k8sCanaryDeployTaskHandler.init(canaryDeployTaskParams, delegateTaskParams, executionLogCallback);
     verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any());
@@ -578,7 +579,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
       return true;
     })
         .when(k8sTaskHelper)
-        .restore(any(), any(), any(), any(), any());
+        .restore(any(), any(), any(), any(), eq(k8sCanaryDeployTaskHandler.getK8sRequestHandlerContext()), any());
     doReturn(true).when(handler).prepareForCanary(any(), any(), any());
     doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     doReturn(true).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
@@ -589,7 +590,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
 
     verify(handler, times(0)).init(eq(k8sCanaryDeployTaskParameters), eq(k8sDelegateTaskParams), any());
     verify(handler, times(1)).prepareForCanary(any(), any(), any());
-    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
+    verify(k8sTaskHelper, times(1))
+        .restore(any(), any(), any(), any(), eq(k8sCanaryDeployTaskHandler.getK8sRequestHandlerContext()), any());
     verify(k8sTaskHelperBase, times(1)).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     verify(k8sTaskHelperBase, times(1)).doStatusCheck(any(), any(), any(), any());
     verify(k8sCanaryBaseHandler, times(1)).wrapUp(any(), any(), any());
@@ -613,11 +615,14 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                                                       .kubernetesResources(null)
                                                                       .k8sTaskType(K8sTaskType.CANARY_DEPLOY)
                                                                       .build();
-    doReturn(false).when(k8sTaskHelper).restore(any(), any(), any(), any(), any());
+    doReturn(false)
+        .when(k8sTaskHelper)
+        .restore(any(), any(), any(), any(), eq(k8sCanaryDeployTaskHandler.getK8sRequestHandlerContext()), any());
 
     K8sTaskExecutionResponse response =
         handler.executeTaskInternal(k8sCanaryDeployTaskParameters, k8sDelegateTaskParams);
-    verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
+    verify(k8sTaskHelper, times(1))
+        .restore(any(), any(), any(), any(), eq(k8sCanaryDeployTaskHandler.getK8sRequestHandlerContext()), any());
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
   }
 
@@ -690,5 +695,51 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
       assertThat(canaryDeployResponse.getCanaryWorkload())
           .endsWith(K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME_WITH_SEPARATOR);
     }
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testInheritManifestsHasDeclarativeRollbackSet() throws Exception {
+    K8sCanaryDeployTaskHandler handler = spy(k8sCanaryDeployTaskHandler);
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
+                                                      .workingDirectory("./working-dir")
+                                                      .kubectlPath("kubectl")
+                                                      .kubeconfigPath("kubeconfig")
+                                                      .build();
+    K8sCanaryDeployTaskParameters k8sCanaryDeployTaskParameters =
+        K8sCanaryDeployTaskParameters.builder()
+            .inheritManifests(true)
+            .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
+            .k8sTaskType(K8sTaskType.CANARY_DEPLOY)
+            .useDeclarativeRollback(true)
+            .build();
+
+    handler.executeTaskInternal(k8sCanaryDeployTaskParameters, k8sDelegateTaskParams);
+
+    assertThat(handler.getCanaryHandlerConfig().isUseDeclarativeRollback()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testInheritManifestsDoesNotDeclarativeRollbackSet() throws Exception {
+    K8sCanaryDeployTaskHandler handler = spy(k8sCanaryDeployTaskHandler);
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder()
+                                                      .workingDirectory("./working-dir")
+                                                      .kubectlPath("kubectl")
+                                                      .kubeconfigPath("kubeconfig")
+                                                      .build();
+    K8sCanaryDeployTaskParameters k8sCanaryDeployTaskParameters =
+        K8sCanaryDeployTaskParameters.builder()
+            .inheritManifests(true)
+            .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
+            .k8sTaskType(K8sTaskType.CANARY_DEPLOY)
+            .useDeclarativeRollback(false)
+            .build();
+
+    handler.executeTaskInternal(k8sCanaryDeployTaskParameters, k8sDelegateTaskParams);
+
+    assertThat(handler.getCanaryHandlerConfig().isUseDeclarativeRollback()).isFalse();
   }
 }

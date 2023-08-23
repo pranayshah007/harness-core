@@ -67,8 +67,16 @@ public class TerraformConfigInspectClientImpl implements TerraformConfigInspectC
 
   String executeTerraformInspect(
       final String directory, final TerraformConfigInspectVersion terraformConfigInspectVersion) {
-    String cmd = InstallUtils.getPath(TERRAFORM_CONFIG_INSPECT, terraformConfigInspectVersion);
+    String cmd = getPath(terraformConfigInspectVersion);
     return executeShellCommand(HarnessStringUtils.join(SPACE, cmd, jsonArg, directory));
+  }
+
+  private String getPath(TerraformConfigInspectVersion terraformConfigInspectVersion) {
+    try {
+      return InstallUtils.getPath(TERRAFORM_CONFIG_INSPECT, terraformConfigInspectVersion);
+    } catch (Exception e) {
+      return InstallUtils.getLatestVersionPath(TERRAFORM_CONFIG_INSPECT);
+    }
   }
 
   /*

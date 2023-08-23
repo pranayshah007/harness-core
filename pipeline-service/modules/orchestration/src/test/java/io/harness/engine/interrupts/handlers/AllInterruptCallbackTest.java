@@ -8,11 +8,12 @@
 package io.harness.engine.interrupts.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.OrchestrationTestBase;
@@ -48,7 +49,7 @@ public class AllInterruptCallbackTest extends OrchestrationTestBase {
                                                         .build();
     Reflect.on(allInterruptCallbackTest).set("interruptService", interruptService);
     allInterruptCallbackTest.notify(ImmutableMap.of());
-    verify(interruptService).markProcessed(eq(interruptId), eq(PROCESSED_SUCCESSFULLY));
+    verify(interruptService, times(0)).markProcessed(any(), any());
   }
 
   @Test

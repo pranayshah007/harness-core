@@ -59,7 +59,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @Singleton
 @Slf4j
 public class FreezeCRUDServiceImpl implements FreezeCRUDService {

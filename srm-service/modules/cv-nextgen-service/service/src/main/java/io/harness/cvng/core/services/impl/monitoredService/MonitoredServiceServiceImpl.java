@@ -8,7 +8,6 @@
 package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
-import static io.harness.cvng.core.constant.MonitoredServiceConstants.REGULAR_EXPRESSION;
 import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
@@ -91,8 +90,8 @@ import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.utils.FeatureFlagNames;
+import io.harness.cvng.core.utils.template.MonitoredServiceExpressionResolver;
 import io.harness.cvng.core.utils.template.MonitoredServiceValidator;
-import io.harness.cvng.core.utils.template.MonitoredServiceYamlExpressionEvaluator;
 import io.harness.cvng.core.utils.template.TemplateFacade;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
@@ -126,32 +125,32 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorServ
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
+import io.harness.cvng.usage.impl.resources.ActiveMonitoredServiceDTO;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.common.ExpressionMode;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.OrganizationDTO;
+import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
-import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.PageUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Resources;
@@ -248,6 +247,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   @Inject private EntityDisabledTimeService entityDisabledTimeService;
 
+  @Inject private MonitoredServiceExpressionResolver monitoredServiceExpressionResolver;
+
   @Override
   public MonitoredServiceResponse create(String accountId, MonitoredServiceDTO monitoredServiceDTO) {
     ServiceEnvironmentParams environmentParams = ServiceEnvironmentParams.builder()
@@ -284,6 +285,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                      .build(),
           monitoredServiceDTO.getSources().getChangeSources());
     }
+    monitoredServiceDTO.setEnabled(false);
     saveMonitoredServiceEntity(environmentParams, monitoredServiceDTO);
     outboxService.save(MonitoredServiceCreateEvent.builder()
                            .resourceName(monitoredServiceDTO.getName())
@@ -313,30 +315,21 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     return update(projectParams.getAccountIdentifier(), monitoredServiceDTO);
   }
 
-  @SneakyThrows
   @Override
   public MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml) {
+    return getExpandedMonitoredServiceFromYamlWithPipelineVariables(projectParams, yaml, null);
+  }
+
+  @Override
+  public MonitoredServiceDTO getExpandedMonitoredServiceFromYamlWithPipelineVariables(
+      ProjectParams projectParams, String yaml, @Nullable Ambiance ambiance) {
     String templateResolvedYaml = templateFacade.resolveYaml(projectParams, yaml);
-    MonitoredServiceYamlExpressionEvaluator yamlExpressionEvaluator =
-        new MonitoredServiceYamlExpressionEvaluator(templateResolvedYaml);
-    templateResolvedYaml = sanitizeTemplateYaml(templateResolvedYaml);
     MonitoredServiceDTO monitoredServiceDTO =
-        YamlUtils.read(templateResolvedYaml, MonitoredServiceYamlDTO.class).getMonitoredServiceDTO();
-    monitoredServiceDTO = (MonitoredServiceDTO) yamlExpressionEvaluator.resolve(
-        monitoredServiceDTO, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+        monitoredServiceExpressionResolver.resolve(templateResolvedYaml, ambiance);
     monitoredServiceDTO.setProjectIdentifier(projectParams.getProjectIdentifier());
     monitoredServiceDTO.setOrgIdentifier(projectParams.getOrgIdentifier());
     MonitoredServiceValidator.validateMSDTO(monitoredServiceDTO);
     return monitoredServiceDTO;
-  }
-
-  private String sanitizeTemplateYaml(String templateResolvedYaml) throws IOException {
-    YamlField rootYamlNode = YamlUtils.readTree(templateResolvedYaml);
-    JsonNode rootNode = rootYamlNode.getNode().getCurrJsonNode();
-    ObjectNode monitoredService = (ObjectNode) rootNode.get("monitoredService");
-    monitoredService.put("identifier", REGULAR_EXPRESSION);
-    monitoredService.put("name", REGULAR_EXPRESSION);
-    return YamlUtils.writeYamlString(rootYamlNode);
   }
 
   private void validateDependencyMetadata(ProjectParams projectParams, Set<ServiceDependencyDTO> dependencyDTOs) {
@@ -2148,6 +2141,49 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .collect(Collectors.toList());
   }
 
+  public List<ActiveMonitoredServiceDTO> listActiveMonitoredServices(
+      ProjectParams projectParams, String serviceIdentifier) {
+    long currentTimeInMS = clock.millis();
+    List<MonitoredService> activeEnabledMonitoredServices =
+        getActiveMonitoredServicesWithScopedQuery(projectParams, serviceIdentifier);
+
+    return activeEnabledMonitoredServices.stream()
+        .map(monitoredService -> {
+          ActiveMonitoredServiceDTO activeMonitoredServiceDTO =
+              ActiveMonitoredServiceDTO.builder()
+                  .serviceIdentifier(monitoredService.getServiceIdentifier())
+                  .orgIdentifier(monitoredService.getOrgIdentifier())
+                  .projectIdentifier(monitoredService.getProjectIdentifier())
+                  .accountIdentifier(monitoredService.getAccountId())
+                  .identifier(monitoredService.getIdentifier())
+                  .name(monitoredService.getName())
+                  .lastUpdatedSeconds(monitoredService.getLastUpdatedAt())
+                  .timestamp(currentTimeInMS)
+                  .module(ModuleType.SRM.getDisplayName())
+                  .build();
+
+          ServiceResponseDTO serviceResponseDTO =
+              nextGenService.getService(monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
+                  monitoredService.getProjectIdentifier(), monitoredService.getServiceIdentifier());
+          OrganizationDTO organizationDTO =
+              nextGenService.getOrganization(monitoredService.getAccountId(), monitoredService.getOrgIdentifier());
+          ProjectDTO projectDTO = nextGenService.getProject(monitoredService.getAccountId(),
+              monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier());
+          EnvironmentResponseDTO environmentResponseDTO =
+              nextGenService.getEnvironment(monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
+                  monitoredService.getProjectIdentifier(), monitoredService.getEnvironmentIdentifier());
+
+          activeMonitoredServiceDTO.setServiceName(serviceResponseDTO != null ? serviceResponseDTO.getName() : null);
+          activeMonitoredServiceDTO.setEnvName(
+              environmentResponseDTO != null ? environmentResponseDTO.getName() : null);
+          activeMonitoredServiceDTO.setOrgName(organizationDTO != null ? organizationDTO.getName() : null);
+          activeMonitoredServiceDTO.setProjectName(projectDTO != null ? projectDTO.getName() : null);
+          return activeMonitoredServiceDTO;
+        })
+
+        .collect(Collectors.toList());
+  }
+
   private Set<ServiceParams> getServiceParamsSet(List<MonitoredService> monitoredServices) {
     return monitoredServices.stream()
         .map(monitoredService
@@ -2171,7 +2207,24 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     if (projectParams.getProjectIdentifier() != null) {
       query = query.filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier());
     }
+    return query.asList();
+  }
 
+  private List<MonitoredService> getActiveMonitoredServicesWithScopedQuery(
+      ProjectParams projectParams, String serviceIdentifer) {
+    Query<MonitoredService> query = hPersistence.createQuery(MonitoredService.class)
+                                        .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
+                                        .filter(MonitoredServiceKeys.enabled, true);
+
+    if (projectParams.getOrgIdentifier() != null) {
+      query = query.filter(MonitoredServiceKeys.orgIdentifier, projectParams.getOrgIdentifier());
+    }
+    if (projectParams.getProjectIdentifier() != null) {
+      query = query.filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
+    if (!serviceIdentifer.isEmpty()) {
+      query = query.filter(MonitoredServiceKeys.serviceIdentifier, serviceIdentifer);
+    }
     return query.asList();
   }
 

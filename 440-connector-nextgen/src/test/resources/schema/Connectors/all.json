@@ -3476,7 +3476,8 @@
               "enum": [
                 "UsernamePassword",
                 "ApiClientToken",
-                "None"
+                "None",
+                "Bearer Token(HTTP Header)"
               ]
             },
             "delegateSelectors": {
@@ -6969,6 +6970,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "enableCache": {
+              "type": "boolean"
             },
             "k8sAuthEndpoint": {
               "type": "string"

@@ -289,6 +289,6 @@ public class WebhookTriggerFilterUtils {
 
   public TriggerExpressionEvaluator generatorPMSExpressionEvaluator(
       ParseWebhookResponse parseWebhookResponse, List<HeaderConfig> headerConfigs, String payload) {
-    return new TriggerExpressionEvaluator(parseWebhookResponse, null, headerConfigs, payload);
+    return new TriggerExpressionEvaluator(parseWebhookResponse, null, headerConfigs, payload, null);
   }
 }

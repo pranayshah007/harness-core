@@ -53,6 +53,7 @@ public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDT
                      .instanceFamily(recommendation.getInstanceType())
                      .memory(recommendation.getMemory())
                      .monthlyCost(recommendation.getCurrentMonthlyCost())
+                     .monthlySavings("0")
                      .region(recommendation.getRegion())
                      .vcpu(recommendation.getVcpu())
                      .cpuUtilisation(recommendation.getCurrentMaxCPU())

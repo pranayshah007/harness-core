@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ng-dashboard-aggregator
+  namespace: {{ .Release.Namespace }}
+spec:
+  minAvailable: 1
+  selector:
+   matchLabels:
+    app: ng-dashboard-aggregator

@@ -8,10 +8,12 @@
 package io.harness.transformers.simplevalue;
 
 import io.harness.beans.CastedField;
+import io.harness.core.Recaster;
 import io.harness.transformers.RecastTransformer;
 
 import com.google.common.collect.ImmutableList;
 import java.lang.reflect.Array;
+import java.util.Map;
 
 public class ByteRecastTransformer extends RecastTransformer implements SimpleValueTransformer {
   public ByteRecastTransformer() {
@@ -35,6 +37,13 @@ public class ByteRecastTransformer extends RecastTransformer implements SimpleVa
     if (targetClass.isArray() && val.getClass().equals(byte[].class)) {
       return convertToWrapperArray((byte[]) val);
     }
+
+    // Handling first class recast encoded value
+    if (val instanceof Map) {
+      Object decodedObject = ((Map<String, Object>) val).get(Recaster.ENCODED_VALUE);
+      return decode(targetClass, decodedObject, cf);
+    }
+
     return Byte.parseByte(val.toString());
   }
 

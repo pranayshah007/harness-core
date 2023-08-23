@@ -75,7 +75,7 @@ func TestCreate(t *testing.T) {
 
 	rdb.Create(ctx, key)
 
-	assert.Equal(t, mr.Exists(key), true)
+	assert.Equal(t, mr.Exists(stream.Prefix+key), true)
 }
 
 func TestCreate_Error(t *testing.T) {
@@ -461,7 +461,7 @@ func TestListPrefixes(t *testing.T) {
 	mr.XAdd("key2", "*", []string{"k1", "v1"})
 	mr.XAdd("differentPrefix", "*", []string{"k1", "v1"})
 
-	l, err := rdb.ListPrefix(ctx, "key")
+	l, err := rdb.ListPrefix(ctx, "key", 1000)
 	assert.Nil(t, err)
 	assert.Equal(t, len(l), 2)
 	assert.Contains(t, l, "key1")

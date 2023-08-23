@@ -47,6 +47,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -159,6 +160,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     }
     return planExecution;
   }
+
   @Override
   public PlanExecution getPlanExecutionMetadata(String planExecutionId) {
     PlanExecution planExecution = planExecutionRepository.getPlanExecutionWithProjections(planExecutionId,
@@ -347,23 +349,6 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     deletePlanExecutionsInternal(planExecutionIds);
   }
 
-  /*
-  This functions calculates the status of the based on status of all node execution status excluding current node. If
-  the status comes out to be a terminal status, we are setting it to Running as currently is running. eg -> we have
-  matrix in which few stages have failed. But currently as the  pipeline is running (may be a CI stage), then it should
-  be marked to Running
-   */
-  @Override
-  public void calculateAndUpdateRunningStatus(String planNodeId, String nodeExecutionId) {
-    Status updateStatusTo = RUNNING;
-    Status planStatus = calculateStatusExcluding(planNodeId, nodeExecutionId);
-    if (!StatusUtils.isFinalStatus(planStatus)) {
-      updateStatusTo = planStatus;
-    }
-    log.info("Marking PlanExecution %s status to %s", planNodeId, updateStatusTo);
-    updateStatus(planNodeId, updateStatusTo);
-  }
-
   private void deletePlanExecutionMetadataInternal(List<PlanExecution> batchPlanExecutions) {
     // Delete planExecutionMetadata example - PlanExecutionMetadata, PipelineExecutionSummaryEntity
     planExecutionDeleteObserverSubject.fireInform(
@@ -379,5 +364,40 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
       planExecutionRepository.deleteAllByUuidIn(planExecutionIds);
       return true;
     });
+  }
+
+  @Override
+  public void updateTTL(String planExecutionId, Date ttlDate) {
+    // Uses idx index
+    if (EmptyPredicate.isEmpty(planExecutionId)) {
+      return;
+    }
+    Criteria planExecutionIdCriteria = Criteria.where(PlanExecutionKeys.uuid).is(planExecutionId);
+    Query query = new Query(planExecutionIdCriteria);
+    Update ops = new Update();
+    ops.set(PlanExecutionKeys.validUntil, ttlDate);
+
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // Uses - id index
+      planExecutionRepository.multiUpdatePlanExecution(query, ops);
+      return true;
+    });
+  }
+
+  /*
+    This functions calculates the status of the based on status of all node execution status excluding current node. If
+    the status comes out to be a terminal status, we are setting it to Running as currently is running. eg -> we have
+    matrix in which few stages have failed. But currently as the  pipeline is running (may be a CI stage), then it
+    should be marked to Running
+     */
+  @Override
+  public void calculateAndUpdateRunningStatus(String planNodeId, String nodeExecutionId) {
+    Status updateStatusTo = RUNNING;
+    Status planStatus = calculateStatusExcluding(planNodeId, nodeExecutionId);
+    if (!StatusUtils.isFinalStatus(planStatus)) {
+      updateStatusTo = planStatus;
+    }
+    log.info("Marking PlanExecution %s status to %s", planNodeId, updateStatusTo);
+    updateStatus(planNodeId, updateStatusTo);
   }
 }

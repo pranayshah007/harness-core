@@ -103,6 +103,7 @@ import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ConfigService;
 import software.wings.service.intfc.ServiceResourceService;
+import software.wings.service.intfc.WorkflowService;
 import software.wings.utils.ArtifactType;
 
 import com.google.inject.Inject;
@@ -134,6 +135,8 @@ public class ServiceMigrationService extends NgMigrationService {
   @Inject private AmiStartupScriptMigrationService amiStartupScriptMigrationService;
   @Inject ConfigService configService;
   @Inject ConfigFileMigrationService configFileMigrationService;
+
+  @Inject private WorkflowService workflowService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -398,8 +401,8 @@ public class ServiceMigrationService extends NgMigrationService {
     List<ConfigFileWrapper> configFileWrapperList =
         configFileMigrationService.getConfigFiles(migrationContext, configFileIds);
 
-    ServiceDefinition serviceDefinition = serviceMapper.getServiceDefinition(
-        migrationContext, service, manifestConfigWrapperList, configFileWrapperList, startupScriptConfigurations);
+    ServiceDefinition serviceDefinition = serviceMapper.getServiceDefinition(workflowService, migrationContext, service,
+        manifestConfigWrapperList, configFileWrapperList, startupScriptConfigurations);
     if (serviceDefinition == null) {
       return YamlGenerationDetails.builder()
           .skipDetails(

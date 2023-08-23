@@ -9,9 +9,12 @@ package io.harness.delegate.task.pcf.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(CDP)
 public interface TasArtifactRequestDetails extends NestedAnnotationResolver {
   String getArtifactName();

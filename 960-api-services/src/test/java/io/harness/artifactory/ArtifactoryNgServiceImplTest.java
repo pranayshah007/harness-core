@@ -34,6 +34,7 @@ import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
@@ -187,14 +188,14 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
     buildDetails = Collections.emptyList();
     doReturn(buildDetails).when(artifactoryClient).getArtifactList(any(), any(), any(), anyInt());
     assertThatThrownBy(()
-                           -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
-                               artifactDirectory, artifactPathFilter, "artifactpath", 10))
+                           -> artifactoryNgService.getLatestArtifact(
+                               artifactoryConfigRequest, "repoName", artifactDirectory, "", "artifactpath", 10))
         .hasMessage(
             "Please check artifactPath or artifactDirectory or repository field in Artifactory artifact configuration.");
 
     assertThatThrownBy(()
-                           -> artifactoryNgService.getLatestArtifact(
-                               artifactoryConfigRequest, "repoName", artifactDirectory, artifactPathFilter, "", 10))
+                           -> artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName",
+                               artifactDirectory, artifactPathFilter, "artifact", 10))
         .hasMessage(
             "Please check artifactPathFilter or artifactDirectory or repository field in Artifactory artifact .");
   }
@@ -215,6 +216,27 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
 
     assertThat(artifactoryNgService.getLatestArtifact(
                    artifactoryConfigRequest, "repoName", "artifactDirectory/subfolder", null, "artifactPath.exe.", 10))
+        .isEqualTo(
+            buildDetails1.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testGetLatestArtifact_RecursiveRegex() {
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    List<BuildDetails> buildDetails1 = new ArrayList<>();
+    buildDetails1.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("A/B/C.zip").build());
+    buildDetails1.add(BuildDetails.Builder.aBuildDetails().withArtifactPath("A/B/C1.zip").build());
+    doReturn(List.of()).when(artifactoryClient).getArtifactList(any(), anyString(), eq("A/*/*/B/C.zip"), anyInt());
+    doReturn(List.of()).when(artifactoryClient).getArtifactList(any(), anyString(), eq("A/B/*/C.zip"), anyInt());
+    doReturn(buildDetails1).when(artifactoryClient).getArtifactList(any(), anyString(), eq("A/B/C.zip"), anyInt());
+
+    assertThat(
+        artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "A/*/*", null, "B/C.zip", 10))
+        .isEqualTo(
+            buildDetails1.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
+    assertThat(artifactoryNgService.getLatestArtifact(artifactoryConfigRequest, "repoName", "A/B/*", null, "C.zip", 10))
         .isEqualTo(
             buildDetails1.stream().sorted(new BuildDetailsComparatorDescending()).collect(Collectors.toList()).get(0));
   }

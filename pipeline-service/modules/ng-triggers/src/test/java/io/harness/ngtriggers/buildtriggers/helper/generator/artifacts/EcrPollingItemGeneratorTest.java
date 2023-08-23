@@ -79,6 +79,7 @@ public class EcrPollingItemGeneratorTest extends CategoryTest {
     assertThat(pollingItem.getPollingPayloadData().getEcrPayload()).isNotNull();
     assertThat(pollingItem.getPollingPayloadData().getEcrPayload().getImagePath()).isEqualTo("test");
     assertThat(pollingItem.getPollingPayloadData().getEcrPayload().getRegion()).isEqualTo("us-west-1");
+    assertThat(pollingItem.getPollingPayloadData().getEcrPayload().getRegistryId()).isEqualTo("registry");
 
     // As All data is already prepared, Testing buildTriggerHelper.validateBuildType
     PollingItemGeneratorTestHelper.validateBuildType(buildTriggerOpsData, buildTriggerHelper);
@@ -104,6 +105,7 @@ public class EcrPollingItemGeneratorTest extends CategoryTest {
     assertThat(pollingItem.getPollingPayloadData().getEcrPayload()).isNotNull();
     assertThat(pollingItem.getPollingPayloadData().getEcrPayload().getImagePath()).isEqualTo("test1");
     assertThat(pollingItem.getPollingPayloadData().getEcrPayload().getRegion()).isEqualTo("us-east-1");
+    assertThat(pollingItem.getPollingPayloadData().getEcrPayload().getRegistryId()).isEqualTo("registry");
 
     // As All data is already prepared, Testing buildTriggerHelper.validateBuildType
     PollingItemGeneratorTestHelper.validateBuildType(buildTriggerOpsData, buildTriggerHelper);

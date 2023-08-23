@@ -102,4 +102,12 @@ public class GitDefaultBranchCacheHelper {
     }
     return responseBranch.equals(getDefaultBranchFromCache(accountIdentifier, repoName, scmConnector));
   }
+
+  public boolean isGitDefaultBranch(
+      String accountIdentifier, ScmConnector scmConnector, String repoName, String requestBranch) {
+    if (isEmpty(requestBranch)) {
+      return true;
+    }
+    return requestBranch.equals(getDefaultBranchFromCache(accountIdentifier, repoName, scmConnector));
+  }
 }

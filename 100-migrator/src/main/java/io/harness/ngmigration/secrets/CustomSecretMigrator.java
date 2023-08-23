@@ -110,6 +110,7 @@ public class CustomSecretMigrator implements SecretMigrator {
         CustomSecretManagerConnectorDTO.builder()
             .onDelegate(customSecretsManagerConfig.isExecuteOnDelegate())
             .template(TemplateLinkConfigForCustomSecretManager.builder()
+                          .versionLabel(templateConfig.getTemplateInfoConfig().getVersionLabel())
                           .templateRef(MigratorUtility.getIdentifierWithScope(templateYamlFile.getNgEntityDetail()))
                           .templateInputs(inputs)
                           .build())

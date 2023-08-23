@@ -166,10 +166,11 @@ public class StringReplacer {
     expressionStartPos--;
     while (expressionStartPos >= 0) {
       char c = buf.charAt(expressionStartPos);
-      if (c == '(' || c == ',') {
+      if (c == '(' || c == '[' || c == ',') {
         // expression is inside a method invocation, thus don't take decision of concatenate from left substring
         // , denotes it could be part of parameter in method, example <+json.list("$", <+var1>)>, then var1 shouldn't be
-        // concatenated
+        // concatenated.
+        // Expression inside [], square brackets denote get method, thus should be also be considered.
         break;
       } else if (c == ':') {
         // Checking : belongs to ternary operator or not, if not concatenate it
@@ -189,10 +190,11 @@ public class StringReplacer {
     // Check on right if any first string mathematical operator found or not
     while (expressionEndPos <= buf.length() - 1) {
       char c = buf.charAt(expressionEndPos);
-      if (c == ')' || c == ',') {
+      if (c == ')' || c == ']' || c == ',') {
         // expression is inside a method invocation, thus don't take decision of concatenate from right substring
         // , denotes it could be part of parameter in method, example <+json.list("$", <+var1>)>, then var1 shouldn't be
-        // concatenated
+        // concatenated.
+        // Expression inside [], square brackets denote get method, thus should be also be considered.
         break;
       } else if (c == ':') {
         // Checking : belongs to ternary operator or not, if not concatenate it
@@ -262,15 +264,14 @@ public class StringReplacer {
   private boolean checkIfStringMathematicalOperator(char c) {
     // + operator for string addition
     // = -> for == comparison operation
-    // ?,: -> for ternary operator
+    // ? -> for ternary operator
     // & -> && AND operation
     // | -> || OR operator
     // ! -> != operator
     // =~ and !~ regex match and its negate jexl operators
     // =^ and !^ startsWith and its negate operator
     // =$ and !$ endsWith and its negate operator
-    return c == '+' || c == '=' || c == '?' || c == ':' || c == '&' || c == '|' || c == '!' || c == '~' || c == '^'
-        || c == '$';
+    return c == '+' || c == '=' || c == '?' || c == '&' || c == '|' || c == '!' || c == '~' || c == '^' || c == '$';
   }
 
   private boolean skipNonCriticalCharacters(char c) {

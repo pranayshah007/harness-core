@@ -45,7 +45,7 @@ public class K8sPodToServiceInstanceInfoMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToServerInstanceInfoList() {
     List<ServerInstanceInfo> serverInstanceInfos =
-        K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(getServiceInstanceInfos());
+        K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(getServiceInstanceInfos(), null);
 
     assertThat(serverInstanceInfos.size()).isEqualTo(1);
     assertThat(serverInstanceInfos.get(0)).isInstanceOf(K8sServerInstanceInfo.class);

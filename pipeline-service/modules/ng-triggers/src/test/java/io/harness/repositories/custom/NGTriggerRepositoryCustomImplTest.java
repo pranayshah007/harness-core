@@ -10,6 +10,7 @@ package io.harness.repositories.custom;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,6 +38,7 @@ import io.harness.rule.Owner;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.bson.BsonBoolean;
@@ -163,6 +165,68 @@ public class NGTriggerRepositoryCustomImplTest extends CategoryTest {
     assertThat(ngTriggerEntities3.getContent().get(0).getTriggerStatus().getStatus()).isEqualTo(StatusResult.FAILED);
     assertThat(ngTriggerEntities3.getContent().get(0).getTriggerStatus().getDetailMessages().get(0))
         .isEqualTo("webhookMessage");
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerEnabled() {
+    NGTriggerEntity triggerEntity1 = NGTriggerEntity.builder()
+                                         .identifier("identifier1")
+                                         .accountId(accountId)
+                                         .orgIdentifier(orgId)
+                                         .projectIdentifier(projectId)
+                                         .targetIdentifier(pipelineId)
+                                         .build();
+    NGTriggerEntity triggerEntity2 = NGTriggerEntity.builder()
+                                         .identifier("identifier2")
+                                         .accountId(accountId)
+                                         .orgIdentifier(orgId)
+                                         .projectIdentifier(projectId)
+                                         .targetIdentifier(pipelineId)
+                                         .build();
+
+    List<NGTriggerEntity> ngTriggerEntityList = Arrays.asList(triggerEntity1, triggerEntity2);
+
+    Query query = new Query(Criteria.where("accountId")
+                                .is(triggerEntity1.getAccountId())
+                                .and("orgIdentifier")
+                                .is(triggerEntity1.getOrgIdentifier())
+                                .and("projectIdentifier")
+                                .is(triggerEntity1.getProjectIdentifier())
+                                .and("targetIdentifier")
+                                .is(triggerEntity1.getTargetIdentifier())
+                                .and("identifier")
+                                .is(triggerEntity1.getIdentifier()));
+    Query query2 = new Query(Criteria.where("accountId")
+                                 .is(triggerEntity2.getAccountId())
+                                 .and("orgIdentifier")
+                                 .is(triggerEntity2.getOrgIdentifier())
+                                 .and("projectIdentifier")
+                                 .is(triggerEntity2.getProjectIdentifier())
+                                 .and("targetIdentifier")
+                                 .is(triggerEntity2.getTargetIdentifier())
+                                 .and("identifier")
+                                 .is(triggerEntity2.getIdentifier()));
+    Update update = new Update().set("yaml", triggerEntity1.getYaml()).set("enabled", false);
+    Update update2 = new Update().set("yaml", triggerEntity2.getYaml()).set("enabled", false);
+
+    when(mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, NGTriggerEntity.class)).thenReturn(bulkOperations);
+    when(bulkOperations.updateOne(query, update)).thenReturn(bulkOperations);
+    when(bulkOperations.updateOne(query2, update2)).thenReturn(bulkOperations);
+
+    when(bulkOperations.execute()).thenReturn(bulkWriteResult);
+    when(bulkWriteResult.getModifiedCount()).thenReturn(2);
+
+    TriggerUpdateCount result = ngTriggerRepositoryCustom.updateTriggerEnabled(ngTriggerEntityList);
+
+    assertEquals(2, result.getSuccessCount());
+    assertEquals(0, result.getFailureCount());
+
+    verify(mongoTemplate, times(1)).bulkOps(BulkOperations.BulkMode.UNORDERED, NGTriggerEntity.class);
+    verify(bulkOperations, times(1)).updateOne(query, update);
+    verify(bulkOperations, times(1)).updateOne(query2, update2);
+    verify(bulkOperations, times(1)).execute();
   }
 
   @Test

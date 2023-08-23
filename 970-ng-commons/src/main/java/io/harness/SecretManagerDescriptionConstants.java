@@ -65,4 +65,5 @@ public class SecretManagerDescriptionConstants {
       "This is the authentication token used to connect underlying secret manager.";
   public static final String GOOGLE_SECRET_MANAGER_CREDENTIALS =
       "Reference to the secret containing credentials of IAM service account for Google Secret Manager";
+  public static final String ENABLE_CACHE = "Boolean value to indicate if cache is enabled for App Role Token.";
 }

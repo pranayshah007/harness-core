@@ -68,7 +68,6 @@ public enum FeatureName {
       "Enable build credit dashboard in UI, FF will be removed once the Free credits allocation for all users are introduced",
       HarnessTeam.GTM),
   BYPASS_HELM_FETCH,
-  CCM_AS_DRY_RUN("Dry Run functionality of the AutoStopping Rules", HarnessTeam.CE),
   CCM_BUDGET_CASCADES("Enable to allow nested budgets for Financial Management", HarnessTeam.CE),
   CCM_CLUSTER_ORCH("Show/ Hide navigation link for cluster orchestrator page", HarnessTeam.CE),
   CCM_COMMORCH("Commitment Orchestration", HarnessTeam.CE),
@@ -150,10 +149,11 @@ public enum FeatureName {
   CDS_K8S_SOCKET_CAPABILITY_CHECK_NG(
       "Replace HTTP capability check for Kubernetes connector with Socket Capability", HarnessTeam.CDP),
   CDS_MULTI_SERVICE_PROPAGATION("FF for enabling multi service propagation for CD", HarnessTeam.CDP),
-  CDS_NEXUS_GROUPID_ARTIFACTID_DROPDOWN(
-      "FF to enable dropdowns for groupId and artifactId in Nexus Artifact Source", HarnessTeam.CDC),
   CDS_NG_TRIGGER_EXECUTION_REFACTOR(
       "Refactor trigger execution to use same logic used in manual execution", HarnessTeam.SPG),
+  CDS_NG_SERVICE_PRINCIPAL_FOR_CUSTOM_WEBHOOK(
+      "Makes authenticated custom webhook calls use service principal instead of the principal inherited from the API key",
+      HarnessTeam.CDC),
   CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-region artifact triggers", HarnessTeam.CDC),
   CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN(
       "Enable the check if Vault secret manager is read only", HarnessTeam.CDP),
@@ -196,11 +196,9 @@ public enum FeatureName {
       "Enabling support for skipping BG deployment if the manifest previously deployed is same as current manifest in NG",
       HarnessTeam.CDP),
   CDS_SUPPORT_TICKET_DEFLECTION("Enable api to create zendesk ticket and for generating coveo token", HarnessTeam.CDP),
-  CDS_TERRAFORM_CLI_OPTIONS_NG("Enable terraform CLI Options", HarnessTeam.CDP),
   CDS_TERRAFORM_CONFIG_INSPECT_V1_2(
       "Enables usage of terraform-config-inspect v1.2 built from commit 7c9946b1df498f1b0634c7b33257790f01c819f3 of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
       HarnessTeam.CDP),
-  CDS_TERRAFORM_S3_NG("Enables storing Terraform config, backend and var files in S3", HarnessTeam.CDP),
   CDS_TERRAFORM_S3_SUPPORT(
       "Enable support for AWS S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP),
   CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG(
@@ -209,6 +207,7 @@ public enum FeatureName {
   CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG(
       "To encrypt and decrypt terraform and terragrunt plan on manager side instead of delegate side for NG",
       HarnessTeam.CDP),
+  CDS_TERRAGRUNT_CLI_OPTIONS_NG("Enable terragrunt CLI Options", HarnessTeam.CDP),
   CDS_TRIGGER_ACTIVITY_PAGE("NG Triggers Activity page", HarnessTeam.CDC),
   CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG(
       "This is to diable checking for the HTTP status code and instead just check for a valid response",
@@ -249,6 +248,7 @@ public enum FeatureName {
   CF_ROLLBACK_CUSTOM_STACK_NAME(
       "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP),
   CG_GIT_POLLING("Poll git based on account config for git sync in CG.", HarnessTeam.SPG),
+  CG_SPG_JIRA_APPROVAL_POLLING_ASYNC("Enable jira approval polling to async", HarnessTeam.SPG),
   CG_K8S_MANIFEST_COMMIT_VAR(
       "Enables users to pass commit id as sweeping output and use later in subsequent steps. PM Rohan",
       HarnessTeam.CDP),
@@ -258,6 +258,7 @@ public enum FeatureName {
   CHAOS_DASHBOARD_ENABLED("Enables chaos dashboards in CHAOS module", HarnessTeam.CHAOS),
   CHAOS_IMAGE_REGISTRY_DEV("Enable image registry configuration in CHAOS", HarnessTeam.CHAOS),
   CHAOS_LINUX_ENABLED("Enable linux experiment and infrastructure integration in CHAOS", HarnessTeam.CHAOS),
+  CHAOS_NEW_ENVIRONMENTS_PAGE("Enable New Environments page in CHAOS", HarnessTeam.CHAOS),
   CHAOS_PROBE_ENABLED("Enable new probe ui and flow in CHAOS", HarnessTeam.CHAOS),
   CHAOS_SECURITY_GOVERNANCE("Enable security governance routes, validation and navigation in CHAOS", HarnessTeam.CHAOS),
   CIE_ENABLED_RBAC("Enable rbac validationa at CI level", HarnessTeam.CI),
@@ -331,7 +332,6 @@ public enum FeatureName {
   CV_SUCCEED_FOR_ANOMALY,
   DEBEZIUM_ENABLED,
   DEFAULT_ARTIFACT,
-  DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST("Enable dynamic handling of task request", HarnessTeam.DEL),
   DELEGATE_TASK_CAPACITY_CHECK("Enable delegate task capacity check", HarnessTeam.DEL),
   DELEGATE_TASK_LOAD_DISTRIBUTION("Delegate task load distribution among delegates", HarnessTeam.DEL),
   DEL_FETCH_TASK_LOG_API("FF to enable fetch delegate task logs from stackdriver", HarnessTeam.DEL),
@@ -419,6 +419,8 @@ public enum FeatureName {
   FFM_7258_INTERCOM_VIDEO_LINKS("Enable links to launch Intercom window containing video tutorials", HarnessTeam.CF),
   FFM_8261_EXPRESSIONS_IN_PIPELINE_STEP("Enable expressions support in the FF pipeline step", HarnessTeam.CF),
   FFM_8344_FLAG_CLEANUP("Enable Stale Flag Cleanup in Feature Flags filtered listing page", HarnessTeam.CF),
+  FFM_8823_AIDA_SDK_CODE_SAMPLE("Enable AIDA generated code sample in FF Onboarding", HarnessTeam.CF),
+  FFM_8184_FEATURE_FLAG_TAGGING("Enable tagging in Feature Flags", HarnessTeam.CF),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
   FF_FLAG_SYNC_THROUGH_GITEX_ENABLED,
   FF_GITSYNC,
@@ -429,7 +431,11 @@ public enum FeatureName {
   GCB_CI_SYSTEM,
   GCP_WORKLOAD_IDENTITY,
   GITHUB_WEBHOOK_AUTHENTICATION,
+  SPG_CG_ADDING_VALIDATION_OF_ENTITY_NULL(
+      "Enables the error return when the database transaction was not completed due to reaching the transaction limit.",
+      SPG),
   SPG_CG_FIXING_PIPELINE_RESUME("This fixes pipeline resume when a loop state is skipped", HarnessTeam.SPG),
+  GITOPS_FLUX_FLAMINGO("Support for flux via flamingo in GitOps", HarnessTeam.GITOPS),
   GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
   GITOPS_REVERT_PR("Support for Revert PR step in GitOps pipeline flow", HarnessTeam.GITOPS),
@@ -476,6 +482,7 @@ public enum FeatureName {
   MOVE_AWS_AMI_SPOT_INST_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_AWS_CODE_DEPLOY_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_AWS_LAMBDA_INSTANCE_SYNC_TO_PERPETUAL_TASK,
+  CD_MAKE_CD_LICENSE_USAGE_REPORTS_ASYNC("Make CD License Usage dashboards to be async", HarnessTeam.CDC),
   MOVE_AWS_SSH_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_CONTAINER_INSTANCE_SYNC_TO_PERPETUAL_TASK,
   MOVE_PCF_INSTANCE_SYNC_TO_PERPETUAL_TASK,
@@ -548,7 +555,6 @@ public enum FeatureName {
   PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL),
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
-  PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL("make the encryption/decryption call as pirvileged call", HarnessTeam.PL),
   PL_DISCOVERY_ENABLE(
       "To control visibility of Discovery navlink in sidebar under project settings", HarnessTeam.CHAOS),
   PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
@@ -683,23 +689,20 @@ public enum FeatureName {
       "Enables validation of dot on pipeline and workflow name", HarnessTeam.SPG),
   SPG_ENFORCE_TIME_RANGE_DEPLOYMENTS_WITHOUT_APP_ID(
       "This feature flag enforces maximum time range for workflow execution queries without appId", HarnessTeam.SPG),
-  SPG_ENVIRONMENT_QUERY_LOGS(
-      "This is a debug FF, no behaviour will be changed. We are adding logs to help find a root cause", SPG),
   SPG_FETCH_ARTIFACT_FROM_DB("Fetch artifact from database if available in artifact collection step", HarnessTeam.SPG),
-  SPG_FIX_APPROVAL_WAITING_FOR_INPUTS(
-      "Fixes a bug where approval step is going to waiting for inputs state", HarnessTeam.SPG),
   SPG_GENERATE_CURL_WITHOUT_ARTIFACT(
       "Enable curl generation to trigger when last collected without artifacts.", HarnessTeam.SPG),
   SPG_GRAPHQL_VERIFY_APPLICATION_FROM_USER_GROUP(
       "Verify if application references from a user group still exist", HarnessTeam.SPG),
+  CD_JIRA_CG_FETCH_ISSUE_DEBUG("Enable debug logging for jira fetch issue", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
   SPG_LIVE_DASHBOARD_STATS_DEBUGGING("Live debugging for dashboard stats in CG", HarnessTeam.SPG),
   SPG_LOG_SERVICE_ENABLE_DOWNLOAD_LOGS("Enable download logs in ng. Only used by ui.", HarnessTeam.SPG),
   SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG),
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
       "Flag to support deployment freeze exclusions. Depends on NEW_DEPLOYMENT_FREEZE", HarnessTeam.SPG),
-  SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
+  SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
   SPG_REMOVE_RESTRICTION_APPS_UNNECESSARY_CALLS(
       "Unnecessary restriction apps calls are not called from UI", HarnessTeam.SPG),
@@ -848,11 +851,29 @@ public enum FeatureName {
   PIE_ERROR_ENHANCEMENTS("Enhance error framework for pipeline exceptions", PIPELINE),
   CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", PIPELINE),
   CDS_GITHUB_PACKAGES("Used for SSH/WinRm copy and download Github packages artifacts", HarnessTeam.CDP),
-  CDS_HELM_SEND_TASK_PROGRESS_NG(
-      "For Helm tasks we will be sending task progress event via log streaming client which will be received and handled by handleProgress handler in the ng-manager step class",
+  CDS_DISABLE_FIRST_GEN_CD("Used to disable/block customer access to CG after the migration cut-over", SPG),
+  CDS_HELM_SEND_TASK_PROGRESS_NG("For Helm tasks we will be "
+          + "sending task progress event via log streaming client which will be received and handled by handleProgress handler in the ng-manager step class",
       HarnessTeam.CDP),
+  CDS_ENABLE_SHELL_SCRITPT_FILE_REFERENCE(
+      "Used for ShellScript step in order to support scripts from Harness File Store", PIPELINE),
   CDS_QUEUE_SERVICE_FOR_TRIGGERS(
-      "When this flag is enabled, triggers will be processed using queue service instead of mongo iterators", PIPELINE);
+      "When this flag is enabled, triggers will be processed using queue service instead of mongo iterators", PIPELINE),
+  CDS_MERGED_RUN_AND_RETRY_PIPELINE_COMPONENT(
+      "When enabled RunPipelineForm component will be used for Retry From (Failed) Stage", HarnessTeam.CDP),
+  CDS_SUPPORT_SERVICE_INPUTS_AS_EXECUTION_INPUTS(
+      "Service Inputs will be marked as execution inputs if service is an expression", HarnessTeam.CDC),
+  CDS_STORE_INSTANCE_STATS_ITERATOR_RUN_TIME(
+      "FF for storing when the instance stats iterator ran for a particular service", HarnessTeam.CDP),
+  CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL("For removing usage of retry interval field for ", HarnessTeam.CDC),
+  CDS_DISABLE_EVALUATE_EXPORT_VARIABLES("For exporting variables without evaluating in command step", HarnessTeam.CDC),
+  CDS_NG_FETCH_FILES_REFACTOR(
+      "Refactoring Fetch logic for K8s and helm step on manager side. PM Rohan", HarnessTeam.CDP),
+  CDS_YAML_SIMPLIFICATION("Feature flag for CD YAML Simplification.", PIPELINE),
+  CDS_SERVICE_GITX("Onboard Service entity to GitX", HarnessTeam.CDC),
+  CDS_ENV_GITX("Onboard Environment entity to GitX", HarnessTeam.CDC),
+  CDS_ECS_BG_GREEN_SERVICE_ROLLBACK(
+      "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP);
   // keep-sorted end
 
   @Deprecated

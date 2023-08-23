@@ -9,6 +9,7 @@ package io.harness.entities.instanceinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.K8sContainer;
 
 import java.util.List;
@@ -28,4 +29,5 @@ public class K8sInstanceInfo extends InstanceInfo {
   private String podIP;
   private String blueGreenColor;
   @NotNull private List<K8sContainer> containerList;
+  private HelmChartInfo helmChartInfo;
 }

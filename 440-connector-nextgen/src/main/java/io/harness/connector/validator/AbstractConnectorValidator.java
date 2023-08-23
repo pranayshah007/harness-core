@@ -87,12 +87,12 @@ public abstract class AbstractConnectorValidator implements ConnectionValidator 
       ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
       log.info("Error in validation task for connector : [{}] with failure types [{}]",
           errorNotifyResponseData.getErrorMessage(), errorNotifyResponseData.getFailureTypes());
-      throw new ConnectorValidationException(errorNotifyResponseData.getErrorMessage());
+      throw new ConnectorValidationException(errorNotifyResponseData.getErrorMessage(), taskId);
     } else if (responseData instanceof RemoteMethodReturnValueData
         && (((RemoteMethodReturnValueData) responseData).getException() instanceof InvalidRequestException)) {
       String errorMessage =
           ((InvalidRequestException) ((RemoteMethodReturnValueData) responseData).getException()).getMessage();
-      throw new ConnectorValidationException(errorMessage);
+      throw new ConnectorValidationException(errorMessage, taskId);
     }
     return Pair.of(taskId, responseData);
   }

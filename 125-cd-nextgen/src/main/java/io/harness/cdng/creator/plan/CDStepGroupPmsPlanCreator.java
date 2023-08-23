@@ -28,6 +28,6 @@ public class CDStepGroupPmsPlanCreator extends StepGroupPMSPlanCreator {
       String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap,
       HashMap<Object, Object> objectObjectHashMap, List<AdviserObtainment> adviserObtainmentFromMetaData) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, uuid, name, identifier, responseMap,
-        new HashMap<>(), getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false), false);
+        new HashMap<>(), getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false, false), false);
   }
 }

@@ -93,6 +93,10 @@ public class PipelineGitXHelper {
         && GitAwareContextHelper.isGitDefaultBranch();
   }
 
+  public boolean shouldPublishSetupUsages(StoreType storeType) {
+    return StoreType.REMOTE.equals(storeType) && GitAwareContextHelper.isGitDefaultBranch();
+  }
+
   private boolean isFetchedFromGit(boolean loadFromCache) {
     if (loadFromCache) {
       return PMSPipelineDtoMapper.getCacheResponseFromGitContext() == null;

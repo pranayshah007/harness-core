@@ -13,5 +13,5 @@ fi
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
 BATCH_PROCESSING_MODULE="//batch-processing/service:module //batch-processing/service:module_deploy.jar"
-bazel ${bazelrc} build $BATCH_PROCESSING_MODULE ${BAZEL_ARGUMENTS} 
+bazel ${bazelrc} build $BATCH_PROCESSING_MODULE ${BAZEL_ARGUMENTS}
 

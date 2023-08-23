@@ -2,6 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  kubeVersion: ""
   secrets:
     app:
       external:
@@ -55,6 +56,18 @@ global:
       secretName: ""
       userKey: ""
       passwordKey: ""
+      extraArgs: ""
+      certName: ""
+      certKey: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis:6379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
       extraArgs: ""
   ingress:
     # -- create ingress objects
@@ -132,7 +145,7 @@ image:
   repository: harness/migrator-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "100400-000"
+  tag: "100534-000"
   digest: ""
   imagePullSecrets:
   - gcr-io-secret
@@ -184,7 +197,7 @@ config:
   REDIS_SENTINELS:
   SERVER_PORT: "9080"
   SERVICE_ACC: /opt/harness/svc/service_acc.json
-  VERSION: 1.0.78900
+  VERSION: 1.0.100440
   NG_MANAGER_BASE_URL:
   AUDIT_CLIENT_BASEURL:
   TEMPLATE_SERVICE_ENDPOINT:
@@ -529,18 +542,17 @@ service:
 
 resources:
   limits:
-    cpu: 2
     memory: 8192Mi
   requests:
     cpu: 2
     memory: 3000Mi
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  targetCPU: ""
+  targetMemory: ""
 
 nodeSelector: {}
 
@@ -560,11 +572,11 @@ featureFlags:
   # -- STO Feature Flags
   CD: "CDNG_ENABLED"
   # -- STO Feature Flags
-  CI: "CI_INDIRECT_LOG_UPLOAD"
+  CI: "CING_ENABLED,CI_INDIRECT_LOG_UPLOAD"
   # -- STO Feature Flags
   STO: "SECURITY,SECURITY_STAGE,STO_CI_PIPELINE_SECURITY,STO_API_V2"
   # -- SRM Flags
-  SRM: "CVNG_ENABLED,ERROR_TRACKING_ENABLED"
+  SRM: "CVNG_ENABLED"
   # -- Custom Dashboard Flags
   CDB: "NG_DASHBOARDS"
   # -- AutoAccept Feature Flags
@@ -574,13 +586,15 @@ featureFlags:
   # -- CCM Feature Flags
   CCM: "CENG_ENABLED,CCM_MICRO_FRONTEND,NODE_RECOMMENDATION_AGGREGATE"
   # -- GitOps Feature Flags
-  GitOps: "CUSTOM_ARIFACT_NG,SERVICE_DASHBOARD_V2,OPTIMIZED_GIT_FETCH_FILES,MULTI_SERVICE_INFRA,ENV_GROUP,NG_SVC_ENV_REDESIGN,OPTIMIZED_GIT_FETCH_FILES"
+  GitOps: "GITOPS_ONPREM_ENABLED,CDS_SHOW_CREATE_PR,GITOPS_BYO_ARGO,ARGO_PHASE1,ARGO_PHASE2_MANAGED,CUSTOM_ARIFACT_NG,SERVICE_DASHBOARD_V2,OPTIMIZED_GIT_FETCH_FILES,MULTI_SERVICE_INFRA,ENV_GROUP,NG_SVC_ENV_REDESIGN,OPTIMIZED_GIT_FETCH_FILES,NG_GITOPS"
   # -- Licensing flags
   LICENSE: "NG_LICENSES_ENABLED,VIEW_USAGE_ENABLED"
   # -- OPA
   OPA: "OPA_PIPELINE_GOVERNANCE,OPA_FEATURE_GOVERNANCE,OPA_FF_GOVERNANCE"
   # -- CHAOS Feature Flags
   CHAOS: "CHAOS_ENABLED"
+  # -- CET Feature Flags
+  CET: "CET_ENABLED,SRM_CODE_ERROR_NOTIFICATIONS,SRM_ET_RESOLVED_EVENTS,SRM_ET_CRITICAL_EVENTS"
   # -- Additional Feature Flag
   ADDITIONAL: ""
 
@@ -593,3 +607,30 @@ migrator:
     userKey: ""
     passwordKey: ""
     extraArgs: ""
+
+# extraVolumes:
+# - name: volume-test
+#   configMap:
+#     name: test-config
+#     readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: test-volume-mount
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:
+
+# extraEnvVars:
+# - name: POD_NAME
+#   valueFrom:
+#     fieldRef:
+#       fieldPath: metadata.name
+extraEnvVars: []

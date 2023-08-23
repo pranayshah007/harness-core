@@ -119,7 +119,7 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
   public SecondaryEventDetailsResponse getInstanceByUuids(List<String> uuids, SecondaryEventsType eventType) {
     SLOErrorBudgetReset sloErrorBudgetReset = getErrorBudgetResetByUuid(uuids.get(0));
     return SecondaryEventDetailsResponse.builder()
-        .type(SecondaryEventsType.ERROR_BUDGET_RESET)
+        .type(eventType)
         .startTime(TimeUnit.MILLISECONDS.toSeconds(sloErrorBudgetReset.getCreatedAt()))
         .details(SLOErrorBudgetResetInstanceDetails.builder()
                      .errorBudgetIncrementMinutes(sloErrorBudgetReset.getErrorBudgetIncrementMinutes())

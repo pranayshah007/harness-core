@@ -30,8 +30,14 @@ import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
+import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.beans.source.artifact.AMIRegistrySpec;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
+import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
 import io.harness.ngtriggers.helpers.WebhookEventMapperHelper;
+import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.pms.contracts.triggers.ArtifactData;
 import io.harness.pms.contracts.triggers.ManifestData;
 import io.harness.pms.contracts.triggers.TriggerPayload;
@@ -62,6 +68,7 @@ import org.mockito.MockitoAnnotations;
 public class TriggerEventExecutionHelperTest extends CategoryTest {
   @Inject @InjectMocks TriggerEventExecutionHelper triggerEventExecutionHelper;
   @Mock TriggerExecutionHelper triggerExecutionHelper;
+  @Mock NGTriggerElementMapper ngTriggerElementMapper;
   @Mock WebhookEventMapperHelper webhookEventMapperHelper;
   @Mock TriggerWebhookEventPublisher triggerWebhookEventPublisher;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
@@ -96,10 +103,17 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
                           .type(NGTriggerType.ARTIFACT)
                           .build();
 
-    triggerDetails = TriggerDetails.builder()
-                         .ngTriggerEntity(ngTriggerEntity)
-                         .ngTriggerConfigV2(NGTriggerConfigV2.builder().inputYaml("inputSetYaml").build())
-                         .build();
+    triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(ngTriggerEntity)
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .spec(ArtifactTriggerConfig.builder().spec(AMIRegistrySpec.builder().build()).build())
+                                .build())
+                    .inputYaml("inputSetYaml")
+                    .build())
+            .build();
   }
 
   @Test
@@ -122,6 +136,9 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
     doReturn(planExecution)
         .when(triggerExecutionHelper)
         .resolveRuntimeInputAndSubmitExecutionReques(any(), any(), any());
+    doReturn(triggerDetails.getNgTriggerConfigV2())
+        .when(ngTriggerElementMapper)
+        .toTriggerConfigV2(any(NGTriggerEntity.class));
     Type buildType = Type.ARTIFACT;
     TriggerPayload.Builder triggerPayloadBuilder = TriggerPayload.newBuilder().setType(buildType);
     String build = pollingResponse.getBuildInfo().getVersions(0);
@@ -142,6 +159,16 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
     manifestTriggerEntity.setType(NGTriggerType.MANIFEST);
     TriggerDetails manifestTriggerDetails = triggerDetails;
     manifestTriggerDetails.setNgTriggerEntity(manifestTriggerEntity);
+    manifestTriggerDetails.setNgTriggerConfigV2(
+        NGTriggerConfigV2.builder()
+            .source(NGTriggerSourceV2.builder()
+                        .spec(ManifestTriggerConfig.builder().spec(HelmManifestSpec.builder().build()).build())
+                        .build())
+            .build());
+    doReturn(manifestTriggerDetails.getNgTriggerConfigV2())
+        .when(ngTriggerElementMapper)
+        .toTriggerConfigV2(any(NGTriggerEntity.class));
+
     triggerPayload = triggerPayloadBuilder.setType(Type.MANIFEST)
                          .setManifestData(ManifestData.newBuilder().setVersion("v1").build())
                          .build();
@@ -186,6 +213,9 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
             .parseWebhookResponse(ParseWebhookResponse.newBuilder().build())
             .triggers(list)
             .build();
+    doReturn(NGTriggerConfigV2.builder().build())
+        .when(ngTriggerElementMapper)
+        .toTriggerConfigV2(any(NGTriggerEntity.class));
     when(webhookEventMapperHelper.mapWebhookEventToTriggers(triggerMappingRequestData))
         .thenReturn(webhookEventMappingResponse);
     when(pmsFeatureFlagService.isEnabled("accountId", SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC)).thenReturn(true);

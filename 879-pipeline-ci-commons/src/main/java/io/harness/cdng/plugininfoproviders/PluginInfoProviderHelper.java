@@ -28,6 +28,7 @@ import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
+import com.google.protobuf.BoolValue;
 import com.google.protobuf.StringValue;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
@@ -70,7 +71,7 @@ public class PluginInfoProviderHelper {
     pluginDetailsBuilder.setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build());
   }
 
-  protected PluginDetails.Builder buildPluginDetails(
+  public PluginDetails.Builder buildPluginDetails(
       ContainerResource resources, ParameterField<Integer> runAsUser, Set<Integer> usedPorts) {
     PluginDetails.Builder pluginDetailsBuilder = PluginDetails.newBuilder();
 
@@ -84,6 +85,7 @@ public class PluginInfoProviderHelper {
     if (runAsUser != null && runAsUser.getValue() != null) {
       pluginDetailsBuilder.setRunAsUser(runAsUser.getValue());
     }
+    pluginDetailsBuilder.setIsHarnessManaged(BoolValue.of(true));
 
     // Set used port and available port information
     PluginInfoProviderHelper.setPortDetails(usedPorts, pluginDetailsBuilder);
@@ -91,7 +93,7 @@ public class PluginInfoProviderHelper {
     return pluginDetailsBuilder;
   }
 
-  protected ImageDetails getImageDetails(ParameterField<String> connectorRef, ParameterField<String> image,
+  public ImageDetails getImageDetails(ParameterField<String> connectorRef, ParameterField<String> image,
       ParameterField<ImagePullPolicy> imagePullPolicy) {
     StringValue imagePullPolicyStr;
     if (ParameterField.isNull(imagePullPolicy) || isEmpty(imagePullPolicy.getValue().toString())) {

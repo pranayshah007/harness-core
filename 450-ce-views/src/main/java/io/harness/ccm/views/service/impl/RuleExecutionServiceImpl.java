@@ -49,6 +49,7 @@ import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.fabric8.utils.Lists;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -57,6 +58,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -164,8 +167,8 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
   }
 
   public OverviewExecutionCostDetails getExecutionCostDetails(
-      String accountId, RuleExecutionFilter ruleExecutionFilter) {
-    return getResourcePotentialCost(accountId, ruleExecutionFilter);
+      String accountId, RuleExecutionFilter ruleExecutionFilter, List<String> recommendationIds) {
+    return getResourcePotentialCost(accountId, ruleExecutionFilter, recommendationIds);
   }
 
   public <T> AggregationResults<T> aggregate(Aggregation aggregation, Class<T> classToFillResultIn) {
@@ -173,18 +176,37 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
   }
 
   private OverviewExecutionCostDetails getResourcePotentialCost(
-      String accountId, RuleExecutionFilter ruleExecutionFilter) {
+      String accountId, RuleExecutionFilter ruleExecutionFilter, List<String> recommendationIds) {
+    // Getting the recommendations data from mongo DB(Only the executions data is projected)
+    List<RuleRecommendation> ruleRecommendationList =
+        rulesExecutionDAO.getGovernanceRecommendations(accountId, recommendationIds);
+    if (Lists.isNullOrEmpty(ruleRecommendationList)) {
+      return OverviewExecutionCostDetails.builder().build();
+    }
+
+    // Extracting the ruleExecutionIds from recommendations data
+    Set<String> ruleExecutionIds = ruleRecommendationList.stream()
+                                       .flatMap(ruleRecommendation -> ruleRecommendation.getExecutions().stream())
+                                       .map(ExecutionSummary::getRuleExecutionID)
+                                       .collect(Collectors.toSet());
+    if (ruleExecutionIds.size() < 1) {
+      return OverviewExecutionCostDetails.builder().build();
+    }
     return OverviewExecutionCostDetails.builder()
-        .awsExecutionCostDetails(getResourcePotentialCostPerCloudProvider(accountId, ruleExecutionFilter, AWS.name()))
+        .awsExecutionCostDetails(
+            getResourcePotentialCostPerCloudProvider(accountId, ruleExecutionFilter, AWS.name(), ruleExecutionIds))
         .azureExecutionCostDetails(
-            getResourcePotentialCostPerCloudProvider(accountId, ruleExecutionFilter, AZURE.name()))
+            getResourcePotentialCostPerCloudProvider(accountId, ruleExecutionFilter, AZURE.name(), ruleExecutionIds))
         .build();
   }
 
-  private Map<String, Double> getResourcePotentialCostPerCloudProvider(
-      String accountId, RuleExecutionFilter ruleExecutionFilter, String cloudProvider) {
+  private Map<String, Double> getResourcePotentialCostPerCloudProvider(String accountId,
+      RuleExecutionFilter ruleExecutionFilter, String cloudProvider, Set<String> ruleExecutionIdList) {
+    // Adding ruleExecutionIdList as extra criteria to filter correct executions
     Criteria criteria = Criteria.where(RuleExecutionKeys.accountId)
                             .is(accountId)
+                            .and(MONGODB_ID)
+                            .in(new ArrayList<>(ruleExecutionIdList))
                             .and(RuleExecutionKeys.cost)
                             .ne(null)
                             .and(RuleExecutionKeys.costType)
@@ -216,7 +238,6 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
         .forEach(resource
             -> result.put(
                 resource.getResourceName() != null ? resource.getResourceName() : "others", resource.getCost()));
-    log.info("result: {}", result);
     return result;
   }
 

@@ -15,7 +15,7 @@ import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.V1.ScriptStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
-import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
+import io.harness.ci.execution.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;

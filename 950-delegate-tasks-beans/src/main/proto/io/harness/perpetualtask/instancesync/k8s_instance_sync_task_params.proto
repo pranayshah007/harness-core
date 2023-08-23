@@ -18,4 +18,5 @@ message K8sDeploymentRelease {
   bytes k8s_infra_delegate_config = 1;
   repeated string namespaces = 2;
   string release_name = 3;
+  bytes helm_chart_info = 4;
 }

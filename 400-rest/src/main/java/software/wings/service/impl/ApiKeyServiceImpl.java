@@ -34,7 +34,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
@@ -436,9 +435,6 @@ public class ApiKeyServiceImpl implements ApiKeyService {
           apiKeyPermissionInfo = authHandler.evaluateUserPermissionInfo(accountId, apiKeyEntry.getUserGroups(), null);
           logApiKeyPermissions(apiKeyPermissionInfo);
           apiKeyPermissionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
-          if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-            log.info("[getApiKeyPermissions] Cache rebuilt - debug log");
-          }
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache

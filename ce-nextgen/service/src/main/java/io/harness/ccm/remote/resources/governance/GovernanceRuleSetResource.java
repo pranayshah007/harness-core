@@ -196,6 +196,7 @@ public class GovernanceRuleSetResource {
     if (ruleSet.getRulesIdentifier().size() > governanceConfig.getPoliciesInPack()) {
       throw new InvalidRequestException("Limit of Rules in a set is exceeded ");
     }
+    ruleSet.setUuid(null);
     ruleSetService.save(ruleSet);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);

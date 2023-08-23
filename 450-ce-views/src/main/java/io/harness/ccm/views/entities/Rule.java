@@ -36,7 +36,12 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.FieldType;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 @Data
 @Builder
@@ -45,11 +50,12 @@ import org.springframework.data.annotation.LastModifiedBy;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "governanceRule", noClassnameStored = true)
+@Document("governanceRule")
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Policies")
 // to do add index with accid + name
 public final class Rule implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
                                    CreatedByAware, UpdatedByAware {
-  @Id @Schema(description = "unique id") String uuid;
+  @Id @Schema(description = "unique id") @MongoId(targetType = FieldType.STRING) String uuid;
   @Schema(description = "account id") String accountId;
   @Schema(description = "name") String name;
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
@@ -65,8 +71,8 @@ public final class Rule implements PersistentEntity, UuidAware, CreatedAtAware, 
   @Schema(description = "deleted") Boolean deleted;
   @Schema(description = "forRecommendation") Boolean forRecommendation;
   @Schema(description = "resourceType") String resourceType;
-  @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
-  @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
+  @CreatedDate @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
+  @LastModifiedDate @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
   @CreatedBy @Schema private EmbeddedUser createdBy;
   @LastModifiedBy @Schema private EmbeddedUser lastUpdatedBy;
 

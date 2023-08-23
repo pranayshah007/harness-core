@@ -131,7 +131,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_APPROVALS,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_ARTIFACTS,
         HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j

@@ -52,4 +52,5 @@ public class K8sCanaryDeployRequest implements K8sDeployRequest {
   @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
   @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
   boolean enabledSupportHPAAndPDB;
+  boolean disableFabric8;
 }

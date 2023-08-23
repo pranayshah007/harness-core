@@ -67,6 +67,9 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
   ParameterField<Timeout> scriptTimeout;
   List<Long> nextIterations;
 
+  // the id of the latest delegate task created while polling
+  String latestDelegateTaskId;
+
   public static CustomApprovalInstance fromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
     if (stepParameters == null) {
       return null;
@@ -108,16 +111,6 @@ public class CustomApprovalInstance extends ApprovalInstance implements Persiste
         .source(getSource())
         .uuid(getUuid())
         .build();
-  }
-
-  private static ParameterField<Timeout> getTimeout(String fieldName, Object objectParameterField) {
-    if (objectParameterField instanceof String) {
-      return ParameterField.createValueField(Timeout.fromString(objectParameterField.toString()));
-    }
-    if (objectParameterField instanceof Timeout) {
-      return ParameterField.createValueField((Timeout) objectParameterField);
-    }
-    throw new IllegalArgumentException(String.format("Invalid value for %s", fieldName));
   }
 
   private long getGap() {

@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.provision.terraform;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -20,6 +21,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @SuperBuilder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.cdng.provision.terraform.TerraformRemoteVarFileConfig")
 public class TerraformRemoteVarFileConfig extends TerraformRemoteFileConfig implements TerraformVarFileConfig {
   String identifier;
 }

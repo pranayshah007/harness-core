@@ -59,6 +59,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -689,7 +690,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(terraformDestroyStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(terraformDestroyStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test // Different Status

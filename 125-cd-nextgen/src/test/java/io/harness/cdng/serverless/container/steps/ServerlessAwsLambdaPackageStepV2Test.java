@@ -78,7 +78,9 @@ public class ServerlessAwsLambdaPackageStepV2Test extends CategoryTest {
     doReturn(displayName).when(unitStep).getDisplayName();
     doReturn(id).when(unitStep).getId();
     doReturn(logKey).when(unitStep).getLogKey();
-    doReturn(unitStep).when(serverlessAwsLambdaPackageV2Step).getUnitStep(any(), any(), any(), any(), any(), any());
+    doReturn(unitStep)
+        .when(serverlessAwsLambdaPackageV2Step)
+        .getUnitStep(any(), any(), any(), any(), any(), any(), any());
 
     ServerlessAwsLambdaPackageV2StepParameters stepParameters =
         ServerlessAwsLambdaPackageV2StepParameters.infoBuilder()

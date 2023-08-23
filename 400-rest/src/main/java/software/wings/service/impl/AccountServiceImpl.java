@@ -20,6 +20,7 @@ import static io.harness.eraro.ErrorCode.ACCOUNT_DOES_NOT_EXIST;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_IP_ALLOWLIST;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DISABLE_TRIGGERS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.NG_USER_CLEANUP_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SYNC_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
@@ -95,6 +96,7 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.account.AccountEntityChangeDTO;
+import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
@@ -397,7 +399,29 @@ public class AccountServiceImpl implements AccountService {
       log.error(format("Failed to publish account %s event for accountId %s via event framework.", action, accountId));
     }
   }
-
+  private String publishAccountChangeEventViaEventFramework(
+      String accountId, String orgIdentifier, String projectIdentifier, String action) {
+    log.info("testDeletionLog: producing event to events framework for account {}, action {}", accountId, action);
+    try {
+      return eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(ImmutableMap.of(EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                  EventsFrameworkMetadataConstants.PROJECT_ENTITY, EventsFrameworkMetadataConstants.ACTION, action))
+              .setData(ProjectEntityChangeDTO.newBuilder()
+                           .setAccountIdentifier(accountId)
+                           .setOrgIdentifier(orgIdentifier == null ? "" : orgIdentifier)
+                           .setIdentifier(projectIdentifier == null ? "" : projectIdentifier)
+                           .build()
+                           .toByteString())
+              .build());
+    } catch (Exception ex) {
+      log.error(format("Failed to publish account %s event for accountId %s , org %s , project %s via event framework.",
+          action, accountId, orgIdentifier, projectIdentifier));
+      throw new InvalidRequestException(
+          format("Failed to publish account %s event for accountId %s , org %s , project %s via event framework.",
+              action, accountId, orgIdentifier, projectIdentifier));
+    }
+  }
   private void publishAccountChangeEvent(Account account) {
     EventData eventData = EventData.builder().eventInfo(new AccountEntityEvent(account)).build();
     eventPublisher.publishEvent(
@@ -602,6 +626,13 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public String disableTriggers(String accountId, String orgIdentifier, String projectIdentifier) {
+    log.info("Publish disable triggers event for account " + accountId + " orgIdentifier " + orgIdentifier
+        + " projectIdentifier " + projectIdentifier);
+    return publishAccountChangeEventViaEventFramework(accountId, orgIdentifier, projectIdentifier, DISABLE_TRIGGERS);
+  }
+
+  @Override
   public Boolean updateIsProductLed(String accountId, boolean isProductLed) {
     Account account = get(accountId);
     account.setProductLed(isProductLed);
@@ -670,6 +701,19 @@ public class AccountServiceImpl implements AccountService {
     }
 
     return updatedAccount;
+  }
+
+  @Override
+  public boolean getPublicAccessEnabled(String accountId) {
+    Query<Account> getQuery = wingsPersistence.createQuery(Account.class).filter(ID_KEY2, accountId);
+    return Optional.ofNullable(getQuery.get().isPublicAccessEnabled()).orElse(false);
+  }
+
+  @Override
+  public void setPublicAccessEnabled(String accountId, boolean publicAccessEnabled) {
+    Account account = get(accountId);
+    account.setPublicAccessEnabled(publicAccessEnabled);
+    update(account);
   }
 
   private void ngAuditAccountDetailsCrossGenerationAccess(
@@ -1062,7 +1106,8 @@ public class AccountServiceImpl implements AccountService {
             .set(AccountKeys.ceAutoCollectK8sEvents, account.isCeAutoCollectK8sEvents())
             .set("whitelistedDomains", account.getWhitelistedDomains())
             .set("smpAccount", account.isSmpAccount())
-            .set("isProductLed", account.isProductLed());
+            .set("isProductLed", account.isProductLed())
+            .set(AccountKeys.publicAccessEnabled, account.isPublicAccessEnabled());
 
     if (null != account.getSessionTimeOutInMinutes()) {
       updateOperations.set(AccountKeys.sessionTimeOutInMinutes, account.getSessionTimeOutInMinutes());
@@ -1277,30 +1322,6 @@ public class AccountServiceImpl implements AccountService {
     if (enabled.contains("ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM")) {
       setDefaultExperience(onPremAccount.get().getUuid(), DefaultExperience.NG);
     }
-  }
-
-  @Override
-  public List<AccountDTO> getAllAccounts() {
-    Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
-                               .project(ID_KEY2, true)
-                               .project(AccountKeys.accountName, true)
-                               .project(AccountKeys.companyName, true)
-                               .project(AccountKeys.defaultExperience, true)
-                               .project(AccountKeys.authenticationMechanism, true)
-                               .project(AccountKeys.nextGenEnabled, true)
-                               .project(AccountKeys.serviceAccountConfig, true)
-                               .project(AccountKeys.isProductLed, true)
-                               .project(AccountKeys.twoFactorAdminEnforced, true)
-                               .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
-                               .limit(NO_LIMIT);
-
-    List<AccountDTO> accountDTOList = new ArrayList<>();
-    try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
-      for (Account account : iterator) {
-        accountDTOList.add(AccountMapper.toAccountDTO(account));
-      }
-    }
-    return accountDTOList;
   }
 
   @Override

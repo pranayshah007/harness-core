@@ -11,8 +11,11 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.yaml.core.StepSpecType;
@@ -26,7 +29,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor

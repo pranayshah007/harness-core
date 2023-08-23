@@ -26,6 +26,8 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.cistatus.service.GithubAppConfig;
+import io.harness.cistatus.service.GithubService;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.SSHKeyDetails;
 import io.harness.delegate.beans.ci.pod.SecretParams;
@@ -48,6 +50,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredential
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
@@ -67,6 +70,7 @@ import io.harness.delegate.beans.connector.scm.harness.HarnessUsernameTokenDTO;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.git.GitClientHelper;
 import io.harness.git.GitTokenRetriever;
 import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
 import io.harness.secrets.SecretDecryptor;
@@ -107,6 +111,7 @@ public class SecretSpecBuilder {
   @Inject private SecretDecryptor secretDecryptor;
   @Inject private ImageSecretBuilder imageSecretBuilder;
   @Inject private GitTokenRetriever gitTokenRetriever;
+  @Inject private GithubService githubService;
 
   public Map<String, SecretParams> decryptCustomSecretVariables(
       List<SecretVariableDetails> secretVariableDetails, Map<String, SecretVariableDTO> cache) {
@@ -409,6 +414,33 @@ public class SecretSpecBuilder {
         if (isEmpty(token)) {
           throw new CIStageExecutionException("Github connector should have not empty token");
         }
+        secretData.put(DRONE_NETRC_PASSWORD,
+            SecretParams.builder()
+                .secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)
+                .value(encodeBase64(token))
+                .type(TEXT)
+                .build());
+      } else if (gitHTTPAuthenticationDTO.getType() == GithubHttpAuthenticationType.GITHUB_APP) {
+        GithubAppDTO githubAppDTO = (GithubAppDTO) decryptableEntity;
+        String username = GithubAppDTO.username;
+        String token =
+            githubService.getToken(GithubAppConfig.builder()
+                                       .appId(getSecretAsStringFromPlainTextOrSecretRef(
+                                           githubAppDTO.getApplicationId(), githubAppDTO.getApplicationIdRef()))
+                                       .installationId(getSecretAsStringFromPlainTextOrSecretRef(
+                                           githubAppDTO.getInstallationId(), githubAppDTO.getInstallationIdRef()))
+                                       .privateKey(String.valueOf(githubAppDTO.getPrivateKeyRef().getDecryptedValue()))
+                                       .githubUrl(GitClientHelper.getGithubApiURL(gitConfigDTO.getUrl()))
+                                       .build());
+        if (isEmpty(token)) {
+          throw new CIStageExecutionException("Unable to get token for github app");
+        }
+        secretData.put(DRONE_NETRC_USERNAME,
+            SecretParams.builder()
+                .secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
+                .value(encodeBase64(username))
+                .type(TEXT)
+                .build());
         secretData.put(DRONE_NETRC_PASSWORD,
             SecretParams.builder()
                 .secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)

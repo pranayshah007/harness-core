@@ -145,14 +145,15 @@ public class K8sRollingStep extends CdTaskChainExecutable implements K8sStepExec
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .skipAddingTrackSelectorToDeployment(cdStepHelper.isSkipAddingTrackSelectorToDeployment(accountId))
             .pruningEnabled(pruningEnabled)
-            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome));
+            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
+            .disableFabric8(cdStepHelper.shouldDisableFabric8(accountId));
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       rollingRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
     }
 
     Map<String, String> k8sCommandFlag =
-        k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingStepParameters.getCommandFlags());
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingStepParameters.getCommandFlags(), ambiance);
     rollingRequestBuilder.k8sCommandFlags(k8sCommandFlag);
     K8sRollingDeployRequest k8sRollingDeployRequest = rollingRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
@@ -228,8 +229,9 @@ public class K8sRollingStep extends CdTaskChainExecutable implements K8sStepExec
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_ROLL_OUT, k8sRollingOutcome, StepOutcomeGroup.STEP.name());
 
-    StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(
-        ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sTaskResponse.getK8sPodList()));
+    StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
+        K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(
+            k8sTaskResponse.getK8sPodList(), k8sTaskResponse.getHelmChartInfo()));
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).outcome(k8sRollingOutcome).build())

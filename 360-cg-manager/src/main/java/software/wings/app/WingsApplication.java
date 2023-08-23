@@ -154,6 +154,7 @@ import io.harness.queue.consumers.GeneralEventConsumerCg;
 import io.harness.queue.consumers.NotifyEventConsumerCg;
 import io.harness.queue.publishers.CgGeneralEventPublisher;
 import io.harness.queue.publishers.CgNotifyEventPublisher;
+import io.harness.redis.DelegateHeartBeatSyncFromRedis;
 import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.reflection.HarnessReflections;
 import io.harness.request.RequestContextFilter;
@@ -1387,6 +1388,14 @@ public class WingsApplication extends Application<MainConfiguration> {
           new Schedulable("Failed while auto revoking delegate tokens",
               () -> injector.getInstance(DelegateNgTokenServiceImpl.class).autoRevokeExpiredTokens()),
           1L, 1L, TimeUnit.HOURS);
+
+      if (configuration.isEnableRedisForDelegateService()) {
+        // Sync HB from redis cache to mongo
+        delegateExecutor.scheduleWithFixedDelay(
+            new Schedulable(
+                "Sync delegate HB from redis", () -> injector.getInstance(DelegateHeartBeatSyncFromRedis.class).run()),
+            3L, 3L, TimeUnit.MINUTES);
+      }
     }
   }
 

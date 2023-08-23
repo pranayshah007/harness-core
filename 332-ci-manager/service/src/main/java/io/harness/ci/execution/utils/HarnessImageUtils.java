@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.utils;
+package io.harness.ci.execution.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -15,8 +15,8 @@ import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;

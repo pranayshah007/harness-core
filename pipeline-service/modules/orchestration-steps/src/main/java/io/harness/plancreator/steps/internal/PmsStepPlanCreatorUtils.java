@@ -339,6 +339,7 @@ public class PmsStepPlanCreatorUtils {
                 .applicableFailureTypes(failureTypes)
                 .nextNodeId(nextNodeUuid)
                 .repairActionCodeAfterRetry(GenericPlanCreatorUtils.toRepairAction(actionUnderRetry))
+                .retryActionConfig(actionUnderRetry)
                 .retryCount(retryCount.getValue())
                 .strategyToUuid(PlanCreatorUtilsCommon.getRollbackStrategyMap(currentField))
                 .waitIntervalList(retryAction.getSpecConfig()

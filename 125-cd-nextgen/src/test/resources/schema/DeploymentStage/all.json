@@ -1571,6 +1571,10 @@
         },
         {
           "type": "object",
+          "required": [
+            "connectorRef",
+            "image"
+          ],
           "properties": {
             "appPath": {
               "type": "string"
@@ -1607,9 +1611,6 @@
                   "minLength": 1
                 }
               ]
-            },
-            "exportTemplate": {
-              "type": "boolean"
             },
             "image": {
               "type": "string"
@@ -1670,6 +1671,8 @@
         {
           "type": "object",
           "required": [
+            "connectorRef",
+            "image",
             "provisionerIdentifier"
           ],
           "properties": {
@@ -1769,13 +1772,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "AwsCdkDiffStepInfo": {
+    "AwsCdkDestroyStepInfo": {
       "allOf": [
         {
           "$ref": "#/definitions/StepSpecType"
         },
         {
           "type": "object",
+          "required": [
+            "connectorRef",
+            "image"
+          ],
           "properties": {
             "appPath": {
               "type": "string"
@@ -1870,6 +1877,145 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AwsCdkDiffStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "image"
+          ],
+          "properties": {
+            "appPath": {
+              "type": "string"
+            },
+            "commandOptions": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "imagePullPolicy": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Always",
+                    "Never",
+                    "IfNotPresent"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "stackNames": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsCdkRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AwsCdkSynthStepInfo": {
       "allOf": [
         {
@@ -1877,6 +2023,10 @@
         },
         {
           "type": "object",
+          "required": [
+            "connectorRef",
+            "image"
+          ],
           "properties": {
             "appPath": {
               "type": "string"
@@ -2296,16 +2446,7 @@
               "type": "string"
             },
             "samVersion": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             }
           }
         }
@@ -2403,28 +2544,10 @@
               ]
             },
             "samVersion": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             },
             "stackName": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             }
           }
         }
@@ -10366,6 +10489,10 @@
             "connectorRef": {
               "type": "string"
             },
+            "consoleLogPollFrequency": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(([5-9])+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -12780,7 +12907,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -15592,7 +15719,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -15895,16 +16022,7 @@
               ]
             },
             "serverlessVersion": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             }
           }
         }
@@ -16068,16 +16186,7 @@
               ]
             },
             "serverlessVersion": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             }
           }
         }
@@ -16109,9 +16218,6 @@
                   "minLength": 1
                 }
               ]
-            },
-            "downloadManifestsFqn": {
-              "type": "string"
             },
             "image": {
               "type": "string"
@@ -16160,16 +16266,7 @@
               ]
             },
             "serverlessVersion": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             }
           }
         }
@@ -16276,20 +16373,8 @@
                 }
               ]
             },
-            "serverlessAwsLambdaRollbackFnq": {
-              "type": "string"
-            },
             "serverlessVersion": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
+              "type": "string"
             }
           }
         }
@@ -18131,6 +18216,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AwsCdkDestroy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsCdkDestroyStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "AwsCdkDiff"
               }
             }
@@ -18139,6 +18240,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AwsCdkDiffStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AwsCdkRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsCdkRollbackStepInfo"
               }
             }
           }
@@ -20452,7 +20569,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -23001,6 +23118,29 @@
       "discriminator": "type",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TerragruntCliOptionFlag": {
+      "type": "object",
+      "required": [
+        "commandType",
+        "flag"
+      ],
+      "properties": {
+        "commandType": {
+          "type": "string",
+          "enum": [
+            "INIT",
+            "WORKSPACE",
+            "PLAN",
+            "APPLY",
+            "DESTROY"
+          ]
+        },
+        "flag": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TerragruntConfigFilesWrapper": {
       "type": "object",
       "required": [
@@ -23153,6 +23293,12 @@
             "Destroy"
           ]
         },
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerragruntCliOptionFlag"
+          }
+        },
         "configFiles": {
           "$ref": "#/definitions/TerragruntConfigFilesWrapper"
         },
@@ -23262,6 +23408,12 @@
             "provisionerIdentifier"
           ],
           "properties": {
+            "commandFlags": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TerragruntCliOptionFlag"
+              }
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -23291,6 +23443,12 @@
         "type"
       ],
       "properties": {
+        "commandFlags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerragruntCliOptionFlag"
+          }
+        },
         "spec": {
           "$ref": "#/definitions/TerragruntExecutionData"
         },

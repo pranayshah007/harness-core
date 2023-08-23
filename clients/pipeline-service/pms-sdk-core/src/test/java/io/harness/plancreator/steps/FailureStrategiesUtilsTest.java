@@ -9,12 +9,14 @@ package io.harness.plancreator.steps;
 
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.ANKIT_TIWARI;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.yaml.core.failurestrategy.NGFailureType.ALL_ERRORS;
 import static io.harness.yaml.core.failurestrategy.NGFailureType.AUTHENTICATION_ERROR;
 import static io.harness.yaml.core.failurestrategy.NGFailureType.AUTHORIZATION_ERROR;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
@@ -30,6 +32,8 @@ import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetryStepGroupFailureSpecConfig;
 import io.harness.yaml.core.timeout.Timeout;
 
 import java.util.ArrayList;
@@ -244,5 +248,61 @@ public class FailureStrategiesUtilsTest extends PmsSdkCoreTestBase {
     Map<FailureStrategyActionConfig, Collection<FailureType>> failureStrategyActionConfigCollectionMap =
         FailureStrategiesUtils.priorityMergeFailureStrategies(null, stepGroupFailureStrategies, null);
     assertThat(failureStrategyActionConfigCollectionMap).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testValidateRetrySGFailureAction() {
+    RetrySGFailureActionConfig retrySGFailureActionConfig = RetrySGFailureActionConfig.builder().build();
+    assertThatThrownBy(() -> FailureStrategiesUtils.validateRetrySGFailureAction(retrySGFailureActionConfig))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Retry Spec cannot be null or empty");
+
+    RetrySGFailureActionConfig retrySGFailureActionConfig1 =
+        RetrySGFailureActionConfig.builder()
+            .specConfig(
+                RetryStepGroupFailureSpecConfig.builder().retryCount(ParameterField.<Integer>builder().build()).build())
+            .build();
+    assertThatThrownBy(() -> FailureStrategiesUtils.validateRetrySGFailureAction(retrySGFailureActionConfig1))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Retry Count cannot be null or empty");
+
+    RetrySGFailureActionConfig retrySGFailureActionConfig2 =
+        RetrySGFailureActionConfig.builder()
+            .specConfig(RetryStepGroupFailureSpecConfig.builder()
+                            .retryCount(ParameterField.<Integer>builder().value(1).build())
+                            .retryIntervals(new ParameterField<>())
+                            .build())
+            .build();
+    assertThatThrownBy(() -> FailureStrategiesUtils.validateRetrySGFailureAction(retrySGFailureActionConfig2))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Retry Interval cannot be null or empty");
+
+    List<Timeout> retryIntervalList = new ArrayList<>();
+    retryIntervalList.add(Timeout.builder().timeoutInMillis(1000).build());
+    RetrySGFailureActionConfig retrySGFailureActionConfig3 =
+        RetrySGFailureActionConfig.builder()
+            .specConfig(RetryStepGroupFailureSpecConfig.builder()
+                            .retryCount(ParameterField.<Integer>builder().value(1).expression(true).build())
+                            .retryIntervals(ParameterField.<List<Timeout>>builder().value(retryIntervalList).build())
+                            .build())
+            .build();
+    assertThatThrownBy(() -> FailureStrategiesUtils.validateRetrySGFailureAction(retrySGFailureActionConfig3))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("RetryCount fixed value is not given.");
+
+    RetrySGFailureActionConfig retrySGFailureActionConfig4 =
+        RetrySGFailureActionConfig.builder()
+            .specConfig(
+                RetryStepGroupFailureSpecConfig.builder()
+                    .retryCount(ParameterField.<Integer>builder().value(1).build())
+                    .retryIntervals(
+                        ParameterField.<List<Timeout>>builder().value(retryIntervalList).expression(true).build())
+                    .build())
+            .build();
+    assertThatThrownBy(() -> FailureStrategiesUtils.validateRetrySGFailureAction(retrySGFailureActionConfig4))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("RetryIntervals cannot be expression/runtime input. Please give values.");
   }
 }

@@ -6,12 +6,15 @@
  */
 
 package io.harness.steps.approval.step;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.Objects.isNull;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -21,6 +24,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.jira.JiraIssueNG;
@@ -72,6 +76,7 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -93,6 +98,9 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   private static final Set<String> approvalStepSpecTypeConstants =
       new HashSet<>(Arrays.asList(StepSpecTypeConstants.HARNESS_APPROVAL, StepSpecTypeConstants.SERVICENOW_APPROVAL,
           StepSpecTypeConstants.JIRA_APPROVAL, StepSpecTypeConstants.CUSTOM_APPROVAL));
+  private static final ApprovalType[] approvalsWithDelegateTasksInPolling =
+      new ApprovalType[] {ApprovalType.SERVICENOW_APPROVAL, ApprovalType.CUSTOM_APPROVAL, ApprovalType.JIRA_APPROVAL};
+
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
 
   @Inject
@@ -163,6 +171,27 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
           instance.getType()));
     }
     return (HarnessApprovalInstance) instance;
+  }
+
+  @Override
+  public Optional<ApprovalInstance> findLatestApprovalInstanceByPlanExecutionIdAndType(
+      @NotEmpty String planExecutionId, @NotNull ApprovalType approvalType) {
+    if (isEmpty(planExecutionId)) {
+      throw new InvalidArgumentsException("PlanExecutionId cannot be null or empty");
+    }
+    if (approvalType == null) {
+      throw new InvalidArgumentsException("ApprovalType cannot be null");
+    }
+
+    Query approvalInstancesByPlanExecutionIdAndTypeQuery =
+        query(where(ApprovalInstanceKeys.planExecutionId).is(planExecutionId))
+            .addCriteria(where(ApprovalInstanceKeys.type).in(approvalType))
+            .with(Sort.by(Sort.Direction.DESC, ApprovalInstanceKeys.createdAt))
+            .limit(1);
+
+    List<ApprovalInstance> approvalInstances =
+        approvalInstanceRepository.find(approvalInstancesByPlanExecutionIdAndTypeQuery);
+    return isEmpty(approvalInstances) ? Optional.empty() : Optional.ofNullable(approvalInstances.get(0));
   }
 
   @Override
@@ -456,6 +485,29 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
     approvalInstanceRepository.updateFirst(
         new Query(Criteria.where(Mapper.ID_KEY).is(approvalInstance.getId()))
             .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING)),
+        update);
+  }
+  @Override
+  public void updateLatestDelegateTaskId(@NotNull String approvalInstanceId, String latestDelegateTaskId) {
+    if (StringUtils.isBlank(approvalInstanceId)) {
+      log.warn("Skipping updating latest delegate task id as empty approval id received");
+      return;
+    }
+
+    if (StringUtils.isBlank(latestDelegateTaskId)) {
+      log.warn("Skipping updating latest delegate task id in approval instance as empty delegate task id received");
+      return;
+    }
+
+    // update task id in approval instance to latest delegate task id
+    Update update = new Update().set(ServiceNowApprovalInstanceKeys.latestDelegateTaskId, latestDelegateTaskId);
+    // it only makes sense to update delegate task id for instances in waiting state
+    // if the instance is aborted/expired etc., and a task is queued that task id will not be updated.
+    approvalInstanceRepository.updateFirst(
+        new Query(Criteria.where(Mapper.ID_KEY).is(approvalInstanceId))
+            .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING))
+            .addCriteria(
+                Criteria.where(ApprovalInstanceKeys.type).in(Arrays.asList(approvalsWithDelegateTasksInPolling))),
         update);
   }
 

@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.gitops;
+
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -42,7 +43,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -58,6 +58,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -98,11 +99,11 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
   @Inject private GitOpsStepHelper gitOpsStepHelper;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
+      StepBaseParameters stepParameters, ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
 
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
@@ -137,7 +138,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     /*
   TODO:
    2. Handle the case when PR already exists
@@ -301,7 +302,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
+  public Class<StepBaseParameters> getStepParametersClass() {
     return null;
   }
 

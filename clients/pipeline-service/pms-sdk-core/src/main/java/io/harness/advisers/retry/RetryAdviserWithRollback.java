@@ -18,6 +18,7 @@ import io.harness.advisers.rollback.OnFailRollbackOutput;
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -29,6 +30,7 @@ import io.harness.pms.contracts.advisers.MarkSuccessAdvise;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.contracts.advisers.RetryAdvise;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.commons.RepairActionCode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -39,6 +41,9 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.TimeoutUtils;
+import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -95,11 +100,32 @@ public class RetryAdviserWithRollback implements Adviser {
         AdviserResponse.newBuilder().setRepairActionCode(parameters.getRepairActionCodeAfterRetry());
     switch (parameters.getRepairActionCodeAfterRetry()) {
       case MANUAL_INTERVENTION:
+        ManualInterventionFailureActionConfig retryConfig =
+            (ManualInterventionFailureActionConfig) parameters.getRetryActionConfig();
+
+        Timeout timeoutValue = null;
+        RepairActionCode actionAfterManualInterventionTimeout = null;
+
+        if (retryConfig != null && retryConfig.getSpecConfig() != null
+            && retryConfig.getSpecConfig().getTimeout() != null) {
+          timeoutValue = retryConfig.getSpecConfig().getTimeout().getValue();
+          actionAfterManualInterventionTimeout =
+              GenericPlanCreatorUtils.toRepairAction(retryConfig.getSpecConfig().getOnTimeout().getAction());
+        } else {
+          log.error("Manual intervention timeout is missing.");
+          MarkAsFailureAdvise.Builder builder = MarkAsFailureAdvise.newBuilder();
+          return adviserResponseBuilder.setMarkAsFailureAdvise(builder.build())
+              .setType(AdviseType.MARK_AS_FAILURE)
+              .build();
+        }
+
         return adviserResponseBuilder
             .setInterventionWaitAdvise(
                 InterventionWaitAdvise.newBuilder()
-                    .setTimeout(Duration.newBuilder().setSeconds(java.time.Duration.ofDays(1).toMinutes() * 60).build())
+                    .setTimeout(Duration.newBuilder().setSeconds(TimeoutUtils.getTimeoutInSeconds(timeoutValue,
+                        Duration.newBuilder().setSeconds(java.time.Duration.ofDays(1).toMinutes() * 60).getSeconds())))
                     .setFromStatus(toStatus)
+                    .setRepairActionCode(actionAfterManualInterventionTimeout)
                     .build())
             .setType(AdviseType.INTERVENTION_WAIT)
             .build();

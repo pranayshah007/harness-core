@@ -48,6 +48,7 @@ spec:
           - "pod"
           - "-lapp=mongodb-replicaset"
       {{- end }}
+      {{- if .Values.global.database.timescaledb.installed }}  
       - name: wait-for-timescale
         image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
         {{- if .Values.waitForInitContainer.resources }}
@@ -60,6 +61,7 @@ spec:
         args:
           - "pod"
           - "-lapp=timescaledb-single-chart"
+        {{- end }}
       - name: wait-for-ng-manager
         image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
         {{- if .Values.waitForInitContainer.resources }}
@@ -83,13 +85,8 @@ spec:
               {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           env:
             {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
-            - name : TIMESCALEDB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.timescaleSecret.password.name }}
-                  key: {{ .Values.timescaleSecret.password.key }}
-            - name: TIMESCALEDB_USERNAME
-              value: postgres
+            {{- include "harnesscommon.dbconnection.timescaleEnv" (dict "passwordVariableName" "TIMESCALEDB_PASSWORD" "userVariableName" "TIMESCALEDB_USERNAME" "context" $) | indent 12}}
+            {{- include "harnesscommon.dbconnection.timescaleSslEnv" (dict "sslModeValue" "require" "certVariableName" "TIMESCALEDB_SSL_ROOT_CERT" "context" $ ) | nindent 12 }} 
             - name: MONGO_URI
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
             - name: EVENTS_MONGO_URI
@@ -100,9 +97,11 @@ spec:
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "change-data-capture" "context" $) }}
             - name: NG_HARNESS_MONGO_URI
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "ng-harness" "context" $) }}
+            - name: CVNG_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "cvng-harness" "context" $) }}
             - name: TIMESCALEDB_URI
-              value: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'
-            {{- if .Values.extraEnvVars }}
+              value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}            
+              {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
           envFrom:
@@ -156,9 +155,17 @@ spec:
             successThreshold: {{ .Values.startupProbe.successThreshold }}
             failureThreshold: {{ .Values.startupProbe.failureThreshold }}
           {{- end }}
+          {{- if .Values.lifecycleHooks }}
+          lifecycle: {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.extraVolumeMounts }}
+          volumeMounts:
+          {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+          {{- end }}
         {{- if .Values.sidecars }}
         {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.sidecars "context" $) | nindent 8 }}
         {{- end }}
+        
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -174,7 +181,7 @@ spec:
       {{- end }}
       {{- if .Values.extraVolumes }}
       volumes:
-        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
+      {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraVolumes "context" $) | nindent 8 }}
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
