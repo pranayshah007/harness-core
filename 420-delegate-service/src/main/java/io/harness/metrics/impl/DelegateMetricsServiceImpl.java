@@ -22,6 +22,7 @@ import io.harness.metrics.service.api.MetricService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.text.SimpleDateFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -136,9 +137,10 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
       String delegateName, String delegateId, String delegateVersion, String delegateConnectionStatus,
       String delegateEventType, boolean isNg, boolean isImmutable, String cpuUsage, String memeUsage, long lastHB,
       String metricName) {
-    try (HeartbeatMetricContext ignore =
-             new HeartbeatMetricContext(time, accountId, orgId, projectId, delegateName, delegateId, delegateVersion,
-                 delegateConnectionStatus, delegateEventType, isNg, isImmutable, cpuUsage, memeUsage, lastHB)) {
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    try (HeartbeatMetricContext ignore = new HeartbeatMetricContext(dateFormat.format(time), accountId, orgId,
+             projectId, delegateName, delegateId, delegateVersion, delegateConnectionStatus, delegateEventType, isNg,
+             isImmutable, cpuUsage, memeUsage, dateFormat.format(lastHB))) {
       metricService.incCounter(metricName);
     }
   }

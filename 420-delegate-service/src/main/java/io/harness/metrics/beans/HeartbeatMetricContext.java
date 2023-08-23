@@ -18,11 +18,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 public class HeartbeatMetricContext extends AutoMetricContext {
-  SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-  public HeartbeatMetricContext(long time, String accountId, String orgId, String projectId, String delegateName,
+  public HeartbeatMetricContext(String time, String accountId, String orgId, String projectId, String delegateName,
       String delegateId, String delegateVersion, String delegateConnectionStatus, String delegateEventType,
-      boolean isNg, boolean isImmutable, String cpuUsage, String memeUsage, long lastHB) {
-    put("time", dateFormat.format(lastHB));
+      boolean isNg, boolean isImmutable, String cpuUsage, String memeUsage, String lastHB) {
+    put("time", time);
     put("accountId", accountId);
     put("orgId", orgId);
     put("projectId", projectId);
@@ -35,6 +34,6 @@ public class HeartbeatMetricContext extends AutoMetricContext {
     put("isImmutable", String.valueOf(isImmutable));
     put("cpuUsage", cpuUsage);
     put("memUsage", memeUsage);
-    put("lastHB", dateFormat.format(lastHB));
+    put("lastHB", lastHB);
   }
 }
