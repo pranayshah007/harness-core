@@ -210,13 +210,13 @@ public class InterruptServiceImplTest extends OrchestrationTestBase {
                                       .build();
     when(nodeExecutionService.getWithFieldsIncluded(nodeExecution.getUuid(), NodeProjectionUtils.withStatusAndMode))
         .thenReturn(nodeExecution);
-    when(abortInterruptHandler.handleInterruptForNodeExecution(any(), eq(nodeExecution.getUuid())))
+    when(abortInterruptHandler.handleAndMarkInterruptForNodeExecution(any(), eq(nodeExecution.getUuid()), eq(false)))
         .thenReturn(abortAllInterrupt);
     ExecutionCheck executionCheck =
         interruptService.checkInterruptsPreInvocation(planExecutionId, nodeExecution.getUuid());
     assertThat(executionCheck).isNotNull();
     assertThat(executionCheck.isProceed()).isFalse();
-    verify(abortInterruptHandler).handleInterruptForNodeExecution(any(), eq(nodeExecution.getUuid()));
+    verify(abortInterruptHandler).handleAndMarkInterruptForNodeExecution(any(), eq(nodeExecution.getUuid()), eq(false));
   }
 
   @Test
@@ -240,13 +240,15 @@ public class InterruptServiceImplTest extends OrchestrationTestBase {
                                       .build();
     when(nodeExecutionService.getWithFieldsIncluded(nodeExecution.getUuid(), NodeProjectionUtils.withStatusAndMode))
         .thenReturn(nodeExecution);
-    when(markExpiredInterruptHandler.handleInterruptForNodeExecution(any(), eq(nodeExecution.getUuid())))
+    when(markExpiredInterruptHandler.handleAndMarkInterruptForNodeExecution(
+             any(), eq(nodeExecution.getUuid()), eq(false)))
         .thenReturn(expireAllInterrupt);
     ExecutionCheck executionCheck =
         interruptService.checkInterruptsPreInvocation(planExecutionId, nodeExecution.getUuid());
     assertThat(executionCheck).isNotNull();
     assertThat(executionCheck.isProceed()).isFalse();
-    verify(markExpiredInterruptHandler).handleInterruptForNodeExecution(any(), eq(nodeExecution.getUuid()));
+    verify(markExpiredInterruptHandler)
+        .handleAndMarkInterruptForNodeExecution(any(), eq(nodeExecution.getUuid()), eq(false));
   }
 
   @Test
