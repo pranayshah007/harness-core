@@ -1469,7 +1469,7 @@ paths:
       tags:
         - Account Services
       x-internal: true
-  '/v1/eula/sign':
+  /v1/eula/sign:
     post:
       summary: Sign an End User License Agreement
       operationId: sign-eula
@@ -1486,7 +1486,7 @@ paths:
       tags:
         - EULA
       x-internal: false
-  'v1/eula/validate-sign':
+  v1/eula/validate-sign:
     get:
       summary: Validate specified agreement is signed or not
       operationId: validate-eula-sign
@@ -1506,6 +1506,66 @@ paths:
       tags:
         - EULA
       x-internal: false
+  /v1/gitx-webhooks:
+    post:
+      summary: Create a GitX webhook
+      operationId: create-gitx-webhooks
+      responses:
+        '200':
+          $ref: '#/components/responses/CreateGitXWebhookResponse'
+      description: Create GitXWebhook at account level
+      security:
+        - x-api-key: []
+      tags:
+        - GitX Webhooks
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/CreateGitXWebhookRequest'
+      x-internal: true
+  '/v1/gitx-webhooks/{gitx-webhook}':
+    parameters:
+      - $ref: '#/components/parameters/GitXWebhookIdentifier'
+    get:
+      summary: Fetch GitX Webhook
+      responses:
+        '200':
+          $ref: '#/components/responses/DeleteGitXWebhookResponse'
+      operationId: get-gitx-webhooks
+      description: Fetch a gitx webhook
+      x-internal: true
+      security:
+        - x-api-key: []
+      tags:
+        - GitX Webhooks
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+    put:
+      summary: ''
+      operationId: update-gitx-webhook
+      responses:
+        '200':
+          $ref: '#/components/responses/UpdateGitXWebhookResponse'
+      security:
+        - x-api-key: []
+      tags:
+        - GitX Webhooks
+      description: Update a Gitx webhook
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateGitXWebhookRequest'
+    delete:
+      summary: ''
+      operationId: delete-gitx-webhook
+      responses:
+        '200':
+          description: OK
+      description: Deletes a gitx webhooks
+      security:
+        - x-api-key: []
+      tags:
+        - GitX Webhooks
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
 components:
   schemas:
     Service:
@@ -2525,6 +2585,63 @@ components:
           identifiers:
             - id1
             - id2
+    CreateGitXWebhookRequest:
+      title: CreateGitXWebhookRequest
+      x-stoplight:
+        id: v13e7op46ke5k
+      type: object
+      description: Contains information about the GitX webhook creation request
+      properties:
+        webhook_identifier:
+          type: string
+        repo_name:
+          type: string
+        connector_ref:
+          type: string
+        folder_paths:
+          type: array
+          items:
+            type: string
+    CreateGitXWebhookResponse:
+      title: CreateGitXWebhookResponse
+      x-stoplight:
+        id: c0ggkoxt4yqr1
+      type: object
+      description: 'Contains information about the GitX webhook creation '
+      properties:
+        webhook_identifier:
+          type: string
+    UpdateGitXWebhookRequest:
+      title: UpdateGitXWebhookRequest
+      x-stoplight:
+        id: jpe7hhufol4wp
+      type: object
+      description: 'Contains information about the GitX webhook updation '
+      properties:
+        folder_paths:
+          type: array
+          items:
+            type: string
+        isEnables:
+          type: boolean
+    UpdateGitXWebhookResponse:
+      title: UpdateGitXWebhookResponse
+      x-stoplight:
+        id: jq7cb085csk3a
+      type: object
+      description: 'Contains information about the GitX webhook updation '
+      properties:
+        webhook_identifier:
+          type: string
+    DeleteGitXWebhookResponse:
+      title: DeleteGitXWebhookResponse
+      x-stoplight:
+        id: 3m4rl2h5i2b4b
+      type: object
+      description: 'Contains information about the GitX webhook response '
+      properties:
+        successfully_deleted:
+          type: boolean
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3119,6 +3236,24 @@ components:
           schema:
             type: object
             properties: {}
+    CreateGitXWebhookResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateGitXWebhookResponse'
+    UpdateGitXWebhookResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateGitXWebhookResponse'
+    DeleteGitXWebhookResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DeleteGitXWebhookResponse'
   requestBodies:
     ServiceRequest:
       content:
@@ -3675,6 +3810,18 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/EulaSignRequest'
+    CreateGitXWebhookRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateGitXWebhookRequest'
+      description: Create GitX webhook request
+    UpdateGitXWebhookRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateGitXWebhookRequest'
+      description: Update GitX webhook request
   parameters:
     Page:
       name: page
@@ -3847,3 +3994,10 @@ components:
       schema:
         type: string
       description: Identifier field of the scoped infrastructure definition entity to be used in the selected operation.
+    GitXWebhookIdentifier:
+      name: GitXWebhookIdentifier
+      in: path
+      required: true
+      schema:
+        type: string
+      description: GitX webhook identifier
