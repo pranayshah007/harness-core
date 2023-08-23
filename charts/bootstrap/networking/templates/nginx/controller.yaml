@@ -10,9 +10,9 @@ metadata:
 spec:
   selector:
     app: harness-ingress-controller
-  {{- if .Values.global.ingress.loadBalancerEnabled }}
+  {{- if .Values.nginx.loadBalancerEnabled }}
   type: 'LoadBalancer'
-  loadBalancerIP: {{ .Values.global.ingress.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.nginx.loadBalancerIP }}
   {{- else }}
   type: 'NodePort'
   {{- end }}
