@@ -169,20 +169,18 @@ func ParsePathBasedNode(file types.File, testGlobs []string, langType LangType) 
 // e.g., src/abc/def/A.py
 // will return class = src/abc/def/A.py file = src/abc/def/A.py
 func ParsePathBasedNodeAndType(file types.File, testGlobs []string) (*Node, error) {
-	LangType := LangType_UNKNOWN
-
 	filename := strings.TrimSpace(file.Name)
 	for extension, langAndPattern := range extensionMapping {
 		if strings.HasSuffix(filename, extension) {
-			LangType = langAndPattern.LangType
+			LangType := langAndPattern.LangType
 			if len(testGlobs) == 0 {
 				testGlobs = langAndPattern.TestPattern
 			}
-			break
+			return ParsePathBasedNode(file, testGlobs, LangType)
 		}
 	}
-
-	return ParsePathBasedNode(file, testGlobs, LangType)
+	// If not any of the extension, it might be a java resource
+	return ParseJavaNode(file)
 }
 
 // GetTestsFromLocal creates list of RunnableTest within file system on given langauge and extension
