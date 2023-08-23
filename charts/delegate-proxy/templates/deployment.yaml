@@ -32,13 +32,19 @@ spec:
         {{- toYaml .Values.securityContext | nindent 8 }}
       containers:
         - name: delegate-proxy
-          image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+          image: {{ include "delegate-proxy.docker_image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           resources:
               {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.lifecycleHooks }}
+          lifecycle: {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - mountPath: /etc/nginx/conf.d
               name: harness-nginx-conf
+            {{- if .Values.extraVolumeMounts }}
+            {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
       volumes:
         - name: harness-nginx-conf
           configMap:
@@ -46,6 +52,9 @@ spec:
             items:
               - key: proxy.conf
                 path: proxy.conf
+        {{- if .Values.extraVolumes }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.extraVolumes "context" $ ) | nindent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
