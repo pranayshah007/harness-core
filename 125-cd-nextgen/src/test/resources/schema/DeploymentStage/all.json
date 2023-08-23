@@ -12972,12 +12972,29 @@
         "type": {
           "type": "string",
           "enum": [
-            "Generic"
+            "Generic",
+            "ECR"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ECR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OciHelmChartStoreEcrConfig"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -12995,6 +13012,35 @@
           }
         }
       ]
+    },
+    "OciHelmChartStoreEcrConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/OciHelmChartStoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "region"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            },
+            "registryId": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "OciHelmChartStoreGenericConfig": {
       "allOf": [
