@@ -35,7 +35,7 @@ import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
-import io.harness.cvng.usage.impl.resources.ActiveMonitoredServiceDTO;
+import io.harness.cvng.usage.impl.resources.ActiveServiceDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -141,5 +141,5 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
 
   List<ActiveServiceMonitoredDTO> listActiveServiceMonitored(ProjectParams projectParams);
 
-  List<ActiveMonitoredServiceDTO> listActiveMonitoredServices(ProjectParams projectParams, String serviceIdentifier);
+  List<ActiveServiceDTO> listActiveMonitoredServices(ProjectParams projectParams, String serviceIdentifier);
 }
