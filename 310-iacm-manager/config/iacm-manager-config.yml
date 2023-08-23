@@ -354,3 +354,10 @@ opaClientConfig:
   baseUrl: http://localhost:3000
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+streamPerServiceConfiguration:
+  migrateNodeStart: ${PIE_MIGRATE_NODE_START:-false}
+  migrateNodeResume: ${PIE_MIGRATE_NODE_RESUME:-false}
+  migrateFacilitator: ${PIE_MIGRATE_FACILITATOR:-false}
+  migrateNodeProgress:  ${PIE_MIGRATE_PROGRESS:-false}
+  migrateInterrupt: ${PIE_MIGRATE_INTERRUPT:-false}

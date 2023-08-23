@@ -25,6 +25,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
+import io.harness.pms.sdk.StreamPerServiceConfiguration;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -101,6 +102,8 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
   private String managerTarget;
   private String managerAuthority;
+  @JsonProperty("streamPerServiceConfiguration") private StreamPerServiceConfiguration streamPerServiceConfiguration;
+
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
   public static final String SERVICES_PROXY_PACKAGE = "io.harness.idp.proxy.services";

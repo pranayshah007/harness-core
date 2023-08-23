@@ -8,12 +8,18 @@
 package io.harness.pms.sdk;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_FACILITATOR_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_FACILITATOR_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_INTERRUPT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_INTERRUPT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_ADVISE_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_ADVISE_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_RESUME_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_RESUME_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_START_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_NODE_START_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_ORCHESTRATION_EVENT_TOPIC;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_PROGRESS_EVENT_TOPIC;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_PROGRESS_EVENT_TOPIC_WITH_SERVICE_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.START_PARTIAL_PLAN_CREATOR_EVENT_TOPIC;
 
 import io.harness.ModuleType;
@@ -131,22 +137,31 @@ public class PmsSdkInitHelper {
 
     ModuleType moduleType = sdkConfiguration.getModuleType();
     EventsFrameworkConfiguration eventsConfig = sdkConfiguration.getEventsFrameworkConfiguration();
+    StreamPerServiceConfiguration streamPerServiceConfiguration = sdkConfiguration.getStreamPerServiceConfiguration();
     return InitializeSdkRequest.newBuilder()
         .setName(sdkConfiguration.getServiceName())
         .putAllSupportedTypes(PmsSdkInitHelper.calculateSupportedTypes(infoProvider))
         .addAllSupportedSteps(mapToSdkStep(calculateStepTypes(injector), infoProvider.getStepInfo()))
         .setSdkModuleInfo(SdkModuleInfo.newBuilder().setDisplayName(moduleType.getDisplayName()).build())
-        .setInterruptConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.INTERRUPT_EVENT))
-        .setOrchestrationEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.ORCHESTRATION_EVENT))
-        .setFacilitatorEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.FACILITATOR_EVENT))
+        .setInterruptConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.INTERRUPT_EVENT,
+            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+        .setOrchestrationEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.ORCHESTRATION_EVENT,
+            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+        .setFacilitatorEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.FACILITATOR_EVENT,
+            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
         .putAllStaticAliases(CollectionUtils.emptyIfNull(sdkConfiguration.getStaticAliases()))
         .addAllSdkFunctors(PmsSdkInitHelper.getSupportedSdkFunctorsList(sdkConfiguration))
         .addAllJsonExpansionInfo(getJsonExpansionInfo(sdkConfiguration))
-        .setNodeStartEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.NODE_START))
-        .setProgressEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.PROGRESS_EVENT))
-        .setNodeAdviseEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.NODE_ADVISE))
-        .setNodeResumeEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.NODE_RESUME))
-        .setPlanCreationEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.CREATE_PARTIAL_PLAN))
+        .setNodeStartEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.NODE_START,
+            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+        .setProgressEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.PROGRESS_EVENT,
+            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+        .setNodeAdviseEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.NODE_ADVISE,
+            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+        .setNodeResumeEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.NODE_RESUME,
+            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+        .setPlanCreationEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.CREATE_PARTIAL_PLAN,
+            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
         .build();
   }
 
@@ -194,11 +209,13 @@ public class PmsSdkInitHelper {
    * If we feel the need (which i do not think) we would in near future we can expose this mechanism back
    *
    */
-  private static ConsumerConfig buildConsumerConfig(
-      EventsFrameworkConfiguration eventsConfig, PmsEventCategory eventCategory) {
+  private static ConsumerConfig buildConsumerConfig(EventsFrameworkConfiguration eventsConfig,
+      PmsEventCategory eventCategory, String serviceName, StreamPerServiceConfiguration streamPerServiceConfiguration) {
     RedisConfig redisConfig = eventsConfig.getRedisConfig();
     if (redisConfig != null) {
-      return ConsumerConfig.newBuilder().setRedis(buildConsumerRedisConfig(eventCategory)).build();
+      return ConsumerConfig.newBuilder()
+          .setRedis(buildConsumerRedisConfig(serviceName, eventCategory, streamPerServiceConfiguration))
+          .build();
     }
     throw new UnsupportedOperationException("Only Redis is Supported as Back End");
   }
@@ -208,21 +225,48 @@ public class PmsSdkInitHelper {
    * to add some logic here to init with a diff config
    *
    */
-  private static Redis buildConsumerRedisConfig(PmsEventCategory eventCategory) {
+  private static Redis buildConsumerRedisConfig(
+      String serviceName, PmsEventCategory eventCategory, StreamPerServiceConfiguration streamPerServiceConfiguration) {
     switch (eventCategory) {
       case INTERRUPT_EVENT:
+        if (streamPerServiceConfiguration.isMigrateInterrupt()) {
+          return Redis.newBuilder()
+              .setTopicName(String.format(PIPELINE_INTERRUPT_TOPIC_WITH_SERVICE_NAME, serviceName))
+              .build();
+        }
         return Redis.newBuilder().setTopicName(PIPELINE_INTERRUPT_TOPIC).build();
+
       case ORCHESTRATION_EVENT:
         return Redis.newBuilder().setTopicName(PIPELINE_ORCHESTRATION_EVENT_TOPIC).build();
       case FACILITATOR_EVENT:
+        if (streamPerServiceConfiguration.isMigrateFacilitator()) {
+          return Redis.newBuilder()
+              .setTopicName(String.format(PIPELINE_FACILITATOR_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName))
+              .build();
+        }
         return Redis.newBuilder().setTopicName(PIPELINE_FACILITATOR_EVENT_TOPIC).build();
       case NODE_START:
+        if (streamPerServiceConfiguration.isMigrateNodeStart()) {
+          return Redis.newBuilder()
+              .setTopicName(String.format(PIPELINE_NODE_START_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName))
+              .build();
+        }
         return Redis.newBuilder().setTopicName(PIPELINE_NODE_START_EVENT_TOPIC).build();
       case PROGRESS_EVENT:
+        if (streamPerServiceConfiguration.isMigrateNodeResume()) {
+          return Redis.newBuilder()
+              .setTopicName(String.format(PIPELINE_PROGRESS_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName))
+              .build();
+        }
         return Redis.newBuilder().setTopicName(PIPELINE_PROGRESS_EVENT_TOPIC).build();
       case NODE_ADVISE:
         return Redis.newBuilder().setTopicName(PIPELINE_NODE_ADVISE_EVENT_TOPIC).build();
       case NODE_RESUME:
+        if (streamPerServiceConfiguration.isMigrateNodeResume()) {
+          return Redis.newBuilder()
+              .setTopicName(String.format(PIPELINE_NODE_RESUME_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName))
+              .build();
+        }
         return Redis.newBuilder().setTopicName(PIPELINE_NODE_RESUME_EVENT_TOPIC).build();
       case CREATE_PARTIAL_PLAN:
         return Redis.newBuilder().setTopicName(START_PARTIAL_PLAN_CREATOR_EVENT_TOPIC).build();
