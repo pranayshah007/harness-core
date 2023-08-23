@@ -29,7 +29,6 @@ import (
 
 var (
 	unittestCmd = "unittest"
-	currentDir  = "."
 )
 
 type unittestRunner struct {
