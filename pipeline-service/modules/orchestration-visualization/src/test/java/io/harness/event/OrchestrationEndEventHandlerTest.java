@@ -96,7 +96,8 @@ public class OrchestrationEndEventHandlerTest extends OrchestrationVisualization
                                                 .build();
     mongoStore.upsert(orchestrationGraph, Duration.ofDays(10));
 
-    orchestrationEndEventHandler.onEnd(Ambiance.newBuilder().setPlanExecutionId(planExecution.getUuid()).build());
+    orchestrationEndEventHandler.onEnd(
+        Ambiance.newBuilder().setPlanExecutionId(planExecution.getUuid()).build(), Status.SUCCEEDED);
 
     OrchestrationGraph updatedGraph = graphGenerationService.getCachedOrchestrationGraph(planExecution.getUuid());
     assertThat(updatedGraph).isNotNull();
