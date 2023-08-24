@@ -56,7 +56,6 @@ import org.springframework.stereotype.Service;
 
 @Api("recommendation/details")
 @Path("recommendation/details")
-@Metered
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
@@ -78,7 +77,7 @@ public class RESTWrapperRecommendationDetails {
 
   @GET
   @Path("node-pool")
-  @Timed
+  @Metered(name = "node-pool-recommendation")
   @LogAccountIdentifier
   @ExceptionMetered
   @Consumes(MediaType.APPLICATION_JSON)
