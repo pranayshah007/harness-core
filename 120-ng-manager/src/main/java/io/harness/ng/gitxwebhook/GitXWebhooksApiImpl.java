@@ -32,7 +32,8 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
   }
 
   @Override
-  public Response updateGitxWebhook(String gitXWebhookIdentifier, @Valid UpdateGitXWebhookRequest body) {
+  public Response updateGitxWebhook(
+      String gitXWebhookIdentifier, @Valid UpdateGitXWebhookRequest body, String harnessAccount) {
     return Response.ok().build();
   }
 

@@ -1570,6 +1570,8 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/UpdateGitXWebhookRequest'
       x-internal: true
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
     delete:
       summary: ''
       operationId: delete-gitx-webhook
@@ -2640,7 +2642,7 @@ components:
           type: array
           items:
             type: string
-        isEnables:
+        isEnabled:
           type: boolean
     UpdateGitXWebhookResponse:
       title: UpdateGitXWebhookResponse
