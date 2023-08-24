@@ -14,6 +14,7 @@ import io.harness.spec.server.audit.v1.model.StatusWiseCount;
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +42,17 @@ public class StreamingDestinationRepositoryCustomImpl implements StreamingDestin
     List<StreamingDestination> streamingDestinations = template.find(query, StreamingDestination.class);
     return PageableExecutionUtils.getPage(streamingDestinations, pageable,
         () -> template.count(Query.of(query).limit(-1).skip(-1), StreamingDestination.class));
+  }
+
+  @Override
+  public Page<String> findAllStreamingDestinationIdentifiers(Criteria criteria, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    query.fields().include(StreamingDestinationKeys.identifier, "_class");
+    List<StreamingDestination> streamingDestinations = template.find(query, StreamingDestination.class);
+    List<String> identifiers =
+        streamingDestinations.stream().map(StreamingDestination::getIdentifier).collect(Collectors.toList());
+    return PageableExecutionUtils.getPage(
+        identifiers, pageable, () -> template.count(Query.of(query).limit(-1).skip(-1), StreamingDestination.class));
   }
 
   @Override
