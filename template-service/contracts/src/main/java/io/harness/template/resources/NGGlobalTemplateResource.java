@@ -18,7 +18,6 @@ import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.resources.beans.NGTemplateConstants;
 import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
@@ -51,8 +50,6 @@ import javax.ws.rs.QueryParam;
 @Path("globalTemplates")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
-@Hidden
-@InternalApi
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
@@ -82,6 +79,7 @@ import javax.ws.rs.QueryParam;
 @NextGenManagerAuth
 public interface NGGlobalTemplateResource {
   @POST
+  @Hidden
   @ApiOperation(value = "Creates a Global Template", nickname = "createGlobalTemplate")
   @Operation(operationId = "createGlobalTemplate", summary = "Creates a Global Template",
       responses =
