@@ -1,0 +1,15 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: data-redis-sentinel-harness-server-0
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: redis
+    {{- include "redis.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: {{ .Values.volumeClaimTemplate.resources.requests.storage }}
+  {{ include "redis.storage.class" (dict "global" .Values.global) }}

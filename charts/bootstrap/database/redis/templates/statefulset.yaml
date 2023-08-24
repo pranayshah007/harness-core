@@ -1,21 +1,19 @@
-
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: redis-sentinel-harness-server
+  name: redis-harness-server
   namespace: {{ .Release.Namespace }}
   labels:
-    redis-sentinel-harness: replica
-    app: redis-sentinel
+    app: redis
     {{- include "redis.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      release: redis-ha
-      app: redis-sentinel
+      release: redis
+      app: redis
       {{- include "redis.selectorLabels" . | nindent 6 }}
-  serviceName: redis-sentinel-harness
-  replicas: {{ .Values.replicaCount }}
+  serviceName: redis-harness
+  replicas: 1
   podManagementPolicy: OrderedReady
   updateStrategy:
     type: RollingUpdate
@@ -27,40 +25,14 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        release: redis-ha
-        app: redis-sentinel
-        redis-sentinel-harness: replica
+        release: redis
+        app: redis
         {{- include "redis.selectorLabels" . | nindent 8 }}
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       serviceAccountName: {{ include "redis.serviceAccountName" . }}
       {{- include "redis.pullSecrets" . | nindent 6 }}
-      initContainers:
-      - name: config-init
-        image: {{ include "common.images.image" (dict "imageRoot" .Values.initContainers.config_init.image "global" .Values.global) }}
-        imagePullPolicy: {{ .Values.initContainers.config_init.image.pullPolicy}}
-        resources:
-          {}
-        command:
-        - sh
-        args:
-        - /readonly-config/init.sh
-        env:
-        - name: SENTINEL_ID_0
-          value: ed89975e57ea5a6848fe664901b11b5e6b22b537
-
-        - name: SENTINEL_ID_1
-          value: 4abd57ef009b0a1595767af80ef815e3438ae7e9
-
-        - name: SENTINEL_ID_2
-          value: e21a3c2cf7abdfc6e8d921901addb1bf86fe32a0
-        volumeMounts:
-        - name: config
-          mountPath: /readonly-config
-          readOnly: true
-        - name: data
-          mountPath: /data
       containers:
       - name: redis
         image: {{ include "redis.redisImage" . }}
@@ -82,25 +54,6 @@ spec:
         volumeMounts:
         - mountPath: /data
           name: data
-      - name: sentinel
-        image: {{ include "redis.sentinelImage" . }}
-        imagePullPolicy: {{ .Values.sentinel.image.pullPolicy }}
-        command:
-          - redis-sentinel
-        args:
-          - /data/conf/sentinel.conf
-        livenessProbe:
-          tcpSocket:
-            port: {{ .Values.service.sentinelport }}
-          initialDelaySeconds: 15
-        resources:
-              {{- toYaml .Values.sentinel.resources | nindent 12 }}
-        ports:
-          - name: sentinel
-            containerPort: {{ .Values.service.sentinelport }}
-        volumeMounts:
-        - mountPath: /data
-          name: data
       {{- if .Values.metrics.enabled }}
       - name: redis-exporter
         image: {{ include "redis.metricsImage" . }}
@@ -115,6 +68,9 @@ spec:
       - name: config
         configMap:
           name: redis-sentinel-harness-configmap
+      - name: data
+        persistentVolumeClaim:
+          claimName: data-redis-sentinel-harness-server-0
       affinity:
         {{- with .Values.affinity }}
         {{- toYaml . | nindent 8 }}
@@ -145,14 +101,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-      annotations:
-    spec:
-      accessModes:
-        - "ReadWriteOnce"
-      resources:
-        requests:
-          storage: {{ .Values.volumeClaimTemplate.resources.requests.storage }}
-      {{ include "redis.storage.class" (dict "global" .Values.global) }}
+
