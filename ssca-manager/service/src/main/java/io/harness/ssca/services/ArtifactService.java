@@ -14,4 +14,6 @@ import io.harness.ssca.entities.ArtifactEntity;
 public interface ArtifactService {
   ArtifactEntity getArtifactFromSbomPayload(
       String accountId, String orgIdentifier, String projectIdentifier, SbomProcessRequestBody body, SbomDTO sbomDTO);
+
+  String sbom(String artifactId, String stepExecutionId);
 }

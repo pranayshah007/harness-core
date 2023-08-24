@@ -19,6 +19,7 @@ import io.harness.ssca.entities.EnforcementResultEntity;
 
 import com.google.inject.Inject;
 import java.util.List;
+import org.springframework.data.domain.Sort;
 
 public class EnforceSBOMWorkflowServiceImpl implements EnforceSBOMWorkflowService {
   @Inject ArtifactRepository artifactRepository;
@@ -29,7 +30,10 @@ public class EnforceSBOMWorkflowServiceImpl implements EnforceSBOMWorkflowServic
   @Override
   public EnforceSbomResponseBody enforceSbom(
       String accountId, String orgIdentifier, String projectIdentifier, EnforceSbomRequestBody body) {
-    ArtifactEntity artifactEntity = artifactRepository.findFirstByUrl(body.getArtifact().getRegistryUrl()).get();
+    ArtifactEntity artifactEntity = artifactRepository
+                                        .findFirstByUrlLike(body.getArtifact().getRegistryUrl(),
+                                            Sort.by(ArtifactEntity.ArtifactEntityKeys.createdOn).descending())
+                                        .get();
 
     RuleDTO ruleDTO = ruleEngineService.getRules(accountId, orgIdentifier, projectIdentifier, body.getPolicyFileId());
 

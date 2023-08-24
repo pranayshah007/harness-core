@@ -48,6 +48,14 @@ basePathPrefix: ${BASE_PATH_PREFIX:-""}
 
 enableAuth: true
 
+s3Config:
+  AccessKeyId: "GOOG1EQTCPC5FTZZAV5OGHHXXT22RUKSYKVGUAGY3QLANT6FSCLAMMDMAKEOY"
+  AccessSecretKey: "vb3SIrIJz95CrEM0wWYFqTOQxDgJxjr3iqYznMx0"
+  Region: "us-east-1"
+  Endpoint: "storage.googleapis.com"
+  Bucket: "sbom_store"
+  PolicyBucket: "policy_store"
+
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 sscaManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq

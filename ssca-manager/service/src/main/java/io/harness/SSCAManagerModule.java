@@ -21,10 +21,14 @@ import io.harness.persistence.UserProvider;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.SSCAManagerModuleRegistrars;
+import io.harness.spec.server.ssca.v1.ArtifactApi;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
 import io.harness.spec.server.ssca.v1.TokenApi;
+import io.harness.ssca.S3Config;
+import io.harness.ssca.api.ArtifactApiImpl;
 import io.harness.ssca.api.SbomProcessorApiImpl;
 import io.harness.ssca.api.TokenApiImpl;
+import io.harness.ssca.s3.S3Store;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
 import io.harness.ssca.services.EnforceSBOMWorkflowService;
@@ -84,6 +88,8 @@ public class SSCAManagerModule extends AbstractModule {
     bind(EnforcementResultService.class).to(EnforcementResultServiceImpl.class);
     bind(EnforcementSummaryService.class).to(EnforcementSummaryServiceImpl.class);
     bind(NextGenService.class).to(NextGenServiceImpl.class);
+    bind(S3Store.class).toInstance(new S3Store());
+    bind(ArtifactApi.class).to(ArtifactApiImpl.class);
     install(new TokenClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
         this.configuration.getNgManagerServiceSecret(), SSCA_SERVICE.getServiceId()));
   }
@@ -106,6 +112,12 @@ public class SSCAManagerModule extends AbstractModule {
   @Named("sscaManagerServiceSecret")
   public String sscaManagerServiceSecret() {
     return this.configuration.getSscaManagerServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  public S3Config s3Config() {
+    return this.configuration.getS3Config();
   }
 
   @Provides

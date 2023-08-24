@@ -17,6 +17,7 @@ import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 import io.harness.ssca.normalize.Normalizer;
 import io.harness.ssca.normalize.NormalizerRegistry;
+import io.harness.ssca.s3.S3Store;
 import io.harness.ssca.utils.SBOMUtils;
 
 import com.google.inject.Inject;
@@ -35,6 +36,8 @@ public class ProcessSbomWorkflowServiceImpl implements ProcessSbomWorkflowServic
   @Inject SBOMComponentRepo SBOMComponentRepo;
   @Inject NormalizerRegistry normalizerRegistry;
 
+  @Inject S3Store s3Store;
+
   @Inject ExecutorRegistry executorRegistry;
   @Inject RuleEngineService ruleEngineService;
   @Inject EnforcementResultService enforcementResultService;
@@ -43,7 +46,6 @@ public class ProcessSbomWorkflowServiceImpl implements ProcessSbomWorkflowServic
   public String processSBOM(String accountId, String orgIdentifier, String projectIdentifier,
       SbomProcessRequestBody sbomProcessRequestBody) throws ParseException {
     // TODO: Check if we can prevent IO Operation.
-    // TODO: Upload to gcp step.
     // TODO: Use Jackson instead of Gson.
     log.info("Starting SBOM Processing");
     String sbomFileName = UUID.randomUUID() + "_sbom";
@@ -54,6 +56,8 @@ public class ProcessSbomWorkflowServiceImpl implements ProcessSbomWorkflowServic
     } catch (IOException e) {
       log.error(String.format("Error in writing sbom to file: %s", sbomDumpFile));
     }
+
+    s3Store.UploadSBOMToGCP(sbomDumpFile, accountId, orgIdentifier, projectIdentifier, sbomProcessRequestBody);
 
     ArtifactEntity artifactEntity;
     SbomDTO sbomDTO = SBOMUtils.getSbomDTO(

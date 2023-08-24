@@ -90,6 +90,36 @@ paths:
       x-internal: true
       security:
         - x-api-key: []
+  '/v1/{artifactId}/step-executions/{stepExecutionId}':
+    get:
+      summary: Download SBOM for an artifact
+      responses:
+        '200':
+          $ref: '#/components/responses/TokenIssueResponseBody'
+      operationId: sbom
+      x-stoplight:
+        id: 65dvz43ksx8pa
+      description: Download SBOM for an artifact
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+      security:
+        - x-api-key: []
+      tags:
+        - artifact
+    parameters:
+      - schema:
+          type: string
+        name: artifactId
+        in: path
+        required: true
+        description: Artifact identifier
+      - schema:
+          type: string
+        name: stepExecutionId
+        in: path
+        required: true
+        description: Pipeline step execution identifier
 components:
   schemas:
     Artifact:
@@ -281,6 +311,15 @@ components:
         - token
       title: ''
       x-internal: true
+    ArtifactSbomResponseBody:
+      title: ArtifactSbomResponseBody
+      x-stoplight:
+        id: kubfwxzoybmsz
+      type: object
+      properties:
+        sbom:
+          type: string
+      description: ''
   parameters:
     OrgParam:
       name: org
@@ -339,5 +378,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/TokenIssueResponseBody'
+    ArtifactSbomResponseBody:
+      description: Response Body for Artifact Sbom
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ArtifactSbomResponseBody'
 tags:
+  - name: artifact
   - name: sbomProcessor
