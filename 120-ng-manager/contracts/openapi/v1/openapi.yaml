@@ -1524,7 +1524,7 @@ paths:
         $ref: '#/components/requestBodies/CreateGitXWebhookRequest'
       x-internal: true
     get:
-      summary: ''
+      summary: 'Lists all the GitX Webhooks'
       operationId: list-gitx-webhooks
       responses:
         '200':
