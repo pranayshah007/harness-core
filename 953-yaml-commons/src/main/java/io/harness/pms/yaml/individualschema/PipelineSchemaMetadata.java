@@ -7,6 +7,9 @@
 
 package io.harness.pms.yaml.individualschema;
 
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -18,4 +21,18 @@ public class PipelineSchemaMetadata extends IndividualSchemaMetadata {
                                           // stepGroupElementConfig would be different in cd and ci sages.
   private String nodeGroup; // Group of the node. eg; Step, Stage, stepGroup
   private String nodeType; // type of the node eg: Http, Custom, Deployment
+
+  // Generate unique key for the given nodeType/group/nodeGroupDifferentiator. Here the nodeGroupDifferentiator will be
+  // used to differentiate between nodes when they have same nodeGroup and nodeType ie: stageName when the nodeGroup is
+  // `stepGroup` . This key will be used to store the calculated results in the map and for lookup.
+  @Override
+  String generateSchemaKey() {
+    if (StepCategory.STEP_GROUP.name().equalsIgnoreCase(nodeGroup)) {
+      return nodeGroupDifferentiator + "/" + nodeGroup;
+    } else if (StepCategory.PIPELINE.name().equalsIgnoreCase(nodeGroup)) {
+      return YAMLFieldNameConstants.PIPELINE;
+    } else {
+      return nodeGroup + "/" + nodeType;
+    }
+  }
 }

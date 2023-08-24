@@ -51,10 +51,6 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
 
   abstract IndividualSchemaGenContext getIndividualSchemaGenContext();
 
-  abstract String generateSchemaKey(IndividualSchemaMetadata schemaMetadata);
-
-  abstract String getApplicableNodePath(String parentNode, String nodeType);
-
   abstract void checkIfRootNodeAndAddIntoFqnToNodeMap(
       String currentFqn, String childNodeRefValue, ObjectNode objectNode);
 
@@ -175,7 +171,7 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
    * @return schema for the requested node.
    */
   void initIndividualSchema(ObjectNode objectNode, IndividualSchemaMetadata individualSchemaMetadata) {
-    String schemaKey = generateSchemaKey(individualSchemaMetadata);
+    String schemaKey = individualSchemaMetadata.generateSchemaKey();
     if (nodeToResolvedSchemaMap.containsKey(schemaKey)) {
       return;
     }
@@ -284,14 +280,14 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
     if (!isInitialised) {
       throw new InvalidRequestException("Parser not yet initialised.");
     }
-    String schemaKey = generateSchemaKey(individualSchemaRequest.getIndividualSchemaMetadata());
+    String schemaKey = individualSchemaRequest.getIndividualSchemaMetadata().generateSchemaKey();
     return nodeToResolvedSchemaMap.get(schemaKey);
   }
 
   public JsonNode getFieldNode(InputFieldMetadata inputFieldMetadata, IndividualSchemaRequest schemaRequest) {
     String[] fqnParts = inputFieldMetadata.getFqnFromParentNode().split("\\.");
     // Here fqnParts[0] would be the parent node type. Like in fqn step.spec.url, the fqnParts[0] would be step.
-    String fieldPath = generateSchemaKey(schemaRequest.getIndividualSchemaMetadata());
+    String fieldPath = schemaRequest.getIndividualSchemaMetadata().generateSchemaKey();
     JsonNode targetFieldNode = fqnToNodeMap.get(fieldPath).getObjectNode();
     for (int i = 1; i < fqnParts.length; i++) {
       targetFieldNode = getFieldNode(targetFieldNode, fqnParts[i]);
@@ -301,5 +297,17 @@ public abstract class AbstractStaticSchemaParser implements SchemaParserInterfac
       }
     }
     return targetFieldNode;
+  }
+
+  String getTypeFromObjectNode(ObjectNode objectNode) {
+    if (JsonPipelineUtils.isPresent(objectNode, SchemaConstants.PROPERTIES_NODE)
+        && objectNode.get(SchemaConstants.PROPERTIES_NODE).get(SchemaConstants.TYPE_NODE) != null) {
+      JsonNode typeEnumArray =
+          objectNode.get(SchemaConstants.PROPERTIES_NODE).get(SchemaConstants.TYPE_NODE).get(SchemaConstants.ENUM_NODE);
+      if (typeEnumArray != null && typeEnumArray.size() > 0) {
+        return typeEnumArray.get(0).asText();
+      }
+    }
+    return null;
   }
 }

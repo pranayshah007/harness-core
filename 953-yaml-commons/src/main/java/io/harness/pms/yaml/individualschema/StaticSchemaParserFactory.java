@@ -6,24 +6,25 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.pipeline.service.yamlschema;
+package io.harness.pms.yaml.individualschema;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
-import io.harness.pms.yaml.individualschema.PipelineSchemaParserV0;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 @Singleton
 public class StaticSchemaParserFactory {
-  @Inject SchemaFetcher schemaFetcher;
   @Inject PipelineSchemaParserV0 pipelineSchemaParserV0;
-  public AbstractStaticSchemaParser getParser(String schemaType, String version) {
+  @Inject TemplateSchemaParserV0 templateSchemaParserV0;
+  public AbstractStaticSchemaParser getParser(String schemaType, String version, JsonNode rootSchema) {
     if (YAMLFieldNameConstants.PIPELINE.equals(schemaType) && PipelineVersion.V0.equals(version)) {
-      return pipelineSchemaParserV0.getInstance(schemaFetcher.fetchStaticYamlSchema());
+      return pipelineSchemaParserV0.getInstance(rootSchema);
+    } else if (YAMLFieldNameConstants.TEMPLATE.equals(schemaType) && PipelineVersion.V0.equals(version)) {
+      return templateSchemaParserV0.getInstance(rootSchema);
     }
     throw new InvalidRequestException(
         String.format("Schema parser is not registered for the schemaType: %s with version: %s", schemaType, version));

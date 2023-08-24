@@ -60,11 +60,6 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
   }
 
   @Override
-  String getApplicableNodePath(String parentNode, String nodeType) {
-    return parentNode + (EmptyPredicate.isNotEmpty(nodeType) ? "/" : "") + nodeType;
-  }
-
-  @Override
   void checkIfRootNodeAndAddIntoFqnToNodeMap(String currentFqn, String childNodeRefValue, ObjectNode objectNode) {
     ObjectNodeWithMetadata stepNode = getRootStepNode(currentFqn, objectNode);
     if (stepNode != null) {
@@ -150,37 +145,11 @@ public class PipelineSchemaParserV0 extends AbstractStaticSchemaParser {
     return null;
   }
 
-  private String getTypeFromObjectNode(ObjectNode objectNode) {
-    if (JsonPipelineUtils.isPresent(objectNode, SchemaConstants.PROPERTIES_NODE)
-        && objectNode.get(SchemaConstants.PROPERTIES_NODE).get(SchemaConstants.TYPE_NODE) != null) {
-      JsonNode typeEnumArray =
-          objectNode.get(SchemaConstants.PROPERTIES_NODE).get(SchemaConstants.TYPE_NODE).get(SchemaConstants.ENUM_NODE);
-      if (typeEnumArray != null && typeEnumArray.size() > 0) {
-        return typeEnumArray.get(0).asText();
-      }
-    }
-    return null;
-  }
-
   @Override
   IndividualSchemaGenContext getIndividualSchemaGenContext() {
     return IndividualSchemaGenContext.builder()
         .rootSchemaNode(rootSchemaJsonNode)
         .resolvedFqnSet(new HashSet<>())
         .build();
-  }
-
-  // Generate unique key for the given nodeType/group/stageName. This key will be used to store the calculated results
-  // in the map and for lookup.
-  @Override
-  String generateSchemaKey(IndividualSchemaMetadata individualSchemaMetadata) {
-    PipelineSchemaMetadata schemaMetadata = (PipelineSchemaMetadata) individualSchemaMetadata;
-    if (StepCategory.STEP_GROUP.name().equalsIgnoreCase(schemaMetadata.getNodeGroup())) {
-      return schemaMetadata.getNodeGroupDifferentiator() + "/" + schemaMetadata.getNodeGroup();
-    } else if (StepCategory.PIPELINE.name().equalsIgnoreCase(schemaMetadata.getNodeGroup())) {
-      return YAMLFieldNameConstants.PIPELINE;
-    } else {
-      return schemaMetadata.getNodeGroup() + "/" + schemaMetadata.getNodeType();
-    }
   }
 }
