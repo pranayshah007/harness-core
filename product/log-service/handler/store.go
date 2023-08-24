@@ -229,6 +229,7 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 		}
 
 		// creates a cache in status queued
+		logger.FromRequest(r).WithField("Prefix", prefix).Infoln("Adding request to queued state for further processing")
 		info := entity.ResponsePrefixDownload{}
 		info.Status = entity.QUEUED
 		info.Value = link
@@ -239,6 +240,7 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 			logger.FromRequest(r).
 				WithError(err).
 				WithField("url", r.URL.String()).
+				WithField("Prefix", prefix).
 				WithField("time", time.Now().Format(time.RFC3339)).
 				WithField("info", info).
 				Errorln("api: cannot create cache info")

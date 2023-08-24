@@ -174,6 +174,7 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 					logger.FromRequest(r).
 						WithError(err).
 						WithField("url", r.URL.String()).
+						WithField("Prefix", prefix).
 						WithField("time", time.Now().Format(time.RFC3339)).
 						Errorln("middleware cache: cannot get prefix")
 					WriteInternalError(w, err)
@@ -186,6 +187,7 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 						WithError(err).
 						WithField("url", r.URL.String()).
 						WithField("time", time.Now().Format(time.RFC3339)).
+						WithField("Prefix", prefix).
 						WithField("info", inf).
 						Errorln("middleware cache: failed to unmarshal info")
 					WriteInternalError(w, err)
@@ -204,21 +206,25 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 							WithError(err).
 							WithField("url", r.URL.String()).
 							WithField("time", time.Now().Format(time.RFC3339)).
+							WithField("Prefix", prefix).
 							WithField("info", inf).
-							Errorln("middleware cache: failed to delete error in c")
+							Errorln("middleware cache: failed to delete error in cache")
 						WriteInternalError(w, err)
 						return
 					}
+					logger.FromRequest(r).WithField("Prefix", prefix).Infoln("Deleted from cache")
 					WriteJSON(w, info, 200)
 					return
 				case entity.SUCCESS:
 					WriteJSON(w, info, 200)
 					return
 				default:
+					logger.FromRequest(r).WithField("Prefix", prefix).Infoln("info status does not match, going to default")
 					next.ServeHTTP(w, r)
 					return
 				}
 			}
+			logger.FromRequest(r).Infoln("Prefix does not exist in cache as it is first attempt", prefix)
 			next.ServeHTTP(w, r)
 			return
 		})
