@@ -44,6 +44,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
@@ -261,7 +262,7 @@ public class K8sDeleteStepTest extends AbstractK8sStepExecutorTestBase {
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
   public void testGetK8sDeleteStepParameter() {
-    assertThat(deleteStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(deleteStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

@@ -148,7 +148,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "harnessArtifact/sidecar-artifact-";
 
   public TaskChainResponse startChainLink(
-      Ambiance ambiance, StepElementParameters stepElementParameters, ServerlessStepHelper serverlessStepHelper) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, ServerlessStepHelper serverlessStepHelper) {
     ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -207,7 +207,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   public TaskChainResponse executeNextLink(ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier, ServerlessStepHelper serverlessStepHelper) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
     ServerlessStepPassThroughData serverlessStepPassThroughData = (ServerlessStepPassThroughData) passThroughData;
@@ -265,7 +265,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse prepareServerlessManifestGitFetchTask(Ambiance ambiance,
-      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
+      StepBaseParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
       ManifestOutcome manifestOutcome, ServerlessStepHelper serverlessStepHelper) {
     StoreConfig storeConfig = manifestOutcome.getStore();
     GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
@@ -284,7 +284,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse prepareServerlessManifestS3FetchTask(Ambiance ambiance,
-      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
+      StepBaseParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
       ManifestOutcome manifestOutcome, ServerlessStepHelper serverlessStepHelper) {
     StoreConfig storeConfig = manifestOutcome.getStore();
     if (!ManifestStoreType.S3.equals(storeConfig.getKind())) {
@@ -350,7 +350,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse handleServerlessGitFetchFilesResponse(ServerlessGitFetchResponse serverlessGitFetchResponse,
-      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       ServerlessStepPassThroughData serverlessStepPassThroughData, ServerlessStepHelper serverlessStepHelper) {
     if (serverlessGitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       ServerlessGitFetchFailurePassThroughData serverlessGitFetchFailurePassThroughData =
@@ -376,7 +376,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse prepareServerlessPrepareRollbackTask(Optional<Pair<String, String>> manifestFilePathContent,
-      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       ServerlessStepPassThroughData serverlessStepPassThroughData, ServerlessStepHelper serverlessStepHelper,
       UnitProgressData unitProgressData) {
     ServerlessArtifactConfig serverlessArtifactConfig = null;
@@ -420,7 +420,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse handleServerlessS3FetchFilesResponse(ServerlessS3FetchResponse serverlessS3FetchResponse,
-      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       ServerlessStepPassThroughData serverlessStepPassThroughData, ServerlessStepHelper serverlessStepHelper) {
     if (serverlessS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       ServerlessS3FetchFailurePassThroughData serverlessS3FetchFailurePassThroughData =
@@ -446,7 +446,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
 
   private TaskChainResponse handleServerlessPrepareRollbackDataResponse(
       ServerlessPrepareRollbackDataResponse serverlessPrepareRollbackDataResponse,
-      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       ServerlessStepPassThroughData serverlessStepPassThroughData) {
     if (serverlessPrepareRollbackDataResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       ServerlessStepExceptionPassThroughData serverlessStepExceptionPassThroughData =
@@ -580,7 +580,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse getGitFetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
+      StepBaseParameters stepElementParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
       ServerlessGitFetchFileConfig serverlessGitFetchFilesConfig) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessGitFetchRequest serverlessGitFetchRequest =
@@ -610,7 +610,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse getS3FetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
+      StepBaseParameters stepElementParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
       ServerlessS3FetchFileConfig serverlessS3FetchFileConfig) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessS3FetchRequest serverlessS3FetchRequest = ServerlessS3FetchRequest.builder()
