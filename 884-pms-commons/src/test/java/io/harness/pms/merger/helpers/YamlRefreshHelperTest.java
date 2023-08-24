@@ -247,6 +247,21 @@ public class YamlRefreshHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testRefreshNodeFromSourceNodeWithUseFromStageForMultiService() throws IOException {
+    assertThat(convertToYaml(refreshNodeFromSourceNode(
+                   convertYamlToJsonNode("type: \"Deployment\"\nspec:\n  services:\n    values: \"<+input>\"\n"),
+                   convertYamlToJsonNode("type: \"Deployment\"\nspec:\n  services:\n    values: \"<+input>\"\n"))))
+        .isEqualTo("type: Deployment\nspec:\n  services:\n    values: <+input>");
+
+    assertThat(convertToYaml(refreshNodeFromSourceNode(
+                   convertYamlToJsonNode("type: Deployment\nspec:\n  services:\n    useFromStage:\n      stage: s1\n"),
+                   convertYamlToJsonNode("type: Deployment\nspec:\n  services:\n    values: <+input>\n"))))
+        .isEqualTo("type: Deployment\nspec:\n  services:\n    useFromStage:\n      stage: s1");
+  }
+
+  @Test
   @Owner(developers = VED)
   @Category(UnitTests.class)
   public void testDefaultKeyOverriding() throws JsonProcessingException {

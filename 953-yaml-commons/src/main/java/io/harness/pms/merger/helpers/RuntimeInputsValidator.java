@@ -45,8 +45,13 @@ public class RuntimeInputsValidator {
   private static final String USE_FROM_STAGE_NODE = "useFromStage";
   private static final String STAGE_NODE = "stage";
   private static final String CHILD_SERVICE_REF_NODE = "service.serviceRef";
+  private static final String CHILD_SERVICES_VALUES_REF_NODE = "services.values";
+
   private static final String CHILD_ENVIRONMENT_REF_NODE = "environment.environmentRef";
   private static final String CHILD_INFRA_DEFINITIONS_REF_NODE = "environment.infrastructureDefinitions";
+
+  private static final List<String> useFromStageSiblingNodes = List.of(
+      "service.serviceRef", "services.values", "environment.environmentRef", "environment.infrastructureDefinitions");
 
   public boolean areInputsValidAgainstSourceNode(JsonNode nodeToValidate, JsonNode sourceNode) {
     return areInputsValidAgainstSourceNode(nodeToValidate, sourceNode, new HashSet<>());
@@ -142,30 +147,14 @@ public class RuntimeInputsValidator {
               && skipValidationIfAbsentKeySet.stream().anyMatch(fqnExp::endsWith)) {
             continue;
           }
-          // This is to handle if sourceYaml has serviceRef as input but user choose useFromStage in nodeToRefresh
-          // ServiceInputs node from sourceYaml is already getting handled with skipValidationIfAbsentKeySet
-          Optional<FQN> nodeFQNOneOfForService =
-              isNodeToValidationKeyIsOneOfForService(nodeToValidateFqnToValueMap, key);
-          if (nodeFQNOneOfForService.isPresent()) {
-            nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForService.get());
-            continue;
-          }
 
-          // This is to handle if sourceYaml has environmentRef as input but user choose useFromStage in nodeToRefresh
-          // EnvironmentInputs node from sourceYaml is already getting handled with skipValidationIfAbsentKeySet
-          Optional<FQN> nodeFQNOneOfForEnvironment =
-              isNodeToValidationKeyIsOneOfForEnvironment(nodeToValidateFqnToValueMap, key);
-          if (nodeFQNOneOfForEnvironment.isPresent()) {
-            nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForEnvironment.get());
-            continue;
-          }
-
-          // This is to handle if sourceYaml has environment.infrastructureDefinitions as input but user choose
-          // useFromStage in nodeToRefresh
-          Optional<FQN> nodeFQNOneOfForInfraDefinition =
-              isNodeToValidationKeyIsOneOfForInfraDefinition(nodeToValidateFqnToValueMap, key);
-          if (nodeFQNOneOfForInfraDefinition.isPresent()) {
-            nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForInfraDefinition.get());
+          // This is to handle if sourceYaml has a sibling node of useFromStage node as input but user choose
+          // useFromStage in nodeToRefresh EnvironmentInputs,ServiceInputs nodes from sourceYaml are already getting
+          // handled with skipValidationIfAbsentKeySet
+          Optional<FQN> useFromStageSiblingFromSiblingNode =
+              getUseFromStageSiblingFromSiblingNode(nodeToValidateFqnToValueMap, key);
+          if (useFromStageSiblingFromSiblingNode.isPresent()) {
+            nodeToValidateFqnToValueMap.remove(useFromStageSiblingFromSiblingNode.get());
             continue;
           }
           return false;
@@ -192,20 +181,36 @@ public class RuntimeInputsValidator {
   }
 
   private Optional<FQN> isNodeToValidationKeyIsOneOfForService(Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
-    return getFqn(nodeToValidateFqnToValueMap, key, CHILD_SERVICE_REF_NODE);
+    return getUseFromStageFqnForSiblingNode(nodeToValidateFqnToValueMap, key, CHILD_SERVICE_REF_NODE);
   }
 
+  private Optional<FQN> isNodeToValidationKeyIsOneOfForServices(Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
+    return getUseFromStageFqnForSiblingNode(nodeToValidateFqnToValueMap, key, CHILD_SERVICES_VALUES_REF_NODE);
+  }
   private Optional<FQN> isNodeToValidationKeyIsOneOfForEnvironment(
       Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
-    return getFqn(nodeToValidateFqnToValueMap, key, CHILD_ENVIRONMENT_REF_NODE);
+    return getUseFromStageFqnForSiblingNode(nodeToValidateFqnToValueMap, key, CHILD_ENVIRONMENT_REF_NODE);
   }
 
   private Optional<FQN> isNodeToValidationKeyIsOneOfForInfraDefinition(
       Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
-    return getFqn(nodeToValidateFqnToValueMap, key, CHILD_INFRA_DEFINITIONS_REF_NODE);
+    return getUseFromStageFqnForSiblingNode(nodeToValidateFqnToValueMap, key, CHILD_INFRA_DEFINITIONS_REF_NODE);
   }
 
-  private Optional<FQN> getFqn(Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key, String childEnvironmentRefNode) {
+  private Optional<FQN> getUseFromStageSiblingFromSiblingNode(Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
+    Optional<FQN> useFromStageFqnForSiblingNode = Optional.empty();
+    for (String useFromStageSiblingNode : useFromStageSiblingNodes) {
+      useFromStageFqnForSiblingNode =
+          getUseFromStageFqnForSiblingNode(nodeToValidateFqnToValueMap, key, useFromStageSiblingNode);
+      if (useFromStageFqnForSiblingNode.isPresent()) {
+        break;
+      }
+    }
+    return useFromStageFqnForSiblingNode;
+  }
+
+  private Optional<FQN> getUseFromStageFqnForSiblingNode(
+      Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key, String childEnvironmentRefNode) {
     if (key.getExpressionFqn().endsWith(childEnvironmentRefNode)) {
       List<FQNNode> fqnList = new ArrayList<>(key.getParent().getFqnList());
       FQNNode fqnNode1 = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(USE_FROM_STAGE_NODE).build();

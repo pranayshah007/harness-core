@@ -17218,8 +17218,10 @@
       "type": "object",
       "properties": {
         "metadata": {
-          "readOnly": true,
           "$ref": "#/definitions/ServicesMetadata"
+        },
+        "useFromStage": {
+          "$ref": "#/definitions/ServiceUseFromStageV2"
         },
         "values": {
           "oneOf": [
