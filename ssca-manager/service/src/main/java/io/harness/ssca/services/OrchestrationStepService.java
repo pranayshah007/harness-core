@@ -7,11 +7,15 @@
 
 package io.harness.ssca.services;
 
+import io.harness.spec.server.ssca.v1.model.OrchestrationSummaryResponse;
 import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
 
 import java.text.ParseException;
 
-public interface ProcessSbomWorkflowService {
+public interface OrchestrationStepService {
   String processSBOM(String accountId, String orgIdentifier, String projectIdentifier,
       SbomProcessRequestBody sbomProcessRequestBody) throws ParseException;
+
+  OrchestrationSummaryResponse getOrchestrationSummary(
+      String accountId, String orgIdentifier, String projectIdentifier, String orchestrationId);
 }

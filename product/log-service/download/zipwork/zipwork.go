@@ -47,6 +47,7 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithError(err).
 				Errorln("consumer execute: cannot process message")
 			continue
 		}
@@ -57,15 +58,22 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithError(err).
 				Errorln("consumer execute: cannot unmarshal message")
 			continue
 		}
+
+		logEntryWorker.
+			WithField("files", event.FilesInPage).
+			Infoln("Starting download for key:", event.Key)
 
 		var info entity.ResponsePrefixDownload
 		infoBytes, err := c.Get(ctx, event.Key)
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("key", event.Key).
+				WithError(err).
 				Errorln("consumer execute: cannot get info from cache")
 			continue
 		}
@@ -83,6 +91,7 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithError(err).
 				Errorln("consumer execute: cannot create update cache info")
 			continue
 		}
@@ -107,6 +116,7 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 			if err != nil {
 				logEntryWorker.
 					WithField("time", time.Now().Format(time.RFC3339)).
+					WithError(err).
 					Errorln("consumer execute: cannot create update cache info")
 				continue
 			}
@@ -117,6 +127,7 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithError(err).
 				Errorln("consumer execute: cannot create update cache info")
 			continue
 		}

@@ -1,0 +1,12 @@
+name: Pipeline Executions Metrics
+identifier: PipelineExecutionMetrics
+metricGroup: PipelineExecutionMetricsGroup
+metrics:
+  - metricName: pipeline_execution_start_count
+    metricDefinition: Number of starting pipeline executions at a given instant
+    type: Count
+    unit: "1"
+  - metricName: pipeline_execution_end_count
+    metricDefinition: Number of ended pipeline executions at a given instant
+    type: Count
+    unit: "1"

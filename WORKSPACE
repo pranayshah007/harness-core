@@ -5300,7 +5300,7 @@ plain_artifacts = [
     "org.mongodb:mongodb-driver-core:4.6.1",
     "org.mongodb:bson:4.6.1",
     "org.mortbay.jetty.alpn:alpn-boot:8.1.13.v20181017",
-    "org.mozilla:rhino:1.7R4",
+    "org.mozilla:rhino:1.7.14",
     "org.objenesis:objenesis:2.6",
     "org.opensaml:opensaml-core:3.4.3",
     "org.opensaml:opensaml-messaging-api:3.4.3",

@@ -20,6 +20,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest.JenkinsArtifactDelegateRequestBuilder;
+import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.LogStreamingStepClientImpl;
@@ -52,7 +53,7 @@ public class JenkinsBuildStepV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testStartChainLinkAfterRbac() {
     ParameterField frequency = ParameterField.createValueField("1m");
-
+    ParameterField<String> timeout = ParameterField.createValueField("2m");
     JenkinsBuildSpecParameters jenkinsBuildSpecParameters =
         JenkinsBuildSpecParameters.builder()
             .connectorRef(ParameterField.createValueField(CONNECTOR))
@@ -63,7 +64,7 @@ public class JenkinsBuildStepV2Test extends CategoryTest {
             .build();
     mock();
     jenkinsBuildStepV2.startChainLinkAfterRbac(
-        AMBIANCE, StepElementParameters.builder().spec(jenkinsBuildSpecParameters).build(), null);
+        AMBIANCE, StepElementParameters.builder().spec(jenkinsBuildSpecParameters).timeout(timeout).build(), null);
     assertConsoleLogPollFrequency(60);
   }
 
@@ -166,8 +167,177 @@ public class JenkinsBuildStepV2Test extends CategoryTest {
     assertConsoleLogPollFrequency(5);
   }
 
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testStartChainLinkAfterRbac_ValueGreaterThanTimeout() {
+    ParameterField<String> frequency = ParameterField.createValueField("1m");
+    ParameterField<String> timeout = ParameterField.createValueField("30s");
+
+    JenkinsBuildSpecParameters jenkinsBuildSpecParameters =
+        JenkinsBuildSpecParameters.builder()
+            .connectorRef(ParameterField.createValueField(CONNECTOR))
+            .jobName(ParameterField.createValueField(JOB_NAME))
+            .unstableStatusAsSuccess(true)
+            .useConnectorUrlForJobExecution(true)
+            .consoleLogPollFrequency(frequency)
+            .build();
+    mock();
+    jenkinsBuildStepV2.startChainLinkAfterRbac(
+        AMBIANCE, StepElementParameters.builder().spec(jenkinsBuildSpecParameters).timeout(timeout).build(), null);
+    assertConsoleLogPollFrequency(5);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testExecuteNextLinkWithSecurityContextAndNodeInfo() throws Exception {
+    ParameterField frequency = ParameterField.createValueField("1m");
+    ParameterField<String> timeout = ParameterField.createValueField("2m");
+    JenkinsBuildSpecParameters jenkinsBuildSpecParameters =
+        JenkinsBuildSpecParameters.builder()
+            .connectorRef(ParameterField.createValueField(CONNECTOR))
+            .jobName(ParameterField.createValueField(JOB_NAME))
+            .unstableStatusAsSuccess(true)
+            .useConnectorUrlForJobExecution(true)
+            .consoleLogPollFrequency(frequency)
+            .build();
+    mock();
+    jenkinsBuildStepV2.executeNextLinkWithSecurityContextAndNodeInfo(AMBIANCE,
+        StepElementParameters.builder().timeout(timeout).spec(jenkinsBuildSpecParameters).build(), null, null,
+        () -> ArtifactTaskResponse.builder().build());
+    assertConsoleLogPollFrequencyForExecuteNextLink(60);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testExecuteNextLinkWithSecurityContextAndNodeInfo_Null() throws Exception {
+    JenkinsBuildSpecParameters jenkinsBuildSpecParameters =
+        JenkinsBuildSpecParameters.builder()
+            .connectorRef(ParameterField.createValueField(CONNECTOR))
+            .jobName(ParameterField.createValueField(JOB_NAME))
+            .unstableStatusAsSuccess(true)
+            .useConnectorUrlForJobExecution(true)
+            .consoleLogPollFrequency(null)
+            .build();
+    mock();
+    jenkinsBuildStepV2.executeNextLinkWithSecurityContextAndNodeInfo(AMBIANCE,
+        StepElementParameters.builder().spec(jenkinsBuildSpecParameters).build(), null, null,
+        () -> ArtifactTaskResponse.builder().build());
+    assertConsoleLogPollFrequencyForExecuteNextLink(5);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testExecuteNextLinkWithSecurityContextAndNodeInfo_LessThanMinimum() throws Exception {
+    ParameterField frequency = ParameterField.createValueField("1s");
+
+    JenkinsBuildSpecParameters jenkinsBuildSpecParameters =
+        JenkinsBuildSpecParameters.builder()
+            .connectorRef(ParameterField.createValueField(CONNECTOR))
+            .jobName(ParameterField.createValueField(JOB_NAME))
+            .unstableStatusAsSuccess(true)
+            .useConnectorUrlForJobExecution(true)
+            .consoleLogPollFrequency(frequency)
+            .build();
+    mock();
+    jenkinsBuildStepV2.executeNextLinkWithSecurityContextAndNodeInfo(AMBIANCE,
+        StepElementParameters.builder().spec(jenkinsBuildSpecParameters).build(), null, null,
+        () -> ArtifactTaskResponse.builder().build());
+    assertConsoleLogPollFrequencyForExecuteNextLink(5);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testExecuteNextLinkWithSecurityContextAndNodeInfo_InvalidValue() {
+    ParameterField frequency = ParameterField.createValueField("1");
+
+    JenkinsBuildSpecParameters jenkinsBuildSpecParameters =
+        JenkinsBuildSpecParameters.builder()
+            .connectorRef(ParameterField.createValueField(CONNECTOR))
+            .jobName(ParameterField.createValueField(JOB_NAME))
+            .unstableStatusAsSuccess(true)
+            .useConnectorUrlForJobExecution(true)
+            .consoleLogPollFrequency(frequency)
+            .build();
+    mock();
+    assertThatThrownBy(()
+                           -> jenkinsBuildStepV2.executeNextLinkWithSecurityContextAndNodeInfo(AMBIANCE,
+                               StepElementParameters.builder().spec(jenkinsBuildSpecParameters).build(), null, null,
+                               () -> ArtifactTaskResponse.builder().build()))
+        .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testExecuteNextLinkWithSecurityContextAndNodeInfo_ResolvedNull() throws Exception {
+    ParameterField frequency = ParameterField.createValueField("null");
+
+    JenkinsBuildSpecParameters jenkinsBuildSpecParameters =
+        JenkinsBuildSpecParameters.builder()
+            .connectorRef(ParameterField.createValueField(CONNECTOR))
+            .jobName(ParameterField.createValueField(JOB_NAME))
+            .unstableStatusAsSuccess(true)
+            .useConnectorUrlForJobExecution(true)
+            .consoleLogPollFrequency(frequency)
+            .build();
+    mock();
+    jenkinsBuildStepV2.executeNextLinkWithSecurityContextAndNodeInfo(AMBIANCE,
+        StepElementParameters.builder().spec(jenkinsBuildSpecParameters).build(), null, null,
+        () -> ArtifactTaskResponse.builder().build());
+    assertConsoleLogPollFrequencyForExecuteNextLink(5);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testExecuteNextLinkWithSecurityContextAndNodeInfo_Expression() throws Exception {
+    ParameterField<String> frequency = ParameterField.createExpressionField(true, "<+abc>", null, true);
+
+    JenkinsBuildSpecParameters jenkinsBuildSpecParameters =
+        JenkinsBuildSpecParameters.builder()
+            .connectorRef(ParameterField.createValueField(CONNECTOR))
+            .jobName(ParameterField.createValueField(JOB_NAME))
+            .unstableStatusAsSuccess(true)
+            .useConnectorUrlForJobExecution(true)
+            .consoleLogPollFrequency(frequency)
+            .build();
+    mock();
+    jenkinsBuildStepV2.executeNextLinkWithSecurityContextAndNodeInfo(AMBIANCE,
+        StepElementParameters.builder().spec(jenkinsBuildSpecParameters).build(), null, null,
+        () -> ArtifactTaskResponse.builder().build());
+    assertConsoleLogPollFrequencyForExecuteNextLink(5);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testExecuteNextLinkWithSecurityContextAndNodeInfo_ValueGreaterThanTimeout() throws Exception {
+    ParameterField<String> frequency = ParameterField.createValueField("1m");
+    ParameterField<String> timeout = ParameterField.createValueField("30s");
+
+    JenkinsBuildSpecParameters jenkinsBuildSpecParameters =
+        JenkinsBuildSpecParameters.builder()
+            .connectorRef(ParameterField.createValueField(CONNECTOR))
+            .jobName(ParameterField.createValueField(JOB_NAME))
+            .unstableStatusAsSuccess(true)
+            .useConnectorUrlForJobExecution(true)
+            .consoleLogPollFrequency(frequency)
+            .build();
+    mock();
+    jenkinsBuildStepV2.executeNextLinkWithSecurityContextAndNodeInfo(AMBIANCE,
+        StepElementParameters.builder().timeout(timeout).spec(jenkinsBuildSpecParameters).build(), null, null,
+        () -> ArtifactTaskResponse.builder().build());
+    assertConsoleLogPollFrequencyForExecuteNextLink(5);
+  }
+
   private void mock() {
     when(jenkinsBuildStepHelperService.queueJenkinsBuildTask(any(), any(), any())).thenReturn(null);
+    when(jenkinsBuildStepHelperService.pollJenkinsJob(any(), any(), any(), any())).thenReturn(null);
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
   }
 
@@ -175,6 +345,16 @@ public class JenkinsBuildStepV2Test extends CategoryTest {
     ArgumentCaptor<JenkinsArtifactDelegateRequestBuilder> argumentCaptor =
         ArgumentCaptor.forClass(JenkinsArtifactDelegateRequestBuilder.class);
     verify(jenkinsBuildStepHelperService).queueJenkinsBuildTask(argumentCaptor.capture(), eq(AMBIANCE), any());
+    JenkinsArtifactDelegateRequestBuilder builder = argumentCaptor.getValue();
+    JenkinsArtifactDelegateRequest request = builder.build();
+
+    assertThat(request.getConsoleLogFrequency()).isEqualTo(value);
+  }
+
+  private void assertConsoleLogPollFrequencyForExecuteNextLink(long value) {
+    ArgumentCaptor<JenkinsArtifactDelegateRequestBuilder> argumentCaptor =
+        ArgumentCaptor.forClass(JenkinsArtifactDelegateRequestBuilder.class);
+    verify(jenkinsBuildStepHelperService).pollJenkinsJob(argumentCaptor.capture(), eq(AMBIANCE), any(), any());
     JenkinsArtifactDelegateRequestBuilder builder = argumentCaptor.getValue();
     JenkinsArtifactDelegateRequest request = builder.build();
 

@@ -11,16 +11,16 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 
 public interface ServerlessStepExecutor {
   TaskChainResponse executeServerlessTask(ManifestOutcome serverlessManifestOutcome, Ambiance ambiance,
-      StepElementParameters stepParameters, ServerlessExecutionPassThroughData executionPassThroughData,
+      StepBaseParameters stepParameters, ServerlessExecutionPassThroughData executionPassThroughData,
       UnitProgressData unitProgressData, ServerlessStepExecutorParams serverlessStepExecutorParams);
 
   TaskChainResponse executeServerlessPrepareRollbackTask(ManifestOutcome serverlessManifestOutcome, Ambiance ambiance,
-      StepElementParameters stepParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
+      StepBaseParameters stepParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
       UnitProgressData unitProgressData, ServerlessStepExecutorParams serverlessStepExecutorParams);
 }

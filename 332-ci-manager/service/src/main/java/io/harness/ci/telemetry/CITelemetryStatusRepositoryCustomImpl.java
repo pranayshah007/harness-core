@@ -46,4 +46,9 @@ public class CITelemetryStatusRepositoryCustomImpl implements CITelemetryStatusR
     }
     return result != null;
   }
+
+  public void deleteAllByAccountId(String accountId) {
+    Query query = new Query().addCriteria(new Criteria().and(CITelemetrySentStatusKeys.accountId).is(accountId));
+    mongoTemplate.findAllAndRemove(query, CITelemetrySentStatus.class);
+  }
 }

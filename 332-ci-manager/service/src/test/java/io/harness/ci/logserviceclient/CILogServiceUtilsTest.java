@@ -7,6 +7,7 @@
 
 package io.harness.ci.logserviceclient;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.VISTAAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -95,5 +96,24 @@ public class CILogServiceUtilsTest extends CIExecutionTestBase {
     verify(logServiceClient, times(1)).generateToken(eq(accountID), eq(globalToken));
     verify(logServiceClient, times(1))
         .closeLogStream(eq(accountID), eq("key"), eq(true), eq(true), eq(logServiceToken));
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testDeleteLogs() throws Exception {
+    String baseUrl = "http://localhost:8079";
+    String accountID = "account";
+    String globalToken = "token";
+    String key = "accountId:" + accountID;
+    Call<Void> deleteCall = mock(Call.class);
+    when(deleteCall.execute()).thenReturn(Response.success(null));
+    when(logServiceClient.deleteLogs(eq(accountID), eq(key), eq(globalToken))).thenReturn(deleteCall);
+    LogServiceConfig logServiceConfig = LogServiceConfig.builder().globalToken(globalToken).baseUrl(baseUrl).build();
+    CILogServiceUtils ciLogServiceUtils = new CILogServiceUtils(logServiceClient, logServiceConfig);
+
+    ciLogServiceUtils.deleteLogs(accountID, key);
+    verify(deleteCall, times(1)).execute();
+    verify(logServiceClient, times(1)).deleteLogs(eq(accountID), eq(key), eq(globalToken));
   }
 }

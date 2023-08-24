@@ -12,9 +12,13 @@ import io.harness.ci.commonconstants.CICommonEndpointConstants;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 public interface TIServiceClient {
   @GET(CICommonEndpointConstants.TI_SERVICE_TOKEN_ENDPOINT)
   Call<String> generateToken(@Query("accountId") String accountId, @Header("X-Harness-Token") String globalToken);
+
+  @POST(CICommonEndpointConstants.TI_SERVICE_INTERNAL_CLEANUP_ENDPOINT)
+  Call<String> clean(@Query("accountId") String accountId, @Header("X-Harness-Token") String globalToken);
 }

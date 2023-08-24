@@ -13,6 +13,7 @@ import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.logging.AutoLogContext;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.inject.Inject;
@@ -27,7 +28,7 @@ public class OrchestrationEndInterruptHandler implements AsyncInformObserver, Or
   @Inject @Named("EngineExecutorService") ExecutorService executorService;
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       long closedInterrupts = interruptService.closeActiveInterrupts(ambiance.getPlanExecutionId());
       if (closedInterrupts < 0) {
