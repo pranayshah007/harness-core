@@ -6,6 +6,7 @@
  */
 
 package software.wings.service.impl;
+
 import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.AUTO_ACCEPT_SAML_ACCOUNT_INVITES;
@@ -585,6 +586,9 @@ public class AccountServiceImpl implements AccountService {
     if (account == null) {
       throw new AccountNotFoundException(
           "Account is not found for the given id:" + accountId, null, ACCOUNT_DOES_NOT_EXIST, Level.ERROR, USER, null);
+    }
+    if (featureFlagService.isEnabled(FeatureName.CDS_DISABLE_FIRST_GEN_CD, accountId)) {
+      account.isCrossGenerationAccessEnabled(false);
     }
     LicenseUtils.decryptLicenseInfo(account, false);
     return account;
