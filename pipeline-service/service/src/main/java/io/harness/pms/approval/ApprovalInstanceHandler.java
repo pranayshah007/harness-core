@@ -14,23 +14,20 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.PipelineServiceIteratorsConfig;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceRequiredProvider;
-import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance.ApprovalInstanceKeys;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
+import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance.JiraApprovalInstanceKeys;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalHelperService;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
-import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -48,18 +45,16 @@ public class ApprovalInstanceHandler implements MongoPersistenceIterator.Handler
   private final PersistenceIteratorFactory persistenceIteratorFactory;
   private final PipelineServiceIteratorsConfig iteratorsConfig;
   private final ServiceNowApprovalHelperService serviceNowApprovalHelperService;
-  private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   @Inject
   public ApprovalInstanceHandler(JiraApprovalHelperService jiraApprovalHelperService, MongoTemplate mongoTemplate,
       PersistenceIteratorFactory persistenceIteratorFactory, PipelineServiceIteratorsConfig iteratorsConfig,
-      ServiceNowApprovalHelperService serviceNowApprovalHelperService, PmsFeatureFlagHelper pmsFeatureFlagHelper) {
+      ServiceNowApprovalHelperService serviceNowApprovalHelperService) {
     this.jiraApprovalHelperService = jiraApprovalHelperService;
     this.mongoTemplate = mongoTemplate;
     this.persistenceIteratorFactory = persistenceIteratorFactory;
     this.iteratorsConfig = iteratorsConfig;
     this.serviceNowApprovalHelperService = serviceNowApprovalHelperService;
-    this.pmsFeatureFlagHelper = pmsFeatureFlagHelper;
   }
 
   public void registerIterators() {
@@ -88,7 +83,9 @@ public class ApprovalInstanceHandler implements MongoPersistenceIterator.Handler
                 -> query.addCriteria(Criteria.where(ApprovalInstanceKeys.status)
                                          .is(ApprovalStatus.WAITING)
                                          .and(ApprovalInstanceKeys.type)
-                                         .in(ApprovalType.JIRA_APPROVAL, ApprovalType.SERVICENOW_APPROVAL)))
+                                         .in(ApprovalType.JIRA_APPROVAL, ApprovalType.SERVICENOW_APPROVAL)
+                                         .and(JiraApprovalInstanceKeys.retryInterval)
+                                         .isNull()))
             .schedulingType(REGULAR)
             .persistenceProvider(new SpringPersistenceRequiredProvider<>(mongoTemplate))
             .redistribute(true));
@@ -99,21 +96,11 @@ public class ApprovalInstanceHandler implements MongoPersistenceIterator.Handler
     switch (entity.getType()) {
       case JIRA_APPROVAL:
         JiraApprovalInstance jiraApprovalInstance = (JiraApprovalInstance) entity;
-        if (!pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(entity.getAmbiance()),
-                FeatureName.CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL)
-            && ParameterField.isNotNull(jiraApprovalInstance.getRetryInterval())) {
-          return;
-        }
         log.info("Executing Jira approval instance with id: {}", jiraApprovalInstance.getId());
         jiraApprovalHelperService.handlePollingEvent(null, jiraApprovalInstance);
         break;
       case SERVICENOW_APPROVAL:
         ServiceNowApprovalInstance serviceNowApprovalInstance = (ServiceNowApprovalInstance) entity;
-        if (!pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(entity.getAmbiance()),
-                FeatureName.CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL)
-            && ParameterField.isNotNull(serviceNowApprovalInstance.getRetryInterval())) {
-          return;
-        }
         log.info("Executing ServiceNow approval instance with id: {}", serviceNowApprovalInstance.getId());
         serviceNowApprovalHelperService.handlePollingEvent(null, serviceNowApprovalInstance);
         break;
