@@ -760,10 +760,12 @@ def ingest_data_to_awscur(jsonData):
                          "unblendedrate", "unblendedcost", "region", "availabilityzone", "usageaccountid", "instancetype",
                          "usagetype", "lineitemtype", "effectivecost", "billingentity", "instancefamily", "marketoption", "usageamount",
                          "billingperiodstartdate", "billingperiodenddate"]
+
     if jsonData.get('accountId') in ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE:
         desirable_columns += ["payeraccountid", "lineitemdescription", "billtype", "usagetype_1", "description", "pricingunit",
                               "publicondemandcost", "publicondemandrate", "operation", "usagehours", "savingsplaneffectivecost",
                               "storage", "licensemodel", "gpumemory", "gpu", "datatransferout"]
+
     available_columns = list(set(desirable_columns) & set(jsonData["available_columns"]))
     select_available_columns = prepare_select_query(jsonData, available_columns)  # passing updated available_columns
     available_columns = ", ".join(f"{w}" for w in available_columns)
@@ -771,15 +773,24 @@ def ingest_data_to_awscur(jsonData):
     amortised_cost_query = prep_amortised_cost_query(jsonData, set(jsonData["available_columns"]))
     net_amortised_cost_query = prep_net_amortised_cost_query(jsonData, set(jsonData["available_columns"]))
 
+    delete_query = """DELETE FROM `%s` WHERE DATE(usagestartdate) >= '%s' AND DATE(usagestartdate) <= '%s' 
+        and usageaccountid IN (%s) 
+    """ % (tableName, jsonData["min_usagestartdate"], jsonData["max_usagestartdate"],
+           jsonData["usageaccountid"])
+
+    # billingperiodstartdate and billingperiodenddate are newly added in unified table. Adding these in delete query is important to take care of future dated cost entries.
+    # At the same time, adding these here might cause problems in doing replays for other accounts where the data in this column might be null.
+    # Handling this case explicitely for Elevance atm. We might remove this IF condition down the line when we have these columns populated for enough number of months.
+    if jsonData["accountId"] == "pC_7h33wQTeZ_j-libvF4A":
+        delete_query = delete_query + " AND DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s'" % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
+
     query = """
-    DELETE FROM `%s` WHERE DATE(usagestartdate) >= '%s' AND DATE(usagestartdate) <= '%s' 
-        and usageaccountid IN (%s);
+    %s;
     INSERT INTO `%s` (%s, amortisedCost, netAmortisedCost, tags, fxRateSrcToDest, ccmPreferredCurrency, mspMarkupMultiplier) 
         SELECT %s, %s, %s, %s, %s as fxRateSrcToDest, %s as ccmPreferredCurrency, %s as mspMarkupMultiplier
         FROM `%s` table 
         WHERE DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s' and usageaccountid IN (%s);
-     """ % (tableName, jsonData["min_usagestartdate"], jsonData["max_usagestartdate"],
-            jsonData["usageaccountid"],
+     """ % (delete_query,
             tableName, available_columns,
             select_available_columns, amortised_cost_query, net_amortised_cost_query, tags_query,
             ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
@@ -1016,15 +1027,21 @@ def ingest_data_to_unified(jsonData):
                                                                        additionalColumn,
                                                                        "" if additionalColumn != "servicecode" else "_simplified")
 
-    query = """DELETE FROM `%s` WHERE DATE(startTime) >= '%s' AND DATE(startTime) <= '%s' 
-                    AND cloudProvider = "AWS"
-                    AND awsUsageAccountId IN (%s);
+    delete_query = """DELETE FROM `%s` WHERE DATE(startTime) >= '%s' AND DATE(startTime) <= '%s'
+                        AND cloudProvider = "AWS"
+                        AND awsUsageAccountId IN (%s)
+    """ % (tableName, jsonData["min_usagestartdate"], jsonData["max_usagestartdate"],
+           jsonData["usageaccountid"])
+
+    if jsonData["accountId"] == "pC_7h33wQTeZ_j-libvF4A":
+        delete_query = delete_query + " AND DATE(awsbillingperiodstartdate) = '%s' AND DATE(awsbillingperiodenddate) = '%s'" % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
+
+    query = """%s;
                INSERT INTO `%s` (%s)
                SELECT %s 
                FROM `%s.awscur_%s` 
                WHERE usageaccountid IN (%s) and DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s' ;
-     """ % (tableName, jsonData["min_usagestartdate"], jsonData["max_usagestartdate"],
-            jsonData["usageaccountid"],
+     """  % (delete_query,
             tableName, insert_columns,
             select_columns,
             ds, jsonData["awsCurTableSuffix"],
