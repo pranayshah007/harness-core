@@ -645,6 +645,12 @@ public class ConnectorServiceImpl implements ConnectorService {
           connectorIdentifier);
 
       connectorRepository.save(connector, ChangeType.NONE);
+
+      getConnectorService(connector.getType())
+          .updateActivityDetailsInTheConnector(connector.getAccountIdentifier(), connector.getOrgIdentifier(),
+              connector.getProjectIdentifier(), connector.getIdentifier(), connectorValidationResult,
+              connector.getConnectivityDetails().getTestedAt());
+
     } catch (Exception ex) {
       log.error("Error saving the connector status for the connector {}",
           String.format(CONNECTOR_STRING, connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier),

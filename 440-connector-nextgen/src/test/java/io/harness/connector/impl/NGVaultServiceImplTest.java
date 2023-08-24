@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RICHA;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
 import static io.harness.security.encryption.EncryptionType.VAULT;
@@ -57,7 +58,9 @@ import io.harness.delegatetasks.NGVaultRenewalTaskParameters;
 import io.harness.delegatetasks.NGVaultRenewalTaskResponse;
 import io.harness.delegatetasks.NGVaultTokenLookupTaskResponse;
 import io.harness.encryption.SecretRefData;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.GeneralException;
+import io.harness.exception.SecretManagementDelegateException;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
 import io.harness.git.model.ChangeType;
@@ -91,6 +94,7 @@ import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.Rule;
@@ -768,6 +772,53 @@ public class NGVaultServiceImplTest extends CategoryTest {
     verify(ngConnectorSecretManagerService, times(1)).getPerpetualTaskId(any(), any(), any(), argumentCaptor.capture());
     assertThat(argumentCaptor.getValue()).isEqualTo(vaultConnector.getIdentifier());
     verify(ngConnectorSecretManagerService, times(1)).resetHeartBeatTask(any(), any());
+  }
+
+  @Test(expected = SecretManagementDelegateException.class)
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testRenewVaultToken_shouldPauseRenewal() throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildTokenBasedConnector());
+    vaultConnectorDTO.setRenewalIntervalMinutes(1);
+    VaultConnector vaultConnector = vaultDTOToEntity.toConnectorEntity(vaultConnectorDTO);
+    vaultConnector.setRenewedAt(
+        OffsetDateTime.now().minusMinutes(vaultConnector.getRenewalIntervalMinutes() + 10).toInstant().toEpochMilli());
+    VaultConfigDTO vaultConfigDTO = (VaultConfigDTO) getVaultConfigDTOWithAuthToken();
+    vaultConfigDTO.setEncryptionType(VAULT);
+    Call<RestResponse<Boolean>> request = mock(Call.class);
+    doReturn(request).when(accountClient).isFeatureFlagEnabled(any(), any());
+    when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(vaultConfigDTO);
+    when(delegateService.executeSyncTaskV2(any()))
+        .thenThrow(new SecretManagementDelegateException(ErrorCode.SECRET_MANAGEMENT_ERROR, "Error", null));
+    when(ngEncryptedDataService.updateSecretText(any(), any())).thenReturn(NGEncryptedData.builder().build());
+    ngVaultService.renewToken(vaultConnector);
+    ArgumentCaptor<VaultConnector> vaultConnectorArgumentCaptor = ArgumentCaptor.forClass(VaultConnector.class);
+    verify(connectorRepository, times(1)).save(vaultConnectorArgumentCaptor.capture(), ChangeType.NONE);
+  }
+
+  @Test(expected = SecretManagementDelegateException.class)
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testRenewVaultToken_shouldNotPauseRenewalDueToBuffer() throws IOException {
+    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildTokenBasedConnector());
+    vaultConnectorDTO.setRenewalIntervalMinutes(1);
+    VaultConnector vaultConnector = vaultDTOToEntity.toConnectorEntity(vaultConnectorDTO);
+    vaultConnector.setRenewedAt(
+        OffsetDateTime.now().minusMinutes(vaultConnector.getRenewalIntervalMinutes()).toInstant().toEpochMilli());
+    VaultConfigDTO vaultConfigDTO = (VaultConfigDTO) getVaultConfigDTOWithAuthToken();
+    vaultConfigDTO.setEncryptionType(VAULT);
+    Call<RestResponse<Boolean>> request = mock(Call.class);
+    doReturn(request).when(accountClient).isFeatureFlagEnabled(any(), any());
+    when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(vaultConfigDTO);
+    when(delegateService.executeSyncTaskV2(any()))
+        .thenThrow(new SecretManagementDelegateException(ErrorCode.SECRET_MANAGEMENT_ERROR, "Error", null));
+    when(ngEncryptedDataService.updateSecretText(any(), any())).thenReturn(NGEncryptedData.builder().build());
+    ngVaultService.renewToken(vaultConnector);
+    verify(connectorRepository, times(0)).save(any(), ChangeType.NONE);
   }
 
   private VaultConnector buildAppRoleVaultConnector() {

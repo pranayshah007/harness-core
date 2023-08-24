@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EntityReference;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
+import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorCatalogueResponseDTO;
 import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorDTO;
@@ -28,6 +29,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
+import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector.VaultConnectorKeys;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGVaultService;
@@ -56,6 +58,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import software.wings.beans.NameValuePairWithDefault;
 
@@ -409,6 +412,18 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   public void updateActivityDetailsInTheConnector(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String identifier, ConnectorValidationResult connectorValidationResult,
       Long activityTime) {
+    Connector connector;
+    try {
+      connector = getConnectorWithIdentifier(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    } catch (Exception ex) {
+      log.error(ex.getMessage());
+      return;
+    }
+    if (ConnectorType.VAULT.equals(connector.getType())
+        && ConnectivityStatus.SUCCESS.equals(connectorValidationResult.getStatus())) {
+      ((VaultConnector) connector).setRenewalPaused(Boolean.FALSE);
+      connectorRepository.save(connector, ChangeType.NONE);
+    }
     defaultConnectorService.updateActivityDetailsInTheConnector(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier, connectorValidationResult, activityTime);
   }
@@ -553,5 +568,20 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   @Override
   public Long countConnectors(String accountIdentifier) {
     return defaultConnectorService.countConnectors(accountIdentifier);
+  }
+
+  private Connector getConnectorWithIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
+    String fullyQualifiedIdentifier = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
+
+    Optional<Connector> connectorOptional = connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
+        fullyQualifiedIdentifier, projectIdentifier, orgIdentifier, accountIdentifier, true);
+
+    return connectorOptional.orElseThrow(
+        ()
+            -> new InvalidRequestException(String.format(
+                "Connector with identifier %s not found in account: %s org: %s project: %s. Skipping update of activity details.",
+                connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier)));
   }
 }
