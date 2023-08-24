@@ -33,4 +33,5 @@ public enum HarnessModuleComponent {
   CDS_TRADITIONAL,
   CDS_TRIGGERS,
   CI_PLG_LICENSING,
+  CDS_SLACK
 }
