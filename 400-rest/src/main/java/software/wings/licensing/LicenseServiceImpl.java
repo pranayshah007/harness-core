@@ -231,7 +231,7 @@ public class LicenseServiceImpl implements LicenseService {
         }
 
         if (accountType.equals(AccountType.TRIAL) && !AccountStatus.DELETED.equals(accountStatus)
-            && !account.isPovAccount() && !account.isCloudCostEnabled() && ngLicenseDecision.isShouldDelete()) {
+            && !account.isPovAccount() && ngLicenseDecision.isShouldDelete()) {
           long lastExpiryTime = Math.max(expiryTime, ngLicenseDecision.getExpiryTime());
           handleTrialAccountExpiration(account, lastExpiryTime);
         }
