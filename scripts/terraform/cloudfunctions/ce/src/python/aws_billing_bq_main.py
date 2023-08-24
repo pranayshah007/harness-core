@@ -773,13 +773,13 @@ def ingest_data_to_awscur(jsonData):
 
     query = """
     DELETE FROM `%s` WHERE DATE(usagestartdate) >= '%s' AND DATE(usagestartdate) <= '%s' 
-        and DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s' and usageaccountid IN (%s);
+        and usageaccountid IN (%s);
     INSERT INTO `%s` (%s, amortisedCost, netAmortisedCost, tags, fxRateSrcToDest, ccmPreferredCurrency, mspMarkupMultiplier) 
         SELECT %s, %s, %s, %s, %s as fxRateSrcToDest, %s as ccmPreferredCurrency, %s as mspMarkupMultiplier
         FROM `%s` table 
         WHERE DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s' and usageaccountid IN (%s);
      """ % (tableName, jsonData["min_usagestartdate"], jsonData["max_usagestartdate"],
-            jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"], jsonData["usageaccountid"],
+            jsonData["usageaccountid"],
             tableName, available_columns,
             select_available_columns, amortised_cost_query, net_amortised_cost_query, tags_query,
             ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
@@ -1017,14 +1017,13 @@ def ingest_data_to_unified(jsonData):
                                                                        "" if additionalColumn != "servicecode" else "_simplified")
 
     query = """DELETE FROM `%s` WHERE DATE(startTime) >= '%s' AND DATE(startTime) <= '%s' 
-                    AND DATE(awsbillingperiodstartdate) = '%s' AND DATE(awsbillingperiodenddate) = '%s'  AND cloudProvider = "AWS"
+                    AND cloudProvider = "AWS"
                     AND awsUsageAccountId IN (%s);
                INSERT INTO `%s` (%s)
                SELECT %s 
                FROM `%s.awscur_%s` 
                WHERE usageaccountid IN (%s) and DATE(billingperiodstartdate) = '%s' AND DATE(billingperiodenddate) = '%s' ;
      """ % (tableName, jsonData["min_usagestartdate"], jsonData["max_usagestartdate"],
-            jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"],
             jsonData["usageaccountid"],
             tableName, insert_columns,
             select_columns,
