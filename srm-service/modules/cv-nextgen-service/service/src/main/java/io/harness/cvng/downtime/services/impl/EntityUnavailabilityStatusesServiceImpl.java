@@ -141,7 +141,7 @@ public class EntityUnavailabilityStatusesServiceImpl
         .get();
   }
   @Override
-  public List<EntityUnavailabilityStatusesDTO> getAllInstances(
+  public List<EntityUnavailabilityStatusesDTO> getAllMaintenanceWindowInstances(
       ProjectParams projectParams, long startTime, long endTime) {
     List<EntityUnavailabilityStatuses> allInstances =
         hPersistence.createQuery(EntityUnavailabilityStatuses.class)
@@ -153,6 +153,8 @@ public class EntityUnavailabilityStatusesServiceImpl
             .lessThanOrEq(endTime)
             .field(EntityUnavailabilityStatusesKeys.endTime)
             .greaterThanOrEq(startTime)
+            .field(EntityUnavailabilityStatusesKeys.entityType)
+            .equal(EntityType.MAINTENANCE_WINDOW)
             .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
             .asList();
     return allInstances.stream()
@@ -160,6 +162,32 @@ public class EntityUnavailabilityStatusesServiceImpl
         .collect(Collectors.toList());
   }
 
+  @Override
+  public List<EntityUnavailabilityStatusesDTO> getAllDataCollectionFailureInstances(
+      ProjectParams projectParams, String sliId, long startTime, long endTime) {
+    List<EntityUnavailabilityStatuses> allInstances =
+        hPersistence.createQuery(EntityUnavailabilityStatuses.class)
+            .disableValidation()
+            .filter(EntityUnavailabilityStatusesKeys.accountId, projectParams.getAccountIdentifier())
+            .filter(EntityUnavailabilityStatusesKeys.orgIdentifier, projectParams.getOrgIdentifier())
+            .filter(EntityUnavailabilityStatusesKeys.projectIdentifier, projectParams.getProjectIdentifier())
+            .field(EntityUnavailabilityStatusesKeys.startTime)
+            .lessThanOrEq(endTime)
+            .field(EntityUnavailabilityStatusesKeys.endTime)
+            .greaterThanOrEq(startTime)
+            .field(EntityUnavailabilityStatusesKeys.entityType)
+            .equal(EntityType.SLO)
+            .field(EntityUnavailabilityStatusesKeys.status)
+            .equal(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
+            .field(EntityUnavailabilityStatusesKeys.entityIdentifier)
+            .equal(sliId)
+            .order(Sort.ascending(EntityUnavailabilityStatusesKeys.startTime))
+            .asList();
+
+    return allInstances.stream()
+        .map(status -> statusesEntityAndDTOTransformer.getDto(status))
+        .collect(Collectors.toList());
+  }
   @Override
   public List<EntityUnavailabilityStatuses> getAllInstancesEntity(
       ProjectParams projectParams, long startTime, long endTime) {

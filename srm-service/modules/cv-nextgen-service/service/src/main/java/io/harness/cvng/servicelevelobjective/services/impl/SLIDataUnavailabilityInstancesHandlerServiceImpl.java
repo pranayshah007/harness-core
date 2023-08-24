@@ -8,8 +8,6 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.downtime.beans.EntityType;
-import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
@@ -24,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class SLIDataUnavailabilityInstancesHandlerServiceImpl implements SLIDataUnavailabilityInstancesHandlerService {
   @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
@@ -33,26 +30,16 @@ public class SLIDataUnavailabilityInstancesHandlerServiceImpl implements SLIData
   @Override
   public List<SLIRecordParam> filterSLIRecordsToSkip(List<SLIRecordParam> sliRecordList, ProjectParams projectParams,
       Instant startTime, Instant endTime, String monitoredServiceIdentifier, String sliId) {
-    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
-        entityUnavailabilityStatusesService.getAllInstances(
-            projectParams, startTime.getEpochSecond(), endTime.getEpochSecond());
-
     // Adding downtime Instances
     List<EntityUnavailabilityStatusesDTO> failureInstances =
-        entityUnavailabilityStatusesDTOS.stream()
-            .filter(statusesDTO -> statusesDTO.getEntityType().equals(EntityType.MAINTENANCE_WINDOW))
-            .collect(Collectors.toList());
+        entityUnavailabilityStatusesService.getAllMaintenanceWindowInstances(
+            projectParams, startTime.getEpochSecond(), endTime.getEpochSecond());
     failureInstances = downtimeService.filterDowntimeInstancesOnMonitoredService(
         projectParams, failureInstances, monitoredServiceIdentifier);
 
     // Adding Data collection failure Instances
-    failureInstances.addAll(
-        entityUnavailabilityStatusesDTOS.stream()
-            .filter(statusesDTO
-                -> statusesDTO.getEntityType().equals(EntityType.SLO)
-                    && statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
-                    && statusesDTO.getEntityId().equals(sliId))
-            .collect(Collectors.toList()));
+    failureInstances.addAll(entityUnavailabilityStatusesService.getAllDataCollectionFailureInstances(
+        projectParams, sliId, startTime.getEpochSecond(), endTime.getEpochSecond()));
 
     Set<Instant> failureInstants = new HashSet<>();
     for (EntityUnavailabilityStatusesDTO failureInstance : failureInstances) {
