@@ -334,17 +334,4 @@ public class GitAwarePersistenceNewImpl implements GitAwarePersistence {
     Criteria gitSyncCriteria = getCriteriaWithGitSync(projectIdentifier, orgIdentifier, accountId, entityClass);
     return criteria == null ? gitSyncCriteria : new Criteria().andOperator(criteria, gitSyncCriteria);
   }
-
-  @Override
-  public <B extends GitSyncableEntity, Y extends YamlDTO> Optional<B> findOne(Criteria criteria, Class<B> entityClass) {
-    Query query = new Query().addCriteria(criteria);
-    final B object = mongoTemplate.findOne(query, entityClass);
-    return Optional.ofNullable(object);
-  }
-
-  @Override
-  public <B extends GitSyncableEntity, Y extends YamlDTO> boolean exists(Criteria criteria, Class<B> entityClass) {
-    Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.exists(query, entityClass);
-  }
 }

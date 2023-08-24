@@ -17,7 +17,7 @@ import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
-import io.harness.template.services.NGTemplateService;
+import io.harness.template.services.NGGlobalTemplateService;
 import io.harness.template.services.TemplateVariableCreatorFactory;
 
 import com.google.inject.Inject;
@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
   public static final String TEMPLATE = "TEMPLATE";
-  private final NGTemplateService templateService;
+  private final NGGlobalTemplateService ngGlobalTemplateService;
   @Inject CustomDeploymentResourceClient customDeploymentResourceClient;
   @Inject TemplateVariableCreatorFactory templateVariableCreatorFactory;
   @Override
@@ -41,7 +41,7 @@ public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
       @OrgIdentifier String orgId, @ProjectIdentifier String projectId, String connectorRef, String targetBranch,
       GitEntityCreateInfoDTO gitEntityCreateInfo, @NotNull String webhookEvent, boolean setDefaultTemplate,
       String comments, boolean isNewTemplate) {
-    List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = templateService.createUpdateGlobalTemplate(
+    List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = ngGlobalTemplateService.createUpdateGlobalTemplate(
         accountId, orgId, projectId, setDefaultTemplate, comments, isNewTemplate, connectorRef, webhookEvent);
     return ResponseDTO.newResponse(templateWrapperResponseDTOS);
   }

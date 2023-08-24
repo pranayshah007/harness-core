@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
-import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.events.TemplateUpdateEventType;
 
@@ -100,25 +99,4 @@ public interface NGTemplateRepositoryCustom {
   TemplateEntity importFlowSaveTemplate(TemplateEntity templateEntity, String comments);
 
   List<String> getListOfRepos(Criteria criteria);
-  GlobalTemplateEntity save(GlobalTemplateEntity templateToSave, String comments) throws InvalidRequestException;
-  Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndVersionLabelAndDeletedNot(
-      String templateIdentifier, String versionLabel, boolean notDeleted, boolean getMetadataOnly);
-
-  Page<GlobalTemplateEntity> findALLGlobalTemplateAndDeletedNot(
-      boolean notDeleted, boolean getMetadataOnly, Pageable pageable, Criteria criteria);
-
-  Optional<GlobalTemplateEntity>
-  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForGlobalTemplate(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
-      boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
-  GlobalTemplateEntity updateTemplateInDb(GlobalTemplateEntity templateEntity, GlobalTemplateEntity oldTemplateEntity,
-      ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits);
-  Page<GlobalTemplateEntity> findAll(String accountIdentifier, Criteria criteria, Pageable pageable);
-
-  GlobalTemplateEntity updateIsStableTemplate(GlobalTemplateEntity globalTemplateEntity, boolean value);
-
-  boolean globalTemplateExistByIdentifierWithoutVersionLabel(String templateIdentifier);
-  boolean globalTemplateExistByIdentifierAndVersionLabel(String templateIdentifier, String versionLabel);
-  Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndIsStableAndDeletedNot(
-      String templateIdentifier, boolean notDeleted, boolean getMetadataOnly);
 }

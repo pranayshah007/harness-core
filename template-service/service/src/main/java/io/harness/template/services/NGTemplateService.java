@@ -29,10 +29,8 @@ import io.harness.template.resources.beans.PageParamsDTO;
 import io.harness.template.resources.beans.TemplateImportRequestDTO;
 import io.harness.template.resources.beans.TemplateListRepoResponse;
 import io.harness.template.resources.beans.TemplateMoveConfigResponse;
-import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 import io.harness.template.resources.beans.UpdateGitDetailsParams;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -121,6 +119,4 @@ public interface NGTemplateService {
       String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams);
   GovernanceMetadata validateGovernanceRules(TemplateEntity templateEntity);
   void populateSetupUsageAsync(TemplateEntity templateEntity);
-  List<TemplateWrapperResponseDTO> createUpdateGlobalTemplate(String accountId, String orgId, String projectId,
-      boolean setDefaultTemplate, String comments, boolean isNewTemplate, String connectorRef, String webhookEvent);
 }

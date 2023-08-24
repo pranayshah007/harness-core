@@ -97,6 +97,8 @@ import io.harness.template.resources.NGTemplateResource;
 import io.harness.template.resources.NGTemplateResourceImpl;
 import io.harness.template.resources.NGTemplateSchemaResource;
 import io.harness.template.resources.NGTemplateSchemaResourceImpl;
+import io.harness.template.services.NGGlobalTemplateService;
+import io.harness.template.services.NGGlobalTemplateServiceImpl;
 import io.harness.template.services.NGTemplateSchemaService;
 import io.harness.template.services.NGTemplateSchemaServiceImpl;
 import io.harness.template.services.NGTemplateService;
@@ -265,6 +267,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
     bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
     bind(TemplateAsyncSetupUsageService.class).to(TemplateAsyncSetupUsageServiceImpl.class);
+    bind(NGGlobalTemplateService.class).to(NGGlobalTemplateServiceImpl.class);
     install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
