@@ -12,6 +12,7 @@ import static io.harness.pms.merger.helpers.RuntimeInputsValidator.validateInput
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.SANDESH_SALUNKHE;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -264,13 +265,30 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateWithUseFromStageMultiService() throws IOException {
     Set<String> KEYS_TO_IGNORE = Set.of("service.serviceInputs", "environment.environmentInputs",
-        "environment.serviceOverrideInputs", "codebase.repoName");
-    String yamlToValidate = "services:\n"
-        + "  useFromStage:\n"
-        + "    stage: s1";
+        "environment.serviceOverrideInputs", "codebase.repoName", "environment.infrastructureDefinitions");
+    String yamlToValidate = "service:\n"
+        + "      useFromStage:\n"
+        + "        stage: s1";
 
-    String sourceEntityYaml = "services:\n"
-        + "  values: \"<+input>\"\n";
+    String sourceEntityYaml = "service:\n"
+        + "  serviceRef: \"<+input>\"\n";
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testValidateWithoutUseFromStageMultiService() throws IOException {
+    Set<String> KEYS_TO_IGNORE = Set.of("service.serviceInputs", "environment.environmentInputs",
+        "environment.serviceOverrideInputs", "codebase.repoName", "environment.infrastructureDefinitions");
+    String yamlToValidate = "service:\n"
+        + "                serviceRef: <+input>\n"
+        + "                serviceInputs: <+input>";
+
+    String sourceEntityYaml = "service:\n"
+        + "                serviceRef: <+input>\n"
+        + "                serviceInputs: <+input>";
     assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
         .isTrue();
   }
@@ -280,7 +298,7 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateEnvironmentInputsWithUseFromStage() throws IOException {
     Set<String> KEYS_TO_IGNORE = Set.of("service.serviceInputs", "environment.environmentInputs",
-        "environment.serviceOverrideInputs", "codebase.repoName");
+        "environment.serviceOverrideInputs", "codebase.repoName", "environment.infrastructureDefinitions");
     String yamlToValidate = "environment:\n"
         + "  useFromStage:\n"
         + "    stage: s1";
