@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.sdk.core.plan.creation.creators;
+import com.google.protobuf.ByteString;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,11 +19,13 @@ import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.RollbackModeBehaviour;
 import io.harness.pms.contracts.plan.SetupMetadata;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -33,6 +36,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.harness.serializer.KryoSerializer;
 import lombok.experimental.UtilityClass;
 
 @CodePulse(
@@ -140,6 +145,34 @@ public class PlanCreatorServiceHelper {
         creatorResponse.addServiceAffinityToResponse(dependencyKey, serviceAffinity);
       }
     }
+  }
+  public void decorateCreationResponseWithParentInfo(CreatorResponse creatorResponse, YamlField currentField, KryoSerializer kryoSerializer, Dependency currentDependency) {
+    Dependencies dependencies = creatorResponse.getDependencies();
+    if (dependencies == null) {
+      return;
+    }
+    Map<String, ByteString> metadataToAdd = new HashMap<>();
+    if (currentDependency != null) {
+      metadataToAdd = new HashMap<>(currentDependency.getMetadataMap());
+    }
+   if (currentField.getNode().getFieldName() != null && currentField.getNode().getFieldName().equals(YAMLFieldNameConstants.STAGE)) {
+      metadataToAdd.put("stageId", ByteString.copyFrom(kryoSerializer.asBytes(currentField.getNode().getUuid())));
+    }
+    else if (currentField.getNode().getFieldName() != null && currentField.getNode().getFieldName().equals(YAMLFieldNameConstants.STEP_GROUP)) {
+      metadataToAdd.put("stepGroupId", ByteString.copyFrom(kryoSerializer.asBytes(currentField.getNode().getUuid())));
+    }
+    else if (currentField.getNode().getFieldName() != null && currentField.getNode().getFieldName().equals(YAMLFieldNameConstants.STRATEGY)) {
+      metadataToAdd.put("strategyId", ByteString.copyFrom(kryoSerializer.asBytes(currentField.getNode().getUuid())));
+    }
+    for (String dependencyKey : dependencies.getDependenciesMap().keySet()) {
+      Dependency dependency = Dependency.newBuilder().build();
+      if (dependencies.getDependencyMetadataMap().containsKey(dependencyKey)) {
+        dependency = dependencies.getDependencyMetadataMap().get(dependencyKey);
+      }
+      dependency = dependency.toBuilder().putAllMetadata(metadataToAdd).build();
+      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependency).build();
+    }
+    creatorResponse.setDependencies(dependencies);
   }
 
   public Dependencies removeInitialDependencies(Dependencies dependencies, Dependencies initialDependencies) {

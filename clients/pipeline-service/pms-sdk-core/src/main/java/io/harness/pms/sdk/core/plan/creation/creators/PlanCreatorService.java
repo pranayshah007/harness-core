@@ -65,6 +65,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+
+import io.harness.serializer.KryoSerializer;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -76,6 +78,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
   @Inject @Named(PLAN_CREATOR_SERVICE_EXECUTOR) private Executor executor;
   @Inject ExceptionManager exceptionManager;
   @Inject @Named(PmsSdkModuleUtils.SDK_SERVICE_NAME) String serviceName;
+  @Inject private KryoSerializer kryoSerializer;
 
   private final FilterCreatorService filterCreatorService;
   private final VariableCreatorService variableCreatorService;
@@ -303,6 +306,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           PlanCreatorServiceHelper.decorateNodesWithStageFqn(field, planForField, ctx.getYamlVersion());
           PlanCreatorServiceHelper.decorateCreationResponseWithServiceAffinity(
               planForField, serviceName, field, currentNodeServiceAffinity);
+          PlanCreatorServiceHelper.decorateCreationResponseWithParentInfo(planForField, field, kryoSerializer, dependency);
           return planForField;
         } catch (Exception ex) {
           log.error(format("Error creating plan for node: %s", fullyQualifiedName), ex);
