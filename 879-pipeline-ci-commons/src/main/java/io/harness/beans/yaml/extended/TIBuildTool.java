@@ -27,7 +27,8 @@ public enum TIBuildTool {
   @JsonProperty("Nunitconsole") NUNITCONSOLE("Nunitconsole"),
   @JsonProperty("SBT") SBT("SBT"),
   @JsonProperty("Pytest") PYTEST("Pytest"),
-  @JsonProperty("Unittest") UNITTEST("Unittest");
+  @JsonProperty("Unittest") UNITTEST("Unittest"),
+  @JsonProperty("Rspec") RSPEC("Rspec");
 
   private final String yamlName;
 

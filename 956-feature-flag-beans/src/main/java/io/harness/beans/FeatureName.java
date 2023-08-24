@@ -278,6 +278,7 @@ public enum FeatureName {
   CI_PIPELINE_VARIABLES_IN_STEPS("For enabling pipeline variables as env variables in CI steps", HarnessTeam.CI),
   CI_PYTHON_TI("Enable Test Intelligence for Python", HarnessTeam.CI),
   CI_REMOTE_DEBUG("Enable the option for remote debug for CI users.", HarnessTeam.CI),
+  CI_RUBY_TI("Enable Test Intelligence for Ruby", HarnessTeam.CI),
   CI_TESTTAB_NAVIGATION,
   CI_TI_DASHBOARDS_ENABLED,
   CI_USE_S3_FOR_CACHE("Use S3 bucket for cache intelligence instead of GCP", HarnessTeam.CI),

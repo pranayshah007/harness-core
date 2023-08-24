@@ -1638,7 +1638,8 @@
                     "Nunitconsole",
                     "SBT",
                     "Pytest",
-                    "Unittest"
+                    "Unittest",
+                    "Rspec"
                   ]
                 },
                 {
@@ -1712,7 +1713,8 @@
                     "Kotlin",
                     "Scala",
                     "Csharp",
-                    "Python"
+                    "Python",
+                    "Ruby"
                   ]
                 },
                 {
