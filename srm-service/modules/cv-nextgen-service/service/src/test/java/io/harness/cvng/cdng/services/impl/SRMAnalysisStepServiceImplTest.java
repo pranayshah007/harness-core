@@ -44,6 +44,7 @@ import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
@@ -242,11 +243,21 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
-  public void testGetInstanceByUuids() {
-    String analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
-        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, "stepName",
-        serviceEnvironmentParams, Duration.ofDays(1), Optional.empty());
+  public void testGetSRMAnalysisStepExecutions() {
+    List<SecondaryEventsResponse> instances = srmAnalysisStepService.getSRMAnalysisStepExecutions(
+        builderFactory.getProjectParams(), monitoredServiceIdentifier, clock.instant().toEpochMilli(),
+        clock.instant().plus(5, ChronoUnit.MINUTES).toEpochMilli());
+    assertThat(instances.size()).isEqualTo(1);
+    assertThat(instances.get(0).getType()).isEqualTo(SecondaryEventsType.SRM_ANALYSIS_IMPACT);
+    assertThat(instances.get(0).getStartTime()).isEqualTo(clock.instant().getEpochSecond());
+    assertThat(instances.get(0).getIdentifiers().size()).isEqualTo(1);
+    assertThat(instances.get(0).getIdentifiers().get(0)).isEqualTo(analysisExecutionDetailsId);
+  }
 
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetInstanceByUuids() {
     SecondaryEventDetailsResponse eventDetailsResponse =
         ((SRMAnalysisStepServiceImpl) srmAnalysisStepService)
             .getInstanceByUuids(List.of(analysisExecutionDetailsId), SecondaryEventsType.SRM_ANALYSIS_IMPACT);

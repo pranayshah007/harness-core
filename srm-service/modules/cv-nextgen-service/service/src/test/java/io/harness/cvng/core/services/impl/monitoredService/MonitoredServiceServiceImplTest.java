@@ -46,6 +46,7 @@ import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.beans.Risk;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepInstanceDetails;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
@@ -53,6 +54,7 @@ import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag.TagType;
@@ -143,10 +145,12 @@ import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
-import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
@@ -175,6 +179,7 @@ import io.serializer.HObjectMapper;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -186,6 +191,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -213,6 +219,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
   @Inject ServiceDependencyService serviceDependencyService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
 
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject CVNGLogService cvngLogService;
@@ -226,8 +233,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Mock FakeNotificationClient notificationClient;
   @Mock private PersistentLocker mockedPersistentLocker;
 
-  @Mock SRMAnalysisStepService srmAnalysisStepService;
-  @Mock private EnforcementClientService enforcementClientService;
+  @Mock SRMAnalysisStepService mockedSrmAnalysisStepService;
   @Mock private FeatureFlagService featureFlagService;
 
   @Mock private WebhookConfigService webhookConfigService;
@@ -301,11 +307,11 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(changeSourceService, "changeSourceUpdateHandlerMap", changeSourceUpdateHandlerMap, true);
     FieldUtils.writeField(monitoredServiceService, "changeSourceService", changeSourceService, true);
     FieldUtils.writeField(heatMapService, "clock", clock, true);
+    FieldUtils.writeField(srmAnalysisStepService, "clock", clock, true);
     FieldUtils.writeField(monitoredServiceService, "heatMapService", heatMapService, true);
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
     FieldUtils.writeField(monitoredServiceService, "featureFlagService", featureFlagService, true);
     FieldUtils.writeField(monitoredServiceService, "ngLicenseHttpClient", ngLicenseHttpClient, true);
-    FieldUtils.writeField(monitoredServiceService, "srmAnalysisStepService", srmAnalysisStepService, true);
   }
 
   @Test
@@ -1226,7 +1232,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
-  public void testDelete() {
+  public void testDelete() throws IllegalAccessException {
+    FieldUtils.writeField(monitoredServiceService, "srmAnalysisStepService", mockedSrmAnalysisStepService, true);
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
@@ -1245,7 +1252,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                    builderFactory.getContext().getMonitoredServiceParams(), Arrays.asList(changeSourceIdentifier)))
         .isEmpty();
     assertThat(cvConfigs.size()).isEqualTo(0);
-    verify(srmAnalysisStepService).abortRunningStepsForMonitoredService(projectParams, monitoredServiceIdentifier);
+    verify(mockedSrmAnalysisStepService)
+        .abortRunningStepsForMonitoredService(projectParams, monitoredServiceIdentifier);
   }
 
   @Test
@@ -2754,6 +2762,41 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .build());
     assertThat(healthScoreDTO.getCurrentHealthScore().getRiskStatus()).isEqualTo(Risk.NEED_ATTENTION);
     assertThat(healthScoreDTO.getDependentHealthScore()).isNull();
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMSSecondaryEvents() {
+    String analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, "stepName",
+        environmentParams, Duration.ofDays(1), Optional.empty());
+
+    List<SecondaryEventsResponse> instances =
+        monitoredServiceService.getMSSecondaryEvents(projectParams, monitoredServiceIdentifier,
+            clock.instant().toEpochMilli(), clock.instant().plus(5, ChronoUnit.MINUTES).toEpochMilli());
+    assertThat(instances.size()).isEqualTo(1);
+    SecondaryEventsResponse instance = instances.get(0);
+    assertThat(instance.getType()).isEqualTo(SecondaryEventsType.SRM_ANALYSIS_IMPACT);
+    assertThat(instance.getStartTime()).isEqualTo(clock.instant().getEpochSecond());
+    assertThat(instance.getIdentifiers().get(0)).isEqualTo(analysisExecutionDetailsId);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetMSSecondaryEventDetails() {
+    String analysisExecutionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
+        builderFactory.getAmbiance(builderFactory.getProjectParams()), monitoredServiceIdentifier, "stepName",
+        environmentParams, Duration.ofDays(1), Optional.empty());
+
+    SecondaryEventDetailsResponse eventDetailsResponse = monitoredServiceService.getMSSecondaryEventDetails(
+        SecondaryEventsType.SRM_ANALYSIS_IMPACT, List.of(analysisExecutionDetailsId));
+    assertThat(eventDetailsResponse.getStartTime()).isEqualTo(clock.instant().getEpochSecond());
+    assertThat(eventDetailsResponse.getType()).isEqualTo(SecondaryEventsType.SRM_ANALYSIS_IMPACT);
+    SRMAnalysisStepInstanceDetails instanceDetails = (SRMAnalysisStepInstanceDetails) eventDetailsResponse.getDetails();
+    assertThat(instanceDetails.getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
+    assertThat(instanceDetails.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
   }
 
   MonitoredServiceDTO createMonitoredServiceDTOWithCustomDependencies(
