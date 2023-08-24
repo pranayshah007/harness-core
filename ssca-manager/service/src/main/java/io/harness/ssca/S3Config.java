@@ -13,10 +13,10 @@ import lombok.Value;
 @Value
 @Builder
 public class S3Config {
-  private String AccessKeyId;
-  private String AccessSecretKey;
-  private String Region;
-  private String Endpoint;
-  private String Bucket;
-  private String PolicyBucket;
+  private String accessKeyId;
+  private String accessSecretKey;
+  private String region;
+  private String endpoint;
+  private String bucket;
+  private String policyBucket;
 }
