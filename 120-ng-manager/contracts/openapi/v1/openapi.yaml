@@ -1557,7 +1557,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     put:
-      summary: ''
+      summary: 'Updates a GitX Webhook'
       operationId: update-gitx-webhook
       responses:
         '200':
@@ -1573,7 +1573,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     delete:
-      summary: ''
+      summary: 'Deletes a GitX Webhook'
       operationId: delete-gitx-webhook
       responses:
         '200':
