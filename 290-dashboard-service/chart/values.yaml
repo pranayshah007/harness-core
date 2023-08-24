@@ -174,3 +174,4 @@ tolerations: []
 affinity: {}
 
 additionalConfigs: {}
+java17flags: ""

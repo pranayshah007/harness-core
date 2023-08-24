@@ -49,7 +49,7 @@ data:
   GOOGLE_APPLICATION_CREDENTIALS: {{ .Values.config.GOOGLE_APPLICATION_CREDENTIALS }}
   MEMORY: {{ .Values.java.memory | default "512m" }}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
-
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   # Additional configs
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
