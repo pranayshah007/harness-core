@@ -9,8 +9,12 @@ package io.harness.ssca.services;
 
 import io.harness.spec.server.ssca.v1.model.EnforceSbomRequestBody;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomResponseBody;
+import io.harness.spec.server.ssca.v1.model.EnforcementSummaryResponse;
 
-public interface EnforceSBOMWorkflowService {
+public interface EnforcementStepService {
   EnforceSbomResponseBody enforceSbom(
       String accountId, String orgIdentifier, String projectIdentifier, EnforceSbomRequestBody body);
+
+  EnforcementSummaryResponse getEnforcementSummary(
+      String accountId, String orgIdentifier, String projectIdentifier, String enforcementId);
 }

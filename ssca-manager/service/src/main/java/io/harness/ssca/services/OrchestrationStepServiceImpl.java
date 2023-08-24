@@ -9,6 +9,9 @@ package io.harness.ssca.services;
 
 import io.harness.repositories.ArtifactRepository;
 import io.harness.repositories.SBOMComponentRepo;
+import io.harness.spec.server.ssca.v1.model.Artifact;
+import io.harness.spec.server.ssca.v1.model.OrchestrationSummaryResponse;
+import io.harness.spec.server.ssca.v1.model.SbomDetails;
 import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
 import io.harness.ssca.beans.SbomDTO;
 import io.harness.ssca.beans.SettingsDTO;
@@ -26,10 +29,11 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 import java.util.UUID;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ProcessSbomWorkflowServiceImpl implements ProcessSbomWorkflowService {
+public class OrchestrationStepServiceImpl implements OrchestrationStepService {
   @Inject ArtifactService artifactService;
   @Inject ArtifactRepository artifactRepository;
   @Inject SBOMComponentRepo SBOMComponentRepo;
@@ -73,6 +77,27 @@ public class ProcessSbomWorkflowServiceImpl implements ProcessSbomWorkflowServic
 
     log.info(String.format("SBOM Processed Successfully, Artifact ID: %s", artifactEntity.getArtifactId()));
     return artifactEntity.getArtifactId();
+  }
+
+  @Override
+  public OrchestrationSummaryResponse getOrchestrationSummary(
+      String accountId, String orgIdentifier, String projectIdentifier, String orchestrationId) {
+    ArtifactEntity artifact =
+        artifactService.getArtifact(accountId, orgIdentifier, projectIdentifier, orchestrationId)
+            .orElseThrow(()
+                             -> new NotFoundException(String.format(
+                                 "Artifact with orchestrationIdentifier [%s] is not found", orchestrationId)));
+
+    return new OrchestrationSummaryResponse()
+        .artifact(new Artifact()
+                      .name(artifact.getName())
+                      .type(artifact.getName())
+                      .registryUrl(artifact.getUrl())
+                      .id(artifact.getId())
+                      .tag(artifact.getTag()))
+        .stepExecutionId(artifact.getOrchestrationId())
+        .isAttested(artifact.isAttested())
+        .sbom(new SbomDetails().name(artifact.getSbomName()));
   }
 
   private SettingsDTO getSettingsDTO(String accountId, String orgIdentifier, String projectIdentifier,

@@ -13,8 +13,9 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ssca.entities.ArtifactEntity;
 
-import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
 @OwnedBy(SSCA)
-public interface ArtifactRepository extends Repository<ArtifactEntity, String>, ArtifactRepositoryCustom {}
+public interface ArtifactRepository
+    extends PagingAndSortingRepository<ArtifactEntity, String>, ArtifactRepositoryCustom {}

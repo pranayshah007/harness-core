@@ -15,6 +15,7 @@ import io.harness.ssca.utils.SBOMUtils;
 
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
@@ -53,5 +54,12 @@ public class ArtifactServiceImpl implements ArtifactService {
                   .sbomVersion(SBOMUtils.getSbomVersion(sbomDTO))
                   .build())
         .build();
+  }
+
+  @Override
+  public Optional<ArtifactEntity> getArtifact(
+      String accountId, String orgIdentifier, String projectIdentifier, String orchestrationId) {
+    return artifactRepository.findByAccountIdAndOrgIdAndProjectIdAndOrchestrationId(
+        accountId, orgIdentifier, projectIdentifier, orchestrationId);
   }
 }

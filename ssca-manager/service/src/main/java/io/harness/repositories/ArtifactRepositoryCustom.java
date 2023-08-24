@@ -16,6 +16,9 @@ import java.util.Optional;
 
 @OwnedBy(SSCA)
 public interface ArtifactRepositoryCustom {
-  ArtifactEntity save(ArtifactEntity entity);
   Optional<ArtifactEntity> findFirstByUrl(String url);
+
+  Optional<ArtifactEntity> findByAccountIdAndOrgIdAndProjectIdAndOrchestrationId(
+      String accountId, String orgId, String projectId, String orchestrationid);
+  ;
 }

@@ -1,6 +1,6 @@
 openapi: 3.0.0
 x-stoplight:
-  id: rpu4zlxgyni04
+  id: nf3qya0lfm394
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -83,19 +83,88 @@ paths:
           $ref: '#/components/responses/TokenIssueResponseBody'
       operationId: Token#IssueToken
       x-stoplight:
-        id: 65dvz43ksx8pa
+        id: lfdnr4gsxm6xy
       description: Issue a cross-service token
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
       security:
         - x-api-key: []
+  '/v1/org/{org}/project/{project}/orchestration/{orchestration-id}/summary':
+    parameters:
+      - name: org
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Organization Id
+      - in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Project Id
+        name: project
+      - schema:
+          type: string
+        name: orchestration-id
+        in: path
+        required: true
+    get:
+      summary: Get Orchestration Summary
+      responses:
+        '200':
+          $ref: '#/components/responses/OrchestrationSummaryResponseBody'
+      operationId: getOrchestrationSummary
+      x-stoplight:
+        id: 1n9aed40nyr4e
+      description: Get Orchestration Summary
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+      tags:
+        - orchestration
+  '/v1/org/{org}/project/{project}/enforcement/{enforcement-id}/summary':
+    parameters:
+      - name: org
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Organization Id
+      - in: path
+        required: true
+        schema:
+          type: string
+        description: Harness Project Id
+        name: project
+      - schema:
+          type: string
+        name: enforcement-id
+        in: path
+        required: true
+    get:
+      summary: Get Enforcement Summary
+      responses:
+        '200':
+          $ref: '#/components/responses/EnforcementSummaryResponseBody'
+      operationId: getEnforcementSummary
+      x-stoplight:
+        id: jzq85doo8tlk5
+      description: Get Enforcement Summary
+      security:
+        - x-api-key: []
+      tags:
+        - enforcement
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
 components:
   schemas:
     Artifact:
       title: Artifact
       x-stoplight:
-        id: tbty2c77aatne
+        id: 5aekk9m4lzej8
       type: object
       x-examples: {}
       properties:
@@ -126,7 +195,7 @@ components:
     SbomProcess:
       title: SbomProcess
       x-stoplight:
-        id: 1govts3jx2is9
+        id: y2hb3u4kauit0
       type: object
       properties:
         name:
@@ -151,7 +220,7 @@ components:
     Attestation:
       title: Attestation
       x-stoplight:
-        id: njovnnucx1sdp
+        id: 3b6pbyc78i7wd
       type: object
       properties:
         is_attested:
@@ -165,7 +234,7 @@ components:
     SbomMetadata:
       title: SbomMetadata
       x-stoplight:
-        id: mt82ebxc3v3d3
+        id: 3x3lrzy9yzqub
       type: object
       properties:
         format:
@@ -211,7 +280,7 @@ components:
     SbomProcessRequestBody:
       title: SbomProcessRequestBody
       x-stoplight:
-        id: 91ee84xa33smg
+        id: 2ej147flnmxhw
       type: object
       properties:
         artifact:
@@ -225,7 +294,7 @@ components:
     SbomProcessResponseBody:
       title: SbomProcessResponseBody
       x-stoplight:
-        id: j2g9ex2135vmo
+        id: kfjzcnavg7zfn
       type: object
       properties:
         artifact_id:
@@ -234,7 +303,7 @@ components:
     EnforceSbomResponseBody:
       title: SbomEnforceResponseBody
       x-stoplight:
-        id: 4ezyuvxap426s
+        id: 2ch2vh1kcu4yj
       type: object
       properties:
         enforcement_id:
@@ -248,7 +317,7 @@ components:
     EnforceSbomRequestBody:
       title: SbomEnforceRequestBody
       x-stoplight:
-        id: o83d681ynx177
+        id: xlwx0g2swgery
       type: object
       properties:
         enforcement_id:
@@ -260,7 +329,7 @@ components:
     TokenIssueResponseBody:
       title: TokenIssueResponseBody
       x-stoplight:
-        id: fd8797fcac677
+        id: m3cidf4usfgo5
       type: object
       x-internal: true
       properties:
@@ -275,12 +344,68 @@ components:
         token:
           type: string
           x-stoplight:
-            id: hll76gq8nz4sz
+            id: 62vk4wkhrtc0e
           description: Issued cross-service JWT
       required:
         - token
       title: ''
       x-internal: true
+    OrchestrationSummaryResponse:
+      title: OrchestrationSummary
+      x-stoplight:
+        id: t0sjc6cfwopbr
+      type: object
+      properties:
+        step_execution_id:
+          type: string
+          x-stoplight:
+            id: jftxdzy4rhm3y
+        is_attested:
+          x-stoplight:
+            id: m82ynd4l6slp8
+          type: boolean
+        artifact:
+          $ref: '#/components/schemas/Artifact'
+        sbom:
+          $ref: '#/components/schemas/SbomDetails'
+    EnforcementSummaryResponse:
+      title: EnforcementSummaryResponse
+      x-stoplight:
+        id: 76lz28i62f144
+      type: object
+      properties:
+        artifact:
+          $ref: '#/components/schemas/Artifact'
+        enforcement_id:
+          type: string
+          x-stoplight:
+            id: 1brcqnddmncyn
+        allow_list_violation_count:
+          type: integer
+          x-stoplight:
+            id: 8dtpohq70jks7
+        deny_list_violation_count:
+          type: integer
+          x-stoplight:
+            id: 9zh0hehjoqujw
+        status:
+          type: string
+          x-stoplight:
+            id: f6yugk26rrsad
+      description: Enforcement Summary
+    SbomDetails:
+      title: SbomDetails
+      x-stoplight:
+        id: a0dhiojgxty14
+      type: object
+      description: Sbom Details
+      properties:
+        name:
+          type: string
+          x-stoplight:
+            id: 3azt0nudorbsy
+      required:
+        - name
   parameters:
     OrgParam:
       name: org
@@ -339,5 +464,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/TokenIssueResponseBody'
+    OrchestrationSummaryResponseBody:
+      description: Step Execution Response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OrchestrationSummaryResponse'
+    EnforcementSummaryResponseBody:
+      description: Enforcement Summary Response Body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EnforcementSummaryResponse'
 tags:
   - name: sbomProcessor
