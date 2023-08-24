@@ -128,7 +128,7 @@ public class ScorecardServiceImpl implements ScorecardService {
   @Override
   public void saveScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier) {
     validateChecks(scorecardDetailsRequest.getChecks(), accountIdentifier);
-    scorecardRepository.save(ScorecardDetailsMapper.fromDTO(scorecardDetailsRequest, accountIdentifier));
+    scorecardRepository.saveOrUpdate(ScorecardDetailsMapper.fromDTO(scorecardDetailsRequest, accountIdentifier));
     setupUsageProducer.publishScorecardSetupUsage(scorecardDetailsRequest, accountIdentifier);
   }
 
