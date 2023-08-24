@@ -23,6 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.execution.PlanExecution;
+import io.harness.metrics.PipelineMetricUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.skip.SkipInfo;
@@ -54,12 +55,13 @@ public class PipelineStatusUpdateEventHandlerTest extends PipelineServiceTestBas
   @Mock private OrchestrationEventEmitter eventEmitter;
   @Mock private WaitNotifyEngine waitNotifyEngine;
   @Mock private AbortInfoHelper abortInfoHelper;
+  @Mock private PipelineMetricUtils pipelineMetricUtils;
   private PipelineStatusUpdateEventHandler pipelineStatusUpdateEventHandler;
 
   @Before
   public void setUp() throws Exception {
-    pipelineStatusUpdateEventHandler = new PipelineStatusUpdateEventHandler(
-        planExecutionService, pmsExecutionSummaryRepository, eventEmitter, waitNotifyEngine, abortInfoHelper);
+    pipelineStatusUpdateEventHandler = new PipelineStatusUpdateEventHandler(planExecutionService,
+        pmsExecutionSummaryRepository, pipelineMetricUtils, eventEmitter, waitNotifyEngine, abortInfoHelper);
   }
 
   @Test
@@ -106,7 +108,7 @@ public class PipelineStatusUpdateEventHandlerTest extends PipelineServiceTestBas
         .thenReturn(Optional.of(pipelineExecutionSummaryEntity));
     when(pmsExecutionSummaryRepository.update(notNull(), notNull())).thenReturn(pipelineExecutionSummaryEntity);
 
-    pipelineStatusUpdateEventHandler.onEnd(createAmbiance());
+    pipelineStatusUpdateEventHandler.onEnd(createAmbiance(), Status.SUCCEEDED);
 
     // IN THIS SCENARIO WE ARE ONLY VERIFYING THAT EVENT WAS EMITTED TWICE AND WITHOUT NPE
     // A NEW TEST CASE SHOULD BE CREATED TO ASSERT EMITTED EVENT PROPERTIES.

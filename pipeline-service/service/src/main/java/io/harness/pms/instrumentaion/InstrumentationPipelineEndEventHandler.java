@@ -43,6 +43,7 @@ import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.bean.PipelineEvent;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
@@ -85,7 +86,7 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
   @Inject SdkStepHelper sdkStepHelper;
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
     String planExecutionId = ambiance.getPlanExecutionId();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     AccountDTO accountDTO = accountService.getAccount(accountId);

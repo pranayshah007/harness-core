@@ -15,6 +15,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.logging.AutoLogContext;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -37,7 +38,7 @@ public class ResourceRestraintObserver
   @Inject private TransactionHelper transactionHelper;
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
     unblockConstraints(ambiance, ambiance.getPlanExecutionId());
   }
 

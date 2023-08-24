@@ -18,6 +18,7 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.execution.PlanExecution;
+import io.harness.metrics.PipelineMetricUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
@@ -44,21 +45,25 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserver, OrchestrationEndObserver {
+  private static final String PIPELINE_EXECUTION_END_COUNT = "pipeline_execution_end_count";
+
   private final PlanExecutionService planExecutionService;
   private final PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
+  private final PipelineMetricUtils pipelineMetricUtils;
   private OrchestrationEventEmitter eventEmitter;
   private WaitNotifyEngine waitNotifyEngine;
   private AbortInfoHelper abortInfoHelper;
 
   @Inject
   public PipelineStatusUpdateEventHandler(PlanExecutionService planExecutionService,
-      PmsExecutionSummaryRepository pmsExecutionSummaryRepository, OrchestrationEventEmitter eventEmitter,
-      WaitNotifyEngine waitNotifyEngine, AbortInfoHelper abortInfoHelper) {
+      PmsExecutionSummaryRepository pmsExecutionSummaryRepository, PipelineMetricUtils pipelineMetricUtils,
+      OrchestrationEventEmitter eventEmitter, WaitNotifyEngine waitNotifyEngine, AbortInfoHelper abortInfoHelper) {
     this.planExecutionService = planExecutionService;
     this.pmsExecutionSummaryRepository = pmsExecutionSummaryRepository;
     this.eventEmitter = eventEmitter;
     this.waitNotifyEngine = waitNotifyEngine;
     this.abortInfoHelper = abortInfoHelper;
+    this.pipelineMetricUtils = pipelineMetricUtils;
   }
 
   @Override
@@ -94,12 +99,13 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
   }
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
     Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntity =
         pmsExecutionSummaryRepository
-            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
-                AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-                AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getPlanExecutionId(), true);
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(accountId,
+                AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+                ambiance.getPlanExecutionId(), true);
     if (pipelineExecutionSummaryEntity.isPresent()) {
       Set<String> executedModules =
           OrchestrationObserverUtils.getExecutedModulesInPipeline(pipelineExecutionSummaryEntity.get());
@@ -117,6 +123,10 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
                   pipelineExecutionSummaryUpdatedEntity.getEndTs()));
         }
       }
+
+      // Update pipeline execution metrics
+      pipelineMetricUtils.publishPipelineExecutionMetrics(
+          PIPELINE_EXECUTION_END_COUNT, pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus(), accountId);
     }
   }
 
