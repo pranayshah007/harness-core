@@ -1469,7 +1469,7 @@ paths:
       tags:
         - Account Services
       x-internal: true
-  /v1/eula/sign:
+  '/v1/eula/sign':
     post:
       summary: Sign an End User License Agreement
       operationId: sign-eula
@@ -1486,7 +1486,7 @@ paths:
       tags:
         - EULA
       x-internal: false
-  v1/eula/validate-sign:
+  'v1/eula/validate-sign':
     get:
       summary: Validate specified agreement is signed or not
       operationId: validate-eula-sign
