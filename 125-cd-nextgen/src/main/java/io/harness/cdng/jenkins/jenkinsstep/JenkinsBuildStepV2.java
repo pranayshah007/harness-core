@@ -82,7 +82,8 @@ public class JenkinsBuildStepV2 extends CdTaskChainExecutable {
         .unstableStatusAsSuccess(specParameters.isUnstableStatusAsSuccess())
         .useConnectorUrlForJobExecution(specParameters.isUseConnectorUrlForJobExecution())
         .delegateSelectors(StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
-        .consoleLogFrequency(getConsoleLogPollingFrequency(specParameters.getConsoleLogPollFrequency(), ngLogCallback))
+        .consoleLogFrequency(getConsoleLogPollingFrequency(
+            specParameters.getConsoleLogPollFrequency(), ngLogCallback, stepParameters.getTimeout()))
         .jobParameter(JenkinsBuildStepUtils.processJenkinsFieldsInParameters(specParameters.getFields()));
   }
 
@@ -140,7 +141,8 @@ public class JenkinsBuildStepV2 extends CdTaskChainExecutable {
     logStreamingStepClient.closeStream(COMMAND_UNIT);
   }
 
-  private static long getConsoleLogPollingFrequency(ParameterField<String> frequency, NGLogCallback ngLogCallback) {
+  private static long getConsoleLogPollingFrequency(
+      ParameterField<String> frequency, NGLogCallback ngLogCallback, ParameterField<String> timeOut) {
     if (ParameterField.isNotNull(frequency)) {
       if (frequency.isExpression()) {
         logPollFrequency(String.format("%s expression [%s] not resolved. Taking default value [%s]",
@@ -149,8 +151,8 @@ public class JenkinsBuildStepV2 extends CdTaskChainExecutable {
         return DEFAULT_CONSOLE_LOG_FREQUENCY_SECONDS;
       } else {
         try {
-          Timeout timeout = Timeout.fromString(frequency.getValue());
-          long value = TimeUnit.MILLISECONDS.toSeconds(timeout.getTimeoutInMillis());
+          Timeout frequencyObject = Timeout.fromString(frequency.getValue());
+          long value = TimeUnit.MILLISECONDS.toSeconds(frequencyObject.getTimeoutInMillis());
           if (value < DEFAULT_CONSOLE_LOG_FREQUENCY_SECONDS) {
             logPollFrequency(
                 String.format(
@@ -160,6 +162,14 @@ public class JenkinsBuildStepV2 extends CdTaskChainExecutable {
                 ngLogCallback);
             return DEFAULT_CONSOLE_LOG_FREQUENCY_SECONDS;
           } else {
+            if (isFrequencyGreaterThanTimeout(timeOut, value)) {
+              logPollFrequency(
+                  String.format(
+                      "User input %s value [%s] is greater than step timeout value [%s]. Taking default polling frequency value [%s]",
+                      CONSOLE_LOG_FREQUENCY, frequency.getValue(), timeOut.getValue(), DEFAULT_CONSOLE_LOG_FREQUENCY),
+                  ngLogCallback);
+              return DEFAULT_CONSOLE_LOG_FREQUENCY_SECONDS;
+            }
             logPollFrequency(
                 String.format("%s value [%s]", CONSOLE_LOG_FREQUENCY, frequency.getValue()), ngLogCallback);
             return value;
@@ -185,5 +195,20 @@ public class JenkinsBuildStepV2 extends CdTaskChainExecutable {
     if (ngLogCallback != null) {
       ngLogCallback.saveExecutionLog(message, LogLevel.INFO);
     }
+  }
+
+  private static boolean isFrequencyGreaterThanTimeout(ParameterField<String> timeOut, long frequency) {
+    if (ParameterField.isNotNull(timeOut) && !timeOut.isExpression()) {
+      try {
+        Timeout timeout = Timeout.fromString(timeOut.getValue());
+        long value = TimeUnit.MILLISECONDS.toSeconds(timeout.getTimeoutInMillis());
+        if (value <= frequency) {
+          return true;
+        }
+      } catch (Exception e) {
+        return false;
+      }
+    }
+    return false;
   }
 }
