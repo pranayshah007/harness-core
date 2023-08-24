@@ -66,3 +66,6 @@ if [[ $NO_PROXY != "" ]]; then
 fi
 
 export PROXY_SYS_PROPS
+
+ACCOUNT_STATUS=$(curl $MANAGER_PROXY_CURL -ks $MANAGER_HOST_AND_PORT/api/account/$ACCOUNT_ID/status | cut -d ":" -f 3 | cut -d "," -f 1 | cut -d "\"" -f 2)
+echo $ACCOUNT_STATUS
