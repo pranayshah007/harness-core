@@ -20,4 +20,5 @@ import org.springframework.data.repository.CrudRepository;
 public interface CITaskDetailsRepository extends CrudRepository<CITaskDetails, String> {
   Optional<CITaskDetails> findFirstByStageExecutionId(String stageExecutionId);
   void deleteFirstByStageExecutionId(String stageExecutionId);
+  void deleteAllByAccountId(String accountId);
 }

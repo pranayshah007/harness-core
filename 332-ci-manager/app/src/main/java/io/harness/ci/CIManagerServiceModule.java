@@ -9,7 +9,9 @@ package io.harness.app;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELEGATE_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned.NG_ORCHESTRATION;
@@ -36,6 +38,7 @@ import io.harness.ci.CIExecutionServiceModule;
 import io.harness.ci.app.intfc.CIYamlSchemaService;
 import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.enforcement.CIBuildEnforcerImpl;
+import io.harness.ci.event.AccountEntityListener;
 import io.harness.ci.execution.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.execution.execution.DelegateTaskEventListener;
 import io.harness.ci.execution.queue.CIInitTaskMessageProcessor;
@@ -304,6 +307,13 @@ public class CIManagerServiceModule extends AbstractModule {
                 .setNameFormat("plugin-metadata-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("ciDataDeleteScheduler"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("ci-data-delete-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
     bind(AwsClient.class).to(AwsClientImpl.class);
     Multibinder<PluginInfoProvider> pluginInfoProviderMultibinder =
         Multibinder.newSetBinder(binder(), new TypeLiteral<PluginInfoProvider>() {});
@@ -431,9 +441,17 @@ public class CIManagerServiceModule extends AbstractModule {
           .toInstance(RedisConsumer.of(OBSERVER_EVENT_CHANNEL, serviceId, redissonClient, DEFAULT_MAX_PROCESSING_TIME,
               DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
 
+      bind(Consumer.class)
+          .annotatedWith(Names.named(ENTITY_CRUD))
+          .toInstance(RedisConsumer.of(ENTITY_CRUD, serviceId, redissonClient, DEFAULT_MAX_PROCESSING_TIME,
+              DEFAULT_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
+
       bind(MessageListener.class)
           .annotatedWith(Names.named(DELEGATE_ENTITY + OBSERVER_EVENT_CHANNEL))
           .to(DelegateTaskEventListener.class);
+      bind(MessageListener.class)
+          .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
+          .to(AccountEntityListener.class);
 
       bind(Producer.class)
           .annotatedWith(Names.named(orchestrationEvent))

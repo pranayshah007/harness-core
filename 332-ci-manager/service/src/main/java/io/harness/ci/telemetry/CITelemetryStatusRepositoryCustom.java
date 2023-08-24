@@ -9,4 +9,5 @@ package io.harness.ci.telemetry;
 
 public interface CITelemetryStatusRepositoryCustom {
   boolean updateTimestampIfOlderThan(String accountId, long olderThan, long updateToTime);
+  void deleteAllByAccountId(String accountId);
 }

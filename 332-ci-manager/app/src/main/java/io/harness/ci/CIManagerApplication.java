@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.app.CIManagerConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
@@ -35,6 +36,8 @@ import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerDayRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerMonthRestrictionUsageImpl;
 import io.harness.ci.enforcement.TotalBuildsRestrictionUsageImpl;
+import io.harness.ci.event.CIDataDeleteJob;
+import io.harness.ci.execution.AccountEventConsumer;
 import io.harness.ci.execution.execution.CINotifyEventConsumerRedis;
 import io.harness.ci.execution.execution.CINotifyEventPublisher;
 import io.harness.ci.execution.execution.ObserverEventConsumer;
@@ -346,6 +349,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     initializeCiManagerMonitoring(configuration, injector);
 
+    initializeCiManagerDataDeletion(injector);
     initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
@@ -357,6 +361,9 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     final ExecutorService observerEventConsumerExecutor =
         Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(OBSERVER_EVENT_CHANNEL).build());
     observerEventConsumerExecutor.execute(injector.getInstance(ObserverEventConsumer.class));
+    final ExecutorService accountEventConsumerExecutor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(ENTITY_CRUD).build());
+    accountEventConsumerExecutor.execute(injector.getInstance(AccountEventConsumer.class));
   }
 
   private void registerOasResource(CIManagerConfiguration appConfig, Environment environment, Injector injector) {
@@ -616,6 +623,9 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       log.info("Initializing CI Manager Monitoring");
       injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
     }
+  }
+  private void initializeCiManagerDataDeletion(Injector injector) {
+    injector.getInstance(CIDataDeleteJob.class).scheduleTasks();
   }
 
   private void initializePluginPublisher(Injector injector) {

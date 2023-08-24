@@ -129,6 +129,11 @@ public class CIAccountExecutionMetadataRepositoryCustomImpl implements CIAccount
     }
   }
 
+  public void deleteAllByAccountId(String accountId) {
+    Query query = new Query(Criteria.where(CIAccountExecutionMetadataKeys.accountId).is(accountId));
+    mongoTemplate.findAllAndRemove(query, CIAccountExecutionMetadata.class);
+  }
+
   private void updateCIMonthlyBuilds(CIAccountExecutionMetadata accountExecutionMetadata, Long startTS) {
     AccountExecutionInfo accountExecutionInfo;
     if (accountExecutionMetadata.getAccountExecutionInfo() != null) {

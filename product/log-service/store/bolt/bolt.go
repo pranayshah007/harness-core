@@ -110,6 +110,15 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	})
 }
 
+func (s *Store) Exists(ctx context.Context, key string) (bool, error) {
+	return false, nil
+}
+
+// Delete deletes the log file from the Bolt datastore.
+func (s *Store) DeleteWithPrefix(ctx context.Context, key string) error {
+	return nil
+}
+
 // Ping pings the store for readiness
 func (s *Store) Ping() error {
 	return nil

@@ -26,4 +26,5 @@ public interface CIExecutionRepository
   CIExecutionMetadata findByStageExecutionId(String stageExecutionId);
 
   void deleteByStageExecutionId(String stageExecutionId);
+  void deleteAllByAccountId(String accountId);
 }

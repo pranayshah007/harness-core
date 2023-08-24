@@ -66,6 +66,32 @@ public class TIServiceUtils {
     return response.body();
   }
 
+  @NotNull
+  public void clean(String accountID) {
+    log.info("Initiating cleanup request to TI service: {}", getInternalUrl());
+    Call<String> cleanupCall = tiServiceClient.clean(accountID, tiServiceConfig.getGlobalToken());
+    Response<String> response = null;
+    try {
+      response = cleanupCall.execute();
+    } catch (IOException e) {
+      throw new GeneralException("Cleanup request to TI service call failed", e);
+    }
+
+    // Received error from the server
+    if (!response.isSuccessful()) {
+      String errorBody = null;
+      try {
+        errorBody = response.errorBody().string();
+      } catch (IOException e) {
+        log.error("Could not read error body {}", response.errorBody());
+      }
+
+      throw new GeneralException(String.format(
+          "Could not send cleaup request to TI service. status code = %s, message = %s, response = %s", response.code(),
+          response.message() == null ? "null" : response.message(), response.errorBody() == null ? "null" : errorBody));
+    }
+  }
+
   private String getInternalUrl() {
     if (!isEmpty(tiServiceConfig.getInternalUrl())) {
       return tiServiceConfig.getInternalUrl();

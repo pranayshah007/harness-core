@@ -73,6 +73,36 @@ func TokenGenerationMiddleware(config config.Config, validateAccount bool, ngCli
 	}
 }
 
+// AuthInternalMiddleware is middleware to ensure that the incoming request is allowed for internal APIs only
+func AuthInternalMiddleware(config config.Config, validateAccount bool, ngClient *client.HTTPClient) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if validateAccount {
+				accountID := r.FormValue(accountIDParam)
+				if accountID == "" {
+					WriteBadRequest(w, errors.New("no account ID in query params"))
+					return
+				}
+			}
+
+			// Try to get token from the header or the URL param
+			inputToken := r.Header.Get(authHeader)
+			if inputToken == "" {
+				WriteBadRequest(w, errors.New("no token in header"))
+				return
+			}
+
+			if inputToken != config.Auth.GlobalToken {
+				// Error: invalid token
+				WriteBadRequest(w, errors.New("token in request not authorized for receiving tokens"))
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // GetAuthFunc is middleware to ensure that the incoming request is allowed to access resources
 // at the specific accountID
 func AuthMiddleware(config config.Config, ngClient *client.HTTPClient, skipKeyCheck bool) func(http.Handler) http.Handler {
