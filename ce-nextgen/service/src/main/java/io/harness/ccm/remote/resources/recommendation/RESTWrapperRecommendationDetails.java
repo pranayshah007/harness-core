@@ -30,6 +30,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
+import com.codahale.metrics.annotation.Metered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.leangen.graphql.execution.ResolutionEnvironment;
@@ -55,6 +56,7 @@ import org.springframework.stereotype.Service;
 
 @Api("recommendation/details")
 @Path("recommendation/details")
+@Metered
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth

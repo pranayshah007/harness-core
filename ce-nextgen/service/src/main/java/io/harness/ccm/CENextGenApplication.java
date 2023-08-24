@@ -17,6 +17,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.ccm.eventframework.CENGEventConsumerService;
 import io.harness.ccm.migration.CENGCoreMigrationProvider;
+import io.harness.ccm.remote.resources.perspectives.PerspectiveResource;
+import io.harness.ccm.remote.resources.recommendation.RESTWrapperRecommendationDetails;
 import io.harness.ccm.service.impl.PerspectivesRestrictionUsageImpl;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
@@ -63,6 +65,7 @@ import io.harness.yaml.YamlSdkConfiguration;
 import io.harness.yaml.YamlSdkInitHelper;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.jersey2.InstrumentedResourceMethodApplicationListener;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -225,6 +228,17 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     createConsumerThreadsToListenToEvents(environment, injector);
     initializeEnforcementSdk(injector);
     initializeMonitoring(injector);
+    registerInstrumentedResourceListener(environment);
+  }
+
+  private void registerInstrumentedResourceListener(Environment environment) {
+    environment.jersey().register(new InstrumentedResourceMethodApplicationListener(metricRegistry));
+    registerResourceClasses(environment);
+  }
+
+  private static void registerResourceClasses(Environment environment) {
+    environment.jersey().register(PerspectiveResource.class);
+    environment.jersey().register(RESTWrapperRecommendationDetails.class);
   }
 
   private void registerRequestContextFilter(Environment environment) {
