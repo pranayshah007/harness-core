@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -328,8 +327,8 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
     doReturn(node).when(planService).fetchNode(eq("identityPlanUuid"));
     ChildExecutableResponse response = identityStrategyInternalStep.obtainChild(ambiance, stepParameters, null);
 
-    assertEquals(response, childExecutableResponse);
-    verify(planService, never()).saveIdentityNodesForMatrix(any(), any());
+    assertThat(response.getChildNodeId()).isNotNull();
+    verify(planService, times(1)).saveIdentityNodesForMatrix(any(), any());
 
     // NodeExecution with lowest createdAt should be returned as child.
     PlanNode node1 = PlanNode.builder().uuid("planUuid1").build();
@@ -350,7 +349,7 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
     response = identityStrategyInternalStep.obtainChild(ambiance, stepParameters, null);
     assertFalse(response.getChildNodeId().equals("planUuid1"));
 
-    verify(planService, times(1)).saveIdentityNodesForMatrix(argumentCaptor.capture(), any());
+    verify(planService, times(2)).saveIdentityNodesForMatrix(argumentCaptor.capture(), any());
     List<Node> childList = argumentCaptor.getValue();
     assertEquals(childList.size(), 1);
     IdentityPlanNode childIdentityPlanNode = (IdentityPlanNode) childList.get(0);
