@@ -1703,6 +1703,21 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testUpdate_sourcesDoesNotExist() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    monitoredServiceDTO.setSources(null);
+    MonitoredServiceDTO updatedMonitoredServiceDTO =
+        monitoredServiceService.update(builderFactory.getContext().getAccountId(), monitoredServiceDTO)
+            .getMonitoredServiceDTO();
+    assertThat(updatedMonitoredServiceDTO.getSources().getHealthSources().size()).isEqualTo(0);
+    assertThat(updatedMonitoredServiceDTO.getSources().getChangeSources().size()).isEqualTo(0);
+  }
+
+  @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
   public void testUpdate_serviceRefUpdateNotAllowed() {
