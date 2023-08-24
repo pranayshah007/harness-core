@@ -1523,6 +1523,22 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/CreateGitXWebhookRequest'
       x-internal: true
+    get:
+      summary: ''
+      operationId: list-gitx-webhooks
+      responses:
+        '200':
+          $ref: '#/components/responses/ListGitXWebhookResponse'
+      description: List GitX webhooks
+      security:
+        - x-api-key: []
+      tags:
+        - GitX Webhooks
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ListGitXWebhookRequest'
+      x-internal: true
   '/v1/gitx-webhooks/{gitx-webhook}':
     parameters:
       - $ref: '#/components/parameters/GitXWebhookIdentifier'
@@ -1530,7 +1546,7 @@ paths:
       summary: Fetch GitX Webhook
       responses:
         '200':
-          $ref: '#/components/responses/DeleteGitXWebhookResponse'
+          $ref: '#/components/responses/GetGitXWebhookResposne'
       operationId: get-gitx-webhooks
       description: Fetch a gitx webhook
       x-internal: true
@@ -1553,6 +1569,7 @@ paths:
       description: Update a Gitx webhook
       requestBody:
         $ref: '#/components/requestBodies/UpdateGitXWebhookRequest'
+      x-internal: true
     delete:
       summary: ''
       operationId: delete-gitx-webhook
@@ -1566,6 +1583,7 @@ paths:
         - GitX Webhooks
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
 components:
   schemas:
     Service:
@@ -2642,6 +2660,19 @@ components:
       properties:
         successfully_deleted:
           type: boolean
+    ListGitXWebhookRequest:
+      title: ListGitXWebhookRequest
+      x-stoplight:
+        id: 40nc5ftckw9pe
+      type: object
+      description: 'Contains information about the GitX webhook request '
+      properties:
+        webhook_search_term:
+          type: string
+        page:
+          type: integer
+        size:
+          type: integer
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3254,6 +3285,22 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/DeleteGitXWebhookResponse'
+    GetGitXWebhookResposne:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            properties:
+              id:
+                type: string
+    ListGitXWebhookResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            properties:
+              id:
+                type: string
   requestBodies:
     ServiceRequest:
       content:
@@ -3822,6 +3869,12 @@ components:
           schema:
             $ref: '#/components/schemas/UpdateGitXWebhookRequest'
       description: Update GitX webhook request
+    ListGitXWebhookRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListGitXWebhookRequest'
+      description: List GitX webhook request
   parameters:
     Page:
       name: page
