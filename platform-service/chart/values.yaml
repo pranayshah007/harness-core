@@ -213,3 +213,4 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
+java17flags: ""
