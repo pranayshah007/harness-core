@@ -140,7 +140,6 @@ public class AsgStepCommonHelper extends CDStepHelper {
   public TaskChainResponse startChainLink(
       AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
     // Get ManifestsOutcome
-      AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
     LogCallback logCallback = getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
 
     // Get UserDataOutcome and update expressions
