@@ -49,7 +49,7 @@ nodeExecutions {"name": "planExecutionId_mode_status_oldRetry_idx", "background"
 nodeExecutions {"name": "planExecutionId_nodeId_idx", "background": true} {"ambiance.planExecutionId": 1, "nodeId": 1}
 nodeExecutions {"name": "planExecutionId_oldRetry_idx", "background": true} {"ambiance.planExecutionId": 1, "oldRetry": 1}
 nodeExecutions {"name": "planExecutionId_parentId_createdAt_idx", "background": true} {"ambiance.planExecutionId": 1, "parentId": 1, "createdAt": -1}
-nodeExecutions {"name": "planExecutionId_stageFqn_idx", "background": true} {"ambiance.planExecutionId": 1, "planNode.stageFqn": 1}
+nodeExecutions {"name": "planExecutionId_stageFqn_idx", "background": true} {"ambiance.planExecutionId": 1, "stageFqn": 1}
 nodeExecutions {"name": "planExecutionId_status_idx", "background": true} {"ambiance.planExecutionId": 1, "status": 1}
 nodeExecutions {"name": "planExecutionId_stepCategory_identifier_idx", "background": true} {"ambiance.planExecutionId": 1, "stepType.stepCategory": 1, "identifier": 1}
 nodeExecutions {"name": "previous_id_idx", "background": true} {"previousId": 1}

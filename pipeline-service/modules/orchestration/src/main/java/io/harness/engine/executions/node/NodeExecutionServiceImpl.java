@@ -876,7 +876,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         .include(NodeExecutionKeys.status)
         .include(NodeExecutionKeys.endTs)
         .include(NodeExecutionKeys.createdAt)
-        .include(NodeExecutionKeys.planNode)
         .include(NodeExecutionKeys.mode)
         .include(NodeExecutionKeys.stepType)
         .include(NodeExecutionKeys.ambiance)

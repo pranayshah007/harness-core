@@ -226,7 +226,7 @@ public class NotificationHelperTest extends CategoryTest {
     PlanNode planNode = PlanNode.builder().identifier("dummyIdentifier").build();
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().yaml(yaml).build();
     NodeExecution nodeExecution =
-        NodeExecution.builder().planNode(planNode).status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
+        NodeExecution.builder().status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
     when(planExecutionMetadataService.findByPlanExecutionId(any()))
         .thenReturn(java.util.Optional.ofNullable(planExecutionMetadata));
     doReturn(null).when(notificationClient).sendNotificationAsync(any());
@@ -283,7 +283,7 @@ public class NotificationHelperTest extends CategoryTest {
   public void testEmailNotificationIsSentToAllRecipients() {
     PlanNode planNode = PlanNode.builder().identifier("dummyIdentifier").build();
     NodeExecution nodeExecution =
-        NodeExecution.builder().planNode(planNode).status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
+        NodeExecution.builder().status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
     when(planExecutionService.getPlanExecutionMetadata(anyString()))
         .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
@@ -315,7 +315,7 @@ public class NotificationHelperTest extends CategoryTest {
   public void testWebhookNotification() {
     PlanNode planNode = PlanNode.builder().identifier("dummyIdentifier").build();
     NodeExecution nodeExecution =
-        NodeExecution.builder().planNode(planNode).status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
+        NodeExecution.builder().status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
     when(planExecutionService.getPlanExecutionMetadata(anyString()))
         .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
@@ -364,7 +364,7 @@ public class NotificationHelperTest extends CategoryTest {
 
     PlanNode planNode = PlanNode.builder().identifier("dummyIdentifier").build();
     NodeExecution nodeExecution =
-        NodeExecution.builder().planNode(planNode).status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
+        NodeExecution.builder().status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
     when(planExecutionService.getPlanExecutionMetadata(anyString()))
         .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))

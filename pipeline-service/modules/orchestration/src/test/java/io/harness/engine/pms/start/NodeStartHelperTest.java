@@ -90,7 +90,6 @@ public class NodeStartHelperTest extends OrchestrationTestBase {
                                       .ambiance(ambiance)
                                       .status(Status.DISCONTINUING)
                                       .mode(ExecutionMode.TASK)
-                                      .planNode(planNode)
                                       .startTs(System.currentTimeMillis())
                                       .build();
 
@@ -142,7 +141,6 @@ public class NodeStartHelperTest extends OrchestrationTestBase {
                                        .uuid(nodeExecutionId)
                                        .ambiance(ambiance)
                                        .mode(ExecutionMode.TASK)
-                                       .planNode(planNode)
                                        .startTs(System.currentTimeMillis());
 
     when(planService.fetchNode(planId, planNode.getUuid())).thenReturn(planNode);

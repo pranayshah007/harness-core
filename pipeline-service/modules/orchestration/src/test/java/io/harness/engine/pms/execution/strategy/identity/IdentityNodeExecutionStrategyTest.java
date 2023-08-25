@@ -171,7 +171,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .uuid(nodeExecutionId)
                                       .ambiance(ambiance)
                                       .adviserResponse(adviserResponse)
-                                      .planNode(planNode)
                                       .originalNodeExecutionId(originalNodeExecutionId)
                                       .mode(ExecutionMode.SYNC)
                                       .build();
@@ -181,7 +180,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                           .uuid(originalNodeExecutionId)
                                           .ambiance(ambiance)
                                           .adviserResponse(adviserResponse)
-                                          .planNode(planNode)
                                           .status(Status.SKIPPED)
                                           .build();
     when(planService.fetchNode(planId, planNode.getUuid())).thenReturn(planNode);
@@ -198,7 +196,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .uuid(originalNodeExecutionId)
                             .ambiance(ambiance)
                             .adviserResponse(adviserResponse)
-                            .planNode(planNode)
                             .mode(ExecutionMode.SYNC)
                             .status(Status.SUCCEEDED)
                             .build();
@@ -213,7 +210,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .uuid(originalNodeExecutionId)
                             .ambiance(ambiance)
                             .adviserResponse(adviserResponse)
-                            .planNode(planNode)
                             .status(Status.SUCCEEDED)
                             .build();
     when(nodeExecutionService.get(eq(originalNodeExecutionId))).thenReturn(originalExecution);
@@ -246,7 +242,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .uuid(nodeExecutionId)
                                       .ambiance(ambiance)
                                       .adviserResponse(adviserResponse)
-                                      .planNode(planNode)
                                       .mode(ExecutionMode.SYNC)
                                       .build();
 
@@ -261,7 +256,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                               .ambiance(ambiance)
                                               .notifyId("notifyId")
                                               .adviserResponse(adviserResponse)
-                                              .planNode(planNode)
                                               .status(Status.INTERVENTION_WAITING)
                                               .mode(ExecutionMode.SYNC)
                                               .build();
@@ -307,7 +301,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .uuid(nodeExecutionId)
                                       .ambiance(ambiance)
                                       .adviserResponse(adviserResponse)
-                                      .planNode(planNode)
                                       .mode(ExecutionMode.SYNC)
                                       .build();
 
@@ -342,7 +335,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .uuid(nodeExecutionId)
                                       .ambiance(ambiance)
                                       .adviserResponse(adviserResponse)
-                                      .planNode(planNode)
                                       .mode(ExecutionMode.SYNC)
                                       .build();
 
@@ -371,7 +363,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
             .uuid("planNodeId")
             .build();
     NodeExecution nodeExecution =
-        NodeExecution.builder().uuid(nodeExecutionId).planNode(planNode).status(Status.RUNNING).build();
+        NodeExecution.builder().uuid(nodeExecutionId).nodeId(planNode.getUuid()).status(Status.RUNNING).build();
     StepResponseProto stepResponse = StepResponseProto.newBuilder().setStatus(Status.RUNNING).build();
     doReturn(nodeExecution)
         .when(nodeExecutionService)
@@ -404,7 +396,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     IdentityPlanNode node = IdentityPlanNode.builder().originalNodeExecutionId("OID").build();
     NodeExecution nodeExecution = NodeExecution.builder()
                                       .uuid(uuid)
-                                      .planNode(node)
                                       .ambiance(ambiance)
                                       .levelCount(1)
                                       .status(Status.QUEUED)
@@ -467,11 +458,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     String nodeUuid = generateUuid();
     List<ExecutableResponse> executableResponse = Arrays.asList(ExecutableResponse.newBuilder().build());
     executionStrategy.handleLeafNodes(Ambiance.newBuilder().build(), NodeExecution.builder().uuid(nodeUuid).build(),
-        NodeExecution.builder()
-            .status(Status.ABORTED)
-            .planNode(IdentityPlanNode.builder().stepType(TEST_STEP_TYPE).build())
-            .executableResponses(executableResponse)
-            .build());
+        NodeExecution.builder().status(Status.ABORTED).executableResponses(executableResponse).build());
     verify(executionStrategy, times(1)).processAdviserResponse(any(), any());
     verify(identityNodeExecutionStrategyHelper, times(1)).copyNodeExecutionsForRetriedNodes(any(), any());
     ArgumentCaptor<String> captureUuid = ArgumentCaptor.forClass(String.class);
@@ -494,11 +481,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     List<ExecutableResponse> executableResponse = Arrays.asList(ExecutableResponse.newBuilder().build());
     doNothing().when(executionStrategy).processAdviserResponse(any(), any());
     executionStrategy.handleLeafNodes(Ambiance.newBuilder().build(), NodeExecution.builder().uuid(nodeUuid).build(),
-        NodeExecution.builder()
-            .status(Status.ABORTED)
-            .planNode(IdentityPlanNode.builder().stepType(pipelineStageStepType).build())
-            .executableResponses(executableResponse)
-            .build());
+        NodeExecution.builder().status(Status.ABORTED).executableResponses(executableResponse).build());
     verify(executionStrategy, times(1)).processAdviserResponse(any(), any());
     verify(identityNodeExecutionStrategyHelper, times(1)).copyNodeExecutionsForRetriedNodes(any(), any());
     ArgumentCaptor<String> captureUuid = ArgumentCaptor.forClass(String.class);

@@ -865,7 +865,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
                                                          .addLevels(Level.newBuilder().build())
                                                          .build())
                                            .stageFqn("pipeline.stages.stage3")
-                                           .planNode(planNode3)
+                                           .nodeId(planNode3.getUuid())
                                            .build()))
         .when(nodeExecutionService)
         .fetchStrategyNodeExecutions(any(), any());
@@ -968,7 +968,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
                                              .addLevels(Level.newBuilder().build())
                                              .build())
                                .stageFqn("pipeline.stages.stage3")
-                               .planNode(planNode3)
+                               .nodeId(planNode3.getUuid())
                                .build(),
                  NodeExecution.builder()
                      .uuid("stepStrategyNodeExecutionUUID")
@@ -979,7 +979,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
                                    .addLevels(Level.newBuilder().setGroup("STRATEGY").build())
                                    .build())
                      .stageFqn("pipeline.stages.stage3")
-                     .planNode(planNode4)
+                     .nodeId(planNode4.getUuid())
                      .build()))
         .when(nodeExecutionService)
         .fetchStrategyNodeExecutions(any(), any());

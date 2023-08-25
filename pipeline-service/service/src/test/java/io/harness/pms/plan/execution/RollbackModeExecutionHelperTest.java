@@ -137,7 +137,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
                                                   .setStrategyMetadata(StrategyMetadata.newBuilder().build())
                                                   .build())
                                    .build())
-                     .planNode(PlanNode.builder().uuid("planNodeUuid").build())
+                     .nodeId("planNodeUuid")
                      .build()))
         .when(nodeExecutionService)
         .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), NodeProjectionUtils.fieldsForNodeAndAmbiance);
@@ -184,10 +184,9 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
 
     List<String> stageNodeExecutionIds = Collections.singletonList("stageNodeExecutionId");
     String stageFqn = "pipeline.stages.stage1";
-    doReturn(Collections.singletonList(
-                 NodeExecution.builder().planNode(PlanNode.builder().stageFqn(stageFqn).build()).build()))
+    doReturn(Collections.singletonList(NodeExecution.builder().stageFqn(stageFqn).build()))
         .when(nodeExecutionService)
-        .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.planNode));
+        .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.stageFqn));
     newMetadata = rollbackModeExecutionHelper.transformPlanExecutionMetadata(
         oldPlanExecutionMetadata, newId, POST_EXECUTION_ROLLBACK, stageNodeExecutionIds, null);
     assertThat(newMetadata.getStagesExecutionMetadata().getStageIdentifiers().size()).isEqualTo(1);
@@ -217,7 +216,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
                                 .skipGraphType(SkipType.NOOP)
                                 .build();
     NodeExecution nodeExecutionForUuid1 =
-        NodeExecution.builder().planNode(toBeReplaced).stepType(stepType).uuid("nodeExecForUuid1").build();
+        NodeExecution.builder().nodeId(toBeReplaced.getUuid()).stepType(stepType).uuid("nodeExecForUuid1").build();
 
     List<NodeExecution> nodeExecutionList = Collections.singletonList(nodeExecutionForUuid1);
 

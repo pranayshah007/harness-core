@@ -160,7 +160,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stepPlanNode))
                                 .build();
     NodeExecution stepNodeExecution = NodeExecution.builder()
-                                          .planNode(stepPlanNode)
+                                          .nodeId(stepPlanNode.getUuid())
                                           .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
                                           .status(Status.EXPIRED)
                                           .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
@@ -202,7 +202,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .status(Status.FAILED)
-            .planNode(stagePlanNode)
+            .nodeId(stagePlanNode.getUuid())
             .endTs(System.currentTimeMillis())
             .stepType(StepType.newBuilder().setType("test").setStepCategory(StepCategory.STEP).build())
             .ambiance(stageAmbiance)
@@ -241,7 +241,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .status(Status.FAILED)
-            .planNode(strategyPlanNode)
+            .nodeId(strategyPlanNode.getUuid())
             .endTs(System.currentTimeMillis())
             .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
             .ambiance(stageAmbiance)
@@ -275,7 +275,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
         NodeExecution.builder()
             .uuid(AmbianceUtils.obtainCurrentRuntimeId(stageAmbiance))
             .status(Status.FAILED)
-            .planNode(strategyPlanNode)
+            .nodeId(strategyPlanNode.getUuid())
             .endTs(System.currentTimeMillis())
             .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
             .ambiance(stageAmbiance)

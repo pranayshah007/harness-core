@@ -101,7 +101,6 @@ public class PausedStepStatusUpdateTest extends OrchestrationTestBase {
         NodeExecution.builder()
             .uuid(pipelineNodeId)
             .status(Status.RUNNING)
-            .planNode(pipelinePlanNode)
             .ambiance(
                 ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(pipelineNodeId, pipelinePlanNode)).build())
             .nodeId(pipelinePlanNode.getUuid())

@@ -81,9 +81,9 @@ public class IdentityStrategyInternalStep
     try (CloseableIterator<NodeExecution> iterator =
              // Use original planExecutionId that belongs to the originalNodeExecutionId and not current
              // planExecutionId(ambiance.getPlanExecutionId)
-        nodeExecutionService.fetchChildrenNodeExecutionsIterator(
-            originalNodeExecution.getAmbiance().getPlanExecutionId(), identityParams.getOriginalNodeExecutionId(),
-            Direction.ASC, NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+        nodeExecutionService.fetchChildrenNodeExecutionsIterator(originalNodeExecution.getPlanExecutionId(),
+            identityParams.getOriginalNodeExecutionId(), Direction.ASC,
+            NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
       while (iterator.hasNext()) {
         NodeExecution next = iterator.next();
         if (Boolean.FALSE.equals(next.getOldRetry())) {

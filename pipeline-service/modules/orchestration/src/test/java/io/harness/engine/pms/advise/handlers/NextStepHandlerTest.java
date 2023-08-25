@@ -108,7 +108,6 @@ public class NextStepHandlerTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(planExecutionId).setPlanId(planId).build();
     NodeExecution nodeExecution = NodeExecution.builder()
                                       .uuid(nodeExecutionId)
-                                      .planNode(PlanNode.builder().build())
                                       .ambiance(ambiance)
                                       .status(Status.QUEUED)
                                       .mode(ExecutionMode.TASK)
@@ -178,16 +177,11 @@ public class NextStepHandlerTest extends CategoryTest {
                  .build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("parentId"), any());
-    doReturn(NodeExecution.builder()
-                 .planNode(IdentityPlanNode.builder().build())
-                 .uuid("originalNodeExecutionId")
-                 .nextId("nextId")
-                 .build())
+    doReturn(NodeExecution.builder().uuid("originalNodeExecutionId").nextId("nextId").build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("originalNodeExecutionId"), any());
 
-    doReturn(
-        NodeExecution.builder().planNode(IdentityPlanNode.builder().build()).uuid("nextId").oldRetry(false).build())
+    doReturn(NodeExecution.builder().uuid("nextId").oldRetry(false).build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(eq("nextId"), any());
 
