@@ -50,8 +50,8 @@ public class RuntimeInputsValidator {
   private static final String CHILD_ENVIRONMENT_REF_NODE = "environment.environmentRef";
   private static final String CHILD_INFRA_DEFINITIONS_REF_NODE = "environment.infrastructureDefinitions";
 
-  private static final List<String> useFromStageSiblingNodes = List.of(
-      "service.serviceRef", "services.values", "environment.environmentRef", "environment.infrastructureDefinitions");
+  private static final List<String> useFromStageSiblingNodes = List.of(CHILD_SERVICE_REF_NODE,
+      CHILD_SERVICES_VALUES_REF_NODE, CHILD_ENVIRONMENT_REF_NODE, CHILD_INFRA_DEFINITIONS_REF_NODE);
 
   public boolean areInputsValidAgainstSourceNode(JsonNode nodeToValidate, JsonNode sourceNode) {
     return areInputsValidAgainstSourceNode(nodeToValidate, sourceNode, new HashSet<>());
@@ -118,6 +118,7 @@ public class RuntimeInputsValidator {
     YamlConfig nodeToValidateYamlConfig = new YamlConfig(nodeToValidateYaml);
     Map<FQN, Object> nodeToValidateFqnToValueMap = new LinkedHashMap<>(nodeToValidateYamlConfig.getFqnToValueMap());
 
+    Set<FQN> fqnsToBeRemovedForPropagation = new HashSet<>();
     for (Map.Entry<FQN, Object> entry : sourceNodeFqnToValueMap.entrySet()) {
       FQN key = entry.getKey();
       Object value = entry.getValue();
@@ -154,7 +155,7 @@ public class RuntimeInputsValidator {
           Optional<FQN> useFromStageSiblingFromSiblingNode =
               getUseFromStageSiblingFromSiblingNode(nodeToValidateFqnToValueMap, key);
           if (useFromStageSiblingFromSiblingNode.isPresent()) {
-            nodeToValidateFqnToValueMap.remove(useFromStageSiblingFromSiblingNode.get());
+            fqnsToBeRemovedForPropagation.add(useFromStageSiblingFromSiblingNode.get());
             continue;
           }
           return false;
@@ -163,6 +164,9 @@ public class RuntimeInputsValidator {
         subMap.keySet().forEach(nodeToValidateFqnToValueMap::remove);
       }
     }
+
+    // This is to remove all sources from yaml if the propagation is happening.
+    fqnsToBeRemovedForPropagation.forEach(nodeToValidateFqnToValueMap::remove);
 
     // if nodeToValidateFqnToValueMap is not empty, return false.
     // if some entries are remaining which are expected, remove them for nodeToValidate
