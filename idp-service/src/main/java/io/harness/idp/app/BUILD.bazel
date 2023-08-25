@@ -64,7 +64,7 @@ java_binary(
         "//idp-service/src/main/java/io/harness/idp/proxy/services:module",
         "//idp-service/src/main/java/io/harness/idp/scorecard/datapointsdata:module",
         "//idp-service/src/main/java/io/harness/idp/scorecard/datasources:module",
-        "//idp-service/src/main/java/io/harness/idp/scorecard/scorecards:module",
+        "//idp-service/src/main/java/io/harness/idp/scorecard/scorecardchecks:module",
         "//idp-service/src/main/java/io/harness/idp/scorecard/scores:module",
         "//idp-service/src/main/java/io/harness/idp/serializer:module",
         "//idp-service/src/main/java/io/harness/idp/settings:module",
