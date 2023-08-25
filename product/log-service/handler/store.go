@@ -264,7 +264,7 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 			WithField(usePrefixParam, prefix).
 			WithField("latency", time.Since(st)).
 			WithField("time", time.Now().Format(time.RFC3339)).
-			Infoln("api: successfully list prefix finished")
+			Infoln("api: successfully list prefix finished and produced to queue")
 	}
 }
 
