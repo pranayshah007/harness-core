@@ -17,6 +17,7 @@ import static io.harness.exception.WingsException.ADMIN_SRE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.filesystem.FileIo.releaseLock;
 import static io.harness.git.Constants.COMMIT_MESSAGE;
 import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.git.Constants.EXCEPTION_STRING;
@@ -131,6 +132,7 @@ import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.NoRemoteRepositoryException;
+import org.eclipse.jgit.errors.NoWorkTreeException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.ObjectReader;
@@ -1469,6 +1471,7 @@ public class GitClientV2Impl implements GitClientV2 {
       CheckoutCommand checkoutCommand = git.checkout().setStartPoint(request.getCommitId()).setCreateBranch(false);
 
       setPathsForCheckout(request.getFilePaths(), checkoutCommand);
+      deleteIndexLockIfExists(git);
       checkoutCommand.call();
       log.info("Successfully Checked out commitId: " + request.getCommitId());
     } catch (Exception ex) {
@@ -1493,6 +1496,7 @@ public class GitClientV2Impl implements GitClientV2 {
                                             .setName(request.getBranch());
 
       setPathsForCheckout(request.getFilePaths(), checkoutCommand);
+      deleteIndexLockIfExists(git);
       checkoutCommand.call();
       log.info("Successfully Checked out Branch: " + request.getBranch());
       return getCommitId(git, request.getBranch());
@@ -1503,6 +1507,15 @@ public class GitClientV2Impl implements GitClientV2 {
           .cause(ex)
           .branch(request.getBranch())
           .build();
+    }
+  }
+
+  void deleteIndexLockIfExists(Git git) {
+    try {
+      File file = git.getRepository().getIndexFile();
+      releaseLock(file);
+    } catch (NoWorkTreeException ex) {
+      log.warn("Work tree is not initialized.");
     }
   }
 
