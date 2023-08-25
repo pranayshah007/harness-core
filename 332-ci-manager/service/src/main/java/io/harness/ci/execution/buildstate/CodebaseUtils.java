@@ -8,7 +8,6 @@
 package io.harness.ci.execution.buildstate;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_BUILD_LINK;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_COMMIT_AUTHOR;
@@ -154,7 +153,8 @@ public class CodebaseUtils {
 
   private static Map<String, String> getDroneSystemEnvVars() {
     Map<String, String> envVarMap = new HashMap<>();
-    envVarMap.put(CI, "true"); // hardcoded to true in drone
+    // Added this caused regression since users can rely on CI env value to do some operations.
+    // envVarMap.put(CI, "true"); // hardcoded to true in drone
     envVarMap.put(DRONE, "true"); // actually false but possibly required in some plugin - hardcoded to true in drone
     envVarMap.put(DRONE_STAGE_KIND, "pipeline");
 
