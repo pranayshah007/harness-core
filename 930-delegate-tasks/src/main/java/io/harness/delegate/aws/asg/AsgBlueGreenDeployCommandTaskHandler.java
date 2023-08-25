@@ -39,6 +39,7 @@ import io.harness.aws.asg.manifest.request.AsgInstanceCapacity;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
@@ -124,9 +125,9 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
 
       asgSdkManager.info("Starting Blue Green Deployment");
 
-      AutoScalingGroupContainer stageAutoScalingGroupContainer =
-          executeBGDeploy(asgSdkManager, asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList,
-              isFirstDeployment, awsInternalConfig, region, useAlreadyRunningInstances, prodAsgName);
+      AutoScalingGroupContainer stageAutoScalingGroupContainer = executeBGDeploy(asgSdkManager,
+          asgStoreManifestsContent, asgName, amiImageId, targetGroupArnsList, isFirstDeployment, awsInternalConfig,
+          region, useAlreadyRunningInstances, prodAsgName, asgBlueGreenDeployRequest.getAsgCapacityConfig());
 
       AutoScalingGroupContainer prodAutoScalingGroupContainer = null;
       if (!isFirstDeployment) {
@@ -157,7 +158,7 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
   private AutoScalingGroupContainer executeBGDeploy(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, String asgName, String amiImageId,
       List<String> targetGroupArnList, boolean isFirstDeployment, AwsInternalConfig awsInternalConfig, String region,
-      boolean useAlreadyRunningInstances, String prodAsgName) {
+      boolean useAlreadyRunningInstances, String prodAsgName, AsgCapacityConfig asgCapacityConfig) {
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
@@ -171,13 +172,25 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
     List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgStoreManifestsContent);
     List<String> asgScheduledActionContent = asgTaskHelper.getAsgScheduledActionContent(asgStoreManifestsContent);
+    String userData = asgTaskHelper.getUserData(asgStoreManifestsContent);
 
-    Map<String, Object> asgLaunchTemplateOverrideProperties =
-        Collections.singletonMap(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
+    Map<String, Object> asgLaunchTemplateOverrideProperties = new HashMap<>();
+    asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
+    if (isNotEmpty(userData)) {
+      asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.userData, userData);
+    }
 
     Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>();
     asgConfigurationOverrideProperties.put(
         AsgConfigurationManifestHandler.OverrideProperties.targetGroupARNs, targetGroupArnList);
+    if (asgCapacityConfig != null) {
+      asgConfigurationOverrideProperties.put(
+          AsgConfigurationManifestHandler.OverrideProperties.minSize, asgCapacityConfig.getMinSize());
+      asgConfigurationOverrideProperties.put(
+          AsgConfigurationManifestHandler.OverrideProperties.maxSize, asgCapacityConfig.getMaxSize());
+      asgConfigurationOverrideProperties.put(
+          AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, asgCapacityConfig.getDesiredSize());
+    }
 
     // Chain factory code to handle each manifest one by one in a chain
     AsgManifestHandlerChainState chainState =

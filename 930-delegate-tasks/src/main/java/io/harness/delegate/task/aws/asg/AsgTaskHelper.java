@@ -12,6 +12,8 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgUserData;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 
@@ -24,7 +26,9 @@ import io.harness.delegate.beans.instancesync.mapper.AutoScalingGroupContainerTo
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.exception.AsgNGException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
 
@@ -76,6 +80,19 @@ public class AsgTaskHelper {
 
   public List<String> getAsgScheduledActionContent(Map<String, List<String>> asgStoreManifestsContent) {
     return asgStoreManifestsContent.get(AsgScheduledUpdateGroupAction);
+  }
+
+  public String getUserData(Map<String, List<String>> asgStoreManifestsContent) {
+    List<String> contents = asgStoreManifestsContent.get(AsgUserData);
+    if (isEmpty(contents)) {
+      return null;
+    }
+
+    if (contents.size() > 1) {
+      throw new InvalidRequestException("userData should contain only one file");
+    }
+
+    return contents.get(0);
   }
 
   public AutoScalingGroupContainer mapToAutoScalingGroupContainer(AutoScalingGroup autoScalingGroup) {

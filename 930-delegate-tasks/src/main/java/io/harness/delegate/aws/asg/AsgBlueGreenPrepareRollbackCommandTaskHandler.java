@@ -58,6 +58,7 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.TagDescription;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -263,10 +264,15 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
     lbConfig.setProdTargetGroupArnsList(prodTargetGroupArns);
     lbConfig.setStageTargetGroupArnsList(stageTargetGroupArns);
 
+    // TODO next PR use loadBalancers instead
+    List<AsgLoadBalancerConfig> loadBalancers = new ArrayList<>();
+    loadBalancers.add(lbConfig);
+
     return AsgBlueGreenPrepareRollbackDataResult.builder()
         .prodAsgName(prodAsgName)
         .asgName(stageAsgName)
         .asgLoadBalancerConfig(lbConfig)
+        .loadBalancers(loadBalancers)
         .prodAsgManifestsDataForRollback(prodAsgManifestsDataForRollback)
         .stageAsgManifestsDataForRollback(stageAsgManifestsDataForRollback)
         .build();

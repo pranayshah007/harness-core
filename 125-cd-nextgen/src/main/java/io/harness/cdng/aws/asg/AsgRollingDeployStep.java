@@ -12,6 +12,7 @@ import static software.wings.beans.TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgCapacityConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -117,6 +118,10 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
     AsgRollingDeployStepParameters asgSpecParameters = (AsgRollingDeployStepParameters) stepElementParameters.getSpec();
 
     String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
+    boolean useAlreadyRunningInstances =
+        asgStepCommonHelper.isUseAlreadyRunningInstances(asgSpecParameters.getInstances(),
+            ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getUseAlreadyRunningInstances()));
+    AsgCapacityConfig asgCapacityConfig = asgStepCommonHelper.getAsgCapacityConfig(asgSpecParameters.getInstances());
 
     AsgRollingDeployRequest asgRollingDeployRequest =
         AsgRollingDeployRequest.builder()
@@ -127,8 +132,8 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
             .skipMatching(ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getSkipMatching()))
-            .useAlreadyRunningInstances(
-                ParameterFieldHelper.getBooleanParameterFieldValue(asgSpecParameters.getUseAlreadyRunningInstances()))
+            .useAlreadyRunningInstances(useAlreadyRunningInstances)
+            .asgCapacityConfig(asgCapacityConfig)
             .instanceWarmup(ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getInstanceWarmup()))
             .minimumHealthyPercentage(
                 ParameterFieldHelper.getIntegerParameterFieldValue(asgSpecParameters.getMinimumHealthyPercentage()))

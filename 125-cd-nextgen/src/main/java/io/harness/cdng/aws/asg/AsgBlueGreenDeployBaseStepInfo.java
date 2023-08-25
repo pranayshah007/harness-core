@@ -12,6 +12,8 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expressio
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.elastigroup.ElastigroupInstances;
+import io.harness.cdng.elastigroup.LoadBalancer;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
@@ -19,8 +21,6 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,28 +32,17 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @TypeAlias("AsgBlueGreenDeployBaseStepInfo")
 public class AsgBlueGreenDeployBaseStepInfo {
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  ParameterField<String> loadBalancer;
+  @Deprecated @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> loadBalancer;
 
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  ParameterField<String> prodListener;
+  @Deprecated @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> prodListener;
 
-  @NotNull
-  @NotEmpty
+  @Deprecated
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   ParameterField<String> prodListenerRuleArn;
 
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  ParameterField<String> stageListener;
+  @Deprecated @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> stageListener;
 
-  @NotNull
-  @NotEmpty
+  @Deprecated
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   ParameterField<String> stageListenerRuleArn;
 
@@ -61,8 +50,14 @@ public class AsgBlueGreenDeployBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
+  @Deprecated
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("useAlreadyRunningInstances")
   ParameterField<Boolean> useAlreadyRunningInstances;
+
+  @ApiModelProperty(dataType = SwaggerConstants.INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH)
+  ElastigroupInstances instances;
+
+  @ApiModelProperty(dataType = SwaggerConstants.LOAD_BALANCER_CONFIGURATION_CLASSPATH) List<LoadBalancer> loadBalancers;
 }
