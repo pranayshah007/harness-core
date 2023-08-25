@@ -15,9 +15,12 @@ import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 
 import org.springframework.data.repository.CrudRepository;
 
+import java.util.List;
+
 @OwnedBy(PIPELINE)
 @HarnessRepo
 public interface BarrierNodeRepository extends CrudRepository<BarrierExecutionInstance, String> {
   BarrierExecutionInstance findByIdentifierAndPlanExecutionId(String identifier, String planExecutionId);
   BarrierExecutionInstance findByIdentifierAndPlanExecutionIdAndStrategyExecutionId(String identifier, String planExecutionId, String strategyExecutionId);
+  List<BarrierExecutionInstance> findManyByPlanExecutionIdAndSetupInfo_StrategySetupId(String planExecutionId, String strategySetupId);
 }

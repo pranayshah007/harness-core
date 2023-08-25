@@ -151,6 +151,11 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   }
 
   @Override
+  public List<BarrierExecutionInstance> findManyByPlanExecutionIdAndSetupInfo_StrategySetupId(String planExecutionId, String strategySetupId) {
+    return barrierNodeRepository.findManyByPlanExecutionIdAndSetupInfo_StrategySetupId(planExecutionId, strategySetupId);
+  }
+
+  @Override
   public BarrierExecutionInstance findByPlanNodeIdAndPlanExecutionId(String planNodeId, String planExecutionId) {
     Criteria positionCriteria = Criteria.where(BarrierExecutionInstanceKeys.positions)
                                     .elemMatch(Criteria.where(BarrierPositionKeys.stepSetupId).is(planNodeId));
@@ -245,6 +250,18 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
         findByPosition(planExecutionId, positionType, positionSetupId);
 
     Update update = obtainRuntimeIdUpdate(positionType, positionSetupId, positionExecutionId, stageExecutionId, stepGroupExecutionId);
+    String strategyNodeTypeToExclude;
+    switch (positionType) {
+      case STAGE:
+        strategyNodeTypeToExclude = "stage";
+        break;
+      case STEP_GROUP:
+        strategyNodeTypeToExclude = "stepGroup";
+        break;
+      default:
+        strategyNodeTypeToExclude = positionType.name();
+        break;
+    }
 
     // mongo does not support multiple documents atomic update, let's update one by one
     barrierExecutionInstances.forEach(instance
@@ -253,9 +270,60 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
                 -> mongoTemplate.findAndModify(
                     query(Criteria.where(BarrierExecutionInstanceKeys.uuid)
                               .is(instance.getUuid())
-                              .andOperator(obtainBarrierPositionCriteria(positionType, positionSetupId))),
+                              .andOperator(obtainBarrierPositionCriteria(positionType, positionSetupId))
+                              .and("setupInfo.strategyNodeType").ne(strategyNodeTypeToExclude)),
                     update, BarrierExecutionInstance.class)));
     return barrierExecutionInstances;
+  }
+
+  @Override
+  public void upsert(
+          BarrierExecutionInstance barrierExecutionInstance) {
+    HMongoTemplate.retry(
+            () -> mongoTemplate.upsert(
+                    query(Criteria
+                            .where(BarrierExecutionInstanceKeys.identifier).is(barrierExecutionInstance.getIdentifier())
+                            .and(BarrierExecutionInstanceKeys.planExecutionId).is(barrierExecutionInstance.getPlanExecutionId())
+                            .and("setupInfo.strategySetupId").is(barrierExecutionInstance.getSetupInfo().getStrategySetupId())
+                    ), new Update()
+                            .set(BarrierExecutionInstanceKeys.name, barrierExecutionInstance.getName())
+                            .set(BarrierExecutionInstanceKeys.identifier, barrierExecutionInstance.getIdentifier())
+                            .set(BarrierExecutionInstanceKeys.planExecutionId, barrierExecutionInstance.getPlanExecutionId())
+                            .set(BarrierExecutionInstanceKeys.barrierState, STANDING)
+                            .set(BarrierExecutionInstanceKeys.strategyExecutionId, barrierExecutionInstance.getStrategyExecutionId())
+                            .set(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfo.BarrierSetupInfoKeys.name, barrierExecutionInstance.getSetupInfo().getName())
+                            .set(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfo.BarrierSetupInfoKeys.identifier, barrierExecutionInstance.getSetupInfo().getIdentifier())
+                            .addToSet(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfo.BarrierSetupInfoKeys.stages).each(barrierExecutionInstance.getSetupInfo().getStages())
+                            .set(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfo.BarrierSetupInfoKeys.strategySetupId, barrierExecutionInstance.getSetupInfo().getStrategySetupId())
+                            .set(BarrierExecutionInstanceKeys.setupInfo + "." + BarrierSetupInfo.BarrierSetupInfoKeys.strategyNodeType, barrierExecutionInstance.getSetupInfo().getStrategyNodeType())
+                            .set(BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfo.BarrierPositionInfoKeys.planExecutionId, barrierExecutionInstance.getPositionInfo().getPlanExecutionId())
+                            .addToSet(BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfo.BarrierPositionInfoKeys.barrierPositionList).each(barrierExecutionInstance.getPositionInfo().getBarrierPositionList()),
+                    BarrierExecutionInstance.class));
+  }
+
+  @Override
+  public void updateManyPlanExecutionId(String setupId, String executionId) {
+    HMongoTemplate.retry(
+            () -> mongoTemplate.updateMulti(
+                    query(Criteria.where(BarrierExecutionInstanceKeys.planExecutionId).is(setupId)
+                    ), new Update()
+                            .set(BarrierPositionInfo.BarrierPositionInfoKeys.planExecutionId, executionId)
+                            .set(BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfo.BarrierPositionInfoKeys.planExecutionId, executionId),
+                    BarrierExecutionInstance.class));
+  }
+
+  @Override
+  public void updateBarrierWithinStrategy(String barrierIdentifier, String planExecutionId, String strategySetupId, List<BarrierPositionInfo.BarrierPosition> barrierPositions, String strategyExecutionId) {
+    HMongoTemplate.retry(
+            () -> mongoTemplate.findAndModify(
+                    query(Criteria
+                            .where(BarrierExecutionInstanceKeys.identifier).is(barrierIdentifier)
+                            .and(BarrierExecutionInstanceKeys.planExecutionId).is(planExecutionId)
+                            .and("setupInfo.strategySetupId").is(strategySetupId)
+                    ), new Update()
+                            .set(BarrierExecutionInstanceKeys.positionInfo + "." + BarrierPositionInfo.BarrierPositionInfoKeys.barrierPositionList, barrierPositions)
+                            .set(BarrierExecutionInstanceKeys.strategyExecutionId, strategyExecutionId),
+                    BarrierExecutionInstance.class));
   }
 
   private Update obtainRuntimeIdUpdate(
@@ -269,15 +337,13 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
             new Update()
                 .set(positions.concat(BarrierPositionKeys.stageRuntimeId), positionExecutionId)
                 .filterArray(
-                    Criteria.where(position.concat(".").concat(BarrierPositionKeys.stageSetupId)).is(positionSetupId)
-                            .and("setupInfo.strategyNodeType").ne("step"));
+                    Criteria.where(position.concat(".").concat(BarrierPositionKeys.stageSetupId)).is(positionSetupId));
         break;
       case STEP_GROUP:
         update = new Update()
                      .set(positions.concat(BarrierPositionKeys.stepGroupRuntimeId), positionExecutionId)
                      .filterArray(Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepGroupSetupId))
-                                      .is(positionSetupId)
-                             .and("setupInfo.strategyNodeType").ne("stepGroup"));
+                                      .is(positionSetupId));
         break;
       case STEP:
         update =

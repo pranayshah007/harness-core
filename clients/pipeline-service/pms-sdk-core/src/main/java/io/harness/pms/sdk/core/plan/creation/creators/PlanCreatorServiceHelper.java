@@ -23,7 +23,9 @@ import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -147,7 +149,7 @@ public class PlanCreatorServiceHelper {
     }
   }
 
-  public void decorateCreationResponseWithParentInfo(CreatorResponse creatorResponse, YamlField currentField, KryoSerializer kryoSerializer, Dependency currentDependency) {
+  public void decorateCreationResponseWithParentInfo(CreatorResponse creatorResponse, YamlField currentField, KryoSerializer kryoSerializer, Dependency currentDependency, PlanCreationContext planCreationContext) {
     Dependencies dependencies = creatorResponse.getDependencies();
     if (dependencies == null) {
       return;
@@ -155,6 +157,9 @@ public class PlanCreatorServiceHelper {
     Map<String, ByteString> metadataToAdd = new HashMap<>();
     if (currentDependency != null) {
       metadataToAdd = new HashMap<>(currentDependency.getMetadataMap());
+    }
+    if (currentField.getNode().getFieldName() != null && currentField.getNode().getFieldName().equals(YAMLFieldNameConstants.PIPELINE)) {
+      metadataToAdd.put("planId", ByteString.copyFrom(kryoSerializer.asBytes(planCreationContext.getExecutionUuid())));
     }
    if (currentField.getNode().getFieldName() != null && currentField.getNode().getFieldName().equals(YAMLFieldNameConstants.STAGE)) {
       metadataToAdd.put("stageId", ByteString.copyFrom(kryoSerializer.asBytes(currentField.getNode().getUuid())));
@@ -164,7 +169,7 @@ public class PlanCreatorServiceHelper {
     }
     YamlField strategyField = currentField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
     if (strategyField != null) {
-      metadataToAdd.put("strategyId", ByteString.copyFrom(kryoSerializer.asBytes(strategyField.getNode().getUuid())));
+      metadataToAdd.put("strategyId", ByteString.copyFrom(kryoSerializer.asBytes(currentField.getNode().getUuid())));
     }
     for (String dependencyKey : dependencies.getDependenciesMap().keySet()) {
       Dependency dependency = Dependency.newBuilder().build();

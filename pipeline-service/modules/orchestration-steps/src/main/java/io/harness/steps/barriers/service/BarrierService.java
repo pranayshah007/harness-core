@@ -44,4 +44,8 @@ public interface BarrierService {
    * @param planExecutionIds
    */
   void deleteAllForGivenPlanExecutionId(Set<String> planExecutionIds);
+  void upsert(BarrierExecutionInstance barrierExecutionInstance);
+  void updateBarrierWithinStrategy(String barrierIdentifier, String planExecutionId, String strategySetupId, List<BarrierPositionInfo.BarrierPosition> barrierPositions, String strategyExecutionId);
+  List<BarrierExecutionInstance> findManyByPlanExecutionIdAndSetupInfo_StrategySetupId(String planExecutionId, String strategySetupId);
+  void updateManyPlanExecutionId(String setupId, String executionId);
 }

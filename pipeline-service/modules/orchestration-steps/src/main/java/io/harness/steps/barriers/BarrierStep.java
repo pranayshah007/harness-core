@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -30,6 +31,8 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import java.util.Map;
+import java.util.Optional;
+
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PIPELINE)
@@ -50,8 +53,10 @@ public class BarrierStep extends PipelineAsyncExecutable {
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     BarrierSpecParameters barrierSpecParameters = (BarrierSpecParameters) stepElementParameters.getSpec();
-    BarrierExecutionInstance barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(
-        barrierSpecParameters.getBarrierRef(), ambiance.getPlanExecutionId());
+    Optional<Level> strategyLevel = AmbianceUtils.getStrategyLevelFromAmbiance(ambiance);
+    String strategyExecutionId = strategyLevel.isPresent() ? strategyLevel.get().getRuntimeId() : null;
+    BarrierExecutionInstance barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionIdAndStrategyExecutionId(
+        barrierSpecParameters.getBarrierRef(), ambiance.getPlanExecutionId(), strategyExecutionId);
 
     log.info("Barrier Step getting executed. RuntimeId: [{}], barrierUuid [{}], barrierIdentifier [{}]",
         AmbianceUtils.obtainCurrentRuntimeId(ambiance), barrierExecutionInstance.getUuid(),
@@ -67,7 +72,7 @@ public class BarrierStep extends PipelineAsyncExecutable {
 
     // if barrier is still in STANDING => update barrier state
     BarrierExecutionInstance barrierExecutionInstance =
-        updateBarrierExecutionInstance(barrierSpecParameters.getBarrierRef(), ambiance.getPlanExecutionId());
+        updateBarrierExecutionInstance(barrierSpecParameters.getBarrierRef(), ambiance);
 
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     BarrierResponseData responseData = (BarrierResponseData) responseDataMap.get(barrierExecutionInstance.getUuid());
@@ -96,12 +101,14 @@ public class BarrierStep extends PipelineAsyncExecutable {
       Ambiance ambiance, StepElementParameters stepElementParameters, AsyncExecutableResponse executableResponse) {
     BarrierSpecParameters barrierSpecParameters = (BarrierSpecParameters) stepElementParameters.getSpec();
 
-    updateBarrierExecutionInstance(barrierSpecParameters.getBarrierRef(), ambiance.getPlanExecutionId());
+    updateBarrierExecutionInstance(barrierSpecParameters.getBarrierRef(), ambiance);
   }
 
-  private BarrierExecutionInstance updateBarrierExecutionInstance(String identifier, String planExecutionId) {
-    BarrierExecutionInstance barrierExecutionInstance =
-        barrierService.findByIdentifierAndPlanExecutionId(identifier, planExecutionId);
+  private BarrierExecutionInstance updateBarrierExecutionInstance(String identifier, Ambiance ambiance) {
+    Optional<Level> strategyLevel = AmbianceUtils.getStrategyLevelFromAmbiance(ambiance);
+    String strategyExecutionId = strategyLevel.isPresent() ? strategyLevel.get().getRuntimeId() : null;
+    BarrierExecutionInstance barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionIdAndStrategyExecutionId(
+            identifier, ambiance.getPlanExecutionId(), strategyExecutionId);
     return barrierService.update(barrierExecutionInstance);
   }
 }

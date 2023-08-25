@@ -40,6 +40,13 @@ public class BarrierInitializer implements OrchestrationStartObserver {
 
   @Override
   public void onStart(OrchestrationStartInfo orchestrationStartInfo) {
+//    String pipelineSetupId = orchestrationStartInfo.getAmbiance().getLevelsList().get(0).getSetupId();
+//    barrierService.updateManyPlanExecutionId(pipelineSetupId, orchestrationStartInfo.getPlanExecutionId());
+    boolean a = true;
+    if (a) {
+      return;
+    }
+
     String version = AmbianceUtils.getPipelineVersion(orchestrationStartInfo.getAmbiance());
     String planExecutionId = orchestrationStartInfo.getPlanExecutionId();
     PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
