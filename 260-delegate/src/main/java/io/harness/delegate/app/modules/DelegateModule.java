@@ -902,6 +902,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClient;
 import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import org.asynchttpclient.proxy.ProxyServer;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_TRADITIONAL})
@@ -1154,6 +1155,9 @@ public class DelegateModule extends AbstractModule {
     }
 
     SslContext sslContext = sslContextBuilder.build();
+
+    System.setProperty("org.asynchttpclient.AsyncHttpClientConfig.proxy.password", System.getenv("PROXY_USER"));
+    System.setProperty("org.asynchttpclient.AsyncHttpClientConfig.proxy.user", System.getenv("PROXY_PASSWORD"));
 
     return new DefaultAsyncHttpClient(
         new DefaultAsyncHttpClientConfig.Builder().setUseProxyProperties(true).setSslContext(sslContext).build());

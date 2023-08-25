@@ -27,6 +27,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -556,14 +557,23 @@ public class Http {
   public static OkHttpClient.Builder getOkHttpClientWithProxyAuthSetup() {
     OkHttpClient.Builder builder = new OkHttpClient.Builder().hostnameVerifier(new NoopHostnameVerifier());
 
+    /*
+    Have a global authenticator to ensure websocket connection goes via proxy.
+    We need to remove return null but then check how to check for wrong credentials.
+    Proxy delete auth cache to re-authenticate.
+    Use Java.net.Authenticator which is a global authenticator.
+     */
+
     String user = getProxyUserName();
     if (isNotEmpty(user)) {
       log.info("###Using proxy Auth");
       String password = getProxyPassword();
       builder.proxyAuthenticator((route, response) -> {
+        log.info("Performing proxy authentication");
         if (response == null || response.code() == 407) {
-          return null;
+          log.info("Performing proxy authentication failed with 407");
         }
+        log.info("Performing proxy authentication failed with 407, continuing ahead");
         String credential = Credentials.basic(user, password);
         return response.request().newBuilder().header("Proxy-Authorization", credential).build();
       });
