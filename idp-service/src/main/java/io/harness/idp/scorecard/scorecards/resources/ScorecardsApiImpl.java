@@ -9,6 +9,7 @@ package io.harness.idp.scorecard.scorecards.resources;
 
 import static io.harness.idp.common.Constants.IDP_PERMISSION;
 import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
+import static io.harness.idp.common.Constants.SUCCESS_RESPONSE;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -19,6 +20,8 @@ import io.harness.idp.scorecard.scorecards.mappers.ScorecardMapper;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.ScorecardsApi;
+import io.harness.spec.server.idp.v1.model.DefaultSaveResponse;
+import io.harness.spec.server.idp.v1.model.Facets;
 import io.harness.spec.server.idp.v1.model.Scorecard;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
@@ -26,8 +29,10 @@ import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
 import com.google.inject.Inject;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 
 @NextGenManagerAuth
 @OwnedBy(HarnessTeam.IDP)
@@ -67,7 +72,16 @@ public class ScorecardsApiImpl implements ScorecardsApi {
   public Response createScorecard(@Valid ScorecardDetailsRequest body, @AccountIdentifier String harnessAccount) {
     try {
       scorecardService.saveScorecard(body, harnessAccount);
-      return Response.status(Response.Status.CREATED).build();
+      return Response.status(Response.Status.CREATED)
+          .entity(new DefaultSaveResponse().status(SUCCESS_RESPONSE))
+          .build();
+    } catch (DuplicateKeyException e) {
+      String errorMessage = String.format(
+          "Scorecard [%s] already created for accountId [%s]", body.getScorecard().getIdentifier(), harnessAccount);
+      log.info(errorMessage);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
     } catch (Exception e) {
       log.error("Could not create scorecard", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -94,12 +108,25 @@ public class ScorecardsApiImpl implements ScorecardsApi {
   }
 
   @Override
+  public Response getEntityFacets(@NotNull String kind, String harnessAccount) {
+    try {
+      Facets facets = scorecardService.getAllEntityFacets(harnessAccount, kind);
+      return Response.status(Response.Status.OK).entity(facets).build();
+    } catch (Exception e) {
+      log.error("Error occurred while fetching entity facets for account = {}, kind = {}", harnessAccount, kind, e);
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .build();
+    }
+  }
+
+  @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
   public Response updateScorecard(
       String scorecardId, @Valid ScorecardDetailsRequest body, @AccountIdentifier String harnessAccount) {
     try {
       scorecardService.updateScorecard(body, harnessAccount);
-      return Response.status(Response.Status.OK).build();
+      return Response.status(Response.Status.OK).entity(new DefaultSaveResponse().status(SUCCESS_RESPONSE)).build();
     } catch (Exception e) {
       log.error("Could not update scorecard", e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

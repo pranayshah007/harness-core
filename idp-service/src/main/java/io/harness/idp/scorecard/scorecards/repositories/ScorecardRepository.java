@@ -19,5 +19,7 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(HarnessTeam.IDP)
 public interface ScorecardRepository extends CrudRepository<ScorecardEntity, String>, ScorecardRepositoryCustom {
   List<ScorecardEntity> findByAccountIdentifier(String accountIdentifier);
+  List<ScorecardEntity> findByAccountIdentifierAndPublished(String accountIdentifier, boolean published);
   ScorecardEntity findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
+  List<ScorecardEntity> findByAccountIdentifierAndIdentifierIn(String accountIdentifier, List<String> identifiers);
 }

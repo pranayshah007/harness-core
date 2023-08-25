@@ -12,9 +12,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 
 import com.mongodb.client.result.UpdateResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface CheckRepositoryCustom {
+  Page<CheckEntity> findAll(Criteria criteria, Pageable pageable);
   CheckEntity update(CheckEntity checkEntity);
   UpdateResult updateDeleted(String accountIdentifier, String identifier);
 }

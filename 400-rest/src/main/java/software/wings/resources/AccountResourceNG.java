@@ -84,14 +84,6 @@ public class AccountResourceNG {
   }
 
   @GET
-  @Path("/list")
-  @Deprecated
-  public RestResponse<List<AccountDTO>> getAllAccounts() {
-    List<AccountDTO> accountList = accountService.getAllAccounts();
-    return new RestResponse<>(accountList);
-  }
-
-  @GET
   @Path("/listV2")
   public RestResponse<PageResponse<AccountDTO>> listAccounts(
       @QueryParam("offset") int offset, @QueryParam("pageSize") int pageSize) {

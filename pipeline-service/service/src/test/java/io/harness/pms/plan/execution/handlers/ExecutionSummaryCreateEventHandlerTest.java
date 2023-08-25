@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -72,6 +73,11 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
 
   private ExecutionSummaryCreateEventHandler executionSummaryCreateEventHandler;
 
+  private final String ACCOUNT_IDENTIFIER = "accId";
+  private final String ORG_IDENTIFIER = "orgId";
+  private final String PROJECT_IDENTIFIER = "projId";
+  private final String PIPELINE_IDENTIFIER = "pipelineId";
+
   @Before
   public void setUp() throws Exception {
     executionSummaryCreateEventHandler = new ExecutionSummaryCreateEventHandler(pmsPipelineService, planService,
@@ -88,18 +94,20 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     Ambiance ambiance = Ambiance.newBuilder()
                             .setPlanExecutionId(planExecutionId)
                             .setPlanId(planId)
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
                             .build();
     PlanExecutionMetadata planExecutionMetadata =
         PlanExecutionMetadata.builder()
             .planExecutionId(ambiance.getPlanExecutionId())
             .inputSetYaml("some-yaml")
             .yaml("pipeline :\n  identifier: pipelineId")
+            .pipelineYaml("pipeline :\n  identifier: pipelineId")
             .stagesExecutionMetadata(StagesExecutionMetadata.builder().isStagesExecution(true).build())
             .executionInputConfigured(true)
             .allowStagesExecution(true)
+            .notes("notes")
             .build();
     PlanExecution planExecution = PlanExecution.builder()
                                       .metadata(ExecutionMetadata.newBuilder()
@@ -111,6 +119,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
 
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .uuid(generateUuid())
+                                        .identifier(PIPELINE_IDENTIFIER)
                                         .yaml("pipeline :\n  identifier: pipelineId")
                                         .executionSummaryInfo(ExecutionSummaryInfo.builder()
                                                                   .lastExecutionStatus(ExecutionStatus.RUNNING)
@@ -157,6 +166,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(executionSummaryInfo.getLastExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
 
     PipelineExecutionSummaryEntity capturedEntity = pipelineExecutionSummaryEntityArgumentCaptor.getValue();
+    assertThat(capturedEntity.getNotesExistForPlanExecutionId()).isTrue();
     assertThat(capturedEntity).isNotNull();
     assertThat(capturedEntity.getRunSequence()).isEqualTo(1);
     assertThat(capturedEntity.getPipelineIdentifier()).isEqualTo("pipelineId");
@@ -179,6 +189,115 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(capturedEntity.getRollbackModeExecutionId()).isNull();
 
     verify(notificationHelper, times(1)).sendNotification(ambiance, PipelineEventType.PIPELINE_START, null, null);
+    verify(pmsPipelineService, times(1))
+        .getPipeline(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, PIPELINE_IDENTIFIER, false, true);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void shouldTestOnStartWithNullPipelineYamlInPlanExecutionMetadata() {
+    String planId = generateUuid();
+    String planExecutionId = generateUuid();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .setPlanId(planId)
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
+                            .build();
+    PlanExecutionMetadata planExecutionMetadata =
+        PlanExecutionMetadata.builder()
+            .planExecutionId(ambiance.getPlanExecutionId())
+            .inputSetYaml("some-yaml")
+            .yaml("pipeline :\n  identifier: pipelineId")
+            .stagesExecutionMetadata(StagesExecutionMetadata.builder().isStagesExecution(true).build())
+            .executionInputConfigured(true)
+            .allowStagesExecution(true)
+            .notes("notes")
+            .build();
+    PlanExecution planExecution = PlanExecution.builder()
+                                      .metadata(ExecutionMetadata.newBuilder()
+                                                    .setRunSequence(1)
+                                                    .setPipelineIdentifier("pipelineId")
+                                                    .setExecutionMode(ExecutionMode.NORMAL)
+                                                    .build())
+                                      .build();
+
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .uuid(generateUuid())
+                                        .identifier(PIPELINE_IDENTIFIER)
+                                        .yaml("pipeline :\n  identifier: pipelineId")
+                                        .executionSummaryInfo(ExecutionSummaryInfo.builder()
+                                                                  .lastExecutionStatus(ExecutionStatus.RUNNING)
+                                                                  .numOfErrors(new HashMap<>())
+                                                                  .build())
+                                        .build();
+
+    ArgumentCaptor<ExecutionSummaryInfo> executionSummaryInfoArgumentCaptor =
+        ArgumentCaptor.forClass(ExecutionSummaryInfo.class);
+
+    ArgumentCaptor<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityArgumentCaptor =
+        ArgumentCaptor.forClass(PipelineExecutionSummaryEntity.class);
+
+    when(planExecutionService.get(planExecutionId)).thenReturn(planExecution);
+    when(planService.fetchPlan(planId))
+        .thenReturn(Plan.builder()
+                        .graphLayoutInfo(GraphLayoutInfo.newBuilder()
+                                             .setStartingNodeId("startId")
+                                             .putLayoutNodes("startId",
+                                                 GraphLayoutNode.newBuilder().setNodeGroup("node-group").build())
+                                             .build())
+                        .build());
+
+    when(pmsPipelineService.getPipeline(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
+        .thenReturn(Optional.of(pipelineEntity));
+
+    doNothing()
+        .when(pmsPipelineService)
+        .saveExecutionInfo(
+            anyString(), anyString(), anyString(), anyString(), executionSummaryInfoArgumentCaptor.capture());
+
+    doReturn(null).when(pmsExecutionSummaryService).save(pipelineExecutionSummaryEntityArgumentCaptor.capture());
+
+    when(nodeTypeLookupService.findNodeTypeServiceName(anyString())).thenReturn("pms");
+
+    executionSummaryCreateEventHandler.onStart(
+        OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(planExecutionMetadata).build());
+
+    ExecutionSummaryInfo executionSummaryInfo = executionSummaryInfoArgumentCaptor.getValue();
+    assertThat(executionSummaryInfo.getLastExecutionStatus()).isEqualTo(ExecutionStatus.RUNNING);
+    assertThat(executionSummaryInfo.getNumOfErrors()).isEmpty();
+    assertThat(executionSummaryInfo.getDeployments()).isNotEmpty();
+    assertThat(executionSummaryInfo.getDeployments().get(getFormattedDate())).isEqualTo(1);
+    assertThat(executionSummaryInfo.getLastExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
+
+    PipelineExecutionSummaryEntity capturedEntity = pipelineExecutionSummaryEntityArgumentCaptor.getValue();
+    assertThat(capturedEntity.getNotesExistForPlanExecutionId()).isTrue();
+    assertThat(capturedEntity).isNotNull();
+    assertThat(capturedEntity.getRunSequence()).isEqualTo(1);
+    assertThat(capturedEntity.getPipelineIdentifier()).isEqualTo("pipelineId");
+    assertThat(capturedEntity.getPlanExecutionId()).isEqualTo(ambiance.getPlanExecutionId());
+    assertThat(capturedEntity.getPipelineDeleted()).isFalse();
+    assertThat(capturedEntity.getInternalStatus()).isEqualTo(null);
+    assertThat(capturedEntity.getStatus()).isEqualTo(ExecutionStatus.NOTSTARTED);
+    assertThat(capturedEntity.getTags()).isEmpty();
+    assertThat(capturedEntity.getStartingNodeId()).isEqualTo("startId");
+    assertThat(capturedEntity.getModules()).containsExactly("pms");
+    assertThat(capturedEntity.getLayoutNodeMap()).isNotEmpty();
+    assertThat(capturedEntity.getLayoutNodeMap()).containsKeys("startId");
+    assertThat(capturedEntity.getStagesExecutionMetadata().isStagesExecution()).isTrue();
+    assertThat(capturedEntity.isStagesExecutionAllowed()).isTrue();
+    assertThat(capturedEntity.getExecutionInputConfigured())
+        .isEqualTo(planExecutionMetadata.getExecutionInputConfigured());
+    assertThat(capturedEntity.getStoreType()).isNull();
+    assertThat(capturedEntity.getConnectorRef()).isNull();
+    assertThat(capturedEntity.getExecutionMode()).isEqualTo(ExecutionMode.NORMAL);
+    assertThat(capturedEntity.getRollbackModeExecutionId()).isNull();
+
+    verify(notificationHelper, times(1)).sendNotification(ambiance, PipelineEventType.PIPELINE_START, null, null);
+    verify(pmsPipelineService, times(1))
+        .getPipeline(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
   }
 
   private String getFormattedDate() {

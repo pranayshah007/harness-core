@@ -229,6 +229,7 @@ public class GovernanceRuleEnforcementResource {
     }
     ruleEnforcement.setAccountId(accountId);
     ruleEnforcement.setRunCount(0);
+    ruleEnforcement.setUuid(null);
     if (ruleEnforcement.getExecutionTimezone() == null) {
       ruleEnforcement.setExecutionTimezone("UTC");
     }

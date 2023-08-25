@@ -21,6 +21,7 @@ import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraStepParameters;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
+import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.cdng.provision.terraform.TerraformConfig;
@@ -62,6 +63,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(TerraformApplyExecutionDetails.class);
     set.add(StageExecutionInstanceInfo.class);
     set.add(CDLicenseReportAccounts.class);
+    set.add(AwsCdkConfig.class);
   }
 
   @Override
@@ -84,5 +86,6 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
         TerraformCloudPlanExecutionDetails.class);
     h.put("io.harness.cdng.provision.terraform.executions.TerraformApplyExecutionDetails",
         TerraformApplyExecutionDetails.class);
+    h.put("io.harness.cdng.provision.awscdk.beans.AwsCdkConfig", AwsCdkConfig.class);
   }
 }

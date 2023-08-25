@@ -11,6 +11,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -19,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
+import javax.persistence.Column;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -40,17 +42,17 @@ public class DataPointEntity implements PersistentEntity {
                  .name("unique_account_identifier")
                  .unique(true)
                  .field(DataPointKeys.accountIdentifier)
+                 .field(DataPointKeys.dataSourceIdentifier)
                  .field(DataPointKeys.identifier)
                  .build())
         .build();
   }
 
   @Id private String id;
-  private String accountIdentifier;
-  private String identifier;
+  @FdIndex private String accountIdentifier;
+  @Column(name = "identifier") private String identifier;
   private String name;
   private Type type;
-  private String expression;
   private String description;
   private boolean isConditional;
   private String conditionalInputValueDescription;

@@ -11,8 +11,6 @@ import static io.harness.steps.StepUtils.buildAbstractions;
 
 import static software.wings.beans.TaskType.CONTAINER_EXECUTE_STEP;
 
-import static java.lang.String.format;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
@@ -58,7 +56,8 @@ public class CIDelegateTaskExecutor {
     this.delegateCallbackTokenSupplier = delegateCallbackTokenSupplier;
   }
 
-  public String queueParkedDelegateTask(Ambiance ambiance, long timeout, String accountId) {
+  public String queueParkedDelegateTask(
+      Ambiance ambiance, long timeout, String accountId, List<TaskSelector> taskSelectors) {
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .parked(true)
@@ -70,7 +69,7 @@ public class CIDelegateTaskExecutor {
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false, ambiance.getStageExecutionId());
+    return queueTask(abstractions, task, taskSelectors, new ArrayList<>(), false, ambiance.getStageExecutionId());
   }
 
   public String queueTask(Ambiance ambiance, TaskData taskData, String accountId) {
@@ -79,7 +78,7 @@ public class CIDelegateTaskExecutor {
     return queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false, ambiance.getStageExecutionId());
   }
 
-  public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
+  public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<TaskSelector> taskSelectors,
       List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates, String stageId) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
@@ -88,7 +87,7 @@ public class CIDelegateTaskExecutor {
             .parked(taskData.isParked())
             .accountId(accountId)
             .serializationFormat(taskData.getSerializationFormat())
-            .taskSelectors(taskSelectors)
+            .selectors(taskSelectors)
             .stageId(stageId)
             .taskType(taskData.getTaskType())
             .taskParameters(extractTaskParameters(taskData))
@@ -98,9 +97,8 @@ public class CIDelegateTaskExecutor {
             .expressionFunctorToken(taskData.getExpressionFunctorToken())
             .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
             .build();
-    RetryPolicy<Object> retryPolicy =
-        getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),
-            format("Failed to submit delegate task  after retrying {} times"));
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying failed call to submit delegate task attempt: {}",
+        "Failed to submit delegate task  after retrying {} times");
     // Make a call to the log service and get back the token
 
     return Failsafe.with(retryPolicy)
@@ -133,15 +131,14 @@ public class CIDelegateTaskExecutor {
             .stageId(stageExecutionId)
             .selectors(selectors)
             .build();
-    RetryPolicy<Object> retryPolicy =
-        getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),
-            format("Failed to submit delegate task  after retrying {} times"));
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying failed call to submit delegate task attempt: {}",
+        "Failed to submit delegate task  after retrying {} times");
     // Make a call to the log service and get back the token
 
-    return Failsafe.with(retryPolicy).get(() -> {
-      return delegateServiceGrpcClient.submitAsyncTaskV2(
-          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO, selectionTrackingLogEnabled);
-    });
+    return Failsafe.with(retryPolicy)
+        .get(()
+                 -> delegateServiceGrpcClient.submitAsyncTaskV2(delegateTaskRequest,
+                     delegateCallbackTokenSupplier.get(), Duration.ZERO, selectionTrackingLogEnabled));
   }
 
   public void expireTask(Map<String, String> setupAbstractions, String taskId) {

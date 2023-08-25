@@ -8,10 +8,15 @@
 package io.harness.repositories;
 
 import io.harness.annotation.HarnessRepo;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.freeze.entity.FrozenExecution;
 
 import org.springframework.data.repository.CrudRepository;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @HarnessRepo
 public interface FrozenExecutionRepository
     extends CrudRepository<FrozenExecution, String>, FrozenExecutionRepositoryCustom {}

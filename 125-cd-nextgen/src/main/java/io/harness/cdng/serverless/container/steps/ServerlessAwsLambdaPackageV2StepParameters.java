@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.serverless.container.steps;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -19,6 +20,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -38,15 +40,18 @@ import org.springframework.data.annotation.TypeAlias;
 public class ServerlessAwsLambdaPackageV2StepParameters
     extends ServerlessAwsLambdaV2BaseStepInfo implements ServerlessSpecParameters, StepParameters {
   ParameterField<List<String>> packageCommandOptions;
+  @JsonIgnore String downloadManifestsFqn;
 
   @Builder(builderMethodName = "infoBuilder")
   public ServerlessAwsLambdaPackageV2StepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
       ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<String> serverlessVersion, ParameterField<List<String>> packageCommandOptions) {
+      ParameterField<String> serverlessVersion, ParameterField<List<String>> packageCommandOptions,
+      String downloadManifestsFqn) {
     super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
         serverlessVersion);
     this.packageCommandOptions = packageCommandOptions;
+    this.downloadManifestsFqn = downloadManifestsFqn;
   }
 }

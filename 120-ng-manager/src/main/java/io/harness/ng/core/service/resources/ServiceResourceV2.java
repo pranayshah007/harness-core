@@ -61,6 +61,9 @@ import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
 import io.harness.ng.core.beans.DocumentationConstants;
@@ -131,6 +134,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -228,7 +232,13 @@ public class ServiceResourceV2 {
       @Parameter(description = "Specify whether Service is deleted or not") @QueryParam(
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
       @Parameter(description = "Specify true for fetching resolved service yaml", hidden = true) @QueryParam(
-          "fetchResolvedYaml") @DefaultValue("false") boolean fetchResolvedYaml) {
+          "fetchResolvedYaml") @DefaultValue("false") boolean fetchResolvedYaml,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info",
+          hidden = true) @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache", hidden = true) @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
+          "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
     Optional<ServiceEntity> serviceEntity =
         serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
     if (serviceEntity.isPresent()) {
@@ -270,10 +280,14 @@ public class ServiceResourceV2 {
   public ResponseDTO<ServiceResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @RequestBody(required = true, description = "Details of the Service to be created", content = {
-        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service create payload",
-                     value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
-      }) @Valid ServiceRequestDTO serviceRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Service to be created",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service create payload",
+                         value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
+          }) @Valid ServiceRequestDTO serviceRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created",
+          hidden = true) @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -360,10 +374,14 @@ public class ServiceResourceV2 {
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @RequestBody(required = true, description = "Details of the Service to be updated", content = {
-        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service update payload",
-                     value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
-      }) @Valid ServiceRequestDTO serviceRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Service to be updated",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service update payload",
+                         value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
+          }) @Valid ServiceRequestDTO serviceRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch information to be updated",
+          hidden = true) @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -408,7 +426,7 @@ public class ServiceResourceV2 {
   }
 
   @GET
-  @ApiOperation(value = "Gets Service list ", nickname = "getServiceList")
+  @ApiOperation(value = "Gets Service list", nickname = "getServiceList")
   @Operation(operationId = "getServiceList", summary = "Gets Service list",
       responses =
       {
@@ -441,7 +459,9 @@ public class ServiceResourceV2 {
       @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
           "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope,
       @Parameter(description = "Specify true if services' version info need to be included", hidden = true) @QueryParam(
-          "includeVersionInfo") @DefaultValue("false") boolean includeVersionInfo) {
+          "includeVersionInfo") @DefaultValue("false") boolean includeVersionInfo,
+      @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
+          "repoName") String repoName) {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
         searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
     Pageable pageRequest;

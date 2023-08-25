@@ -266,7 +266,10 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
              pmsExecutionSummaryRespository.findListOfRepositories(criteria)) {
       while (iterator.hasNext()) {
-        repoList.add(iterator.next().getEntityGitDetails().getRepoName());
+        EntityGitDetails entityGitDetails = iterator.next().getEntityGitDetails();
+        if (entityGitDetails != null && EmptyPredicate.isNotEmpty(entityGitDetails.getRepoName())) {
+          repoList.add(entityGitDetails.getRepoName());
+        }
       }
     }
 
@@ -281,7 +284,10 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
              pmsExecutionSummaryRespository.findListOfBranches(criteria)) {
       while (iterator.hasNext()) {
-        branchList.add(iterator.next().getEntityGitDetails().getBranch());
+        EntityGitDetails entityGitDetails = iterator.next().getEntityGitDetails();
+        if (entityGitDetails != null && EmptyPredicate.isNotEmpty(entityGitDetails.getBranch())) {
+          branchList.add(entityGitDetails.getBranch());
+        }
       }
     }
 

@@ -24,5 +24,4 @@ public interface ServerlessInstanceStatService {
   @Nullable Instant getLastSnapshotTime(String accountId);
   @Nullable Instant getFirstSnapshotTime(String accountId);
   ServerlessInstanceTimeline aggregate(String accountId, long from, long to, InvocationCountKey invocationCountKey);
-  boolean purgeUpTo(Instant startingInstantOfRetentionOfInstanceStats);
 }

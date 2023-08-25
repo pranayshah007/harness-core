@@ -432,11 +432,17 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   public void shouldTestProcessFacilitatorResponse() {
     String planExecutionId = generateUuid();
     String nodeExecutionId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(planExecutionId)
-                            .putAllSetupAbstractions(prepareInputArgs())
-                            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
-                            .build();
+    String stageNodeExecutionId = generateUuid();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(planExecutionId)
+            .putAllSetupAbstractions(prepareInputArgs())
+            .addLevels(Level.newBuilder()
+                           .setRuntimeId(stageNodeExecutionId)
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                           .build())
+            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
+            .build();
 
     when(nodeExecutionService.update(eq(nodeExecutionId), any()))
         .thenReturn(NodeExecution.builder()
@@ -445,7 +451,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                         .status(Status.QUEUED)
                         .mode(ExecutionMode.ASYNC)
                         .build());
-    when(interruptService.checkInterruptsPreInvocation(eq(planExecutionId), eq(nodeExecutionId)))
+    when(interruptService.checkInterruptsPreInvocation(
+             eq(planExecutionId), eq(nodeExecutionId), eq(List.of(nodeExecutionId, stageNodeExecutionId))))
         .thenReturn(ExecutionCheck.builder().proceed(true).build());
 
     FacilitatorResponseProto facilitatorResponse =
@@ -460,11 +467,17 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   public void shouldTestProcessFacilitatorResponseWithInterrupt() {
     String planExecutionId = generateUuid();
     String nodeExecutionId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(planExecutionId)
-                            .putAllSetupAbstractions(prepareInputArgs())
-                            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
-                            .build();
+    String stageNodeExecutionId = generateUuid();
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(planExecutionId)
+            .putAllSetupAbstractions(prepareInputArgs())
+            .addLevels(Level.newBuilder()
+                           .setRuntimeId(stageNodeExecutionId)
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                           .build())
+            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
+            .build();
 
     when(nodeExecutionService.update(eq(nodeExecutionId), any()))
         .thenReturn(NodeExecution.builder()
@@ -473,7 +486,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                         .status(Status.QUEUED)
                         .mode(ExecutionMode.ASYNC)
                         .build());
-    when(interruptService.checkInterruptsPreInvocation(eq(planExecutionId), eq(nodeExecutionId)))
+    when(interruptService.checkInterruptsPreInvocation(
+             eq(planExecutionId), eq(nodeExecutionId), eq(List.of(nodeExecutionId, stageNodeExecutionId))))
         .thenReturn(ExecutionCheck.builder().proceed(false).build());
 
     FacilitatorResponseProto facilitatorResponse =

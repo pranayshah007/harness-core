@@ -21,6 +21,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.managerclient.DelegateAgentManagerClient;
@@ -126,6 +127,7 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
                        connectorDTO, releaseDetails.getK8sCloudClusterConfig(), namespace))
                    .namespace(namespace)
                    .releaseName(releaseName)
+                   .helmChartInfo(releaseDetails.getHelmChartInfo())
                    .build())
         .collect(Collectors.toList());
   }
@@ -140,5 +142,6 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
     private KubernetesConfig kubernetesConfig;
     @NotNull private String namespace;
     @NotNull private String releaseName;
+    private HelmChartInfo helmChartInfo;
   }
 }

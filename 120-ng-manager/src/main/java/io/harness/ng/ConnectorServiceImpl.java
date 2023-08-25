@@ -26,11 +26,8 @@ import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NgAutoLogContext;
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EntityReference;
 import io.harness.beans.FeatureName;
 import io.harness.beans.ScopeLevel;
@@ -70,6 +67,7 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.ngexception.beans.ConnectorValidationErrorMetadataDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -92,6 +90,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
+import io.fabric8.utils.Strings;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -103,7 +102,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.DX)
@@ -619,6 +617,11 @@ public class ConnectorServiceImpl implements ConnectorService {
         validationFailureBuilder.errorSummary(errorSummary).errors(errorDetail);
       }
       connectorValidationResult = validationFailureBuilder.build();
+      // set Delegate taskId as the metadata
+      if (isNotEmpty((String) wingsException.getParams().get("taskId"))) {
+        wingsException.setMetadata(
+            new ConnectorValidationErrorMetadataDTO((String) wingsException.getParams().get("taskId")));
+      }
       throw wingsException;
     } finally {
       if (connectorValidationResult != null) {
@@ -642,6 +645,12 @@ public class ConnectorServiceImpl implements ConnectorService {
           connectorIdentifier);
 
       connectorRepository.save(connector, ChangeType.NONE);
+
+      getConnectorService(connector.getType())
+          .updateActivityDetailsInTheConnector(connector.getAccountIdentifier(), connector.getOrgIdentifier(),
+              connector.getProjectIdentifier(), connector.getIdentifier(), connectorValidationResult,
+              connector.getConnectivityDetails().getTestedAt());
+
     } catch (Exception ex) {
       log.error("Error saving the connector status for the connector {}",
           String.format(CONNECTOR_STRING, connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier),
@@ -709,7 +718,8 @@ public class ConnectorServiceImpl implements ConnectorService {
   private void deletePTForGitConnector(
       ConnectorValidationResult connectorValidationResult, Connector connector, String accountIdentifier) {
     // Delete PT during connection failure if it exist
-    if (connectorValidationResult.getErrorSummary().contains(HINT_INVALID_GIT_API_AUTHORIZATION)
+    if (Strings.isNotBlank(connectorValidationResult.getErrorSummary())
+        && connectorValidationResult.getErrorSummary().contains(HINT_INVALID_GIT_API_AUTHORIZATION)
         && connector.getType() == ConnectorType.GITHUB && connector.getHeartbeatPerpetualTaskId() != null) {
       String fullyQualifiedIdentifier = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
           accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());

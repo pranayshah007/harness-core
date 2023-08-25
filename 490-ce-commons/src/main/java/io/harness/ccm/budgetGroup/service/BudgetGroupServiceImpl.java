@@ -949,6 +949,10 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     Comparator comparator;
     if (budgetGroupSortType == BudgetGroupSortType.BUDGET_GROUP_AMOUNT) {
       comparator = Comparator.comparingDouble(BudgetSummary::getBudgetAmount);
+    } else if (budgetGroupSortType == BudgetGroupSortType.BUDGET_GROUP_ACTUAL_COST) {
+      comparator = Comparator.comparingDouble(BudgetSummary::getActualCost);
+    } else if (budgetGroupSortType == BudgetGroupSortType.BUDGET_GROUP_FORECASTED_COST) {
+      comparator = Comparator.comparingDouble(BudgetSummary::getForecastCost);
     } else {
       comparator = Comparator.comparing(BudgetSummary::getName, String.CASE_INSENSITIVE_ORDER);
     }

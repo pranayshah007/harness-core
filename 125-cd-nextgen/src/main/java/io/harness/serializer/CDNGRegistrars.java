@@ -79,6 +79,7 @@ import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkDeployStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkDestroyStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkDiffStepNode;
+import io.harness.cdng.provision.awscdk.AwsCdkRollbackStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkSynthStepNode;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepNode;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepNode;
@@ -1379,6 +1380,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(AwsCdkDestroyStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.AWS_CDK_ROLLBACK)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AwsCdkRollbackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))

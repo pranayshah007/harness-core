@@ -938,6 +938,10 @@ paths:
       parameters:
         - $ref: '#/components/parameters/CheckType'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/SearchTerm'
       tags:
         - Checks
       x-stoplight:
@@ -957,7 +961,7 @@ paths:
       operationId: create-check
       responses:
         '201':
-          description: Created
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: 3odk9i73co8ny
       description: Create a custom check
@@ -988,6 +992,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/CheckIdentifier'
+        - $ref: '#/components/parameters/CheckType'
       x-internal: true
     put:
       summary: Update check details for given checkId
@@ -996,7 +1001,7 @@ paths:
       operationId: update-check
       responses:
         '200':
-          description: OK
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: 94y43314ia7cu
       description: Update check details for given checkId
@@ -1007,7 +1012,10 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/CheckIdentifier'
       requestBody:
-        $ref: '#/components/schemas/CheckDetailsRequest'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckDetailsRequest'
     delete:
       summary: Delete check details for given checkId
       operationId: delete-check
@@ -1050,7 +1058,7 @@ paths:
       operationId: create-scorecard
       responses:
         '201':
-          description: Created
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: vs8mu57g6sy8h
       description: Create scorecard
@@ -1089,7 +1097,7 @@ paths:
       operationId: update-scorecard
       responses:
         '200':
-          description: OK
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: eifr2cushvum8
       description: Update scorecard details for given scorecardId
@@ -1121,6 +1129,64 @@ paths:
         - Scorecards
       x-stoplight:
         id: o1dppys5mqejp
+  /v1/entity-facets:
+    get:
+      summary: Get all entity facets for given kind
+      tags:
+       - Scorecards
+      responses:
+        '200':
+          $ref: '#/components/responses/FacetsResponse'
+      operationId: get-entity-facets
+      x-stoplight:
+        id: 8bdlnmkjjb6rm
+      description: Get all entity facets for given kind
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/CatalogKind'
+  '/v1/data-source/{data-source}/data-point/values':
+    get:
+      summary: Get data points data for data source
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointInfoResponse'
+      operationId: get-data-source-data-point-values
+      x-stoplight:
+        id: n763zvcv8fxcy
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/DataSourceDataPointInfoRequest'
+      tags:
+        - DataPointsData
+    parameters:
+      - schema:
+          type: string
+        name: data-source
+        in: path
+        required: true
+  /v1/data-sources/data-points/map:
+    get:
+      summary: Get Data Sources and Data Points Map for Account
+      tags:
+        - DataSource
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointsMapResponse'
+      operationId: get-data-sources-data-points-map
+      x-stoplight:
+        id: 8ksgpo0pm5604
+      description: API for getting the map of data sources and data points for account
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
 components:
   schemas:
     BackstageEnvVariable:
@@ -2220,9 +2286,14 @@ components:
             x-stoplight:
               id: na722h8vio416
             type: string
+        custom:
+          type: boolean
+          x-stoplight:
+            id: rongwmegupm95
       required:
         - identifier
         - name
+        - custom
       x-internal: true
     CheckListItem:
       title: CheckListItem
@@ -2278,18 +2349,6 @@ components:
               type: boolean
               x-stoplight:
                 id: d866s5x1c11b4
-            custom:
-              type: boolean
-              x-stoplight:
-                id: it7cwhdz3iybm
-            tags:
-              type: array
-              x-stoplight:
-                id: jz5a6os04cen1
-              items:
-                x-stoplight:
-                  id: uow20bew76m73
-                type: string
             default_behaviour:
               x-stoplight:
                 id: 13d4z9h0oimjr
@@ -2304,7 +2363,6 @@ components:
           required:
             - rule_strategy
             - rules
-            - custom
             - default_behaviour
       x-internal: true
     CheckDetailsRequest:
@@ -2375,8 +2433,13 @@ components:
           x-stoplight:
             id: 9u8dxhjfrafed
           format: double
+        custom:
+          type: boolean
+          x-stoplight:
+            id: gq0dfcshoqumh
       required:
         - identifier
+        - custom
     ScorecardChecksDetails:
       title: ScorecardChecksDetails
       x-stoplight:
@@ -2419,6 +2482,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Check'
+        published:
+          type: boolean
+          x-stoplight:
+            id: bprjxwrnen0vj
+        checks_missing:
+          type: array
+          x-stoplight:
+            id: ec045eeauhsdv
+          items:
+            x-stoplight:
+              id: ws9ljw83jq43w
+            type: string
       required:
         - name
         - identifier
@@ -2435,12 +2510,8 @@ components:
           type: string
         description:
           type: string
-        filters:
-          x-stoplight:
-            id: f1au4kix9z5hv
-          type: array
-          items:
-            $ref: '#/components/schemas/ScorecardFilters'
+        filter:
+          $ref: '#/components/schemas/ScorecardFilter'
         weightage_strategy:
           type: string
           x-stoplight:
@@ -2453,13 +2524,21 @@ components:
           type: boolean
           x-stoplight:
             id: zo3ufqnmsgvo1
+        checks_missing:
+          type: array
+          x-stoplight:
+            id: ec045edauhsdv
+          items:
+            x-stoplight:
+              id: ws9ltw83jq43w
+            type: string
       required:
         - name
         - identifier
-        - filters
+        - filter
         - published
-    ScorecardFilters:
-      title: ScorecardFilters
+    ScorecardFilter:
+      title: ScorecardFilter
       x-stoplight:
         id: 2oxyg4tys853p
       type: object
@@ -2539,6 +2618,49 @@ components:
       required:
         - scorecard
         - checks
+    Facets:
+      title: Facets
+      x-stoplight:
+        id: 4s1zzr3b7vexk
+      type: object
+      properties:
+        type:
+          type: array
+          x-stoplight:
+            id: snonx3g63gqfz
+          items:
+            x-stoplight:
+              id: vuq35640o2x04
+            type: string
+        owners:
+          type: array
+          x-stoplight:
+            id: snknx3g63gqfz
+          items:
+            x-stoplight:
+              id: vur35640o2x04
+            type: string
+        tags:
+          type: array
+          x-stoplight:
+            id: dvr6apmvo4hc9
+          items:
+            x-stoplight:
+              id: fqyhjib03ov1g
+            type: string
+        lifecycle:
+          type: array
+          x-stoplight:
+            id: a5i4ybt9y21tz
+          items:
+            x-stoplight:
+              id: 3oil2gdwpinc8
+            type: string
+      required:
+        - type
+        - owners
+        - tags
+        - lifecycle
     DataSource:
       title: DataSource
       x-stoplight:
@@ -2801,6 +2923,147 @@ components:
           $ref: '#/components/schemas/ScorecardSummaryInfo'
       required:
         - recalibrated_scores
+    DataSourceDataPointInfo:
+      title: DataSourceDataPointInfo
+      x-stoplight:
+        id: tggo329c3whzy
+      type: object
+      description: Request Content for fetching the data point data from data source
+      x-internal: true
+      properties:
+        ci_pipeline_url:
+          type: string
+          x-stoplight:
+            id: r53d288yjhv45
+        service_url:
+          type: string
+          x-stoplight:
+            id: tm3qx5d51qp2s
+        data_source_location:
+          $ref: '#/components/schemas/DataSourceLocationInfo'
+        github_url:
+          type: string
+          x-stoplight:
+            id: nphiny6fsdwgd
+      required:
+        - ci_pipeline_url
+        - service_url
+        - data_source_location
+        - github_url
+    DataPointInputValues:
+      title: DataPointInputValues
+      x-stoplight:
+        id: 6tvb6bvgpw47v
+      type: object
+      properties:
+        data_point_identifier:
+          type: string
+          x-stoplight:
+            id: zmwv1knumeiet
+        values:
+          type: array
+          x-stoplight:
+            id: f8uovlsr7vh6h
+          items:
+            x-stoplight:
+              id: xhke4prmxesht
+            type: string
+      required:
+        - data_point_identifier
+        - values
+      description: Data point values Info for Request
+      x-internal: true
+    DataSourceLocationInfo:
+      title: DataSourceLocationInfo
+      x-stoplight:
+        id: p26wnz3k5nsjh
+      type: object
+      description: Data Source Location Info for request
+      x-internal: true
+      properties:
+        data_points:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPointInputValues'
+        data_source_location_identifier:
+          type: string
+          x-stoplight:
+            id: wu0w94s9gbsdn
+      required:
+        - data_points
+        - data_source_location_identifier
+    DataSourceDataPointInfoResponse:
+      title: DataSourceDataPointInfoResponse
+      x-stoplight:
+        id: v5fltn2m4mhmd
+      type: object
+      description: Resonse for getting the data point data
+      x-internal: true
+      properties:
+        resource:
+          type: object
+          x-stoplight:
+            id: gorxsw7uo1m31
+      required:
+        - resource
+    DataSourceDataPointInfoRequest:
+      title: DataSourceDataPointInfoRequest
+      x-stoplight:
+        id: yxbkeqxrkzszu
+      type: object
+      description: Request for getting the data point data
+      x-internal: true
+      properties:
+        request:
+          $ref: '#/components/schemas/DataSourceDataPointInfo'
+      required:
+        - request
+    DefaultSaveResponse:
+      title: DefaultSaveResponse
+      x-stoplight:
+        id: g3wczg3wjlmxq
+      type: object
+      description: 'Default response for Save/Edit operations '
+      properties:
+        status:
+          type: string
+          x-stoplight:
+            id: qh5qxx57312re
+      required:
+        - status
+    DataSourceDataPointsMap:
+      title: DataSourceDataPointsMap
+      x-stoplight:
+        id: z77fv6vcnfg4b
+      type: object
+      properties:
+        data_source:
+          $ref: '#/components/schemas/DataSource'
+        data_points:
+          type: array
+          x-stoplight:
+            id: 4dmhbjlkx46p9
+          items:
+            $ref: '#/components/schemas/DataPoint'
+      required:
+        - data_source
+        - data_points
+      description: Mapping of data source with data points
+    DataSourceDataPointsMapResponse:
+      title: DataSourceDataPointsMapResponse
+      x-stoplight:
+        id: tsydrbfqm03z1
+      type: object
+      properties:
+        data_source_data_points_map:
+          x-stoplight:
+            id: 19okloss3p3sr
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSourceDataPointsMap'
+      required:
+        - data_source_data_points_map
+      description: Response for getting the data sources and data points map
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -2926,7 +3189,7 @@ components:
       schema:
         type: boolean
       description: Type of checks to be returned
-      required: true
+      required: false
     CheckIdentifier:
       name: check-id
       in: path
@@ -2955,6 +3218,13 @@ components:
       schema:
         type: boolean
       description: This is used if an entity need to be force deleted
+    CatalogKind:
+      name: kind
+      in: query
+      required: true
+      schema:
+        type: string
+      description: This is used to filter backstage catalog entity facets by kind
   requestBodies:
     BackstageEnvVariableRequest:
       content:
@@ -3088,6 +3358,12 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/CheckDetailsRequest'
+    DataSourceDataPointInfoRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointInfoRequest'
+      description: Request for getting the data point data
   responses:
     BackstageEnvVariableResponse:
       description: Example response
@@ -3379,6 +3655,19 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/CheckResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     CheckDetailsResponse:
       description: Response for check details
       content:
@@ -3410,6 +3699,40 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/ScorecardDetailsResponse'
+    FacetsResponse:
+      description: Response for entity facets
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Facets'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/Facets'
+    DataSourceDataPointInfoResponse:
+      description: Response for getting the data point data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointInfoResponse'
+    DefaultSaveResponse:
+      description: Default response for Save/Edit operations
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DefaultSaveResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/DefaultSaveResponse'
+    DataSourceDataPointsMapResponse:
+      description: Response for getting the data source and data point map
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointsMapResponse'
+        application/xml:
+          schema:
+            type: object
+            properties: {}
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3430,6 +3753,8 @@ tags:
     description: Backstage Permissions
   - name: ConnectorInfo
     description: Connector Information
+  - name: DataPointsData
+    description: DataPointData Information
   - name: DataSource
     description: DataSource Information
   - name: LayoutProxy

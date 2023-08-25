@@ -17,6 +17,8 @@ import (
 // with the Streamer.
 var ErrNotFound = errors.New("stream: not found")
 
+const Prefix = "log-service"
+
 // Stream defines the live log streaming interface.
 type Stream interface {
 	// Create creates the log stream for the string key.

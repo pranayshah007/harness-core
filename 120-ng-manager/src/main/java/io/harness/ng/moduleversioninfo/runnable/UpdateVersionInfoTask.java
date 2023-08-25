@@ -90,6 +90,10 @@ public class UpdateVersionInfoTask {
           log.error("Encountered an exception while trying to update the version for module: {}",
               moduleVersionInfo.getDisplayName());
           throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
+        } catch (InterruptedException e) {
+          log.error("Encountered an exception while trying to update the version for module: {}",
+              moduleVersionInfo.getDisplayName());
+          throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:", e);
         }
       }
       updateModuleVersionInfoCollection(moduleVersionInfo);
@@ -141,7 +145,8 @@ public class UpdateVersionInfoTask {
     return finalBaseUrl;
   }
 
-  private String getLatestVersion(ModuleVersionInfo moduleVersionInfo, String baseUrl) throws IOException {
+  private String getLatestVersion(ModuleVersionInfo moduleVersionInfo, String baseUrl)
+      throws IOException, InterruptedException {
     StringBuilder baseUrlBuilder = new StringBuilder();
     baseUrlBuilder.append(baseUrl);
     if (!baseUrl.endsWith("/")) {
@@ -181,7 +186,7 @@ public class UpdateVersionInfoTask {
   }
 
   private String getCurrentMicroserviceVersions(String serviceName, String serviceVersionUrl)
-      throws IOException, JSONException {
+      throws IOException, InterruptedException, JSONException {
     if (StringUtils.isNullOrEmpty(serviceName) || StringUtils.isNullOrEmpty(serviceVersionUrl)) {
       return COMING_SOON;
     }
@@ -193,9 +198,11 @@ public class UpdateVersionInfoTask {
     try {
       response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
     } catch (IOException e) {
-      throw new UnexpectedException(JOB_INTERRUPTED, e);
+      log.error(JOB_INTERRUPTED, e);
+      throw new IOException(JOB_INTERRUPTED, e);
     } catch (InterruptedException e) {
       log.error(JOB_INTERRUPTED, e);
+      throw new InterruptedException(JOB_INTERRUPTED + e);
     }
     if (response == null) {
       return "";
@@ -203,8 +210,8 @@ public class UpdateVersionInfoTask {
     log.info("Request: {} and Response Body: {}", request, response.body());
     String responseString = response.body().toString().trim();
     JSONObject jsonObject = new JSONObject(responseString);
+    
     String finalVersion = "";
-
     try {
       ModuleType moduleType = ModuleType.valueOf(serviceName);
       switch (moduleType) {

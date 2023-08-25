@@ -15,6 +15,7 @@
 package io.harness.service.instance;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
@@ -53,6 +54,7 @@ import io.harness.service.instancedashboardservice.InstanceDashboardServiceImplT
 
 import com.google.inject.Inject;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -67,6 +69,7 @@ import org.mockito.Mock;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.TransactionTimedOutException;
 
 public class InstanceServiceImplTest extends InstancesTestBase {
   private final String INSTANCE_KEY = "instance_key";
@@ -541,5 +544,48 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     verify(instanceRepository)
         .getActiveServiceInstanceInfoWithEnvType(
             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, true, true);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void test_deleteForProject() {
+    when(instanceRepository.getInstancesForProject(ACCOUNT_ID, ORG_ID, PROJECT_ID))
+        .thenReturn(List.of(Instance.builder().id("1").build(), Instance.builder().id("2").build(),
+            Instance.builder().id("3").build(), Instance.builder().id("4").build()));
+
+    boolean result = instanceService.deleteForProject(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+
+    assertTrue(result);
+    verify(instanceRepository).getInstancesForProject(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+    verify(instanceRepository).deleteById("1");
+    verify(instanceRepository).deleteById("2");
+    verify(instanceRepository).deleteById("3");
+    verify(instanceRepository).deleteById("4");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void test_deleteForProject_NoInstanceForDeletion() {
+    when(instanceRepository.getInstancesForProject(ACCOUNT_ID, ORG_ID, PROJECT_ID)).thenReturn(Collections.emptyList());
+
+    boolean result = instanceService.deleteForProject(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+
+    assertTrue(result);
+    verify(instanceRepository).getInstancesForProject(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+    verify(instanceRepository, times(0)).deleteById(any());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void test_deleteForProject_fails() {
+    when(instanceRepository.getInstancesForProject(ACCOUNT_ID, ORG_ID, PROJECT_ID))
+        .thenThrow(new TransactionTimedOutException("error"));
+
+    boolean result = instanceService.deleteForProject(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+
+    assertFalse(result);
   }
 }

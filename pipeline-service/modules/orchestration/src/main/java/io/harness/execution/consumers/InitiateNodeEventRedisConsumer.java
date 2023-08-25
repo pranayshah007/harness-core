@@ -18,6 +18,7 @@ import io.harness.queue.QueueController;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +29,8 @@ public class InitiateNodeEventRedisConsumer extends PmsAbstractRedisConsumer<Ini
   @Inject
   public InitiateNodeEventRedisConsumer(@Named(INITIATE_NODE_EVENT_CONSUMER) Consumer redisConsumer,
       InitiateNodeEventMessageListener initiateNodeEventMessageListener,
-      @Named("pmsEventsCache") Cache<String, Integer> eventsCache, QueueController queueController) {
-    super(redisConsumer, initiateNodeEventMessageListener, eventsCache, queueController);
+      @Named("pmsEventsCache") Cache<String, Integer> eventsCache, QueueController queueController,
+      @Named("EngineExecutorService") ExecutorService executorService) {
+    super(redisConsumer, initiateNodeEventMessageListener, eventsCache, queueController, executorService);
   }
 }

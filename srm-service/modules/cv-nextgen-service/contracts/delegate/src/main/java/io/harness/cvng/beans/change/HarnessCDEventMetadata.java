@@ -10,6 +10,7 @@ package io.harness.cvng.beans.change;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.time.Duration;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -37,6 +38,7 @@ public class HarnessCDEventMetadata extends ChangeEventMetadata {
   String artifactTag;
   String status;
   List<VerifyStepSummary> verifyStepSummaries;
+  List<SRMAnalysisStepDetails> analysisStepDetails;
   String pipelinePath;
 
   @Override
@@ -49,5 +51,17 @@ public class HarnessCDEventMetadata extends ChangeEventMetadata {
   public static class VerifyStepSummary {
     String name;
     ActivityVerificationStatus verificationStatus;
+  }
+
+  @Value
+  @Builder
+  public static class SRMAnalysisStepDetails {
+    long analysisStartTime;
+    long analysisEndTime;
+    Duration analysisDuration;
+    SRMAnalysisStatus analysisStatus;
+    String monitoredServiceIdentifier;
+    String executionDetailIdentifier;
+    String stepName;
   }
 }

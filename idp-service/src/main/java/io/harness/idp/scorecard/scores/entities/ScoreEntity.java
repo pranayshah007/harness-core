@@ -43,11 +43,12 @@ public class ScoreEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("unique_account_entityName_scorecardIdentifier")
+                 .name("unique_account_entityIdentifier_scorecardIdentifier_lastComputedTimestamp")
                  .unique(true)
                  .field(ScoreKeys.accountIdentifier)
                  .field(ScoreKeys.entityIdentifier)
                  .field(ScoreKeys.scorecardIdentifier)
+                 .field(ScoreKeys.lastComputedTimestamp)
                  .build())
         .build();
   }
@@ -57,7 +58,7 @@ public class ScoreEntity implements PersistentEntity {
   private String entityIdentifier;
   private String scorecardIdentifier;
   private long lastComputedTimestamp;
-  private double score;
+  private int score;
   private List<CheckStatus> checkStatus;
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 }

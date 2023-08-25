@@ -493,6 +493,9 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(453, "COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT");
     taskTypeOrdinalMapping.put(454, "INSTANCE_SYNC_V2_NG_SUPPORT");
     taskTypeOrdinalMapping.put(455, "COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT");
+    taskTypeOrdinalMapping.put(456, "TERRAGRUNT_PLAN_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(457, "TERRAGRUNT_APPLY_TASK_NG_V2");
+    taskTypeOrdinalMapping.put(458, "TERRAGRUNT_DESTROY_TASK_NG_V2");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

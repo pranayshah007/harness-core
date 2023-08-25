@@ -85,12 +85,15 @@ public class AwsCdkDeployStepInfo extends AwsCdkBaseStepInfo implements CDAbstra
     return AwsCdkDeployStepParameters.infoBuilder()
         .delegateSelectors(getDelegateSelectors())
         .image(getImage())
+        .resources(getResources())
+        .provisionerIdentifier(getProvisionerIdentifier())
         .connectorRef(getConnectorRef())
         .privileged(getPrivileged())
         .runAsUser(getRunAsUser())
         .imagePullPolicy(getImagePullPolicy())
         .commandOptions(getCommandOptions())
         .appPath(getAppPath())
+        .envVariables(getEnvVariables())
         .stackNames(getStackNames())
         .build();
   }

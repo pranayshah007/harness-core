@@ -11,15 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 
 @OwnedBy(CDP)
 public interface AsgStepExecutor {
-  TaskChainResponse executeAsgTask(Ambiance ambiance, StepElementParameters stepParameters,
+  TaskChainResponse executeAsgTask(Ambiance ambiance, StepBaseParameters stepParameters,
       AsgExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
       AsgStepExecutorParams asgStepExecutorParams);
-  TaskChainResponse executeAsgPrepareRollbackDataTask(Ambiance ambiance, StepElementParameters stepParameters,
+  TaskChainResponse executeAsgPrepareRollbackDataTask(Ambiance ambiance, StepBaseParameters stepParameters,
       AsgPrepareRollbackDataPassThroughData asgStepPassThroughData, UnitProgressData unitProgressData);
 }

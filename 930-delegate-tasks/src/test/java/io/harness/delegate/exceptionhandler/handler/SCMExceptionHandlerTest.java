@@ -8,6 +8,7 @@
 package io.harness.delegate.exceptionhandler.handler;
 
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.SHOBHIT_SINGH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -83,5 +84,41 @@ public class SCMExceptionHandlerTest extends CategoryTest {
     assertThat(actual.getMessage()).isEqualTo(HintException.HINT_GIT_CONNECTIVITY);
     assertThat(actual.getCause() instanceof ExplanationException).isTrue();
     assertThat(actual.getCause().getCause() instanceof InvalidRequestException).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testInvalidPrivateKey() {
+    exception = new SCMRuntimeException("(Hello World) Invalid private key error", ErrorCode.INVALID_KEY);
+    Exception ex = scmExceptionHandler.handleException(exception);
+    assertThat(ex instanceof HintException).isTrue();
+    assertThat(ex.getMessage()).isEqualTo(HintException.HINT_MALFORMED_GIT_SSH_KEY);
+    assertThat(ex.getCause() instanceof ExplanationException).isTrue();
+    assertThat(ex.getCause().getCause() instanceof InvalidRequestException).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testInvalidGitUsername() {
+    exception = new SCMRuntimeException("(Hello World) Invalid git username", ErrorCode.SSH_CONNECTION_ERROR);
+    Exception ex = scmExceptionHandler.handleException(exception);
+    assertThat(ex instanceof HintException).isTrue();
+    assertThat(ex.getMessage()).isEqualTo(HintException.HINT_INVALID_GIT_SSH_KEY);
+    assertThat(ex.getCause() instanceof ExplanationException).isTrue();
+    assertThat(ex.getCause().getCause() instanceof InvalidRequestException).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testAllOtherCases() {
+    exception = new SCMRuntimeException("(Hello World) Something went wrong", ErrorCode.GENERAL_ERROR);
+    Exception ex = scmExceptionHandler.handleException(exception);
+    assertThat(ex instanceof HintException).isTrue();
+    assertThat(ex.getMessage()).isEqualTo("Try re-connecting the delegate. Make sure credentials are correct");
+    assertThat(ex.getCause() instanceof ExplanationException).isTrue();
+    assertThat(ex.getCause().getCause() instanceof InvalidRequestException).isTrue();
   }
 }

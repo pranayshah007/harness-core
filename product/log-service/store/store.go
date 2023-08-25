@@ -29,6 +29,11 @@ type Store interface {
 	// Delete deletes the blob from the datastore.
 	Delete(ctx context.Context, key string) error
 
+	//DeleteWithPrefix deletes multiple objects with the given key as a prefix
+	DeleteWithPrefix(ctx context.Context, key string) error
+
+	//Exists checks if objects with the given key as a prefix exist
+	Exists(ctx context.Context, key string) (bool, error)
 	// Ping pings the store for readiness
 	Ping() error
 

@@ -272,9 +272,10 @@ public class TriggerImportService implements ImportService {
       case SCHEDULED:
         ScheduledTriggerCondition scheduledTriggerCondition = (ScheduledTriggerCondition) trigger.getCondition();
         type = NGTriggerType.SCHEDULED;
+        String expression = scheduledTriggerCondition.getCronExpression().replace("?", "*");
         spec = ScheduledTriggerConfig.builder()
                    .type("Cron")
-                   .spec(CronTriggerSpec.builder().expression(scheduledTriggerCondition.getCronExpression()).build())
+                   .spec(CronTriggerSpec.builder().type("UNIX").expression(expression).build())
                    .build();
         break;
       case NEW_ARTIFACT:

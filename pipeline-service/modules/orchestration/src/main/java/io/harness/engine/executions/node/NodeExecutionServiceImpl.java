@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.executions.node;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
@@ -604,14 +605,16 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     }
   }
 
-  private List<String> getTimeoutInstanceIds(Status toBeUpdatedNodeStatus, String curretNodeExecutionId) {
+  @VisibleForTesting
+  List<String> getTimeoutInstanceIds(Status toBeUpdatedNodeStatus, String currentNodeExecutionId) {
     List<String> timeoutInstanceIds = new LinkedList<>();
     if (StatusUtils.isFinalStatus(toBeUpdatedNodeStatus)) {
-      Query getCurrentNodeQuery = query(where(NodeExecutionKeys.uuid).is(curretNodeExecutionId));
+      Query getCurrentNodeQuery = query(where(NodeExecutionKeys.uuid).is(currentNodeExecutionId));
       getCurrentNodeQuery.fields().include(NodeExecutionKeys.uuid).include(NodeExecutionKeys.timeoutInstanceIds);
       NodeExecution oldNodeExecution =
           nodeExecutionReadHelper.fetchNodeExecutionsFromSecondaryTemplate(getCurrentNodeQuery);
-      timeoutInstanceIds = oldNodeExecution.getTimeoutInstanceIds();
+      // nodeExecution could be null due to skipped nodes
+      timeoutInstanceIds = oldNodeExecution == null ? new LinkedList<>() : oldNodeExecution.getTimeoutInstanceIds();
     }
     return timeoutInstanceIds;
   }
@@ -1056,12 +1059,13 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> fetchAllWithPlanExecutionId(String planExecutionId, Set<String> fieldsToBeIncluded) {
+  public CloseableIterator<NodeExecution> fetchAllWithPlanExecutionId(
+      String planExecutionId, Set<String> fieldsToBeIncluded) {
     Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId).is(planExecutionId);
     Query query = query(criteria);
     for (String field : fieldsToBeIncluded) {
       query.fields().include(field);
     }
-    return nodeExecutionReadHelper.fetchNodeExecutionsWithoutProjections(query);
+    return nodeExecutionReadHelper.fetchNodeExecutionsFromAnalytics(query);
   }
 }

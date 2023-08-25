@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngtriggers.service.impl;
+
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -238,7 +239,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     if (ngTriggerEntity.getMetadata().getWebhook() != null
         && ngTriggerEntity.getMetadata().getWebhook().getGit() != null
         && Boolean.TRUE.equals(ngTriggerEntity.getMetadata().getWebhook().getGit().getIsHarnessScm())) {
-      // todo(abhinav): check what reponame is used
+      // todo(abhinav): if org level repos come we will need to change here to extract right repo name
       String repoName = ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName();
       String repositoryAccessControlResourceName = "REPOSITORY";
       String repositoryAccessControlPerms = "code_repo_edit";
@@ -320,9 +321,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                 ngTriggerEntity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
           log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
               ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
-          // TODO: (Vinicius) Set the status to PENDING here when ng-manager changes are deployed.
           updatePollingRegistrationStatus(
-              ngTriggerEntity, Collections.singletonList(pollingDocument), StatusResult.SUCCESS);
+              ngTriggerEntity, Collections.singletonList(pollingDocument), StatusResult.PENDING);
         }
       }
     } catch (Exception exception) {
@@ -354,8 +354,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
       if (shouldSubscribe) {
         List<PollingDocument> pollingDocuments = subscribePollingV2(ngTriggerEntity, pollingItems);
-        // TODO: (Vinicius) Set the status to PENDING here when ng-manager changes are deployed.
-        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.SUCCESS);
+        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.PENDING);
       } else if (unsubscribeSuccess) {
         // no subscription done, check if unsubscription worked.
         updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
@@ -460,7 +459,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments, StatusResult statusResult) {
     // change pollingDocId only if request was successful. Else, we dont know what happened.
     // In next trigger upsert, we will try again
-    if (statusResult == StatusResult.SUCCESS) {
+    if (statusResult == StatusResult.SUCCESS || statusResult == StatusResult.PENDING) {
       if (ngTriggerEntity.getType() == MULTI_REGION_ARTIFACT) {
         stampPollingInfoForMultiArtifactTrigger(ngTriggerEntity, pollingDocuments);
       } else {

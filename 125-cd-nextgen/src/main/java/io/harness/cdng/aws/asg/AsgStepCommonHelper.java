@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.aws.asg;
+
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -77,7 +78,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -95,6 +95,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.LogWrapper;
@@ -131,7 +132,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   static final String VERSION_DELIMITER = "__";
 
   public TaskChainResponse startChainLink(
-      AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
+      AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
     // Get ManifestsOutcome
     ManifestsOutcome manifestsOutcome = resolveAsgManifestsOutcome(ambiance);
 
@@ -260,7 +261,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   private TaskChainResponse prepareAsgTask(AsgStepExecutor asgStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, Map<String, List<String>> harnessFetchedManifestContentMap,
+      StepBaseParameters stepElementParameters, Map<String, List<String>> harnessFetchedManifestContentMap,
       InfrastructureOutcome infrastructureOutcome, LogCallback logCallback) {
     logCallback.saveExecutionLog(
         color("Fetched all manifest files", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
@@ -304,7 +305,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
     return taskChainResponse;
   }
 
-  public TaskChainResponse queueAsgTask(StepElementParameters stepElementParameters, AsgCommandRequest commandRequest,
+  public TaskChainResponse queueAsgTask(StepBaseParameters stepElementParameters, AsgCommandRequest commandRequest,
       Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {commandRequest})
@@ -372,7 +373,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   public TaskChainResponse executeNextLinkRolling(AsgStepExecutor asgStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       DelegateResponseData delegateResponseData) throws Exception {
     UnitProgressData unitProgressData = null;
     TaskChainResponse taskChainResponse = null;
@@ -402,7 +403,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   private TaskChainResponse handleAsgPrepareRollbackDataResponseRolling(
       AsgPrepareRollbackDataResponse asgPrepareRollbackDataResponse, AsgStepExecutor asgStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, AsgPrepareRollbackDataPassThroughData asgStepPassThroughData) {
+      StepBaseParameters stepElementParameters, AsgPrepareRollbackDataPassThroughData asgStepPassThroughData) {
     if (asgPrepareRollbackDataResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       AsgStepExceptionPassThroughData asgStepExceptionPassThroughData =
           AsgStepExceptionPassThroughData.builder()
@@ -464,7 +465,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
   }
 
   public TaskChainResponse queueFetchGitTask(AsgExecutionPassThroughData asgExecutionPassThroughData, Ambiance ambiance,
-      StepElementParameters stepElementParameters) {
+      StepBaseParameters stepElementParameters) {
     GitFetchFilesConfig gitFetchFilesConfig =
         asgExecutionPassThroughData.getAsgManifestFetchData().getNextGitFetchFilesConfig();
 
@@ -500,14 +501,14 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   public TaskChainResponse chainFetchGitTaskUntilAllGitManifestsFetched(
       AsgExecutionPassThroughData asgExecutionPassThroughData, Ambiance ambiance,
-      StepElementParameters stepElementParameters) {
+      StepBaseParameters stepElementParameters) {
     return chainFetchGitTaskUntilAllGitManifestsFetched(
         asgExecutionPassThroughData, null, ambiance, stepElementParameters, null);
   }
 
   public TaskChainResponse chainFetchGitTaskUntilAllGitManifestsFetched(
       AsgExecutionPassThroughData asgExecutionPassThroughData, DelegateResponseData delegateResponseData,
-      Ambiance ambiance, StepElementParameters stepElementParameters, Supplier<TaskChainResponse> taskSupplier) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, Supplier<TaskChainResponse> taskSupplier) {
     LogCallback logCallback = getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, false);
 
     AsgManifestFetchData asgManifestFetchData = asgExecutionPassThroughData.getAsgManifestFetchData();

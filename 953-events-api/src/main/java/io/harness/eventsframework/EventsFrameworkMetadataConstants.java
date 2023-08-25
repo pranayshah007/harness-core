@@ -109,6 +109,7 @@ public final class EventsFrameworkMetadataConstants {
   // CCM
   public static final String CCM_FOLDER = "ccmFolder";
   public static final String CCM_RULE = "ccmRule";
+  public static final String CCM_BUDGET = "ccmBudget";
 
   // IDP
   public static final String ASYNC_CATALOG_IMPORT_ENTITY = "asyncCatalogImport";
@@ -117,4 +118,5 @@ public final class EventsFrameworkMetadataConstants {
   public static final String DEPLOYMENT_SUMMARY_NG = "deploymentSummaryNG";
   public static final String DEPLOYMENT_ACCOUNTS = "DeploymentAccounts";
   public static final String INSTANCE_DEPLOYMENT_INFO = "instanceDeploymentInfo";
+  public static final String INSTANCE_NG = "instanceNG";
 }

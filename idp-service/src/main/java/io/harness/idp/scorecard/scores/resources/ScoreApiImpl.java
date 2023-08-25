@@ -21,6 +21,7 @@ import io.harness.spec.server.idp.v1.model.ScorecardScoreResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardSummaryResponse;
 
+import java.util.Collections;
 import java.util.List;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
@@ -53,6 +54,8 @@ public class ScoreApiImpl implements ScoresApi {
   public Response getRecalibratedScoreForScorecard(
       String entityIdentifier, String scorecardIdentifier, String harnessAccount) {
     try {
+      scoreService.computeScores(
+          harnessAccount, Collections.singletonList(scorecardIdentifier), Collections.singletonList(entityIdentifier));
       ScorecardSummaryInfo scorecardSummaryInfo = scoreService.getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
           harnessAccount, entityIdentifier, scorecardIdentifier);
       ScorecardRecalibrateResponse scorecardRecalibrateResponse = new ScorecardRecalibrateResponse();
@@ -60,8 +63,8 @@ public class ScoreApiImpl implements ScoresApi {
       return Response.status(Response.Status.OK).entity(scorecardRecalibrateResponse).build();
     } catch (Exception e) {
       log.error(
-          "Error in getting recalibrated score for scorecards details for account - {},  entity - {} and scorecard - {}",
-          harnessAccount, entityIdentifier, scorecardIdentifier);
+          "Error in getting recalibrated score for scorecards details for account - {},  entity - {} and scorecard - {}, error = {}",
+          harnessAccount, entityIdentifier, scorecardIdentifier, e.getMessage(), e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

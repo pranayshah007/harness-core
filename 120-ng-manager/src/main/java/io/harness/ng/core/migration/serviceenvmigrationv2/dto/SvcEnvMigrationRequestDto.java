@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.migration.serviceenvmigrationv2.dto;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.CodePulse;
@@ -21,7 +22,7 @@ import javax.ws.rs.DefaultValue;
 import lombok.Builder;
 import lombok.Value;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDP)
 @Value

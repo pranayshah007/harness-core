@@ -5,13 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.states.ssca;
+package io.harness.ci.execution.states.ssca;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.steps.outcome.StepArtifacts.StepArtifactsBuilder;
-import io.harness.ci.states.AbstractStepExecutable;
+import io.harness.ci.execution.states.AbstractStepExecutable;
 import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadataType;

@@ -40,6 +40,4 @@ stages:
                 spec:
                   method: GET
                   url: http://www.google.com
-    when:
-      pipelineStatus: Success
-      condition: "\"a\"==\"A\""
+    when: <+OnPipelineSuccess> && ("a"=="A")

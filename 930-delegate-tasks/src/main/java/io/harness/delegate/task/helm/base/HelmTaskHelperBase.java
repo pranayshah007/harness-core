@@ -389,6 +389,13 @@ public class HelmTaskHelperBase {
     updateRepo(repoName, chartDirectory, helmVersion, timeoutInMillis, cacheDir, helmCommandFlag);
   }
 
+  public void tryAddRepo(String repoName, String repoDisplayName, String chartRepoUrl, String username, char[] password,
+      String chartDirectory, HelmVersion helmVersion, long timeoutInMillis, String cacheDir,
+      HelmCommandFlag helmCommandFlag) {
+    addRepoInternal(repoName, repoDisplayName, chartRepoUrl, username, password, chartDirectory, helmVersion,
+        timeoutInMillis, isEmpty(cacheDir) ? EMPTY : cacheDir, helmCommandFlag);
+  }
+
   private ProcessResult executeAddRepo(String addCommand, Map<String, String> env, String chartDirectory,
       long timeoutInMillis, String addCommandLogging, HelmVersion helmVersion) {
     ProcessResult processResult = executeCommand(env, addCommand, chartDirectory,
@@ -1629,7 +1636,8 @@ public class HelmTaskHelperBase {
     }
     URI uri = new URI(ociUrl);
     if (uri.getPort() < 0) {
-      uri = URI.create(uri + ":" + DEFAULT_PORT);
+      uri = new URI(uri.getScheme(), uri.getRawUserInfo(), uri.getHost(), DEFAULT_PORT, uri.getRawPath(),
+          uri.getRawQuery(), uri.getRawFragment());
     }
     return uri;
   }

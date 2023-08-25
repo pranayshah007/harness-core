@@ -38,7 +38,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -48,6 +47,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -76,7 +76,7 @@ public class AzureARMRollbackStep extends CdTaskExecutable<AzureARMTaskNGRespons
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     AzureARMRollbackStepParameters azureARMRollbackStepParameters =
         (AzureARMRollbackStepParameters) stepParameters.getSpec();
     if (isEmpty(getParameterFieldValue(azureARMRollbackStepParameters.getProvisionerIdentifier()))) {
@@ -85,13 +85,13 @@ public class AzureARMRollbackStep extends CdTaskExecutable<AzureARMTaskNGRespons
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     AzureARMRollbackStepParameters azureARMRollbackStepParameters =
         (AzureARMRollbackStepParameters) stepParameters.getSpec();
     log.info("Starting execution for the Azure Rollback Step");
@@ -120,7 +120,7 @@ public class AzureARMRollbackStep extends CdTaskExecutable<AzureARMTaskNGRespons
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, ThrowingSupplier<AzureARMTaskNGResponse> responseDataSupplier)
+      StepBaseParameters stepParameters, ThrowingSupplier<AzureARMTaskNGResponse> responseDataSupplier)
       throws Exception {
     AzureARMTaskNGResponse response;
     String provisionerID =
@@ -163,7 +163,7 @@ public class AzureARMRollbackStep extends CdTaskExecutable<AzureARMTaskNGRespons
   }
 
   private TaskRequest obtainAzureRollbackTask(
-      Ambiance ambiance, StepElementParameters stepElementParameters, AzureARMTaskNGParameters data) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, AzureARMTaskNGParameters data) {
     TaskData taskData = TaskData.builder()
                             .async(true)
                             .taskType(TaskType.AZURE_NG_ARM.name())
@@ -179,7 +179,7 @@ public class AzureARMRollbackStep extends CdTaskExecutable<AzureARMTaskNGRespons
         stepHelper.getEnvironmentType(ambiance));
   }
 
-  private AzureARMTaskNGParameters getAzureTaskNGParams(Ambiance ambiance, StepElementParameters stepElementParameters,
+  private AzureARMTaskNGParameters getAzureTaskNGParams(Ambiance ambiance, StepBaseParameters stepElementParameters,
       AzureConnectorDTO connectorConfig, AzureARMPreDeploymentData data) {
     AzureARMTaskNGParametersBuilder builder = AzureARMTaskNGParameters.builder();
     return builder.accountId(AmbianceUtils.getAccountId(ambiance))

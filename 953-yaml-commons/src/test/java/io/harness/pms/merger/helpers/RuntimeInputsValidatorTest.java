@@ -260,6 +260,22 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testValidateWithUseFromStageMultiService() throws IOException {
+    Set<String> KEYS_TO_IGNORE = Set.of("service.serviceInputs", "environment.environmentInputs",
+        "environment.serviceOverrideInputs", "codebase.repoName");
+    String yamlToValidate = "services:\n"
+        + "  useFromStage:\n"
+        + "    stage: s1";
+
+    String sourceEntityYaml = "services:\n"
+        + "  values: \"<+input>\"\n";
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
+        .isTrue();
+  }
+
+  @Test
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
   public void testValidateEnvironmentInputsWithUseFromStage() throws IOException {

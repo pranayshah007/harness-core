@@ -48,5 +48,5 @@ public interface Infrastructure {
       return yamlName;
     }
   }
-  @ApiModelProperty(allowableValues = "KubernetesDirect, UseFromStage, VM, KubernetesHosted") Type getType();
+  @ApiModelProperty(allowableValues = "KubernetesDirect, UseFromStage, VM") Type getType();
 }

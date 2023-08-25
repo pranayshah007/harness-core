@@ -1082,6 +1082,9 @@ public class CVServiceModule extends AbstractModule {
     secondaryEventsTypeToDetailsMapBinder.addBinding(SecondaryEventsType.ERROR_BUDGET_RESET)
         .to(SLOErrorBudgetResetServiceImpl.class)
         .in(Scopes.SINGLETON);
+    secondaryEventsTypeToDetailsMapBinder.addBinding(SecondaryEventsType.SRM_ANALYSIS_IMPACT)
+        .to(SRMAnalysisStepServiceImpl.class)
+        .in(Scopes.SINGLETON);
 
     bindAnalysisStateExecutor();
 

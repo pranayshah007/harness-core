@@ -12,6 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.entity.FreezeConfigEntity;
@@ -22,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 public class FreezeFilterHelper {
   public static Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
       String searchTerm, FreezeType type, FreezeStatus freezeStatus, Long startTime, Long endTime) {

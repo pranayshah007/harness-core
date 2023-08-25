@@ -7,7 +7,6 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN;
 import static io.harness.beans.FeatureName.CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_NG;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
@@ -132,7 +131,6 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -146,6 +144,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
 import io.harness.remote.client.CGRestUtils;
@@ -1531,15 +1530,12 @@ public class TerraformStepHelper {
   }
 
   public void validateSecretManager(Ambiance ambiance, IdentifierRef identifierRef) {
-    if (cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), CDS_NOT_ALLOW_READ_ONLY_SECRET_MANAGER_TERRAFORM_TERRAGRUNT_PLAN)) {
-      boolean isSecretManagerReadOnly =
-          ngEncryptedDataService.isSecretManagerReadOnly(identifierRef.getAccountIdentifier(),
-              identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
-      if (isSecretManagerReadOnly) {
-        throw new InvalidRequestException(
-            "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");
-      }
+    boolean isSecretManagerReadOnly =
+        ngEncryptedDataService.isSecretManagerReadOnly(identifierRef.getAccountIdentifier(),
+            identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
+    if (isSecretManagerReadOnly) {
+      throw new InvalidRequestException(
+          "Please configure a secret manager which allows to store terraform plan as a secret. Read-only secret manager is not allowed.");
     }
   }
 
@@ -1698,7 +1694,7 @@ public class TerraformStepHelper {
   }
 
   public TaskChainResponse executeTerraformTask(TerraformTaskNGParameters terraformTaskNGParameters,
-      StepElementParameters stepElementParameters, Ambiance ambiance, TerraformPassThroughData terraformPassThroughData,
+      StepBaseParameters stepElementParameters, Ambiance ambiance, TerraformPassThroughData terraformPassThroughData,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String commandUnitName) {
     TaskData taskData =
         TaskData.builder()
@@ -1721,7 +1717,7 @@ public class TerraformStepHelper {
   }
 
   private TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,
-      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepElementParameters stepElementParameters,
+      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepBaseParameters stepElementParameters,
       TerraformPassThroughData passThroughData, String commandUnitName,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     GitFetchRequest gitFetchRequest = GitFetchRequest.builder()
@@ -1750,7 +1746,7 @@ public class TerraformStepHelper {
   }
 
   private TaskChainResponse getS3FetchFileTaskChainResponse(Ambiance ambiance,
-      List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs, StepElementParameters stepElementParameters,
+      List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs, StepBaseParameters stepElementParameters,
       TerraformPassThroughData passThroughData, CommandUnitsProgress commandUnitsProgress, String commandUnitName,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     AwsS3FetchFilesTaskParams awsS3FetchFilesTaskParams = AwsS3FetchFilesTaskParams.builder()
@@ -1780,7 +1776,7 @@ public class TerraformStepHelper {
   }
 
   public TaskChainResponse fetchRemoteVarFiles(TerraformPassThroughData terraformPassThroughData,
-      List<TerraformVarFileInfo> varFilesInfo, Ambiance ambiance, StepElementParameters stepElementParameters,
+      List<TerraformVarFileInfo> varFilesInfo, Ambiance ambiance, StepBaseParameters stepElementParameters,
       String commandUnitName, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     TaskChainResponse response = null;
     List<GitFetchFilesConfig> gitFetchFilesConfigs;
@@ -1805,7 +1801,7 @@ public class TerraformStepHelper {
     return response;
   }
 
-  private TaskChainResponse handleGitFetchResponse(Ambiance ambiance, StepElementParameters stepElementParameters,
+  private TaskChainResponse handleGitFetchResponse(Ambiance ambiance, StepBaseParameters stepElementParameters,
       TerraformPassThroughData terraformPassThroughData, GitFetchResponse responseData, String commandUnitName,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     terraformPassThroughData.setFetchedCommitIdsMap(responseData.getFetchedCommitIdsMap());
@@ -1839,7 +1835,7 @@ public class TerraformStepHelper {
         builder.build(), stepElementParameters, ambiance, terraformPassThroughData, delegateSelectors, commandUnitName);
   }
 
-  private TaskChainResponse handleAwsS3FetchFileResponse(Ambiance ambiance, StepElementParameters stepElementParameters,
+  private TaskChainResponse handleAwsS3FetchFileResponse(Ambiance ambiance, StepBaseParameters stepElementParameters,
       TerraformPassThroughData terraformPassThroughData, AwsS3FetchFilesResponse responseData, String commandUnitName,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     UnitProgressData unitProgressData;
@@ -1936,7 +1932,7 @@ public class TerraformStepHelper {
 
   public TaskChainResponse executeNextLink(Ambiance ambiance, ThrowingSupplier<ResponseData> responseSupplier,
       PassThroughData passThroughData, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      StepElementParameters stepElementParameters, String commandUnitName) {
+      StepBaseParameters stepElementParameters, String commandUnitName) {
     TerraformPassThroughData terraformPassThroughData = (TerraformPassThroughData) passThroughData;
 
     UnitProgressData unitProgressData = null;
