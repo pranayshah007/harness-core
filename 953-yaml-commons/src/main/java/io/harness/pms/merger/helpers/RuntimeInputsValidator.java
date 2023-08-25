@@ -156,6 +156,16 @@ public class RuntimeInputsValidator {
             continue;
           }
 
+          // This is to handle if sourceYaml has a sibling node of useFromStage node as input but user choose
+          // useFromStage in nodeToRefresh EnvironmentInputs,ServiceInputs nodes from sourceYaml are already getting
+          // handled with skipValidationIfAbsentKeySet
+          Optional<FQN> useFromStageSiblingFromSiblingNode =
+              getUseFromStageSiblingFromSiblingNode(nodeToValidateFqnToValueMap, key);
+          if (useFromStageSiblingFromSiblingNode.isPresent()) {
+            nodeToValidateFqnToValueMap.remove(useFromStageSiblingFromSiblingNode.get());
+            continue;
+          }
+
           // This is to handle if sourceYaml has environmentRef as input but user choose useFromStage in nodeToRefresh
           // EnvironmentInputs node from sourceYaml is already getting handled with skipValidationIfAbsentKeySet
           Optional<FQN> nodeFQNOneOfForEnvironment =
