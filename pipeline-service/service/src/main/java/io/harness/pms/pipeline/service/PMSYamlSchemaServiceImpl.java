@@ -33,6 +33,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.JsonSchemaException;
 import io.harness.exception.JsonSchemaValidationException;
@@ -46,7 +47,6 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
-import io.harness.pms.pipeline.service.yamlschema.StaticSchemaParserFactory;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.PipelineVersion;
@@ -54,6 +54,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
 import io.harness.pms.yaml.individualschema.PipelineSchemaMetadata;
 import io.harness.pms.yaml.individualschema.PipelineSchemaRequest;
+import io.harness.pms.yaml.individualschema.StaticSchemaParserFactory;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
@@ -120,6 +121,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   Integer allowedParallelStages;
 
   private final String PIPELINE_JSON = "pipeline.json";
+  private final String PIPELINE_JSON_PATH = "static-schema/pipeline.json";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
@@ -519,8 +521,15 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   @Override
   public ObjectNode getIndividualStaticSchema(
       String accountIdentifier, String nodeGroup, String nodeType, String nodeGroupDifferentiator) {
+    JsonNode jsonNode;
+    try {
+      jsonNode = schemaFetcher.fetchFile(PIPELINE_JSON_PATH);
+    } catch (IOException ex) {
+      log.error("Not able to read json from {} path", PIPELINE_JSON_PATH);
+      throw new InvalidRequestException(String.format("Not able to read json from %s path", PIPELINE_JSON_PATH));
+    }
     AbstractStaticSchemaParser abstractStaticSchemaParser =
-        staticSchemaParserFactory.getParser(PIPELINE, PipelineVersion.V0);
+        staticSchemaParserFactory.getParser(PIPELINE, PipelineVersion.V0, jsonNode);
     return abstractStaticSchemaParser.getIndividualSchema(
         PipelineSchemaRequest.builder()
             .individualSchemaMetadata(PipelineSchemaMetadata.builder()
