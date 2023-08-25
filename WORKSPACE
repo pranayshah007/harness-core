@@ -4844,7 +4844,7 @@ plain_artifacts = [
     "com.google.protobuf:protobuf-java-util:3.21.7",
     "com.google.protobuf:protobuf-java:3.21.7",
     "com.googlecode.javaewah:JavaEWAH:1.1.6",
-    "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20211018.1",
+    "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20220608.1",
     "com.graphql-java:graphql-java:12.0",
     "com.graphql-java:java-dataloader:2.1.1",
     "com.healthmarketscience.sqlbuilder:sqlbuilder:3.0.0",
