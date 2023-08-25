@@ -49,7 +49,9 @@ public class TerragruntPlanStepParameters extends TerragruntPlanBaseStepInfo imp
   public SpecParameters getViewJsonObject() {
     TerragruntPlanStepParameters terragruntPlanStepParameters = this;
     // this TerragruntModuleConfig we are settle to null so that it will not show in the input of plan step execution
-    terragruntPlanStepParameters.getConfiguration().setTerragruntModuleConfig(null);
+    if (terragruntPlanStepParameters.getConfiguration() != null) {
+      terragruntPlanStepParameters.getConfiguration().setTerragruntModuleConfig(null);
+    }
     return terragruntPlanStepParameters;
   }
 

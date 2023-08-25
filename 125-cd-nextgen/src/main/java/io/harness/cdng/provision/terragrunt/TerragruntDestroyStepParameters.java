@@ -57,7 +57,9 @@ public class TerragruntDestroyStepParameters extends TerragruntDestroyBaseStepIn
   public SpecParameters getViewJsonObject() {
     TerragruntDestroyStepParameters terragruntDestroyStepParameters = this;
     // this TerragruntModuleConfig we are settle to null so that it will not show in the input of Destroy step execution
-    terragruntDestroyStepParameters.getConfiguration().getSpec().setTerragruntModuleConfig(null);
+    if (terragruntDestroyStepParameters.getConfiguration().getSpec() != null) {
+      terragruntDestroyStepParameters.getConfiguration().getSpec().setTerragruntModuleConfig(null);
+    }
     return terragruntDestroyStepParameters;
   }
 }
