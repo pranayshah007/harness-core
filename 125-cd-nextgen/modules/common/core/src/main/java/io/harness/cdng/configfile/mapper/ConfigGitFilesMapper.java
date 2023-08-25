@@ -10,14 +10,18 @@ package io.harness.cdng.configfile.mapper;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.configfile.ConfigGitFile;
 import io.harness.git.model.GitFile;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDP)
 public class ConfigGitFilesMapper {
   public List<ConfigGitFile> getConfigGitFiles(List<GitFile> gitFileList) {

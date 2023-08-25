@@ -18,8 +18,8 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
-    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 public interface YamlTypes {
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;

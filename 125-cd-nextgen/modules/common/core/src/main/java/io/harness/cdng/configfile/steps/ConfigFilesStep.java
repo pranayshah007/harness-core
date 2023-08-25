@@ -7,8 +7,11 @@
 
 package io.harness.cdng.configfile.steps;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
@@ -29,7 +32,8 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDP)
 public class ConfigFilesStep extends NGForkStep {
   public static final StepType STEP_TYPE = StepType.newBuilder()
