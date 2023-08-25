@@ -58,6 +58,6 @@ public class DataPointEntity implements PersistentEntity {
   private String conditionalInputValueDescription;
   private String dataSourceLocationIdentifier;
   private String dataSourceIdentifier;
-
+  private String outcomeExpression;
   public enum Type { NUMBER, BOOLEAN, STRING }
 }

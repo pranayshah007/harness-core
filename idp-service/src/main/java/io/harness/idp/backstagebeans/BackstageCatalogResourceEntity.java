@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.onboarding.beans;
+package io.harness.idp.backstagebeans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,11 +25,11 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
-public class BackstageCatalogTemplateEntity extends BackstageCatalogEntity {
+public class BackstageCatalogResourceEntity extends BackstageCatalogEntity {
   private Spec spec;
 
-  public BackstageCatalogTemplateEntity() {
-    super.setKind(BackstageCatalogEntityTypes.TEMPLATE.kind);
+  public BackstageCatalogResourceEntity() {
+    super.setKind(BackstageCatalogEntityTypes.RESOURCE.kind);
   }
 
   @Data
@@ -39,6 +39,6 @@ public class BackstageCatalogTemplateEntity extends BackstageCatalogEntity {
   public static class Spec {
     private String type;
     private String owner;
-    // TODO: Add output, parameters, steps
+    private String system;
   }
 }

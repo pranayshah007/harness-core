@@ -16,8 +16,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.clients.BackstageResourceClient;
 import io.harness.exception.UnexpectedException;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntityTypes;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntityTypes;
 import io.harness.idp.scorecard.checks.entity.CheckEntity;
 import io.harness.idp.scorecard.checks.repositories.CheckRepository;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
@@ -28,6 +28,7 @@ import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProvider;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProviderFactory;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
+import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
 import io.harness.idp.scorecard.scorecards.beans.ScorecardAndChecks;
 import io.harness.idp.scorecard.scorecards.entity.ScorecardEntity;
 import io.harness.idp.scorecard.scorecards.service.ScorecardService;
@@ -59,6 +60,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.util.Pair;
 
 @AllArgsConstructor(onConstructor = @__({ @com.google.inject.Inject }))
 @Slf4j
@@ -254,13 +257,30 @@ public class ScoreServiceImpl implements ScoreService {
 
   private Map<String, Map<String, Object>> fetch(
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
-    Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
+    Set<String> dataPointIdentifiers = dataPointsAndInputValues.keySet();
+    List<DataPointEntity> dataPointEntities = datapointRepository.findByIdentifierIn(dataPointIdentifiers);
+    Map<String, Map<String, Set<String>>> providerDataPoints = new HashMap<>();
     dataPointsAndInputValues.forEach((k, v) -> {
-      DataPointEntity dataPointEntity = datapointRepository.findByIdentifier(k);
-      DataSourceProvider provider = dataSourceProviderFactory.getProvider(dataPointEntity.getDataSourceIdentifier());
+      DataPointEntity dataPointEntity =
+          dataPointEntities.stream().filter(dpe -> dpe.getIdentifier().equals(k)).findFirst().orElse(null);
+      assert dataPointEntity != null;
+      String dataSourceIdentifier = dataPointEntity.getDataSourceIdentifier();
+      if (providerDataPoints.containsKey(dataSourceIdentifier)) {
+        Map<String, Set<String>> existingProviderDataPoints = providerDataPoints.get(dataSourceIdentifier);
+        existingProviderDataPoints.put(k, v);
+        providerDataPoints.put(dataSourceIdentifier, existingProviderDataPoints);
+      } else {
+        providerDataPoints.put(dataSourceIdentifier, new HashMap<>() {
+          { put(k, v); }
+        });
+      }
+    });
+
+    Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
+    providerDataPoints.forEach((k, v) -> {
+      DataSourceProvider provider = dataSourceProviderFactory.getProvider(k);
       try {
-        Map<String, Map<String, Object>> data =
-            provider.fetchData(accountIdentifier, entity, Map.of(k, dataPointsAndInputValues.get(k)));
+        Map<String, Map<String, Object>> data = provider.fetchData(accountIdentifier, entity, v);
         if (data != null) {
           aggregatedData.putAll(data);
         }
@@ -302,7 +322,9 @@ public class ScoreServiceImpl implements ScoreService {
 
           CheckStatus checkStatus = new CheckStatus();
           checkStatus.setName(check.getName());
-          checkStatus.setStatus(getCheckStatus(evaluator, check));
+          Pair<String, String> statusAndMessage = getCheckStatusAndFailureReason(evaluator, check);
+          checkStatus.setStatus(statusAndMessage.getFirst());
+          checkStatus.setReason(statusAndMessage.getSecond());
           checkStatuses.add(checkStatus);
           log.info("Check status for {} : {}; Account: {} ", check.getIdentifier(), checkStatus.getStatus(),
               accountIdentifier);
@@ -334,21 +356,34 @@ public class ScoreServiceImpl implements ScoreService {
     return filter.getType().equalsIgnoreCase("All") || filter.getType().equalsIgnoreCase(type);
   }
 
-  private String getCheckStatus(IdpExpressionEvaluator evaluator, CheckEntity checkEntity) {
+  private Pair<String, String> getCheckStatusAndFailureReason(
+      IdpExpressionEvaluator evaluator, CheckEntity checkEntity) {
     Object value = evaluator.evaluateExpression(checkEntity.getExpression(), RETURN_NULL_IF_UNRESOLVED);
     if (value == null) {
       log.warn("Could not evaluate check status for {}", checkEntity.getIdentifier());
-      return checkEntity.getDefaultBehaviour().toString();
+      return new Pair<>(checkEntity.getDefaultBehaviour().toString(), null);
     } else {
       if (!(value instanceof Boolean)) {
         log.warn("Expected boolean assertion, got {} value for check {}", value, checkEntity.getIdentifier());
-        return checkEntity.getDefaultBehaviour().toString();
+        return new Pair<>(checkEntity.getDefaultBehaviour().toString(), null);
       }
-      // TODO: Some issue with open api, it's not generating enum. Need to update this later
-      return (boolean) value ? "PASS" : "FAIL";
 
-      // TODO: Since we are evaluating the check as a whole, we can't find the dynamic reason
-      //  (check failed because the value x was less the the threshold y)
+      if (!(boolean) value) {
+        StringBuilder reasonBuilder = new StringBuilder();
+        for (Rule rule : checkEntity.getRules()) {
+          String expressionLhs = String.format("%s.%s", rule.getDataSourceIdentifier(), rule.getDataPointIdentifier());
+          if (StringUtils.isNotBlank(rule.getConditionalInputValue())) {
+            expressionLhs = String.format("%s.%s", expressionLhs, rule.getConditionalInputValue());
+          }
+          Object lhsValue = evaluator.evaluateExpression(expressionLhs, RETURN_NULL_IF_UNRESOLVED);
+          reasonBuilder.append(
+              String.format("Expected %s %s. Actual %s.", rule.getOperator(), rule.getValue(), lhsValue));
+        }
+        return new Pair<>("FAIL", reasonBuilder.toString());
+      }
+
+      // TODO: Some issue with open api, it's not generating enum. Need to update this later
+      return new Pair<>("PASS", null);
     }
   }
 }

@@ -5,18 +5,19 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.scorecard.datasources.providers;
+package io.harness.idp.backstagebeans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 
-import java.util.Map;
-import java.util.Set;
+import lombok.experimental.UtilityClass;
 
+@UtilityClass
 @OwnedBy(HarnessTeam.IDP)
-public interface DataSourceProvider {
-  String getProviderIdentifier();
-  Map<String, Map<String, Object>> fetchData(
-      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues);
+public class Constants {
+  public static final String ENTITY_UNKNOWN_OWNER = "Unknown";
+  public static final String PIPE_DELIMITER = "|";
+  public static final String PROJECT = "Project";
+  public static final String SERVICE = "Service";
+  public static final String ORGANIZATION = "Organization";
 }

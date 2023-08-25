@@ -89,12 +89,12 @@
     "rules": [
       {
         "data_source_identifier": "catalog",
-        "data_point_identifier": "specOwnerExists",
+        "data_point_identifier": "specOwner",
         "operator": "!=",
         "value": "null"
       }
     ],
-    "expression": "catalog.specOwnerExists != null",
+    "expression": "catalog.specOwner != null",
     "labels": ["Software quality", "Development maturity" ,"DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Spec owner doesn't exists"

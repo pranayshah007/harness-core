@@ -24,14 +24,23 @@ public class DataPointParserFactory {
   private PipelineIsPolicyEvaluationSuccessfulParser pipelineIsPolicyEvaluationSuccessfulParser;
   private PipelinePercentageOfCIPipelineFailingInSevenDaysParser pipelinePercentageOfCIPipelineFailingInSevenDaysParser;
   private PipelineTestFailingInCiIsZeroParser pipelineTestFailingInCiIsZeroParser;
+  private GenericExpressionParser genericExpressionParser;
 
   public DataPointParser getParser(String identifier) {
     switch (identifier) {
+      // Github
       case GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE:
         return githubMeanTimeToMergeParser;
       case GITHUB_IS_BRANCH_PROTECTED:
         return githubIsBranchProtectedParser;
-      // Add more cases for other parsers
+
+      // Catalog
+      case CATALOG_TECH_DOCS:
+      case CATALOG_PAGERDUTY:
+      case CATALOG_SPEC_OWNER:
+        return genericExpressionParser;
+
+      // Harness
       case STO_ADDED_IN_PIPELINE:
         return pipelineStoStageAddedParser;
       case IS_POLICY_EVALUATION_SUCCESSFUL_IN_PIPELINE:

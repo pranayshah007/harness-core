@@ -5,11 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.onboarding.beans;
+package io.harness.idp.backstagebeans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,11 +26,11 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
-public class BackstageCatalogGroupEntity extends BackstageCatalogEntity {
+public class BackstageCatalogUserEntity extends BackstageCatalogEntity {
   private Spec spec;
 
-  public BackstageCatalogGroupEntity() {
-    super.setKind(BackstageCatalogEntityTypes.GROUP.kind);
+  public BackstageCatalogUserEntity() {
+    super.setKind(BackstageCatalogEntityTypes.USER.kind);
   }
 
   @Data
@@ -37,6 +38,9 @@ public class BackstageCatalogGroupEntity extends BackstageCatalogEntity {
   @NoArgsConstructor
   @AllArgsConstructor
   public static class Spec {
-    private String owner;
+    private String displayName;
+    private String email;
+    private String picture;
+    private List<String> memberOf;
   }
 }
