@@ -6,11 +6,9 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base;
 
-import io.harness.pms.pipeline.PMSPipelineResponseDTO;
-
+import com.google.gson.JsonObject;
 import java.util.Map;
 
-public interface PipelineInfo {
-  Map<String, Object> getParsedValue(PMSPipelineResponseDTO ciPmsPipelineResponseDTO,
-      PMSPipelineResponseDTO cdPmsPipelineResponseDTO, String dataPointIdentifier);
+public interface PipelineTestSummaryReport {
+  Map<String, Object> getParsedValue(JsonObject testSummaryReport, String dataPointIdentifier);
 }

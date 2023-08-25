@@ -362,3 +362,23 @@ fi
 if [[ "" != "$NOTIFICATION_CONFIGS_PLUGIN_REQUESTS_NOTIFICATION_SLACK" ]]; then
   export NOTIFICATION_CONFIGS_PLUGIN_REQUESTS_NOTIFICATION_SLACK; yq -i '.notificationConfigs.pluginRequestsNotificationSlack=env(NOTIFICATION_CONFIGS_PLUGIN_REQUESTS_NOTIFICATION_SLACK)' $CONFIG_FILE
 fi
+
+if [[ "" != "$PIPELINE_SERVICE_CLIENT_BASEURL" ]]; then
+  export PIPELINE_SERVICE_CLIENT_BASEURL; yq -i '.pipelineServiceClientConfig.baseUrl=env(PIPELINE_SERVICE_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
+  export PIPELINE_SERVICE_SECRET; yq -i '.pipelineServiceSecret=env(PIPELINE_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TI_SERVICE_ENDPOINT" ]]; then
+  export TI_SERVICE_ENDPOINT; yq -i '.tiServiceConfig.baseUrl=env(TI_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TI_SERVICE_INTERNAL_URL" ]]; then
+  export TI_SERVICE_INTERNAL_URL; yq -i '.tiServiceConfig.internalUrl=env(TI_SERVICE_INTERNAL_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TI_SERVICE_GLOBAL_TOKEN" ]]; then
+  export TI_SERVICE_GLOBAL_TOKEN; yq -i '.tiServiceConfig.globalToken=env(TI_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+fi

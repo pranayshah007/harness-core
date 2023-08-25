@@ -7,7 +7,5 @@
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser;
 
 public class ValueParserConstants {
-  public static final String STO_SCAN_SETUP_DATAPOINT_IDENTIFIER = "stoStageAdded";
-
-  public static final String POLICY_EVALUATION_DATAPOINT_IDENTIFIER = "isPolicyEvaluationSuccessful";
+  public static final String CONTENT_KEY = "content";
 }

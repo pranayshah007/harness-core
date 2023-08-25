@@ -1146,7 +1146,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/CatalogKind'
-  '/v1/data-source/{data-source}/data-point/values':
+  '/v1/data-sources/{data-source}/data-point/values':
     get:
       summary: Get data points data for data source
       responses:

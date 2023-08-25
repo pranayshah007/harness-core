@@ -20,9 +20,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.ci.beans.entities.TIServiceConfig;
+import io.harness.ci.tiserviceclient.TIServiceClientModule;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.clients.BackstageResourceClientModule;
 import io.harness.connector.ConnectorResourceClientModule;
+import io.harness.dashboard.DashboardResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
@@ -126,6 +129,7 @@ import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.pipeline.dashboards.PMSDashboardResourceClientModule;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
@@ -274,8 +278,13 @@ public class IdpModule extends AbstractModule {
     });
     install(new SecretNGManagerClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
+    install(new DashboardResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId(), ClientMode.PRIVILEGED));
+    install(new TIServiceClientModule(appConfig.getTiServiceConfig()));
     install(new ConnectorResourceClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId(), ClientMode.PRIVILEGED));
+    install(new PMSDashboardResourceClientModule(appConfig.getPipelineServiceConfiguration(),
+        appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new TokenClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(AccessControlClientModule.getInstance(
@@ -579,5 +588,12 @@ public class IdpModule extends AbstractModule {
   @Named("pipelineServiceClientConfigs")
   public ServiceHttpClientConfig pipelineServiceConfiguration() {
     return this.appConfig.getPipelineServiceConfiguration();
+  }
+
+  @Provides
+  @Singleton
+  @Named("tiServiceConfig")
+  public TIServiceConfig tiServiceConfig() {
+    return this.appConfig.getTiServiceConfig();
   }
 }

@@ -13,10 +13,10 @@ import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
-public class StoStageSetupParser implements DataPointParser {
+public class PipelineIsPolicyEvaluationSuccessfulParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, String dataPointIdentifier, Set<String> strings) {
-    throw new UnsupportedOperationException();
+    return data.get(dataPointIdentifier);
   }
 
   @Override

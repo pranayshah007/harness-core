@@ -14,7 +14,6 @@ import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.ng.beans.PageResponse;
@@ -166,7 +165,7 @@ public interface PipelineServiceClient {
       @Query(value = NGCommonEntityConstants.SIZE) @DefaultValue("20") int size,
       @Query(value = NGCommonEntityConstants.SORT) List<String> sort,
       @Query(value = NGResourceFilterConstants.FILTER_KEY) String filterKey,
-      @Query(value = NGCommonEntityConstants.MODULE_TYPE) String moduleName, @Body FilterPropertiesDTO filterProperties,
+      @Query(value = NGCommonEntityConstants.MODULE_TYPE) String moduleName,
       @Query(value = NGCommonEntityConstants.STATUS) List<ExecutionStatus> statusesList,
       @Query("myDeployments") boolean myDeployments);
 }

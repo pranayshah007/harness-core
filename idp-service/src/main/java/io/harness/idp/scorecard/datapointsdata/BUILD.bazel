@@ -12,6 +12,8 @@ java_library(
     visibility = ["//idp-service:__subpackages__"],
     deps = [
         "//:lombok",
+        "//332-ci-manager/service:module",
+        "//930-ng-core-clients:module",
         "//960-persistence/src/main/java/io/harness/mongo/index/annotation:module",
         "//960-persistence/src/main/java/io/harness/ng:module",
         "//960-persistence/src/main/java/io/harness/persistence/api:module",

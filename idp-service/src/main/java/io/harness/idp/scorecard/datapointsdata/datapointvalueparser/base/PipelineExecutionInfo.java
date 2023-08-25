@@ -9,5 +9,5 @@ package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base;
 import java.util.Map;
 
 public interface PipelineExecutionInfo {
-  Map<String, Object> getParsedValue(Object object, String dataPointIdentifier);
+  Map<String, Object> getParsedValue(Object responseCI, Object responseCD, String dataPointIdentifier);
 }
