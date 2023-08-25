@@ -38,6 +38,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.matrix.StrategyConstants;
+import io.harness.steps.matrix.StrategyMetadata;
 import lombok.experimental.UtilityClass;
 
 @CodePulse(
@@ -161,8 +163,9 @@ public class PlanCreatorServiceHelper {
     else if (currentField.getNode().getFieldName() != null && currentField.getNode().getFieldName().equals(YAMLFieldNameConstants.STEP_GROUP)) {
       metadataToAdd.put("stepGroupId", ByteString.copyFrom(kryoSerializer.asBytes(currentField.getNode().getUuid())));
     }
-    else if (currentField.getNode().getFieldName() != null && currentField.getNode().getFieldName().equals(YAMLFieldNameConstants.STRATEGY)) {
-      metadataToAdd.put("strategyId", ByteString.copyFrom(kryoSerializer.asBytes(currentField.getNode().getUuid())));
+    YamlField strategyField = currentField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    if (strategyField != null) {
+      metadataToAdd.put("strategyId", ByteString.copyFrom(kryoSerializer.asBytes(strategyField.getNode().getUuid())));
     }
     for (String dependencyKey : dependencies.getDependenciesMap().keySet()) {
       Dependency dependency = Dependency.newBuilder().build();
