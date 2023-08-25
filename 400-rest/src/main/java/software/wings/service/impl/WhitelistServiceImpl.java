@@ -46,6 +46,7 @@ import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.List;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.net.util.SubnetUtils;
@@ -145,7 +146,11 @@ public class WhitelistServiceImpl implements WhitelistService {
     value = whitelistConfigCache.get(accountId);
     if (value == null) {
       value = getWhitelistConfigFromDB(accountId);
-      whitelistConfigCache.put(accountId, value);
+      try {
+        whitelistConfigCache.put(accountId, value);
+      } catch (CacheException e) {
+        log.error("Unable to set whitelist config data into cache", e);
+      }
     }
 
     return value.getWhitelistList();
