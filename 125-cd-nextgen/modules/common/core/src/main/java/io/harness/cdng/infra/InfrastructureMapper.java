@@ -369,6 +369,9 @@ public class InfrastructureMapper {
                         asgInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED))
                 .infrastructureKey(InfrastructureKey.generate(
                     service, environmentOutcome, asgInfrastructure.getInfrastructureKeyValues()))
+                .baseAsgName(
+                    asgInfrastructure.getBaseAsgName() != null ? asgInfrastructure.getBaseAsgName().getValue() : null)
+                .asgName(asgInfrastructure.getAsgName() != null ? asgInfrastructure.getAsgName().getValue() : null)
                 .build();
         setInfraIdentifierAndName(
             asgInfrastructureOutcome, asgInfrastructure.getInfraIdentifier(), asgInfrastructure.getInfraName());

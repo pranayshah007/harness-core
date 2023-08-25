@@ -5,30 +5,28 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.infra.beans;
+package io.harness.cdng.aws.asg;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import dev.morphia.annotations.Id;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
-@Data
-@Builder
-@TypeAlias("asgInfraMapping")
-@JsonTypeName("asgInfraMapping")
 @OwnedBy(CDP)
-@RecasterAlias("io.harness.cdng.infra.beans.AsgInfraMapping")
-public class AsgInfraMapping implements InfraMapping {
-  @Id private String uuid;
-  private String accountId;
-  private String awsConnector;
-  private String region;
-  private String baseAsgName;
-  private String asgName;
+@Value
+@Builder
+@TypeAlias("userDataOutcome")
+@JsonTypeName("userData")
+@FieldNameConstants(innerTypeName = "UserDataOutcomeKeys")
+@RecasterAlias("io.harness.cdng.aws.asg.UserDataOutcome")
+public class UserDataOutcome implements Outcome {
+  StoreConfig store;
 }

@@ -11,6 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgCommandUnitConstants;
+import io.harness.cdng.elastigroup.ElastigroupInstances;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
@@ -32,8 +33,10 @@ public class AsgRollingDeployStepParameters extends AsgRollingDeployBaseStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public AsgRollingDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> skipMatching, ParameterField<Boolean> useAlreadyRunningInstances,
-      ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage) {
-    super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage);
+      ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage,
+      ElastigroupInstances instances) {
+    super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
+        instances);
   }
 
   public List<String> getCommandUnits() {

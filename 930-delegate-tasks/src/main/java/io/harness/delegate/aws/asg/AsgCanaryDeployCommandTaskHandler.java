@@ -10,6 +10,7 @@ package io.harness.delegate.aws.asg;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -118,6 +119,7 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
       String amiImageId, AwsInternalConfig awsInternalConfig, String region) {
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
+    String userData = asgTaskHelper.getUserData(asgStoreManifestsContent);
 
     CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
         AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
@@ -134,8 +136,11 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
       asgSdkManager.deleteAsg(canaryAsgName);
     }
 
-    Map<String, Object> asgLaunchTemplateOverrideProperties =
-        Collections.singletonMap(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
+    Map<String, Object> asgLaunchTemplateOverrideProperties = new HashMap<>();
+    asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
+    if (isNotEmpty(userData)) {
+      asgLaunchTemplateOverrideProperties.put(AsgLaunchTemplateManifestHandler.OverrideProperties.userData, userData);
+    }
 
     Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>() {
       {

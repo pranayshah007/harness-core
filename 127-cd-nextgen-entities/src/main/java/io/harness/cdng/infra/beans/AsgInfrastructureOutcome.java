@@ -30,6 +30,8 @@ public class AsgInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   String infrastructureKey;
   String connectorRef;
   String region;
+  String baseAsgName;
+  String asgName;
 
   @Override
   public String getKind() {

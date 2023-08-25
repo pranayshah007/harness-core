@@ -38,4 +38,5 @@ public class AsgBlueGreenPrepareRollbackDataOutcome implements Outcome, Executio
   String stageListenerArn;
   String stageListenerRuleArn;
   List<String> stageTargetGroupArnsList;
+  List<AwsAsgLoadBalancerConfigYaml> loadBalancerConfigs;
 }

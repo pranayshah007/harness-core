@@ -95,4 +95,5 @@ public class OutcomeExpressionConstants {
   public final String AWS_SAM_VALUES_YAML_DATA_OUTCOME = "AwsSamValuesYamlDataOutcome";
   public final String SERVERLESS_VALUES_YAML_DATA_OUTCOME = "ServerlessValuesYamlDataOutcome";
   public final String SERVERLESS_V2_DIRECTORY_PATH_OUTCOME = "serverlessV2";
+  public final String USER_DATA = "userData";
 }

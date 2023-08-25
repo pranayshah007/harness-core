@@ -12,6 +12,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expressio
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.elastigroup.ElastigroupInstances;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
@@ -21,7 +22,6 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -42,7 +42,7 @@ public class AsgRollingDeployBaseStepInfo {
   @JsonProperty("skipMatching")
   ParameterField<Boolean> skipMatching;
 
-  @NotNull
+  @Deprecated
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("useAlreadyRunningInstances")
@@ -60,4 +60,7 @@ public class AsgRollingDeployBaseStepInfo {
   @Min(0)
   @Max(100)
   ParameterField<Integer> minimumHealthyPercentage;
+
+  @ApiModelProperty(dataType = SwaggerConstants.INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH)
+  ElastigroupInstances instances;
 }

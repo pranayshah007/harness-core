@@ -13,4 +13,5 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.CDP)
 public interface LoadBalancerKind {
   String AWS_LOAD_BALANCER_CONFIG = "AWSLoadBalancerConfig";
+  String AWS_ASG_LOAD_BALANCER_CONFIG = "AWSAsgLoadBalancerConfig";
 }

@@ -28,4 +28,6 @@ public class AsgInfraConfig {
   List<EncryptedDataDetail> encryptionDataDetails;
   @NonFinal @Expression(ALLOW_SECRETS) String region;
   String infraStructureKey;
+  String baseAsgName;
+  String asgName;
 }
