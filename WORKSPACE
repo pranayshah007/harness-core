@@ -5334,7 +5334,7 @@ plain_artifacts = [
     "org.springframework.boot:spring-boot-autoconfigure:2.7.10",
     "org.springframework.boot:spring-boot-loader:2.7.10",
     "org.springframework.boot:spring-boot-starter-batch:2.7.10",
-    "org.springframework.boot:spring-boot:2.7.10",
+    "org.springframework.boot:spring-boot:2.7.14",
     "org.springframework.data:spring-data-commons:2.7.7",
     "org.springframework.data:spring-data-mongodb:3.4.7",
     "org.springframework.guice:spring-guice:1.1.3.RELEASE",
