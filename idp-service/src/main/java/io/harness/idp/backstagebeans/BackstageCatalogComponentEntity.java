@@ -5,11 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.onboarding.beans;
+package io.harness.idp.backstagebeans;
 
-import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_OWNER;
-import static io.harness.idp.onboarding.utils.Constants.PIPE_DELIMITER;
-import static io.harness.idp.onboarding.utils.Constants.SERVICE;
+import static io.harness.idp.backstagebeans.Constants.ENTITY_UNKNOWN_OWNER;
+import static io.harness.idp.backstagebeans.Constants.PIPE_DELIMITER;
+import static io.harness.idp.backstagebeans.Constants.SERVICE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
