@@ -169,6 +169,7 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 			exists := c.Exists(ctx, prefix)
 
 			if exists {
+				logger.FromRequest(r).Infoln("Request found in cache for prefix", prefix)
 				inf, err := c.Get(ctx, prefix)
 				if err != nil {
 					logger.FromRequest(r).
@@ -197,6 +198,7 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 				switch info.Status {
 				case entity.QUEUED:
 				case entity.IN_PROGRESS:
+					logger.FromRequest(r).Infoln("Returning queued or inprogress for prefix", prefix)
 					WriteJSON(w, info, 200)
 					return
 				case entity.ERROR:
@@ -216,6 +218,7 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 					WriteJSON(w, info, 200)
 					return
 				case entity.SUCCESS:
+					logger.FromRequest(r).Infoln("Returning success found in cache for prefix", prefix)
 					WriteJSON(w, info, 200)
 					return
 				default:
