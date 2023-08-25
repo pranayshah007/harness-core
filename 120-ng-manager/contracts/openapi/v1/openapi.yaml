@@ -1511,7 +1511,7 @@ paths:
       summary: Create a GitX webhook
       operationId: create-gitx-webhooks
       responses:
-        '200':
+        '201':
           $ref: '#/components/responses/CreateGitXWebhookResponse'
       description: Create GitXWebhook at account level
       security:
@@ -1576,7 +1576,7 @@ paths:
       summary: Deletes a GitX Webhook
       operationId: delete-gitx-webhook
       responses:
-        '200':
+        '204':
           description: OK
       description: Deletes a gitx webhooks
       security:
@@ -2642,7 +2642,7 @@ components:
           type: array
           items:
             type: string
-        isEnabled:
+        is_enabled:
           type: boolean
     UpdateGitXWebhookResponse:
       title: UpdateGitXWebhookResponse
@@ -2694,7 +2694,7 @@ components:
           type: array
           items:
             type: string
-        isEnabled:
+        is_enabled:
           type: boolean
     ListGitXWebhookResponse:
       title: ListGitXWebhookResponse
@@ -3328,6 +3328,19 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ListGitXWebhookResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
   requestBodies:
     ServiceRequest:
       content:
