@@ -77,6 +77,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -656,7 +657,11 @@ public class DefaultLicenseServiceImpl implements LicenseService {
         moduleLicenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, moduleType);
     List<ModuleLicenseDTO> result =
         licenses.stream().map(licenseObjectConverter::<ModuleLicenseDTO>toDTO).collect(Collectors.toList());
-    setToCache(accountIdentifier, moduleType, result);
+    try {
+      setToCache(accountIdentifier, moduleType, result);
+    } catch (CacheException e) {
+      log.error("Unable to set license data into cache", e);
+    }
     return result;
   }
 
