@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.service.resources;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -30,7 +31,8 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @NextGenManagerAuth
 public class AccountServicesApiImpl extends AbstractServicesApiImpl implements AccountServicesApi {
