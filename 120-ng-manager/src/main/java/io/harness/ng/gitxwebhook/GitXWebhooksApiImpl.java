@@ -7,23 +7,42 @@
 
 package io.harness.ng.gitxwebhook;
 
+import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
+import io.harness.gitsync.gitxwebhooks.service.GitXWebhookService;
 import io.harness.spec.server.ng.v1.GitXWebhooksApi;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookRequest;
+import io.harness.spec.server.ng.v1.model.CreateGitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.ListGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookRequest;
 
 import com.google.inject.Inject;
 import javax.validation.Valid;
 import javax.ws.rs.core.Response;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class GitXWebhooksApiImpl implements GitXWebhooksApi {
+  GitXWebhookService gitXWebhookService;
+
   @Override
   public Response createGitxWebhooks(@Valid CreateGitXWebhookRequest body, String harnessAccount) {
-    return Response.ok().build();
+    CreateGitXWebhookRequestDTO createGitXWebhookRequestDTO = CreateGitXWebhookRequestDTO.builder()
+                                                                  .accountIdentifier(harnessAccount)
+                                                                  .connectorRef(body.getConnectorRef())
+                                                                  .folderPaths(body.getFolderPaths())
+                                                                  .repoName(body.getRepoName())
+                                                                  .isEnabled(true)
+                                                                  .build();
+
+    CreateGitXWebhookResponseDTO createGitXWebhookResponseDTO =
+        gitXWebhookService.createGitXWebhook(createGitXWebhookRequestDTO);
+    CreateGitXWebhookResponse responseBody = new CreateGitXWebhookResponse();
+    responseBody.setWebhookIdentifier(createGitXWebhookResponseDTO.getWebhookIdentifier());
+    return Response.status(201).entity(responseBody).build();
   }
 
   @Override
