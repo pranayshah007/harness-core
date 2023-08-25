@@ -6,25 +6,25 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.factory;
 
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_POLICY_EVALUATION_SUCCESSFUL_IN_PIPELINE;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineExecutionInfo;
-import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl.PipelinePolicyEvaluationParser;
+import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineSuccessPercent;
+import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl.PipelineSuccessPercentParser;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-public class PipelineExecutionResponseFactory {
-  PipelinePolicyEvaluationParser pipelinePolicyEvaluationParser;
+public class PipelineSuccessPercentResponseFactory {
+  PipelineSuccessPercentParser pipelineSuccessPercentParser;
 
-  public PipelineExecutionInfo getResponseParser(String identifier) {
+  public PipelineSuccessPercent getResponseParser(String identifier) {
     switch (identifier) {
-      case IS_POLICY_EVALUATION_SUCCESSFUL_IN_PIPELINE:
-        return pipelinePolicyEvaluationParser;
+      case PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS:
+        return pipelineSuccessPercentParser;
       default:
         throw new UnsupportedOperationException(String.format("Could not find response parser for %s", identifier));
     }
