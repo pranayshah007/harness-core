@@ -366,4 +366,52 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
     assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
         .isTrue();
   }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testValidateUsageOfInfrastructureDefinitionsWithService() throws IOException {
+    Set<String> KEYS_TO_IGNORE = Set.of("service.serviceInputs", "environment.environmentInputs",
+        "environment.serviceOverrideInputs", "codebase.repoName", "environment.infrastructureDefinitions");
+    String sourceEntityYaml = "spec:\n" +
+     "              environment:\n" +
+     "                environmentRef: <+input>\n" +
+     "                environmentInputs: <+input>\n" +
+     "                serviceOverrideInputs: <+input>\n" +
+     "                infrastructureDefinitions: <+input>\n" +
+     "              service:\n" +
+     "                serviceRef: <+variable.var1>";
+
+    String yamlToValidate = "spec:\n" +
+     "              environment:\n" +
+     "                environmentRef: <+input>\n" +
+     "                environmentInputs: <+input>\n" +
+     "                serviceOverrideInputs: <+input>\n" +
+     "              service:\n" +
+     "                useFromStage:\n" +
+     "                  stage: St_1";
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testValidateUsageOfInfrastructureDefinitionsWithoutService() throws IOException {
+    Set<String> KEYS_TO_IGNORE = Set.of("service.serviceInputs", "environment.environmentInputs",
+        "environment.serviceOverrideInputs", "codebase.repoName", "environment.infrastructureDefinitions");
+    String sourceEntityYaml = "environment:\n" +
+     "                environmentRef: <+input>\n" +
+     "                environmentInputs: <+input>\n" +
+     "                serviceOverrideInputs: <+input>\n" +
+     "                infrastructureDefinitions: <+input>";
+
+    String yamlToValidate = "environment:\n" +
+     "                environmentRef: <+input>\n" +
+     "                environmentInputs: <+input>\n" +
+     "                serviceOverrideInputs: <+input>";
+    assertThat(validateInputsAgainstSourceNode(yamlToValidate, sourceEntityYaml, KEYS_TO_IGNORE, new HashSet<>()))
+        .isTrue();
+  }
+
 }
