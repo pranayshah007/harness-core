@@ -16,7 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 @Getter
 @Slf4j
 public enum ScmVersion implements ClientToolVersion {
-  DEFAULT("93b3c9f1");
+  DEFAULT("df0e7d04");
 
   private final String version;
 
