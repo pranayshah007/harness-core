@@ -17,8 +17,11 @@
 package io.harness.cdng.provision.terragrunt;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.LinkedHashMap;
@@ -27,6 +30,8 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
@@ -41,6 +46,7 @@ public class TerragruntPlanExecutionDataParameters {
   TerragruntPlanCommand command;
   ParameterField<String> secretManagerRef;
   ParameterField<Boolean> exportTerragruntPlanJson;
-  TerragruntModuleConfig terragruntModuleConfig;
+  @Deprecated TerragruntModuleConfig terragruntModuleConfig;
+  TerragruntModuleConfig moduleConfig;
   List<TerragruntCliOptionFlag> cliOptionFlags;
 }

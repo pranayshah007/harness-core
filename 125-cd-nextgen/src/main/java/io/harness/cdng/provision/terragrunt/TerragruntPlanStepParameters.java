@@ -17,8 +17,11 @@
 package io.harness.cdng.provision.terragrunt;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -30,6 +33,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,6 +44,14 @@ import lombok.NoArgsConstructor;
 public class TerragruntPlanStepParameters extends TerragruntPlanBaseStepInfo implements SpecParameters {
   String stepFqn;
   TerragruntPlanExecutionDataParameters configuration;
+
+  @Override
+  public SpecParameters getViewJsonObject() {
+    TerragruntPlanStepParameters terragruntPlanStepParameters = this;
+    // this TerragruntModuleConfig we are settle to null so that it will not show in the input of plan step execution
+    terragruntPlanStepParameters.getConfiguration().setTerragruntModuleConfig(null);
+    return terragruntPlanStepParameters;
+  }
 
   @Builder(builderMethodName = "infoBuilder")
   public TerragruntPlanStepParameters(ParameterField<String> provisionerIdentifier,
