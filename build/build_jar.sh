@@ -24,6 +24,7 @@ modify_service_name() {
     ["sto-manager"]="315-sto-manager"
     ["ci-manager"]="332-ci-manager"
     ["verification-service"]="270-verification"
+    ["ng-dashboard-aggregator"]="290-dashboard-service"
   )
   declare -A modified_service_name_with_app=(
     ["310-iacm-manager"]=1
@@ -62,7 +63,7 @@ modify_service_name() {
 # Call the function and pass the service name as an argument
 modified_service_name=$(modify_service_name "$SERVICE_NAME")
 
-bazel ${bazelrc} build //${modified_service_name}":module_deploy.jar" ${BAZEL_ARGUMENTS}
+bazel ${bazelrc} build --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json //${modified_service_name}":module_deploy.jar" ${BAZEL_ARGUMENTS}
 
 
 if [ "${SERVICE_NAME}" == "pipeline-service" ]; then
@@ -88,7 +89,7 @@ fi
 
 
 service=$(echo "$modified_service_name" | cut -d'/' -f1)
-if [[ $SERVICE_NAME == "manager" || $SERVICE_NAME == "migrator" || $SERVICE_NAME == "change-data-capture" || $SERVICE_NAME == "verification-service" ]]; then
+if [[ $SERVICE_NAME == "manager" || $SERVICE_NAME == "migrator" || $SERVICE_NAME == "change-data-capture" || $SERVICE_NAME == "verification-service" || $SERVICE_NAME == "ng-dashboard-aggregator" ]]; then
     chmod +x build/build_dist.sh
     build/build_dist.sh || true
 else
