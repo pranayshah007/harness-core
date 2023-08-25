@@ -50,7 +50,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return NGRestUtils.getResponse(ngLicenseHttpClient.getModuleLicenses(accountId));
   }
 
-  private Edition getEdition(String accountId) throws ExecutionException {
+  protected Edition getEdition(String accountId) throws ExecutionException {
     List<ModuleLicenseDTO> moduleLicenseDTOS = moduleLicensesCache.get(accountId);
     Edition edition = FREE;
     for (ModuleLicenseDTO moduleLicenseDTO : moduleLicenseDTOS) {
@@ -170,7 +170,8 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     }
   }
 
-  private PlanExecutionSettingResponse shouldQueueInternal(String accountId, String pipelineIdentifier, long maxCount) {
+  protected PlanExecutionSettingResponse shouldQueueInternal(
+      String accountId, String pipelineIdentifier, long maxCount) {
     long runningExecutionsForGivenPipeline =
         planExecutionService.countRunningExecutionsForGivenPipelineInAccount(accountId, pipelineIdentifier);
     if (runningExecutionsForGivenPipeline >= maxCount) {
