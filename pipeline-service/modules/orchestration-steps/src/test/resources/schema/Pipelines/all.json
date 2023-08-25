@@ -6913,6 +6913,16 @@
             "executionTarget": {
               "$ref": "#/definitions/ExecutionTarget"
             },
+            "includeInfraSelectors": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "metadata": {
               "type": "string"
             },

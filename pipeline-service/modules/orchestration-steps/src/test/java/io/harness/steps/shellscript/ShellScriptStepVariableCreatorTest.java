@@ -89,7 +89,8 @@ public class ShellScriptStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.environmentVariables.e2",
             "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.environmentVariables.e1",
             "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.source.spec.script",
-            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.when");
+            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.when",
+            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.includeInfraSelectors");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
