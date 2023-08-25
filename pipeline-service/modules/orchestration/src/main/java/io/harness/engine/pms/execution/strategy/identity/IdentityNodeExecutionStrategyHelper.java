@@ -62,7 +62,6 @@ public class IdentityNodeExecutionStrategyHelper {
     }
     NodeExecution execution = NodeExecution.builder()
                                   .uuid(uuid)
-                                  .planNode(node)
                                   .ambiance(ambiance)
                                   .levelCount(ambiance.getLevelsCount())
                                   .status(Status.QUEUED)
@@ -136,7 +135,6 @@ public class IdentityNodeExecutionStrategyHelper {
 
     return NodeExecution.builder()
         .uuid(uuid)
-        .planNode(node)
         .ambiance(finalAmbiance)
         .oldRetry(true)
         .retryIds(originalNodeExecution.getRetryIds())

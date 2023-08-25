@@ -29,7 +29,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.interrupts.Interrupt;
-import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
@@ -177,7 +176,6 @@ public class PauseAllInterruptHandlerTest extends OrchestrationTestBase {
                         .uuid(generateUuid())
                         .status(Status.PAUSED)
                         .parentId(generateUuid())
-                        .planNode(PlanNode.builder().identifier(generateUuid()).build())
                         .ambiance(ambiance)
                         .version(1L)
                         .build());

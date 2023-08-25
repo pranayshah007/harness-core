@@ -126,7 +126,7 @@ public class RollbackModeExecutionHelper {
     }
     List<String> rollbackStageFQNs =
         nodeExecutionService
-            .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.planNode))
+            .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.stageFqn))
             .stream()
             .map(NodeExecution::getStageFqn)
             .collect(Collectors.toList());

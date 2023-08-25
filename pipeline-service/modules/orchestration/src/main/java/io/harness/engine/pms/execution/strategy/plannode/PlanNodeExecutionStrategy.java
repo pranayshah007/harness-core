@@ -121,7 +121,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .uuid(uuid)
-            .planNode(node)
             .executionInputConfigured(!EmptyPredicate.isEmpty(node.getExecutionInputTemplate()))
             .ambiance(ambiance)
             .levelCount(ambiance.getLevelsCount())

@@ -33,14 +33,11 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
-import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
-import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
 import io.harness.waiter.OldNotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
@@ -82,18 +79,13 @@ public class AbortHelperTest extends OrchestrationTestBase {
                               .build();
     mongoTemplate.save(interrupt);
 
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .uuid(nodeExecutionId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build())
-            .status(DISCONTINUING)
-            .mode(ExecutionMode.ASYNC)
-            .planNode(PlanNode.builder()
-                          .uuid(generateUuid())
-                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-                          .build())
-            .startTs(System.currentTimeMillis())
-            .build();
+    NodeExecution nodeExecution = NodeExecution.builder()
+                                      .uuid(nodeExecutionId)
+                                      .ambiance(Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build())
+                                      .status(DISCONTINUING)
+                                      .mode(ExecutionMode.ASYNC)
+                                      .startTs(System.currentTimeMillis())
+                                      .build();
 
     when(interruptEventPublisher.publishEvent(nodeExecutionId, interrupt, InterruptType.ABORT)).thenReturn(notifyId);
     abortHelper.discontinueMarkedInstance(nodeExecution, interrupt);
@@ -132,16 +124,11 @@ public class AbortHelperTest extends OrchestrationTestBase {
                             .setPlanExecutionId(generateUuid())
                             .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
                             .build();
-    NodeExecutionBuilder nodeExecution =
-        NodeExecution.builder()
-            .uuid(nodeExecutionId)
-            .ambiance(ambiance)
-            .mode(ExecutionMode.SYNC)
-            .planNode(PlanNode.builder()
-                          .uuid(generateUuid())
-                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-                          .build())
-            .startTs(System.currentTimeMillis());
+    NodeExecutionBuilder nodeExecution = NodeExecution.builder()
+                                             .uuid(nodeExecutionId)
+                                             .ambiance(ambiance)
+                                             .mode(ExecutionMode.SYNC)
+                                             .startTs(System.currentTimeMillis());
 
     when(nodeExecutionService.updateStatusWithOps(eq(nodeExecutionId), eq(ABORTED), any(), any()))
         .thenReturn(nodeExecution.status(ABORTED).endTs(System.currentTimeMillis()).build());
@@ -177,16 +164,11 @@ public class AbortHelperTest extends OrchestrationTestBase {
                             .setPlanExecutionId(generateUuid())
                             .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
                             .build();
-    NodeExecutionBuilder nodeExecution =
-        NodeExecution.builder()
-            .uuid(nodeExecutionId)
-            .ambiance(ambiance)
-            .mode(ExecutionMode.CHILD)
-            .planNode(PlanNode.builder()
-                          .uuid(generateUuid())
-                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-                          .build())
-            .startTs(System.currentTimeMillis());
+    NodeExecutionBuilder nodeExecution = NodeExecution.builder()
+                                             .uuid(nodeExecutionId)
+                                             .ambiance(ambiance)
+                                             .mode(ExecutionMode.CHILD)
+                                             .startTs(System.currentTimeMillis());
 
     when(nodeExecutionService.updateStatusWithOps(eq(nodeExecutionId), eq(ABORTED), any(), any()))
         .thenReturn(nodeExecution.status(ABORTED).endTs(System.currentTimeMillis()).build());
@@ -215,18 +197,13 @@ public class AbortHelperTest extends OrchestrationTestBase {
                               .planExecutionId(generateUuid())
                               .state(State.PROCESSING)
                               .build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build())
-            .status(DISCONTINUING)
-            .mode(ExecutionMode.ASYNC)
-            .planNode(PlanNode.builder()
-                          .uuid(generateUuid())
-                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-                          .build())
-            .startTs(System.currentTimeMillis())
-            .build();
+    NodeExecution nodeExecution = NodeExecution.builder()
+                                      .uuid(generateUuid())
+                                      .ambiance(Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build())
+                                      .status(DISCONTINUING)
+                                      .mode(ExecutionMode.ASYNC)
+                                      .startTs(System.currentTimeMillis())
+                                      .build();
     assertThatThrownBy(() -> abortHelper.discontinueMarkedInstance(nodeExecution, interrupt))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Error in discontinuing, TEST_EXCEPTION");
