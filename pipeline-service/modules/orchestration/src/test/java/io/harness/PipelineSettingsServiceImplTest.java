@@ -8,7 +8,9 @@
 package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.licensing.Edition.*;
+import static io.harness.licensing.Edition.ENTERPRISE;
+import static io.harness.licensing.Edition.FREE;
+import static io.harness.licensing.Edition.TEAM;
 import static io.harness.rule.OwnerRule.AYUSHI_TIWARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
