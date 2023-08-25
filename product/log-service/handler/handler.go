@@ -154,12 +154,6 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 			sr.Use(AuthMiddleware(config, ngClient, true))
 		}
 
-		// TODO: delete it after freeze window.
-		sr.
-			With(RequiredQueryParams(accountIDParam, usePrefixParam)).
-			With(ValidatePrefixRequest()).
-			With(CacheRequest(cache)).
-			Get("/", HandleZipLinkPrefix(queue, store, cache, config))
 		sr.
 			With(RequiredQueryParams(accountIDParam, usePrefixParam)).
 			With(ValidatePrefixRequest()).
