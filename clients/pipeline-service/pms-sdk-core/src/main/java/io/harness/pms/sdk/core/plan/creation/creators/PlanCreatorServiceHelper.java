@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.sdk.core.plan.creation.creators;
+import com.google.protobuf.ByteString;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -33,6 +34,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.harness.serializer.KryoSerializer;
+import io.harness.steps.matrix.StrategyConstants;
+import io.harness.steps.matrix.StrategyMetadata;
 import lombok.experimental.UtilityClass;
 
 @CodePulse(
@@ -140,6 +145,36 @@ public class PlanCreatorServiceHelper {
         creatorResponse.addServiceAffinityToResponse(dependencyKey, serviceAffinity);
       }
     }
+  }
+
+  public void decorateCreationResponseWithParentInfo(CreatorResponse creatorResponse, YamlField currentField, KryoSerializer kryoSerializer, Dependency currentDependency) {
+    Dependencies dependencies = creatorResponse.getDependencies();
+    if (dependencies == null) {
+      return;
+    }
+    Map<String, ByteString> metadataToAdd = new HashMap<>();
+    if (currentDependency != null) {
+      metadataToAdd = new HashMap<>(currentDependency.getMetadataMap());
+    }
+   if (currentField.getNode().getFieldName() != null && currentField.getNode().getFieldName().equals(YAMLFieldNameConstants.STAGE)) {
+      metadataToAdd.put("stageId", ByteString.copyFrom(kryoSerializer.asBytes(currentField.getNode().getUuid())));
+    }
+    else if (currentField.getNode().getFieldName() != null && currentField.getNode().getFieldName().equals(YAMLFieldNameConstants.STEP_GROUP)) {
+      metadataToAdd.put("stepGroupId", ByteString.copyFrom(kryoSerializer.asBytes(currentField.getNode().getUuid())));
+    }
+    YamlField strategyField = currentField.getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    if (strategyField != null) {
+      metadataToAdd.put("strategyId", ByteString.copyFrom(kryoSerializer.asBytes(strategyField.getNode().getUuid())));
+    }
+    for (String dependencyKey : dependencies.getDependenciesMap().keySet()) {
+      Dependency dependency = Dependency.newBuilder().build();
+      if (dependencies.getDependencyMetadataMap().containsKey(dependencyKey)) {
+        dependency = dependencies.getDependencyMetadataMap().get(dependencyKey);
+      }
+      dependency = dependency.toBuilder().putAllMetadata(metadataToAdd).build();
+      dependencies = dependencies.toBuilder().putDependencyMetadata(dependencyKey, dependency).build();
+    }
+    creatorResponse.setDependencies(dependencies);
   }
 
   public Dependencies removeInitialDependencies(Dependencies dependencies, Dependencies initialDependencies) {
