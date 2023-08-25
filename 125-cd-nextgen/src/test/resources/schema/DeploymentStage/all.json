@@ -1732,6 +1732,12 @@
                 }
               ]
             },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
             "privileged": {
               "oneOf": [
                 {
