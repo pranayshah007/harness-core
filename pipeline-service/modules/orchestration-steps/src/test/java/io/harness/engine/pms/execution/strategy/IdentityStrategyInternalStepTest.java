@@ -183,10 +183,10 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
         .getWithFieldsIncluded(
             stepParameters.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
-    doReturn(node1).when(planService).fetchNode(node1.getUuid());
-    doReturn(node2).when(planService).fetchNode(node2.getUuid());
-    doReturn(iNode1).when(planService).fetchNode(iNode1.getUuid());
-    doReturn(iNode2).when(planService).fetchNode(iNode2.getUuid());
+    doReturn(node1).when(planService).fetchNode(any(), eq(node1.getUuid()));
+    doReturn(node2).when(planService).fetchNode(any(), eq(node2.getUuid()));
+    doReturn(iNode1).when(planService).fetchNode(any(), eq(iNode1.getUuid()));
+    doReturn(iNode2).when(planService).fetchNode(any(), eq(iNode2.getUuid()));
     ArgumentCaptor<List> identityNodesCaptor = ArgumentCaptor.forClass(List.class);
 
     ChildrenExecutableResponse response = identityStrategyInternalStep.obtainChildren(ambiance, stepParameters, null);
@@ -276,8 +276,6 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
                                                .filter(o -> o.getNodeType() == NodeType.IDENTITY_PLAN_NODE)
                                                .map(NodeExecution::getNodeId)
                                                .collect(Collectors.toList());
-    long planNodesCount =
-        childrenNodeExecutions.stream().filter(o -> o.getNodeType() == NodeType.IDENTITY_PLAN_NODE).count();
     int identityNodesCount = 0;
     for (ChildrenExecutableResponse.Child child : childrenExecutableResponse.getChildrenList()) {
       if (!originalIdentityNodeIds.contains(child.getChildNodeId())) {
@@ -288,7 +286,6 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
       }
     }
     assertEquals(identityNodesCount, newlyCreatedidentittNodeids.size());
-    assertEquals(planNodesCount, identityNodesCount);
   }
 
   @Test
@@ -302,7 +299,8 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
     IdentityStepParameters stepParameters =
         IdentityStepParameters.builder().originalNodeExecutionId(originalNodeExecutionId).build();
 
-    ChildExecutableResponse childExecutableResponse = ChildExecutableResponse.newBuilder().build();
+    ChildExecutableResponse childExecutableResponse =
+        ChildExecutableResponse.newBuilder().setChildNodeId("identityPlanUuid").build();
     NodeExecution originalNodeExecution =
         NodeExecution.builder()
             .uuid("originalNodeExecutionId")
@@ -328,8 +326,7 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
         .when(nodeExecutionService)
         .fetchChildrenNodeExecutionsIterator(ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, Direction.ASC,
             NodeProjectionUtils.fieldsForIdentityStrategyStep);
-
-    doReturn(node).when(planService).fetchNode(eq("identityPlanUuid"));
+    doReturn(node).when(planService).fetchNode(any(), eq("identityPlanUuid"));
     ChildExecutableResponse response = identityStrategyInternalStep.obtainChild(ambiance, stepParameters, null);
 
     assertThat(response.getChildNodeId()).isNotNull();
@@ -356,8 +353,8 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
         .when(nodeExecutionService)
         .fetchChildrenNodeExecutionsIterator(ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, Direction.ASC,
             NodeProjectionUtils.fieldsForIdentityStrategyStep);
-    doReturn(node1).when(planService).fetchNode("planUuid1");
-    doReturn(node2).when(planService).fetchNode("planUuid2");
+    doReturn(node1).when(planService).fetchNode(any(), eq("planUuid1"));
+    doReturn(node2).when(planService).fetchNode(any(), eq("planUuid2"));
     ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
 
     response = identityStrategyInternalStep.obtainChild(ambiance, stepParameters, null);

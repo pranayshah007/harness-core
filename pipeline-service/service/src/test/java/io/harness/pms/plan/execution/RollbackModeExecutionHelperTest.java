@@ -215,8 +215,13 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
                                     Collections.singletonList(AdviserObtainment.newBuilder().build())))
                                 .skipGraphType(SkipType.NOOP)
                                 .build();
-    NodeExecution nodeExecutionForUuid1 =
-        NodeExecution.builder().nodeId(toBeReplaced.getUuid()).stepType(stepType).uuid("nodeExecForUuid1").build();
+
+    NodeExecution nodeExecutionForUuid1 = NodeExecution.builder()
+                                              .nodeId(toBeReplaced.getUuid())
+                                              .stepType(stepType)
+                                              .ambiance(Ambiance.newBuilder().setPlanId("planId1").build())
+                                              .uuid("nodeExecForUuid1")
+                                              .build();
 
     List<NodeExecution> nodeExecutionList = Collections.singletonList(nodeExecutionForUuid1);
 
@@ -231,7 +236,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
         .fetchNodeExecutionsForGivenStageFQNs(prevExecId, Collections.singletonList("pipeline.stages.s1"),
             NodeProjectionUtils.fieldsForIdentityNodeCreation);
 
-    when(planService.fetchNode(toBeReplaced.getUuid())).thenReturn(toBeReplaced);
+    when(planService.fetchNode("planId1", toBeReplaced.getUuid())).thenReturn(toBeReplaced);
     Plan transformedPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(createdPlan, prevExecId,
         Collections.singletonList("uuid2"), POST_EXECUTION_ROLLBACK, Collections.singletonList("pipeline.stages.s1"));
     List<Node> nodes = transformedPlan.getPlanNodes();

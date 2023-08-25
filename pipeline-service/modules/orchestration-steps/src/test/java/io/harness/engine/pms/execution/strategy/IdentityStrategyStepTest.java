@@ -159,9 +159,9 @@ public class IdentityStrategyStepTest extends CategoryTest {
         .getWithFieldsIncluded(
             stepParameters.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
-    doReturn(childNode1).when(planService).fetchNode(eq("childId"));
-    doReturn(childNode2).when(planService).fetchNode(eq("childId2"));
-    doReturn(childNode3).when(planService).fetchNode(eq("childId3"));
+    doReturn(childNode1).when(planService).fetchNode(any(), eq("childId"));
+    doReturn(childNode2).when(planService).fetchNode(any(), eq("childId2"));
+    doReturn(childNode3).when(planService).fetchNode(any(), eq("childId3"));
 
     CloseableIterator<NodeExecution> iterator =
         OrchestrationStepsTestHelper.createCloseableIterator(childrenNodeExecutions.iterator());

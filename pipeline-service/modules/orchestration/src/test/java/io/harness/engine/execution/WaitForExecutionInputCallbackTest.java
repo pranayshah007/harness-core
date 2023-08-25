@@ -81,7 +81,7 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
   public void testNotifyTimeout() {
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("id").build();
     PlanNodeBuilder planNodeBuilder = PlanNode.builder();
-    doReturn(planNodeBuilder.build()).when(planService).fetchNode(any());
+    doReturn(planNodeBuilder.build()).when(planService).fetchNode(any(), any());
     doReturn(NodeExecution.builder().ambiance(ambiance).build()).when(nodeExecutionService).get(nodeExecutionId);
 
     doReturn(NodeExecution.builder().ambiance(ambiance).build())
@@ -100,7 +100,7 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
                      AdviserObtainment.newBuilder().setType(ProceedWithDefaultValueAdviser.ADVISER_TYPE).build())
                  .build())
         .when(planService)
-        .fetchNode(any());
+        .fetchNode(any(), any());
     waitForExecutionInputCallback.notifyTimeout(Map.of("key", ExecutionInputData.builder().build()));
     // It will remain 1. Because ProceedWithDefault adviser is present to NodeExecution will not be marked as expired.
     verify(nodeExecutionService, times(1))
@@ -112,7 +112,7 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
     doReturn(
         planNodeBuilder.clearAdviserObtainments().adviserObtainment(AdviserObtainment.getDefaultInstance()).build())
         .when(planService)
-        .fetchNode(any());
+        .fetchNode(any(), any());
     NodeExecution updatedNodeExecution = NodeExecution.builder().status(Status.EXPIRED).build();
     doReturn(updatedNodeExecution)
         .when(nodeExecutionService)

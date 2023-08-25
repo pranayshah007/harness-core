@@ -178,6 +178,9 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
     public static final String accountId = NodeExecutionKeys.ambiance + "."
         + "setupAbstractions"
         + "." + SetupAbstractionKeys.accountId;
+
+    public static final String planId = NodeExecutionKeys.ambiance + "."
+        + "planId";
   }
 
   public static List<MongoIndex> mongoIndexes() {

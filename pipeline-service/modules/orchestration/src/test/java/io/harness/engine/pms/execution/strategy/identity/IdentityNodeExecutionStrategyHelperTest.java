@@ -132,12 +132,12 @@ public class IdentityNodeExecutionStrategyHelperTest {
     List<NodeExecution> retriedNodeExecutions = new ArrayList<>();
     IdentityPlanNode node =
         IdentityPlanNode.builder().uuid("uuid1").identifier("id1").stepType(StepType.newBuilder().build()).build();
-    retriedNodeExecutions.add(NodeExecution.builder().nodeId(node.getUuid()).uuid(retryId1).build());
-    retriedNodeExecutions.add(NodeExecution.builder().nodeId(node.getUuid()).uuid(retryId2).build());
-
+    retriedNodeExecutions.add(
+        NodeExecution.builder().ambiance(Ambiance.newBuilder().build()).nodeId(node.getUuid()).uuid(retryId1).build());
+    retriedNodeExecutions.add(
+        NodeExecution.builder().ambiance(Ambiance.newBuilder().build()).nodeId(node.getUuid()).uuid(retryId2).build());
     doReturn(retriedNodeExecutions).when(nodeExecutionService).getAll(any());
-
-    doReturn(node).when(planService).fetchNode(eq("uuid1"));
+    doReturn(node).when(planService).fetchNode(any(), eq("uuid1"));
 
     ArgumentCaptor<List> nodeExecutionArgumentCaptor = ArgumentCaptor.forClass(List.class);
 
