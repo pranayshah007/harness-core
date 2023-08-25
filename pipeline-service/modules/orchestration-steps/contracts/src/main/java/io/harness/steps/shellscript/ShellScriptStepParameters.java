@@ -43,8 +43,8 @@ public class ShellScriptStepParameters extends ShellScriptBaseStepInfo implement
   public ShellScriptStepParameters(ShellType shellType, ShellScriptSourceWrapper source,
       ExecutionTarget executionTarget, ParameterField<Boolean> onDelegate, Map<String, Object> outputVariables,
       Map<String, Object> environmentVariables, ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid,
-      Set<String> secretOutputVariables) {
-    super(uuid, shellType, source, executionTarget, onDelegate, delegateSelectors);
+      Set<String> secretOutputVariables, ParameterField<Boolean> includeInfraSelectors) {
+    super(uuid, shellType, source, executionTarget, onDelegate, delegateSelectors, includeInfraSelectors);
     this.outputVariables = outputVariables;
     this.environmentVariables = environmentVariables;
     this.secretOutputVariables = secretOutputVariables;
@@ -61,6 +61,7 @@ public class ShellScriptStepParameters extends ShellScriptBaseStepInfo implement
         .shellType(this.shell)
         .source(this.source.toBuilder().uuid(null).build())
         .delegateSelectors(this.delegateSelectors)
+        .includeInfraSelectors(this.includeInfraSelectors)
         .build();
   }
 
