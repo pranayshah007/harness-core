@@ -1,4 +1,4 @@
-# Copyright 2022 Harness Inc. All rights reserved.
+# Copyright 2023 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -6,12 +6,11 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "python",
+    name = "ruby",
     srcs = [
-        "pytest.go",
-        "unittest.go",
+        "rspec.go",
     ],
-    importpath = "github.com/harness/harness-core/product/ci/addon/testintelligence/python",
+    importpath = "github.com/harness/harness-core/product/ci/addon/testintelligence/ruby",
     visibility = ["//visibility:public"],
     deps = [
         "//commons/go/lib/exec",
