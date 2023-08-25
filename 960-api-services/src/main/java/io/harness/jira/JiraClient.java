@@ -158,9 +158,29 @@ public class JiraClient {
     return getIssue(issueKey, false);
   }
 
+  public JiraIssueNG getIssue(@NotBlank String issueKey, String filterFields) {
+    return getIssue(issueKey, false, filterFields);
+  }
+
   private JiraIssueNG getIssue(@NotBlank String issueKey, boolean throwOnInvalidKey) {
     try {
-      JiraIssueNG issue = executeCall(restClient.getIssue(issueKey, "names,schema"), "fetching issue");
+      JiraIssueNG issue = executeCall(restClient.getIssue(issueKey, "names,schema", null), "fetching issue");
+      if (issue != null) {
+        issue.updateJiraBaseUrl(config.getJiraUrl());
+      }
+      return issue;
+    } catch (Exception ex) {
+      if (!throwOnInvalidKey && is404StatusCode(ex)) {
+        return null;
+      }
+      throw ex;
+    }
+  }
+
+  private JiraIssueNG getIssue(@NotBlank String issueKey, boolean throwOnInvalidKey, String filterFields) {
+    try {
+      JiraIssueNG issue = executeCall(
+          restClient.getIssue(issueKey, "names,schema", filterFields), "fetching issue with filtered fields");
       if (issue != null) {
         issue.updateJiraBaseUrl(config.getJiraUrl());
       }

@@ -37,7 +37,8 @@ public interface JiraRestClient {
   @GET("project") Call<List<JiraProjectBasicNG>> getProjects();
 
   @GET("issue/{issueKey}")
-  Call<JiraIssueNG> getIssue(@Path("issueKey") String issueKey, @Query("expand") String expand);
+  Call<JiraIssueNG> getIssue(
+      @Path("issueKey") String issueKey, @Query("expand") String expand, @Query("fields") String fields);
 
   @GET("issue/{issueKey}/transitions")
   Call<JiraIssueTransitionsNG> getIssueTransitions(@Path("issueKey") String issueKey);

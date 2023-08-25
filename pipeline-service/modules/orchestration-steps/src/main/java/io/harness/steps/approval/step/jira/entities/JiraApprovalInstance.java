@@ -67,6 +67,8 @@ public class JiraApprovalInstance extends ApprovalInstance implements Persistent
 
   // the id of the latest delegate task created while polling
   String latestDelegateTaskId;
+  // this field if populated will be used to optimize Jira Approvals by filtering fields
+  String keyListInKeyValueCriteria;
 
   public static JiraApprovalInstance fromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
     if (stepParameters == null) {

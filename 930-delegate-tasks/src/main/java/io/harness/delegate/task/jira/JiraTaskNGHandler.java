@@ -86,7 +86,7 @@ public class JiraTaskNGHandler {
 
   public JiraTaskNGResponse getIssue(JiraTaskNGParameters params) {
     JiraClient jiraClient = getJiraClient(params);
-    JiraIssueNG issue = jiraClient.getIssue(params.getIssueKey());
+    JiraIssueNG issue = jiraClient.getIssue(params.getIssueKey(), params.getFilterFields());
     return JiraTaskNGResponse.builder().issue(issue).build();
   }
 

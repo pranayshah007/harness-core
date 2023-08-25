@@ -17,12 +17,16 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 @Data
@@ -63,5 +67,16 @@ public class KeyValuesCriteriaSpecDTO implements CriteriaSpecDTO {
       conditionDTOS.add(ConditionDTO.fromCondition(condition));
     }
     return KeyValuesCriteriaSpecDTO.builder().matchAnyCondition(matchCondition).conditions(conditionDTOS).build();
+  }
+
+  public Set<String> fetchKeySetFromKeyValueCriteriaDTO() {
+    if (this.isEmpty()) {
+      return new HashSet<>();
+    }
+    return this.getConditions()
+        .stream()
+        .map(ConditionDTO::getKey)
+        .filter(StringUtils::isNotBlank)
+        .collect(Collectors.toSet());
   }
 }

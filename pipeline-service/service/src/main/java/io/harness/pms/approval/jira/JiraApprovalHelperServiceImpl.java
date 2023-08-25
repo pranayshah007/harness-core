@@ -20,6 +20,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
@@ -63,6 +64,7 @@ import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance.JiraApprovalInstanceKeys;
 import io.harness.steps.jira.JiraStepHelperService;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.waiter.NotifyCallback;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -79,6 +81,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -92,6 +95,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
   private final String publisherName;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   private final ApprovalInstanceService approvalInstanceService;
+  private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   @Inject
   public JiraApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
@@ -100,7 +104,8 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
       @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, WaitNotifyEngine waitNotifyEngine,
       LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, PmsGitSyncHelper pmsGitSyncHelper,
-      JiraStepHelperService jiraStepHelperService, ApprovalInstanceService approvalInstanceService) {
+      JiraStepHelperService jiraStepHelperService, ApprovalInstanceService approvalInstanceService,
+      PmsFeatureFlagHelper pmsFeatureFlagHelper) {
     this.ngDelegate2TaskExecutor = ngDelegate2TaskExecutor;
     this.connectorResourceClient = connectorResourceClient;
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
@@ -110,6 +115,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
     this.publisherName = publisherName;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.approvalInstanceService = approvalInstanceService;
+    this.pmsFeatureFlagHelper = pmsFeatureFlagHelper;
   }
 
   @Override
@@ -147,8 +153,16 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
       validateField(issueKey, JiraApprovalInstanceKeys.issueKey);
       validateField(connectorRef, JiraApprovalInstanceKeys.connectorRef);
 
-      JiraTaskNGParameters jiraTaskNGParameters = prepareJiraTaskParameters(
-          accountIdentifier, orgIdentifier, projectIdentifier, issueKey, connectorRef, instance.getDelegateSelectors());
+      String filterFields = null;
+      if (pmsFeatureFlagHelper.isEnabled(accountIdentifier, FeatureName.CDS_JIRA_APPROVAL_OPTIMIZATION)) {
+        filterFields = StringUtils.isBlank(instance.getKeyListInKeyValueCriteria())
+            ? null
+            : instance.getKeyListInKeyValueCriteria();
+      }
+      log.debug("Fetching fields list to filter in get issue call - {}", filterFields);
+
+      JiraTaskNGParameters jiraTaskNGParameters = prepareJiraTaskParameters(accountIdentifier, orgIdentifier,
+          projectIdentifier, issueKey, connectorRef, filterFields, instance.getDelegateSelectors());
       logCallback.saveExecutionLog(
           String.format("Jira url: %s", jiraTaskNGParameters.getJiraConnectorDTO().getJiraUrl()));
 
@@ -172,7 +186,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
   }
 
   private JiraTaskNGParameters prepareJiraTaskParameters(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String issueId, String connectorRef,
+      String projectIdentifier, String issueId, String connectorRef, String filterFields,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     JiraConnectorDTO jiraConnectorDTO =
         getJiraConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
@@ -200,6 +214,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
         .encryptionDetails(encryptionDataDetails)
         .jiraConnectorDTO(jiraConnectorDTO)
         .issueKey(issueId)
+        .filterFields(filterFields)
         .delegateSelectors(StepUtils.getDelegateSelectorListFromTaskSelectorYaml(delegateSelectors))
         .build();
   }

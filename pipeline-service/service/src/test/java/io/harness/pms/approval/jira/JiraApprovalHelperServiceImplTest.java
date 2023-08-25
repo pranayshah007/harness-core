@@ -57,6 +57,7 @@ import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.beans.KeyValuesCriteriaSpecDTO;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.waiter.WaitNotifyEngine;
 
 import java.time.Duration;
@@ -87,6 +88,7 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   JiraApprovalHelperServiceImpl jiraApprovalHelperService;
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
+  @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
   private MockedStatic<NGRestUtils> aStatic;
   private static String accountId = "accountId";
   private static String orgIdentifier = "orgIdentifier";
@@ -98,7 +100,7 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
     aStatic = Mockito.mockStatic(NGRestUtils.class);
     jiraApprovalHelperService = spy(new JiraApprovalHelperServiceImpl(ngDelegate2TaskExecutor, connectorResourceClient,
         kryoSerializer, secretManagerClient, waitNotifyEngine, logStreamingStepClientFactory, publisherName,
-        pmsGitSyncHelper, null, approvalInstanceService));
+        pmsGitSyncHelper, null, approvalInstanceService, pmsFeatureFlagHelper));
   }
 
   @After

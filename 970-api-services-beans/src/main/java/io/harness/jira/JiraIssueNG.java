@@ -54,6 +54,7 @@ public class JiraIssueNG implements TicketNG {
   @NotNull String id;
   @NotNull String key;
   @NotNull Map<String, Object> fields = new HashMap<>();
+  Map<String, String> fieldNameToKeys = new HashMap<>();
 
   public JiraIssueNG(JsonNode node) {
     this.restUrl = JsonNodeUtils.mustGetString(node, "self");
@@ -111,13 +112,14 @@ public class JiraIssueNG implements TicketNG {
       }
       if (value instanceof JiraTimeTrackingFieldNG) {
         // Special handling for timetracking field.
-        ((JiraTimeTrackingFieldNG) value).addToFields(fields);
+        ((JiraTimeTrackingFieldNG) value).addToFields(fields, fieldNameToKeys);
       } else {
         // Refer to -  https://harness.atlassian.net/browse/CDS-38402
         if (fields.containsKey(name)) {
           log.warn("Jira Issue: Found already existing name - {}. Skipping.", name);
         }
         fields.putIfAbsent(name, value);
+        fieldNameToKeys.putIfAbsent(name, key);
       }
       return;
     }
@@ -133,6 +135,7 @@ public class JiraIssueNG implements TicketNG {
       });
     }
     fields.put(name, arr);
+    fieldNameToKeys.put(name, key);
   }
 
   private void addProjectFields(String name, JsonNode valueNode) {
@@ -156,6 +159,9 @@ public class JiraIssueNG implements TicketNG {
     String statusName = JsonNodeUtils.mustGetString(valueNode, "name");
     fields.put(name, statusName);
     fields.put(JiraConstantsNG.STATUS_INTERNAL_NAME, JsonUtils.treeToValue(valueNode, Object.class));
+
+    // Adding status name-key mapping: Status -> status
+    fieldNameToKeys.put(name, JiraConstantsNG.STATUS_KEY);
   }
 
   private static Object convertToFinalValue(JiraFieldTypeNG type, JsonNode valueNode) {

@@ -32,6 +32,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.misc.TicketNG;
+import io.harness.steps.approval.ApprovalUtils;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
 import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
@@ -128,8 +129,10 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
       if (!validateIssueType(instance, jiraTaskNGResponse)) {
         return;
       }
-
       logCallback.saveExecutionLog(String.format("Issue url: %s", jiraTaskNGResponse.getIssue().getUrl()));
+
+      updateKeyListToFetchFilteredFields(jiraTaskNGResponse.getIssue(), instance);
+
     } catch (Exception ex) {
       logCallback.saveExecutionLog(
           LogHelper.color(String.format("Error fetching jira issue response: %s. Retrying in sometime...",
@@ -205,6 +208,26 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     approvalInstanceService.updateTicketFieldsInJiraApprovalInstance(
         (JiraApprovalInstance) instance, (JiraIssueNG) ticket);
   }
+
+  @Override
+  protected void updateKeyListToFetchFilteredFields(TicketNG ticket, ApprovalInstance instance) {
+    JiraApprovalInstance jiraApprovalInstance = (JiraApprovalInstance) instance;
+    if (isNull(jiraApprovalInstance.getKeyListInKeyValueCriteria())) {
+      // this block is expected to run once per Jira approval as fetchKeysForApprovalInstance returns non-null value.
+      // can run again in case of error while updating instance
+      log.info("Fetching keys list in Key Value criteria");
+      String keyListInKeyValueCriteria =
+          ApprovalUtils.fetchKeysForApprovalInstance(jiraApprovalInstance, (JiraIssueNG) ticket);
+      try {
+        approvalInstanceService.updateKeyListInKeyValueCriteria(
+            jiraApprovalInstance.getId(), keyListInKeyValueCriteria);
+      } catch (Exception ex) {
+        // ignore the exception, retry updating in next callback event
+        log.warn("Failed to update keyListInKeyValueCriteria in approval instance", ex);
+      }
+    }
+  }
+
   private void resetNextIteration(JiraApprovalInstance instance) {
     approvalInstanceService.resetNextIterations(instance.getId(), instance.recalculateNextIterations());
     irregularApprovalInstanceHandler.wakeup();

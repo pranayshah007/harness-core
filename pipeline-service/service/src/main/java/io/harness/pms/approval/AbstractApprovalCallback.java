@@ -121,4 +121,8 @@ public abstract class AbstractApprovalCallback {
   protected void updateTicketFieldsInApprovalInstance(TicketNG ticket, ApprovalInstance instance) {
     // to add implementation, override this method in approval callback
   }
+
+  protected void updateKeyListToFetchFilteredFields(TicketNG ticket, ApprovalInstance instance) {
+    // to add implementation, override this method in approval callback
+  }
 }
