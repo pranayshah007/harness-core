@@ -37,13 +37,10 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.repositories.ResourceRestraintInstanceRepository;
 import io.harness.rule.Owner;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
@@ -256,18 +253,7 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
 
     when(nodeExecutionService.getWithFieldsIncluded(any(), any()))
         .thenReturn(
-            NodeExecution.builder()
-                .ambiance(ambiance)
-                .planNode(
-                    PlanNode.builder()
-                        .uuid(generateUuid())
-                        .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-                        .name("dummy")
-                        .identifier("dummy")
-                        .build())
-                .mode(ExecutionMode.SYNC)
-                .status(Status.SUCCEEDED)
-                .build());
+            NodeExecution.builder().ambiance(ambiance).mode(ExecutionMode.SYNC).status(Status.SUCCEEDED).build());
 
     boolean isUpdated = resourceRestraintInstanceService.updateActiveConstraintsForInstance(instance);
     assertThat(isUpdated).isTrue();

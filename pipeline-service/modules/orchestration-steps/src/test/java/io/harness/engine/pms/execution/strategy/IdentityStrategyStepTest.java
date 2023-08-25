@@ -111,7 +111,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
                                    .uuid("uuid1")
                                    .ambiance(oldAmbiance)
                                    .status(Status.SUCCEEDED)
-                                   .planNode(childNode1)
+                                   .nodeId(childNode1.getUuid())
                                    .build());
     PlanNode childNode2 = PlanNode.builder()
                               .uuid("childId2")
@@ -124,14 +124,18 @@ public class IdentityStrategyStepTest extends CategoryTest {
                                    .uuid("uuid2")
                                    .ambiance(oldAmbiance)
                                    .status(Status.SUCCEEDED)
-                                   .planNode(childNode2)
+                                   .nodeId(childNode2.getUuid())
                                    .build());
     PlanNode childNode3 = PlanNode.builder().uuid("childId3").build();
-    childrenNodeExecutions.add(
-        NodeExecution.builder().uuid("uuid3").planNode(childNode3).ambiance(oldAmbiance).status(Status.FAILED).build());
+    childrenNodeExecutions.add(NodeExecution.builder()
+                                   .uuid("uuid3")
+                                   .nodeId(childNode3.getUuid())
+                                   .ambiance(oldAmbiance)
+                                   .status(Status.FAILED)
+                                   .build());
     childrenNodeExecutions.add(NodeExecution.builder()
                                    .uuid("uuid4")
-                                   .planNode(childNode3)
+                                   .nodeId(childNode3.getUuid())
                                    .ambiance(oldAmbiance)
                                    .status(Status.ABORTED)
                                    .build());

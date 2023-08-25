@@ -26,7 +26,6 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
-import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -65,7 +64,6 @@ public class FailureInterruptCallbackTest extends OrchestrationTestBase {
                            .uuid(nodeExecutionId)
                            .status(Status.FAILED)
                            .parentId(generateUuid())
-                           .planNode(PlanNode.builder().identifier(generateUuid()).build())
                            .ambiance(ambiance)
                            .version(1L)
                            .build();
@@ -115,7 +113,6 @@ public class FailureInterruptCallbackTest extends OrchestrationTestBase {
                            .uuid(nodeExecutionId)
                            .status(Status.FAILED)
                            .parentId(generateUuid())
-                           .planNode(PlanNode.builder().identifier(generateUuid()).build())
                            .ambiance(ambiance)
                            .version(1L)
                            .build();

@@ -42,6 +42,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
@@ -64,6 +65,7 @@ import org.springframework.data.domain.Sort;
 @Path("/usage")
 @Produces("application/json")
 @NextGenManagerAuth
+@Tag(name = "Usage", description = "This contains APIs related to License Usage.")
 public class SRMLicenseUsageResource {
   @Inject LicenseUsageInterface licenseUsageInterface;
 
@@ -143,7 +145,6 @@ public class SRMLicenseUsageResource {
   @POST
   @Path("/SRM/active-monitored-services")
   @ApiOperation(value = "List Active Services in SRM Module", nickname = "listSRMActiveMonitoredServices")
-  @Hidden
   @Operation(operationId = "listSRMActiveMonitoredServices",
       summary =
           "Returns a List of active monitored services along with identifier,Active Monitored Services Count and other details",

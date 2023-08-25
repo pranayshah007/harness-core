@@ -84,7 +84,6 @@ public class PMSBarrierServiceTest extends PipelineServiceTestBase {
                                   .uuid("stageNode")
                                   .status(Status.RUNNING)
                                   .parentId(generateUuid())
-                                  .planNode(planNode)
                                   .ambiance(ambiance)
                                   .version(1L)
                                   .build();

@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.util.CloseableIterator;
 
@@ -60,6 +61,7 @@ import org.springframework.data.util.CloseableIterator;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class IdentityStrategyInternalStep
     implements ChildExecutable<IdentityStepParameters>, ChildrenExecutable<IdentityStepParameters> {
   @Inject PlanService planService;
@@ -79,9 +81,9 @@ public class IdentityStrategyInternalStep
     try (CloseableIterator<NodeExecution> iterator =
              // Use original planExecutionId that belongs to the originalNodeExecutionId and not current
              // planExecutionId(ambiance.getPlanExecutionId)
-        nodeExecutionService.fetchChildrenNodeExecutionsIterator(
-            originalNodeExecution.getAmbiance().getPlanExecutionId(), identityParams.getOriginalNodeExecutionId(),
-            Direction.ASC, NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+        nodeExecutionService.fetchChildrenNodeExecutionsIterator(originalNodeExecution.getPlanExecutionId(),
+            identityParams.getOriginalNodeExecutionId(), Direction.ASC,
+            NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
       while (iterator.hasNext()) {
         NodeExecution next = iterator.next();
         if (Boolean.FALSE.equals(next.getOldRetry())) {
@@ -177,13 +179,15 @@ public class IdentityStrategyInternalStep
   private ChildExecutableResponse getChildFromNodeExecutions(
       NodeExecution childNodeExecution, NodeExecution originalNodeExecution, String planId) {
     Node node = planService.fetchNode(childNodeExecution.getNodeId());
-    if (node.getNodeType() == NodeType.PLAN_NODE) {
-      IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), node,
-          childNodeExecution.getIdentifier(), childNodeExecution.getName(), node.getStepType(),
-          childNodeExecution.getUuid());
-      planService.saveIdentityNodesForMatrix(Collections.singletonList(identityPlanNode), planId);
-      return ChildExecutableResponse.newBuilder().setChildNodeId(identityPlanNode.getUuid()).build();
-    }
-    return originalNodeExecution.getExecutableResponses().get(0).getChild();
+    /*
+    We are creating  new identityPlanNode for each such execution and setting the originalNodeExecution to the
+    corresponding nodeExecutionId from previous execution. So the correct data will be copied in all combinations in
+    matrix stages.
+     */
+    IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), node,
+        childNodeExecution.getIdentifier(), childNodeExecution.getName(), node.getStepType(),
+        childNodeExecution.getUuid());
+    planService.saveIdentityNodesForMatrix(Collections.singletonList(identityPlanNode), planId);
+    return ChildExecutableResponse.newBuilder().setChildNodeId(identityPlanNode.getUuid()).build();
   }
 }

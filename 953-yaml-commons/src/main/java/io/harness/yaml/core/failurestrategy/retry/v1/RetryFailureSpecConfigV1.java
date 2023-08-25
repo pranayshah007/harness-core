@@ -24,5 +24,5 @@ import lombok.Value;
 public class RetryFailureSpecConfigV1 {
   ParameterField<Integer> attempts;
   @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) ParameterField<List<Timeout>> intervals;
-  FailureConfigV1 post_action;
+  FailureConfigV1 on_failure;
 }

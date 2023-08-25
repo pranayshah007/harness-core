@@ -25,6 +25,15 @@ public class ScorecardRepositoryCustomImpl implements ScorecardRepositoryCustom 
   private MongoTemplate mongoTemplate;
 
   @Override
+  public ScorecardEntity saveOrUpdate(ScorecardEntity scorecardEntity) {
+    ScorecardEntity entity = findByAccountIdAndIdentifier(scorecardEntity);
+    if (entity == null) {
+      return mongoTemplate.save(scorecardEntity);
+    }
+    return update(scorecardEntity);
+  }
+
+  @Override
   public ScorecardEntity update(ScorecardEntity scorecardEntity) {
     Criteria criteria = Criteria.where(ScorecardKeys.accountIdentifier)
                             .is(scorecardEntity.getAccountIdentifier())
@@ -50,5 +59,13 @@ public class ScorecardRepositoryCustomImpl implements ScorecardRepositoryCustom 
                             .is(identifier);
     Query query = new Query(criteria);
     return mongoTemplate.remove(query, ScorecardEntity.class);
+  }
+
+  private ScorecardEntity findByAccountIdAndIdentifier(ScorecardEntity scorecardEntity) {
+    Criteria criteria = Criteria.where(ScorecardKeys.accountIdentifier)
+                            .is(scorecardEntity.getAccountIdentifier())
+                            .and(ScorecardKeys.identifier)
+                            .is(scorecardEntity.getIdentifier());
+    return mongoTemplate.findOne(Query.query(criteria), ScorecardEntity.class);
   }
 }

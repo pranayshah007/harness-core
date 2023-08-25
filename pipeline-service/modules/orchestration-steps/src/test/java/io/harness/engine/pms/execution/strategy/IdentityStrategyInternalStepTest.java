@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -98,7 +97,6 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
   public void testObtainChildren() {
     String originalNodeExecutionId = "originalNodeExecutionId";
     String ORIGINAL_PLAN_EXECUTION_ID = "originalPlanExecutionId";
-    Ambiance oldAmbiance = buildAmbiance();
     Ambiance ambiance = Ambiance.newBuilder().setPlanId("planId").setPlanExecutionId("PLAN_EXECUTION_ID").build();
 
     Ambiance.Builder builder = Ambiance.newBuilder()
@@ -119,7 +117,7 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
                                          .setStrategyMetadata(StrategyMetadata.newBuilder().build())
                                          .build())
                           .build())
-            .planNode(node1)
+            .nodeId(node1.getUuid())
             .build());
     PlanNode node2 = PlanNode.builder().uuid("planUuid2").build();
     childrenNodeExecutions.add(
@@ -131,7 +129,7 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
                                          .setStrategyMetadata(StrategyMetadata.newBuilder().build())
                                          .build())
                           .build())
-            .planNode(node2)
+            .nodeId(node2.getUuid())
             .build());
     IdentityPlanNode iNode1 = IdentityPlanNode.builder().uuid("identityUuid1").build();
     childrenNodeExecutions.add(
@@ -143,7 +141,7 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
                                          .setStrategyMetadata(StrategyMetadata.newBuilder().build())
                                          .build())
                           .build())
-            .planNode(iNode1)
+            .nodeId(iNode1.getUuid())
             .build());
     IdentityPlanNode iNode2 = IdentityPlanNode.builder().uuid("identityUuid2").build();
     childrenNodeExecutions.add(
@@ -155,7 +153,7 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
                                          .setStrategyMetadata(StrategyMetadata.newBuilder().build())
                                          .build())
                           .build())
-            .planNode(iNode2)
+            .nodeId(iNode2.getUuid())
             .build());
 
     NodeExecution strategyNodeExecution =
@@ -317,28 +315,43 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
         .getWithFieldsIncluded(originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
     IdentityPlanNode node = IdentityPlanNode.builder().uuid("identityPlanUuid").build();
-    CloseableIterator<NodeExecution> iterator = OrchestrationStepsTestHelper.createCloseableIterator(
-        Arrays
-            .asList(NodeExecution.builder().uuid("uuid1").ambiance(oldAmbiance).planNode(node).createdAt(100L).build())
-            .iterator());
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationStepsTestHelper.createCloseableIterator(Arrays
+                                                                 .asList(NodeExecution.builder()
+                                                                             .uuid("uuid1")
+                                                                             .ambiance(oldAmbiance)
+                                                                             .nodeId(node.getUuid())
+                                                                             .createdAt(100L)
+                                                                             .build())
+                                                                 .iterator());
     doReturn(iterator)
         .when(nodeExecutionService)
         .fetchChildrenNodeExecutionsIterator(ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, Direction.ASC,
             NodeProjectionUtils.fieldsForIdentityStrategyStep);
+
     doReturn(node).when(planService).fetchNode(eq("identityPlanUuid"));
     ChildExecutableResponse response = identityStrategyInternalStep.obtainChild(ambiance, stepParameters, null);
 
-    assertEquals(response, childExecutableResponse);
-    verify(planService, never()).saveIdentityNodesForMatrix(any(), any());
+    assertThat(response.getChildNodeId()).isNotNull();
+    verify(planService, times(1)).saveIdentityNodesForMatrix(any(), any());
 
     // NodeExecution with lowest createdAt should be returned as child.
     PlanNode node1 = PlanNode.builder().uuid("planUuid1").build();
     PlanNode node2 = PlanNode.builder().uuid("planUuid2").build();
-    iterator = OrchestrationStepsTestHelper.createCloseableIterator(
-        Arrays
-            .asList(NodeExecution.builder().uuid("uuid1").ambiance(oldAmbiance).createdAt(100L).planNode(node1).build(),
-                NodeExecution.builder().uuid("uuid2").ambiance(oldAmbiance).planNode(node2).createdAt(200L).build())
-            .iterator());
+    iterator = OrchestrationStepsTestHelper.createCloseableIterator(Arrays
+                                                                        .asList(NodeExecution.builder()
+                                                                                    .uuid("uuid1")
+                                                                                    .ambiance(oldAmbiance)
+                                                                                    .createdAt(100L)
+                                                                                    .nodeId(node1.getUuid())
+                                                                                    .build(),
+                                                                            NodeExecution.builder()
+                                                                                .uuid("uuid2")
+                                                                                .ambiance(oldAmbiance)
+                                                                                .nodeId(node2.getUuid())
+                                                                                .createdAt(200L)
+                                                                                .build())
+                                                                        .iterator());
     doReturn(iterator)
         .when(nodeExecutionService)
         .fetchChildrenNodeExecutionsIterator(ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, Direction.ASC,
@@ -350,7 +363,7 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
     response = identityStrategyInternalStep.obtainChild(ambiance, stepParameters, null);
     assertFalse(response.getChildNodeId().equals("planUuid1"));
 
-    verify(planService, times(1)).saveIdentityNodesForMatrix(argumentCaptor.capture(), any());
+    verify(planService, times(2)).saveIdentityNodesForMatrix(argumentCaptor.capture(), any());
     List<Node> childList = argumentCaptor.getValue();
     assertEquals(childList.size(), 1);
     IdentityPlanNode childIdentityPlanNode = (IdentityPlanNode) childList.get(0);

@@ -469,3 +469,4 @@ mongoSSL:
 
 # -- additionalConfigs Additional configurations for the deployment
 additionalConfigs: {}
+java17flags: ""

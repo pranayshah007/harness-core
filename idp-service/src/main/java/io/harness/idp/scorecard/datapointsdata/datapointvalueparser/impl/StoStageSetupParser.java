@@ -14,9 +14,15 @@ import java.util.Map;
 
 public class StoStageSetupParser implements PipelineInfo {
   private static final String STO_SCAN_STAGE_KEY_IN_YAML = "type: Security";
-  public Map<String, Object> getParsedValue(PMSPipelineResponseDTO pmsPipelineResponseDTO, String dataPointIdentifier) {
+  public Map<String, Object> getParsedValue(PMSPipelineResponseDTO ciPmsPipelineResponseDTO,
+      PMSPipelineResponseDTO cdPmsPipelineResponseDTO, String dataPointIdentifier) {
     Map<String, Object> map = new HashMap<>();
-    map.put(dataPointIdentifier, pmsPipelineResponseDTO.getYamlPipeline().contains(STO_SCAN_STAGE_KEY_IN_YAML));
+    map.put(dataPointIdentifier, false);
+    if (ciPmsPipelineResponseDTO != null && cdPmsPipelineResponseDTO != null) {
+      map.put(dataPointIdentifier,
+          ciPmsPipelineResponseDTO.getYamlPipeline().contains(STO_SCAN_STAGE_KEY_IN_YAML)
+              && cdPmsPipelineResponseDTO.getYamlPipeline().contains(STO_SCAN_STAGE_KEY_IN_YAML));
+    }
     return map;
   }
 }

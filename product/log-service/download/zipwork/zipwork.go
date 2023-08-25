@@ -65,7 +65,7 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 
 		logEntryWorker.
 			WithField("files", event.FilesInPage).
-			Infoln("Starting download for key:", event.Key)
+			Infoln("Starting download IN_PROGRESS for prefix:", event.Key)
 
 		var info entity.ResponsePrefixDownload
 		infoBytes, err := c.Get(ctx, event.Key)
@@ -82,6 +82,8 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("key", event.Key).
+				WithError(err).
 				Errorln("consumer execute: cannot unmarshal info from cache")
 			continue
 		}
@@ -91,6 +93,7 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("key", event.Key).
 				WithError(err).
 				Errorln("consumer execute: cannot create update cache info")
 			continue
@@ -98,7 +101,8 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 
 		logEntryWorker.
 			WithField("time", time.Now().Format(time.RFC3339)).
-			Infoln("message has been processed by ", wID)
+			WithField("key", event.Key).
+			Infoln("message has been processed to IN_PROGRESS by ", wID)
 
 		internal, cancel := context.WithCancel(context.Background())
 
@@ -107,6 +111,7 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 			cancel()
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("Error While downloadZipUploadRoutine for key:", event.Key).
 				Errorln(err.Error())
 
 			info.Status = entity.ERROR
@@ -116,6 +121,7 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 			if err != nil {
 				logEntryWorker.
 					WithField("time", time.Now().Format(time.RFC3339)).
+					WithField("key", event.Key).
 					WithError(err).
 					Errorln("consumer execute: cannot create update cache info")
 				continue
@@ -127,10 +133,12 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("key", event.Key).
 				WithError(err).
 				Errorln("consumer execute: cannot create update cache info")
 			continue
 		}
+		logEntryWorker.WithField("key", event.Key).Infoln("cache marked as SUCCESS")
 	}
 }
 
