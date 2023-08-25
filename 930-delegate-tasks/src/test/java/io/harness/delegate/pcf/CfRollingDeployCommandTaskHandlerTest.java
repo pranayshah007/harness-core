@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -43,6 +44,7 @@ import io.harness.logging.LogCallback;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
+import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CloudFoundryConfig;
 import io.harness.rule.Owner;
@@ -56,6 +58,7 @@ import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -617,7 +620,8 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
     File file = new File("/gs");
-    doReturn(file).when(pcfCommandTaskBaseHelper).generateWorkingDirectoryForDeployment();
+    File file1 = new File("/trailing");
+    when(pcfCommandTaskBaseHelper.generateWorkingDirectoryForDeployment()).thenReturn(file).thenReturn(file1);
 
     doReturn(executionLogCallback)
         .when(tasTaskHelperBase)
@@ -727,10 +731,18 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         TasArtifactDownloadResponse.builder().artifactFile(fileArtifact).build();
     doReturn(tasArtifactDownloadResponse).when(pcfCommandTaskHelper).downloadPackageArtifact(any(), any());
 
-    doReturn(applicationDetail).when(cfDeploymentManager).createRollingApplicationWithSteadyStateCheck(any(), any());
+    ArgumentCaptor<CfCreateApplicationRequestData> cfRequestConfigArgumentCaptor =
+        ArgumentCaptor.forClass(CfCreateApplicationRequestData.class);
+    doReturn(applicationDetail)
+        .when(cfDeploymentManager)
+        .createRollingApplicationWithSteadyStateCheck(cfRequestConfigArgumentCaptor.capture(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfRollingDeployCommandTaskHandlerNG.executeTaskInternal(
         cfRollingDeployRequestNG, logStreamingTaskClient, commandUnitsProgress);
+    CfRequestConfig cfRequestConfigCaptured = cfRequestConfigArgumentCaptor.getValue().getCfRequestConfig();
+    assertThat(cfRequestConfigCaptured.getCfHomeDirPath()).isEqualTo("/gs");
+    assertThat(cfRequestConfigCaptured.getTrailingLogsDirPath()).isEqualTo("/trailing");
+    assertThat(cfRequestConfigArgumentCaptor.getValue().getStrategy()).isNull();
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
@@ -746,8 +758,8 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
     File file = new File("/gs");
-    doReturn(file).when(pcfCommandTaskBaseHelper).generateWorkingDirectoryForDeployment();
-
+    File file1 = new File("/trailing");
+    when(pcfCommandTaskBaseHelper.generateWorkingDirectoryForDeployment()).thenReturn(file).thenReturn(file1);
     doReturn(executionLogCallback)
         .when(tasTaskHelperBase)
         .getLogCallback(logStreamingTaskClient, CfCommandUnitConstants.Deploy, true, commandUnitsProgress);
@@ -856,11 +868,17 @@ public class CfRollingDeployCommandTaskHandlerTest extends CategoryTest {
         TasArtifactDownloadResponse.builder().artifactFile(fileArtifact).build();
     doReturn(tasArtifactDownloadResponse).when(pcfCommandTaskHelper).downloadPackageArtifact(any(), any());
 
-    doReturn(applicationDetail).when(cfDeploymentManager).createRollingApplicationWithSteadyStateCheck(any(), any());
-
+    ArgumentCaptor<CfCreateApplicationRequestData> cfRequestConfigArgumentCaptor =
+        ArgumentCaptor.forClass(CfCreateApplicationRequestData.class);
+    doReturn(applicationDetail)
+        .when(cfDeploymentManager)
+        .createRollingApplicationWithSteadyStateCheck(cfRequestConfigArgumentCaptor.capture(), any());
     CfCommandResponseNG cfCommandExecutionResponse = cfRollingDeployCommandTaskHandlerNG.executeTaskInternal(
         cfRollingDeployRequestNG, logStreamingTaskClient, commandUnitsProgress);
-
+    CfRequestConfig cfRequestConfigCaptured = cfRequestConfigArgumentCaptor.getValue().getCfRequestConfig();
+    assertThat(cfRequestConfigCaptured.getCfHomeDirPath()).isEqualTo("/gs");
+    assertThat(cfRequestConfigCaptured.getTrailingLogsDirPath()).isEqualTo("/trailing");
+    assertThat(cfRequestConfigArgumentCaptor.getValue().getStrategy()).isEqualTo("rolling");
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
 
