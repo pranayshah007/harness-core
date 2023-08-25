@@ -663,6 +663,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     String stage3Fqn = "pipeline.stages.stage3";
 
     String planExecutionUuid = generateUuid();
+    String planId = generateUuid();
     String parentId = generateUuid();
     String nodeUuid = generateUuid();
     String nodeExecutionUuid = generateUuid();
@@ -681,7 +682,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         NodeExecution.builder()
             .uuid(nodeExecutionUuid)
             .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).setPlanId(planId).build())
             .status(Status.RUNNING)
             .nodeId(nodeUuid)
             .name("name")
@@ -698,7 +699,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         NodeExecution.builder()
             .uuid(nodeExecutionUuid12)
             .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).setPlanId(planId).build())
             .status(Status.RUNNING)
             .nodeId(nodeUuid)
             .name("name")
@@ -724,7 +725,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         NodeExecution.builder()
             .uuid(nodeExecutionUuid2)
             .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).setPlanId(planId).build())
             .stageFqn(stage2Fqn)
             .status(Status.RUNNING)
             .nodeId(nodeUuid2)
@@ -751,7 +752,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
         NodeExecution.builder()
             .uuid(nodeExecutionUuid3)
             .parentId(parentId)
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).build())
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionUuid).setPlanId(planId).build())
             .stageFqn(stage3Fqn)
             .status(Status.RUNNING)
             .nodeId(nodeUuid3)
@@ -770,7 +771,8 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     nodeExecutionService.save(nodeExecution2);
     nodeExecutionService.save(nodeExecution3);
 
-    when(planService.fetchAllNodes(Set.of(nodeUuid, nodeUuid2, nodeUuid3))).thenReturn(Set.of(node1, node2, node3));
+    when(planService.fetchAllNodes(planId, Set.of(nodeUuid, nodeUuid2, nodeUuid3)))
+        .thenReturn(Set.of(node1, node2, node3));
     Map<String, Node> uuidNodeMap = nodeExecutionService.mapNodeExecutionIdWithPlanNodeForGivenStageFQN(
         planExecutionUuid, Arrays.asList(stage1Fqn, stage2Fqn, stage3Fqn));
     // Total 4 nodeExecutions but only 3 will be returned. Because nodeExecution1 and nodeExecution12 correspond to same

@@ -990,7 +990,10 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     Map<String, Node> nodeExecutionIdToPlanNode = new HashMap<>();
 
     Set<String> nodeIds = nodeExecutionMap.values().stream().map(NodeExecution::getNodeId).collect(Collectors.toSet());
-    Set<Node> nodes = planService.fetchAllNodes(nodeIds);
+    // Here we have assumed that plan id of all node executions will be same as this was the assumption till now as well
+    String planId = !isEmpty(nodeExecutions) ? nodeExecutions.get(0).getPlanId() : null;
+    // TODO Remove the list query to fetch list of nodes
+    Set<Node> nodes = planService.fetchAllNodes(planId, nodeIds);
     Map<String, Node> nodeMap = nodes.stream().collect(Collectors.toMap(Node::getUuid, node -> node));
 
     nodeExecutionMap.forEach(

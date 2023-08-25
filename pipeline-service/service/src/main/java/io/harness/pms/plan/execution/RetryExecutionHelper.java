@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -430,9 +431,19 @@ public class RetryExecutionHelper {
     finalUpdatedPlanNodes.addAll(
         handleStrategyNodeForStagesBeingRetried(strategyNodes, stageFqnForStagesBeingRetried, previousExecutionId));
 
+    Map<String, Node> nodeIdToPlanNodes = new HashMap<>();
+    for (Node node : finalUpdatedPlanNodes) {
+      nodeIdToPlanNodes.put(node.getUuid(), node);
+    }
+    for (Node node : plan.getPlanNodes()) {
+      if (!nodeIdToPlanNodes.containsKey(node.getUuid())) {
+        nodeIdToPlanNodes.put(node.getUuid(), node);
+      }
+    }
+
     return Plan.builder()
         .uuid(plan.getUuid())
-        .planNodes(finalUpdatedPlanNodes)
+        .planNodes(nodeIdToPlanNodes.values())
         .startingNodeId(plan.getStartingNodeId())
         .setupAbstractions(plan.getSetupAbstractions())
         .graphLayoutInfo(plan.getGraphLayoutInfo())

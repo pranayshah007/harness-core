@@ -193,7 +193,7 @@ public class RollbackModeExecutionHelper {
         previouslyAddedNode.convertToListOfOGNodeExecIds(nodeExecution.getUuid());
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, previouslyAddedNode);
       } else {
-        Node node = planService.fetchNode(nodeExecution.getNodeId());
+        Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
         IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
             node, nodeExecution.getStepType(), nodeExecution.getUuid(), true);
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, identityPlanNode);

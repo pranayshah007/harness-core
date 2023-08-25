@@ -97,7 +97,7 @@ public class PlanServiceImplTest extends OrchestrationTestBase {
     assertThat(fetchNode.getUuid()).isEqualTo(DUMMY_NODE_1_ID);
     assertThat(fetchNode.getName()).isEqualTo("Dummy Node 1");
 
-    planService.deleteNodesForGivenIds(Set.of(DUMMY_NODE_1_ID, DUMMY_NODE_2_ID, DUMMY_NODE_3_ID));
+    planService.deleteNodesForGivenIds(plan.getUuid(), Set.of(DUMMY_NODE_1_ID, DUMMY_NODE_2_ID, DUMMY_NODE_3_ID));
     assertThatThrownBy(() -> planService.fetchNode(plan.getUuid(), DUMMY_NODE_1_ID))
         .isInstanceOf(InvalidRequestException.class);
   }
@@ -114,7 +114,8 @@ public class PlanServiceImplTest extends OrchestrationTestBase {
 
     Date ttlExpiry = Date.from(OffsetDateTime.now().plus(Duration.ofMinutes(30)).toInstant());
     planService.updateTTLForNodesForGivenPlanId(plan.getUuid(), ttlExpiry);
-    Optional<NodeEntity> optionalNodeEntity = nodeEntityRepository.findById(DUMMY_NODE_1_ID);
+    Optional<NodeEntity> optionalNodeEntity =
+        nodeEntityRepository.findByPlanIdAndNodeId(plan.getUuid(), DUMMY_NODE_1_ID);
     assertThat(optionalNodeEntity).isPresent();
     assertThat(optionalNodeEntity.get().getValidUntil()).isEqualTo(ttlExpiry);
   }

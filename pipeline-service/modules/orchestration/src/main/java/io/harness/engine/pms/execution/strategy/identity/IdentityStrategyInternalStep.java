@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.pms.execution.strategy.identity;
+
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
 import io.harness.annotations.dev.CodePulse;
@@ -22,7 +23,6 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
-import io.harness.plan.NodeType;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
@@ -153,24 +153,20 @@ public class IdentityStrategyInternalStep
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     List<Node> identityNodesToBeCreated = new ArrayList<>();
     for (NodeExecution nodeExecution : childrenNodeExecutions) {
-      if (nodeExecution.getNodeType() == NodeType.PLAN_NODE) {
-        Node originalNode = planService.fetchNode(nodeExecution.getNodeId());
-        Node node = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), originalNode,
-            nodeExecution.getIdentifier(), nodeExecution.getName(), nodeExecution.getStepType(),
-            nodeExecution.getUuid());
-        children.add(ChildrenExecutableResponse.Child.newBuilder()
-                         .setChildNodeId(node.getUuid())
-                         .setStrategyMetadata(
-                             AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata())
-                         .build());
-        identityNodesToBeCreated.add(node);
-      } else {
-        children.add(ChildrenExecutableResponse.Child.newBuilder()
-                         .setChildNodeId(nodeExecution.getNodeId())
-                         .setStrategyMetadata(
-                             AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata())
-                         .build());
-      }
+      Node originalNode = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
+      /*
+      We are creating  new identityPlanNode for each such execution and setting the originalNodeExecution to the
+      corresponding nodeExecutionId from previous execution. So the correct data will be copied in all combinations in
+      matrix stages.
+     */
+      Node node = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), originalNode,
+          nodeExecution.getIdentifier(), nodeExecution.getName(), nodeExecution.getStepType(), nodeExecution.getUuid());
+      children.add(
+          ChildrenExecutableResponse.Child.newBuilder()
+              .setChildNodeId(node.getUuid())
+              .setStrategyMetadata(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata())
+              .build());
+      identityNodesToBeCreated.add(node);
     }
     planService.saveIdentityNodesForMatrix(identityNodesToBeCreated, planId);
     return children;
@@ -178,12 +174,12 @@ public class IdentityStrategyInternalStep
 
   private ChildExecutableResponse getChildFromNodeExecutions(
       NodeExecution childNodeExecution, NodeExecution originalNodeExecution, String planId) {
-    Node node = planService.fetchNode(childNodeExecution.getNodeId());
+    Node node = planService.fetchNode(childNodeExecution.getPlanId(), childNodeExecution.getNodeId());
     /*
     We are creating  new identityPlanNode for each such execution and setting the originalNodeExecution to the
     corresponding nodeExecutionId from previous execution. So the correct data will be copied in all combinations in
     matrix stages.
-     */
+   */
     IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), node,
         childNodeExecution.getIdentifier(), childNodeExecution.getName(), node.getStepType(),
         childNodeExecution.getUuid());
