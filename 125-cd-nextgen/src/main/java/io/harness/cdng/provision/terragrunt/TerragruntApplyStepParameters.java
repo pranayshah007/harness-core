@@ -58,7 +58,9 @@ public class TerragruntApplyStepParameters extends TerragruntApplyBaseStepInfo i
   public SpecParameters getViewJsonObject() {
     TerragruntApplyStepParameters terragruntApplyStepParameters = this;
     // this TerragruntModuleConfig we are settle to null so that it will not show in the input of Apply step execution
-    terragruntApplyStepParameters.getConfiguration().getSpec().setTerragruntModuleConfig(null);
+    if (terragruntApplyStepParameters.getConfiguration().getSpec() != null) {
+      terragruntApplyStepParameters.getConfiguration().getSpec().setTerragruntModuleConfig(null);
+    }
     return terragruntApplyStepParameters;
   }
 }
