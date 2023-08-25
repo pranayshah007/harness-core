@@ -129,7 +129,8 @@ public class UpdateVersionInfoTask {
           finalBaseUrl = nextGenConfiguration.getStoClientConfig().getBaseUrl();
           break;
         default:
-          log.error("");
+          log.error("getBaseUrl() not supported for provided moduleType={}.", moduleType);
+          break;
       }
     } catch (Exception e) {
       log.error("Encountered an error while trying to construct the baseURL for module: {}. {} at {}", moduleName,
