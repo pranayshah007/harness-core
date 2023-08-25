@@ -221,8 +221,15 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
       nodeExecutionService.updateV2(
           nodeExecutionId, ops -> ops.set(NodeExecutionKeys.mode, facilitatorResponse.getExecutionMode()));
+
+      List<String> interruptNodeExecutionIds = new ArrayList<>(List.of(nodeExecutionId));
+      // Currently AbortAll/ExpireAll expires can be at stage level only except on plan. So sending stage
+      // NodeExecutionId.
+      AmbianceUtils.getStageLevelFromAmbiance(ambiance).ifPresent(
+          stageLevel -> interruptNodeExecutionIds.add(stageLevel.getRuntimeId()));
+
       ExecutionCheck check = interruptService.checkInterruptsPreInvocation(
-          ambiance.getPlanExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+          ambiance.getPlanExecutionId(), nodeExecutionId, interruptNodeExecutionIds);
       if (!check.isProceed()) {
         log.info("Not Proceeding with Execution : {}", check.getReason());
         return;
