@@ -1469,7 +1469,7 @@ paths:
       tags:
         - Account Services
       x-internal: true
-  '/v1/eula/sign':
+  /v1/eula/sign:
     post:
       summary: Sign an End User License Agreement
       operationId: sign-eula
@@ -1486,7 +1486,7 @@ paths:
       tags:
         - EULA
       x-internal: false
-  'v1/eula/validate-sign':
+  v1/eula/validate-sign:
     get:
       summary: Validate specified agreement is signed or not
       operationId: validate-eula-sign
@@ -1524,7 +1524,7 @@ paths:
         $ref: '#/components/requestBodies/CreateGitXWebhookRequest'
       x-internal: true
     get:
-      summary: 'Lists all the GitX Webhooks'
+      summary: Lists all the GitX Webhooks
       operationId: list-gitx-webhooks
       responses:
         '200':
@@ -1557,7 +1557,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     put:
-      summary: 'Updates a GitX Webhook'
+      summary: Updates a GitX Webhook
       operationId: update-gitx-webhook
       responses:
         '200':
@@ -1573,7 +1573,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
     delete:
-      summary: 'Deletes a GitX Webhook'
+      summary: Deletes a GitX Webhook
       operationId: delete-gitx-webhook
       responses:
         '200':
@@ -2675,6 +2675,35 @@ components:
           type: integer
         size:
           type: integer
+    GetGitXWebhookResposne:
+      title: GetGitXWebhookResposne
+      x-stoplight:
+        id: v56313et2fl5i
+      type: object
+      description: 'Contains information about the GitX webhooks '
+      properties:
+        webhook_identifier:
+          type: string
+        webhook_name:
+          type: string
+        connector_ref:
+          type: string
+        repo_name:
+          type: string
+        folder_paths:
+          type: array
+          items:
+            type: string
+        isEnabled:
+          type: boolean
+    ListGitXWebhookResponse:
+      title: ListGitXWebhookResponse
+      x-stoplight:
+        id: qpu4dgbo6xr0y
+      type: array
+      items:
+        $ref: '#/components/schemas/GetGitXWebhookResposne'
+      description: 'Contains information about list of GitX webhooks '
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3292,17 +3321,13 @@ components:
       content:
         application/json:
           schema:
-            properties:
-              id:
-                type: string
+            $ref: '#/components/schemas/GetGitXWebhookResposne'
     ListGitXWebhookResponse:
       description: Example response
       content:
         application/json:
           schema:
-            properties:
-              id:
-                type: string
+            $ref: '#/components/schemas/ListGitXWebhookResponse'
   requestBodies:
     ServiceRequest:
       content:
