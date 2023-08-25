@@ -136,6 +136,7 @@ public class AwsCdkRollbackStep extends AbstractContainerStepV2<StepElementParam
         .image(awsCdkConfig.getImage())
         .imagePullPolicy(awsCdkConfig.getImagePullPolicy())
         .envVariables(getEnvironmentVariables(awsCdkConfig, awsCdkRollbackStepParameters))
+        .parameters(awsCdkConfig.getParameters())
         .privileged(awsCdkConfig.getPrivileged())
         .commitId(awsCdkConfig.getCommitId())
         .build();
