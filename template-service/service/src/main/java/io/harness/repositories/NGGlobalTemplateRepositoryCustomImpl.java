@@ -15,6 +15,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -69,23 +70,21 @@ public class NGGlobalTemplateRepositoryCustomImpl implements NGGlobalTemplateRep
   @Override
   public Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndIsStableAndDeletedNot(
       String templateIdentifier, boolean notDeleted, boolean getMetadataOnly) {
-    Criteria criteria =
-        buildCriteriaForGlobalTemplateFindByIdentifierAndIsStableAndDeletedNot(templateIdentifier, notDeleted);
+    Criteria criteria = buildCriteria("", "", "", templateIdentifier, "", notDeleted);
     return getGlobalTemplateEntity(criteria, getMetadataOnly);
   }
 
   @Override
   public Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndVersionLabelAndDeletedNot(
       String templateIdentifier, String versionLabel, boolean notDeleted, boolean getMetadataOnly) {
-    Criteria criteria = buildCriteriaForGlobalTemplateFindByIdentifierAndVersionLabelAndDeletedNot(
-        templateIdentifier, versionLabel, notDeleted);
+    Criteria criteria = buildCriteria("", "", "", templateIdentifier, versionLabel, notDeleted);
     return getGlobalTemplateEntity(criteria, getMetadataOnly);
   }
 
   @Override
   public Page<GlobalTemplateEntity> findALLGlobalTemplateAndDeletedNot(
       boolean notDeleted, boolean getMetadataOnly, Pageable pageable, Criteria criteria) {
-    criteria = buildCriteriaForGlobalTemplateFindByDeletedNot(notDeleted);
+    criteria = buildCriteria("", "", "", "", "", notDeleted);
     return getAllGlobalTemplateEntity(criteria, getMetadataOnly, pageable);
   }
 
@@ -95,31 +94,32 @@ public class NGGlobalTemplateRepositoryCustomImpl implements NGGlobalTemplateRep
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
       boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
     Criteria criteria =
-        buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-            accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
+        buildCriteria(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
     return getGlobalTemplateEntity(criteria, getMetadataOnly);
   }
 
-  private Criteria
-  buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
-      boolean notDeleted) {
-    return Criteria.where(TemplateEntityKeys.deleted)
-        .is(!notDeleted)
-        .and(TemplateEntityKeys.versionLabel)
-        .is(versionLabel)
-        .and(TemplateEntityKeys.identifier)
-        .is(templateIdentifier)
-        .and(TemplateEntityKeys.projectIdentifier)
-        .is(projectIdentifier)
-        .and(TemplateEntityKeys.orgIdentifier)
-        .is(orgIdentifier)
-        .and(TemplateEntityKeys.accountId)
-        .is(accountId);
-  }
-
-  private Criteria buildCriteriaForGlobalTemplateFindByDeletedNot(boolean notDeleted) {
-    return Criteria.where(GlobalTemplateEntityKeys.deleted).is(!notDeleted);
+  private Criteria buildCriteria(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, boolean notDeleted) {
+    Criteria criteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(String.valueOf(notDeleted))) {
+      criteria.and(TemplateEntityKeys.deleted).is(!notDeleted);
+    }
+    if (EmptyPredicate.isNotEmpty(versionLabel)) {
+      criteria.and(TemplateEntityKeys.versionLabel).is(!notDeleted);
+    }
+    if (EmptyPredicate.isNotEmpty(templateIdentifier)) {
+      criteria.and(TemplateEntityKeys.identifier).is(templateIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      criteria.and(TemplateEntityKeys.projectIdentifier).is(projectIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      criteria.and(TemplateEntityKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(accountId)) {
+      criteria.and(TemplateEntityKeys.accountId).is(accountId);
+    }
+    return criteria;
   }
 
   private Optional<GlobalTemplateEntity> getGlobalTemplateEntity(Criteria criteria, boolean getMetadataOnly) {
@@ -198,15 +198,6 @@ public class NGGlobalTemplateRepositoryCustomImpl implements NGGlobalTemplateRep
     return !gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier);
   }
 
-  private Criteria buildCriteriaForGlobalTemplateFindByIdentifierAndIsStableAndDeletedNot(
-      String templateIdentifier, boolean notDeleted) {
-    return Criteria.where(GlobalTemplateEntityKeys.deleted)
-        .is(!notDeleted)
-        .and(GlobalTemplateEntityKeys.isStableTemplate)
-        .is(true)
-        .and(GlobalTemplateEntityKeys.identifier)
-        .is(templateIdentifier);
-  }
   private Criteria buildCriteria(GlobalTemplateEntity globalTemplateEntity) {
     return Criteria.where(TemplateEntityKeys.identifier)
         .is(globalTemplateEntity.getIdentifier())
@@ -226,15 +217,5 @@ public class NGGlobalTemplateRepositoryCustomImpl implements NGGlobalTemplateRep
     List<GlobalTemplateEntity> templateEntities = mongoTemplate.find(query, GlobalTemplateEntity.class);
     return PageableExecutionUtils.getPage(templateEntities, pageable,
         () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), GlobalTemplateEntity.class));
-  }
-
-  private Criteria buildCriteriaForGlobalTemplateFindByIdentifierAndVersionLabelAndDeletedNot(
-      String templateIdentifier, String versionLabel, boolean notDeleted) {
-    return Criteria.where(GlobalTemplateEntityKeys.deleted)
-        .is(!notDeleted)
-        .and(GlobalTemplateEntityKeys.versionLabel)
-        .is(versionLabel)
-        .and(GlobalTemplateEntityKeys.identifier)
-        .is(templateIdentifier);
   }
 }

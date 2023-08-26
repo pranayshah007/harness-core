@@ -156,7 +156,7 @@ public class NGGlobalTemplateServiceImpl implements NGGlobalTemplateService {
     }
   }
 
-  public List<TemplateWrapperResponseDTO> updateGlobalTemplate(String accountId, String orgId, String projectId,
+  private List<TemplateWrapperResponseDTO> updateGlobalTemplate(String accountId, String orgId, String projectId,
       String repoName, String branch, ArrayList<String> filePaths, boolean setDefaultTemplate, String comments,
       String connectorRef) {
     List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = new ArrayList<>();

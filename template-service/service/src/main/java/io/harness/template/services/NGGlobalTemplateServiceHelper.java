@@ -19,22 +19,16 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmException;
-import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
-import io.harness.gitaware.helper.GitAwareEntityHelper;
-import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.repositories.NGGlobalTemplateRepository;
-import io.harness.telemetry.TelemetryReporter;
 import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,18 +40,10 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 @OwnedBy(CDC)
 public class NGGlobalTemplateServiceHelper {
-  private final FilterService filterService;
   private final NGGlobalTemplateRepository ngGlobalTemplateRepository;
-  private GitSyncSdkService gitSyncSdkService;
-  private TemplateGitXService templateGitXService;
 
-  private final GitAwareEntityHelper gitAwareEntityHelper;
-
-  private final TelemetryReporter telemetryReporter;
-  private final ExecutorService executorService;
-
-  public static String TEMPLATE_SAVE = "template_save";
-  public static String TEMPLATE_SAVE_ACTION_TYPE = "action";
+  //  public static String TEMPLATE_SAVE = "template_save";
+  //  public static String TEMPLATE_SAVE_ACTION_TYPE = "action";
   public static String TEMPLATE_NAME = "templateName";
   public static String TEMPLATE_ID = "templateId";
   public static String ORG_ID = "orgId";
@@ -65,17 +51,8 @@ public class NGGlobalTemplateServiceHelper {
   public static String MODULE_NAME = "moduleName";
 
   @Inject
-  public NGGlobalTemplateServiceHelper(FilterService filterService, NGGlobalTemplateRepository templateRepository,
-      GitSyncSdkService gitSyncSdkService, TemplateGitXService templateGitXService,
-      GitAwareEntityHelper gitAwareEntityHelper, TelemetryReporter telemetryReporter,
-      @Named("TemplateServiceHelperExecutorService") ExecutorService executorService) {
-    this.filterService = filterService;
+  public NGGlobalTemplateServiceHelper(NGGlobalTemplateRepository templateRepository) {
     this.ngGlobalTemplateRepository = templateRepository;
-    this.gitSyncSdkService = gitSyncSdkService;
-    this.templateGitXService = templateGitXService;
-    this.gitAwareEntityHelper = gitAwareEntityHelper;
-    this.telemetryReporter = telemetryReporter;
-    this.executorService = executorService;
   }
 
   private GlobalTemplateEntity makeUpdateCall(GlobalTemplateEntity templateToUpdate,
@@ -128,6 +105,7 @@ public class NGGlobalTemplateServiceHelper {
         templateIdentifier, !deleted, getMetadataOnly);
   }
 
+  /* Commenting the method, will be adding the usage in next PR
   public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(
       String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly) {
     return ngGlobalTemplateRepository.findGlobalTemplateByIdentifierAndVersionLabelAndDeletedNot(
@@ -147,7 +125,7 @@ public class NGGlobalTemplateServiceHelper {
             accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly,
             loadFromCache, loadFromFallbackBranch);
   }
-
+*/
   public GlobalTemplateEntity makeTemplateUpdateCall(GlobalTemplateEntity templateToUpdate,
       GlobalTemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
       TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
