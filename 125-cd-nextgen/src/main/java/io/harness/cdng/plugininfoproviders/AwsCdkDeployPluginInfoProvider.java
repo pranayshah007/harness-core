@@ -7,6 +7,8 @@
 
 package io.harness.cdng.plugininfoproviders;
 
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.DEPLOY;
+import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_ACTION;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_STACK_NAMES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -67,6 +69,10 @@ public class AwsCdkDeployPluginInfoProvider extends AbstractPluginInfoProvider {
     if (isNotEmpty(stackNames)) {
       environmentVariablesMap.put(PLUGIN_AWS_CDK_STACK_NAMES, String.join(" ", stackNames));
     }
+
+    awsCdkStepHelper.addParametersToEnvValues(
+        getParameterFieldValue(awsCdkDeployStepInfo.getParameters()), environmentVariablesMap);
+    environmentVariablesMap.put(PLUGIN_AWS_CDK_ACTION, DEPLOY);
 
     return environmentVariablesMap;
   }

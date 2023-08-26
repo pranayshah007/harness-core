@@ -239,7 +239,7 @@ public class ChangeSourceServiceImpl implements ChangeSourceService {
   private void validateChangeSourcesDoesntExist(
       MonitoredServiceParams monitoredServiceParams, Set<ChangeSourceDTO> changeSourceDTOs) {
     Set<ChangeSourceDTO> changeSourceDTOS = get(monitoredServiceParams,
-        changeSourceDTOs.stream().map(changeSourceDTO -> changeSourceDTO.getIdentifier()).collect(Collectors.toList()));
+        changeSourceDTOs.stream().map(ChangeSourceDTO::getIdentifier).collect(Collectors.toList()));
 
     if (CollectionUtils.isNotEmpty(changeSourceDTOS)) {
       throw new InvalidRequestException(String.format("Multiple Change Sources exists with the same identifier %s",

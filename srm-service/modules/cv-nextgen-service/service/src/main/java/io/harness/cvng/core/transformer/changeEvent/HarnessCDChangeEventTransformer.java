@@ -7,18 +7,24 @@
 
 package io.harness.cvng.core.transformer.changeEvent;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata.HarnessCDEventMetadataBuilder;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata.VerifyStepSummary;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 
+import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class HarnessCDChangeEventTransformer
     extends ChangeEventMetaDataTransformer<DeploymentActivity, HarnessCDEventMetadata> {
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
+
   @Override
   public DeploymentActivity getEntity(ChangeEventDTO changeEventDTO) {
     HarnessCDEventMetadata metaData = (HarnessCDEventMetadata) changeEventDTO.getMetadata();
@@ -73,6 +79,10 @@ public class HarnessCDChangeEventTransformer
                   -> VerifyStepSummary.builder().name(entry.getKey()).verificationStatus(entry.getValue()).build())
               .collect(Collectors.toList());
       harnessCDEventMetadataBuilder.verifyStepSummaries(verifyStepSummaries);
+    }
+    if (isNotEmpty(activity.getAnalysisImpactExecutionIds())) {
+      harnessCDEventMetadataBuilder.analysisStepDetails(
+          srmAnalysisStepService.getSRMAnalysisStepDetails(activity.getAnalysisImpactExecutionIds()));
     }
     return harnessCDEventMetadataBuilder.build();
   }

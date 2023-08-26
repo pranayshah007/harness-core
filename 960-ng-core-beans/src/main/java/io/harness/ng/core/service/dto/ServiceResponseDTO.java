@@ -7,7 +7,13 @@
 
 package io.harness.ng.core.service.dto;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -20,6 +26,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -38,6 +46,11 @@ public class ServiceResponseDTO {
   @JsonIgnore Long version;
   String yaml;
   @Schema(hidden = true) boolean v2Service;
+  @Schema(hidden = true) EntityGitDetails entityGitDetails;
+  @Schema(hidden = true) String connectorRef;
+  @Schema(hidden = true) StoreType storeType;
+  @Schema(hidden = true) CacheResponseMetadataDTO cacheResponseMetadataDTO;
+
   @JsonIgnore
   public String getFullyQualifiedIdentifier() {
     IdentifierRef serviceIdentifierRef =

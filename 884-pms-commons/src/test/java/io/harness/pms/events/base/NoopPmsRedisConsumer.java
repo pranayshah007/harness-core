@@ -7,14 +7,27 @@
 
 package io.harness.pms.events.base;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.NoOpCache;
 import io.harness.eventsframework.api.Consumer;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @OwnedBy(HarnessTeam.PIPELINE)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class NoopPmsRedisConsumer extends PmsAbstractRedisConsumer<NoopPmsMessageListener> {
   public NoopPmsRedisConsumer(Consumer redisConsumer, NoopPmsMessageListener messageListener) {
-    super(redisConsumer, messageListener, new NoOpCache<>(), new NoopQueueController());
+    super(redisConsumer, messageListener, new NoOpCache<>(), new NoopQueueController(),
+        Executors.newSingleThreadExecutor());
+  }
+
+  public NoopPmsRedisConsumer(
+      Consumer redisConsumer, NoopPmsMessageListener messageListener, ExecutorService executorService) {
+    super(redisConsumer, messageListener, new NoOpCache<>(), new NoopQueueController(), executorService);
   }
 }

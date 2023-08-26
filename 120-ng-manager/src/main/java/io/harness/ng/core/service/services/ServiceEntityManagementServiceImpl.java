@@ -15,8 +15,11 @@ import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.dtos.InstanceDTO;
 import io.harness.eraro.ErrorMessageConstants;
@@ -33,7 +36,8 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j

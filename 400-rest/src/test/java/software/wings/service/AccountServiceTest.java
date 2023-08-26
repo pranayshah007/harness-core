@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.JOHANNES;
@@ -1845,5 +1846,59 @@ public class AccountServiceTest extends WingsBaseTest {
 
     accountService.setPublicAccessEnabled(account.getUuid(), false);
     assertFalse(accountService.getPublicAccessEnabled(account.getUuid()));
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDisableCrossGenAccessWhenFFenabled() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("fernando@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .withIsCrossGenerationAccessEnabled(Boolean.TRUE)
+                          .build();
+    wingsPersistence.save(account);
+
+    when(featureFlagService.isEnabled(eq(FeatureName.CDS_DISABLE_FIRST_GEN_CD), any())).thenReturn(true);
+
+    assertThat(accountService.get(account.getUuid()).isCrossGenerationAccessEnabled()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDontChangeCrossGenAccessWhenFFdisabledAndPropTrue() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("fernando@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .withIsCrossGenerationAccessEnabled(Boolean.TRUE)
+                          .build();
+    wingsPersistence.save(account);
+
+    when(featureFlagService.isEnabled(eq(FeatureName.CDS_DISABLE_FIRST_GEN_CD), any())).thenReturn(false);
+
+    assertThat(accountService.get(account.getUuid()).isCrossGenerationAccessEnabled()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDontChangeCrossGenAccessWhenFFdisabledAndPropFalse() {
+    Account account = anAccount()
+                          .withCompanyName("Harness")
+                          .withAccountName("Harness")
+                          .withWhitelistedDomains(Collections.singleton("fernando@harness.io"))
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .withIsCrossGenerationAccessEnabled(Boolean.FALSE)
+                          .build();
+    wingsPersistence.save(account);
+
+    when(featureFlagService.isEnabled(eq(FeatureName.CDS_DISABLE_FIRST_GEN_CD), any())).thenReturn(false);
+
+    assertThat(accountService.get(account.getUuid()).isCrossGenerationAccessEnabled()).isFalse();
   }
 }

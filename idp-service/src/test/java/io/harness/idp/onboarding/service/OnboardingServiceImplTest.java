@@ -7,7 +7,7 @@
 
 package io.harness.idp.onboarding.service;
 
-import static io.harness.idp.onboarding.utils.Constants.SERVICE;
+import static io.harness.idp.backstagebeans.Constants.SERVICE;
 import static io.harness.rule.OwnerRule.SATHISH;
 
 import static junit.framework.TestCase.assertEquals;
@@ -30,6 +30,10 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.idp.backstagebeans.BackstageCatalogComponentEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogDomainEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogSystemEntity;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.events.producers.IdpEntityCrudStreamProducer;
@@ -38,10 +42,6 @@ import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.onboarding.beans.AsyncCatalogImportDetails;
-import io.harness.idp.onboarding.beans.BackstageCatalogComponentEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogDomainEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogSystemEntity;
 import io.harness.idp.onboarding.client.FakeOrganizationClient;
 import io.harness.idp.onboarding.client.FakeProjectClient;
 import io.harness.idp.onboarding.client.FakeServiceResourceClient;

@@ -11,5 +11,6 @@ import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import java.util.Map;
 
 public interface PipelineInfo {
-  Map<String, Object> getParsedValue(PMSPipelineResponseDTO pmsPipelineResponseDTO, String dataPointIdentifier);
+  Map<String, Object> getParsedValue(PMSPipelineResponseDTO ciPmsPipelineResponseDTO,
+      PMSPipelineResponseDTO cdPmsPipelineResponseDTO, String dataPointIdentifier);
 }

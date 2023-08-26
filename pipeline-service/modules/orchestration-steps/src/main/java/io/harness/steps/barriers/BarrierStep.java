@@ -10,7 +10,6 @@ package io.harness.steps.barriers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -20,6 +19,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierOutcome;
@@ -42,13 +42,13 @@ public class BarrierStep extends PipelineAsyncExecutable {
   @Inject private BarrierService barrierService;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, StepInputPackage inputPackage) {
     BarrierSpecParameters barrierSpecParameters = (BarrierSpecParameters) stepElementParameters.getSpec();
     BarrierExecutionInstance barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(
         barrierSpecParameters.getBarrierRef(), ambiance.getPlanExecutionId());
@@ -62,7 +62,7 @@ public class BarrierStep extends PipelineAsyncExecutable {
 
   @Override
   public StepResponse handleAsyncResponseInternal(
-      Ambiance ambiance, StepElementParameters stepElementParameters, Map<String, ResponseData> responseDataMap) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, Map<String, ResponseData> responseDataMap) {
     BarrierSpecParameters barrierSpecParameters = (BarrierSpecParameters) stepElementParameters.getSpec();
 
     // if barrier is still in STANDING => update barrier state
@@ -93,7 +93,7 @@ public class BarrierStep extends PipelineAsyncExecutable {
 
   @Override
   public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepElementParameters, AsyncExecutableResponse executableResponse) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, AsyncExecutableResponse executableResponse) {
     BarrierSpecParameters barrierSpecParameters = (BarrierSpecParameters) stepElementParameters.getSpec();
 
     updateBarrierExecutionInstance(barrierSpecParameters.getBarrierRef(), ambiance.getPlanExecutionId());

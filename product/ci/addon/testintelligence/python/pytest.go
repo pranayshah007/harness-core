@@ -22,6 +22,7 @@ import (
 
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
+	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/ti-client/types"
 	"go.uber.org/zap"
 )
@@ -53,7 +54,10 @@ func (b *pytestRunner) AutoDetectPackages() ([]string, error) {
 }
 
 func (b *pytestRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
-	return GetPythonTests(testGlobs)
+	if len(testGlobs) == 0 {
+		testGlobs = utils.PYTHON_TEST_PATTERN
+	}
+	return utils.GetTestsFromLocal(testGlobs, "py", utils.LangType_PYTHON)
 }
 
 func (b *pytestRunner) ReadPackages(files []types.File) []types.File {

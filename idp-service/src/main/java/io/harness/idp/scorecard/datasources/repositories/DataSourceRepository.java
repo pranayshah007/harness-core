@@ -20,5 +20,4 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(HarnessTeam.IDP)
 public interface DataSourceRepository extends CrudRepository<DataSourceEntity, String>, DataSourceRepositoryCustom {
   List<DataSourceEntity> findAllByAccountIdentifierIn(Set<String> accountIdentifiers);
-  List<DataSourceEntity> findAllByAccountIdentifier(String accountIdentifier);
 }

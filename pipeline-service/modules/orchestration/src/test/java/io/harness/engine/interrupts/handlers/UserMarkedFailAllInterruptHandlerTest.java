@@ -230,7 +230,6 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
         NodeExecution.builder()
             .uuid(nodeExecution1Id)
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1)).build())
-            .planNode(planNode1)
             .status(RUNNING)
             .build();
     List<NodeExecution> nodeExecutionList1 = asList(nodeExecution1);

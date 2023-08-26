@@ -36,6 +36,7 @@ public class CfRequestConfig {
   private String cfCliPath;
   private CfCliVersion cfCliVersion;
   private String cfHomeDirPath;
+  private String trailingLogsDirPath;
   private boolean loggedin;
   private boolean limitPcfThreads;
   private boolean useNumbering;

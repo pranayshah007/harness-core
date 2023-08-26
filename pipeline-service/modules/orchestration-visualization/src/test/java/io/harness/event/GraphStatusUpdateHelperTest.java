@@ -124,19 +124,12 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
     planExecutionService.save(planExecution);
 
     // creating NodeExecution
-    NodeExecution dummyStart =
-        NodeExecution.builder()
-            .uuid(generateUuid())
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecution.getUuid()).build())
-            .mode(ExecutionMode.SYNC)
-            .planNode(PlanNode.builder()
-                          .uuid(generateUuid())
-                          .name("name")
-                          .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-                          .identifier("identifier1")
-                          .build())
-            .status(Status.QUEUED)
-            .build();
+    NodeExecution dummyStart = NodeExecution.builder()
+                                   .uuid(generateUuid())
+                                   .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecution.getUuid()).build())
+                                   .mode(ExecutionMode.SYNC)
+                                   .status(Status.QUEUED)
+                                   .build();
     nodeExecutionService.save(dummyStart);
 
     // creating cached graph

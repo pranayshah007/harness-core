@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.serviceoverride.mapper;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
@@ -36,7 +37,8 @@ import java.io.IOException;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class ServiceOverridesMapper {

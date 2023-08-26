@@ -23,7 +23,7 @@ public class InitiateNodeEventRedisConsumerTest {
   @Category(UnitTests.class)
   public void testInitiateNodeEventRedisConsumer() {
     InitiateNodeEventRedisConsumer initiateNodeEventRedisConsumer =
-        new InitiateNodeEventRedisConsumer(null, null, null, null);
+        new InitiateNodeEventRedisConsumer(null, null, null, null, null);
     assertThat(initiateNodeEventRedisConsumer).isNotEqualTo(null);
   }
 }

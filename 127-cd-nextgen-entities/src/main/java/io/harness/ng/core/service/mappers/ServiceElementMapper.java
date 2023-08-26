@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.service.mappers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
@@ -25,7 +26,8 @@ import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 
 import lombok.experimental.UtilityClass;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class ServiceElementMapper {

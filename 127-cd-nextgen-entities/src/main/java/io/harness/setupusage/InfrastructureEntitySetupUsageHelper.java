@@ -12,8 +12,11 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.setupusage.InfraDefinitionRefProtoDTOHelper.createInfraDefinitionReferenceProtoDTO;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.InfraDefReference;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
@@ -43,7 +46,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j

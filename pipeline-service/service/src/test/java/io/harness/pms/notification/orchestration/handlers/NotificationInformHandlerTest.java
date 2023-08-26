@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.notification.PipelineEventType;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.notification.NotificationHelper;
 import io.harness.rule.Owner;
 
@@ -58,7 +59,7 @@ public class NotificationInformHandlerTest extends CategoryTest {
     notificationInformHandler.onPause(ambiance);
     verify(notificationHelper, times(3)).sendNotification(any(), argumentCaptor.capture(), any(), any());
     assertEquals(argumentCaptor.getValue(), PipelineEventType.PIPELINE_PAUSED);
-    notificationInformHandler.onEnd(ambiance);
+    notificationInformHandler.onEnd(ambiance, Status.FAILED);
     verify(notificationHelper, times(4)).sendNotification(any(), argumentCaptor.capture(), any(), any());
     assertEquals(argumentCaptor.getValue(), PipelineEventType.PIPELINE_END);
   }

@@ -25,10 +25,13 @@ import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
 import io.harness.cvng.activity.entities.ActivityBucket;
 import io.harness.cvng.activity.entities.ActivityBucket.ActivityBucketKeys;
+import io.harness.cvng.activity.entities.DeploymentActivity;
+import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService.ServiceEnvironmentKeys;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
@@ -174,7 +177,10 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       return true;
     }
     if (changeEventDTO.getMetadata().getType().isInternal()) {
-      activityService.upsert(transformer.getEntity(changeEventDTO));
+      String activityId = activityService.upsert(transformer.getEntity(changeEventDTO));
+      if (changeEventDTO.getMetadata().getType().equals(ChangeSourceType.HARNESS_CD)) {
+        mapSRMAnalysisExecutionsToDeploymentActivities(activityId);
+      }
       return true;
     }
     Optional<ChangeSource> changeSourceOptional =
@@ -405,6 +411,39 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     }
     return getChangeSummary(projectParams, monitoredServiceIdentifiers, changeCategories, changeSourceTypes, startTime,
         endTime, isMonitoredServiceIdentifierScoped);
+  }
+
+  @Override
+  public void mapSRMAnalysisExecutionsToDeploymentActivities(SRMAnalysisStepExecutionDetail stepExecutionDetail) {
+    List<DeploymentActivity> deploymentActivities =
+        hPersistence.createQuery(DeploymentActivity.class)
+            .filter(DeploymentActivityKeys.planExecutionId, stepExecutionDetail.getPlanExecutionId())
+            .filter(DeploymentActivityKeys.stageId, stepExecutionDetail.getStageId())
+            .filter(ActivityKeys.type, ActivityType.DEPLOYMENT)
+            .asList();
+    if (isNotEmpty(deploymentActivities)) {
+      deploymentActivities.forEach(activity -> {
+        List<String> analysisImpactExecutionIds = activity.getAnalysisImpactExecutionIds();
+        analysisImpactExecutionIds.add(stepExecutionDetail.getUuid());
+        activity.setAnalysisImpactExecutionIds(analysisImpactExecutionIds);
+        hPersistence.save(activity);
+      });
+    }
+  }
+
+  private void mapSRMAnalysisExecutionsToDeploymentActivities(String activityId) {
+    DeploymentActivity deploymentActivity = hPersistence.get(DeploymentActivity.class, activityId);
+    if (deploymentActivity != null) {
+      List<SRMAnalysisStepDetailDTO> analysisStepDetails =
+          srmAnalysisStepService.getSRMAnalysisSummaries(deploymentActivity.getMonitoredServiceIdentifier(),
+              deploymentActivity.getPlanExecutionId(), deploymentActivity.getStageId());
+      List<String> analysisImpactExecutionIds = deploymentActivity.getAnalysisImpactExecutionIds();
+      analysisImpactExecutionIds.addAll(analysisStepDetails.stream()
+                                            .map(SRMAnalysisStepDetailDTO::getExecutionDetailIdentifier)
+                                            .collect(Collectors.toList()));
+      deploymentActivity.setAnalysisImpactExecutionIds(analysisImpactExecutionIds);
+      hPersistence.save(deploymentActivity);
+    }
   }
 
   private ChangeSummaryDTO getChangeSummary(ProjectParams projectParams, List<String> monitoredServiceIdentifiers,

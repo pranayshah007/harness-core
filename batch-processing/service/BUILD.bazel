@@ -41,6 +41,7 @@ shared_dependencies = [
     "@maven//:io_opencensus_opencensus_exporter_stats_stackdriver",
     "@maven//:io_vavr_vavr",
     "@maven//:javax_ws_rs_javax_ws_rs_api",
+    "@maven//:net_jodah_failsafe",
     "@maven//:org_apache_avro_avro",
     "@maven//:org_apache_commons_commons_email",
     "@maven//:org_apache_commons_commons_math3",

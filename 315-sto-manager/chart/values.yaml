@@ -20,7 +20,7 @@ global:
     virtualService:
       hosts:
       - ''
-      gateways: {}
+      gateways: []
   ingress:
     enabled: false
     objects:
@@ -94,7 +94,7 @@ image:
   repository: harness/stomanager-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "79900-000"
+  tag: "80101-000"
   digest: ""
   imagePullSecrets: []
 waitForInitContainer:
@@ -118,7 +118,7 @@ addOnImage:
     registry: docker.io
     repository: harness/ci-addon
     pullPolicy: IfNotPresent
-    tag: "1.16.19"
+    tag: "1.16.22"
     digest: ""
     imagePullSecrets: []
 leImage:
@@ -126,7 +126,7 @@ leImage:
     registry: docker.io
     repository: harness/ci-lite-engine
     pullPolicy: IfNotPresent
-    tag: "1.16.19"
+    tag: "1.16.22"
     digest: ""
     imagePullSecrets: []
 s3UploadImage:
@@ -134,7 +134,7 @@ s3UploadImage:
     registry: docker.io
     repository: plugins/s3
     pullPolicy: IfNotPresent
-    tag: "1.2.3"
+    tag: "1.2.4"
     digest: ""  
     imagePullSecrets: []
 mongoSecrets:

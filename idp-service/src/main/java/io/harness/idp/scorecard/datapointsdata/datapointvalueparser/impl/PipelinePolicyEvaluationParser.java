@@ -6,6 +6,7 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl;
 
+import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineExecutionInfo;
 
 import com.google.gson.Gson;
@@ -15,23 +16,33 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class PipelinePolicyEvaluationParser implements PipelineExecutionInfo {
-  private static final String CONTENT_KEY = "content";
-
   @Override
-  public Map<String, Object> getParsedValue(Object response, String dataPointIdentifier) {
-    String jsonInString = new Gson().toJson(response);
-    JSONObject listOfPipelineExecutions = new JSONObject(jsonInString);
-    JSONArray jsonArray = listOfPipelineExecutions.getJSONArray(CONTENT_KEY);
+  public Map<String, Object> getParsedValue(Object responseCI, Object responseCD, String dataPointIdentifier) {
+    boolean policyEvaluationCI = false;
+    boolean policyEvaluationCD = false;
     Map<String, Object> returnData = new HashMap<>();
 
-    if (jsonArray.length() > 0) {
-      JSONObject latestPipelineExecution = jsonArray.getJSONObject(0);
-      JSONObject governanceMetadata = (JSONObject) latestPipelineExecution.get("governanceMetadata");
-      returnData.put(dataPointIdentifier, governanceMetadata.get("status").equals("pass"));
-    } else {
-      // no executions hence marking check as false
-      returnData.put(dataPointIdentifier, false);
+    if (responseCI != null) {
+      policyEvaluationCI = isPolicyEvaluationSuccessfulForLatestPipelineExecution(responseCI);
     }
+
+    if (responseCD != null) {
+      policyEvaluationCD = isPolicyEvaluationSuccessfulForLatestPipelineExecution(responseCD);
+    }
+
+    returnData.put(dataPointIdentifier, policyEvaluationCI && policyEvaluationCD);
     return returnData;
+  }
+
+  private boolean isPolicyEvaluationSuccessfulForLatestPipelineExecution(Object response) {
+    String jsonInString = new Gson().toJson(response);
+    JSONObject listOfPipelineExecutions = new JSONObject(jsonInString);
+    JSONArray pipelineExecutions = listOfPipelineExecutions.getJSONArray(ValueParserConstants.CONTENT_KEY);
+    if (pipelineExecutions.length() > 0) {
+      JSONObject latestPipelineExecution = pipelineExecutions.getJSONObject(0);
+      JSONObject governanceMetadata = (JSONObject) latestPipelineExecution.get("governanceMetadata");
+      return governanceMetadata.get("status").equals("pass");
+    }
+    return false;
   }
 }

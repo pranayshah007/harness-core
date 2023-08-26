@@ -189,3 +189,108 @@ pipeline:
                   spec:
                     timeout: 120000
                     skipDryRun: false
+    - stage:
+        identifier: stage4
+        name: stage4
+        type: Deployment
+        spec:
+          services:
+            useFromStage :
+              stage: stage3
+          environment:
+            useFromStage:
+              stage: stage1
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+    - stage:
+        identifier: stage5
+        name: stage5
+        type: Deployment
+        spec:
+          services:
+            useFromStage :
+              stage: stage2
+          environment:
+            useFromStage:
+              stage: stage1
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+    - stage:
+        identifier: stage6
+        name: stage6
+        type: Deployment
+        spec:
+          services:
+            useFromStage :
+              stage: stage5
+          environment:
+            useFromStage:
+              stage: stage1
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+    - stage:
+        identifier: stage7
+        name: stage7
+        type: Deployment
+        spec:
+          services:
+            values:
+              - serviceRef: service1
+              - serviceRef: service2
+            metadata:
+              parallel: false
+          environment:
+            useFromStage:
+              stage: stage1
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+    - stage:
+        identifier: stage8
+        name: stage8
+        type: Deployment
+        spec:
+          services:
+            useFromStage :
+              stage: stage7
+            metadata:
+              parallel: true
+          environment:
+            useFromStage:
+              stage: stage1
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
