@@ -577,6 +577,7 @@ public class RetryExecutionHelper {
         .startTs(entity.getStartTs())
         .status(entity.getStatus())
         .endTs(entity.getEndTs())
+        .runSequence(entity.getRunSequence())
         .build();
   }
 }

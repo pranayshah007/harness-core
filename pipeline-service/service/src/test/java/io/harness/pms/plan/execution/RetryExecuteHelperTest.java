@@ -1039,12 +1039,14 @@ public class RetryExecuteHelperTest extends CategoryTest {
                                                          .startTs(10L)
                                                          .endTs(11L)
                                                          .status(ExecutionStatus.FAILED)
+                                                         .runSequence(1)
                                                          .build(),
         PipelineExecutionSummaryEntity.builder()
             .planExecutionId("uuid2")
             .startTs(20L)
             .endTs(21L)
             .status(ExecutionStatus.FAILED)
+            .runSequence(2)
             .build(),
         PipelineExecutionSummaryEntity.builder()
             .planExecutionId("uuid3")
@@ -1062,6 +1064,9 @@ public class RetryExecuteHelperTest extends CategoryTest {
     assertThat(retryHistory.getErrorMessage()).isNull();
     assertThat(retryHistory.getLatestExecutionId()).isEqualTo("uuid1");
     assertThat(retryHistory.getExecutionInfos().size()).isEqualTo(3);
+    assertThat(retryHistory.getExecutionInfos().get(0).getRunSequence()).isEqualTo(1);
+    assertThat(retryHistory.getExecutionInfos().get(1).getRunSequence()).isEqualTo(2);
+    assertThat(retryHistory.getExecutionInfos().get(2).getRunSequence()).isEqualTo(0);
   }
 
   @Test
