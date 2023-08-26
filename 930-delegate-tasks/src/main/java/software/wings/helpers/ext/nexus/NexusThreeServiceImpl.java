@@ -77,6 +77,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Slf4j
 public class NexusThreeServiceImpl {
   private static final int MAX_PAGES = 10;
+
+  private static final int MAX_PACKAGE_VERSIONS = 10;
   private static final List<String> IGNORE_EXTENSIONS = Lists.newArrayList("pom", "sha1", "sha256", "sha512", "md5");
   private static final int HTTP_CLIENT_TIMOUT_SECONDS = 600;
 
@@ -295,7 +297,9 @@ public class NexusThreeServiceImpl {
     Response<Nexus3ComponentResponse> response;
     boolean hasMoreResults = true;
     String continuationToken = null;
-    while (hasMoreResults) {
+    int page = 0;
+    while (hasMoreResults && page < MAX_PACKAGE_VERSIONS) {
+      page++;
       hasMoreResults = false;
       if (nexusConfig.isHasCredentials()) {
         response =
