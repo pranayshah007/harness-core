@@ -117,6 +117,8 @@ public class NGGlobalTemplateServiceHelper {
     return ngGlobalTemplateRepository.findALLGlobalTemplateAndDeletedNot(!deleted, getMetadataOnly, pageable, criteria);
   }
 
+   */
+
   public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
       boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
@@ -125,7 +127,7 @@ public class NGGlobalTemplateServiceHelper {
             accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly,
             loadFromCache, loadFromFallbackBranch);
   }
-*/
+
   public GlobalTemplateEntity makeTemplateUpdateCall(GlobalTemplateEntity templateToUpdate,
       GlobalTemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
       TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
