@@ -1103,13 +1103,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "loadBalancer",
-            "prodListener",
-            "prodListenerRuleArn",
-            "stageListener",
-            "stageListenerRuleArn"
-          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -1126,8 +1119,17 @@
                 }
               ]
             },
+            "instances": {
+              "$ref": "#/definitions/ElastigroupInstances"
+            },
             "loadBalancer": {
               "type": "string"
+            },
+            "loadBalancers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LoadBalancer"
+              }
             },
             "prodListener": {
               "type": "string"
@@ -1333,6 +1335,12 @@
             "region"
           ],
           "properties": {
+            "asgName": {
+              "type": "string"
+            },
+            "baseAsgName": {
+              "type": "string"
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -1377,9 +1385,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "useAlreadyRunningInstances"
-          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -1409,6 +1414,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "instances": {
+              "$ref": "#/definitions/ElastigroupInstances"
             },
             "minimumHealthyPercentage": {
               "oneOf": [
@@ -1527,7 +1535,11 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {
+            "userData": {
+              "$ref": "#/definitions/UserDataConfiguration"
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1558,6 +1570,41 @@
             },
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AwsAsgLoadBalancerConfigYaml": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/LoadBalancerSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "loadBalancer",
+            "prodListener",
+            "prodListenerRuleArn",
+            "stageListener",
+            "stageListenerRuleArn"
+          ],
+          "properties": {
+            "loadBalancer": {
+              "type": "string"
+            },
+            "prodListener": {
+              "type": "string"
+            },
+            "prodListenerRuleArn": {
+              "type": "string"
+            },
+            "stageListener": {
+              "type": "string"
+            },
+            "stageListenerRuleArn": {
+              "type": "string"
             }
           }
         }
@@ -11635,12 +11682,29 @@
         "type": {
           "type": "string",
           "enum": [
-            "AWSLoadBalancerConfig"
+            "AWSLoadBalancerConfig",
+            "AWSAsgLoadBalancerConfig"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AWSAsgLoadBalancerConfig"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AwsAsgLoadBalancerConfigYaml"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -11666,7 +11730,8 @@
         "type": {
           "type": "string",
           "enum": [
-            "AWSLoadBalancerConfig"
+            "AWSLoadBalancerConfig",
+            "AWSAsgLoadBalancerConfig"
           ]
         }
       },
@@ -23999,6 +24064,21 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "UserDataConfiguration": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ValuesManifest": {

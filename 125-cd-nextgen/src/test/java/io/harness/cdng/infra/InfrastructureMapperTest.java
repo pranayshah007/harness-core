@@ -497,9 +497,13 @@ public class InfrastructureMapperTest extends CategoryTest {
   @Owner(developers = LOVISH_BANSAL)
   @Category(UnitTests.class)
   public void testAsgInfraMapper() {
+    final String baseAsg = "baseAsg";
+    final String asg = "asg";
     AsgInfrastructure asgInfrastructure = AsgInfrastructure.builder()
                                               .connectorRef(ParameterField.createValueField("connectorId"))
                                               .region(ParameterField.createValueField("region"))
+                                              .baseAsgName(ParameterField.createValueField(baseAsg))
+                                              .asgName(ParameterField.createValueField(asg))
                                               .build();
 
     AsgInfrastructureOutcome expectedOutcome = AsgInfrastructureOutcome.builder()
@@ -507,6 +511,8 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                    .region("region")
                                                    .environment(environment)
                                                    .infrastructureKey("f9497b14ff1b27911470c2fe1683bd66358ebd4f")
+                                                   .baseAsgName(baseAsg)
+                                                   .asgName(asg)
                                                    .build();
 
     expectedOutcome.setConnector(Connector.builder().name("my_connector").build());

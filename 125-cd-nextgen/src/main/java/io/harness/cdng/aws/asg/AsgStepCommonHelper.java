@@ -264,7 +264,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
     return resultMap;
   }
 
-  private ManifestOutcome convertUserDataOutcomeToManifestOutcome(UserDataOutcome userDataOutcome) {
+  ManifestOutcome convertUserDataOutcomeToManifestOutcome(UserDataOutcome userDataOutcome) {
     return new ManifestOutcome() {
       @Override
       public String getIdentifier() {
