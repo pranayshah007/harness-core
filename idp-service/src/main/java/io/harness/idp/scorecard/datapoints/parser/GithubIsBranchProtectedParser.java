@@ -19,19 +19,11 @@ import java.util.Set;
 public class GithubIsBranchProtectedParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
-    Map<?, ?> result = (Map<?, ?>) data.get(dataPoint.getIdentifier());
-    Map<String, Boolean> dataPointData = new HashMap<>();
-
-    for (String inputValue : inputValues) {
-      if (result.containsKey(inputValue)) {
-        dataPointData.put(inputValue, (boolean) result.get(inputValue));
-      }
-    }
-    return dataPointData;
+    return new HashMap<>();
   }
 
   @Override
   public String getReplaceKey() {
-    return "{branch}";
+    return "";
   }
 }

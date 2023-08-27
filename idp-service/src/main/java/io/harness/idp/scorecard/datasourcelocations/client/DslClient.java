@@ -9,12 +9,11 @@ package io.harness.idp.scorecard.datasourcelocations.client;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.http.HttpHeaderConfig;
 
-import java.util.List;
+import java.util.Map;
 import javax.ws.rs.core.Response;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface DslClient {
-  Response call(String accountIdentifier, String url, List<HttpHeaderConfig> headerList, String body, String method);
+  Response call(String accountIdentifier, String url, String method, Map<String, String> headers, String body);
 }

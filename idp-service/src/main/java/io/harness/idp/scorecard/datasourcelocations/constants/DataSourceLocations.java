@@ -15,6 +15,11 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class DataSourceLocations {
-  public static final String GITHUB_PR = "github_pr";
-  public static final String GITHUB_BASE = "github_base";
+  // Github
+  public static final String GITHUB_MEAN_TIME_TO_MERGE_PR = "github_mean_time_to_merge_pr";
+  public static final String GITHUB_IS_BRANCH_PROTECTION_SET = "github_is_branch_protection_set";
+  public static final String GITHUB_GIT_LEAKS_FILE_EXISTS = "github_git_leaks_file_exists";
+
+  // Catalog
+  public static final String CATALOG = "catalog";
 }
