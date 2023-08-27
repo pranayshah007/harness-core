@@ -20,7 +20,7 @@ import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;

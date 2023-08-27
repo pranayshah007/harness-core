@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng;
+
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -93,16 +94,17 @@ import io.harness.manifest.CustomSourceFile;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -167,7 +169,7 @@ public class K8sHelmCommonStepHelper {
   }
 
   protected TaskChainResponse prepareGitFetchValuesTaskChainResponse(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ValuesManifestOutcome valuesManifestOutcome,
+      StepBaseParameters stepElementParameters, ValuesManifestOutcome valuesManifestOutcome,
       List<ValuesManifestOutcome> aggregatedValuesManifests, K8sStepPassThroughData k8sStepPassThroughData,
       StoreConfig storeConfig) {
     LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifests);
@@ -209,7 +211,7 @@ public class K8sHelmCommonStepHelper {
   }
 
   protected TaskChainResponse prepareCustomFetchManifestAndValuesTaskChainResponse(StoreConfig storeConfig,
-      Ambiance ambiance, StepElementParameters stepElementParameters, List<ManifestOutcome> paramsOrValuesManifests,
+      Ambiance ambiance, StepBaseParameters stepElementParameters, List<ManifestOutcome> paramsOrValuesManifests,
       K8sStepPassThroughData k8sStepPassThroughData) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ManifestOutcome manifestOutcome = k8sStepPassThroughData.getManifestOutcome();
@@ -332,7 +334,7 @@ public class K8sHelmCommonStepHelper {
   }
 
   protected TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,
-      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepElementParameters stepElementParameters,
+      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepBaseParameters stepElementParameters,
       K8sStepPassThroughData k8sStepPassThroughData) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     GitFetchRequest gitFetchRequest = GitFetchRequest.builder()
@@ -380,7 +382,7 @@ public class K8sHelmCommonStepHelper {
                 format("Values YAML with Id [%s]", valuesManifestOutcome.getIdentifier()), valuesManifestOutcome))
         .collect(Collectors.toList());
   }
-  public TaskChainResponse executeValuesFetchTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public TaskChainResponse executeValuesFetchTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
       List<ValuesManifestOutcome> aggregatedValuesManifests,
       Map<String, HelmFetchFileResult> helmChartValuesFileContentMap, K8sStepPassThroughData k8sStepPassThroughData) {
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
@@ -396,7 +398,7 @@ public class K8sHelmCommonStepHelper {
   }
 
   protected TaskChainResponse prepareHelmFetchValuesTaskChainResponse(Ambiance ambiance,
-      StepElementParameters stepElementParameters, List<ValuesManifestOutcome> aggregatedValuesManifests,
+      StepBaseParameters stepElementParameters, List<ValuesManifestOutcome> aggregatedValuesManifests,
       K8sStepPassThroughData k8sStepPassThroughData) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     HelmChartManifestOutcome helmChartManifestOutcome =
@@ -686,6 +688,16 @@ public class K8sHelmCommonStepHelper {
         .collect(Collectors.toList());
   }
 
+  public String renderValue(Ambiance ambiance, String value, boolean skipUnresolvedExpression) {
+    if (isEmpty(value)) {
+      return value;
+    }
+
+    return engineExpressionService.renderExpression(ambiance, value,
+        skipUnresolvedExpression ? ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED
+                                 : ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+  }
+
   public StepResponse handleCustomTaskFailure(CustomFetchResponsePassThroughData customFetchResponse) {
     UnitProgressData unitProgressData = customFetchResponse.getUnitProgressData();
     return StepResponse.builder()
@@ -808,7 +820,7 @@ public class K8sHelmCommonStepHelper {
     }
   }
 
-  public List<ManifestOutcome> getStepLevelManifestOutcomes(StepElementParameters stepElementParameters) {
+  public List<ManifestOutcome> getStepLevelManifestOutcomes(StepBaseParameters stepElementParameters) {
     if (!(stepElementParameters.getSpec() instanceof K8sApplyStepParameters)) {
       return Collections.emptyList();
     }

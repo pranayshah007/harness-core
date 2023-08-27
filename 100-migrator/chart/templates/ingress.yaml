@@ -5,6 +5,9 @@ metadata:
   name: migrator-api
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    {{- if .Values.global.ingress.objects.annotations }}
+      {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.global.ingress.className | quote }}
   rules:

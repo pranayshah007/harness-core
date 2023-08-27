@@ -115,6 +115,7 @@ public class CustomDeploymentInstanceSyncClient implements PerpetualTaskServiceC
                   .timeout(TimeUnit.MINUTES.toMillis(InstanceSyncConstants.VALIDATION_TIMEOUT_MINUTES))
                   .build())
         .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
+        .waitId(generateUuid())
         .build();
   }
 

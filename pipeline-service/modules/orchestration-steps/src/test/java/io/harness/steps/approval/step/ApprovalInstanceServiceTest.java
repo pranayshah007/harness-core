@@ -9,6 +9,7 @@ package io.harness.steps.approval.step;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.YUVRAJ;
@@ -34,6 +35,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.jira.JiraIssueNG;
@@ -58,6 +60,7 @@ import io.harness.steps.approval.step.harness.beans.ApproverInput;
 import io.harness.steps.approval.step.harness.beans.ApproverInputInfoDTO;
 import io.harness.steps.approval.step.harness.beans.ApproversDTO;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalAction;
+import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivity;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityRequestDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
@@ -115,6 +118,9 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   private static final String APPROVAL_ID = "approvalId";
   private static final String TASK_ID = "taskId";
   private static final Long CREATED_AT = 1000L;
+  private static final String APPROVAL_NAME = "Admin";
+  private static final String APPROVAL_COMMENT = "Approval comment";
+  private static final String APPROVAL_EMAIL = "admin@harness.io";
   @Spy @Inject @InjectMocks private ApprovalInstanceServiceImpl approvalInstanceServiceImpl;
 
   @Test
@@ -929,5 +935,71 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
                                             ApprovalType.CUSTOM_APPROVAL, ApprovalType.JIRA_APPROVAL))));
     assertThat(updateArgumentCaptor.getValue())
         .isEqualTo(new Update().set(ServiceNowApprovalInstanceKeys.latestDelegateTaskId, TASK_ID));
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testFindLatestApprovalInstanceByPlanExecutionIdAndType() {
+    when(approvalInstanceRepository.find(any()))
+        .thenReturn(List.of(HarnessApprovalInstance.builder()
+                                .approvalMessage(APPROVAL_COMMENT)
+                                .approvalActivities(List.of(
+                                    HarnessApprovalActivity.builder()
+                                        .comments(APPROVAL_COMMENT)
+                                        .user(EmbeddedUser.builder().email(APPROVAL_EMAIL).name(APPROVAL_NAME).build())
+                                        .build()))
+                                .approvers(ApproversDTO.builder().userGroups(List.of(APPROVAL_NAME)).build())
+                                .build()));
+
+    Optional<ApprovalInstance> latestApprovalInstance =
+        approvalInstanceServiceImpl.findLatestApprovalInstanceByPlanExecutionIdAndType(
+            planExecutionId, ApprovalType.HARNESS_APPROVAL);
+
+    assertThat(latestApprovalInstance.isPresent()).isEqualTo(true);
+    ApprovalInstance approvalInstance = latestApprovalInstance.get();
+    assertThat(approvalInstance).isInstanceOf(HarnessApprovalInstance.class);
+
+    List<HarnessApprovalActivity> approvalActivities =
+        ((HarnessApprovalInstance) approvalInstance).getApprovalActivities();
+    assertThat(approvalActivities.size()).isEqualTo(1);
+    HarnessApprovalActivity harnessApprovalActivity = approvalActivities.get(0);
+    assertThat(harnessApprovalActivity.getComments()).isEqualTo(APPROVAL_COMMENT);
+    assertThat(harnessApprovalActivity.getUser().getEmail()).isEqualTo(APPROVAL_EMAIL);
+    assertThat(harnessApprovalActivity.getUser().getName()).isEqualTo(APPROVAL_NAME);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testFindLatestApprovalInstanceByPlanExecutionIdAndTypeWithEmptyResponse() {
+    when(approvalInstanceRepository.find(any())).thenReturn(null);
+
+    Optional<ApprovalInstance> latestApprovalInstance =
+        approvalInstanceServiceImpl.findLatestApprovalInstanceByPlanExecutionIdAndType(
+            planExecutionId, ApprovalType.HARNESS_APPROVAL);
+
+    assertThat(latestApprovalInstance.isPresent()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testFindLatestApprovalInstanceByPlanExecutionIdAndTypeWithPlanExecutionIdEmpty() {
+    assertThatThrownBy(()
+                           -> approvalInstanceServiceImpl.findLatestApprovalInstanceByPlanExecutionIdAndType(
+                               "", ApprovalType.HARNESS_APPROVAL))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("PlanExecutionId cannot be null or empty");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testFindLatestApprovalInstanceByPlanExecutionIdAndTypeWithApprovalTypeNull() {
+    assertThatThrownBy(
+        () -> approvalInstanceServiceImpl.findLatestApprovalInstanceByPlanExecutionIdAndType(planExecutionId, null))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("ApprovalType cannot be null");
   }
 }

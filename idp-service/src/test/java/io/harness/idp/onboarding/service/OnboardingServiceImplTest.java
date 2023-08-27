@@ -7,7 +7,7 @@
 
 package io.harness.idp.onboarding.service;
 
-import static io.harness.idp.onboarding.utils.Constants.SERVICE;
+import static io.harness.idp.backstagebeans.Constants.SERVICE;
 import static io.harness.rule.OwnerRule.SATHISH;
 
 import static junit.framework.TestCase.assertEquals;
@@ -30,6 +30,10 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.idp.backstagebeans.BackstageCatalogComponentEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogDomainEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogSystemEntity;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.events.producers.IdpEntityCrudStreamProducer;
@@ -38,10 +42,6 @@ import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.onboarding.beans.AsyncCatalogImportDetails;
-import io.harness.idp.onboarding.beans.BackstageCatalogComponentEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogDomainEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogSystemEntity;
 import io.harness.idp.onboarding.client.FakeOrganizationClient;
 import io.harness.idp.onboarding.client.FakeProjectClient;
 import io.harness.idp.onboarding.client.FakeServiceResourceClient;
@@ -107,7 +107,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
   static final String GENERATE_YAML_DEF =
       "apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: my-example-service\n  description: |\n    My Example service which has something to do with APIs and database.\n  links:\n    - title: Website\n      url: http://my-internal-website.com\n  annotations:\n    github.com/project-slug: myorg/myrepo\n    backstage.io/techdocs-ref: dir:.\n    lighthouse.com/website-url: https://harness.io\n# labels:\n#   key1: value1\n# tags: \nspec:\n  type: service\n  owner: my-team\n  lifecycle: experimental\n  system: my-project\n#  dependsOn:\n#    - resource:default/my-db\n#  consumesApis:\n#    - user-api\n#  providesApis:\n#    - example-api";
   static final String GENERATE_YAML_DEF_WITH_ENTITIES =
-      "kind: Component\nspec:\n  type: Service\n  lifecycle: Unknown\n  owner: Unknown\n  system: projectId\napiVersion: backstage.io/v1alpha1\nmetadata:\n  name: serviceId\n  description: serviceDesc\n  tags: []\n  annotations:\n    harness.io/project-url: https://localhost:8181/ng/account/123/home/orgs/orgId/projects/projectId/details\n    harness.io/cd-serviceId: serviceId\n    harness.io/services: |\n      serviceId: https://localhost:8181/ng/account/123/cd/orgs/orgId/projects/projectId/services/serviceId\n";
+      "spec:\n  type: Service\n  lifecycle: Unknown\n  owner: Unknown\n  system: projectId\napiVersion: backstage.io/v1alpha1\nmetadata:\n  name: serviceId\n  description: serviceDesc\n  tags: []\n  annotations:\n    harness.io/project-url: https://localhost:8181/ng/account/123/home/orgs/orgId/projects/projectId/details\n    harness.io/cd-serviceId: serviceId\n    harness.io/services: |\n      serviceId: https://localhost:8181/ng/account/123/cd/orgs/orgId/projects/projectId/services/serviceId\nkind: Component\n";
   private static final String URL = "https://www.github.com";
   private static final String CONNECTOR_NAME = "test-connector-name";
   private static final String DELEGATE_SELECTOR1 = "ds1";

@@ -9,13 +9,40 @@ package io.harness.idp.scorecard.datasourcelocations.locations;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
+import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
 public interface DataSourceLocation {
-  Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      String dataSourceLocationEntity, Map<String, Set<String>> dataPointsAndInputValues);
+  Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
+      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
+      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs);
+
+  default void matchAndReplaceHeaders(Map<String, String> headers, Map<String, String> replaceableHeaders) {
+    headers.forEach((k, v) -> {
+      if (replaceableHeaders.containsKey(k)) {
+        headers.put(k, replaceableHeaders.get(k));
+      }
+    });
+  }
+
+  default String replaceRequestBodyPlaceholdersIfAny(
+      Map<String, String> possibleReplaceableRequestBodyPairs, String requestBody) {
+    for (Map.Entry<String, String> entry : possibleReplaceableRequestBodyPairs.entrySet()) {
+      requestBody = requestBody.replace(entry.getKey(), entry.getValue());
+    }
+    return requestBody;
+  }
+
+  default Map<String, Set<String>> convertDataPointEntityMapToDataPointIdMap(
+      Map<DataPointEntity, Set<String>> dataPointsAndInputValues) {
+    Map<String, Set<String>> dataPointIdsAndInputValues = new HashMap<>();
+    dataPointsAndInputValues.forEach((k, v) -> dataPointIdsAndInputValues.put(k.getIdentifier(), v));
+    return dataPointIdsAndInputValues;
+  }
 }

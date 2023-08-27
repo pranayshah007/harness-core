@@ -52,8 +52,9 @@ public class ShellScriptStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public ShellScriptStepInfo(ShellType shell, ShellScriptSourceWrapper source, ExecutionTarget executionTarget,
       ParameterField<Boolean> onDelegate, List<NGVariable> outputVariables, List<NGVariable> environmentVariables,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid) {
-    super(uuid, shell, source, executionTarget, onDelegate, delegateSelectors);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String uuid,
+      ParameterField<Boolean> includeInfraSelectors) {
+    super(uuid, shell, source, executionTarget, onDelegate, delegateSelectors, includeInfraSelectors);
     this.outputVariables = outputVariables;
     this.environmentVariables = environmentVariables;
   }
@@ -81,6 +82,7 @@ public class ShellScriptStepInfo
         .shellType(getShell())
         .source(getSource())
         .delegateSelectors(getDelegateSelectors())
+        .includeInfraSelectors(getIncludeInfraSelectors())
         .build();
   }
 

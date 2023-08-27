@@ -26,4 +26,9 @@ public class HttpHelmStoreDelegateConfig implements StoreDelegateConfig {
   public StoreDelegateConfigType getType() {
     return StoreDelegateConfigType.HTTP_HELM;
   }
+
+  @Override
+  public String getRepoUrl() {
+    return this.getHttpHelmConnector().getHelmRepoUrl();
+  }
 }

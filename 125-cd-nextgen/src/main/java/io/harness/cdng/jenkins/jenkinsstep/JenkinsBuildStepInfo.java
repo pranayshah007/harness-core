@@ -12,7 +12,10 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expressio
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.JenkinsBuildStepInfoVisitorHelper;
@@ -26,9 +29,12 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.utils.TimeoutUtils;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -37,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -44,6 +51,8 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -60,6 +69,10 @@ public class JenkinsBuildStepInfo implements CDAbstractStepInfo, WithConnectorRe
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> connectorRef;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> jobName;
+
+  @Pattern(regexp = NGRegexValidatorConstants.POLL_FREQUENCY_PATTERN)
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  ParameterField<Timeout> consoleLogPollFrequency;
 
   @ApiModelProperty(dataType = SwaggerConstants.JENKINS_PARAMETER_FIELD_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
@@ -90,6 +103,8 @@ public class JenkinsBuildStepInfo implements CDAbstractStepInfo, WithConnectorRe
         .unstableStatusAsSuccess(unstableStatusAsSuccess)
         .useConnectorUrlForJobExecution(useConnectorUrlForJobExecution)
         .delegateSelectors(delegateSelectors)
+        .consoleLogPollFrequency(TimeoutUtils.getTimeoutParameterFieldStringWithDefaultValue(
+            consoleLogPollFrequency, JenkinsBuildStepV2.DEFAULT_CONSOLE_LOG_FREQUENCY))
         .build();
   }
 

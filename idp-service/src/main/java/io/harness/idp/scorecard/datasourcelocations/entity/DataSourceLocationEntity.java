@@ -10,30 +10,48 @@ package io.harness.idp.scorecard.datasourcelocations.entity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.datasourcelocations.beans.DataSourceLocationType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
-import lombok.Builder;
+import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
-@Builder
+@SuperBuilder
+@JsonIgnoreProperties(ignoreUnknown = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = DirectHttpDataSourceLocationEntity.class, name = "DirectHttp")
+  , @JsonSubTypes.Type(value = CustomHttpDataSourceLocationEntity.class, name = "CustomHttp"),
+      @JsonSubTypes.Type(value = NoopDataSourceLocationEntity.class, name = "Noop")
+})
+@EqualsAndHashCode(callSuper = false)
 @FieldNameConstants(innerTypeName = "DataSourceLocationKeys")
 @StoreIn(DbAliases.IDP)
 @Entity(value = "dataSourceLocations", noClassnameStored = true)
 @Document("dataSourceLocations")
 @Persistent
 @OwnedBy(HarnessTeam.IDP)
-public class DataSourceLocationEntity implements PersistentEntity {
+public abstract class DataSourceLocationEntity implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -49,4 +67,5 @@ public class DataSourceLocationEntity implements PersistentEntity {
   private String accountIdentifier;
   private String identifier;
   private String dataSourceIdentifier;
+  @NotNull DataSourceLocationType type;
 }

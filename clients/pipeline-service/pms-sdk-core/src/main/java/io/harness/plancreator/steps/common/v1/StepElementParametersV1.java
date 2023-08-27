@@ -17,7 +17,7 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
 
 import java.util.List;
 import lombok.AccessLevel;
@@ -34,12 +34,11 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.plancreator.steps.common.v1.StepElementParametersV1")
 public class StepElementParametersV1 implements StepBaseParameters {
   String uuid;
-  String identifier;
+  String id;
   String name;
-  String description;
+  String desc;
   ParameterField<String> timeout;
-  // TODO: change this to List<FailureStrategyConfigV1>
-  List<FailureStrategyConfig> failureStrategies;
+  OnConfigV1 on;
 
   String when;
 
@@ -67,13 +66,18 @@ public class StepElementParametersV1 implements StepBaseParameters {
         .type(this.type)
         .name(this.name)
         .spec(includeSpec ? this.spec : null)
-        .description(this.description)
-        .identifier(this.identifier)
+        .desc(this.desc)
+        .id(this.id)
         .timeout(this.timeout)
         .enforce(this.enforce)
-        .failureStrategies(this.failureStrategies)
+        .on(this.on)
         .when(this.when)
         .delegateSelectors(this.delegateSelectors)
         .build();
+  }
+
+  @Override
+  public String getIdentifier() {
+    return getId();
   }
 }

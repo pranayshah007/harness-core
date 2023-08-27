@@ -21,4 +21,11 @@ public class CustomRemoteStoreDelegateConfig implements StoreDelegateConfig {
   public StoreDelegateConfigType getType() {
     return StoreDelegateConfigType.CUSTOM_REMOTE;
   }
+  @Override
+  public String getRepoUrl() {
+    if (this.getCustomManifestSource().getFilePaths().size() == 1) {
+      return new StringBuilder("custom://").append(this.getCustomManifestSource().getFilePaths().get(0)).toString();
+    }
+    return "custom";
+  }
 }

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import static io.harness.ci.commonconstants.CIExecutionConstants.ID_PREFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.IMAGE_PREFIX;

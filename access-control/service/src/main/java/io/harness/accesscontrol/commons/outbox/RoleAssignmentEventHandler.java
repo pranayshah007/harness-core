@@ -113,7 +113,7 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
         getAuditResource(roleAssignmentCreateEvent.getScope(), roleAssignmentCreateEvent.getRoleAssignment());
     AuditEntry auditEntry =
         AuditEntry.builder()
-            .action(Action.UPDATE)
+            .action(Action.ROLE_ASSIGNMENT_CREATED)
             .module(ModuleType.CORE)
             .newYaml(getYamlString(
                 RoleAssignmentRequest.builder().roleAssignment(roleAssignmentCreateEvent.getRoleAssignment()).build()))
@@ -133,7 +133,7 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
         getAuditResource(roleAssignmentUpdateEvent.getScope(), roleAssignmentUpdateEvent.getNewRoleAssignment());
     AuditEntry auditEntry =
         AuditEntry.builder()
-            .action(Action.UPDATE)
+            .action(Action.ROLE_ASSIGNMENT_UPDATED)
             .module(ModuleType.CORE)
             .newYaml(getYamlString(RoleAssignmentRequest.builder()
                                        .roleAssignment(roleAssignmentUpdateEvent.getNewRoleAssignment())
@@ -157,7 +157,7 @@ public class RoleAssignmentEventHandler implements OutboxEventHandler {
         getAuditResource(roleAssignmentDeleteEvent.getScope(), roleAssignmentDeleteEvent.getRoleAssignment());
     AuditEntry auditEntry =
         AuditEntry.builder()
-            .action(Action.UPDATE)
+            .action(Action.ROLE_ASSIGNMENT_DELETED)
             .module(ModuleType.CORE)
             .oldYaml(getYamlString(
                 RoleAssignmentRequest.builder().roleAssignment(roleAssignmentDeleteEvent.getRoleAssignment()).build()))

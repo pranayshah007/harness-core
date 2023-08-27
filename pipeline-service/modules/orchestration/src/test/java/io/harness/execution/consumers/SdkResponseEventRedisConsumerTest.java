@@ -23,7 +23,7 @@ public class SdkResponseEventRedisConsumerTest {
   @Category(UnitTests.class)
   public void testSdkResponseEventRedisConsumer() {
     SdkResponseEventRedisConsumer sdkResponseEventRedisConsumer =
-        new SdkResponseEventRedisConsumer(null, null, null, null);
+        new SdkResponseEventRedisConsumer(null, null, null, null, null);
     assertThat(sdkResponseEventRedisConsumer).isNotEqualTo(null);
   }
 }

@@ -62,7 +62,7 @@ public class StageStartNotificationHandlerTest extends CategoryTest {
                               .build();
     Ambiance stagesAmbiance =
         Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagesNode)).build();
-    NodeExecution nodeExecution = NodeExecution.builder().ambiance(stagesAmbiance).planNode(stagesNode).build();
+    NodeExecution nodeExecution = NodeExecution.builder().ambiance(stagesAmbiance).build();
     NodeStartInfo nodeStartInfo = NodeStartInfo.builder().nodeExecution(nodeExecution).updatedTs(ts).build();
     stageStartNotificationHandler.onNodeStart(nodeStartInfo);
     verify(notificationHelper, times(0)).sendNotification(any(), any(), any(), any());
@@ -75,7 +75,7 @@ public class StageStartNotificationHandlerTest extends CategoryTest {
                              .build();
     Ambiance stageAmbiance =
         Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stageNode)).build();
-    nodeExecution = NodeExecution.builder().ambiance(stageAmbiance).planNode(stageNode).build();
+    nodeExecution = NodeExecution.builder().ambiance(stageAmbiance).build();
     nodeStartInfo = NodeStartInfo.builder().nodeExecution(nodeExecution).updatedTs(ts).build();
     stageStartNotificationHandler.onNodeStart(nodeStartInfo);
     verify(notificationHelper, times(1))

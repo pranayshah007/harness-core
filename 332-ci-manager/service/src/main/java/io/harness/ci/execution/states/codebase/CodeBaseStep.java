@@ -17,7 +17,7 @@ import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.StageDetails;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;

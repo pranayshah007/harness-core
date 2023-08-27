@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.ci.plan.creator.steps;
+package io.harness.ci.execution.plan.creator.steps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
+import io.harness.ci.execution.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plancreator.V1.GitClonePlanCreator;
 import io.harness.ci.plancreator.V1.InitializeStepPlanCreatorV1;
 import io.harness.data.structure.EmptyPredicate;

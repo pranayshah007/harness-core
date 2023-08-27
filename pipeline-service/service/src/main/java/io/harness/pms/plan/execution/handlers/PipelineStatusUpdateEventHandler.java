@@ -94,12 +94,13 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
   }
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
     Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntity =
         pmsExecutionSummaryRepository
-            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
-                AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-                AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getPlanExecutionId(), true);
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(accountId,
+                AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance),
+                ambiance.getPlanExecutionId(), true);
     if (pipelineExecutionSummaryEntity.isPresent()) {
       Set<String> executedModules =
           OrchestrationObserverUtils.getExecutedModulesInPipeline(pipelineExecutionSummaryEntity.get());

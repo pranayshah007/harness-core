@@ -46,6 +46,7 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverridev2.beans.OverrideV2SettingsUpdateResponseDTO;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideBatchMigrationDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
@@ -76,6 +77,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -349,6 +352,7 @@ public class ServiceOverridesResource {
   }
 
   @POST
+  @Hidden
   @Path("/migrate")
   @ApiOperation(value = "Migrate ServiceOverride to V2", nickname = "migrateServiceOverride")
   @Operation(operationId = "migrateServiceOverride", summary = "Migrate ServiceOverride to V2",
@@ -374,6 +378,53 @@ public class ServiceOverridesResource {
   }
 
   @POST
+  @Hidden
+  @Path("/batch-migrate-and-enable")
+  @ApiOperation(
+      value = "Migrate ServiceOverride to V2 and enable setting ", nickname = "migrateAndEnableServiceOverrideV2")
+  @Operation(operationId = "migrateServiceOverride", summary = "Migrate ServiceOverride to V2 and Enable Setting ",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns Override Migration Details")
+      })
+  public ResponseDTO<List<ServiceOverrideMigrationResponseDTO>>
+  migrateAndEnableServiceOverrideV2(
+      @RequestBody(required = true, description = "Details of accounts to be migrated to override v2") @NonNull
+      @Valid ServiceOverrideBatchMigrationDTO batchMigrationDTO) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to migrate overrides.", USER);
+    }
+
+    List<ServiceOverrideMigrationResponseDTO> migrationResponseDTOS = new ArrayList<>();
+
+    for (String accountId : batchMigrationDTO.getAccountIds()) {
+      try {
+        ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
+            serviceOverrideV2MigrationService.migrateToV2(accountId, null, null, true, false);
+        if (serviceOverrideMigrationResponseDTO.isSuccessful()) {
+          OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
+              serviceOverrideV2SettingsUpdateService.settingsUpdateToV2(accountId, null, null, false, false);
+          serviceOverrideMigrationResponseDTO.setOverrideV2SettingsUpdateResponseDTO(
+              overrideV2SettingsUpdateResponseDTO);
+          log.info(String.format(
+              "Account level override migration succeeded for accountId: %s. Enabling account level setting for overrides v2",
+              accountId));
+        } else {
+          log.warn(String.format("Account level override v2 migration failed for accountId: %s", accountId));
+        }
+
+        migrationResponseDTOS.add(serviceOverrideMigrationResponseDTO);
+      } catch (Exception e) {
+        log.error(String.format("Could not migrate and enable setting for override v2 accountId: %s", accountId), e);
+      }
+    }
+
+    return ResponseDTO.newResponse(migrationResponseDTOS);
+  }
+
+  @POST
+  @Hidden
   @Path("/migrateScope")
   @ApiOperation(value = "Migrate ServiceOverride to V2 at one scope", nickname = "migrateServiceOverrideScoped")
   @Operation(operationId = "migrateServiceOverrideScoped", summary = "Migrate ServiceOverride to V2 at one scope",

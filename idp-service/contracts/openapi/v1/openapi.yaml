@@ -938,6 +938,10 @@ paths:
       parameters:
         - $ref: '#/components/parameters/CheckType'
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Sort'
+        - $ref: '#/components/parameters/SearchTerm'
       tags:
         - Checks
       x-stoplight:
@@ -957,7 +961,7 @@ paths:
       operationId: create-check
       responses:
         '201':
-          description: Created
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: 3odk9i73co8ny
       description: Create a custom check
@@ -997,7 +1001,7 @@ paths:
       operationId: update-check
       responses:
         '200':
-          description: OK
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: 94y43314ia7cu
       description: Update check details for given checkId
@@ -1054,7 +1058,7 @@ paths:
       operationId: create-scorecard
       responses:
         '201':
-          description: Created
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: vs8mu57g6sy8h
       description: Create scorecard
@@ -1093,7 +1097,7 @@ paths:
       operationId: update-scorecard
       responses:
         '200':
-          description: OK
+          $ref: '#/components/responses/DefaultSaveResponse'
       x-stoplight:
         id: eifr2cushvum8
       description: Update scorecard details for given scorecardId
@@ -1142,7 +1146,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/CatalogKind'
-  '/v1/data-source/{data-source}/data-point/values':
+  '/v1/data-sources/{data-source}/data-point/values':
     get:
       summary: Get data points data for data source
       responses:
@@ -1166,6 +1170,23 @@ paths:
         name: data-source
         in: path
         required: true
+  /v1/data-sources/data-points/map:
+    get:
+      summary: Get Data Sources and Data Points Map for Account
+      tags:
+        - DataSource
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointsMapResponse'
+      operationId: get-data-sources-data-points-map
+      x-stoplight:
+        id: 8ksgpo0pm5604
+      description: API for getting the map of data sources and data points for account
+      x-internal: true
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
 components:
   schemas:
     BackstageEnvVariable:
@@ -2997,6 +3018,52 @@ components:
           $ref: '#/components/schemas/DataSourceDataPointInfo'
       required:
         - request
+    DefaultSaveResponse:
+      title: DefaultSaveResponse
+      x-stoplight:
+        id: g3wczg3wjlmxq
+      type: object
+      description: 'Default response for Save/Edit operations '
+      properties:
+        status:
+          type: string
+          x-stoplight:
+            id: qh5qxx57312re
+      required:
+        - status
+    DataSourceDataPointsMap:
+      title: DataSourceDataPointsMap
+      x-stoplight:
+        id: z77fv6vcnfg4b
+      type: object
+      properties:
+        data_source:
+          $ref: '#/components/schemas/DataSource'
+        data_points:
+          type: array
+          x-stoplight:
+            id: 4dmhbjlkx46p9
+          items:
+            $ref: '#/components/schemas/DataPoint'
+      required:
+        - data_source
+        - data_points
+      description: Mapping of data source with data points
+    DataSourceDataPointsMapResponse:
+      title: DataSourceDataPointsMapResponse
+      x-stoplight:
+        id: tsydrbfqm03z1
+      type: object
+      properties:
+        data_source_data_points_map:
+          x-stoplight:
+            id: 19okloss3p3sr
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSourceDataPointsMap'
+      required:
+        - data_source_data_points_map
+      description: Response for getting the data sources and data points map
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -3588,6 +3655,19 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/CheckResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: integer
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: integer
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: integer
+          description: Maximum page size in Paginated response.
     CheckDetailsResponse:
       description: Response for check details
       content:
@@ -3634,6 +3714,25 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/DataSourceDataPointInfoResponse'
+    DefaultSaveResponse:
+      description: Default response for Save/Edit operations
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DefaultSaveResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/DefaultSaveResponse'
+    DataSourceDataPointsMapResponse:
+      description: Response for getting the data source and data point map
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DataSourceDataPointsMapResponse'
+        application/xml:
+          schema:
+            type: object
+            properties: {}
   securitySchemes:
     x-api-key:
       name: x-api-key

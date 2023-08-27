@@ -39,6 +39,8 @@ public class SRMAnalysisStepDetailDTO {
 
   @NotNull private String executionDetailIdentifier;
   @NotNull private String stepName;
+  @NotNull String stageStepId;
+  @NotNull String planExecutionId;
 
   public static SRMAnalysisStepDetailDTO getDTOFromEntity(SRMAnalysisStepExecutionDetail stepExecutionDetail) {
     return SRMAnalysisStepDetailDTO.builder()
@@ -54,6 +56,8 @@ public class SRMAnalysisStepDetailDTO {
         .orgIdentifier(stepExecutionDetail.getOrgIdentifier())
         .projectIdentifier(stepExecutionDetail.getProjectIdentifier())
         .stepName(stepExecutionDetail.getStepName())
+        .stageStepId(stepExecutionDetail.getStageStepId())
+        .planExecutionId(stepExecutionDetail.getPlanExecutionId())
         .build();
   }
 }

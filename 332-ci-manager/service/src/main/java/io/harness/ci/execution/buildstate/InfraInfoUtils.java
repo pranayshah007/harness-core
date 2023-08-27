@@ -5,17 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import static java.lang.String.format;
 
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.ci.integrationstage.DliteVmInitializeTaskParamsBuilder;
-import io.harness.ci.integrationstage.DockerInitializeStepUtils;
-import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
-import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
-import io.harness.ci.integrationstage.VmInitializeUtils;
+import io.harness.ci.execution.integrationstage.DliteVmInitializeTaskParamsBuilder;
+import io.harness.ci.execution.integrationstage.DockerInitializeStepUtils;
+import io.harness.ci.execution.integrationstage.DockerInitializeTaskParamsBuilder;
+import io.harness.ci.execution.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.execution.integrationstage.VmInitializeUtils;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
 

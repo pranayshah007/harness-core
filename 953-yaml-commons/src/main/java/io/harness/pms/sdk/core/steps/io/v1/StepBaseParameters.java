@@ -12,6 +12,8 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.List;
+
 public interface StepBaseParameters extends StepParameters {
   String getIdentifier();
   String getName();
@@ -19,4 +21,5 @@ public interface StepBaseParameters extends StepParameters {
   ParameterField<String> getTimeout();
   SpecParameters getSpec();
   PolicyConfig getEnforce();
+  ParameterField<List<String>> getDelegateSelectors();
 }
