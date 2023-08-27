@@ -11,15 +11,17 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 
 import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
-public class HttpDsl implements DataSourceLocation {
+public class GithubGitLeaksFileExistsDsl implements DataSourceLocation {
   @Override
-  public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
-      String dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues) {
+  public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
+      DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
+      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs) {
     return null;
   }
 }

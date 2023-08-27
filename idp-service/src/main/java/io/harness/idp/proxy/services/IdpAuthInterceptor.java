@@ -15,8 +15,11 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Map;
+import okhttp3.Headers;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -29,6 +32,7 @@ public class IdpAuthInterceptor implements Interceptor {
   private final ServiceTokenGenerator tokenGenerator;
   private final String secret;
 
+  @Inject
   public IdpAuthInterceptor(ServiceTokenGenerator tokenGenerator, String secret) {
     this.tokenGenerator = tokenGenerator;
     this.secret = secret;
@@ -37,6 +41,13 @@ public class IdpAuthInterceptor implements Interceptor {
   @NotNull
   @Override
   public Response intercept(@NotNull Chain chain) throws IOException {
+    Map<String, String> authHeaders = getAuthHeaders();
+    Headers headers = Headers.of(authHeaders);
+    Request request = chain.request();
+    return chain.proceed(request.newBuilder().headers(headers).build());
+  }
+
+  public Map<String, String> getAuthHeaders() {
     SecurityContextBuilder.setContext(new ServicePrincipal(IDP_SERVICE.getServiceId()));
     String authorizationToken =
         tokenGenerator.getServiceTokenWithDuration(secret, Duration.ofHours(4), SecurityContextBuilder.getPrincipal());
@@ -45,10 +56,7 @@ public class IdpAuthInterceptor implements Interceptor {
         : SecurityContextBuilder.getPrincipal();
     String sourcePrincipalToken =
         tokenGenerator.getServiceTokenWithDuration(secret, Duration.ofHours(4), sourcePrincipal);
-    Request request = chain.request();
-    return chain.proceed(request.newBuilder()
-                             .header(AUTHORIZATION, IDP_SERVICE.getServiceId() + SPACE + authorizationToken)
-                             .addHeader(X_SOURCE_PRINCIPAL, IDP_SERVICE.getServiceId() + SPACE + sourcePrincipalToken)
-                             .build());
+    return Map.of(AUTHORIZATION, IDP_SERVICE.getServiceId() + SPACE + authorizationToken, X_SOURCE_PRINCIPAL,
+        IDP_SERVICE.getServiceId() + SPACE + sourcePrincipalToken);
   }
 }
