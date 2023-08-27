@@ -11,14 +11,11 @@ import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.NISHANT;
-import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VLAD;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyString;
@@ -60,7 +57,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class DelegateNgTokenServiceTest extends WingsBaseTest {
   private static final String TEST_ACCOUNT_ID = "testAccountId";
-  private static final String REVOKED_TOKEN_SUFFIX = "_revoked";
 
   @Inject private HPersistence persistence;
   @Inject private OutboxService outboxService;
@@ -94,21 +90,6 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
         .hasSize(1);
     DelegateTokenDetails revokedToken = delegateNgTokenService.revokeDelegateToken(TEST_ACCOUNT_ID, tokenName);
     assertThat(revokedToken.getStatus()).isEqualTo(DelegateTokenStatus.REVOKED);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
-        .isEmpty();
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
-  public void revokedTokenNameShouldHaveRevokedSuffix() {
-    String tokenName = "token1";
-    delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName, null);
-    assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
-        .hasSize(1);
-    DelegateTokenDetails revokedToken = delegateNgTokenService.revokeDelegateToken(TEST_ACCOUNT_ID, tokenName);
-    assertThat(revokedToken.getStatus()).isEqualTo(DelegateTokenStatus.REVOKED);
-    assertThat(revokedToken.getName()).isEqualTo(tokenName + REVOKED_TOKEN_SUFFIX);
     assertThat(delegateNgTokenService.getDelegateTokens(TEST_ACCOUNT_ID, null, DelegateTokenStatus.ACTIVE, false))
         .isEmpty();
   }

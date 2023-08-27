@@ -65,7 +65,6 @@ import org.atmosphere.cpr.BroadcasterFactory;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, AccountCrudObserver {
   private static final String DEFAULT_TOKEN_NAME = "default_token";
-  private static final String REVOKED_TOKEN_SUFFIX = "_revoked";
   private final String TOKEN_NAME_ILLEGAL_CHARACTERS = "[~!@#$%^&*'\"/?<>,;.]";
 
   private final HPersistence persistence;
@@ -127,7 +126,6 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     UpdateOperations<DelegateToken> updateOperations =
         persistence.createUpdateOperations(DelegateToken.class)
             .set(DelegateTokenKeys.status, DelegateTokenStatus.REVOKED)
-            .set(DelegateTokenKeys.name, tokenName + REVOKED_TOKEN_SUFFIX)
             .set(DelegateTokenKeys.validUntil,
                 Date.from(OffsetDateTime.now().plusDays(DelegateToken.TTL.toDays()).toInstant()));
     DelegateToken updatedDelegateToken =
