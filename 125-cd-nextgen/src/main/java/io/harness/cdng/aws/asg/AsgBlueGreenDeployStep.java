@@ -328,10 +328,13 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
     }
   }
 
-  private List<AsgLoadBalancerConfig> getLoadBalancers(
-      AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters) {
+  List<AsgLoadBalancerConfig> getLoadBalancers(AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters) {
     if (isEmpty(asgBlueGreenDeployStepParameters.getLoadBalancers())) {
-      return List.of(getLoadBalancer(asgBlueGreenDeployStepParameters));
+      AsgLoadBalancerConfig asgLoadBalancerConfig = getLoadBalancer(asgBlueGreenDeployStepParameters);
+      if (asgLoadBalancerConfig == null) {
+        return null;
+      }
+      return List.of(asgLoadBalancerConfig);
     }
 
     return asgBlueGreenDeployStepParameters.getLoadBalancers()
@@ -349,7 +352,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
         .collect(Collectors.toList());
   }
 
-  private AsgLoadBalancerConfig getLoadBalancer(AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters) {
+  AsgLoadBalancerConfig getLoadBalancer(AsgBlueGreenDeployStepParameters asgBlueGreenDeployStepParameters) {
     String loadBalancer = asgBlueGreenDeployStepParameters.getLoadBalancer() != null
         ? asgBlueGreenDeployStepParameters.getLoadBalancer().getValue()
         : null;
