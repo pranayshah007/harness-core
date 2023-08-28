@@ -330,7 +330,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     registerYamlSdk(injector);
     scheduleJobs(injector, configuration);
     registerQueueListener(injector);
-    registerPmsSdkEvents(injector);
+    registerPmsSdkEvents(injector, configuration);
     registerExceptionMappers(environment);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
@@ -486,7 +486,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }
 
-  private void registerPmsSdkEvents(Injector injector) {
+  private void registerPmsSdkEvents(Injector injector, CIManagerConfiguration appConfig) {
     log.info("Initializing redis abstract consumers...");
     PipelineEventConsumerController pipelineEventConsumerController =
         injector.getInstance(PipelineEventConsumerController.class);
@@ -500,12 +500,22 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
 
-    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class), 1);
-    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
-    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 2);
-    pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
-    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseRedisConsumerV2.class), 2);
-    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 2);
+    if (appConfig.getStreamPerServiceConfiguration().isMigrateInterrupt()) {
+      pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class), 1);
+    }
+    if (appConfig.getStreamPerServiceConfiguration().isMigrateFacilitator()) {
+      pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
+    }
+    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeStart()) {
+      pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 2);
+    }
+    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeProgress()) {
+      pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
+    }
+
+    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeResume()) {
+      pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 2);
+    }
 
     pipelineEventConsumerController.register(injector.getInstance(STONotifyEventConsumerRedis.class), 15);
   }

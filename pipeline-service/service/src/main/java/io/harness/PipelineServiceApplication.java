@@ -452,7 +452,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     if (!appConfig.isDisableFreezeNotificationTemplate()) {
       registerNotificationTemplates(injector);
     }
-    registerPmsSdkEvents(appConfig.getPipelineServiceConsumersConfig(), injector);
+    registerPmsSdkEvents(injector, appConfig);
 
     initializeGrpcServer(injector);
     registerPmsSdk(appConfig, injector);
@@ -782,7 +782,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     notifyQueuePublisherRegister.register(PMS_PLAN_CREATION, injector.getInstance(PlanNotifyEventPublisher.class));
   }
 
-  private void registerPmsSdkEvents(PipelineServiceConsumersConfig pipelineServiceConsumersConfig, Injector injector) {
+  private void registerPmsSdkEvents(Injector injector, PipelineServiceConfiguration appConfig) {
+    PipelineServiceConsumersConfig pipelineServiceConsumersConfig = appConfig.getPipelineServiceConsumersConfig();
     log.info("Initializing pms sdk redis abstract consumers...");
     PipelineEventConsumerController pipelineEventConsumerController =
         injector.getInstance(PipelineEventConsumerController.class);
@@ -804,18 +805,27 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class),
         pipelineServiceConsumersConfig.getResume().getThreads());
 
-    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class),
-        pipelineServiceConsumersConfig.getInterrupt().getThreads());
-    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class),
-        pipelineServiceConsumersConfig.getFacilitatorEvent().getThreads());
-    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class),
-        pipelineServiceConsumersConfig.getNodeStart().getThreads());
-    pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class),
-        pipelineServiceConsumersConfig.getProgress().getThreads());
-    pipelineEventConsumerController.register(
-        injector.getInstance(NodeAdviseRedisConsumerV2.class), pipelineServiceConsumersConfig.getAdvise().getThreads());
-    pipelineEventConsumerController.register(
-        injector.getInstance(NodeResumeEventConsumerV2.class), pipelineServiceConsumersConfig.getResume().getThreads());
+    if (appConfig.getStreamPerServiceConfiguration().isMigrateInterrupt()) {
+      pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class),
+          pipelineServiceConsumersConfig.getInterrupt().getThreads());
+    }
+    if (appConfig.getStreamPerServiceConfiguration().isMigrateFacilitator()) {
+      pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class),
+          pipelineServiceConsumersConfig.getFacilitatorEvent().getThreads());
+    }
+    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeStart()) {
+      pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class),
+          pipelineServiceConsumersConfig.getNodeStart().getThreads());
+    }
+    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeProgress()) {
+      pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class),
+          pipelineServiceConsumersConfig.getProgress().getThreads());
+    }
+
+    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeResume()) {
+      pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class),
+          pipelineServiceConsumersConfig.getResume().getThreads());
+    }
 
     pipelineEventConsumerController.register(injector.getInstance(SdkResponseEventRedisConsumer.class),
         pipelineServiceConsumersConfig.getSdkResponse().getThreads());
