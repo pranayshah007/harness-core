@@ -33,6 +33,7 @@ import io.harness.utils.PageUtils;
 import com.google.inject.Inject;
 import java.util.List;
 import javax.validation.Valid;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -119,6 +120,7 @@ public class ChecksApiImpl implements ChecksApi {
       log.error(errorMessage, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
+          .type(MediaType.APPLICATION_JSON)
           .build();
     }
   }
