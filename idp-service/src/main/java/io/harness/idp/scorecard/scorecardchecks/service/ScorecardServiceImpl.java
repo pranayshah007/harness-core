@@ -7,6 +7,7 @@
 
 package io.harness.idp.scorecard.scorecardchecks.service;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
@@ -57,11 +58,12 @@ public class ScorecardServiceImpl implements ScorecardService {
   private final BackstageResourceClient backstageResourceClient;
   private static final ObjectMapper mapper =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-  private static final String CATALOG_API = "%s/idp/api/catalog/entity-facets?filter=kind=%s&facet=%s";
   private static final String TYPE_FILTER = "spec.type";
   private static final String OWNERS_FILTER = "relations.ownedBy";
   private static final String TAGS_FILTER = "metadata.tags";
   private static final String LIFECYCLE_FILTER = "spec.lifecycle";
+  private static final String CATALOG_API = "%s/idp/api/catalog/entity-facets?filter=kind=%s&facet=" + TYPE_FILTER
+      + "&facet=" + OWNERS_FILTER + "&facet=" + TAGS_FILTER + "&facet=" + LIFECYCLE_FILTER;
 
   @Inject
   public ScorecardServiceImpl(ScorecardRepository scorecardRepository, CheckService checkService,
@@ -126,6 +128,7 @@ public class ScorecardServiceImpl implements ScorecardService {
 
   @Override
   public void saveScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier) {
+    validateScorecardSaveRequest(scorecardDetailsRequest);
     validateChecks(scorecardDetailsRequest.getChecks(), accountIdentifier);
     scorecardRepository.saveOrUpdate(ScorecardDetailsMapper.fromDTO(scorecardDetailsRequest, accountIdentifier));
     setupUsageProducer.publishScorecardSetupUsage(scorecardDetailsRequest, accountIdentifier);
@@ -133,6 +136,7 @@ public class ScorecardServiceImpl implements ScorecardService {
 
   @Override
   public void updateScorecard(ScorecardDetailsRequest scorecardDetailsRequest, String accountIdentifier) {
+    validateScorecardSaveRequest(scorecardDetailsRequest);
     validateChecks(scorecardDetailsRequest.getChecks(), accountIdentifier);
     scorecardRepository.update(ScorecardDetailsMapper.fromDTO(scorecardDetailsRequest, accountIdentifier));
     setupUsageProducer.deleteScorecardSetupUsage(
@@ -156,6 +160,12 @@ public class ScorecardServiceImpl implements ScorecardService {
                 -> checkEntity.getAccountIdentifier() + DOT_SEPARATOR + checkEntity.getIdentifier(),
                 checkEntity -> checkEntity));
     return ScorecardDetailsMapper.toDTO(scorecardEntity, checkEntityMap, accountIdentifier);
+  }
+
+  private void validateScorecardSaveRequest(ScorecardDetailsRequest scorecardDetailsRequest) {
+    if (scorecardDetailsRequest.getScorecard().isPublished() && isEmpty(scorecardDetailsRequest.getChecks())) {
+      throw new InvalidRequestException("Atleast one check should be present for publishing scorecard");
+    }
   }
 
   private void validateChecks(List<ScorecardChecks> scorecardChecks, String harnessAccount) {
@@ -197,20 +207,13 @@ public class ScorecardServiceImpl implements ScorecardService {
   @Override
   public Facets getAllEntityFacets(String accountIdentifier, String kind) {
     Facets facets = new Facets();
-    List<BackstageCatalogEntityFacets> entityFacets = new ArrayList<>();
-    entityFacets.add(getEntityResponse(accountIdentifier, kind, TYPE_FILTER));
-    entityFacets.add(getEntityResponse(accountIdentifier, kind, OWNERS_FILTER));
-    entityFacets.add(getEntityResponse(accountIdentifier, kind, TAGS_FILTER));
-    entityFacets.add(getEntityResponse(accountIdentifier, kind, LIFECYCLE_FILTER));
-
-    for (BackstageCatalogEntityFacets backstageCatalogEntityFacets : entityFacets) {
-      populateFacets(backstageCatalogEntityFacets, facets);
-    }
+    BackstageCatalogEntityFacets backstageCatalogEntityFacets = getEntityResponse(accountIdentifier, kind);
+    populateFacets(backstageCatalogEntityFacets, facets);
     return facets;
   }
 
-  private BackstageCatalogEntityFacets getEntityResponse(String accountIdentifier, String kind, String filter) {
-    String url = String.format(CATALOG_API, accountIdentifier, kind, filter);
+  private BackstageCatalogEntityFacets getEntityResponse(String accountIdentifier, String kind) {
+    String url = String.format(CATALOG_API, accountIdentifier, kind);
     return mapper.convertValue(
         getGeneralResponse(backstageResourceClient.getCatalogEntityFacets(url)), BackstageCatalogEntityFacets.class);
   }
