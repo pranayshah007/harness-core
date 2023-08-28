@@ -5,10 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.steps.customstage.v1;
+package io.harness.cdng.creator.plan.customstage.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.creator.plan.customstage.CustomStageSpecParams;
+import io.harness.cdng.creator.plan.customstage.CustomStageStep;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.PlanCreatorUtilsV1;
@@ -32,9 +34,7 @@ import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepSpecTypeConstants;
-import io.harness.steps.customstage.CustomStageSpecParams;
-import io.harness.steps.customstage.CustomStageStep;
+// import io.harness.steps.StepSpecTypeConstants;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.common.base.Preconditions;
@@ -58,8 +58,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(
-        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.CUSTOM_STAGE));
+    return Collections.singletonMap(YAMLFieldNameConstants.STAGE, Collections.singleton("Custom"));
   }
 
   @Override

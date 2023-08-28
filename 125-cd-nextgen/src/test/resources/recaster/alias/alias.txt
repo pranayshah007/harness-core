@@ -1183,3 +1183,6 @@ io.harness.cdng.provision.awscdk.AwsCdkRollbackStepInfo
 io.harness.cdng.provision.awscdk.AwsCdkRollbackStepNode
 io.harness.cdng.provision.awscdk.AwsCdkRollbackStepParameters
 io.harness.plancreator.steps.common.v1.StepElementParametersV1
+io.harness.steps.customstage.CustomStageSpecParams
+io.harness.steps.customstage.CustomEnvironmentYamlV2
+io.harness.steps.customstage.CustomStageNode

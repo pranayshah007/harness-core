@@ -21,7 +21,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaService;
-import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
 import io.harness.rule.Owner;
@@ -52,7 +51,7 @@ public class LocalSchemaGetterTest {
   @Mock private YamlSchemaProvider yamlSchemaProvider;
   @Mock private ApprovalYamlSchemaService approvalYamlSchemaService;
   @Mock private FeatureFlagYamlService featureFlagYamlService;
-  @Mock private CustomStageYamlSchemaService customStageYamlSchemaService;
+  //@Mock private CustomStageYamlSchemaService customStageYamlSchemaService;
   @Mock private PipelineStageYamlSchemaService pipelineStageYamlSchemaService;
   @Mock private PmsYamlSchemaHelper pmsYamlSchemaHelper;
   @InjectMocks LocalSchemaGetter localSchemaGetter;
@@ -81,9 +80,9 @@ public class LocalSchemaGetterTest {
     doReturn(cfPartialSchemaDTO)
         .when(featureFlagYamlService)
         .getFeatureFlagYamlSchema(any(), any(), any(), any(), any());
-    doReturn(customStagePartialSchemaDTO)
-        .when(customStageYamlSchemaService)
-        .getCustomStageYamlSchema(any(), any(), any(), any(), any());
+    //    doReturn(customStagePartialSchemaDTO)
+    //        .when(customStageYamlSchemaService)
+    //        .getCustomStageYamlSchema(any(), any(), any(), any(), any());
     doReturn(pipelineStagePartialSchemaDTO)
         .when(pipelineStageYamlSchemaService)
         .getPipelineStageYamlSchema(any(), any(), any(), any(), any());

@@ -34,7 +34,6 @@ import io.harness.steps.common.pipeline.PipelineSetupStep;
 import io.harness.steps.container.ContainerStep;
 import io.harness.steps.container.InitContainerStep;
 import io.harness.steps.container.execution.RunContainerStep;
-import io.harness.steps.customstage.CustomStageStep;
 import io.harness.steps.email.EmailStep;
 import io.harness.steps.group.GroupStepV1;
 import io.harness.steps.http.HttpStep;
@@ -80,7 +79,7 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(ServiceNowImportSetStep.STEP_TYPE, ServiceNowImportSetStep.class);
     engineSteps.put(StagesStep.STEP_TYPE, StagesStep.class);
     engineSteps.put(StagesStep.DEPRECATED_STEP_TYPE, StagesStep.class);
-    engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
+    // engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
 
     // Feature Flag
     engineSteps.put(FlagConfigurationStep.STEP_TYPE, FlagConfigurationStep.class);

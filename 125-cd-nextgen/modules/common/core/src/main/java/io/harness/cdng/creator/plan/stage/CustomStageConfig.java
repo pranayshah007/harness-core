@@ -5,14 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.steps.customstage;
+package io.harness.cdng.creator.plan.stage;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.steps.StepSpecTypeConstants;
 import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -34,13 +34,15 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@JsonTypeName(StepSpecTypeConstants.CUSTOM_STAGE)
+@JsonTypeName("Custom")
 @TypeAlias("CustomStageConfig")
 public class CustomStageConfig implements StageInfoConfig {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
+
+  @VariableExpression(skipVariableExpression = true) private EnvironmentYamlV2 environment;
 
   @NotNull @VariableExpression(skipVariableExpression = true) private ExecutionElementConfig execution;
 

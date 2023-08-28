@@ -12,6 +12,8 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.creator.plan.stage.CustomStageConfig;
+import io.harness.cdng.creator.plan.stage.CustomStageNode;
 import io.harness.rule.Owner;
 import io.harness.steps.StepSpecTypeConstants;
 
@@ -22,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+// needs to be moved to ng-manager
 public class CustomStageNodeTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 

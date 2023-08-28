@@ -12,6 +12,8 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.creator.plan.customstage.CustomStageSpecParams;
+import io.harness.cdng.creator.plan.customstage.CustomStageStep;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
@@ -27,6 +29,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+// needs to be moved to ng-manager
 public class CustomStageStepTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;

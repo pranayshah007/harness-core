@@ -34,6 +34,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepNode;
 import io.harness.cdng.bamboo.BambooBuildStepNode;
 import io.harness.cdng.chaos.ChaosStepNode;
 import io.harness.cdng.creator.plan.customDeployment.CustomDeploymentConfig;
+import io.harness.cdng.creator.plan.stage.CustomStageNode;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepNode;
 import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepNode;
@@ -185,6 +186,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(DeploymentStageNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(ImmutableList.of(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.CUSTOM_STAGE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(CustomStageNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(ImmutableList.of(ModuleType.CD, ModuleType.PMS))
