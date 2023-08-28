@@ -7,13 +7,21 @@
 
 package io.harness.repositories.service.custom;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 import static io.harness.springdata.PersistenceUtils.getRetryPolicyWithDuplicateKeyException;
 
+import static java.lang.String.format;
+
+import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmException;
+import io.harness.exception.WingsException;
+import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
@@ -22,19 +30,25 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
+import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.utils.CDGitXService;
 import io.harness.springdata.PersistenceUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.mongodb.DuplicateKeyException;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -188,31 +202,120 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
   }
 
   @Override
-  public ServiceEntity save(ServiceEntity serviceToSave) throws InvalidRequestException {
+  public ServiceEntity save(ServiceEntity serviceToSave) throws InvalidRequestException, DuplicateKeyException {
     GitAwareContextHelper.initDefaultScmGitMetaData();
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
 
+    // inline entity
     if (gitEntityInfo == null || StoreType.INLINE.equals(gitEntityInfo.getStoreType())
         || gitEntityInfo.getStoreType() == null) {
       serviceToSave.setStoreType(StoreType.INLINE);
 
-      ServiceEntity savedServiceEntity = mongoTemplate.save(serviceToSave);
-      return savedServiceEntity;
+      return mongoTemplate.save(serviceToSave);
     }
 
-    if (cdGitXService.isNewGitXEnabledAndIsRemoteEntity(serviceToSave, gitEntityInfo)) {
-      addGitParamsToServiceEntity(serviceToSave, gitEntityInfo);
-      Scope scope = Scope.of(
-          serviceToSave.getAccountId(), serviceToSave.getOrgIdentifier(), serviceToSave.getProjectIdentifier());
-      String yamlToPush = serviceToSave.getYaml();
-
-      gitAwareEntityHelper.createEntityOnGit(serviceToSave, yamlToPush, scope);
-    } else {
-      // checks for git x settings?
+    if (!cdGitXService.isNewGitXEnabledAndIsRemoteEntity(serviceToSave, gitEntityInfo)) {
+      if (serviceToSave.getProjectIdentifier() != null) {
+        throw new InvalidRequestException(
+            format("Remote git simplification was not enabled for Project [%s] in Organisation [%s] in Account [%s]",
+                serviceToSave.getProjectIdentifier(), serviceToSave.getOrgIdentifier(),
+                serviceToSave.getAccountIdentifier()));
+      } else {
+        throw new InvalidRequestException(
+            format("Remote git simplification or feature flag was not enabled for Organisation [%s] or Account [%s]",
+                serviceToSave.getOrgIdentifier(), serviceToSave.getAccountIdentifier()));
+      }
     }
 
-    ServiceEntity savedServiceEntity = mongoTemplate.save(serviceToSave);
-    return savedServiceEntity;
+    addGitParamsToServiceEntity(serviceToSave, gitEntityInfo);
+    Scope scope =
+        Scope.of(serviceToSave.getAccountId(), serviceToSave.getOrgIdentifier(), serviceToSave.getProjectIdentifier());
+    String yamlToPush = serviceToSave.getYaml();
+
+    gitAwareEntityHelper.createEntityOnGit(serviceToSave, yamlToPush, scope);
+    return mongoTemplate.save(serviceToSave);
+  }
+
+  @Override
+  public Optional<ServiceEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    Query query = new Query(buildCriteriaForServiceIdentifier(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, !notDeleted));
+
+    ServiceEntity savedEntity = mongoTemplate.findOne(query, ServiceEntity.class);
+
+    if (savedEntity == null) {
+      return Optional.empty();
+    }
+
+    if (savedEntity.getStoreType() == StoreType.REMOTE) {
+      // fetch yaml from git
+      String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
+      if (loadFromFallbackBranch) {
+        savedEntity = fetchRemoteEntityWithFallBackBranch(
+            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
+      } else {
+        savedEntity = fetchRemoteEntity(
+            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);
+      }
+    }
+
+    return Optional.of(savedEntity);
+  }
+
+  private Criteria buildCriteriaForServiceIdentifier(@NonNull String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NonNull String serviceIdentifier, boolean deleted) {
+    return Criteria.where(ServiceEntityKeys.accountId)
+        .is(accountIdentifier)
+        .and(ServiceEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(ServiceEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(ServiceEntityKeys.identifier)
+        .is(serviceIdentifier)
+        .and(ServiceEntityKeys.deleted)
+        .is(deleted);
+  }
+
+  ServiceEntity fetchRemoteEntity(String accountId, String orgIdentifier, String projectIdentifier,
+      ServiceEntity savedEntity, String branchName, boolean loadFromCache) {
+    return (ServiceEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
+        Scope.of(accountId, orgIdentifier, projectIdentifier),
+        GitContextRequestParams.builder()
+            .branchName(branchName)
+            .connectorRef(savedEntity.getConnectorRef())
+            .filePath(savedEntity.getFilePath())
+            .repoName(savedEntity.getRepo())
+            .entityType(EntityType.SERVICE)
+            .loadFromCache(loadFromCache)
+            .build(),
+        Collections.emptyMap());
+  }
+
+  ServiceEntity fetchRemoteEntityWithFallBackBranch(String accountId, String orgIdentifier, String projectIdentifier,
+      ServiceEntity savedEntity, String branch, boolean loadFromCache) {
+    try {
+      savedEntity = fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
+    } catch (WingsException ex) {
+      String fallBackBranch = savedEntity.getFallBackBranch();
+      GitAwareContextHelper.setIsDefaultBranchInGitEntityInfoWithParameter(savedEntity.getFallBackBranch());
+      if (shouldRetryWithFallBackBranch(ServiceElementMapper.getScmException(ex), branch, fallBackBranch)) {
+        log.info(String.format(
+            "Retrieving service [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));
+        savedEntity =
+            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch, loadFromCache);
+      } else {
+        throw ex;
+      }
+    }
+    return savedEntity;
+  }
+
+  @VisibleForTesting
+  boolean shouldRetryWithFallBackBranch(ScmException scmException, String branchTried, String serviceFallbackBranch) {
+    return scmException != null && SCM_BAD_REQUEST.equals(scmException.getCode())
+        && (isNotEmpty(serviceFallbackBranch) && !branchTried.equals(serviceFallbackBranch));
   }
 
   private void addGitParamsToServiceEntity(ServiceEntity serviceEntity, GitEntityInfo gitEntityInfo) {

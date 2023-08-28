@@ -240,7 +240,8 @@ public class ServiceResourceV2 {
       @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
           "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
     Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
+        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted,
+            ServiceElementMapper.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch);
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());

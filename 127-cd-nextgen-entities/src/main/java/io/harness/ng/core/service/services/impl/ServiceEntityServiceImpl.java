@@ -176,6 +176,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
+
+      // before trying to more expensive operations
+      validateIdentifierIsUnique(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
+          serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier());
+
       Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(serviceEntity);
       ServiceEntityValidator serviceEntityValidator =
           serviceEntityValidatorFactory.getServiceEntityValidator(serviceEntity);
@@ -195,6 +200,21 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           getDuplicateServiceExistsErrorMessage(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
               serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier()),
           USER_SRE, ex);
+    } catch (Exception ex) {
+      log.error(String.format("Error while saving service [%s] ", serviceEntity.getIdentifier()), ex);
+      throw new InvalidRequestException(
+          String.format("Error while saving service [%s]: %s", serviceEntity.getIdentifier(), ex.getMessage()));
+    }
+  }
+
+  private void validateIdentifierIsUnique(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    Optional<ServiceEntity> serviceEntity =
+        serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+    if (serviceEntity.isPresent()) {
+      throw new DuplicateFieldException(
+          getDuplicateServiceExistsErrorMessage(accountId, orgIdentifier, projectIdentifier, serviceIdentifier));
     }
   }
 
@@ -221,23 +241,32 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public Optional<ServiceEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
-    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
-
-    return getServiceByRef(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted);
+    // default behavior to not load from cache and fallback branch
+    return get(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false);
   }
 
-  private Optional<ServiceEntity> getServiceByRef(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
+  @Override
+  public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
+
+    return getServiceByRef(
+        accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache, loadFromFallbackBranch);
+  }
+
+  private Optional<ServiceEntity> getServiceByRef(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
     String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (serviceRefSplit == null || serviceRefSplit.length == 1) {
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
-          accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted);
+          accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted, loadFromCache, loadFromFallbackBranch);
     } else {
       IdentifierRef serviceIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-          serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted);
+          serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted, loadFromCache,
+          loadFromFallbackBranch);
     }
   }
 

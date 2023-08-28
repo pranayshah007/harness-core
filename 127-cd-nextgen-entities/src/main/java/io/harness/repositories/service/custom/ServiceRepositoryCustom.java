@@ -12,8 +12,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 
+import com.mongodb.DuplicateKeyException;
 import com.mongodb.client.result.DeleteResult;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -38,5 +40,9 @@ public interface ServiceRepositoryCustom {
 
   List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  ServiceEntity save(ServiceEntity serviceToSave) throws InvalidRequestException;
+  ServiceEntity save(ServiceEntity serviceToSave) throws InvalidRequestException, DuplicateKeyException;
+
+  Optional<ServiceEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch);
 }
