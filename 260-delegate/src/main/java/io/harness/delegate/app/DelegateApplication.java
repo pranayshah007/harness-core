@@ -9,6 +9,7 @@ package io.harness.delegate.app;
 
 import static io.harness.annotations.dev.HarnessModule._420_DELEGATE_AGENT;
 import static io.harness.configuration.DeployMode.isOnPrem;
+import static io.harness.delegate.DelegateProxyUtils.setupProxyConfig;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_DASH;
 import static io.harness.delegate.message.MessageConstants.NEW_DELEGATE;
 import static io.harness.delegate.message.MessageConstants.WATCHER_DATA;
@@ -41,6 +42,8 @@ import com.google.inject.Injector;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -69,16 +72,17 @@ public class DelegateApplication {
 
   public static void main(String... args) throws IOException {
     try {
-      String proxyUser = System.getenv("PROXY_USER");
-      if (isNotBlank(proxyUser)) {
-        System.setProperty("http.proxyUser", proxyUser);
-        System.setProperty("https.proxyUser", proxyUser);
-      }
-      String proxyPassword = System.getenv("PROXY_PASSWORD");
-      if (isNotBlank(proxyPassword)) {
-        System.setProperty("http.proxyPassword", proxyPassword);
-        System.setProperty("https.proxyPassword", proxyPassword);
-      }
+      //      String proxyUser = System.getenv("PROXY_USER");
+      //      if (isNotBlank(proxyUser)) {
+      //        System.setProperty("http.proxyUser", proxyUser);
+      //        System.setProperty("https.proxyUser", proxyUser);
+      //      }
+      //      String proxyPassword = System.getenv("PROXY_PASSWORD");
+      //      if (isNotBlank(proxyPassword)) {
+      //        System.setProperty("http.proxyPassword", proxyPassword);
+      //        System.setProperty("https.proxyPassword", proxyPassword);
+      //      }
+      setupProxyConfig();
 
       File configFile = new File(args[0]);
       configuration = new YamlUtils().read(FileUtils.readFileToString(configFile, UTF_8), DelegateConfiguration.class);

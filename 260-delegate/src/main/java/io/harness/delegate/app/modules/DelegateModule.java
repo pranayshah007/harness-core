@@ -1159,6 +1159,8 @@ public class DelegateModule extends AbstractModule {
     System.setProperty("org.asynchttpclient.AsyncHttpClientConfig.proxy.password", System.getenv("PROXY_USER"));
     System.setProperty("org.asynchttpclient.AsyncHttpClientConfig.proxy.user", System.getenv("PROXY_PASSWORD"));
 
+    //  we can set this: setUseProxyProperties(true) to false if global authenticator
+
     return new DefaultAsyncHttpClient(
         new DefaultAsyncHttpClientConfig.Builder().setUseProxyProperties(true).setSslContext(sslContext).build());
   }

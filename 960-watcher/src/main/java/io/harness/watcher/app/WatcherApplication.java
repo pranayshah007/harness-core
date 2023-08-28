@@ -9,6 +9,7 @@ package io.harness.watcher.app;
 
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployMode.isOnPrem;
+import static io.harness.delegate.DelegateProxyUtils.setupProxyConfig;
 import static io.harness.delegate.message.MessageConstants.NEW_WATCHER;
 import static io.harness.delegate.message.MessengerType.WATCHER;
 import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractAndPrepareAuthority;
@@ -33,6 +34,8 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -67,16 +70,17 @@ public class WatcherApplication {
     try {
       processId = Splitter.on("@").split(ManagementFactory.getRuntimeMXBean().getName()).iterator().next();
 
-      String proxyUser = System.getenv("PROXY_USER");
-      if (isNotBlank(proxyUser)) {
-        System.setProperty("http.proxyUser", proxyUser);
-        System.setProperty("https.proxyUser", proxyUser);
-      }
-      String proxyPassword = System.getenv("PROXY_PASSWORD");
-      if (isNotBlank(proxyPassword)) {
-        System.setProperty("http.proxyPassword", proxyPassword);
-        System.setProperty("https.proxyPassword", proxyPassword);
-      }
+      //      String proxyUser = System.getenv("PROXY_USER");
+      //      if (isNotBlank(proxyUser)) {
+      //        System.setProperty("http.proxyUser", proxyUser);
+      //        System.setProperty("https.proxyUser", proxyUser);
+      //      }
+      //      String proxyPassword = System.getenv("PROXY_PASSWORD");
+      //      if (isNotBlank(proxyPassword)) {
+      //        System.setProperty("http.proxyPassword", proxyPassword);
+      //        System.setProperty("https.proxyPassword", proxyPassword);
+      //      }
+      setupProxyConfig();
 
       File configFile = new File(args[0]);
       configuration = new YamlUtils().read(FileUtils.readFileToString(configFile, UTF_8), WatcherConfiguration.class);

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.app;
 
+import static io.harness.delegate.DelegateProxyUtils.setupProxyConfig;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -39,6 +40,8 @@ import io.dropwizard.setup.Environment;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -68,19 +71,6 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
 
   public static void main(final String... args) throws Exception {
     new DelegateAgentApplication(args[1]).run(args);
-  }
-
-  private static void setupProxyConfig() {
-    final String proxyUser = System.getenv("PROXY_USER");
-    if (isNotBlank(proxyUser)) {
-      System.setProperty("http.proxyUser", proxyUser);
-      System.setProperty("https.proxyUser", proxyUser);
-    }
-    final String proxyPassword = System.getenv("PROXY_PASSWORD");
-    if (isNotBlank(proxyPassword)) {
-      System.setProperty("http.proxyPassword", proxyPassword);
-      System.setProperty("https.proxyPassword", proxyPassword);
-    }
   }
 
   @Override
