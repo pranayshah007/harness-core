@@ -17,12 +17,15 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.outcome.HelmChartOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo.ManifestStoreInfoBuilder;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -56,5 +59,20 @@ public class HelmChartManifestOutcome implements ManifestOutcome {
       return ParameterField.createValueField(Collections.emptyList());
     }
     return this.valuesPaths;
+  }
+  @Override
+  public Optional<ManifestStoreInfo> toManifestStoreInfo() {
+    ManifestStoreInfoBuilder manifestInfoBuilder = ManifestStoreInfo.builder();
+    if (this.getHelm() != null) {
+      manifestInfoBuilder.chartName(this.getHelm().getName());
+      manifestInfoBuilder.chartVersion(this.getHelm().getVersion());
+    } else {
+      manifestInfoBuilder.chartName(getParameterFieldValue(this.getChartName()));
+      manifestInfoBuilder.chartVersion(getParameterFieldValue(this.getChartVersion()));
+    }
+    manifestInfoBuilder.helmVersion(this.getHelmVersion().toString());
+    manifestInfoBuilder.subChartPath(getParameterFieldValue(this.getSubChartPath()));
+    store.populateManifestStoreInfo(manifestInfoBuilder);
+    return Optional.of(manifestInfoBuilder.build());
   }
 }
