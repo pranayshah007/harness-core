@@ -194,7 +194,6 @@ import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumer;
-import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventConsumerV2;
@@ -700,22 +699,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
 
-    if (appConfig.getStreamPerServiceConfiguration().isMigrateInterrupt()) {
-      pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class), 1);
-    }
-    if (appConfig.getStreamPerServiceConfiguration().isMigrateFacilitator()) {
-      pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
-    }
-    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeStart()) {
-      pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 2);
-    }
-    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeProgress()) {
-      pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
-    }
-
-    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeResume()) {
-      pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 2);
-    }
+    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 2);
 
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class),

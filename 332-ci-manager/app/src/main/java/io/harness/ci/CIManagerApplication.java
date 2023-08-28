@@ -344,7 +344,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerYamlSdk(injector);
     scheduleJobs(injector, configuration);
     registerQueueListener(injector);
-    registerPmsSdkEvents(injector, configuration);
+    registerPmsSdkEvents(injector);
     initializeEnforcementFramework(injector);
     registerEventConsumers(injector);
 
@@ -497,7 +497,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }
 
-  private void registerPmsSdkEvents(Injector injector, CIManagerConfiguration appConfig) {
+  private void registerPmsSdkEvents(Injector injector) {
     log.info("Initializing redis abstract consumers...");
     PipelineEventConsumerController pipelineEventConsumerController =
         injector.getInstance(PipelineEventConsumerController.class);
@@ -510,22 +510,12 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
 
-    if (appConfig.getStreamPerServiceConfiguration().isMigrateInterrupt()) {
-      pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class), 1);
-    }
-    if (appConfig.getStreamPerServiceConfiguration().isMigrateFacilitator()) {
-      pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
-    }
-    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeStart()) {
-      pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 2);
-    }
-    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeProgress()) {
-      pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
-    }
-
-    if (appConfig.getStreamPerServiceConfiguration().isMigrateNodeResume()) {
-      pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 2);
-    }
+    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 2);
 
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(CINotifyEventConsumerRedis.class), 15);
