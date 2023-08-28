@@ -8,6 +8,8 @@
 # --global.imagePullSecrets Global Docker registry secret names as an array
 # --global.storageClass Global StorageClass for Persistent Volume(s)
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   kubeVersion: ""
   loadbalancerURL: ""
   stackDriverLoggingEnabled: false
@@ -83,7 +85,7 @@ image:
   repository: harness/cdcdata-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "79819"
+  tag: "80209"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
