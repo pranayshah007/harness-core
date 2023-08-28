@@ -42,10 +42,10 @@ public class AsgRollingDeployBaseStepInfo {
   @JsonProperty("skipMatching")
   ParameterField<Boolean> skipMatching;
 
-  @Deprecated
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("useAlreadyRunningInstances")
+  @Deprecated
   ParameterField<Boolean> useAlreadyRunningInstances;
 
   @YamlSchemaTypes({expression})

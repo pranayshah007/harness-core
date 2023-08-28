@@ -32,28 +32,28 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @TypeAlias("AsgBlueGreenDeployBaseStepInfo")
 public class AsgBlueGreenDeployBaseStepInfo {
-  @Deprecated @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> loadBalancer;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Deprecated ParameterField<String> loadBalancer;
 
-  @Deprecated @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> prodListener;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Deprecated ParameterField<String> prodListener;
 
-  @Deprecated
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Deprecated
   ParameterField<String> prodListenerRuleArn;
 
-  @Deprecated @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> stageListener;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Deprecated ParameterField<String> stageListener;
 
-  @Deprecated
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Deprecated
   ParameterField<String> stageListenerRuleArn;
 
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @Deprecated
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @JsonProperty("useAlreadyRunningInstances")
+  @Deprecated
   ParameterField<Boolean> useAlreadyRunningInstances;
 
   @ApiModelProperty(dataType = SwaggerConstants.INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH)
