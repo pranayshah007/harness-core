@@ -19,8 +19,8 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
-import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -83,12 +83,11 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.ThreadOperationContextHelper;
 
 import com.google.inject.Inject;
-
 import java.security.AccessControlException;
-import java.util.List;
-import java.util.Optional;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -117,13 +116,15 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   private ResourceScope resourceScope;
   private Resource resource;
   private AccessControlClient accessControlClient;
-  private static final List<String> permissionsList = Arrays.asList(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT,
-                                                                    PipelineRbacPermissions.PIPELINE_EXECUTE);
+  private static final List<String> permissionsList =
+      Arrays.asList(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT, PipelineRbacPermissions.PIPELINE_EXECUTE);
 
-//  We can use this method in future if more permissions are to be checked at a single time / simultaneously.
-//  public boolean checkForPipelineCreateEditOrExecAccess(ResourceScope resourceScope, Resource resourceType, String permission) throws AccessControlException {
-//    return permissionsList.contains(permission) && accessControlClient.hasAccess(resourceScope, resourceType, permission);
-//  }
+  //  We can use this method in future if more permissions are to be checked at a single time / simultaneously.
+  //  public boolean checkForPipelineCreateEditOrExecAccess(ResourceScope resourceScope, Resource resourceType, String
+  //  permission) throws AccessControlException {
+  //    return permissionsList.contains(permission) && accessControlClient.hasAccess(resourceScope, resourceType,
+  //    permission);
+  //  }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
@@ -175,11 +176,16 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String pipelineBranch, String pipelineRepoID,
       GitEntityCreateInfoDTO gitEntityCreateInfo, @NotNull String yaml) throws AccessControlException {
-    if(permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)){
-      resourceScope = ResourceScope.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+      resourceScope = ResourceScope.builder()
+                          .accountIdentifier(accountId)
+                          .orgIdentifier(orgIdentifier)
+                          .projectIdentifier(projectIdentifier)
+                          .build();
       resource = Resource.builder().resourceType("PIPELINE").build();
     }
-    accessControlClient.checkForAccessOrThrow(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
+    accessControlClient.checkForAccessOrThrow(
+        resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountId, yaml);
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityFromVersion(accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, yaml, inputSetVersion, InputSetEntityType.INPUT_SET);
@@ -195,11 +201,16 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml) throws AccessControlException {
-    if(permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)){
-      resourceScope = ResourceScope.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+      resourceScope = ResourceScope.builder()
+                          .accountIdentifier(accountId)
+                          .orgIdentifier(orgIdentifier)
+                          .projectIdentifier(projectIdentifier)
+                          .build();
       resource = Resource.builder().resourceType("PIPELINE").build();
     }
-    accessControlClient.checkForAccessOrThrow(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
+    accessControlClient.checkForAccessOrThrow(
+        resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityForOverlay(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     log.info(
@@ -215,12 +226,18 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<InputSetResponseDTOPMS> updateInputSet(String ifMatch, String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
-      String pipelineBranch, String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) throws AccessControlException {
-    if(permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)){
-      resourceScope = ResourceScope.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+      String pipelineBranch, String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml)
+      throws AccessControlException {
+    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+      resourceScope = ResourceScope.builder()
+                          .accountIdentifier(accountId)
+                          .orgIdentifier(orgIdentifier)
+                          .projectIdentifier(projectIdentifier)
+                          .build();
       resource = Resource.builder().resourceType("PIPELINE").build();
     }
-    accessControlClient.checkForAccessOrThrow(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
+    accessControlClient.checkForAccessOrThrow(
+        resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountId, yaml);
@@ -236,11 +253,16 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
       GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml) throws AccessControlException {
-    if(permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)){
-      resourceScope = ResourceScope.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+      resourceScope = ResourceScope.builder()
+                          .accountIdentifier(accountId)
+                          .orgIdentifier(orgIdentifier)
+                          .projectIdentifier(projectIdentifier)
+                          .build();
       resource = Resource.builder().resourceType("PIPELINE").build();
     }
-    accessControlClient.checkForAccessOrThrow(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
+    accessControlClient.checkForAccessOrThrow(
+        resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     log.info(
         String.format("Updating overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
             inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
@@ -407,12 +429,18 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<InputSetSanitiseResponseDTO> sanitiseInputSet(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier, String pipelineBranch,
-      String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String invalidInputSetYaml) throws AccessControlException {
-    if(permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)){
-      resourceScope = ResourceScope.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+      String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String invalidInputSetYaml)
+      throws AccessControlException {
+    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+      resourceScope = ResourceScope.builder()
+                          .accountIdentifier(accountId)
+                          .orgIdentifier(orgIdentifier)
+                          .projectIdentifier(projectIdentifier)
+                          .build();
       resource = Resource.builder().resourceType("PIPELINE").build();
     }
-    accessControlClient.checkForAccessOrThrow(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
+    accessControlClient.checkForAccessOrThrow(
+        resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     String pipelineYaml = validateAndMergeHelper
                               .getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
                                   pipelineBranch, pipelineRepoID, false, false)
@@ -450,12 +478,18 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   public ResponseDTO<InputSetImportResponseDTO> importInputSetFromGit(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier,
-      GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO) throws AccessControlException {
-    if(permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)){
-      resourceScope = ResourceScope.builder().accountIdentifier(accountId).orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+      GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO)
+      throws AccessControlException {
+    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+      resourceScope = ResourceScope.builder()
+                          .accountIdentifier(accountId)
+                          .orgIdentifier(orgIdentifier)
+                          .projectIdentifier(projectIdentifier)
+                          .build();
       resource = Resource.builder().resourceType("PIPELINE").build();
     }
-    accessControlClient.checkForAccessOrThrow(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
+    accessControlClient.checkForAccessOrThrow(
+        resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     InputSetEntity inputSetEntity =
         pmsInputSetService.importInputSetFromRemote(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             inputSetIdentifier, inputSetImportRequestDTO, gitImportInfoDTO.getIsForceImport());

@@ -147,19 +147,18 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     MockitoAnnotations.initMocks(this);
 
     resourceScope = ResourceScope.builder()
-            .accountIdentifier(ACCOUNT_ID)
-            .orgIdentifier(ORG_IDENTIFIER)
-            .projectIdentifier(PROJ_IDENTIFIER)
-            .build();
+                        .accountIdentifier(ACCOUNT_ID)
+                        .orgIdentifier(ORG_IDENTIFIER)
+                        .projectIdentifier(PROJ_IDENTIFIER)
+                        .build();
 
-    resource = Resource.builder()
-            .resourceType(PIPELINE_RESOURCE_IDENTIFIER)
-            .build();
+    resource = Resource.builder().resourceType(PIPELINE_RESOURCE_IDENTIFIER).build();
 
     accessControlClient = mock(AccessControlClient.class);
 
-    inputSetResourcePMSImpl = new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService,
-        validateAndMergeHelper, inputSetsApiUtils, executionService, pmsFeatureFlagService, resourceScope, resource, accessControlClient);
+    inputSetResourcePMSImpl =
+        new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService, validateAndMergeHelper,
+            inputSetsApiUtils, executionService, pmsFeatureFlagService, resourceScope, resource, accessControlClient);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
