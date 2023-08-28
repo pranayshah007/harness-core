@@ -644,7 +644,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     boolean remote = config.getShouldConfigureWithPMS() != null && config.getShouldConfigureWithPMS();
 
     return PmsSdkConfiguration.builder()
-        .streamPerServiceConfiguration(config.getStreamPerServiceConfiguration())
+        .streamPerServiceConfiguration(config.isStreamPerServiceConfiguration())
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
         .moduleType(ModuleType.CV)
         .pipelineServiceInfoProviderClass(CVNGPipelineServiceInfoProvider.class)

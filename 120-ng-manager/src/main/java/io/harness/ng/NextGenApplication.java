@@ -746,7 +746,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     return PmsSdkConfiguration.builder()
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
-        .streamPerServiceConfiguration(appConfig.getStreamPerServiceConfiguration())
+        .streamPerServiceConfiguration(appConfig.isStreamPerServiceConfiguration())
         .moduleType(ModuleType.CD)
         .grpcServerConfig(appConfig.getPmsSdkGrpcServerConfig())
         .pmsGrpcClientConfig(appConfig.getPmsGrpcClientConfig())

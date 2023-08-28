@@ -666,9 +666,4 @@ webhookEventHsqsDequeueConfig:
 
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
 
-streamPerServiceConfiguration:
-  migrateNodeStart: ${PIE_MIGRATE_NODE_START:-true}
-  migrateNodeResume: ${PIE_MIGRATE_NODE_RESUME:-false}
-  migrateFacilitator: ${PIE_MIGRATE_FACILITATOR:-false}
-  migrateNodeProgress:  ${PIE_MIGRATE_PROGRESS:-false}
-  migrateInterrupt: ${PIE_MIGRATE_INTERRUPT:-false}
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- fale}

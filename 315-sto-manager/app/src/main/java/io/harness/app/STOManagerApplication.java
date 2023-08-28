@@ -425,7 +425,7 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
     }
 
     return PmsSdkConfiguration.builder()
-        .streamPerServiceConfiguration(config.getStreamPerServiceConfiguration())
+        .streamPerServiceConfiguration(config.isStreamPerServiceConfiguration())
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
         .moduleType(moduleType)
         .pipelineServiceInfoProviderClass(pipelineServiceInfoProviderClass)

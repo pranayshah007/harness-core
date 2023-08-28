@@ -722,7 +722,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
 
   private PmsSdkConfiguration getPmsSdkConfiguration(PipelineServiceConfiguration config) {
     return PmsSdkConfiguration.builder()
-        .streamPerServiceConfiguration(config.getStreamPerServiceConfiguration())
+        .streamPerServiceConfiguration(config.isStreamPerServiceConfiguration())
         .deploymentMode(SdkDeployMode.REMOTE_IN_PROCESS)
         .moduleType(ModuleType.PMS)
         .pipelineServiceInfoProviderClass(PipelineServiceInternalInfoProvider.class)

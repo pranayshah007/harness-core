@@ -394,7 +394,7 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
     boolean remote = config.getShouldConfigureWithPMS() != null && config.getShouldConfigureWithPMS();
 
     return PmsSdkConfiguration.builder()
-        .streamPerServiceConfiguration(config.getStreamPerServiceConfiguration())
+        .streamPerServiceConfiguration(config.isStreamPerServiceConfiguration())
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
         .moduleType(moduleType)
         .pipelineServiceInfoProviderClass(pipelineServiceInfoProviderClass)

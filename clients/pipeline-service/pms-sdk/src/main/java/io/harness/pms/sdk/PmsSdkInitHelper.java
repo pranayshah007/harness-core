@@ -137,31 +137,30 @@ public class PmsSdkInitHelper {
 
     ModuleType moduleType = sdkConfiguration.getModuleType();
     EventsFrameworkConfiguration eventsConfig = sdkConfiguration.getEventsFrameworkConfiguration();
-    StreamPerServiceConfiguration streamPerServiceConfiguration = sdkConfiguration.getStreamPerServiceConfiguration();
     return InitializeSdkRequest.newBuilder()
         .setName(sdkConfiguration.getServiceName())
         .putAllSupportedTypes(PmsSdkInitHelper.calculateSupportedTypes(infoProvider))
         .addAllSupportedSteps(mapToSdkStep(calculateStepTypes(injector), infoProvider.getStepInfo()))
         .setSdkModuleInfo(SdkModuleInfo.newBuilder().setDisplayName(moduleType.getDisplayName()).build())
         .setInterruptConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.INTERRUPT_EVENT,
-            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+            sdkConfiguration.getServiceName(), sdkConfiguration.isStreamPerServiceConfiguration()))
         .setOrchestrationEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.ORCHESTRATION_EVENT,
-            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+            sdkConfiguration.getServiceName(), sdkConfiguration.isStreamPerServiceConfiguration()))
         .setFacilitatorEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.FACILITATOR_EVENT,
-            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+            sdkConfiguration.getServiceName(), sdkConfiguration.isStreamPerServiceConfiguration()))
         .putAllStaticAliases(CollectionUtils.emptyIfNull(sdkConfiguration.getStaticAliases()))
         .addAllSdkFunctors(PmsSdkInitHelper.getSupportedSdkFunctorsList(sdkConfiguration))
         .addAllJsonExpansionInfo(getJsonExpansionInfo(sdkConfiguration))
         .setNodeStartEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.NODE_START,
-            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+            sdkConfiguration.getServiceName(), sdkConfiguration.isStreamPerServiceConfiguration()))
         .setProgressEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.PROGRESS_EVENT,
-            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+            sdkConfiguration.getServiceName(), sdkConfiguration.isStreamPerServiceConfiguration()))
         .setNodeAdviseEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.NODE_ADVISE,
-            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+            sdkConfiguration.getServiceName(), sdkConfiguration.isStreamPerServiceConfiguration()))
         .setNodeResumeEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.NODE_RESUME,
-            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+            sdkConfiguration.getServiceName(), sdkConfiguration.isStreamPerServiceConfiguration()))
         .setPlanCreationEventConsumerConfig(buildConsumerConfig(eventsConfig, PmsEventCategory.CREATE_PARTIAL_PLAN,
-            sdkConfiguration.getServiceName(), streamPerServiceConfiguration))
+            sdkConfiguration.getServiceName(), sdkConfiguration.isStreamPerServiceConfiguration()))
         .build();
   }
 
@@ -210,7 +209,7 @@ public class PmsSdkInitHelper {
    *
    */
   private static ConsumerConfig buildConsumerConfig(EventsFrameworkConfiguration eventsConfig,
-      PmsEventCategory eventCategory, String serviceName, StreamPerServiceConfiguration streamPerServiceConfiguration) {
+      PmsEventCategory eventCategory, String serviceName, boolean streamPerServiceConfiguration) {
     RedisConfig redisConfig = eventsConfig.getRedisConfig();
     if (redisConfig != null) {
       return ConsumerConfig.newBuilder()
@@ -226,10 +225,10 @@ public class PmsSdkInitHelper {
    *
    */
   private static Redis buildConsumerRedisConfig(
-      String serviceName, PmsEventCategory eventCategory, StreamPerServiceConfiguration streamPerServiceConfiguration) {
+      String serviceName, PmsEventCategory eventCategory, boolean streamPerServiceConfiguration) {
     switch (eventCategory) {
       case INTERRUPT_EVENT:
-        if (streamPerServiceConfiguration.isMigrateInterrupt()) {
+        if (streamPerServiceConfiguration) {
           return Redis.newBuilder()
               .setTopicName(String.format(PIPELINE_INTERRUPT_TOPIC_WITH_SERVICE_NAME, serviceName))
               .build();
@@ -239,21 +238,21 @@ public class PmsSdkInitHelper {
       case ORCHESTRATION_EVENT:
         return Redis.newBuilder().setTopicName(PIPELINE_ORCHESTRATION_EVENT_TOPIC).build();
       case FACILITATOR_EVENT:
-        if (streamPerServiceConfiguration.isMigrateFacilitator()) {
+        if (streamPerServiceConfiguration) {
           return Redis.newBuilder()
               .setTopicName(String.format(PIPELINE_FACILITATOR_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName))
               .build();
         }
         return Redis.newBuilder().setTopicName(PIPELINE_FACILITATOR_EVENT_TOPIC).build();
       case NODE_START:
-        if (streamPerServiceConfiguration.isMigrateNodeStart()) {
+        if (streamPerServiceConfiguration) {
           return Redis.newBuilder()
               .setTopicName(String.format(PIPELINE_NODE_START_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName))
               .build();
         }
         return Redis.newBuilder().setTopicName(PIPELINE_NODE_START_EVENT_TOPIC).build();
       case PROGRESS_EVENT:
-        if (streamPerServiceConfiguration.isMigrateNodeResume()) {
+        if (streamPerServiceConfiguration) {
           return Redis.newBuilder()
               .setTopicName(String.format(PIPELINE_PROGRESS_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName))
               .build();
@@ -262,7 +261,7 @@ public class PmsSdkInitHelper {
       case NODE_ADVISE:
         return Redis.newBuilder().setTopicName(PIPELINE_NODE_ADVISE_EVENT_TOPIC).build();
       case NODE_RESUME:
-        if (streamPerServiceConfiguration.isMigrateNodeResume()) {
+        if (streamPerServiceConfiguration) {
           return Redis.newBuilder()
               .setTopicName(String.format(PIPELINE_NODE_RESUME_EVENT_TOPIC_WITH_SERVICE_NAME, serviceName))
               .build();

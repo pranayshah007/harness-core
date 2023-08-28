@@ -29,7 +29,6 @@ import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
-import io.harness.pms.sdk.StreamPerServiceConfiguration;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.ManagerAuthConfig;
@@ -122,7 +121,7 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("enableDashboardTimescale") private Boolean enableDashboardTimescale;
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
   @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
-  @JsonProperty("streamPerServiceConfiguration") private StreamPerServiceConfiguration streamPerServiceConfiguration;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   private String portalUrl;
 

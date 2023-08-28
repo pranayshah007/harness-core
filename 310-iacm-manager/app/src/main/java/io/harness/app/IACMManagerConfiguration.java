@@ -23,7 +23,6 @@ import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
-import io.harness.pms.sdk.StreamPerServiceConfiguration;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
@@ -88,7 +87,7 @@ public class IACMManagerConfiguration extends Configuration implements AssetsBun
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("distributedLockImplementation") DistributedLockImplementation distributedLockImplementation;
-  @JsonProperty("streamPerServiceConfiguration") private StreamPerServiceConfiguration streamPerServiceConfiguration;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   private ScmConnectionConfig scmConnectionConfig;
 

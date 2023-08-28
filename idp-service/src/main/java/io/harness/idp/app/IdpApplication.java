@@ -304,7 +304,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     boolean remote = configuration.getShouldConfigureWithPMS() != null && configuration.getShouldConfigureWithPMS();
 
     return PmsSdkConfiguration.builder()
-        .streamPerServiceConfiguration(configuration.getStreamPerServiceConfiguration())
+        .streamPerServiceConfiguration(configuration.isStreamPerServiceConfiguration())
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
         .moduleType(ModuleType.IDP)
         .grpcServerConfig(configuration.getPmsSdkGrpcServerConfig())

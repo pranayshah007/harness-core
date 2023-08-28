@@ -41,7 +41,6 @@ import io.harness.notification.NotificationClientConfiguration;
 import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.outbox.OutboxPollConfiguration;
 import io.harness.pms.redisConsumer.DebeziumConsumersConfig;
-import io.harness.pms.sdk.StreamPerServiceConfiguration;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.CEAwsSetupConfig;
@@ -279,7 +278,7 @@ public class NextGenConfiguration extends Configuration {
   private HsqsDequeueConfig webhookBranchHookEventHsqsDequeueConfig;
   @JsonProperty("webhookPushEventHsqsDequeueConfig") private HsqsDequeueConfig webhookPushEventHsqsDequeueConfig;
   private boolean useQueueServiceForWebhookTriggers;
-  @JsonProperty("streamPerServiceConfiguration") private StreamPerServiceConfiguration streamPerServiceConfiguration;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

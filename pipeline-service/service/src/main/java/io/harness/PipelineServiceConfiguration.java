@@ -34,7 +34,6 @@ import io.harness.ngtriggers.TriggerConfiguration;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.pms.event.overviewLandingPage.DebeziumConsumersConfig;
-import io.harness.pms.sdk.StreamPerServiceConfiguration;
 import io.harness.pms.sdk.core.PipelineSdkRedisEventsConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
@@ -177,7 +176,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("expandedJsonConfig") private ExpandedJsonLockConfig expandedJsonLockConfig;
   @JsonProperty("pipelineSetupUsageCreationExecutorServiceConfig")
   private ThreadPoolConfig pipelineSetupUsageCreationPoolConfig;
-  @JsonProperty("streamPerServiceConfiguration") private StreamPerServiceConfiguration streamPerServiceConfiguration;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   @JsonProperty("podCleanUpThreadPoolConfig") private ThreadPoolConfig podCleanUpThreadPoolConfig;
 

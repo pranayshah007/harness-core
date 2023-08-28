@@ -437,7 +437,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     return PmsSdkConfiguration.builder()
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
-        .streamPerServiceConfiguration(config.getStreamPerServiceConfiguration())
+        .streamPerServiceConfiguration(config.isStreamPerServiceConfiguration())
         .moduleType(moduleType)
         .pipelineServiceInfoProviderClass(pipelineServiceInfoProviderClass)
         .grpcServerConfig(config.getPmsSdkGrpcServerConfig())
