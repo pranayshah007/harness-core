@@ -25,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
-  DataPointParserFactory dataPointParserFactory;
   DslClientFactory dslClientFactory;
 
   @Override

@@ -12,5 +12,6 @@ import java.util.Map;
 
 public interface PipelineInfo {
   Map<String, Object> getParsedValue(PMSPipelineResponseDTO ciPmsPipelineResponseDTO,
-      PMSPipelineResponseDTO cdPmsPipelineResponseDTO, String dataPointIdentifier);
+      PMSPipelineResponseDTO cdPmsPipelineResponseDTO, String dataPointIdentifier, String ciPipelineUrl,
+      String cdPipelineUrl);
 }

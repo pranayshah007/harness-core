@@ -7,7 +7,7 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
-import static io.harness.idp.scorecard.datasources.constants.Constants.CUSTOM_PROVIDER;
+import static io.harness.idp.common.Constants.CUSTOM_IDENTIFIER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,7 +29,7 @@ import lombok.experimental.FieldDefaults;
 public class CustomProvider extends DataSourceProvider {
   protected CustomProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory) {
-    super(CUSTOM_PROVIDER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+    super(CUSTOM_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
         dataPointParserFactory);
   }
 

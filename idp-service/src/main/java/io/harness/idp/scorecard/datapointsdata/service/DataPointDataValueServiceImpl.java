@@ -8,8 +8,9 @@ package io.harness.idp.scorecard.datapointsdata.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.datapointsdata.dsldataprovider.base.DataSourceDsl;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.base.DslDataProvider;
-import io.harness.idp.scorecard.datapointsdata.dsldataprovider.factory.DslDataProviderFactory;
+import io.harness.idp.scorecard.datapointsdata.dsldataprovider.factory.DataSourceDslFactory;
 import io.harness.spec.server.idp.v1.model.DataSourceDataPointInfo;
 
 import com.google.inject.Inject;
@@ -21,12 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class DataPointDataValueServiceImpl implements DataPointDataValueService {
-  DslDataProviderFactory dslDataProviderFactory;
+  DataSourceDslFactory dataSourceDataProviderFactory;
 
   public Map<String, Object> getDataPointDataValues(
       String datasourceIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
-    DslDataProvider dslDataProvider = dslDataProviderFactory.getDslDataProvider(
-        datasourceIdentifier, dataSourceDataPointInfo.getDataSourceLocation().getDataSourceLocationIdentifier());
+    DataSourceDsl dataSourceDataProvider =
+        dataSourceDataProviderFactory.getDataSourceDataProvider(datasourceIdentifier);
+    DslDataProvider dslDataProvider = dataSourceDataProvider.getDslDataProvider(
+        dataSourceDataPointInfo.getDataSourceLocation().getDataSourceLocationIdentifier());
     return dslDataProvider.getDslData(datasourceIdentifier, dataSourceDataPointInfo);
   }
 }

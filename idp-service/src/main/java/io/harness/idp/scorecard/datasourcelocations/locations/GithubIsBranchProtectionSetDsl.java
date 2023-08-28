@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.common.GsonUtils;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
@@ -32,8 +31,6 @@ import org.apache.commons.collections.CollectionUtils;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class GithubIsBranchProtectionSetDsl implements DataSourceLocation {
   private static final String REPOSITORY_BRANCH_NAME_REPLACER = "{REPOSITORY_BRANCH_NAME_REPLACER}";
-
-  DataPointParserFactory dataPointParserFactory;
   DslClientFactory dslClientFactory;
 
   @Override

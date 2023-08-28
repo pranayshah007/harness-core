@@ -8,6 +8,7 @@ package io.harness.idp.scorecard.datapointsdata.dsldataprovider.factory;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.datapointsdata.dsldataprovider.base.DataSourceDsl;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.base.DslDataProvider;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.impl.HarnessPipelineSuccessPercent;
 import io.harness.idp.scorecard.datapointsdata.dsldataprovider.impl.HarnessPolicyEvaluationDsl;
@@ -19,34 +20,31 @@ import lombok.AllArgsConstructor;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-public class DslDataProviderFactory {
+public class HarnessDslFactory implements DataSourceDsl {
   HarnessStoScanDsl harnessStoScanDsl;
   HarnessPolicyEvaluationDsl harnessPolicyEvaluationDsl;
   HarnessPipelineSuccessPercent harnessPipelineSuccessPercent;
   HarnessTestPassingInCi harnessTestPassingInCi;
-  private static final String HARNESS_DATA_SOURCE = "Harness";
   private static final String HARNESS_STO_SCAN_SETUP_DSL = "harness_sto_scan_dsl";
   private static final String HARNESS_POLICY_EVALUATION_DSL = "harness_policy_evaluation_dsl";
   private static final String HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS = "harness_ci_success_percent_in_seven_days";
 
   private static final String HARNESS_TEST_PASSING_ON_CI_IS_ZERO = "harness_test_passing_on_ci_is_zero";
 
-  public DslDataProvider getDslDataProvider(String datasourceIdentifier, String dslIdentifier) {
-    if (datasourceIdentifier.equals(HARNESS_DATA_SOURCE)) {
-      switch (dslIdentifier) {
-        case HARNESS_STO_SCAN_SETUP_DSL:
-          return harnessStoScanDsl;
-        case HARNESS_POLICY_EVALUATION_DSL:
-          return harnessPolicyEvaluationDsl;
-        case HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS:
-          return harnessPipelineSuccessPercent;
-        case HARNESS_TEST_PASSING_ON_CI_IS_ZERO:
-          return harnessTestPassingInCi;
-      }
-    } else {
-      throw new UnsupportedOperationException(
-          String.format("For data source - %s , Dsl is not supported - %s", datasourceIdentifier, dslIdentifier));
+  @Override
+  public DslDataProvider getDslDataProvider(String dslIdentifier) {
+    switch (dslIdentifier) {
+      case HARNESS_STO_SCAN_SETUP_DSL:
+        return harnessStoScanDsl;
+      case HARNESS_POLICY_EVALUATION_DSL:
+        return harnessPolicyEvaluationDsl;
+      case HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS:
+        return harnessPipelineSuccessPercent;
+      case HARNESS_TEST_PASSING_ON_CI_IS_ZERO:
+        return harnessTestPassingInCi;
+      default:
+        throw new UnsupportedOperationException(
+            String.format("For data source - Harness , Dsl is not supported - %s", dslIdentifier));
     }
-    return null;
   }
 }

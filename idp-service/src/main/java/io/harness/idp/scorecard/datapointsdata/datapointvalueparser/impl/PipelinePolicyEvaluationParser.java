@@ -7,9 +7,11 @@
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl;
 
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
+import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserUtils;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineExecutionInfo;
 
 import com.google.gson.Gson;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
@@ -17,20 +19,30 @@ import org.json.JSONObject;
 
 public class PipelinePolicyEvaluationParser implements PipelineExecutionInfo {
   @Override
-  public Map<String, Object> getParsedValue(Object responseCI, Object responseCD, String dataPointIdentifier) {
+  public Map<String, Object> getParsedValue(
+      Object responseCI, Object responseCD, String dataPointIdentifier, String ciPipelineUrl, String cdPipelineUrl) {
     boolean policyEvaluationCI = false;
     boolean policyEvaluationCD = false;
     Map<String, Object> returnData = new HashMap<>();
 
+    ArrayList<String> errorMessagePipelines = new ArrayList<>();
     if (responseCI != null) {
       policyEvaluationCI = isPolicyEvaluationSuccessfulForLatestPipelineExecution(responseCI);
+      if (!policyEvaluationCI) {
+        errorMessagePipelines.add(ciPipelineUrl);
+      }
     }
 
     if (responseCD != null) {
       policyEvaluationCD = isPolicyEvaluationSuccessfulForLatestPipelineExecution(responseCD);
+      if (!policyEvaluationCD) {
+        errorMessagePipelines.add(cdPipelineUrl);
+      }
     }
 
-    returnData.put(dataPointIdentifier, policyEvaluationCI && policyEvaluationCD);
+    Map<String, Object> dataPointInfo =
+        ValueParserUtils.getDataPointsInfoMap(policyEvaluationCI && policyEvaluationCD, errorMessagePipelines);
+    returnData.put(dataPointIdentifier, dataPointInfo);
     return returnData;
   }
 

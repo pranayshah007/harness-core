@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.Yaml;
 
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
@@ -36,6 +37,28 @@ public class DslUtils {
     returnMap.put(DslConstants.CD_ORG_IDENTIFIER_KEY, splitText[8]);
     returnMap.put(DslConstants.CD_PROJECT_IDENTIFIER_KEY, splitText[10]);
     returnMap.put(DslConstants.CD_SERVICE_IDENTIFIER_KEY, splitText[12]);
+    returnMap.put(DslConstants.CD_SERVICE_HOST, splitText[2]);
     return returnMap;
+  }
+
+  public String getCiUrlFromCatalogInfoYaml(String catalogInfoYaml) {
+    Map<String, Object> annotationObject = getAnnotationsFromCatalogInfoYaml(catalogInfoYaml);
+    String ciPipelineUrls = (String) annotationObject.get("harness.io/pipelines");
+    String[] ciPipelineUrlsAsList = ciPipelineUrls.split("\n");
+    return ciPipelineUrlsAsList[0].split(":", 2)[1];
+  }
+
+  public String getServiceUrlFromCatalogInfoYaml(String catalogInfoYaml) {
+    Map<String, Object> annotationObject = getAnnotationsFromCatalogInfoYaml(catalogInfoYaml);
+    String serviceUrls = (String) annotationObject.get("harness.io/services");
+    String[] serviceUrlsAsList = serviceUrls.split("\n");
+    return serviceUrlsAsList[0].split(":", 2)[1];
+  }
+
+  public Map<String, Object> getAnnotationsFromCatalogInfoYaml(String catalogInfoYaml) {
+    Yaml yaml = new Yaml();
+    Map<String, Object> catalogInfoYamlObject = yaml.load(catalogInfoYaml);
+    Map<String, Object> metadataObject = (Map<String, Object>) catalogInfoYamlObject.get("metadata");
+    return (Map<String, Object>) metadataObject.get("annotations");
   }
 }

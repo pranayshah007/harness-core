@@ -7,7 +7,7 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
-import static io.harness.idp.scorecard.datasources.constants.Constants.HARNESS_PROVIDER;
+import static io.harness.idp.common.Constants.HARNESS_IDENTIFIER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,7 +27,7 @@ public class HarnessProvider extends DataSourceProvider {
   protected HarnessProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
       IdpAuthInterceptor idpAuthInterceptor) {
-    super(HARNESS_PROVIDER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+    super(HARNESS_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
         dataPointParserFactory);
     this.idpAuthInterceptor = idpAuthInterceptor;
   }
