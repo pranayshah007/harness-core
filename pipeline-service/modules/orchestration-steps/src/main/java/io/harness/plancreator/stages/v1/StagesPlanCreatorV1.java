@@ -16,6 +16,8 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -60,16 +62,23 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     // TODO : Figure out corresponding failure stages and put that here as well
     for (i = 0; i < stages.size() - 1; i++) {
       curr = stages.get(i);
+      String nextId = stages.get(i + 1).getUuid();
+      // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+      // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+      // bytes for complex objects. We will deprecate the first one in v1
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
-              .dependencies(Dependencies.newBuilder()
-                                .putDependencies(curr.getUuid(), curr.getYamlPath())
-                                .putDependencyMetadata(curr.getUuid(),
-                                    Dependency.newBuilder()
-                                        .putMetadata("nextId",
-                                            ByteString.copyFrom(kryoSerializer.asBytes(stages.get(i + 1).getUuid())))
-                                        .build())
-                                .build())
+              .dependencies(
+                  Dependencies.newBuilder()
+                      .putDependencies(curr.getUuid(), curr.getYamlPath())
+                      .putDependencyMetadata(curr.getUuid(),
+                          Dependency.newBuilder()
+                              .putMetadata(
+                                  YAMLFieldNameConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
+                              .setNodeMetadata(HarnessStruct.newBuilder().putFields(YAMLFieldNameConstants.NEXT_ID,
+                                  HarnessValue.newBuilder().setStringValue(nextId).build()))
+                              .build())
+                      .build())
               .build());
     }
 

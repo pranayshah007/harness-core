@@ -9,12 +9,14 @@ package io.harness.steps.shellscript.v1;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
+import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -38,7 +40,6 @@ import io.harness.when.utils.RunInfoUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,10 +64,7 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
     ShellScriptStepNode stepNode = YamlUtils.read(field.getNode().toString(), ShellScriptStepNode.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
     StepParameters stepParameters = ((PMSStepInfo) stepNode.getStepSpecType()).getStepParameters(stepNode, null, ctx);
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap,
-        metadataMap, PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepNode.getUuid()))
@@ -94,12 +92,24 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
     if (field.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField("strategy") == null) {
       builder.adviserObtainments(PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));
     }
+    DependencyMetadata dependencyMetadata =
+        StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(kryoSerializer, ctx, field.getUuid(),
+            dependenciesNodeMap, PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));
+
+    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+    // bytes for complex objects. We will deprecate the first one in v1
     return PlanCreationResponse.builder()
         .planNode(builder.build())
         .dependencies(
             DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                 .toBuilder()
-                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .putDependencyMetadata(field.getUuid(),
+                    Dependency.newBuilder()
+                        .putAllMetadata(dependencyMetadata.getMetadataMap())
+                        .setNodeMetadata(
+                            HarnessStruct.newBuilder().putAllFields(dependencyMetadata.getNodeMetadataMap()).build())
+                        .build())
                 .build())
         .build();
   }
