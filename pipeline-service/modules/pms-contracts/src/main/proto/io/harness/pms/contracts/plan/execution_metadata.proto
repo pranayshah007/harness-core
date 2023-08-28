@@ -22,7 +22,10 @@ message ExecutionMetadata {
   ExecutionPrincipalInfo principalInfo = 8;
   bytes gitSyncBranchContext = 10;
   string moduleType = 11;
+
+  // Not used anymore so please don't use it.
   RetryExecutionInfo retryInfo = 12;
+
   bool isNotificationConfigured = 13;
   PipelineStoreType pipelineStoreType = 14;
   string pipelineConnectorRef = 15;
