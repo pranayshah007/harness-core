@@ -4,6 +4,8 @@
 global:
   kubeVersion: ""
   loadbalancerURL: ""
+  commonAnnotations: {}
+  commonLabels: {}
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -88,7 +90,7 @@ image:
   repository: harness/template-service-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "79819"
+  tag: "1.12.1"
   digest: ""
   imagePullSecrets: []
 
@@ -145,6 +147,7 @@ service:
   port: 15002
   grpcport: 15011
   gitsyncgrpcport: 16002
+  annotations: {}
 
 resources:
   limits:
@@ -196,3 +199,8 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

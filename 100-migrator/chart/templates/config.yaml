@@ -3,6 +3,13 @@ kind: ConfigMap
 metadata:
   name: migrator-config
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotation }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   ALLOWED_ORIGINS: {{ .Values.config.ALLOWED_ORIGINS | default .Values.global.loadbalancerURL }}
   API_URL: {{ .Values.config.API_URL | default .Values.global.loadbalancerURL }}

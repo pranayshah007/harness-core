@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   loadbalancerURL: ""
   database:
     postgres:
@@ -85,7 +87,7 @@ image:
   repository: harness/ng-dashboard-aggregator-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "700243-000"
+  tag: "80211"
   digest: ""
   imagePullSecrets: []
 
@@ -147,6 +149,7 @@ probes:
     failureThreshold: 3
 
 service:
+  annotations: {}
   type: ClusterIP
   protocol: TCP
   port: 7100
@@ -175,3 +178,8 @@ affinity: {}
 
 additionalConfigs: {}
 java17flags: ""
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}
