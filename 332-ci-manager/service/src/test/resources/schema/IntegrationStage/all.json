@@ -5249,6 +5249,9 @@
               "type": "string"
             }
           ]
+        },
+        "slsa": {
+          "$ref": "#/definitions/SlsaConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -10664,6 +10667,27 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaConfig": {
+      "type": "object",
+      "properties": {
+        "attestation": {
+          "$ref": "#/definitions/Attestation"
+        },
+        "enabled": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "SniperStepInfo": {
