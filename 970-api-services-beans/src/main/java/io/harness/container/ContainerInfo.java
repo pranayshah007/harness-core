@@ -9,6 +9,7 @@ package io.harness.container;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ecs.EcsContainerDetails;
 
@@ -26,6 +27,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@RecasterAlias("io.harness.container.ContainerInfo")
 public class ContainerInfo {
   public enum Status { SUCCESS, FAILURE }
 

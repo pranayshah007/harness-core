@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.awssecretmanager.outcome;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.SecretManagerDescriptionConstants;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
@@ -29,6 +30,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("io.harness.delegate.beans.connector.awssecretmanager.outcome.AwsSecretManagerOutcomeDTO")
 public class AwsSecretManagerOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @Schema(description = SecretManagerDescriptionConstants.AWS_AUTH_CRED_SM)
   @Valid

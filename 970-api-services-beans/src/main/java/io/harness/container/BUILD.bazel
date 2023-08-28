@@ -19,6 +19,7 @@ java_library(
     deps = [
         "//:lombok",
         "//970-api-services-beans/src/main/java/io/harness/ecs:module",
+        "//979-recaster/src/main/java/io/harness/annotation:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_amazonaws_aws_java_sdk_ec2",
     ],

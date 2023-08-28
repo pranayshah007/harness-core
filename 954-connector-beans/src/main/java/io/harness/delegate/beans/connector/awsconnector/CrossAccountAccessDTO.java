@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.awsconnector;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,6 +25,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("CrossAccountAccess")
 @Schema(name = "CrossAccountAccess", description = "This contains AWS connector cross account access details")
+@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO")
 public class CrossAccountAccessDTO {
   @NotNull private String crossAccountRoleArn;
   private String externalId;

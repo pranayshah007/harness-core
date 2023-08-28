@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.azureconnector;
 import static io.harness.ConnectorConstants.INHERIT_FROM_DELEGATE_TYPE_ERROR_MSG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
@@ -40,6 +41,7 @@ import lombok.EqualsAndHashCode;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel("AzureConnector")
 @Schema(name = "AzureConnector", description = "This contains details of the Azure connector")
+@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO")
 public class AzureConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @NotNull @Valid AzureCredentialDTO credential;
   Set<String> delegateSelectors;
