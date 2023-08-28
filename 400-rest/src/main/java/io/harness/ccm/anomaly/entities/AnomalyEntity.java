@@ -57,7 +57,6 @@ public class AnomalyEntity {
   String workloadType;
   String namespace;
   String service;
-
   String serviceName;
 
   String gcpProject;

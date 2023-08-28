@@ -111,7 +111,6 @@ public class ViewFieldUtils {
         QLCEViewField.builder().fieldId(APP_NAME_FIELD_ID).fieldName("Application").build(),
         QLCEViewField.builder().fieldId(ENV_NAME_FIELD_ID).fieldName("Environment").build(),
         QLCEViewField.builder().fieldId(SERVICE_NAME_FIELD_ID).fieldName("Service").build(),
-        QLCEViewField.builder().fieldId(SERVICE_NAME_FIELD_ID).fieldName("Service Name").build(),
         QLCEViewField.builder().fieldId(CLOUD_PROVIDER_FIELD_ID).fieldName("Cloud Provider").build(),
         QLCEViewField.builder().fieldId(CLOUD_SERVICE_NAME_FIELD_ID).fieldName("ECS Service").build(),
         QLCEViewField.builder().fieldId(CLOUD_SERVICE_NAME_FIELD_ID).fieldName("ECS Service Id").build(),

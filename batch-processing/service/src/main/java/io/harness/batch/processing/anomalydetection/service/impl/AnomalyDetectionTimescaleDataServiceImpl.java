@@ -84,20 +84,12 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
       currentTime = resultSet.getTimestamp(tableSchema.getStartTime().getName()).toInstant();
       currentValue = resultSet.getDouble("cost");
 
-      log.info("previousHash : {} , currentHash ; {}", previousHash, currentHash);
-
       if (previousHash == null || !previousHash.equals(currentHash)) {
-        log.info("Yes pos 1 secured");
-
         if (currentTimeSeries != null) {
-          log.info("Yes pos 2 secured");
-
           if (TimeSeriesUtils.validate(currentTimeSeries, timeSeriesMetaData)) {
-            log.info("Valid 1");
             AnomalyDetectionHelper.logValidTimeSeries(currentTimeSeries);
             listTimeSeries.add(currentTimeSeries);
           } else {
-            log.info("Invalid 1");
             AnomalyDetectionHelper.logInvalidTimeSeries(currentTimeSeries);
           }
         }
@@ -106,52 +98,17 @@ public class AnomalyDetectionTimescaleDataServiceImpl {
         fillMetaInfoToTimeSeries(currentTimeSeries, timeSeriesMetaData, resultSet);
       }
       currentTimeSeries.insert(currentTime, currentValue);
-
-      log.info("currentTime : {} , currentValue ; {}", currentTime.toString(), currentValue);
       previousHash = currentHash;
     }
 
-    //    int i = 0;
-
-    if (currentTimeSeries != null) {
-      log.info("currentTimeSeries1isnull : {} ", currentTimeSeries != null);
-    } else {
-      log.info("currentTimeSeries1isnull : {} ", currentTimeSeries == null);
-    }
-
-    //    if (currentTimeSeries.getTrainTimePointsList() != null) {
-    //      log.info("currentTimeSeries2 : {} ", currentTimeSeries.getTrainTimePointsList() != null);
-    //      log.info("Time : {}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0), 0);
-    //      log.info("Time : {}, Value{}, Index : {} ", currentTimeSeries.getTrainTimePointsList().get(0),
-    //          currentTimeSeries.getValue(currentTimeSeries.getTrainTimePointsList().get(0)), 0);
-    //    }
-
-    //    for(Instant cr : currentTimeSeries.getTrainTimePointsList()) {
-    //      i++;
-    //      Double cv1 = ;
-    //      log.info("Time : {}, Value{}, Index : {} ", cr.toString(), cv1, i);
-    //    }
-
-    //    int j = 0;
-    //    for (Instant cr2 : currentTimeSeries.getTestTimePointsList()) {
-    //      j++;
-    //      Double cv2 = currentTimeSeries.getValue(cr2);
-    //      log.info("Time : {}, Value{}, Index : {} ", cr2.toString(), cv2, j);
-    //    }
-
     if (!resultSet.isBeforeFirst() && currentTimeSeries != null) {
-      log.info("Yes pos 3 secured");
-
       if (TimeSeriesUtils.validate(currentTimeSeries, timeSeriesMetaData)) {
-        log.info("Valid 2");
         AnomalyDetectionHelper.logValidTimeSeries(currentTimeSeries);
         listTimeSeries.add(currentTimeSeries);
       } else {
-        log.info("Invalid 2");
         AnomalyDetectionHelper.logInvalidTimeSeries(currentTimeSeries);
       }
     }
-
     return listTimeSeries;
   }
 

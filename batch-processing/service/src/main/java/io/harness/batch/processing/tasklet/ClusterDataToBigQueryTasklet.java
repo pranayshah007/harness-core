@@ -422,12 +422,8 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     }
 
     if (instanceBillingData.getServiceId() != null) {
-      log.info("Service Id : {}", instanceBillingData.getServiceId());
       clusterBillingData.setServicename(entityIdToNameCache.get(
           new HarnessEntitiesService.CacheKey(instanceBillingData.getServiceId(), HarnessEntities.SERVICE)));
-
-      log.info("Service Name : {}", (clusterBillingData.getServicename()).toString());
-
     } else {
       clusterBillingData.setServicename(null);
     }

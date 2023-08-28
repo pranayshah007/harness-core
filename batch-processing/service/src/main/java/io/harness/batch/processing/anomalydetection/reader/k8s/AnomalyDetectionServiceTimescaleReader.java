@@ -131,12 +131,7 @@ public class AnomalyDetectionServiceTimescaleReader extends AnomalyDetectionTime
     for (AnomalyDetectionTimeSeries anomalyDetectionTimeSeries : listAnomalyDetectionTimeSeries) {
       String servicename = harnessEntitiesService.fetchEntityName(
           HarnessEntitiesService.HarnessEntities.SERVICE, anomalyDetectionTimeSeries.getService());
-
-      log.info("The service name is {}", servicename);
-
       anomalyDetectionTimeSeries.setServiceName(servicename);
-
-      log.info("Yes the service name is finally available and is {}", anomalyDetectionTimeSeries.getServiceName());
     }
 
     log.info("successfully read {} no of {}", listAnomalyDetectionTimeSeries.size(),

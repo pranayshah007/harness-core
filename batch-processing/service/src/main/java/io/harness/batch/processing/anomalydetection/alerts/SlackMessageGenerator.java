@@ -155,11 +155,11 @@ public class SlackMessageGenerator {
   }
 
   public String addServiceInfo(String templateString, AnomalyEntity anomaly) {
-    if (EmptyPredicate.isNotEmpty(anomaly.getService())) {
-      if (anomaly.getEntityType().equals(EntityType.SERVICE)) {
-        templateString = templateString + " \n> *Service* : <${SERVICE_URL}|${" + AnomalyEntityKeys.service + "}>";
+    if (EmptyPredicate.isNotEmpty(anomaly.getServiceName())) {
+      if (anomaly.getEntityType().equals(EntityType.SERVICE_NAME)) {
+        templateString = templateString + " \n> *Service* : <${SERVICE_URL}|${" + AnomalyEntityKeys.serviceName + "}>";
       } else {
-        templateString = templateString + " \n> *Service* : ${" + AnomalyEntityKeys.service + "}";
+        templateString = templateString + " \n> *Service* : ${" + AnomalyEntityKeys.serviceName + "}";
       }
     }
     return templateString;
