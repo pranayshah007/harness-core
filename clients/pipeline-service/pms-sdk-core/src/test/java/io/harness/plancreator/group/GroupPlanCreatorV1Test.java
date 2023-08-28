@@ -156,7 +156,8 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     planNode = planCreator.createPlanForParentNode(
         PlanCreationContext.builder()
             .dependency(Dependency.newBuilder()
-                            .putMetadata("nextId", ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
+                            .putMetadata(YAMLFieldNameConstants.NEXT_ID,
+                                ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
                             .build())
             .build(),
         new YamlField(stagesNode.get(1)), childrenIds);
@@ -213,7 +214,8 @@ public class GroupPlanCreatorV1Test extends CategoryTest {
     response = planCreator.getLayoutNodeInfo(
         PlanCreationContext.builder()
             .dependency(Dependency.newBuilder()
-                            .putMetadata("nextId", ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
+                            .putMetadata(YAMLFieldNameConstants.NEXT_ID,
+                                ByteString.copyFrom("nextNodeUuid".getBytes(StandardCharsets.UTF_8)))
                             .build())
             .build(),
         new YamlField(stagesNode.get(1)));

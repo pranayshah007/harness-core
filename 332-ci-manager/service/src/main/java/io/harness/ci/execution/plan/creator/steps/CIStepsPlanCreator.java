@@ -21,6 +21,8 @@ import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -89,26 +91,42 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
     // TODO : Figure out corresponding failure stages and put that here as well
     IntStream.range(0, steps.size() - 1).forEach(i -> {
       YamlField curr = steps.get(i);
+      String nextId = steps.get(i + 1).getUuid();
+      // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+      // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+      // bytes for complex objects. We will deprecate the first one in v1
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
-              .dependencies(Dependencies.newBuilder()
-                                .putDependencies(curr.getUuid(), curr.getYamlPath())
-                                .putDependencyMetadata(curr.getUuid(),
-                                    Dependency.newBuilder()
-                                        .putAllMetadata(ctx.getDependency().getMetadataMap())
-                                        .putMetadata("nextId",
-                                            ByteString.copyFrom(kryoSerializer.asBytes(steps.get(i + 1).getUuid())))
-                                        .build())
-                                .build())
+              .dependencies(
+                  Dependencies.newBuilder()
+                      .putDependencies(curr.getUuid(), curr.getYamlPath())
+                      .putDependencyMetadata(curr.getUuid(),
+                          Dependency.newBuilder()
+                              .putAllMetadata(ctx.getDependency().getMetadataMap())
+                              .putMetadata(
+                                  YAMLFieldNameConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
+                              .setNodeMetadata(HarnessStruct.newBuilder()
+                                                   .putFields(YAMLFieldNameConstants.NEXT_ID,
+                                                       HarnessValue.newBuilder().setStringValue(nextId).build())
+                                                   .putAllFields(ctx.getDependency().getNodeMetadata().getFieldsMap())
+                                                   .build())
+                              .build())
+                      .build())
               .build());
     });
 
     YamlField curr = steps.get(steps.size() - 1);
+    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+    // bytes for complex objects. We will deprecate the first one in v1
     responseMap.put(curr.getUuid(),
         PlanCreationResponse.builder()
             .dependencies(Dependencies.newBuilder()
                               .putDependencyMetadata(curr.getUuid(),
-                                  Dependency.newBuilder().putAllMetadata(ctx.getDependency().getMetadataMap()).build())
+                                  Dependency.newBuilder()
+                                      .putAllMetadata(ctx.getDependency().getMetadataMap())
+                                      .setNodeMetadata(ctx.getDependency().getNodeMetadata())
+                                      .build())
                               .putDependencies(curr.getUuid(), curr.getYamlPath())
                               .build())
             .build());
