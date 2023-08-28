@@ -4,7 +4,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class DelegateProxyUtils {
   public static void setupProxyConfig() {
     System.setProperty("proxyScheme", "http");
@@ -26,6 +28,7 @@ public class DelegateProxyUtils {
         Authenticator.setDefault(new Authenticator() {
           @Override
           protected PasswordAuthentication getPasswordAuthentication() {
+            log.info("Fetch information from global auth");
             return new PasswordAuthentication(proxyUser, proxyPassword.toCharArray());
           }
         });
