@@ -172,10 +172,15 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       String parentNodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
       List<Child> filteredChild = new LinkedList<>();
       for (Child child : children) {
+        StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
         // If the parentNodeId is present in the list of stages being rolledBack. Then initiate the child only if its
         // strategyMetadata matches the strategyMetadata of stage being rolledBack.
-        if (!strategyMetadataMap.containsKey(parentNodeId)
-            || !strategyMetadataMap.get(parentNodeId).contains(child.getStrategyMetadata())) {
+        if (strategyMetadataMap.containsKey(parentNodeId)
+            && !strategyMetadataMap.get(parentNodeId).contains(child.getStrategyMetadata())) {
+          continue;
+        }
+
+        if (!strategyMetadataMap.containsKey(parentNodeId) && strategyMetadata != null) {
           continue;
         }
         filteredChild.add(child);
