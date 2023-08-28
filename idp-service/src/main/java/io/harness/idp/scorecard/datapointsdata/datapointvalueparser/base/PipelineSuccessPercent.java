@@ -9,5 +9,6 @@ package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base;
 import java.util.Map;
 
 public interface PipelineSuccessPercent {
-  Map<String, Object> getParsedValue(Object dashboardPipelineHealthInfo, String dataPointIdentifier);
+  Map<String, Object> getParsedValue(
+      Object dashboardPipelineHealthInfo, String dataPointIdentifier, String ciPipelineUrl);
 }

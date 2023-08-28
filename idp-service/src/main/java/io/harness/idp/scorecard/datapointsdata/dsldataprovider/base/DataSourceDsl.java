@@ -4,11 +4,8 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base;
+package io.harness.idp.scorecard.datapointsdata.dsldataprovider.base;
 
-import java.util.Map;
-
-public interface PipelineExecutionInfo {
-  Map<String, Object> getParsedValue(
-      Object responseCI, Object responseCD, String dataPointIdentifier, String ciPipelineUrl, String cdPipelineUrl);
+public interface DataSourceDsl {
+  DslDataProvider getDslDataProvider(String dslIdentifier);
 }
