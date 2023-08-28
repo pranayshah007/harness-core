@@ -54,8 +54,6 @@ public class ScoreApiImpl implements ScoresApi {
   public Response getRecalibratedScoreForScorecard(
       String entityIdentifier, String scorecardIdentifier, String harnessAccount) {
     try {
-      scoreService.computeScores(
-          harnessAccount, Collections.singletonList(scorecardIdentifier), Collections.singletonList(entityIdentifier));
       ScorecardSummaryInfo scorecardSummaryInfo = scoreService.getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
           harnessAccount, entityIdentifier, scorecardIdentifier);
       ScorecardRecalibrateResponse scorecardRecalibrateResponse = new ScorecardRecalibrateResponse();

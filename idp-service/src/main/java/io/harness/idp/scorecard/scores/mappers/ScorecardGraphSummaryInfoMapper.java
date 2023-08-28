@@ -18,6 +18,9 @@ import lombok.experimental.UtilityClass;
 public class ScorecardGraphSummaryInfoMapper {
   public ScorecardGraphSummaryInfo toDTO(ScoreEntity scoreEntity) {
     ScorecardGraphSummaryInfo scorecardGraphSummaryInfo = new ScorecardGraphSummaryInfo();
+    if (scoreEntity == null) {
+      return scorecardGraphSummaryInfo;
+    }
     scorecardGraphSummaryInfo.setScorecardIdentifier(scoreEntity.getScorecardIdentifier());
     scorecardGraphSummaryInfo.setScore((int) scoreEntity.getScore());
     scorecardGraphSummaryInfo.setTimestamp(scoreEntity.getLastComputedTimestamp());
