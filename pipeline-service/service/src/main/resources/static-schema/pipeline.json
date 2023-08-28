@@ -11365,6 +11365,13 @@
                 "executionTarget" : {
                   "$ref" : "#/definitions/pipeline/steps/custom/ExecutionTarget"
                 },
+                "includeInfraSelectors" : {
+                  "oneOf" : [ {
+                    "type" : "boolean"
+                  }, {
+                    "type" : "string"
+                  } ]
+                },
                 "metadata" : {
                   "type" : "string"
                 },
