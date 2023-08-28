@@ -18,6 +18,7 @@ import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.CVNGLog;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
@@ -30,6 +31,7 @@ import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.DebugService;
+import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.downtime.beans.EntityType;
@@ -65,6 +67,7 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,6 +107,10 @@ public class DebugServiceImpl implements DebugService {
   @Inject DebugConfigService debugConfigService;
 
   @Inject private NextGenService nextGenService;
+
+  @Inject private SideKickService sideKickService;
+
+  @Inject private Clock clock;
 
   public static final Integer RECORDS_BATCH_SIZE = 100;
 
@@ -427,5 +434,16 @@ public class DebugServiceImpl implements DebugService {
       throw new RuntimeException("Debug Mode is turned off");
     }
     fakeFeatureFlagSRMProducer.publishEvent(ffEventBody);
+  }
+
+  @Override
+  public void scheduleCleanup(List<String> verificationTaskIds) {
+    if (verificationTaskIds != null) {
+      verificationTaskIds.forEach(verificationTaskId -> {
+        sideKickService.schedule(
+            VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).build(),
+            clock.instant());
+      });
+    }
   }
 }
