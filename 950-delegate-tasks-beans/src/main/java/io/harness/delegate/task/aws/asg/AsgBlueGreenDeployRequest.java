@@ -33,7 +33,7 @@ public class AsgBlueGreenDeployRequest implements AsgCommandRequest, NestedAnnot
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   Map<String, List<String>> asgStoreManifestsContent;
-  @Deprecated @NonFinal AsgLoadBalancerConfig asgLoadBalancerConfig;
+  @NonFinal @Deprecated AsgLoadBalancerConfig asgLoadBalancerConfig;
   String asgName;
   String amiImageId;
   boolean firstDeployment;
