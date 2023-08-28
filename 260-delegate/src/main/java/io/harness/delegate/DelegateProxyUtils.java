@@ -29,7 +29,7 @@ public class DelegateProxyUtils {
           @Override
           protected PasswordAuthentication getPasswordAuthentication() {
             log.info("Fetch information from global auth");
-            return new PasswordAuthentication(proxyUser, proxyPassword.toCharArray());
+            return null;
           }
         });
       }
