@@ -2390,6 +2390,7 @@ components:
       x-stoplight:
         id: qg6l73nz6jl5o
       type: object
+      x-internal: true
       properties:
         data_source_identifier:
           type: string
@@ -2416,8 +2417,6 @@ components:
         - data_point_identifier
         - operator
         - value
-        - conditional_input_value
-      x-internal: true
     ScorecardChecks:
       title: ScorecardChecks
       x-stoplight:
@@ -2768,14 +2767,20 @@ components:
           x-stoplight:
             id: 7wrcffd5ubf5z
         status:
+          type: string
           x-stoplight:
             id: pblstkz463ptv
           enum:
             - PASS
             - FAIL
+        weight:
+          type: integer
+          x-stoplight:
+            id: xp87r8p7xwfgm
       required:
         - name
         - status
+        - weight
     ScorecardSummaryInfo:
       title: ScorecardSummaryInfo
       x-stoplight:
@@ -2793,10 +2798,6 @@ components:
           x-stoplight:
             id: 52k4qmnsh5ng9
           format: int64
-        entity_identifier:
-          type: string
-          x-stoplight:
-            id: z9yqnn9ti3i5r
         score:
           type: integer
           x-stoplight:
@@ -2807,12 +2808,16 @@ components:
             id: edl8hdvg9ingt
           items:
             $ref: '#/components/schemas/CheckStatus'
+        description:
+          type: string
+          x-stoplight:
+            id: mp6ecvb3rzwui
       required:
         - scorecard_name
         - timestamp
-        - entity_identifier
         - score
         - checks_statuses
+        - description
     ScorecardSummaryResponse:
       title: ScorecardSummaryResponse
       x-stoplight:
