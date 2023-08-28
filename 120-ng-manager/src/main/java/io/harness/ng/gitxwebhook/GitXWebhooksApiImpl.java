@@ -9,6 +9,8 @@ package io.harness.ng.gitxwebhook;
 
 import io.harness.spec.server.ng.v1.GitXWebhooksApi;
 import io.harness.spec.server.ng.v1.model.CreateGitXWebhookRequest;
+import io.harness.spec.server.ng.v1.model.DeleteGitXWebhookRequest;
+import io.harness.spec.server.ng.v1.model.GetGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.ListGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookRequest;
 
@@ -27,8 +29,9 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
   }
 
   @Override
-  public Response getGitxWebhook(String gitXWebhookIdentifier, String harnessAccount) {
-    return Response.ok().build();
+  public Response getGitxWebhook(
+      String gitXWebhookIdentifier, @Valid GetGitXWebhookRequest body, String harnessAccount) {
+    return null;
   }
 
   @Override
@@ -38,7 +41,8 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
   }
 
   @Override
-  public Response deleteGitxWebhook(String gitXWebhookIdentifier, String harnessAccount) {
+  public Response deleteGitxWebhook(
+      String gitXWebhookIdentifier, @Valid DeleteGitXWebhookRequest body, String harnessAccount) {
     return Response.ok().build();
   }
 
