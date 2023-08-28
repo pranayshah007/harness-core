@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.rancher;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -37,6 +38,7 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Schema(name = "RancherConnector", description = "This contains Rancher connector details")
+@RecasterAlias("io.harness.delegate.beans.connector.rancher.RancherConnectorDTO")
 public class RancherConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
   Set<String> delegateSelectors;
 

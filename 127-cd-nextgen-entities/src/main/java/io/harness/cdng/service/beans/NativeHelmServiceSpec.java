@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.service.beans;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -39,6 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(ServiceSpecType.NATIVE_HELM)
 @SimpleVisitorHelper(helperClass = NativeHelmServiceSpecVisitorHelper.class)
 @TypeAlias("nativeHelmServiceSpec")
+@RecasterAlias("io.harness.cdng.service.beans.NativeHelmServiceSpec")
 public class NativeHelmServiceSpec implements ServiceSpec, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

@@ -14,30 +14,42 @@ import static io.harness.idp.scorecard.datasources.constants.Constants.HARNESS_P
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.envvariable.repositories.BackstageEnvVariableRepository;
+import io.harness.idp.proxy.services.IdpAuthInterceptor;
+import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
+import io.harness.idp.scorecard.datapoints.service.DataPointService;
+import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
+import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
 public class DataSourceProviderFactory {
-  private CatalogProvider catalogProvider;
-  private GithubProvider githubProvider;
-  private HarnessProvider harnessProvider;
-  private CustomProvider customProvider;
+  @Inject DataPointService dataPointService;
+  @Inject DataSourceLocationFactory dataSourceLocationFactory;
+  @Inject DataSourceLocationRepository dataSourceLocationRepository;
+  @Inject DataPointParserFactory dataPointParserFactory;
+
+  @Inject BackstageEnvVariableRepository backstageEnvVariableRepository;
+  @Inject SecretManagerClientService ngSecretService;
+
+  @Inject IdpAuthInterceptor idpAuthInterceptor;
 
   public DataSourceProvider getProvider(String dataSource) {
     switch (dataSource) {
       case CATALOG_PROVIDER:
-        return catalogProvider;
+        return new CatalogProvider(
+            dataPointService, dataSourceLocationFactory, dataSourceLocationRepository, dataPointParserFactory);
       case GITHUB_PROVIDER:
-        return githubProvider;
+        return new GithubProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataPointParserFactory, backstageEnvVariableRepository, ngSecretService);
       case HARNESS_PROVIDER:
-        return harnessProvider;
+        return new HarnessProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataPointParserFactory, idpAuthInterceptor);
       case CUSTOM_PROVIDER:
-        return customProvider;
+        return new CustomProvider(
+            dataPointService, dataSourceLocationFactory, dataSourceLocationRepository, dataPointParserFactory);
       default:
         throw new IllegalArgumentException("DataSource provider " + dataSource + " is not supported yet");
     }

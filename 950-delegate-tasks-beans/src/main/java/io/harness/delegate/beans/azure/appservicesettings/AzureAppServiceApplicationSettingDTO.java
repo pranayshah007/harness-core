@@ -9,6 +9,7 @@ package io.harness.delegate.beans.azure.appservicesettings;
 
 import static io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSettingConstants.APPLICATION_SETTING_JSON_TYPE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.security.encryption.EncryptedRecord;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -29,6 +30,7 @@ import lombok.experimental.FieldDefaults;
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("AzureAppServiceApplicationSetting")
+@RecasterAlias("io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceApplicationSettingDTO")
 public class AzureAppServiceApplicationSettingDTO extends AzureAppServiceSettingDTO {
   @Builder
   public AzureAppServiceApplicationSettingDTO(

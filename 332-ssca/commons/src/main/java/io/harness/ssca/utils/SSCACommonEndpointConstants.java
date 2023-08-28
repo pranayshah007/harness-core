@@ -18,5 +18,9 @@ public class SSCACommonEndpointConstants {
   public static final String SSCA_SERVICE_ARTIFACT_ENDPOINT = "api/v1/artifacts/";
   public static final String SSCA_SERVICE_TOKEN_ENDPOINT = "api/v1/token";
   public static final String SSCA_SERVICE_ENFORCEMENT_ENDPOINT = "api/v1/sbom/enforcement/";
-  public static final String SSCA_MANAGER_TOKEN_ENDPOINT = "v2/token";
+  public static final String SSCA_MANAGER_ORCHESTRATION_SUMMARY_ENDPOINT =
+      "v1/org/{org}/project/{project}/orchestration/{orchestration-id}/summary";
+  public static final String SSCA_MANAGER_ENFORCEMENT_ENDPOINT =
+      "v1/org/{org}/project/{project}/enforcement/{enforcement-id}/summary";
+  public static final String SSCA_MANAGER_TOKEN_ENDPOINT = "v1/token";
 }

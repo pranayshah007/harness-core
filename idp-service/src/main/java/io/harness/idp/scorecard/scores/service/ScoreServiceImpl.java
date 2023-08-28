@@ -285,7 +285,7 @@ public class ScoreServiceImpl implements ScoreService {
           aggregatedData.putAll(data);
         }
       } catch (Exception e) {
-        log.warn("Error fetching data from {} provider", provider.getProviderIdentifier(), e);
+        log.warn("Error fetching data from {} provider", provider.getIdentifier(), e);
       }
     });
     return aggregatedData;

@@ -12,23 +12,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.beans.DataSourceLocationType;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
-@JsonTypeName("CustomHttp")
 @Data
 @SuperBuilder
-@FieldNameConstants(innerTypeName = "CustomHttpDataSourceLocationKeys")
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.IDP)
-public class CustomHttpDataSourceLocationEntity extends HttpDataSourceLocationEntity {
-  public CustomHttpDataSourceLocationEntity() {
-    super(DataSourceLocationType.CUSTOM_HTTP);
+public class HttpDataSourceLocationEntity extends DataSourceLocationEntity {
+  public HttpDataSourceLocationEntity(DataSourceLocationType dataSourceLocationType) {
+    super.setType(dataSourceLocationType);
   }
 
-  Map<Integer, ApiRequestDetails> apisChain;
+  ApiRequestDetails apiRequestDetails;
 }

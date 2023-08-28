@@ -2,7 +2,7 @@
   {
     "id": "64d4f2792a05b207f0ee598f",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "__HARNESS__59416052-669b-45e0-813b-f686eb26e464",
+    "identifier": "github_mean_time_to_merge_pr",
     "dataSourceIdentifier": "github",
     "type": "DirectHttp",
     "apiRequestDetails": {
@@ -10,7 +10,7 @@
       "url": "https://api.github.com/graphql",
       "headers": {
         "Content-Type": "application/json",
-        "Authorization": "bearer {BEARER_AUTH}"
+        "Authorization": "{BEARER_AUTH}"
       },
       "requestBody": "{\"query\":\"query {\\n    repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    pullRequests(states: MERGED, last: 100{REPOSITORY_BRANCH_NAME_REPLACER}) {\\n      edges {\\n        node {\\n          number\\n          createdAt\\n          mergedAt\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
@@ -18,14 +18,14 @@
   {
     "id": "64d5c5ed0646ac1d149d0da2",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "__HARNESS__2cc456df-76cd-41c2-8013-60605f266b88",
+    "identifier": "catalog",
     "dataSourceIdentifier": "catalog",
     "type": "Noop"
   },
   {
     "id": "64d5f2f51bf2020f1cc713bd",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "__HARNESS__767f2233-6c67-4dd9-8785-121261f340a9",
+    "identifier": "github_is_branch_protection_set",
     "dataSourceIdentifier": "github",
     "type": "DirectHttp",
     "apiRequestDetails": {
@@ -33,9 +33,9 @@
       "url": "https://api.github.com/graphql",
       "headers": {
         "Content-Type": "application/json",
-        "Authorization": "bearer {BEARER_AUTH}"
+        "Authorization": "{BEARER_AUTH}"
       },
-      "requestBody": "{\"query\":\"{\\n  repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    {REPOSITORY_BRANCH_NAME_REPLACER} {\\n      name\\n      branchProtectionRule {\\n        allowsDeletions\\n        allowsForcePushes\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+      "requestBody": "{\"query\":\"query {\\n    repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    {REPOSITORY_BRANCH_NAME_REPLACER}{\\n      name\\n      branchProtectionRule{\\n          allowsDeletions\\n          allowsForcePushes\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
   }
 ]

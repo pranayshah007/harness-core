@@ -12,71 +12,35 @@ import static io.harness.idp.scorecard.datasources.constants.Constants.CATALOG_P
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
+import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
+import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
-public class CatalogProvider implements DataSourceProvider {
-  private DataPointParserFactory dataPointParserFactory;
-  private DataPointService dataPointService;
-  static final ObjectMapper mapper =
-      new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-  @Override
-  public String getProviderIdentifier() {
-    return CATALOG_PROVIDER;
+public class CatalogProvider extends DataSourceProvider {
+  protected CatalogProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
+      DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory) {
+    super(CATALOG_PROVIDER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+        dataPointParserFactory);
   }
 
   @Override
   public Map<String, Map<String, Object>> fetchData(
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
-    Map<String, Object> response = mapper.convertValue(entity, new TypeReference<>() {});
+    return processOut(
+        accountIdentifier, entity, dataPointsAndInputValues, getAuthHeaders(accountIdentifier), Collections.emptyMap());
+  }
 
-    Set<String> dataPointIdentifiers = dataPointsAndInputValues.keySet();
-    Map<String, List<DataPointEntity>> dataToFetch = dataPointService.getDslDataPointsInfo(
-        accountIdentifier, new ArrayList<>(dataPointIdentifiers), this.getProviderIdentifier());
-
-    Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
-
-    for (String dslIdentifier : dataToFetch.keySet()) {
-      Map<DataPointEntity, Set<String>> dataToFetchWithInputValues = new HashMap<>();
-      dataToFetch.get(dslIdentifier)
-          .forEach(dataPointEntity
-              -> dataToFetchWithInputValues.put(
-                  dataPointEntity, dataPointsAndInputValues.get(dataPointEntity.getIdentifier())));
-
-      Map<String, Object> dataPointValues = new HashMap<>();
-      for (Map.Entry<DataPointEntity, Set<String>> entry : dataToFetchWithInputValues.entrySet()) {
-        DataPointEntity dataPoint = entry.getKey();
-        Set<String> inputValues = entry.getValue();
-        DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPoint.getIdentifier());
-        Object values = dataPointParser.parseDataPoint(response, dataPoint, inputValues);
-        if (values != null) {
-          dataPointValues.put(dataPoint.getIdentifier(), values);
-        }
-      }
-
-      if (aggregatedData.containsKey(getProviderIdentifier())) {
-        aggregatedData.get(getProviderIdentifier()).putAll(dataPointValues);
-      } else {
-        aggregatedData.put(getProviderIdentifier(), dataPointValues);
-      }
-    }
-
-    return aggregatedData;
+  @Override
+  public Map<String, String> getAuthHeaders(String accountIdentifier) {
+    return Collections.emptyMap();
   }
 }

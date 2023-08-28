@@ -83,6 +83,16 @@ public class DebugResource {
 
   @GET
   @Timed
+  @Path("schedule-cleanup")
+  @ApiOperation(
+      value = "Schedule sidekick jobs for cleanup of verificationTasks", nickname = "scheduleCleanup", hidden = true)
+  public void
+  scheduleCleanup(@NotNull @QueryParam("identifiers") List<String> verificationTaskIds) {
+    debugService.scheduleCleanup(verificationTaskIds);
+  }
+
+  @GET
+  @Timed
   @Path("isSLIDeleted/{identifier}")
   @ApiOperation(value = "Checks whether SLI resources are deleted", nickname = "isSLIResourcesDeleted", hidden = true)
   public RestResponse<Boolean> isSLIDeleted(@NotNull @BeanParam ProjectScopedProjectParams projectParams,

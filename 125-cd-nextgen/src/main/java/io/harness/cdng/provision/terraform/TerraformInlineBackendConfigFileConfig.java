@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -16,6 +17,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.cdng.provision.terraform.TerraformInlineBackendConfigFileConfig")
 public class TerraformInlineBackendConfigFileConfig implements TerraformBackendConfigFileConfig {
   String backendConfigFileContent;
 }
