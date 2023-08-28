@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.creator.plan.customstage.CustomStageVariableCreator;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -34,6 +35,7 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+// needs to be moved to ng-manager
 public class CustomStageVariableCreatorTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 

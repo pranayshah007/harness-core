@@ -9,7 +9,7 @@ package io.harness.pms.pipeline.service.yamlschema;
 
 import io.harness.ModuleType;
 import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaService;
-import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaService;
+// import io.harness.cdng.yaml.CustomStageYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
 import io.harness.yaml.schema.YamlSchemaProvider;
@@ -23,7 +23,7 @@ import lombok.NonNull;
 @Singleton
 public class SchemaGetterFactory {
   private final ApprovalYamlSchemaService approvalYamlSchemaService;
-  private final CustomStageYamlSchemaService customStageYamlSchemaService;
+  // private final CustomStageYamlSchemaService customStageYamlSchemaService;
   private final PipelineStageYamlSchemaService pipelineStageYamlSchemaService;
   private final FeatureFlagYamlService featureFlagYamlService;
   private final YamlSchemaProvider yamlSchemaProvider;
@@ -32,12 +32,12 @@ public class SchemaGetterFactory {
 
   @Inject
   public SchemaGetterFactory(ApprovalYamlSchemaService approvalYamlSchemaService,
-      CustomStageYamlSchemaService customStageYamlSchemaService,
+      // CustomStageYamlSchemaService customStageYamlSchemaService,
       PipelineStageYamlSchemaService pipelineStageYamlSchemaService, FeatureFlagYamlService featureFlagYamlService,
       YamlSchemaProvider yamlSchemaProvider, Map<String, YamlSchemaClient> yamlSchemaClientMapper,
       PmsYamlSchemaHelper pmsYamlSchemaHelper) {
     this.approvalYamlSchemaService = approvalYamlSchemaService;
-    this.customStageYamlSchemaService = customStageYamlSchemaService;
+    // this.customStageYamlSchemaService = customStageYamlSchemaService;
     this.pipelineStageYamlSchemaService = pipelineStageYamlSchemaService;
     this.featureFlagYamlService = featureFlagYamlService;
     this.yamlSchemaProvider = yamlSchemaProvider;
@@ -47,7 +47,7 @@ public class SchemaGetterFactory {
   public SchemaGetter obtainGetter(@NonNull String accountIdentifier, @NonNull ModuleType moduleType) {
     if (moduleType == ModuleType.PMS || moduleType == ModuleType.CF) {
       return new LocalSchemaGetter(accountIdentifier, moduleType, yamlSchemaProvider, approvalYamlSchemaService,
-          pipelineStageYamlSchemaService, customStageYamlSchemaService, featureFlagYamlService, pmsYamlSchemaHelper);
+          pipelineStageYamlSchemaService, featureFlagYamlService, pmsYamlSchemaHelper);
     }
 
     YamlSchemaClient yamlSchemaClient = yamlSchemaClientMapper.get(moduleType.name().toLowerCase());

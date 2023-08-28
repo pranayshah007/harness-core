@@ -12,6 +12,7 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.cdng.yaml.CdYamlSchemaService;
+import io.harness.cdng.yaml.CustomStageYamlSchemaService;
 import io.harness.common.EntityTypeConstants;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
@@ -54,6 +55,7 @@ import lombok.AllArgsConstructor;
     })
 public class CdPartialYamlSchemaResource implements YamlSchemaResource {
   CdYamlSchemaService cdYamlSchemaService;
+  CustomStageYamlSchemaService customStageYamlSchemaService;
 
   @GET
   @ApiOperation(value = "Get Partial Yaml Schema", nickname = "getPartialYamlSchema")
@@ -63,6 +65,9 @@ public class CdPartialYamlSchemaResource implements YamlSchemaResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("scope") Scope scope) {
     List<PartialSchemaDTO> schema =
         cdYamlSchemaService.getDeploymentStageYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, scope);
+    PartialSchemaDTO customStageYamlSchema = customStageYamlSchemaService.getCustomStageYamlSchema(
+        accountIdentifier, orgIdentifier, projectIdentifier, scope, Collections.EMPTY_LIST);
+    schema.add(customStageYamlSchema);
     return ResponseDTO.newResponse(schema);
   }
 

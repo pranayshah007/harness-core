@@ -5,10 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.steps.customstage;
+package io.harness.cdng.creator.plan.customstage;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
+import io.harness.cdng.creator.plan.stage.CustomStageNode;
 import io.harness.pms.sdk.core.variables.AbstractStageVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
@@ -16,8 +17,8 @@ import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.steps.StepSpecTypeConstants;
 
+// import io.harness.steps.StepSpecTypeConstants;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -56,8 +57,7 @@ public class CustomStageVariableCreator extends AbstractStageVariableCreator<Cus
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(
-        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.CUSTOM_STAGE));
+    return Collections.singletonMap(YAMLFieldNameConstants.STAGE, Collections.singleton("Custom"));
   }
 
   @Override

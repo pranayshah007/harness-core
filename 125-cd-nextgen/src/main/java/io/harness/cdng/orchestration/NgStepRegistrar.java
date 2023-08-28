@@ -106,6 +106,7 @@ import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.pipeline.steps.RollbackOptionalChildrenStep;
+// import io.harness.cdng.creator.plan.customstage.CustomStageStep;
 import io.harness.cdng.provision.awscdk.AwsCdkBootstrapStep;
 import io.harness.cdng.provision.awscdk.AwsCdkDeployStep;
 import io.harness.cdng.provision.awscdk.AwsCdkDestroyStep;
@@ -350,6 +351,9 @@ public class NgStepRegistrar {
     engineSteps.put(AwsCdkDeployStep.STEP_TYPE, AwsCdkDeployStep.class);
     engineSteps.put(AwsCdkDestroyStep.STEP_TYPE, AwsCdkDestroyStep.class);
     engineSteps.put(AwsCdkRollbackStep.STEP_TYPE, AwsCdkRollbackStep.class);
+
+    // do we need CustomStageStep step
+    // engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
 
     return engineSteps;
   }

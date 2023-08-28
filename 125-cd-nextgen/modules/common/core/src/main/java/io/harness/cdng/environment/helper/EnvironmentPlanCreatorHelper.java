@@ -24,6 +24,7 @@ import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
@@ -39,6 +40,7 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.merger.helpers.MergeHelper;
@@ -88,6 +90,22 @@ public class EnvironmentPlanCreatorHelper {
                 .setParameters(advisorParameters)
                 .build())
         .skipExpressionChain(false)
+        .build();
+  }
+
+  public PlanNode getPlanNode(List<AdviserObtainment> adviserObtainments) {
+    return PlanNode.builder()
+        .uuid(UUIDGenerator.generateUuid())
+        .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
+        .name(PlanCreatorConstants.ENVIRONMENT_NODE_NAME)
+        .identifier(YamlTypes.ENVIRONMENT_YAML)
+        .stepType(EnvironmentStep.STEP_TYPE)
+        .stepParameters(null)
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
+                .build())
+        .adviserObtainments(adviserObtainments)
         .build();
   }
 

@@ -139,8 +139,8 @@ import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaSer
 import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaServiceImpl;
 import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
-import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaService;
-import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaServiceImpl;
+// import io.harness.cdng.yaml.CustomStageYamlSchemaService;
+// import io.harness.cdng.yaml.CustomStageYamlSchemaServiceImpl;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlServiceImpl;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
@@ -433,7 +433,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PMSOpaService.class).to(PMSOpaServiceImpl.class);
     bind(ShellScriptHelperService.class).to(ShellScriptHelperServiceImpl.class);
     bind(ApprovalYamlSchemaService.class).to(ApprovalYamlSchemaServiceImpl.class).in(Singleton.class);
-    bind(CustomStageYamlSchemaService.class).to(CustomStageYamlSchemaServiceImpl.class).in(Singleton.class);
+    // bind(CustomStageYamlSchemaService.class).to(CustomStageYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(PipelineStageYamlSchemaService.class).to(PipelineStageYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(FeatureFlagYamlService.class).to(FeatureFlagYamlServiceImpl.class).in(Singleton.class);
     bind(PipelineEnforcementService.class).to(PipelineEnforcementServiceImpl.class).in(Singleton.class);

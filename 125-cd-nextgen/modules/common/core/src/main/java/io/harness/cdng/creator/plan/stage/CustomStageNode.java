@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.steps.customstage;
+package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -14,9 +14,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.plancreator.stages.PmsAbstractStageNode;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
-import io.harness.steps.StepSpecTypeConstants;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -31,11 +29,11 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.CUSTOM_STAGE)
+@JsonTypeName("Custom")
 @TypeAlias("CustomStageNode")
 @OwnedBy(PIPELINE)
 @RecasterAlias("io.harness.steps.customstage.CustomStageNode")
-public class CustomStageNode extends PmsAbstractStageNode {
+public class CustomStageNode extends CustomAbstractStageNode {
   @JsonProperty("type") @NotNull StepType type = StepType.Custom;
 
   @JsonProperty("spec")
@@ -43,7 +41,7 @@ public class CustomStageNode extends PmsAbstractStageNode {
   CustomStageConfig customStageConfig;
   @Override
   public String getType() {
-    return StepSpecTypeConstants.CUSTOM_STAGE;
+    return "Custom";
   }
 
   @Override
@@ -52,7 +50,7 @@ public class CustomStageNode extends PmsAbstractStageNode {
   }
 
   public enum StepType {
-    Custom(StepSpecTypeConstants.CUSTOM_STAGE);
+    Custom("Custom");
     @Getter String name;
     StepType(String name) {
       this.name = name;

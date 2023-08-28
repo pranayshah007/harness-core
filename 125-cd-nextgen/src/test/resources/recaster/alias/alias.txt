@@ -1264,3 +1264,6 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureClientSecretKeyO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOutcomeDTO
 io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo
+io.harness.steps.customstage.CustomStageSpecParams
+io.harness.steps.customstage.CustomEnvironmentYamlV2
+io.harness.steps.customstage.CustomStageNode

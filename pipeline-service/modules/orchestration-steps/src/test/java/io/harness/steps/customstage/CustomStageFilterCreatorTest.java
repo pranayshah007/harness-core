@@ -12,6 +12,8 @@ import static io.harness.rule.OwnerRule.SOUMYAJIT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.creator.plan.customstage.CustomStageFilterCreator;
+import io.harness.cdng.creator.plan.stage.CustomStageNode;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.rule.Owner;
@@ -24,6 +26,7 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+// needs to be moved to ng-manager
 public class CustomStageFilterCreatorTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -33,7 +36,7 @@ public class CustomStageFilterCreatorTest {
   @Owner(developers = SOUMYAJIT)
   @Category(UnitTests.class)
   public void shouldValidateCustomStageFilterCreator() {
-    //        CustomStageFilterCreator customStageFilterCreator = new CustomStageFilterCreator();
+    // CustomStageFilterCreator customStageFilterCreator = new CustomStageFilterCreator();
     Set<String> stageTypes = customStageFilterCreator.getSupportedStageTypes();
     assertThat(stageTypes).isNotEmpty();
   }
