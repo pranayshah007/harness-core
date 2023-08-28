@@ -10,6 +10,13 @@ package io.harness.repositories;
 import static io.harness.annotations.dev.HarnessTeam.SSCA;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ssca.entities.EnforcementResultEntity;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(SSCA)
-public interface EnforcementResultRepoCustom {}
+public interface EnforcementResultRepoCustom {
+  Page<EnforcementResultEntity> findAll(Criteria criteria, Pageable pageable);
+}
