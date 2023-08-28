@@ -118,15 +118,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   private AccessControlClient accessControlClient;
   private static final List<String> permissionsList =
       Arrays.asList(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT, PipelineRbacPermissions.PIPELINE_EXECUTE);
+  private static final String PIPELINE_RESOURCE_TYPE = "PIPELINE";
 
-  //  We can use this method in future if more permissions are to be checked at a single time / simultaneously.
-  //  public boolean checkForPipelineCreateEditOrExecAccess(ResourceScope resourceScope, Resource resourceType, String
-  //  permission) throws AccessControlException {
-  //    return permissionsList.contains(permission) && accessControlClient.hasAccess(resourceScope, resourceType,
-  //    permission);
-  //  }
-
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
@@ -148,7 +142,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     return ResponseDTO.newResponse(inputSetEntity.getVersion().toString(), inputSet);
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<OverlayInputSetResponseDTOPMS> getOverlayInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
@@ -182,7 +176,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .orgIdentifier(orgIdentifier)
                           .projectIdentifier(projectIdentifier)
                           .build();
-      resource = Resource.builder().resourceType("PIPELINE").build();
+      resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
     accessControlClient.checkForAccessOrThrow(
         resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -207,7 +201,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .orgIdentifier(orgIdentifier)
                           .projectIdentifier(projectIdentifier)
                           .build();
-      resource = Resource.builder().resourceType("PIPELINE").build();
+      resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
     accessControlClient.checkForAccessOrThrow(
         resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -234,7 +228,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .orgIdentifier(orgIdentifier)
                           .projectIdentifier(projectIdentifier)
                           .build();
-      resource = Resource.builder().resourceType("PIPELINE").build();
+      resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
     accessControlClient.checkForAccessOrThrow(
         resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -259,7 +253,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .orgIdentifier(orgIdentifier)
                           .projectIdentifier(projectIdentifier)
                           .build();
-      resource = Resource.builder().resourceType("PIPELINE").build();
+      resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
     accessControlClient.checkForAccessOrThrow(
         resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -276,7 +270,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
         updatedEntity.getVersion().toString(), PMSInputSetElementMapper.toOverlayInputSetResponseDTOPMS(updatedEntity));
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_DELETE)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_DELETE)
   public ResponseDTO<Boolean> delete(String ifMatch, String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
@@ -287,7 +281,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
         pipelineIdentifier, inputSetIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<PageResponse<InputSetSummaryResponseDTOPMS>> listInputSetsForPipeline(int page, int size,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
@@ -307,7 +301,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     return ResponseDTO.newResponse(getNGPageResponse(inputSetList));
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<InputSetTemplateResponseDTOPMS> getTemplateFromPipeline(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
@@ -323,7 +317,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     return ResponseDTO.newResponse(response);
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<MergeInputSetResponseDTOPMS> getMergeInputSetFromPipelineTemplate(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
@@ -361,7 +355,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                                        .build());
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<MergeInputSetResponseDTOPMS> getMergeInputSetForRerun(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String pipelineBranch, String pipelineRepoID,
@@ -391,7 +385,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                                        .build());
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<MergeInputSetResponseDTOPMS> getMergeInputForExecution(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, boolean resolveExpressions,
@@ -409,7 +403,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
         MergeInputSetResponseDTOPMS.builder().isErrorResponse(false).pipelineYaml(mergedYaml).build());
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   // TODO(Naman): Correct PipelineServiceClient when modifying this api
   public ResponseDTO<MergeInputSetResponseDTOPMS> getMergeInputSetFromPipelineTemplate(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
@@ -437,7 +431,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .orgIdentifier(orgIdentifier)
                           .projectIdentifier(projectIdentifier)
                           .build();
-      resource = Resource.builder().resourceType("PIPELINE").build();
+      resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
     accessControlClient.checkForAccessOrThrow(
         resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -465,7 +459,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   }
 
   // Pipeline Branch is mandatory for this Api
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<InputSetYamlDiffDTO> getInputSetYAMLDiff(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier, String pipelineBranch,
@@ -486,7 +480,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .orgIdentifier(orgIdentifier)
                           .projectIdentifier(projectIdentifier)
                           .build();
-      resource = Resource.builder().resourceType("PIPELINE").build();
+      resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
     accessControlClient.checkForAccessOrThrow(
         resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
