@@ -10,18 +10,18 @@ global:
       external:
         ## if FALSE, Generate all secrets within K8s Namespace
         ## If TRUE, use one of the followings kids to inject
-        enabled: false 
+        enabled: false
         kind:
           # use ExternalSecrets Operator
-          externalSecrets: false 
+          externalSecrets: false
           # Use CSI Driver volume mount
-          csiSecretDriver: false          
+          csiSecretDriver: false
     database:
       external:
         enabled: false
         kind:
           externalSecrets: false
-          csiSecretDriver: false 
+          csiSecretDriver: false
 
   useExternalSecrets: false
   loadbalancerURL: ""
@@ -124,6 +124,14 @@ image:
   tag: "80209"
   digest: ""
   imagePullSecrets: []
+
+initContainer:
+  image:
+    registry: docker.io
+    repository: busybox
+    tag: "1.35.0"
+    digest: ""
+    imagePullSecrets: []  
 
 waitForInitContainer:
   image:
