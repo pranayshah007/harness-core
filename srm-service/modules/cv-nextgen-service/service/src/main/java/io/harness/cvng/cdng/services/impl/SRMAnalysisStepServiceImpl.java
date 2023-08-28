@@ -436,8 +436,8 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
                 .equal(monitoredServiceIdentifiersWithParams.get(i).getProjectIdentifier()),
             query.criteria(SRMAnalysisStepExecutionDetailsKeys.monitoredServiceIdentifier)
                 .equal(monitoredServiceIdentifiersWithParams.get(i).getIdentifier())));
-        query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime).greaterThanOrEq(startTime.toEpochMilli());
-        query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime).lessThanOrEq(endTime.toEpochMilli());
+        query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime).greaterThanOrEq(startTime.toEpochMilli());
+        query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime).lessThan(endTime.toEpochMilli());
       }
 
     } else {
@@ -446,10 +446,10 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
                   .filter(SRMAnalysisStepExecutionDetailsKeys.projectIdentifier, projectParams.getProjectIdentifier())
                   .field(SRMAnalysisStepExecutionDetailsKeys.monitoredServiceIdentifier)
                   .in(monitoredServiceIdentifiers)
-                  .field(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime)
+                  .field(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime)
                   .greaterThanOrEq(startTime.toEpochMilli())
                   .field(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime)
-                  .lessThanOrEq(endTime.toEpochMilli());
+                  .lessThan(endTime.toEpochMilli());
     }
     return query.order(Sort.descending(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime));
   }

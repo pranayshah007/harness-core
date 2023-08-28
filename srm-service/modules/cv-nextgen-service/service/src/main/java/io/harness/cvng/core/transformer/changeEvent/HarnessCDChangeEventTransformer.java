@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.transformer.changeEvent;
 
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_URL_FORMAT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.activity.entities.DeploymentActivity;
@@ -64,9 +65,9 @@ public class HarnessCDChangeEventTransformer
             .pipelineId(activity.getPipelineId())
             .stageId(activity.getStageId())
             .artifactTag(activity.getArtifactTag())
-            .pipelinePath("/account/" + activity.getAccountId() + "/cd/orgs/" + activity.getOrgIdentifier()
-                + "/projects/" + activity.getProjectIdentifier() + "/pipelines/" + activity.getPipelineId()
-                + "/executions/" + activity.getPlanExecutionId() + "/pipeline?stage=" + activity.getStageStepId())
+            .pipelinePath(String.format(PIPELINE_URL_FORMAT, activity.getAccountId(), activity.getOrgIdentifier(),
+                activity.getProjectIdentifier(), activity.getPipelineId(), activity.getPlanExecutionId(),
+                activity.getStageStepId()))
             .artifactType(activity.getArtifactType());
     if (activity.getVerificationSummary() != null
         && activity.getVerificationSummary().getVerficationStatusMap() != null) {
