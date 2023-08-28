@@ -9,6 +9,8 @@ package io.harness.ssca.client;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.spec.server.ssca.v1.model.EnforcementSummaryResponse;
+import io.harness.spec.server.ssca.v1.model.OrchestrationSummaryResponse;
 import io.harness.spec.server.ssca.v1.model.TokenIssueResponseBody;
 import io.harness.ssca.client.beans.SBOMArtifactResponse;
 import io.harness.ssca.client.beans.SscaAuthToken;
@@ -31,6 +33,13 @@ public interface SSCAServiceClient {
   @GET(SSCACommonEndpointConstants.SSCA_SERVICE_TOKEN_ENDPOINT)
   Call<SscaAuthToken> generateAuthToken(@Query("accountIdentifier") String accountIdentifier,
       @Query("orgIdentifier") String orgIdentifier, @Query("projectIdentifier") String projectIdentifier);
+
+  @GET(SSCACommonEndpointConstants.SSCA_MANAGER_ORCHESTRATION_SUMMARY_ENDPOINT)
+  Call<OrchestrationSummaryResponse> getOrchestrationSummary(@Path("org") String org, @Path("project") String project,
+      @Path("orchestration-id") String orchestrationId, @Header("Harness-Account") String accountIdentifier);
+  @GET(SSCACommonEndpointConstants.SSCA_MANAGER_ENFORCEMENT_ENDPOINT)
+  Call<EnforcementSummaryResponse> getEnforcementSummary(@Path("org") String org, @Path("project") String project,
+      @Path("enforcement-id") String enforcementId, @Header("Harness-Account") String accountIdentifier);
 
   @GET(SSCACommonEndpointConstants.SSCA_SERVICE_ENFORCEMENT_ENDPOINT + "{enforcementId}/summary")
   Call<SscaEnforcementSummary> getEnforcementSummary(@Path("enforcementId") String enforcementId);
