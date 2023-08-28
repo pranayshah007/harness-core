@@ -396,7 +396,7 @@ public class MonitoredServiceResource {
   @GET
   @Timed
   @ExceptionMetered
-  @Path("{identifier}/secondary-events-details")
+  @Path("/secondary-events-details")
   @ApiOperation(value = "get monitored service secondary events details", nickname = "getMSSecondaryEventsDetails")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<SecondaryEventDetailsResponse> getMSSecondaryEventsDetails(
