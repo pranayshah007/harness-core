@@ -12,6 +12,7 @@ import io.harness.spec.server.ssca.v1.model.Artifact;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomRequestBody;
 import io.harness.spec.server.ssca.v1.model.EnforceSbomResponseBody;
 import io.harness.spec.server.ssca.v1.model.EnforcementSummaryResponse;
+import io.harness.spec.server.ssca.v1.model.PolicyViolation;
 import io.harness.ssca.beans.RuleDTO;
 import io.harness.ssca.enforcement.ExecutorRegistry;
 import io.harness.ssca.enforcement.constants.RuleExecutorType;
@@ -23,12 +24,15 @@ import io.harness.ssca.entities.EnforcementSummaryEntity;
 import com.google.inject.Inject;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public class EnforcementStepServiceImpl implements EnforcementStepService {
   @Inject ArtifactRepository artifactRepository;
   @Inject ExecutorRegistry executorRegistry;
   @Inject RuleEngineService ruleEngineService;
   @Inject EnforcementSummaryService enforcementSummaryService;
+  @Inject EnforcementResultService enforcementResultService;
 
   @Override
   public EnforceSbomResponseBody enforceSbom(
@@ -82,5 +86,31 @@ public class EnforcementStepServiceImpl implements EnforcementStepService {
         .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
         .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
         .status(enforcementSummary.getStatus());
+  }
+
+  @Override
+  public Page<PolicyViolation> getPolicyViolations(
+      String accountId, String orgIdentifier, String projectIdentifier, String enforcementId, Pageable pageable) {
+    return enforcementResultService
+        .getPolicyViolations(accountId, orgIdentifier, projectIdentifier, enforcementId, pageable)
+        .map(enforcementResultEntity
+            -> new PolicyViolation()
+                   .enforcementId(enforcementResultEntity.getEnforcementID())
+                   .account(enforcementResultEntity.getAccountId())
+                   .org(enforcementResultEntity.getOrgIdentifier())
+                   .project(enforcementResultEntity.getProjectIdentifier())
+                   .artifactId(enforcementResultEntity.getArtifactId())
+                   .imageName(enforcementResultEntity.getImageName())
+                   .purl(enforcementResultEntity.getPurl())
+                   .orchestrationId(enforcementResultEntity.getOrchestrationID())
+                   .license(enforcementResultEntity.getLicense())
+                   .tag(enforcementResultEntity.getTag())
+                   .supplier(enforcementResultEntity.getSupplier())
+                   .supplierType(enforcementResultEntity.getSupplierType())
+                   .name(enforcementResultEntity.getName())
+                   .version(enforcementResultEntity.getVersion())
+                   .packageManager(enforcementResultEntity.getPackageManager())
+                   .violationType(enforcementResultEntity.getViolationType())
+                   .violationDetails(enforcementResultEntity.getViolationDetails()));
   }
 }

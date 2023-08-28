@@ -15,11 +15,15 @@ import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface EnforcementResultService {
   List<EnforcementResultEntity> getEnforcementResults(List<NormalizedSBOMComponentEntity> violatedComponents,
       String violationType, String violationDetails, ArtifactEntity artifact, String enforcementId);
 
+  Page<EnforcementResultEntity> getPolicyViolations(
+      String accountId, String orgIdentifier, String projectIdentifier, String enforcementId, Pageable pageable);
   String getViolationDetails(NormalizedSBOMComponentEntity pkg, AllowListItem allowListItem, AllowListRuleType type);
 
   String getViolationDetails(DenyListItem denyListItem);

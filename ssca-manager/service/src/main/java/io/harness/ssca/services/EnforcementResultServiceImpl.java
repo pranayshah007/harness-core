@@ -6,7 +6,7 @@
  */
 
 package io.harness.ssca.services;
-
+import io.harness.repositories.EnforcementResultRepo;
 import io.harness.ssca.beans.AllowLicense;
 import io.harness.ssca.beans.AllowList.AllowListItem;
 import io.harness.ssca.beans.AllowList.AllowListRuleType;
@@ -14,15 +14,21 @@ import io.harness.ssca.beans.DenyList.DenyListItem;
 import io.harness.ssca.beans.Supplier;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
+import io.harness.ssca.entities.EnforcementResultEntity.EnforcementResultEntityKeys;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 
+import com.google.inject.Inject;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.BadRequestException;
 import org.eclipse.jgit.ignore.internal.Strings;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 public class EnforcementResultServiceImpl implements EnforcementResultService {
+  @Inject EnforcementResultRepo enforcementResultRepo;
   @Override
   public List<EnforcementResultEntity> getEnforcementResults(List<NormalizedSBOMComponentEntity> violatedComponents,
       String violationType, String violationDetails, ArtifactEntity artifact, String enforcementId) {
@@ -52,6 +58,20 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
     }
 
     return result;
+  }
+
+  @Override
+  public Page<EnforcementResultEntity> getPolicyViolations(
+      String accountId, String orgIdentifier, String projectIdentifier, String enforcementId, Pageable pageable) {
+    Criteria criteria = Criteria.where(EnforcementResultEntityKeys.accountId)
+                            .is(accountId)
+                            .and(EnforcementResultEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(EnforcementResultEntityKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(EnforcementResultEntityKeys.enforcementID)
+                            .is(enforcementId);
+    return enforcementResultRepo.findAll(criteria, pageable);
   }
 
   @Override
