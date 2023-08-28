@@ -68,6 +68,7 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -612,6 +613,6 @@ public class TasBasicAppSetupStepTest extends CDNGTestBase {
   @Owner(developers = RISHABH)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(tasBasicAppSetupStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(tasBasicAppSetupStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 }

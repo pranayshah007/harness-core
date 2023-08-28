@@ -66,7 +66,7 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
   @Override
   public void notifyTimeout(Map<String, ResponseData> responseMap) {
     NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-    PlanNode node = planService.fetchNode(nodeExecution.getNodeId());
+    PlanNode node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
     FailureInfo failureInfo =
         FailureInfo.newBuilder()
             .setErrorMessage("ExecutionInputExpired")

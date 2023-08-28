@@ -67,6 +67,7 @@ public class AwsCdkConfig implements PersistentEntity, CreatedAtAware {
   private String image;
   private ImagePullPolicy imagePullPolicy;
   private Map<String, String> envVariables;
+  private Map<String, String> parameters;
   private Boolean privileged;
   private String commitId;
 }

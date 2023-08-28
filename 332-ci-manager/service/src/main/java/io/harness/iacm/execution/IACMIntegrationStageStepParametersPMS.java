@@ -13,7 +13,7 @@ import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.yaml.extended.ci.codebase.CodeBase;

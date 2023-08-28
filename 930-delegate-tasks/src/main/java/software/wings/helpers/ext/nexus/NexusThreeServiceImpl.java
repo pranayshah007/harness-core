@@ -217,9 +217,8 @@ public class NexusThreeServiceImpl {
     Map<String, List<ArtifactFileMetadata>> nameToArtifactDownloadUrls = new HashMap<>();
     NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
     Response<Nexus3ComponentResponse> response;
-    String continuationToken;
+    String continuationToken = null;
     do {
-      continuationToken = null;
       if (nexusConfig.isHasCredentials()) {
         response =
             nexusThreeRestClient

@@ -1732,6 +1732,12 @@
                 }
               ]
             },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
             "privileged": {
               "oneOf": [
                 {
@@ -10491,7 +10497,7 @@
             },
             "consoleLogPollFrequency": {
               "type": "string",
-              "pattern": "^(([1-9])+\\d+[s])|(([5-9])+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
+              "pattern": "^(([1-9])+\\d+[s])|(([5-9])+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
             },
             "delegateSelectors": {
               "oneOf": [
@@ -12972,12 +12978,29 @@
         "type": {
           "type": "string",
           "enum": [
-            "Generic"
+            "Generic",
+            "ECR"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ECR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OciHelmChartStoreEcrConfig"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -12995,6 +13018,35 @@
           }
         }
       ]
+    },
+    "OciHelmChartStoreEcrConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/OciHelmChartStoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "region"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            },
+            "registryId": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "OciHelmChartStoreGenericConfig": {
       "allOf": [
@@ -13471,7 +13523,8 @@
             "Kotlin",
             "Scala",
             "Csharp",
-            "Python"
+            "Python",
+            "Ruby"
           ]
         },
         "executionInput": {
@@ -13502,7 +13555,8 @@
             "Kotlin",
             "Scala",
             "Csharp",
-            "Python"
+            "Python",
+            "Ruby"
           ]
         }
       },
@@ -15034,7 +15088,8 @@
                     "Nunitconsole",
                     "SBT",
                     "Pytest",
-                    "Unittest"
+                    "Unittest",
+                    "Rspec"
                   ]
                 },
                 {
@@ -15108,7 +15163,8 @@
                     "Kotlin",
                     "Scala",
                     "Csharp",
-                    "Python"
+                    "Python",
+                    "Ruby"
                   ]
                 },
                 {
@@ -17172,8 +17228,10 @@
       "type": "object",
       "properties": {
         "metadata": {
-          "readOnly": true,
           "$ref": "#/definitions/ServicesMetadata"
+        },
+        "useFromStage": {
+          "$ref": "#/definitions/ServiceUseFromStageV2"
         },
         "values": {
           "oneOf": [
@@ -23664,7 +23722,8 @@
                     "nunit_console",
                     "sbt",
                     "pytest",
-                    "unittest"
+                    "unittest",
+                    "rspec"
                   ]
                 },
                 {

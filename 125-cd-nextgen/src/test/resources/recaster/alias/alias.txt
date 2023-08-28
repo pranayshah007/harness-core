@@ -543,6 +543,7 @@ io.harness.cdng.common.capacity.CountCapacitySpec
 io.harness.cdng.provision.cloudformation.CloudformationRollbackStepNode
 io.harness.cdng.ecs.beans.EcsRollingDeployOutcome
 io.harness.cdng.manifest.yaml.OciHelmChartGenericConfig
+io.harness.cdng.manifest.yaml.OciHelmChartStoreEcrConfig
 io.harness.cdng.elastigroup.ElastigroupSetupStepInfo
 io.harness.ngpipeline.artifact.bean.SidecarsOutcome
 io.harness.cdng.service.beans.ServiceConfigOutcome

@@ -12,5 +12,12 @@
     "identifier": "catalog",
     "name": "Catalog info yaml",
     "description": "Catalog info yaml"
+  },
+  {
+    "id": "64e4c59343ad86a7a6032b1f",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "harness",
+    "name": "Harness",
+    "description": "Harness"
   }
 ]

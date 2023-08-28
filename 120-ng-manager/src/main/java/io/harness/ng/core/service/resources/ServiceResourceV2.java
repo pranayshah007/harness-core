@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.service.resources;
+
 import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl.getConnector;
@@ -156,7 +157,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @NextGenManagerAuth
 @Api("/servicesV2")
 @Path("/servicesV2")

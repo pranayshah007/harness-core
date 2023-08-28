@@ -8,6 +8,7 @@
 package io.harness.pms.async.plan;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.PLAN_NOTIFY_EVENT_TOPIC;
+import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,6 +19,7 @@ import io.harness.queue.QueueController;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,7 +32,7 @@ public class PlanNotifyEventConsumer extends PmsAbstractRedisConsumer<PlanNotify
   @Inject
   public PlanNotifyEventConsumer(@Named(PLAN_NOTIFY_EVENT_TOPIC) Consumer redisConsumer,
       PlanNotifyMessageListener messageListener, @Named("sdkEventsCache") Cache<String, Integer> eventsCache,
-      QueueController queueController) {
-    super(redisConsumer, messageListener, eventsCache, queueController);
+      QueueController queueController, @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
+    super(redisConsumer, messageListener, eventsCache, queueController, executorService);
   }
 }

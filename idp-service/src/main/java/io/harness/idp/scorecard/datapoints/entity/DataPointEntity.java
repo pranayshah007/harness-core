@@ -11,6 +11,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -48,7 +49,7 @@ public class DataPointEntity implements PersistentEntity {
   }
 
   @Id private String id;
-  private String accountIdentifier;
+  @FdIndex private String accountIdentifier;
   @Column(name = "identifier") private String identifier;
   private String name;
   private Type type;
@@ -57,6 +58,6 @@ public class DataPointEntity implements PersistentEntity {
   private String conditionalInputValueDescription;
   private String dataSourceLocationIdentifier;
   private String dataSourceIdentifier;
-
+  private String outcomeExpression;
   public enum Type { NUMBER, BOOLEAN, STRING }
 }

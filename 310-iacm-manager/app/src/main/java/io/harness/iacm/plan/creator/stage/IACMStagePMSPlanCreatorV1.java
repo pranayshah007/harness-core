@@ -31,7 +31,7 @@ import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
 import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
-import io.harness.ci.plan.creator.codebase.CodebasePlanCreator;
+import io.harness.ci.execution.plan.creator.codebase.CodebasePlanCreator;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.IACMStageExecutionException;

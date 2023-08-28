@@ -19,5 +19,14 @@ public class DataPoints {
   public static final String GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
   public static final String GITHUB_IS_BRANCH_PROTECTED = "isBranchProtected";
 
-  public static final String STO_SCAN_IN_PIPELINE = "stoStageAdded";
+  // Catalog
+  public static final String CATALOG_TECH_DOCS = "techDocsAnnotation";
+  public static final String CATALOG_PAGERDUTY = "pagerdutyAnnotation";
+  public static final String CATALOG_SPEC_OWNER = "specOwner";
+
+  // Harness
+  public static final String STO_ADDED_IN_PIPELINE = "stoStageAdded";
+  public static final String IS_POLICY_EVALUATION_SUCCESSFUL_IN_PIPELINE = "isPolicyEvaluationSuccessful";
+  public static final String PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS = "%ofCIPipelinePassingInPast7Days";
+  public static final String PIPELINE_TEST_FAILING_IN_CI_IS_ZERO = "noTestsFailingInCiPipeline";
 }

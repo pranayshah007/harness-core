@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.executions.node;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
@@ -875,7 +876,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         .include(NodeExecutionKeys.status)
         .include(NodeExecutionKeys.endTs)
         .include(NodeExecutionKeys.createdAt)
-        .include(NodeExecutionKeys.planNode)
         .include(NodeExecutionKeys.mode)
         .include(NodeExecutionKeys.stepType)
         .include(NodeExecutionKeys.ambiance)
@@ -990,7 +990,10 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     Map<String, Node> nodeExecutionIdToPlanNode = new HashMap<>();
 
     Set<String> nodeIds = nodeExecutionMap.values().stream().map(NodeExecution::getNodeId).collect(Collectors.toSet());
-    Set<Node> nodes = planService.fetchAllNodes(nodeIds);
+    // Here we have assumed that plan id of all node executions will be same as this was the assumption till now as well
+    String planId = !isEmpty(nodeExecutions) ? nodeExecutions.get(0).getPlanId() : null;
+    // TODO Remove the list query to fetch list of nodes
+    Set<Node> nodes = planService.fetchAllNodes(planId, nodeIds);
     Map<String, Node> nodeMap = nodes.stream().collect(Collectors.toMap(Node::getUuid, node -> node));
 
     nodeExecutionMap.forEach(
@@ -1058,12 +1061,13 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> fetchAllWithPlanExecutionId(String planExecutionId, Set<String> fieldsToBeIncluded) {
+  public CloseableIterator<NodeExecution> fetchAllWithPlanExecutionId(
+      String planExecutionId, Set<String> fieldsToBeIncluded) {
     Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId).is(planExecutionId);
     Query query = query(criteria);
     for (String field : fieldsToBeIncluded) {
       query.fields().include(field);
     }
-    return nodeExecutionReadHelper.fetchNodeExecutionsWithoutProjections(query);
+    return nodeExecutionReadHelper.fetchNodeExecutionsFromAnalytics(query);
   }
 }

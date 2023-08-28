@@ -22,6 +22,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
@@ -44,7 +45,11 @@ public class SignupSpamChecker {
     } else {
       registrationCount += 1;
     }
-    trialEmailCache.put(emailAddress, registrationCount);
+    try {
+      trialEmailCache.put(emailAddress, registrationCount);
+    } catch (CacheException e) {
+      log.error("Unable to set trial email data into cache", e);
+    }
     if (registrationCount > REGISTRATION_SPAM_THRESHOLD) {
       log.info(
           "Trial registration has been performed already using the email from user invite '{}' shortly before, rejecting this request.",

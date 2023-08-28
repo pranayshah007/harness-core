@@ -6,6 +6,7 @@
  */
 
 package software.wings.service.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -85,6 +86,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
@@ -406,7 +408,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
           if (apiKeyEntry == null) {
             return null;
           }
-          apiKeyCache.put(getKeyForAPIKeyCache(accountId, apiKeyEntry.getDecryptedKey()), apiKeyEntry);
+          updateApiKeyCache(accountId, apiKeyEntry);
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache
@@ -414,10 +416,18 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         apiKeyCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
         apiKeyEntry = getByKeyFromDB(apiKey, accountId);
         if (apiKeyEntry != null) {
-          apiKeyCache.put(getKeyForAPIKeyCache(accountId, apiKeyEntry.getDecryptedKey()), apiKeyEntry);
+          updateApiKeyCache(accountId, apiKeyEntry);
         }
       }
       return apiKeyEntry;
+    }
+  }
+
+  private void updateApiKeyCache(String accountId, ApiKeyEntry apiKeyEntry) {
+    try {
+      apiKeyCache.put(getKeyForAPIKeyCache(accountId, apiKeyEntry.getDecryptedKey()), apiKeyEntry);
+    } catch (CacheException e) {
+      log.error("Unable to set api key data into cache", e);
     }
   }
 
@@ -434,7 +444,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         if (apiKeyPermissionInfo == null) {
           apiKeyPermissionInfo = authHandler.evaluateUserPermissionInfo(accountId, apiKeyEntry.getUserGroups(), null);
           logApiKeyPermissions(apiKeyPermissionInfo);
-          apiKeyPermissionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
+          updateApiKeyPermissionInfoCache(accountId, apiKey, apiKeyPermissionInfo);
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache
@@ -442,9 +452,18 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         apiKeyPermissionInfoCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
         apiKeyPermissionInfo = authHandler.evaluateUserPermissionInfo(accountId, apiKeyEntry.getUserGroups(), null);
         logApiKeyPermissions(apiKeyPermissionInfo);
-        apiKeyPermissionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
+        updateApiKeyPermissionInfoCache(accountId, apiKey, apiKeyPermissionInfo);
       }
       return apiKeyPermissionInfo;
+    }
+  }
+
+  private void updateApiKeyPermissionInfoCache(
+      String accountId, String apiKey, UserPermissionInfo apiKeyPermissionInfo) {
+    try {
+      apiKeyPermissionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
+    } catch (CacheException e) {
+      log.error("Unable to set api key permission info data into cache", e);
     }
   }
 
@@ -476,7 +495,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         if (apiKeyPermissionInfo == null) {
           apiKeyPermissionInfo =
               authService.getUserRestrictionInfoFromDB(accountId, userPermissionInfo, apiKeyEntry.getUserGroups());
-          apiKeyRestrictionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
+          updateApiKeyRestrictionInfoCache(accountId, apiKey, apiKeyPermissionInfo);
         }
       } catch (Exception ex) {
         // If there was any exception, remove that entry from cache
@@ -484,9 +503,18 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         apiKeyRestrictionInfoCache.remove(getKeyForAPIKeyCache(accountId, apiKey));
         apiKeyPermissionInfo =
             authService.getUserRestrictionInfoFromDB(accountId, userPermissionInfo, apiKeyEntry.getUserGroups());
-        apiKeyRestrictionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
+        updateApiKeyRestrictionInfoCache(accountId, apiKey, apiKeyPermissionInfo);
       }
       return apiKeyPermissionInfo;
+    }
+  }
+
+  private void updateApiKeyRestrictionInfoCache(
+      String accountId, String apiKey, UserRestrictionInfo apiKeyPermissionInfo) {
+    try {
+      apiKeyRestrictionInfoCache.put(getKeyForAPIKeyCache(accountId, apiKey), apiKeyPermissionInfo);
+    } catch (CacheException e) {
+      log.error("Unable to set api key restriction info data into cache", e);
     }
   }
 

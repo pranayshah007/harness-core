@@ -5,10 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
-import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_BUILD_LINK;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.CI_COMMIT_AUTHOR;
@@ -86,9 +85,9 @@ import static org.apache.commons.lang3.StringUtils.stripStart;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
-import io.harness.ci.execution.GitBuildStatusUtility;
-import io.harness.ci.integrationstage.BuildEnvironmentUtils;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.execution.GitBuildStatusUtility;
+import io.harness.ci.execution.integrationstage.BuildEnvironmentUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
@@ -154,7 +153,8 @@ public class CodebaseUtils {
 
   private static Map<String, String> getDroneSystemEnvVars() {
     Map<String, String> envVarMap = new HashMap<>();
-    envVarMap.put(CI, "true"); // hardcoded to true in drone
+    // Added this caused regression since users can rely on CI env value to do some operations.
+    // envVarMap.put(CI, "true"); // hardcoded to true in drone
     envVarMap.put(DRONE, "true"); // actually false but possibly required in some plugin - hardcoded to true in drone
     envVarMap.put(DRONE_STAGE_KIND, "pipeline");
 

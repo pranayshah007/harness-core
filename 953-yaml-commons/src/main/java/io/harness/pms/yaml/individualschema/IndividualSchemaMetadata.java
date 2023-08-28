@@ -7,4 +7,6 @@
 
 package io.harness.pms.yaml.individualschema;
 
-public abstract class IndividualSchemaMetadata {}
+public abstract class IndividualSchemaMetadata {
+  abstract String generateSchemaKey();
+}

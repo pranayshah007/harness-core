@@ -58,17 +58,21 @@ public class AwsCdkDeployStepInfo extends AwsCdkBaseStepInfo implements CDAbstra
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> provisionerIdentifier;
 
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH) ParameterField<Map<String, String>> parameters;
+
   @Builder(builderMethodName = "infoBuilder")
   public AwsCdkDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> image,
       ParameterField<String> connectorRef, ContainerResource resources,
       ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
       ParameterField<List<String>> commandOptions, ParameterField<String> appPath,
-      ParameterField<List<String>> stackNames, ParameterField<String> provisionerIdentifier) {
+      ParameterField<List<String>> stackNames, ParameterField<String> provisionerIdentifier,
+      ParameterField<Map<String, String>> parameters) {
     super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
         commandOptions, appPath);
     this.stackNames = stackNames;
     this.provisionerIdentifier = provisionerIdentifier;
+    this.parameters = parameters;
   }
   @Override
   public StepType getStepType() {
@@ -95,6 +99,7 @@ public class AwsCdkDeployStepInfo extends AwsCdkBaseStepInfo implements CDAbstra
         .appPath(getAppPath())
         .envVariables(getEnvVariables())
         .stackNames(getStackNames())
+        .parameters(getParameters())
         .build();
   }
 

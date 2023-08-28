@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator.filters;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.executions.steps.StepSpecTypeConstants.AZURE_CREATE_ARM_RESOURCE;
@@ -77,8 +78,7 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT,
-        HarnessModuleComponent.CDS_K8S})
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<DeploymentStageNode> {
@@ -130,6 +130,18 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     } else if (deploymentStageConfig.getService() != null) {
       validateV2(filterCreationContext, deploymentStageConfig);
     }
+    if (deploymentStageConfig.getServices() != null) {
+      validateMultiServices(filterCreationContext, deploymentStageConfig);
+    }
+  }
+
+  private void validateMultiServices(
+      FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
+    if (usesServicesFromAnotherStage(deploymentStageConfig)
+        & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
+      throw new InvalidYamlRuntimeException(
+          "cannot save a stage template that propagates services from another stage.");
+    }
   }
 
   private void validateV1(FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
@@ -170,6 +182,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       throw new InvalidYamlRuntimeException(
           "cannot save a stage template that propagates service from another stage. Please remove useFromStage and set the serviceRef to fixed value or runtime or an expression and try again");
     }
+
     if (usesEnvironmentFromAnotherStage(deploymentStageConfig)
         & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
       throw new InvalidYamlRuntimeException(
@@ -190,6 +203,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     if (deploymentStageConfig.getEnvironment() != null) {
       validateInfraProvisioners(filterCreationContext, deploymentStageConfig.getEnvironment());
     }
+  }
+
+  private boolean usesServicesFromAnotherStage(DeploymentStageConfig deploymentStageConfig) {
+    return deploymentStageConfig.getServices() != null && deploymentStageConfig.getServices().getUseFromStage() != null
+        && isNotEmpty(deploymentStageConfig.getServices().getUseFromStage().getStage());
   }
 
   private boolean hasNoSiblingStages(YamlField currentField) {
@@ -217,10 +235,8 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       addFiltersFromServiceV2(filterCreationContext, filterBuilder, deploymentStageConfig.getService(),
           deploymentStageConfig.getDeploymentType());
     } else if (deploymentStageConfig.getServices() != null) {
-      if (!deploymentStageConfig.getServices().getValues().isExpression()) {
-        addFiltersForServices(filterCreationContext, filterBuilder, deploymentStageConfig.getServices(),
-            deploymentStageConfig.getDeploymentType());
-      }
+      addFiltersForServices(filterCreationContext, filterBuilder, deploymentStageConfig.getServices(),
+          deploymentStageConfig.getDeploymentType());
     } else {
       throw new InvalidYamlRuntimeException(
           format("serviceConfig or service or services should be present in stage [%s]. Please add it and try again",
@@ -374,20 +390,37 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void addFiltersForServices(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
       ServicesYaml services, ServiceDefinitionType deploymentType) {
-    if (services.getValues().isExpression()) {
+    if (services.getUseFromStage() != null && ParameterField.isNotNull(services.getValues())) {
+      throw new InvalidRequestException(
+          "Only one of services.values and services.useFromStage is allowed in CD stage yaml");
+    }
+    if (services.getUseFromStage() != null) {
+      if (isEmpty(services.getUseFromStage().getStage())) {
+        throw new InvalidYamlRuntimeException(format(
+            "stage identifier should be present in stage [%s] when propagating services from a different stage. Please add it and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
+
+      return;
+    }
+
+    if (services.getValues() != null && services.getValues().isExpression()) {
       return;
     }
 
     final List<String> serviceRefs = new ArrayList<>();
-    for (ServiceYamlV2 serviceYamlV2 : services.getValues().getValue()) {
-      final ParameterField<String> serviceEntityRef = serviceYamlV2.getServiceRef();
-      if (ParameterField.isNull(serviceEntityRef)) {
-        throw new InvalidYamlRuntimeException(format(
-            "serviceRef should be present in stage [%s] when referring to a service entity. Please add it and try again",
-            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-      }
-      if (!serviceEntityRef.isExpression()) {
-        serviceRefs.add(serviceEntityRef.getValue());
+
+    if (isNotEmpty(services.getValues().getValue())) {
+      for (ServiceYamlV2 serviceYamlV2 : services.getValues().getValue()) {
+        final ParameterField<String> serviceEntityRef = serviceYamlV2.getServiceRef();
+        if (ParameterField.isNull(serviceEntityRef)) {
+          throw new InvalidYamlRuntimeException(format(
+              "serviceRef should be present in stage [%s] when referring to a service entity. Please add it and try again",
+              YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+        }
+        if (!serviceEntityRef.isExpression()) {
+          serviceRefs.add(serviceEntityRef.getValue());
+        }
       }
     }
 

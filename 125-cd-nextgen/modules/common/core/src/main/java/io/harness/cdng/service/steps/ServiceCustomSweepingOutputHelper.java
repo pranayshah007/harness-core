@@ -7,8 +7,11 @@
 
 package io.harness.cdng.service.steps;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.EcsServiceSpec;
 import io.harness.cdng.service.beans.GoogleCloudFunctionsServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinition;
@@ -23,7 +26,8 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
-
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 @Slf4j

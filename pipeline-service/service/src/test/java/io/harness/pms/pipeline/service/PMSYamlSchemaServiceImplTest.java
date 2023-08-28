@@ -46,6 +46,7 @@ import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.individualschema.StaticSchemaParserFactory;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PmsFeatureFlagService;
@@ -92,6 +93,7 @@ public class PMSYamlSchemaServiceImplTest {
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
   @Mock private ExecutorService yamlSchemaExecutor;
+  @Mock StaticSchemaParserFactory staticSchemaParserFactory;
 
   PipelineServiceConfiguration pipelineServiceConfiguration;
 
@@ -103,7 +105,7 @@ public class PMSYamlSchemaServiceImplTest {
   public void setUp() throws ExecutionException, InterruptedException, TimeoutException {
     MockitoAnnotations.initMocks(this);
     pmsYamlSchemaService = new PMSYamlSchemaServiceImpl(yamlSchemaProvider, yamlSchemaValidator, pmsSdkInstanceService,
-        pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor, pmsFeatureFlagService);
+        pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor, pmsFeatureFlagService, staticSchemaParserFactory);
   }
 
   @Test

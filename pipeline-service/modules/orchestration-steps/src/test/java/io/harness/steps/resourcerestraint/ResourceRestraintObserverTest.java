@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import io.harness.OrchestrationStepsTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.rule.Owner;
 import io.harness.springdata.TransactionHelper;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
@@ -51,7 +52,7 @@ public class ResourceRestraintObserverTest extends OrchestrationStepsTestBase {
 
     when(restraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(eq(planExecutionId)))
         .thenReturn(ImmutableList.of(activeRc, blockedRc));
-    observer.onEnd(ambiance);
+    observer.onEnd(ambiance, Status.SUCCEEDED);
 
     ArgumentCaptor<ResourceRestraintInstance> instanceCaptor = ArgumentCaptor.forClass(ResourceRestraintInstance.class);
 

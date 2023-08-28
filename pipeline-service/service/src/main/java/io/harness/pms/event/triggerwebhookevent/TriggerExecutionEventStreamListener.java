@@ -8,7 +8,6 @@
 package io.harness.pms.event.triggerwebhookevent;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 import static io.harness.pms.sdk.PmsSdkModuleUtils.SDK_SERVICE_NAME;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -25,7 +24,6 @@ import io.harness.pms.triggers.webhook.service.TriggerWebhookEventExecutionServi
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -35,13 +33,13 @@ public class TriggerExecutionEventStreamListener
   @Inject TriggerWebhookEventExecutionService triggerWebhookEventExecutionService;
 
   @Inject
-  public TriggerExecutionEventStreamListener(@Named(SDK_SERVICE_NAME) String serviceName,
-      FacilitatorEventHandler handler, @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
-    super(serviceName, FacilitatorEvent.class, handler, executorService);
+  public TriggerExecutionEventStreamListener(
+      @Named(SDK_SERVICE_NAME) String serviceName, FacilitatorEventHandler handler) {
+    super(serviceName, FacilitatorEvent.class, handler);
   }
 
   @Override
-  public boolean handleMessage(Message message) {
+  public boolean handleMessage(Message message, Long readTs) {
     if (message != null && message.hasMessage()) {
       try {
         log.info("Started processing trigger webhook event for message id {}", message.getId());

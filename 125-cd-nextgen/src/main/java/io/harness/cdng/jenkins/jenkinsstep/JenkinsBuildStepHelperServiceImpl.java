@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.jenkins.jenkinsstep;
+
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -47,7 +48,6 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
@@ -56,6 +56,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoSerializer;
@@ -176,7 +177,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
 
   @Override
   public TaskChainResponse queueJenkinsBuildTask(JenkinsArtifactDelegateRequestBuilder paramsBuilder, Ambiance ambiance,
-      StepElementParameters stepElementParameters) {
+      StepBaseParameters stepElementParameters) {
     TaskRequest taskRequest = queueDelegateTask(
         ambiance, stepElementParameters, paramsBuilder, ArtifactTaskType.JENKINS_BUILD, JENKINS_QUEUE_TASK_NAME);
     return TaskChainResponse.builder()
@@ -188,7 +189,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
 
   @Override
   public TaskChainResponse pollJenkinsJob(JenkinsArtifactDelegateRequestBuilder paramsBuilder, Ambiance ambiance,
-      StepElementParameters stepElementParameters, ResponseData responseData) {
+      StepBaseParameters stepElementParameters, ResponseData responseData) {
     ArtifactTaskResponse artifactTaskResponse = getArtifactTaskResponse(responseData);
     if (artifactTaskResponse.getCommandExecutionStatus() != SUCCESS) {
       throw new ArtifactServerException(IF_FAIL_MESSAGE + " - " + artifactTaskResponse.getErrorMessage()
@@ -213,7 +214,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
         .build();
   }
 
-  private TaskRequest queueDelegateTask(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskRequest queueDelegateTask(Ambiance ambiance, StepBaseParameters stepParameters,
       JenkinsArtifactDelegateRequestBuilder paramsBuilder, ArtifactTaskType taskType, String jenkinsPollTaskName) {
     JenkinsBuildSpecParameters specParameters = (JenkinsBuildSpecParameters) stepParameters.getSpec();
     String connectorRef = specParameters.getConnectorRef().getValue();

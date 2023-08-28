@@ -38,8 +38,11 @@ public interface EntityUnavailabilityStatusesService extends DeleteEntityByHandl
   EntityUnavailabilityStatuses getMinStartTimeInstanceWithStatus(
       ProjectParams projectParams, EntityType entityType, String entityIdentifier, EntityUnavailabilityStatus status);
 
-  List<EntityUnavailabilityStatusesDTO> getAllInstances(ProjectParams projectParams, long startTime, long endTime);
+  List<EntityUnavailabilityStatusesDTO> getAllMaintenanceWindowInstances(
+      ProjectParams projectParams, long startTime, long endTime);
 
+  List<EntityUnavailabilityStatusesDTO> getAllDataCollectionFailureInstances(
+      ProjectParams projectParams, String sliId, long startTime, long endTime);
   List<EntityUnavailabilityStatuses> getAllInstancesEntity(ProjectParams projectParams, long startTime, long endTime);
 
   List<EntityUnavailabilityStatuses> getAllUnavailabilityInstances(

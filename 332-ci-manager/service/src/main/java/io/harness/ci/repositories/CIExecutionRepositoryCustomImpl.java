@@ -7,8 +7,8 @@
 
 package io.harness.repositories;
 
-import io.harness.ci.execution.CIExecutionMetadata;
-import io.harness.ci.execution.CIExecutionMetadata.CIExecutionMetadataKeys;
+import io.harness.ci.execution.execution.CIExecutionMetadata;
+import io.harness.ci.execution.execution.CIExecutionMetadata.CIExecutionMetadataKeys;
 
 import com.google.inject.Inject;
 import lombok.AccessLevel;

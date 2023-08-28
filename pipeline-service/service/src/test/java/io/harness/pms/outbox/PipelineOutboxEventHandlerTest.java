@@ -9,6 +9,7 @@ package io.harness.pms.outbox;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
@@ -28,9 +29,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
+import io.harness.audit.beans.custom.executions.NodeExecutionEventData;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
+import io.harness.engine.pms.audits.events.NodeExecutionOutboxEventConstants;
+import io.harness.engine.pms.audits.events.PipelineAbortEvent;
+import io.harness.engine.pms.audits.events.TriggeredInfo;
 import io.harness.outbox.OutboxEvent;
 import io.harness.pms.events.PipelineCreateEvent;
 import io.harness.pms.events.PipelineDeleteEvent;
@@ -48,6 +53,7 @@ import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -234,6 +240,44 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
     assertEquals(Action.DELETE, auditEntry.getAction());
     assertNull(auditEntry.getNewYaml());
     assertEquals(oldYaml, auditEntry.getOldYaml());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testAbort() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+
+    TriggeredInfo triggeredInfo =
+        TriggeredInfo.builder().identifier("admin").extraInfo(Map.of("email", "email@em.com")).build();
+
+    PipelineAbortEvent pipelineAbortEvent = new PipelineAbortEvent(
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier, "planExecutionId", triggeredInfo);
+    String eventData = objectMapper.writeValueAsString(pipelineAbortEvent);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .resource(pipelineAbortEvent.getResource())
+                                  .resourceScope(pipelineAbortEvent.getResourceScope())
+                                  .eventType(NodeExecutionOutboxEventConstants.PIPELINE_ABORT)
+                                  .blocked(false)
+                                  .globalContext(new GlobalContext())
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .eventData(eventData)
+                                  .id(randomAlphabetic(10))
+                                  .build();
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    eventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, identifier, auditEntry, outboxEvent);
+    assertEquals(Action.ABORT, auditEntry.getAction());
+    assertEquals("email@em.com",
+        ((NodeExecutionEventData) auditEntry.getAuditEventData()).getTriggeredBy().getExtraInfo().get("email"));
   }
 
   private void assertAuditEntry(String accountId, String orgIdentifier, String projectIdentifier, String identifier,

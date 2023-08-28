@@ -34,7 +34,6 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -1702,13 +1701,6 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Override
   public GovernanceMetadata validateGovernanceRules(TemplateEntity templateEntity) {
-    if (!pmsFeatureFlagService.isEnabled(templateEntity.getAccountId(), FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE)) {
-      return GovernanceMetadata.newBuilder()
-          .setDeny(false)
-          .setMessage(String.format("FF: [%s] is disabled for account: [%s]", FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE,
-              templateEntity.getAccountId()))
-          .build();
-    }
     return governanceService.evaluateGovernancePoliciesForTemplate(templateEntity.getYaml(),
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
         OpaConstants.OPA_EVALUATION_ACTION_SAVE, OpaConstants.OPA_EVALUATION_TYPE_TEMPLATE);

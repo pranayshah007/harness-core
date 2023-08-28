@@ -8,6 +8,7 @@
 package io.harness.sto.execution;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.STO_ORCHESTRATION_NOTIFY_EVENT;
+import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,6 +19,7 @@ import io.harness.queue.QueueController;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 
 @Singleton
@@ -28,7 +30,7 @@ public final class STONotifyEventConsumerRedis extends PmsAbstractRedisConsumer<
   @Inject
   public STONotifyEventConsumerRedis(@Named(STO_ORCHESTRATION_NOTIFY_EVENT) Consumer redisConsumer,
       STONotifyEventMessageListener messageListener, @Named(STO_EVENTS_CACHE) Cache<String, Integer> eventsCache,
-      QueueController queueController) {
-    super(redisConsumer, messageListener, eventsCache, queueController);
+      QueueController queueController, @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
+    super(redisConsumer, messageListener, eventsCache, queueController, executorService);
   }
 }

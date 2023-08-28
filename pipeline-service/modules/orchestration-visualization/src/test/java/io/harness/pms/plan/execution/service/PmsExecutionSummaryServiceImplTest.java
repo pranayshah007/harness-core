@@ -32,7 +32,6 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
-import io.harness.plan.PlanNode;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -136,7 +135,6 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
                     .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.name()).build())
                     .build())
             .stepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
-            .planNode(PlanNode.builder().build())
             .build();
     pmsExecutionSummaryService.updateStrategyPlanNode("planExecution", nodeExecution, update);
     verify(pmsGraphStepDetailsService, times(1)).fetchConcurrentChildInstance(nodeExecution.getUuid());
@@ -190,7 +188,6 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
     nodeExecutions.add(NodeExecution.builder()
                            .uuid("nodeExecutionId1")
                            .endTs(1000L)
-                           .planNode(PlanNode.builder().build())
                            .status(Status.SUCCEEDED)
                            .nodeId("stageNodeIdWithoutStrategy")
                            .parentId("parentNodeExecutionId")
@@ -201,7 +198,6 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
     nodeExecutions.add(NodeExecution.builder()
                            .uuid("nodeExecutionId2")
                            .endTs(1000L)
-                           .planNode(PlanNode.builder().build())
                            .status(Status.SUCCEEDED)
                            .nodeId(stageSetupIdForStrategy)
                            .parentId(strategyNodeExecutionId)

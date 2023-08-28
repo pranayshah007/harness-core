@@ -12,10 +12,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 
-import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.IDP)
 public interface DataSourceLocationRepository
-    extends CrudRepository<DataSourceLocationEntity, String>, DataSourceLocationRepositoryCustom {}
+    extends CrudRepository<DataSourceLocationEntity, String>, DataSourceLocationRepositoryCustom {
+  DataSourceLocationEntity findByIdentifier(String identifier);
+}
