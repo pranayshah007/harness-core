@@ -62,9 +62,7 @@ public class NGGlobalTemplateRepositoryCustomImpl implements NGGlobalTemplateRep
 
   @Override
   public boolean globalTemplateExistByIdentifierWithoutVersionLabel(String templateIdentifier) {
-    Optional<GlobalTemplateEntity> template =
-        getGlobalTemplateEntity(Criteria.where(GlobalTemplateEntityKeys.identifier).is(templateIdentifier), false);
-    return template.isPresent();
+    return checkTemplateExist(Criteria.where(GlobalTemplateEntityKeys.identifier).is(templateIdentifier), false);
   }
 
   @Override
@@ -134,6 +132,11 @@ public class NGGlobalTemplateRepositoryCustomImpl implements NGGlobalTemplateRep
     return Optional.of(savedEntity);
   }
 
+  private boolean checkTemplateExist(Criteria criteria, boolean getMetadataOnly) {
+    Query query = new Query(criteria);
+    return mongoTemplate.exists(query, GlobalTemplateEntity.class);
+  }
+
   @Override
   public GlobalTemplateEntity updateTemplateInDb(GlobalTemplateEntity templateToUpdate,
       GlobalTemplateEntity oldTemplateEntity, ChangeType changeType, String comments,
@@ -171,13 +174,11 @@ public class NGGlobalTemplateRepositoryCustomImpl implements NGGlobalTemplateRep
 
   @Override
   public boolean globalTemplateExistByIdentifierAndVersionLabel(String templateIdentifier, String versionLabel) {
-    Optional<GlobalTemplateEntity> template =
-        getGlobalTemplateEntity(Criteria.where(GlobalTemplateEntityKeys.identifier)
-                                    .is(templateIdentifier)
-                                    .and(GlobalTemplateEntityKeys.versionLabel)
-                                    .is(versionLabel),
-            false);
-    return template.isPresent();
+    return checkTemplateExist(Criteria.where(GlobalTemplateEntityKeys.identifier)
+                                  .is(templateIdentifier)
+                                  .and(GlobalTemplateEntityKeys.versionLabel)
+                                  .is(versionLabel),
+        false);
   }
 
   @Override

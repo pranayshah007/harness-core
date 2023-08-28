@@ -13,6 +13,7 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -43,6 +44,9 @@ public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
       String comments, boolean isNewTemplate) {
     List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = ngGlobalTemplateService.createUpdateGlobalTemplate(
         accountId, orgId, projectId, setDefaultTemplate, comments, isNewTemplate, connectorRef, webhookEvent);
+    if (templateWrapperResponseDTOS.isEmpty()) {
+      throw new InvalidRequestException("Unable to fetch the template from Git");
+    }
     return ResponseDTO.newResponse(templateWrapperResponseDTOS);
   }
 }

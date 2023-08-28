@@ -46,6 +46,7 @@ import io.harness.exception.ngexception.TemplateAlreadyExistsException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitaware.dto.GetFileGitContextRequestParams;
+import io.harness.gitaware.dto.GetFileGitContextRequestParams.GetFileGitContextRequestParamsBuilder;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -313,7 +314,7 @@ public class NGGlobalTemplateServiceImpl implements NGGlobalTemplateService {
       String projectIdentifier, List<String> filePathList, String repoName, String branch, String connectorRef,
       boolean loadFromCache) {
     Map<String, GlobalTemplateEntity> batchTemplateEntities = new HashMap<>();
-    GetFileGitContextRequestParams.GetFileGitContextRequestParamsBuilder getFileGitContextRequestParams =
+    GetFileGitContextRequestParamsBuilder getFileGitContextRequestParams =
         GetFileGitContextRequestParams.builder()
             .connectorRef(connectorRef)
             .repoName(repoName)
