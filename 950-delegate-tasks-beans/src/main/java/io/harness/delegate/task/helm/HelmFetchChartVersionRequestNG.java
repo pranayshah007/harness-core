@@ -26,7 +26,6 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
-import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.model.HelmVersion;
 
@@ -60,8 +59,8 @@ public class HelmFetchChartVersionRequestNG implements TaskParameters, Execution
           case HTTP_HELM:
             HttpHelmStoreDelegateConfig httpHelmStoreConfig =
                 (HttpHelmStoreDelegateConfig) helmChartManifestDelegateConfig.getStoreDelegateConfig();
-            SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
-                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
+            capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(

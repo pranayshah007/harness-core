@@ -13,7 +13,6 @@ import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
-import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.util.ArrayList;
@@ -29,7 +28,8 @@ public class HttpHelmCapabilityHelper extends ConnectorCapabilityBaseHelper {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     HttpHelmConnectorDTO helmConnector = (HttpHelmConnectorDTO) connectorConfigDTO;
     final String helmRepoUrl = helmConnector.getHelmRepoUrl();
-    SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(helmRepoUrl, capabilityList);
+    capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+        helmRepoUrl, maskingEvaluator));
     populateDelegateSelectorCapability(capabilityList, helmConnector.getDelegateSelectors());
     return capabilityList;
   }

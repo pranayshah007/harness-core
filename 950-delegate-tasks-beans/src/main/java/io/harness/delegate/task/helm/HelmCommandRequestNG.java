@@ -42,7 +42,6 @@ import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
-import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.helm.HelmCommandType;
@@ -145,8 +144,8 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
           case HTTP_HELM:
             HttpHelmStoreDelegateConfig httpHelmStoreConfig =
                 (HttpHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-            SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
-                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
+            capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+                httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(

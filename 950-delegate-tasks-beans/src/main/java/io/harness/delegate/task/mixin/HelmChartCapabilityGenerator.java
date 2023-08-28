@@ -60,8 +60,8 @@ public class HelmChartCapabilityGenerator {
         case HTTP_HELM:
           HttpHelmStoreDelegateConfig httpHelmStoreConfig =
               (HttpHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-          SocketConnectivityCapabilityGenerator.addSocketConnectivityExecutionCapability(
-              httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), capabilities);
+          capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+              httpHelmStoreConfig.getHttpHelmConnector().getHelmRepoUrl(), maskingEvaluator));
           capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
               httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
           populateDelegateSelectorCapability(
