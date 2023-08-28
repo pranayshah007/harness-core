@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.service.yamlschema;
+
 import static java.lang.String.format;
 
 import io.harness.EntityType;
@@ -40,6 +41,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 
@@ -84,8 +86,11 @@ public class SchemaFetcher {
 
       SchemaGetter schemaGetter = schemaGetterFactory.obtainGetter(accountId, moduleType);
       List<PartialSchemaDTO> partialSchemaDTOS = schemaGetter.getSchema(yamlSchemaWithDetailsList);
-
-      schemaCache.put(schemaCacheKey, SchemaCacheUtils.getPartialSchemaWrapperValue(partialSchemaDTOS));
+      try {
+        schemaCache.put(schemaCacheKey, SchemaCacheUtils.getPartialSchemaWrapperValue(partialSchemaDTOS));
+      } catch (CacheException e) {
+        log.error("Unable to set schema data into cache", e);
+      }
 
       log.info("[PMS] Successfully fetched schema for {} for account {}", moduleType.name(), accountId);
       logWarnIfExceedsThreshold(moduleType, startTs);
@@ -111,7 +116,11 @@ public class SchemaFetcher {
       YamlSchemaDetailsWrapper yamlSchemaDetailsWrapper = schemaGetter.getSchemaDetails();
       log.info("[PMS_SCHEMA] Fetching schema information for {} from remote for account {} with time took {}ms",
           moduleType.name(), accountId, System.currentTimeMillis() - start);
-      schemaDetailsCache.put(schemaCacheKey, SchemaCacheUtils.toYamlSchemaDetailCacheValue(yamlSchemaDetailsWrapper));
+      try {
+        schemaDetailsCache.put(schemaCacheKey, SchemaCacheUtils.toYamlSchemaDetailCacheValue(yamlSchemaDetailsWrapper));
+      } catch (CacheException e) {
+        log.error("Unable to set schema detail data into cache", e);
+      }
       return yamlSchemaDetailsWrapper;
     } catch (Exception e) {
       log.warn(format("[PMS_SCHEMA] Unable to get %s schema information", moduleType.name()), e);

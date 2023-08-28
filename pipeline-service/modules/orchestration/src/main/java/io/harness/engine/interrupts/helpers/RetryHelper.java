@@ -129,7 +129,6 @@ public class RetryHelper {
     return NodeExecution.builder()
         .uuid(newUuid)
         .ambiance(ambiance)
-        .planNode(nodeExecution.getNode())
         .levelCount(ambiance.getLevelsCount())
         .mode(null)
         .endTs(null)

@@ -27,7 +27,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.jooq.tools.StringUtils;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 public class DockerValidationHandler implements ConnectorValidationHandler {
   @Inject private DockerArtifactTaskHelper dockerArtifactTaskHelper;

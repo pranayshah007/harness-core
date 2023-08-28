@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.telemetry;
+package io.harness.ci.telemetry;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

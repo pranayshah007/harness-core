@@ -135,6 +135,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
@@ -233,7 +234,11 @@ public class AuthServiceImpl implements AuthService {
 
   private void addAuthTokenToCache(AuthToken authToken) {
     if (authToken != null && authTokenCache != null) {
-      authTokenCache.put(authToken.getUuid(), authToken);
+      try {
+        authTokenCache.put(authToken.getUuid(), authToken);
+      } catch (CacheException e) {
+        log.error("Unable to set auth data into cache", e);
+      }
     }
   }
 
@@ -561,7 +566,11 @@ public class AuthServiceImpl implements AuthService {
         if (isUserPermissionInfoEmpty(value)) {
           log.warn("Adding empty user permission for accountId: {} and user: {}", accountId, user.getEmail());
         }
-        userPermissionInfoCache.put(key, value);
+        try {
+          userPermissionInfoCache.put(key, value);
+        } catch (CacheException e) {
+          log.error("Unable to set user permission info data into cache", e);
+        }
       }
       return value;
     } catch (Exception e) {
@@ -593,7 +602,11 @@ public class AuthServiceImpl implements AuthService {
           return null;
         }
         value = getUserRestrictionInfoFromDB(accountId, user, userPermissionInfo);
-        userRestrictionInfoCache.put(key, value);
+        try {
+          userRestrictionInfoCache.put(key, value);
+        } catch (CacheException e) {
+          log.error("Unable to set user restriction info data into cache", e);
+        }
       }
       return value;
     } catch (Exception e) {

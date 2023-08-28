@@ -12,6 +12,7 @@ import static io.harness.ssca.execution.SscaOrchestrationPluginUtils.getSscaOrch
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.COSIGN_PASSWORD;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.COSIGN_PRIVATE_KEY;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_FORMAT;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_MODE;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMDESTINATION;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMSOURCE;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_TOOL;
@@ -33,6 +34,7 @@ import io.harness.rule.Owner;
 import io.harness.ssca.beans.Attestation;
 import io.harness.ssca.beans.attestation.AttestationType;
 import io.harness.ssca.beans.attestation.CosignAttestation;
+import io.harness.ssca.beans.mode.SbomModeType;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
@@ -81,7 +83,8 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
     Map<String, String> sscaEnvVarMap =
         sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance, Type.K8);
     assertThat(sscaEnvVarMap).isNotNull().isNotEmpty();
-    assertThat(sscaEnvVarMap).hasSize(10);
+    assertThat(sscaEnvVarMap).hasSize(11);
+    assertThat(sscaEnvVarMap.get(PLUGIN_MODE)).isEqualTo(SbomModeType.GENERATION.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_TOOL)).isEqualTo(SbomOrchestrationToolType.SYFT.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_FORMAT)).isEqualTo(SyftOrchestrationFormat.SPDX_JSON.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_SBOMSOURCE)).isEqualTo("image:tag");
@@ -137,6 +140,7 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
     long expressionFunctorToken = 12345;
     SscaOrchestrationStepInfo stepInfo =
         SscaOrchestrationStepInfo.builder()
+            .mode(SbomModeType.GENERATION)
             .tool(SbomOrchestrationTool.builder()
                       .type(SbomOrchestrationToolType.SYFT)
                       .sbomOrchestrationSpec(
@@ -164,11 +168,12 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
     Map<String, String> sscaEnvVarMap =
         sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance, Type.VM);
     assertThat(sscaEnvVarMap).isNotNull().isNotEmpty();
-    assertThat(sscaEnvVarMap).hasSize(12);
+    assertThat(sscaEnvVarMap).hasSize(13);
     assertThat(sscaEnvVarMap.get(PLUGIN_TOOL)).isEqualTo(SbomOrchestrationToolType.SYFT.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_FORMAT)).isEqualTo(SyftOrchestrationFormat.SPDX_JSON.toString());
     assertThat(sscaEnvVarMap.get(PLUGIN_SBOMSOURCE)).isEqualTo("image:tag");
     assertThat(sscaEnvVarMap.get(PLUGIN_TYPE)).isEqualTo("Orchestrate");
+    assertThat(sscaEnvVarMap.get(PLUGIN_MODE)).isEqualTo("generation");
     assertThat(sscaEnvVarMap.get(PLUGIN_SBOMDESTINATION)).isEqualTo("harness/sbom");
     assertThat(sscaEnvVarMap.get(SKIP_NORMALISATION)).isEqualTo("true");
     assertThat(sscaEnvVarMap.get(COSIGN_PASSWORD))

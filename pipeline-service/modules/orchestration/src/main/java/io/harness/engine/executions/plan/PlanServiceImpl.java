@@ -24,6 +24,7 @@ import io.harness.repositories.NodeEntityRepository;
 import io.harness.repositories.PlanRepository;
 import io.harness.springdata.TransactionHelper;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
@@ -88,8 +89,17 @@ public class PlanServiceImpl implements PlanService {
 
   @Override
   public Node fetchNode(String planId, String nodeId) {
-    Optional<NodeEntity> nodeEntity = nodeEntityRepository.findById(nodeId);
+    Optional<NodeEntity> nodeEntity = nodeEntityRepository.findByPlanIdAndNodeId(planId, nodeId);
     if (nodeEntity.isPresent()) {
+      return nodeEntity.get().getNode();
+    }
+    // This is a fallback mechanism added. In case of execution that were running while deployment nodes would have
+    // already been created according to old setup that is uuid of the entity will be same as node id hence for those
+    // executions the above query will not work and it won't fetch any nodes , hence we have added a fallback query
+    // which fetches node based on assumption that nodeId is set as uuid for that node.
+    nodeEntity = nodeEntityRepository.findById(nodeId);
+    if (nodeEntity.isPresent()) {
+      log.info("Unable to find node from node Id and planId . Most likely this was an older running execution");
       return nodeEntity.get().getNode();
     }
 
@@ -108,11 +118,15 @@ public class PlanServiceImpl implements PlanService {
         .collect(Collectors.toList());
   }
   @Override
-  public void deleteNodesForGivenIds(Set<String> nodeEntityIds) {
+  public void deleteNodesForGivenIds(String planId, Set<String> nodeEntityIds) {
     if (EmptyPredicate.isEmpty(nodeEntityIds)) {
       return;
     }
     Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      Query query =
+          new Query(Criteria.where(NodeEntityKeys.planId).is(planId).and(NodeEntityKeys.nodeId).in(nodeEntityIds));
+      nodeEntityRepository.deleteAllByPlanIdNodeIds(query);
+      // This is also for fallback. In case if the execution was done before the latest deployment
       nodeEntityRepository.deleteAllByUuidIn(nodeEntityIds);
       return true;
     });
@@ -168,17 +182,27 @@ public class PlanServiceImpl implements PlanService {
   }
 
   @Override
-  public <T extends Node> T fetchNode(String nodeId) {
-    Optional<NodeEntity> nodeEntity = nodeEntityRepository.findById(nodeId);
-    return nodeEntity.map(entity -> (T) entity.getNode()).orElse(null);
-  }
-
-  @Override
-  public <T extends Node> Set<T> fetchAllNodes(Set<String> nodeIds) {
-    Iterable<NodeEntity> nodesEntities = nodeEntityRepository.findAllById(nodeIds);
+  public <T extends Node> Set<T> fetchAllNodes(String planId, Set<String> nodeIds) {
+    Query query = new Query(Criteria.where(NodeEntityKeys.planId).is(planId).and(NodeEntityKeys.nodeId).in(nodeIds));
+    Iterable<NodeEntity> nodesEntities = nodeEntityRepository.findByPlanIdAndNodeIds(query);
     Set<T> nodes = new HashSet<>();
+    Set<String> nodeIdsFound = new HashSet<>();
     for (NodeEntity nodeEntity : nodesEntities) {
       nodes.add((T) nodeEntity.getNode());
+      nodeIdsFound.add(nodeEntity.getNodeId());
+    }
+
+    Set<String> remainingNodeIds = Sets.difference(nodeIds, nodeIdsFound);
+    if (isNotEmpty(remainingNodeIds)) {
+      // This is a fallback mechanism added. In case of execution that were running while deployment nodes would have
+      // already been created according to old setup that is uuid of the entity will be same as node id hence for those
+      // executions the above query will not work and it won't fetch any nodes , hence we have added a fallback query
+      // which fetches nodes based on assumption that nodeIds is set as uuid for those nodes.
+      log.info("Unable to find some nodes from node Id and planId . Most likely this was an older running execution");
+      nodesEntities = nodeEntityRepository.findAllById(remainingNodeIds);
+      for (NodeEntity nodeEntity : nodesEntities) {
+        nodes.add((T) nodeEntity.getNode());
+      }
     }
     return nodes;
   }

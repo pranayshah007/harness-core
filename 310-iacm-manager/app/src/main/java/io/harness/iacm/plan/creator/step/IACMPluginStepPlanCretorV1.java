@@ -9,7 +9,7 @@ package io.harness.iacm.plan.creator.step;
 
 import io.harness.beans.steps.nodes.V1.PluginStepNodeV1;
 import io.harness.beans.steps.stepinfo.V1.PluginStepInfoV1;
-import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
+import io.harness.ci.execution.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plancreator.V1.PluginStepPlanCreatorV1;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;

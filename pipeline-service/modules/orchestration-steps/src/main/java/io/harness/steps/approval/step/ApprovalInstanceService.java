@@ -27,12 +27,14 @@ import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 public interface ApprovalInstanceService {
   ApprovalInstance save(@NotNull ApprovalInstance instance);
@@ -43,6 +45,9 @@ public interface ApprovalInstanceService {
       @Valid ApprovalStatus approvalStatus, @Valid ApprovalType approvalType, String nodeExecutionId);
 
   HarnessApprovalInstance getHarnessApprovalInstance(@NotNull String approvalInstanceId);
+
+  Optional<ApprovalInstance> findLatestApprovalInstanceByPlanExecutionIdAndType(
+      @NotEmpty String planExecutionId, @NotNull ApprovalType approvalType);
 
   void delete(@NotNull String approvalInstanceId);
 

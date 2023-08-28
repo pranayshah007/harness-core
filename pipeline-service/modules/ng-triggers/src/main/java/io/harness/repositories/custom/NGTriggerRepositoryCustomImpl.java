@@ -108,8 +108,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
         }
       } else if (pollingSubscriptionStatus != null
           && pollingSubscriptionStatus.getStatusResult() == StatusResult.PENDING) {
-        // TODO: (Vinicius) Set trigger status to PENDING here when UI is capable of handling it.
-        triggerStatus.setStatus(StatusResult.SUCCESS);
+        triggerStatus.setStatus(StatusResult.PENDING);
       } else {
         triggerStatus.setStatus(StatusResult.SUCCESS);
       }

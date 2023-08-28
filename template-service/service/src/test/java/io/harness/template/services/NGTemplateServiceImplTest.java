@@ -44,7 +44,6 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.encryption.Scope;
@@ -74,7 +73,6 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitx.GitXSettingsHelper;
-import io.harness.governance.GovernanceMetadata;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.OrganizationResponse;
@@ -278,14 +276,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     doReturn(ngManagerReconcileCall)
         .when(ngManagerReconcileClient)
         .validateYaml(anyString(), eq(null), eq(null), any(NgManagerRefreshRequestDTO.class));
-
-    doReturn(GovernanceMetadata.newBuilder()
-                 .setDeny(false)
-                 .setMessage(String.format(
-                     "FF: [%s] is disabled for account: [%s]", FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE, ACCOUNT_ID))
-                 .build())
-        .when(governanceService)
-        .evaluateGovernancePoliciesForTemplate(any(), any(), any(), any(), any(), any());
 
     doReturn(Response.success(ResponseDTO.newResponse(InputsValidationResponse.builder().isValid(true).build())))
         .when(ngManagerReconcileCall)
@@ -1937,18 +1927,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setDefaultRepoForRemoteEntity(any(), any(), any());
-  }
-
-  @Test
-  @Owner(developers = SHIVAM)
-  @Category(UnitTests.class)
-  public void testEvaluateGovernancePoliciesTemplateWithFlagOff() {
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE);
-    GovernanceMetadata flagOffMetadata =
-        templateService.validateGovernanceRules(TemplateEntity.builder().accountId("acc").build());
-    assertThat(flagOffMetadata.getDeny()).isFalse();
-    assertThat(flagOffMetadata.getMessage())
-        .isEqualTo("FF: [CDS_OPA_TEMPLATE_GOVERNANCE] is disabled for account: [acc]");
   }
 
   @Test

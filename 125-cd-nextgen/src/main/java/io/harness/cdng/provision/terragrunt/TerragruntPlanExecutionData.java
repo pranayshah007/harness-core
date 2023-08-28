@@ -20,14 +20,18 @@ import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.provision.terragrunt.TerragruntPlanExecutionDataParameters.TerragruntPlanExecutionDataParametersBuilder;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.validation.Validator;
 import io.harness.yaml.YamlSchemaTypes;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -43,6 +47,8 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -65,6 +71,7 @@ public class TerragruntPlanExecutionData {
   @YamlSchemaTypes({string})
   ParameterField<Boolean> exportTerragruntPlanJson;
   @NotNull @JsonProperty("moduleConfig") TerragruntModuleConfig terragruntModuleConfig;
+  @VariableExpression(skipVariableExpression = true) List<TerragruntCliOptionFlag> commandFlags;
 
   public TerragruntPlanExecutionDataParameters toStepParameters() {
     validateParams();
@@ -78,6 +85,7 @@ public class TerragruntPlanExecutionData {
             .command(command)
             .secretManagerRef(secretManagerRef)
             .terragruntModuleConfig(terragruntModuleConfig)
+            .moduleConfig(terragruntModuleConfig)
             .exportTerragruntPlanJson(exportTerragruntPlanJson);
     LinkedHashMap<String, TerragruntVarFile> varFiles = new LinkedHashMap<>();
     if (EmptyPredicate.isNotEmpty(terragruntVarFiles)) {
@@ -91,6 +99,7 @@ public class TerragruntPlanExecutionData {
       });
     }
     builder.varFiles(varFiles);
+    builder.cliOptionFlags(commandFlags);
     return builder.build();
   }
 

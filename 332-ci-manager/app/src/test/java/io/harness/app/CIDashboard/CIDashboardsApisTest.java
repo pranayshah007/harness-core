@@ -38,7 +38,7 @@ import io.harness.app.beans.entities.RepositoryInfo;
 import io.harness.app.beans.entities.RepositoryInformation;
 import io.harness.app.beans.entities.StatusAndTime;
 import io.harness.category.element.UnitTests;
-import io.harness.core.ci.services.CIOverviewDashboardServiceImpl;
+import io.harness.core.ci.dashboard.CIOverviewDashboardServiceImpl;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.usage.beans.ReferenceDTO;
 import io.harness.licensing.usage.beans.UsageDataDTO;

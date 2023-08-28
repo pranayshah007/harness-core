@@ -37,6 +37,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
@@ -229,7 +230,7 @@ public class JiraApprovalStepTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testgetStepParametersClass() {
-    assertThat(jiraApprovalStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(jiraApprovalStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

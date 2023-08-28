@@ -49,7 +49,8 @@ public class BudgetCostUpdateService {
       budgets.forEach(budget -> {
         updateBudgetHistory(budget);
         updateBudgetAmount(budget);
-        budgetService.updateBudgetCosts(budget);
+        // This is async cost update, so we can update all the costs.
+        budgetService.updateBudgetCosts(budget, true, true);
         budgetDao.update(budget.getUuid(), budget);
       });
 

@@ -5,9 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import io.harness.beans.DecryptableEntity;
+import io.harness.ci.buildstate.SecretUtils;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.security.encryption.EncryptedDataDetail;
 

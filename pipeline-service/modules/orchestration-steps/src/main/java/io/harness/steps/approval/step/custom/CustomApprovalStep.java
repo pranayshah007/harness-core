@@ -6,6 +6,7 @@
  */
 
 package io.harness.steps.approval.step.custom;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.eraro.ErrorCode.APPROVAL_STEP_NG_ERROR;
 
@@ -24,7 +25,6 @@ import io.harness.exception.ApprovalStepNGException;
 import io.harness.execution.step.approval.custom.CustomApprovalStepExecutionDetails;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -34,6 +34,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
@@ -68,7 +69,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     CustomApprovalInstance approvalInstance = CustomApprovalInstance.fromStepParameters(ambiance, stepParameters);
     openLogStream(ambiance, approvalInstance);
     approvalInstance = (CustomApprovalInstance) approvalInstanceService.save(approvalInstance);
@@ -96,7 +97,7 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
 
   @Override
   public StepResponse handleAsyncResponseInternal(
-      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+      Ambiance ambiance, StepBaseParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     try {
       CustomApprovalResponseData customApprovalResponseData =
           (CustomApprovalResponseData) responseDataMap.values().iterator().next();
@@ -144,14 +145,14 @@ public class CustomApprovalStep extends PipelineAsyncExecutable {
 
   @Override
   public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
+      Ambiance ambiance, StepBaseParameters stepParameters, AsyncExecutableResponse executableResponse) {
     approvalInstanceService.abortByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     closeLogStream(ambiance);
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   private void closeLogStream(Ambiance ambiance) {

@@ -105,7 +105,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
     nodeExecution1 = NodeExecution.builder()
                          .uuid(nodeExecution1Id)
                          .ambiance(ambianceBuilder.build())
-                         .resolvedStepParameters(prepareStepParameters("ao"))
+                         .resolvedParams(PmsStepParameters.parse(prepareStepParameters("ao")))
                          .nodeId(node1.getUuid())
                          .name(node1.getName())
                          .stepType(node1.getStepType())
@@ -126,7 +126,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .identifier(node2.getIdentifier())
             .module(node2.getServiceName())
             .skipGraphType(node2.getSkipGraphType())
-            .resolvedStepParameters(prepareStepParameters("bo"))
+            .resolvedParams(PmsStepParameters.parse(prepareStepParameters("bo")))
             .parentId(nodeExecution1Id)
             .nextId(nodeExecution1Id)
             .build();
@@ -143,7 +143,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .identifier(node3.getIdentifier())
             .module(node3.getServiceName())
             .skipGraphType(node3.getSkipGraphType())
-            .resolvedStepParameters(prepareStepParameters("co"))
+            .resolvedParams(PmsStepParameters.parse(prepareStepParameters("co")))
             .parentId(nodeExecution1Id)
             .previousId(nodeExecution2Id)
             .build();
@@ -184,7 +184,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .identifier(node5.getIdentifier())
                          .module(node5.getServiceName())
                          .skipGraphType(node5.getSkipGraphType())
-                         .resolvedStepParameters(prepareStepParameters("do2"))
+                         .resolvedParams(PmsStepParameters.parse(prepareStepParameters("do2")))
                          .parentId(nodeExecution3Id)
                          .previousId(nodeExecution4Id)
                          .build();
@@ -203,7 +203,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .identifier(node6.getIdentifier())
                          .module(node6.getServiceName())
                          .skipGraphType(node6.getSkipGraphType())
-                         .resolvedStepParameters(prepareStepParameters("eo"))
+                         .resolvedParams(PmsStepParameters.parse(prepareStepParameters("eo")))
                          .parentId(nodeExecution4Id)
                          .build();
 
@@ -222,7 +222,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .identifier(node7.getIdentifier())
                          .module(node7.getServiceName())
                          .skipGraphType(node7.getSkipGraphType())
-                         .resolvedStepParameters(prepareStepParameters("eo"))
+                         .resolvedParams(PmsStepParameters.parse(prepareStepParameters("eo")))
                          .parentId(nodeExecution6Id)
                          .nextId(nodeExecution8Id)
                          .build();
@@ -242,7 +242,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .identifier(node8.getIdentifier())
                          .module(node8.getServiceName())
                          .skipGraphType(node8.getSkipGraphType())
-                         .resolvedStepParameters(prepareStepParameters("eo"))
+                         .resolvedParams(PmsStepParameters.parse(prepareStepParameters("eo")))
                          .parentId(nodeExecution6Id)
                          .previousId(nodeExecution7Id)
                          .build();

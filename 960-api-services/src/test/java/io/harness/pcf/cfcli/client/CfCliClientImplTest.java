@@ -17,6 +17,7 @@ import static io.harness.pcf.model.PcfRouteType.PCF_ROUTE_TYPE_HTTP;
 import static io.harness.pcf.model.PcfRouteType.PCF_ROUTE_TYPE_TCP;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -34,6 +35,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -344,7 +346,7 @@ public class CfCliClientImplTest extends CategoryTest {
     doNothing().when(logCallback).saveExecutionLog(anyString());
     ProcessExecutor processExecutorForLogTailing = cfCliClient.getProcessExecutorForLogTailing(
         CfRequestConfig.builder().cfCliPath("cf").cfCliVersion(CfCliVersion.V6).applicationName(APP_NAME).build(),
-        logCallback);
+        logCallback, "test");
 
     assertThat(processExecutorForLogTailing.getCommand())
         .containsExactly(BIN_BASH, "-c", CF_COMMAND_FOR_APP_LOG_TAILING.replace(APP_TOKEN, APP_NAME));
@@ -360,7 +362,7 @@ public class CfCliClientImplTest extends CategoryTest {
     CfRequestConfig cfRequestConfig = CfRequestConfig.builder().applicationName(APP_NAME).loggedin(true).build();
     ProcessExecutor processExecutor = mock(ProcessExecutor.class);
     StartedProcess startedProcess = mock(StartedProcess.class);
-    doReturn(processExecutor).when(cfCliClient).getProcessExecutorForLogTailing(any(), any());
+    doReturn(processExecutor).when(cfCliClient).getProcessExecutorForLogTailing(any(), any(), any());
     doReturn(startedProcess).when(processExecutor).start();
 
     StartedProcess startedProcessRet = cfCliClient.tailLogsForPcf(cfRequestConfig, logCallback);
@@ -375,6 +377,39 @@ public class CfCliClientImplTest extends CategoryTest {
 
     reset(cfCliClient);
     doReturn(false).when(cfCliClient).doLogin(any(), any(), any());
+    try {
+      cfCliClient.tailLogsForPcf(cfRequestConfig, logCallback);
+    } catch (PivotalClientApiException e) {
+      assertThat(e.getCause().getMessage()).contains("Failed to login");
+    }
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void test_tailLogsForPcfNew() throws Exception {
+    reset(cfCliClient);
+    doNothing().when(logCallback).saveExecutionLog(anyString());
+
+    CfRequestConfig cfRequestConfig =
+        CfRequestConfig.builder().applicationName(APP_NAME).trailingLogsDirPath("test").loggedin(true).build();
+    ProcessExecutor processExecutor = mock(ProcessExecutor.class);
+    StartedProcess startedProcess = mock(StartedProcess.class);
+    doReturn(processExecutor).when(cfCliClient).getProcessExecutorForLogTailing(any(), any(), eq("test"));
+    doReturn(startedProcess).when(processExecutor).start();
+
+    StartedProcess startedProcessRet = cfCliClient.tailLogsForPcf(cfRequestConfig, logCallback);
+    assertThat(startedProcess).isEqualTo(startedProcessRet);
+    verify(cfCliClient, never()).doLogin(any(), any(), eq("test"));
+
+    cfRequestConfig.setLoggedin(false);
+    doReturn(true).when(cfCliClient).doLogin(any(), any(), eq("test"));
+    startedProcessRet = cfCliClient.tailLogsForPcf(cfRequestConfig, logCallback);
+    assertThat(startedProcess).isEqualTo(startedProcessRet);
+    verify(cfCliClient, times(1)).doLogin(any(), any(), eq("test"));
+
+    reset(cfCliClient);
+    doReturn(false).when(cfCliClient).doLogin(any(), any(), eq("test"));
     try {
       cfCliClient.tailLogsForPcf(cfRequestConfig, logCallback);
     } catch (PivotalClientApiException e) {

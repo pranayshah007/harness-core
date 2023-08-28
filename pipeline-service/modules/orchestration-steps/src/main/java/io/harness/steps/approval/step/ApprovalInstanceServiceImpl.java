@@ -6,12 +6,15 @@
  */
 
 package io.harness.steps.approval.step;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.Objects.isNull;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -21,6 +24,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.jira.JiraIssueNG;
@@ -72,6 +76,7 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -166,6 +171,27 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
           instance.getType()));
     }
     return (HarnessApprovalInstance) instance;
+  }
+
+  @Override
+  public Optional<ApprovalInstance> findLatestApprovalInstanceByPlanExecutionIdAndType(
+      @NotEmpty String planExecutionId, @NotNull ApprovalType approvalType) {
+    if (isEmpty(planExecutionId)) {
+      throw new InvalidArgumentsException("PlanExecutionId cannot be null or empty");
+    }
+    if (approvalType == null) {
+      throw new InvalidArgumentsException("ApprovalType cannot be null");
+    }
+
+    Query approvalInstancesByPlanExecutionIdAndTypeQuery =
+        query(where(ApprovalInstanceKeys.planExecutionId).is(planExecutionId))
+            .addCriteria(where(ApprovalInstanceKeys.type).in(approvalType))
+            .with(Sort.by(Sort.Direction.DESC, ApprovalInstanceKeys.createdAt))
+            .limit(1);
+
+    List<ApprovalInstance> approvalInstances =
+        approvalInstanceRepository.find(approvalInstancesByPlanExecutionIdAndTypeQuery);
+    return isEmpty(approvalInstances) ? Optional.empty() : Optional.ofNullable(approvalInstances.get(0));
   }
 
   @Override

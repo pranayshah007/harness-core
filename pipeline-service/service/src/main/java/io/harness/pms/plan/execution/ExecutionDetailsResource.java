@@ -58,6 +58,7 @@ import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
 import io.harness.pms.plan.execution.service.ExecutionGraphService;
 import io.harness.pms.plan.execution.service.ExpressionEvaluatorService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
 
@@ -136,6 +137,7 @@ public class ExecutionDetailsResource {
   @Inject private final ExecutionGraphService executionGraphService;
   @Inject private final ExpressionEvaluatorService expressionEvaluatorService;
   @Inject private final PlanExecutionMetadataService planExecutionMetadataService;
+  @Inject private final PmsExecutionSummaryService pmsExecutionSummaryService;
 
   @POST
   @Path("/summary")
@@ -680,6 +682,9 @@ public class ExecutionDetailsResource {
           description = "ExecutionId of the execution for which we want to update notes",
           required = true) String planExecutionId) {
     String pipelineExecutionNotes = planExecutionMetadataService.updateNotesForExecution(planExecutionId, notes);
+    if (EmptyPredicate.isNotEmpty(pipelineExecutionNotes)) {
+      pmsExecutionSummaryService.updateNotes(planExecutionId, true);
+    }
     return ResponseDTO.newResponse(PipelineExecutionNotesDTO.builder().notes(pipelineExecutionNotes).build());
   }
 }

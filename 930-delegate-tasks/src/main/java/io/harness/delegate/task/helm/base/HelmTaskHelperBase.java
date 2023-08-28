@@ -853,7 +853,7 @@ public class HelmTaskHelperBase {
         chartmuseumClient.stop(chartMuseumServer);
       }
 
-      if (repoName != null) {
+      if (repoName != null && !manifest.isUseCache()) {
         removeRepo(repoName, destinationDirectory, manifest.getHelmVersion(), timeoutInMillis);
       }
 
@@ -1330,8 +1330,11 @@ public class HelmTaskHelperBase {
     String username = getHttpHelmUsername(httpHelmConnector);
     char[] password = getHttpHelmPassword(httpHelmConnector);
     try {
-      removeRepo(storeDelegateConfig.getRepoName(), destinationDirectory, manifest.getHelmVersion(), timeoutInMillis,
-          cacheDir);
+      if (!manifest.isUseCache()) {
+        removeRepo(storeDelegateConfig.getRepoName(), destinationDirectory, manifest.getHelmVersion(), timeoutInMillis,
+            cacheDir);
+      }
+
       addRepo(storeDelegateConfig.getRepoName(), storeDelegateConfig.getRepoDisplayName(),
           httpHelmConnector.getHelmRepoUrl(), username, password, destinationDirectory, manifest.getHelmVersion(),
           timeoutInMillis, cacheDir, manifest.getHelmCommandFlag());
@@ -1525,7 +1528,9 @@ public class HelmTaskHelperBase {
       default:
         throw new ManifestCollectionException("Manifest collection not supported for other helm repos");
     }
-    removeRepo(repoName, workingDirectory, config.getHelmVersion(), timeoutInMillis);
+    if (!config.isUseCache()) {
+      removeRepo(repoName, workingDirectory, config.getHelmVersion(), timeoutInMillis);
+    }
     cleanup(workingDirectory);
   }
 
@@ -1636,7 +1641,8 @@ public class HelmTaskHelperBase {
     }
     URI uri = new URI(ociUrl);
     if (uri.getPort() < 0) {
-      uri = URI.create(uri + ":" + DEFAULT_PORT);
+      uri = new URI(uri.getScheme(), uri.getRawUserInfo(), uri.getHost(), DEFAULT_PORT, uri.getRawPath(),
+          uri.getRawQuery(), uri.getRawFragment());
     }
     return uri;
   }

@@ -49,6 +49,7 @@ public abstract class InterruptPropagatorHandler {
     // Marking all finalizable leaf nodes as DISCONTINUING
     long updatedCount = nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
         interrupt.getPlanExecutionId(), StatusUtils.abortAndExpireStatuses());
+    log.info(String.format("Marked %s nodeExecutions as discontinuing", updatedCount));
     return handleDiscontinuingNodes(updatedInterrupt, updatedCount);
   }
 
@@ -104,6 +105,8 @@ public abstract class InterruptPropagatorHandler {
             updatedInterrupt.getUuid());
         return interruptService.markProcessed(updatedInterrupt.getUuid(), PROCESSED_SUCCESSFULLY);
       }
+      log.info(
+          String.format("Starting to process %s discontinuing nodeExecutions", discontinuingNodeExecutions.size()));
       return processDiscontinuedInstances(updatedInterrupt, discontinuingNodeExecutions);
     }
   }

@@ -7,11 +7,15 @@
 
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 
 import lombok.NonNull;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 public class EnvGlobalOverrideRequestParamsHandler implements ServiceOverrideTypeBasedRequestParamsHandler {
   @Override
   public void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {}

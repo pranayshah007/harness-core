@@ -9,7 +9,7 @@ package io.harness.idp.scorecard.datasources.providers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 
 import java.util.Map;
 import java.util.Set;

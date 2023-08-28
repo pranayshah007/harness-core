@@ -112,6 +112,7 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
         .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
         .namespaces(deploymentInfoDTO.getNamespaces())
         .releaseName(deploymentInfoDTO.getReleaseName())
+        .helmChartInfo(deploymentInfoDTO.getHelmChartInfo())
         .build();
   }
 
@@ -205,6 +206,7 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
         .setReleaseName(releaseData.getReleaseName())
         .addAllNamespaces(releaseData.getNamespaces())
         .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
+        .setHelmChartInfo(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getHelmChartInfo())))
         .build();
   }
 

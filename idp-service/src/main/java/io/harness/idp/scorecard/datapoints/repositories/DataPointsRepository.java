@@ -23,5 +23,7 @@ public interface DataPointsRepository extends CrudRepository<DataPointEntity, St
       Set<String> accountIdentifiers, String dataSourceIdentifier);
   List<DataPointEntity> findByAccountIdentifierInAndDataSourceIdentifierAndIdentifierIn(
       Set<String> accountIdentifiers, String dataSourceIdentifier, List<String> identifiers);
-  DataPointEntity findByIdentifier(String identifier);
+  List<DataPointEntity> findByIdentifierIn(Set<String> identifiers);
+
+  List<DataPointEntity> findAllByAccountIdentifierIn(Set<String> accountIdentifiers);
 }

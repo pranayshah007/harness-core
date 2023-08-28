@@ -40,7 +40,8 @@ import lombok.extern.slf4j.Slf4j;
     })
 @Tag(name = "Slack resource", description = "This contains APIs related to Slack events")
 @Slf4j
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_SLACK})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class SlackResource {
   @POST
   @ApiOperation(value = "Submit a Slack Event", nickname = "submit Slack Event")

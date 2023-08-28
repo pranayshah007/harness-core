@@ -78,6 +78,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
+import javax.cache.CacheException;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -221,7 +222,11 @@ public class NewRelicServiceImpl implements NewRelicService {
             return allApplications;
           }
           applications = NewRelicApplications.builder().applications(allApplications).build();
-          newRelicApplicationCache.put(key, applications);
+          try {
+            newRelicApplicationCache.put(key, applications);
+          } catch (CacheException e) {
+            log.error("Unable to set new relic application data into cache", e);
+          }
           return allApplications;
         case APP_DYNAMICS:
           errorCode = ErrorCode.APPDYNAMICS_ERROR;

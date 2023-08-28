@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
@@ -47,13 +47,13 @@ import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.ci.buildstate.CodebaseUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
-import io.harness.ci.buildstate.providers.InternalContainerParamsProvider;
+import io.harness.ci.execution.buildstate.CodebaseUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.providers.InternalContainerParamsProvider;
+import io.harness.ci.execution.utils.HarnessImageUtils;
+import io.harness.ci.execution.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.utils.HarnessImageUtils;
-import io.harness.ci.utils.LiteEngineSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.delegate.beans.ci.k8s.CIK8InitializeTaskParams;

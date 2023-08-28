@@ -21,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -35,4 +36,5 @@ public class TerragruntStepConfigurationParameters {
 
   @NonNull TerragruntStepConfigurationType type;
   TerragruntExecutionDataParameters spec;
+  List<TerragruntCliOptionFlag> commandFlags;
 }

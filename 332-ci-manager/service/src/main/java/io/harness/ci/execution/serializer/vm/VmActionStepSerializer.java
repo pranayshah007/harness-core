@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer.vm;
+package io.harness.ci.execution.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 
@@ -13,7 +13,7 @@ import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.ActionStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.serializer.SerializerUtils;
+import io.harness.ci.execution.serializer.SerializerUtils;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;

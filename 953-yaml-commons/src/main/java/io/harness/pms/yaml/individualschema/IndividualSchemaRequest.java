@@ -7,4 +7,6 @@
 
 package io.harness.pms.yaml.individualschema;
 
-public abstract class IndividualSchemaRequest {}
+public abstract class IndividualSchemaRequest {
+  abstract IndividualSchemaMetadata getIndividualSchemaMetadata();
+}

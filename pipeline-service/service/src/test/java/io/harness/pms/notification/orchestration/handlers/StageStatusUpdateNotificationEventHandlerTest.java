@@ -79,8 +79,7 @@ public class StageStatusUpdateNotificationEventHandlerTest extends CategoryTest 
     Ambiance stageAmbiance =
         Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(stageNodeExecutionId, stagePlanNode)).build();
 
-    NodeExecution nodeExecution =
-        NodeExecution.builder().ambiance(stageAmbiance).planNode(stagePlanNode).status(Status.SUCCEEDED).build();
+    NodeExecution nodeExecution = NodeExecution.builder().ambiance(stageAmbiance).status(Status.SUCCEEDED).build();
     NodeUpdateInfo nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(nodeExecution).build();
     when(notificationHelper.getEventTypeForStage(nodeExecution))
         .thenReturn(Optional.of(PipelineEventType.STAGE_SUCCESS));
@@ -99,7 +98,7 @@ public class StageStatusUpdateNotificationEventHandlerTest extends CategoryTest 
                                 .addLevels(PmsLevelUtils.buildLevelFromNode(stageNodeExecutionId, stagePlanNode))
                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stepPlanNode))
                                 .build();
-    nodeExecution = NodeExecution.builder().ambiance(stepAmbiance).planNode(stepPlanNode).status(Status.FAILED).build();
+    nodeExecution = NodeExecution.builder().ambiance(stepAmbiance).status(Status.FAILED).build();
     doReturn(Collections.singleton("ShellScript")).when(sdkStepHelper).getAllStepVisibleInUI();
     nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(nodeExecution).build();
     stageStatusUpdateNotificationEventHandler.onNodeStatusUpdate(nodeUpdateInfo);

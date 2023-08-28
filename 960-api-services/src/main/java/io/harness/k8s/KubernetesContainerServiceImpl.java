@@ -82,6 +82,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.k8s.apiclient.K8sApiClientHelper;
 import io.harness.k8s.apiclient.KubernetesApiCall;
@@ -185,6 +186,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -542,6 +544,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   private void persistKubernetesConfigFile(KubernetesConfig config, String dir) throws IOException {
     String configFileContent = getConfigFileContent(config);
     writeUtf8StringToFile(Paths.get(dir, K8sConstants.KUBECONFIG_FILENAME).toString(), configFileContent);
+    modifyConfigFileReadableProperties(dir);
   }
 
   @VisibleForTesting
@@ -2338,5 +2341,17 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace(OIDC_ISSUER_URL, providerUrl)
         .replace(OIDC_RERESH_TOKEN, refreshToken)
         .replace(OIDC_AUTH_NAME, authConfigName);
+  }
+  public void modifyConfigFileReadableProperties(String workingDirectory) {
+    Path configPath = Path.of(workingDirectory, K8sConstants.KUBECONFIG_FILENAME);
+    try {
+      Set<PosixFilePermission> permissions = java.nio.file.Files.getPosixFilePermissions(configPath);
+      // Remove group-readable and world-readable properties
+      permissions.remove(PosixFilePermission.GROUP_READ);
+      permissions.remove(PosixFilePermission.OTHERS_READ);
+      java.nio.file.Files.setPosixFilePermissions(configPath, permissions);
+    } catch (Exception e) {
+      log.error("Error updating file permissions", ExceptionMessageSanitizer.sanitizeException(e));
+    }
   }
 }

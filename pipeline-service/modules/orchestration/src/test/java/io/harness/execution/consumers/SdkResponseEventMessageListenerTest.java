@@ -16,7 +16,6 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.execution.SdkResponseHandler;
 import io.harness.rule.Owner;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,8 +32,8 @@ public class SdkResponseEventMessageListenerTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testSdkResponseEventMessageListener() {
-    SdkResponseEventMessageListener messageListener = Mockito.spy(
-        new SdkResponseEventMessageListener("RANDOM_SERVICE", eventHandler, MoreExecutors.newDirectExecutorService()));
+    SdkResponseEventMessageListener messageListener =
+        Mockito.spy(new SdkResponseEventMessageListener("RANDOM_SERVICE", eventHandler));
 
     Boolean listenerProcessable = messageListener.isProcessable(Message.newBuilder().build());
     assertThat(listenerProcessable).isEqualTo(true);

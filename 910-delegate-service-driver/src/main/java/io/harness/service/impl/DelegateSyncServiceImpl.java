@@ -133,9 +133,9 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
     Object response = referenceFalseKryoSerializer.asInflatedObject(taskResponse.getResponseData());
     if (response instanceof ErrorNotifyResponseData) {
       WingsException exception = ((ErrorNotifyResponseData) response).getException();
-      exception.addParam("taskId", taskId);
       // if task registered to error handling framework on delegate, then exception won't be null
       if (exception != null) {
+        exception.addParam("taskId", taskId);
         throw exception;
       }
     }

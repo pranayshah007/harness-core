@@ -653,15 +653,26 @@ public class TriggerServiceTest extends WingsBaseTest {
   @Owner(developers = MOUNIK)
   @Category(UnitTests.class)
   public void shouldNotUpdateScheduledConditionTrigger() {
-    scheduledConditionTrigger = triggerService.save(scheduledConditionTrigger);
-    scheduledConditionTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("* * * * ?").build());
-    assertThatThrownBy(() -> triggerService.update(scheduledConditionTrigger, false))
+    Trigger scheduleConditionTrigger =
+        Trigger.builder()
+            .workflowId(PIPELINE_ID)
+            .accountId(ACCOUNT_ID)
+            .uuid(TRIGGER_ID)
+            .appId(APP_ID)
+            .name(TRIGGER_NAME)
+            .condition(ScheduledTriggerCondition.builder().cronExpression("0/5 0 ? * * *").build())
+            .build();
+    scheduleConditionTrigger = triggerService.save(scheduleConditionTrigger);
+    scheduleConditionTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("* * * * ?").build());
+    Trigger finalScheduleConditionTrigger = scheduleConditionTrigger;
+    assertThatThrownBy(() -> triggerService.update(finalScheduleConditionTrigger, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Deployments must be triggered at intervals greater than or equal to 5 minutes. Cron Expression should evaluate to time intervals of at least "
             + 300 + " seconds.");
-    scheduledConditionTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("0/2 0 ? * * *").build());
-    assertThatThrownBy(() -> triggerService.update(scheduledConditionTrigger, false))
+    finalScheduleConditionTrigger.setCondition(
+        ScheduledTriggerCondition.builder().cronExpression("0/2 0 ? * * *").build());
+    assertThatThrownBy(() -> triggerService.update(finalScheduleConditionTrigger, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Deployments must be triggered at intervals greater than or equal to 5 minutes. Cron Expression should evaluate to time intervals of at least "

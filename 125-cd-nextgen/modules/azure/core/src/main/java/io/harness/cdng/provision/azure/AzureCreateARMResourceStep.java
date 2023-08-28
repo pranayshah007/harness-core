@@ -66,7 +66,6 @@ import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -79,6 +78,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -119,7 +119,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   @Inject private ProvisionerOutputHelper provisionerOutputHelper;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     List<EntityDetail> entityDetailList = new ArrayList<>();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
@@ -178,7 +178,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     AzureCreateARMResourceStepConfigurationParameters stepConfigurationParameters =
         ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getConfigurationParameters();
     ConnectorInfoDTO connectorDTO =
@@ -198,7 +198,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
     ResponseData responseData = responseSupplier.get();
@@ -228,7 +228,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     }
   }
 
-  private TaskChainResponse executeWithPreDeploymentData(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskChainResponse executeWithPreDeploymentData(Ambiance ambiance, StepBaseParameters stepParameters,
       AzureConnectorDTO connectorConfig, CommandUnitsProgress commandUnitsProgress,
       AzureARMPreDeploymentData preDeploymentData) {
     AzureCreateARMResourceStepParameters azureCreateARMResourceStepParameters =
@@ -277,7 +277,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof StepExceptionPassThroughData) {
       StepExceptionPassThroughData stepExceptionPassThroughData = (StepExceptionPassThroughData) passThroughData;
@@ -326,11 +326,11 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
-  private TaskChainResponse executeCreateTask(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskChainResponse executeCreateTask(Ambiance ambiance, StepBaseParameters stepParameters,
       AzureResourceCreationTaskNGParameters parameters, PassThroughData passThroughData) {
     TaskData taskData = TaskData.builder()
                             .async(true)
@@ -347,7 +347,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     return TaskChainResponse.builder().taskRequest(taskRequest).passThroughData(passThroughData).chainEnd(true).build();
   }
 
-  private TaskChainResponse executeFetchPreDeploymentDataTask(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskChainResponse executeFetchPreDeploymentDataTask(Ambiance ambiance, StepBaseParameters stepParameters,
       AzureConnectorDTO connectorConfig, AzureResourceGroupSpec azureResourceGroupSpec) {
     AzureCreateARMResourceStepConfigurationParameters stepConfigurationParameters =
         ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getConfigurationParameters();
@@ -396,7 +396,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   }
 
   private AzureResourceCreationTaskNGParameters getAzureTaskNGParams(Ambiance ambiance,
-      StepElementParameters stepElementParameters, AzureConnectorDTO connectorConfig, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, AzureConnectorDTO connectorConfig, PassThroughData passThroughData,
       CommandUnitsProgress commandUnitsProgress) {
     AzureCreateARMResourceStepParameters azureCreateStepParameters =
         (AzureCreateARMResourceStepParameters) stepElementParameters.getSpec();
@@ -469,7 +469,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     return builder;
   }
 
-  TaskChainResponse handleGitFetchResponse(Ambiance ambiance, StepElementParameters stepElementParameters,
+  TaskChainResponse handleGitFetchResponse(Ambiance ambiance, StepBaseParameters stepElementParameters,
       PassThroughData passThroughData, GitFetchResponse responseData) {
     Map<String, FetchFilesResult> filesFromMultipleRepo = responseData.getFilesFromMultipleRepo();
     AzureCreateARMResourceStepParameters spec = (AzureCreateARMResourceStepParameters) stepElementParameters.getSpec();

@@ -8,6 +8,7 @@
 package io.harness.waiter;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT;
+import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 
 import io.harness.eventsframework.api.Consumer;
 import io.harness.pms.events.base.PmsAbstractRedisConsumer;
@@ -16,6 +17,7 @@ import io.harness.queue.QueueController;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 
 @Singleton
@@ -23,7 +25,7 @@ public class PmsNotifyEventConsumerRedis extends PmsAbstractRedisConsumer<PmsNot
   @Inject
   public PmsNotifyEventConsumerRedis(@Named(PMS_ORCHESTRATION_NOTIFY_EVENT) Consumer redisConsumer,
       PmsNotifyEventMessageListener messageListener, @Named("pmsEventsCache") Cache<String, Integer> eventsCache,
-      QueueController queueController) {
-    super(redisConsumer, messageListener, eventsCache, queueController);
+      QueueController queueController, @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
+    super(redisConsumer, messageListener, eventsCache, queueController, executorService);
   }
 }

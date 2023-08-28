@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class HandlerMappingServer {
   private final ThreadPoolExecutor taskExecutor;
   private final AcquireTaskHelper acquireTaskHelper;
-  private final Context context;
+  private final Context context; // TODO: Don't inject context
   private final Map<String, Handler> handlersMap;
 
   @Inject

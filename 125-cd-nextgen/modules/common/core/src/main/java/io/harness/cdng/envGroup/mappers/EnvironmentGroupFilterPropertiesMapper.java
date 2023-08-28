@@ -7,6 +7,9 @@
 
 package io.harness.cdng.envGroup.mappers;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupFilterProperties;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupFilterPropertiesDTO;
 import io.harness.filter.dto.FilterPropertiesDTO;
@@ -16,7 +19,8 @@ import io.harness.ng.core.mapper.TagMapper;
 
 import com.google.inject.Singleton;
 import org.modelmapper.ModelMapper;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Singleton
 public class EnvironmentGroupFilterPropertiesMapper
     implements FilterPropertiesMapper<EnvironmentGroupFilterPropertiesDTO, EnvironmentGroupFilterProperties> {

@@ -11,12 +11,16 @@ import static io.harness.idp.common.CommonUtils.addGlobalAccountIdentifierAlong;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
+import io.harness.idp.scorecard.datapoints.mappers.DataPointMapper;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasources.beans.entity.DataSourceEntity;
+import io.harness.idp.scorecard.datasources.mappers.DataSourceDataPointsMapMapper;
 import io.harness.idp.scorecard.datasources.mappers.DataSourceMapper;
 import io.harness.idp.scorecard.datasources.repositories.DataSourceRepository;
 import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.DataSource;
+import io.harness.spec.server.idp.v1.model.DataSourceDataPointsMap;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,5 +45,22 @@ public class DataSourceServiceImpl implements DataSourceService {
   @Override
   public List<DataPoint> getAllDataPointsDetailsForDataSource(String accountIdentifier, String dataSourceIdentifier) {
     return dataPointService.getAllDataPointsDetailsForAccountAndDataSource(accountIdentifier, dataSourceIdentifier);
+  }
+
+  @Override
+  public List<DataSourceDataPointsMap> getDataPointsForDataSources(String accountIdentifier) {
+    List<DataPointEntity> dataPointsInAccount = dataPointService.getAllDataPointsForAccount(accountIdentifier);
+    List<DataSourceEntity> dataSourcesInAccount =
+        dataSourceRepository.findAllByAccountIdentifierIn(addGlobalAccountIdentifierAlong(accountIdentifier));
+    return dataSourcesInAccount.stream()
+        .map(dataSourceEntity -> {
+          return DataSourceDataPointsMapMapper.toDto(DataSourceMapper.toDTO(dataSourceEntity),
+              dataPointsInAccount.stream()
+                  .filter(dataPointEntity
+                      -> dataPointEntity.getDataSourceIdentifier().equals(dataSourceEntity.getIdentifier()))
+                  .map(DataPointMapper::toDto)
+                  .collect(Collectors.toList()));
+        })
+        .collect(Collectors.toList());
   }
 }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.perpetualtask;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE;
@@ -52,8 +53,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
@@ -141,7 +141,7 @@ public class K8sInstanceSyncV2Helper {
 
     List<K8sPod> k8sPodList = k8sTaskHelperBase.getPodDetails(
         requestData.getKubernetesConfig(), requestData.getNamespace(), requestData.getReleaseName(), timeoutMillis);
-    return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList);
+    return K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(k8sPodList, requestData.getHelmChartInfo());
   }
   public List<ServerInstanceInfo> getServerInstanceInfoList(
       NativeHelmInstanceSyncPerpetualTaskV2Executor.PodDetailsRequest requestData) throws Exception {

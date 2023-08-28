@@ -61,6 +61,8 @@ global:
     tls:
       enabled: true
       secretName: ''
+    objects:
+      annotations: {}
   istio:
     enabled: false
     gateway:
@@ -196,6 +198,7 @@ resources:
     memory: "4Gi"
 
 additionalConfigs: {}
+java17flags: ""
 
 # extraVolumes:
 #   - name: volume-test
