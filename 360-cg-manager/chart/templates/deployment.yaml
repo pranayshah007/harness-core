@@ -78,6 +78,12 @@ spec:
             - secretRef:
                 name: smtp-secret
             {{- end }}
+            {{- if .Values.global.secrets.app.external.enabled }}
+            {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
+            - secretRef:
+                name: harness-manager-external-secret
+            {{- end }}
+            {{- end }}
           env:
             {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "REDIS_USERNAME" "passwordVariableName" "REDIS_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
@@ -100,7 +106,7 @@ spec:
           {{- if .Values.lifecycleHooks }}
           lifecycle: {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
           {{- end }}
-          
+
           livenessProbe:
             failureThreshold: 20
             initialDelaySeconds: 180
@@ -138,7 +144,7 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          
+
       volumes:
         - name: dynamic-iterator-config
           configMap:
