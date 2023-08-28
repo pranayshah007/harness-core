@@ -7,10 +7,9 @@
 
 package io.harness.template.services;
 
-import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -29,10 +28,11 @@ import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.engine.GovernanceService;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitsync.scm.beans.ScmGetBatchFilesResponse;
+import io.harness.gitsync.scm.beans.ScmGetFileResponse;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitx.GitXSettingsHelper;
 import io.harness.ng.core.dto.OrganizationResponse;
 import io.harness.ng.core.dto.ProjectResponse;
@@ -47,17 +47,18 @@ import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.project.remote.ProjectClient;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
+import io.harness.repositories.NGGlobalTemplateRepository;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.springdata.TransactionHelper;
 import io.harness.telemetry.TelemetryReporter;
-import io.harness.template.entity.TemplateEntity;
-import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.helpers.InputsValidator;
 import io.harness.template.helpers.TemplateInputsValidator;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
 import io.harness.template.helpers.TemplateReferenceHelper;
+import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.utils.PmsFeatureFlagService;
 
@@ -65,6 +66,9 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -76,18 +80,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.query.Criteria;
 import retrofit2.Call;
 import retrofit2.Response;
 
-public class NGGlobalTemplateServiceImpl extends TemplateServiceTestBase {
+public class NGGlobalTemplateServiceImplTest extends TemplateServiceTestBase {
+  @InjectMocks NGGlobalTemplateServiceImpl ngGlobalTemplateService;
   @Mock TelemetryReporter telemetryReporter;
   @Mock ExecutorService executorService;
   @Mock EnforcementClientService enforcementClientService;
   @Spy @InjectMocks private NGTemplateServiceHelper templateServiceHelper;
+  @Mock private NGGlobalTemplateServiceHelper ngGlobalTemplateServiceHelper;
   @Mock private GitSyncSdkService gitSyncSdkService;
   @Inject private NGTemplateRepository templateRepository;
   @Inject private TransactionHelper transactionHelper;
@@ -97,8 +99,6 @@ public class NGGlobalTemplateServiceImpl extends TemplateServiceTestBase {
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
   @Mock GitXSettingsHelper gitXSettingsHelper;
   @Mock TemplateRbacHelper templateRbacHelper;
-
-  @InjectMocks NGTemplateServiceImpl templateService;
 
   @Mock private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
 
@@ -130,7 +130,9 @@ public class NGGlobalTemplateServiceImpl extends TemplateServiceTestBase {
   private final String TEMPLATE_CHILD_TYPE = "ShellScript";
 
   private String yaml;
-  TemplateEntity entity;
+  GlobalTemplateEntity entity;
+
+  @Mock private NGGlobalTemplateRepository ngGlobalTemplateRepository;
 
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
@@ -149,20 +151,16 @@ public class NGGlobalTemplateServiceImpl extends TemplateServiceTestBase {
     on(templateInputsValidator).set("inputsValidator", inputsValidator);
     on(templateMergeService).set("templateMergeServiceHelper", injectedTemplateMergeServiceHelper);
     on(templateMergeService).set("templateInputsValidator", templateInputsValidator);
-    on(templateServiceHelper).set("templateRepository", templateRepository);
-    on(templateService).set("templateRepository", templateRepository);
-    on(templateService).set("templateRepository", templateRepository);
-    on(templateService).set("templateGitXService", templateGitXService);
-    on(templateService).set("transactionHelper", transactionHelper);
-    on(templateService).set("templateServiceHelper", templateServiceHelper);
-    on(templateService).set("enforcementClientService", enforcementClientService);
-    on(templateService).set("projectClient", projectClient);
-    on(templateService).set("organizationClient", organizationClient);
-    on(templateService).set("templateReferenceHelper", templateReferenceHelper);
-    on(templateService).set("templateMergeService", templateMergeService);
+    on(ngGlobalTemplateService).set("templateGitXService", templateGitXService);
+    on(ngGlobalTemplateService).set("transactionHelper", transactionHelper);
+    on(ngGlobalTemplateService).set("enforcementClientService", enforcementClientService);
+    on(ngGlobalTemplateService).set("projectClient", projectClient);
+    on(ngGlobalTemplateService).set("organizationClient", organizationClient);
+    on(ngGlobalTemplateService).set("templateReferenceHelper", templateReferenceHelper);
+    on(ngGlobalTemplateService).set("templateMergeService", templateMergeService);
     doNothing().when(enforcementClientService).checkAvailability(any(), any());
     doNothing().when(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
-    entity = TemplateEntity.builder()
+    entity = GlobalTemplateEntity.builder()
                  .accountId(ACCOUNT_ID)
                  .orgIdentifier(ORG_IDENTIFIER)
                  .projectIdentifier(PROJ_IDENTIFIER)
@@ -211,124 +209,131 @@ public class NGGlobalTemplateServiceImpl extends TemplateServiceTestBase {
     SettingValueResponseDTO settingValueResponseDTO =
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    doReturn(false)
+        .when(ngGlobalTemplateRepository)
+        .globalTemplateExistByIdentifierAndVersionLabel(anyString(), anyString());
+    doReturn(Page.empty()).when(ngGlobalTemplateServiceHelper).listTemplate(anyString(), any(), any());
+    doReturn(entity).when(ngGlobalTemplateRepository).save(any(), anyString());
   }
 
   @Test
-  @Owner(developers = ARCHIT)
+  @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testServiceLayerForProjectScopeTemplates() {
-    TemplateEntity createdEntity = templateService.create(entity, false, "", false);
-    assertThat(createdEntity).isNotNull();
-    assertThat(createdEntity.getAccountId()).isEqualTo(ACCOUNT_ID);
-    assertThat(createdEntity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
-    assertThat(createdEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
-    assertThat(createdEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
-    assertThat(createdEntity.getVersion()).isZero();
+  public void testCreateGlobalTemplate() {
+    Map<String, ScmGetFileResponse> batchFilesResponse = new HashMap<>();
+    String template = "template:\n"
+        + "  name: HTTP Check\n"
+        + "  identifier: HTTP_Check\n"
+        + "  versionLabel: \"1.0\"\n"
+        + "  type: Step\n"
+        + "  description: \"This is http template for health check \"\n"
+        + "  tags:\n"
+        + "    owner: Harness\n"
+        + "  spec:\n"
+        + "    type: Http\n"
+        + "    timeout: 10s\n"
+        + "    spec:\n"
+        + "      url: <+input>\n"
+        + "      method: GET\n"
+        + "      headers:\n"
+        + "        - key: content-type\n"
+        + "          value: application/json\n"
+        + "      outputVariables: []\n"
+        + "      requestBody: \"\"\n"
+        + "      assertion: <+http.ResponseCode>==200";
+    String ReadMe = "# Health Check Step Template\n"
+        + "\n"
+        + "## Introduction\n"
+        + "\n"
+        + "- Harness has an HTTP Step that can be used to perform Health Checks on Applicaton Endpoints\n"
+        + "- HTTP Steps can be created and managed as Step Templates.\n"
+        + "- You can take this step template, add it to your account level Template Library, and then link it in your pipeline.\n";
+    String WEBHOOK_EVENT = readFile("webhookEvent.json");
+    ScmGetFileResponse scmGetBatchFilesResponse =
+        ScmGetFileResponse.builder()
+            .fileContent(template)
+            .gitMetaData(
+                ScmGitMetaData.builder().filePath("continuous-delivery/health-check/v1/health-check.yaml").build())
+            .build();
+    ScmGetFileResponse scmGetBatchFilesReadMeResponse =
+        ScmGetFileResponse.builder()
+            .fileContent(ReadMe)
+            .gitMetaData(ScmGitMetaData.builder().filePath("continuous-delivery/health-check/v1/README.md").build())
+            .build();
+    batchFilesResponse.put("continuous-delivery/health-check/v1/health-check.yaml", scmGetBatchFilesResponse);
+    batchFilesResponse.put("continuous-delivery/health-check/v1/README.md", scmGetBatchFilesReadMeResponse);
+    doReturn(ScmGetBatchFilesResponse.builder().batchFilesResponse(batchFilesResponse).build())
+        .when(gitAwareEntityHelper)
+        .fetchEntitiesFromRemoteIncludingReadMeFile(anyString(), any());
+    List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = ngGlobalTemplateService.createUpdateGlobalTemplate(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false, "Comments", true, "connectorRef", WEBHOOK_EVENT);
+    assertThat(templateWrapperResponseDTOS).isNotNull();
+    assertThat(templateWrapperResponseDTOS.get(0).getTemplateResponseDTO().getIdentifier())
+        .isEqualTo(TEMPLATE_IDENTIFIER);
+    assertThat(templateWrapperResponseDTOS.get(0).getTemplateResponseDTO().getVersionLabel()).isEqualTo("version1");
+  }
 
-    Optional<TemplateEntity> optionalTemplateEntity = templateService.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
-    assertThat(optionalTemplateEntity).isPresent();
-    assertThat(optionalTemplateEntity.get().getAccountId()).isEqualTo(ACCOUNT_ID);
-    assertThat(optionalTemplateEntity.get().getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
-    assertThat(optionalTemplateEntity.get().getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
-    assertThat(optionalTemplateEntity.get().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
-    assertThat(optionalTemplateEntity.get().getVersionLabel()).isEqualTo(TEMPLATE_VERSION_LABEL);
-    assertThat(optionalTemplateEntity.get().getVersion()).isZero();
-
-    String description = "Updated Description";
-    TemplateEntity updateTemplate = entity.withDescription(description);
-    TemplateEntity updatedTemplateEntity =
-        templateService.updateTemplateEntity(updateTemplate, ChangeType.MODIFY, false, "");
-    assertThat(updatedTemplateEntity).isNotNull();
-    assertThat(updatedTemplateEntity.getAccountId()).isEqualTo(ACCOUNT_ID);
-    assertThat(updatedTemplateEntity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
-    assertThat(updatedTemplateEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
-    assertThat(updatedTemplateEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
-    assertThat(updatedTemplateEntity.getVersionLabel()).isEqualTo(TEMPLATE_VERSION_LABEL);
-    assertThat(updatedTemplateEntity.getVersion()).isEqualTo(1L);
-    assertThat(updatedTemplateEntity.getDescription()).isEqualTo(description);
-
-    TemplateEntity incorrectTemplate = entity.withVersionLabel("incorrect version");
-    assertThatThrownBy(() -> templateService.updateTemplateEntity(incorrectTemplate, ChangeType.MODIFY, false, ""))
-        .isInstanceOf(InvalidRequestException.class);
-
-    // Test template list
-    Criteria criteria =
-        templateServiceHelper.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, false, "", false);
-    Pageable pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
-    Page<TemplateEntity> templateEntities =
-        templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
-    assertThat(templateEntities.getContent()).isNotNull();
-    assertThat(templateEntities.getContent().size()).isEqualTo(1);
-    assertThat(templateEntities.getContent().get(0).getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
-
-    // Add 1 more entry to template db
-    TemplateEntity version2 = entity.withVersionLabel("version2");
-    templateService.create(version2, false, "", false);
-
-    templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
-    assertThat(templateEntities.getContent()).isNotNull();
-    assertThat(templateEntities.getContent().size()).isEqualTo(2);
-    assertThat(templateEntities.getContent().get(0).getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
-    assertThat(templateEntities.getContent().get(0).getVersionLabel()).isEqualTo(TEMPLATE_VERSION_LABEL);
-    assertThat(templateEntities.getContent().get(1).getVersionLabel()).isEqualTo("version2");
-    // test for lastUpdatedBy
-    assertThat(templateEntities.getContent().get(0).isLastUpdatedTemplate()).isFalse();
-    assertThat(templateEntities.getContent().get(1).isLastUpdatedTemplate()).isTrue();
-
-    // Template list with search term
-    criteria = templateServiceHelper.formCriteria(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, false, "version2", false);
-    templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
-    assertThat(templateEntities.getContent()).isNotNull();
-    assertThat(templateEntities.getContent().size()).isEqualTo(1);
-    assertThat(templateEntities.getContent().get(0).getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
-    assertThat(templateEntities.getContent().get(0).getVersionLabel()).isEqualTo("version2");
-
-    // Update stable template
-    TemplateEntity updateStableTemplateVersion = templateService.updateStableTemplateVersion(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version2", "");
-    assertThat(updateStableTemplateVersion).isNotNull();
-    assertThat(updateStableTemplateVersion.getAccountId()).isEqualTo(ACCOUNT_ID);
-    assertThat(updateStableTemplateVersion.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
-    assertThat(updateStableTemplateVersion.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
-    assertThat(updateStableTemplateVersion.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
-    assertThat(updateStableTemplateVersion.getVersionLabel()).isEqualTo("version2");
-    assertThat(updateStableTemplateVersion.getVersion()).isEqualTo(1L);
-    assertThat(updateStableTemplateVersion.isStableTemplate()).isTrue();
-
-    // Add 1 more entry to template db
-    TemplateEntity version3 = entity.withVersionLabel("version3");
-    templateService.create(version3, false, "", false);
-
-    // Testing updating stable template to check the lastUpdatedBy flag
-    updateStableTemplateVersion = templateService.updateStableTemplateVersion(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version2", "");
-    assertThat(updateStableTemplateVersion.isLastUpdatedTemplate()).isTrue();
-
-    Call<ResponseDTO<Boolean>> request = mock(Call.class);
-    try {
-      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
-    } catch (IOException ex) {
-    }
-    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
-
-    // delete template stable template
-    assertThatThrownBy(()
-                           -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
-                               "version2", 1L, "", false))
-        .isInstanceOf(InvalidRequestException.class);
-
-    boolean markEntityInvalid = templateService.markEntityInvalid(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, "INVALID_YAML");
-    assertThat(markEntityInvalid).isTrue();
-    assertThatThrownBy(()
-                           -> templateService.getMetadataOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER,
-                               PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false))
-        .isInstanceOf(NGTemplateException.class);
-
-    boolean delete = templateService.delete(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
-    assertThat(delete).isTrue();
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testUpdateGlobalTemplate() {
+    Map<String, ScmGetFileResponse> batchFilesResponse = new HashMap<>();
+    String template = "template:\n"
+        + "  name: HTTP Check\n"
+        + "  identifier: HTTP_Check\n"
+        + "  versionLabel: \"1.0\"\n"
+        + "  type: Step\n"
+        + "  description: \"This is http template for health check \"\n"
+        + "  tags:\n"
+        + "    owner: Harness\n"
+        + "  spec:\n"
+        + "    type: Http\n"
+        + "    timeout: 10s\n"
+        + "    spec:\n"
+        + "      url: <+input>\n"
+        + "      method: GET\n"
+        + "      headers:\n"
+        + "        - key: content-type\n"
+        + "          value: application/json\n"
+        + "      outputVariables: []\n"
+        + "      requestBody: \"\"\n"
+        + "      assertion: <+http.ResponseCode>==200";
+    String ReadMe = "# Health Check Step Template\n"
+        + "\n"
+        + "## Introduction\n"
+        + "\n"
+        + "- Harness has an HTTP Step that can be used to perform Health Checks on Applicaton Endpoints\n"
+        + "- HTTP Steps can be created and managed as Step Templates.\n"
+        + "- You can take this step template, add it to your account level Template Library, and then link it in your pipeline.\n";
+    String WEBHOOK_EVENT = readFile("webhookUpdateEvent.json");
+    doReturn(Optional.of(entity))
+        .when(ngGlobalTemplateServiceHelper)
+        .getGlobalTemplateWithVersionLabel(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "1.0", false, false, false, false);
+    //    doReturn(entity).when(ngGlobalTemplateServiceHelper).makeTemplateUpdateCall(any(GlobalTemplateEntity.class),
+    //    any(GlobalTemplateEntity.class), ChangeType.MODIFY, anyString(),
+    //            any(), false);
+    ScmGetFileResponse scmGetBatchFilesResponse =
+        ScmGetFileResponse.builder()
+            .fileContent(template)
+            .gitMetaData(
+                ScmGitMetaData.builder().filePath("continuous-delivery/health-check/v1/health-check.yaml").build())
+            .build();
+    ScmGetFileResponse scmGetBatchFilesReadMeResponse =
+        ScmGetFileResponse.builder()
+            .fileContent(ReadMe)
+            .gitMetaData(ScmGitMetaData.builder().filePath("continuous-delivery/health-check/v1/README.md").build())
+            .build();
+    batchFilesResponse.put("continuous-delivery/health-check/v1/health-check.yaml", scmGetBatchFilesResponse);
+    batchFilesResponse.put("continuous-delivery/health-check/v1/README.md", scmGetBatchFilesReadMeResponse);
+    doReturn(ScmGetBatchFilesResponse.builder().batchFilesResponse(batchFilesResponse).build())
+        .when(gitAwareEntityHelper)
+        .fetchEntitiesFromRemoteIncludingReadMeFile(anyString(), any());
+    List<TemplateWrapperResponseDTO> templateWrapperResponseDTOS = ngGlobalTemplateService.createUpdateGlobalTemplate(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false, "Comments", true, "connectorRef", WEBHOOK_EVENT);
+    assertThat(templateWrapperResponseDTOS).isNotNull();
+    assertThat(templateWrapperResponseDTOS.get(0).getTemplateResponseDTO().getIdentifier())
+        .isEqualTo(TEMPLATE_IDENTIFIER);
+    assertThat(templateWrapperResponseDTOS.get(0).getTemplateResponseDTO().getVersionLabel()).isEqualTo("version1");
   }
 }
