@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.customsecretmanager;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.validator.NGRegexValidatorConstants;
 
@@ -35,6 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("delegate.beans.connector.customsecretmanager.TemplateLinkConfig")
 @OwnedBy(PL)
+@RecasterAlias("io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager")
 public class TemplateLinkConfigForCustomSecretManager {
   @NotNull String templateRef;
   @NotNull @Pattern(regexp = NGRegexValidatorConstants.VERSION_LABEL_PATTERN) String versionLabel;

@@ -23,6 +23,7 @@ import static io.harness.security.encryption.SecretManagerType.KMS;
 
 import static software.wings.beans.helper.NgSecretManagerHelper.updateNGSecretManagerMetadata;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -70,6 +71,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "KmsConfigKeys")
 @TargetModule(HarnessModule._950_DELEGATE_TASKS_BEANS)
+@RecasterAlias("software.wings.beans.KmsConfig")
 public class KmsConfig extends SecretManagerConfig {
   private static final String TASK_SELECTORS = "Task Selectors";
   @Attributes(title = "Name", required = true) private String name;

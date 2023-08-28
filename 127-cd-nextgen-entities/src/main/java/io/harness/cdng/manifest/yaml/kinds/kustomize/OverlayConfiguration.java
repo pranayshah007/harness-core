@@ -9,6 +9,7 @@ package io.harness.cdng.manifest.yaml.kinds.kustomize;
 
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -29,6 +30,7 @@ import lombok.experimental.Wither;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("OverlayConfiguration")
 @Schema(name = "OverlayConfiguration", description = "This contains Kustomize Manifest Optimize File Fetch details")
+@RecasterAlias("io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration")
 public class OverlayConfiguration {
   @NotNull
   @ApiModelProperty(dataType = STRING_CLASSPATH)

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.azureconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureAuthOutcomeDTO;
@@ -26,6 +27,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(name = "AzureAuth", description = "This contains azure auth details")
+@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO")
 public class AzureAuthDTO {
   @NotNull @JsonProperty("type") AzureSecretType azureSecretType;
 
