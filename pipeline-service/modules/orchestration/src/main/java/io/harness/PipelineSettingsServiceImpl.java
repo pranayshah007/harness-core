@@ -18,6 +18,7 @@ import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.remote.client.NGRestUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -50,7 +51,8 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     return NGRestUtils.getResponse(ngLicenseHttpClient.getModuleLicenses(accountId));
   }
 
-  private Edition getEdition(String accountId) throws ExecutionException {
+  @VisibleForTesting
+  protected Edition getEdition(String accountId) throws ExecutionException {
     List<ModuleLicenseDTO> moduleLicenseDTOS = moduleLicensesCache.get(accountId);
     Edition edition = FREE;
     for (ModuleLicenseDTO moduleLicenseDTO : moduleLicenseDTOS) {
@@ -169,8 +171,9 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
       return 20;
     }
   }
-
-  private PlanExecutionSettingResponse shouldQueueInternal(String accountId, String pipelineIdentifier, long maxCount) {
+  @VisibleForTesting
+  protected PlanExecutionSettingResponse shouldQueueInternal(
+      String accountId, String pipelineIdentifier, long maxCount) {
     long runningExecutionsForGivenPipeline =
         planExecutionService.countRunningExecutionsForGivenPipelineInAccount(accountId, pipelineIdentifier);
     if (runningExecutionsForGivenPipeline >= maxCount) {
