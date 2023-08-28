@@ -9,7 +9,6 @@ package io.harness.watcher.app;
 
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployMode.isOnPrem;
-import static io.harness.delegate.DelegateProxyUtils.setupProxyConfig;
 import static io.harness.delegate.message.MessageConstants.NEW_WATCHER;
 import static io.harness.delegate.message.MessengerType.WATCHER;
 import static io.harness.grpc.utils.DelegateGrpcConfigExtractor.extractAndPrepareAuthority;
@@ -80,7 +79,7 @@ public class WatcherApplication {
       //        System.setProperty("http.proxyPassword", proxyPassword);
       //        System.setProperty("https.proxyPassword", proxyPassword);
       //      }
-      setupProxyConfig();
+      // setupProxyConfig();
 
       File configFile = new File(args[0]);
       configuration = new YamlUtils().read(FileUtils.readFileToString(configFile, UTF_8), WatcherConfiguration.class);
