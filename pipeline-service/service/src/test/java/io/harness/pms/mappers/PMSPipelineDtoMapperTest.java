@@ -476,6 +476,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isNull();
     assertThat(pipelineSummaryResponse.getConnectorRef()).isNull();
+    assertThat(pipelineSummaryResponse.getYamlVersion()).isEqualTo("0");
 
     PipelineEntity oldGitSyncInvalid = PipelineEntity.builder()
                                            .name("name")
@@ -486,6 +487,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
                                            .filters(Collections.singletonMap("cd", null))
                                            .yamlGitConfigRef("repo")
                                            .branch("br1")
+                                           .harnessVersion("1")
                                            .isEntityInvalid(true)
                                            .build();
     pipelineSummaryResponse =
@@ -500,6 +502,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
     assertThat(pipelineSummaryResponse.getStoreType()).isNull();
     assertThat(pipelineSummaryResponse.getConnectorRef()).isNull();
+    assertThat(pipelineSummaryResponse.getYamlVersion()).isEqualTo("1");
 
     PipelineEntity inline = PipelineEntity.builder()
                                 .name("name")

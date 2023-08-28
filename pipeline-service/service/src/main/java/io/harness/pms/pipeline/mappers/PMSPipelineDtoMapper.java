@@ -329,6 +329,7 @@ public class PMSPipelineDtoMapper {
         .gitDetails(entityGitDetails)
         .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
         .isDraft(pipelineEntity.getIsDraft())
+        .yamlVersion(pipelineEntity.getHarnessVersion())
         .build();
   }
 

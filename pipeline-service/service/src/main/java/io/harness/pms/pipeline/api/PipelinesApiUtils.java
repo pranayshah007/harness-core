@@ -249,6 +249,7 @@ public class PipelinesApiUtils {
     responseBody.setConnectorRef(pipelineDTO.getConnectorRef());
     responseBody.setValid((pipelineDTO.getIsDraft() == null) ? null : !pipelineDTO.getIsDraft());
     responseBody.setGitDetails(getGitDetails(pipelineDTO.getGitDetails()));
+    responseBody.setYamlVersion(pipelineDTO.getYamlVersion());
     if (pipelineDTO.getRecentExecutionsInfo() != null) {
       responseBody.setRecentExecutionInfo(pipelineDTO.getRecentExecutionsInfo()
                                               .stream()
