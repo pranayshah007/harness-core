@@ -356,8 +356,11 @@ lifecycleHooks:
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
+<<<<<<< HEAD
 
 virtualService:
   annotations: {}
 ingress:
   annotations: {}
+=======
+>>>>>>> 5bddc0122f4 (feat:[IE-356]: External Secrets in Helm Charts for harness-manager)
