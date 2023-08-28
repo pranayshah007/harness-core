@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.plan.creator.step;
+package io.harness.ci.execution.plan.creator.step;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,7 +15,7 @@ import io.harness.beans.steps.nodes.RunTestStepNode;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.plan.creator.CICreatorUtils;
+import io.harness.ci.execution.plan.creator.CICreatorUtils;
 import io.harness.exception.InvalidYamlException;
 import io.harness.filters.GenericStepPMSFilterJsonCreatorV2;
 import io.harness.plancreator.steps.AbstractStepNode;

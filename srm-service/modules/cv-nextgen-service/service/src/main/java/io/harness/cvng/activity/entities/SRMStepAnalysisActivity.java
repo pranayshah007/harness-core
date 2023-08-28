@@ -73,7 +73,8 @@ public class SRMStepAnalysisActivity extends Activity {
         Query<SRMStepAnalysisActivity> query, SRMStepAnalysisActivity activity) {
       return super.populateKeyQuery(query, activity)
           .filter(SRMStepAnalysisActivityKeys.planExecutionId, activity.getPlanExecutionId())
-          .filter(SRMStepAnalysisActivityKeys.stageStepId, activity.getStageStepId());
+          .filter(SRMStepAnalysisActivityKeys.stageStepId, activity.getStageStepId())
+          .filter(ActivityKeys.type, activity.getType());
     }
 
     @Override

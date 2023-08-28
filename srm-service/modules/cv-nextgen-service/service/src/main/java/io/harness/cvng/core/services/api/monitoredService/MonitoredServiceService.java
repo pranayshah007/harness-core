@@ -34,8 +34,11 @@ import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
-import io.harness.cvng.usage.impl.resources.ActiveMonitoredServiceDTO;
+import io.harness.cvng.usage.impl.resources.ActiveServiceDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -104,6 +107,10 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
 
   HealthScoreDTO getCurrentAndDependentServicesScore(MonitoredServiceParams monitoredServiceParams);
 
+  List<SecondaryEventsResponse> getMSSecondaryEvents(
+      ProjectParams projectParams, String monitoredServiceIdentifier, long startTime, long endTime);
+  SecondaryEventDetailsResponse getMSSecondaryEventDetails(SecondaryEventsType eventType, List<String> uuids);
+
   String getYamlTemplate(ProjectParams projectParams, MonitoredServiceType type);
 
   List<HealthSourceDTO> getHealthSources(ProjectParams projectParams, String monitoredServiceIdentifier);
@@ -141,5 +148,5 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
 
   List<ActiveServiceMonitoredDTO> listActiveServiceMonitored(ProjectParams projectParams);
 
-  List<ActiveMonitoredServiceDTO> listActiveMonitoredServices(ProjectParams projectParams, String serviceIdentifier);
+  List<ActiveServiceDTO> listActiveMonitoredServices(ProjectParams projectParams, String serviceIdentifier);
 }

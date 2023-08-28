@@ -9,6 +9,7 @@ package io.harness.ssca.execution;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -17,52 +18,75 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.spec.server.ssca.v1.model.OrchestrationSummaryResponse;
 import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepOutcome;
-import io.harness.ssca.client.SSCAServiceClient;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.ssca.client.beans.SBOMArtifactResponse;
 import io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.AbstractContainerStep;
 
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.Optional;
-import retrofit2.Call;
-import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.SSCA)
 public class CdSscaOrchestrationStep extends AbstractContainerStep {
-  @Inject private SSCAServiceClient sscaServiceClient;
+  @Inject private SSCAServiceUtils sscaServiceUtils;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   @Override
   public StepResponse.StepOutcome produceOutcome(Ambiance ambiance, StepElementParameters stepParameters) {
     Optional<Level> stageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
-
+    CdSscaOrchestrationStepOutcome stepOutcome = CdSscaOrchestrationStepOutcome.builder().build();
     if (stageLevel.isEmpty()) {
       throw new ContainerStepExecutionException("Could not fetch stage details");
     }
 
     String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    SBOMArtifactResponse response = getSbomArtifactResponse(ambiance, stepExecutionId);
 
-    if (response == null) {
-      return null;
+    if (sscaServiceUtils.isSSCAManagerEnabled()) {
+      try {
+        OrchestrationSummaryResponse response =
+            sscaServiceUtils.getOrchestrationSummaryResponse(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+                AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+
+        if (response == null) {
+          return null;
+        }
+        stepOutcome.setSbomArtifact(PublishedSbomArtifact.builder()
+                                        .id(response.getArtifact().getId())
+                                        .url(response.getArtifact().getRegistryUrl())
+                                        .imageName(response.getArtifact().getName())
+                                        .tag(response.getArtifact().getTag())
+                                        .isSbomAttested(response.isIsAttested())
+                                        .sbomName(response.getSbom().getName())
+                                        .stepExecutionId(stepExecutionId)
+                                        .build());
+      } catch (CIStageExecutionException exception) {
+        throw new ContainerStepExecutionException("Request to SSCA manager call failed", exception);
+      }
+    } else {
+      try {
+        SBOMArtifactResponse response =
+            sscaServiceUtils.getSbomArtifact(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+                AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+        if (response == null) {
+          return null;
+        }
+        stepOutcome.setSbomArtifact(PublishedSbomArtifact.builder()
+                                        .id(response.getArtifact().getId())
+                                        .url(response.getArtifact().getUrl())
+                                        .imageName(response.getArtifact().getName())
+                                        .tag(response.getArtifact().getTag())
+                                        .isSbomAttested(response.getAttestation().isAttested())
+                                        .sbomName(response.getSbom().getName())
+                                        .sbomUrl(response.getSbom().getUrl())
+                                        .stepExecutionId(stepExecutionId)
+                                        .build());
+      } catch (CIStageExecutionException exception) {
+        throw new ContainerStepExecutionException("Request to SSCA service call failed", exception);
+      }
     }
-
-    CdSscaOrchestrationStepOutcome stepOutcome =
-        CdSscaOrchestrationStepOutcome.builder()
-            .sbomArtifact(PublishedSbomArtifact.builder()
-                              .id(response.getArtifact().getId())
-                              .url(response.getArtifact().getUrl())
-                              .imageName(response.getArtifact().getName())
-                              .tag(response.getArtifact().getTag())
-                              .isSbomAttested(response.getAttestation().isAttested())
-                              .sbomName(response.getSbom().getName())
-                              .sbomUrl(response.getSbom().getUrl())
-                              .stepExecutionId(stepExecutionId)
-                              .build())
-            .build();
 
     String outputName = "artifact_" + stepExecutionId;
     sdkGraphVisualizationDataService.publishStepDetailInformation(
@@ -72,18 +96,5 @@ public class CdSscaOrchestrationStep extends AbstractContainerStep {
         .name(outputName)
         .group(StepOutcomeGroup.STAGE.name())
         .build();
-  }
-
-  private SBOMArtifactResponse getSbomArtifactResponse(Ambiance ambiance, String stepExecutionId) {
-    Call<SBOMArtifactResponse> call =
-        sscaServiceClient.getArtifactInfoV2(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
-            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-
-    try {
-      Response<SBOMArtifactResponse> response = call.execute();
-      return response.body();
-    } catch (IOException exception) {
-      throw new ContainerStepExecutionException("Request to SSCA service call failed", exception);
-    }
   }
 }

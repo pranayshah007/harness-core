@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -38,8 +39,12 @@ import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
+import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGFreezeException;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
@@ -62,6 +67,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -555,5 +561,125 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                .build();
     assertThat(deploymentStagePMSPlanCreator.getIdentifierWithExpression(context, node, "id1"))
         .isEqualTo("id1<+strategy.identifierPostFix>");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromServicesError_0() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 6));
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(
+            ()
+                -> deploymentStagePMSPlanCreator.useServicesYamlFromStage(
+                    DeploymentStageConfig.builder()
+                        .services(ServicesYaml.builder().useFromStage(ServiceUseFromStageV2.builder().build()).build())
+                        .build(),
+                    specField))
+        .withMessageContaining("Stage identifier is empty in useFromStage");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromServicesError_1() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 6));
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> deploymentStagePMSPlanCreator.useServicesYamlFromStage(
+                            DeploymentStageConfig.builder()
+                                .services(ServicesYaml.builder()
+                                              .useFromStage(ServiceUseFromStageV2.builder().stage("stage2").build())
+                                              .build())
+                                .build(),
+                            specField))
+        .withMessageContaining(
+            "Could not find multi service configuration in stage [stage2], hence not possible to propagate service from that stage");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromServicesError_2() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 7));
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(()
+                        -> deploymentStagePMSPlanCreator.useServicesYamlFromStage(
+                            DeploymentStageConfig.builder()
+                                .services(ServicesYaml.builder()
+                                              .useFromStage(ServiceUseFromStageV2.builder().stage("random").build())
+                                              .build())
+                                .build(),
+                            specField))
+        .withMessageContaining("Stage with identifier [random] given for service propagation does not exist");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromServicesError_3() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 8));
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(()
+                        -> deploymentStagePMSPlanCreator.useServicesYamlFromStage(
+                            DeploymentStageConfig.builder()
+                                .services(ServicesYaml.builder()
+                                              .useFromStage(ServiceUseFromStageV2.builder().stage("stage5").build())
+                                              .build())
+                                .build(),
+                            specField))
+        .withMessageContaining(
+            "Invalid identifier [stage5] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromServicesWithMetadata() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 10));
+    ServicesYaml services = deploymentStagePMSPlanCreator.useServicesYamlFromStage(
+        DeploymentStageConfig.builder()
+            .services(
+                ServicesYaml.builder()
+                    .servicesMetadata(
+                        ServicesMetadata.builder().parallel(ParameterField.createValueField(Boolean.TRUE)).build())
+                    .useFromStage(ServiceUseFromStageV2.builder().stage("stage7").build())
+                    .build())
+            .build(),
+        specField);
+    assertThat(services.getUseFromStage()).isNull();
+    assertThat(services.getValues()).isNotNull();
+    assertThat(services.getValues()
+                   .getValue()
+                   .stream()
+                   .map(ServiceYamlV2::getServiceRef)
+                   .map(ParameterField::getValue)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("service1", "service2");
+    assertThat(services.getServicesMetadata().getParallel().getValue()).isEqualTo(Boolean.TRUE);
+  }
+
+  private static YamlNode getStageNodeAtIndex(YamlField pipeline, int idx) {
+    return pipeline.getNode()
+        .getField("pipeline")
+        .getNode()
+        .getField("stages")
+        .getNode()
+        .asArray()
+        .get(idx)
+        .getField("stage")
+        .getNode()
+        .getField(YAMLFieldNameConstants.SPEC)
+        .getNode();
   }
 }

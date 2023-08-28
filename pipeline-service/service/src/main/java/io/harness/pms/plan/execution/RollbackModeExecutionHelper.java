@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -51,8 +52,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.CloseableIterator;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @NoArgsConstructor
@@ -126,7 +126,7 @@ public class RollbackModeExecutionHelper {
     }
     List<String> rollbackStageFQNs =
         nodeExecutionService
-            .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.planNode))
+            .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.stageFqn))
             .stream()
             .map(NodeExecution::getStageFqn)
             .collect(Collectors.toList());
@@ -193,7 +193,7 @@ public class RollbackModeExecutionHelper {
         previouslyAddedNode.convertToListOfOGNodeExecIds(nodeExecution.getUuid());
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, previouslyAddedNode);
       } else {
-        Node node = planService.fetchNode(nodeExecution.getNodeId());
+        Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
         IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
             node, nodeExecution.getStepType(), nodeExecution.getUuid(), true);
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, identityPlanNode);

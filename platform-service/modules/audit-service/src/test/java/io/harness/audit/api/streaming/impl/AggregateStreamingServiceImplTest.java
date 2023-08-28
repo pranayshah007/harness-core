@@ -7,6 +7,7 @@
 
 package io.harness.audit.api.streaming.impl;
 
+import static io.harness.audit.api.streaming.impl.AggregateStreamingServiceImpl.MAX_STREAMING_DESTINATIONS;
 import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationsApiUtilsTest.RANDOM_STRING_CHAR_COUNT_10;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.rule.OwnerRule.NISHANT;
@@ -17,6 +18,7 @@ import static io.harness.spec.server.audit.v1.model.StreamingDestinationStatus.I
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,6 +27,7 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 import io.harness.CategoryTest;
 import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
+import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
 import io.harness.audit.mapper.streaming.StreamingDestinationMapper;
@@ -50,6 +53,7 @@ import io.harness.spec.server.audit.v1.model.StreamingDestinationAggregateDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationCards;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationStatus;
+import io.harness.utils.PageTestUtils;
 import io.harness.utils.PageUtils;
 
 import java.io.IOException;
@@ -101,13 +105,18 @@ public class AggregateStreamingServiceImplTest extends CategoryTest {
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
   public void testGetStreamingDestinationCards() {
+    String streamingDestinationIdentifier = randomAlphabetic(10);
     long now = System.currentTimeMillis();
     StatusWiseCount activeStatusCount = new StatusWiseCount().count(1).status(ACTIVE);
     StatusWiseCount inactiveStatusCount = new StatusWiseCount().count(2).status(INACTIVE);
+    StreamingDestination streamingDestination =
+        AwsS3StreamingDestination.builder().identifier(streamingDestinationIdentifier).build();
     when(streamingDestinationRepository.countByStatus(any()))
         .thenReturn(List.of(activeStatusCount, inactiveStatusCount));
     when(streamingBatchRepository.findOne(any(), any()))
         .thenReturn(StreamingBatchDTO.builder().accountIdentifier(ACCOUNT_IDENTIFIER).lastStreamedAt(now).build());
+    when(streamingDestinationRepository.findAllStreamingDestinationIdentifiers(any(), any()))
+        .thenReturn(PageTestUtils.getPage(List.of(streamingDestination.getIdentifier()), 1));
     when(streamingBatchRepository.count(any())).thenReturn(1L);
     StreamingDestinationCards cards = aggregateStreamingService.getStreamingDestinationCards(ACCOUNT_IDENTIFIER);
     assertThat(cards).isNotNull();
@@ -127,14 +136,20 @@ public class AggregateStreamingServiceImplTest extends CategoryTest {
     assetLastStreamedCriteriaAndSort(criteriaArgumentCaptor.getValue(), sortArgumentCaptor.getValue());
 
     verify(streamingBatchRepository, times(1)).count(criteriaArgumentCaptor.capture());
-    assertFailureCountCriteria(criteriaArgumentCaptor.getValue());
+    assertFailureCountCriteria(criteriaArgumentCaptor.getValue(), streamingDestination);
+
+    verify(streamingDestinationRepository, times(1))
+        .findAllStreamingDestinationIdentifiers(
+            criteriaArgumentCaptor.capture(), eq(Pageable.ofSize(MAX_STREAMING_DESTINATIONS)));
+    assertThat(criteriaArgumentCaptor.getValue())
+        .isEqualTo(Criteria.where(StreamingBatchDTOKeys.accountIdentifier).is(ACCOUNT_IDENTIFIER));
   }
 
-  private void assertFailureCountCriteria(Criteria criteria) {
+  private void assertFailureCountCriteria(Criteria criteria, StreamingDestination streamingDestination) {
     Document document = criteria.getCriteriaObject();
-    assertThat(document).isNotEmpty().containsExactlyInAnyOrderEntriesOf(
-        Map.ofEntries(Map.entry(StreamingDestinationKeys.accountIdentifier, ACCOUNT_IDENTIFIER),
-            Map.entry(StreamingBatchDTOKeys.status, BatchStatus.FAILED)));
+    assertThat(document).isNotEmpty().contains(
+        Map.entry(StreamingDestinationKeys.accountIdentifier, ACCOUNT_IDENTIFIER),
+        Map.entry(StreamingBatchDTOKeys.status, BatchStatus.FAILED));
   }
 
   private void assetLastStreamedCriteriaAndSort(Criteria criteria, Sort sort) {

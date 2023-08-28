@@ -25,7 +25,6 @@ import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandReque
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -39,6 +38,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -65,7 +65,7 @@ public class ElastigroupBGStageSetupStep
   @Inject private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
-  public TaskChainResponse executeElastigroupTask(Ambiance ambiance, StepElementParameters stepParameters,
+  public TaskChainResponse executeElastigroupTask(Ambiance ambiance, StepBaseParameters stepParameters,
       ElastigroupExecutionPassThroughData passThroughData, UnitProgressData unitProgressData) {
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
@@ -133,22 +133,22 @@ public class ElastigroupBGStageSetupStep
         passThroughData, true, TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG);
   }
 
-  private int getSteadyStateTimeout(StepElementParameters stepParameters) {
+  private int getSteadyStateTimeout(StepBaseParameters stepParameters) {
     return CDStepHelper.getTimeoutInMin(stepParameters);
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // nothing
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
     log.info("Calling executeNextLink");
@@ -157,7 +157,7 @@ public class ElastigroupBGStageSetupStep
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof ElastigroupStepExceptionPassThroughData) {
       return elastigroupStepCommonHelper.handleStepExceptionFailure(
@@ -230,7 +230,7 @@ public class ElastigroupBGStageSetupStep
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     ElastigroupExecutionPassThroughData passThroughData =
         ElastigroupExecutionPassThroughData.builder().blueGreen(true).build();
     return elastigroupStepCommonHelper.startChainLink(ambiance, stepParameters, passThroughData);

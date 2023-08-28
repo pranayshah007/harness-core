@@ -21,6 +21,7 @@ import static io.harness.security.encryption.SecretManagerType.VAULT;
 
 import static software.wings.beans.helper.NgSecretManagerHelper.updateNGSecretManagerMetadata;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.SecretManagerCapabilities;
@@ -63,6 +64,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "AzureVaultConfigKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("software.wings.beans.AzureVaultConfig")
 public class AzureVaultConfig extends SecretManagerConfig {
   private static final String TASK_SELECTORS = "Task Selectors";
   public static final String AZURE_VAULT_VALIDATION_URL = "harnessAzureVaultValidation";

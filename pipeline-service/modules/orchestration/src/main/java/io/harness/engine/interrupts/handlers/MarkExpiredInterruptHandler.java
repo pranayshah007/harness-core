@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.interrupts.handlers;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
@@ -65,8 +66,8 @@ public class MarkExpiredInterruptHandler implements InterruptHandler {
     return interruptService.save(interrupt);
   }
 
-  @Override
-  public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
+  public Interrupt handleAndMarkInterruptForNodeExecution(
+      Interrupt interrupt, String nodeExecutionId, boolean markInterruptAsProcessed) {
     try {
       NodeExecution nodeExecution = nodeExecutionService.updateStatusWithOps(
           nodeExecutionId, Status.DISCONTINUING, null, EnumSet.noneOf(Status.class));
@@ -77,10 +78,20 @@ public class MarkExpiredInterruptHandler implements InterruptHandler {
       }
       expiryHelper.expireMarkedInstance(nodeExecution, interrupt);
     } catch (Exception ex) {
-      interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+      if (markInterruptAsProcessed) {
+        interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+      }
       throw ex;
     }
-    return interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    if (markInterruptAsProcessed) {
+      return interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    }
+    return interrupt;
+  }
+
+  @Override
+  public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
+    return handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, true);
   }
 
   @Override

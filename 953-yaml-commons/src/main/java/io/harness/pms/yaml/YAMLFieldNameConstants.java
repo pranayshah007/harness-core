@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.yaml;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -122,4 +123,5 @@ public class YAMLFieldNameConstants {
 
   public final String COMBINED_ROLLBACK_STATUS = "combinedRollbackStatus";
   public final String RETRY_STEP_GROUP = "retryStepGroup";
+  public final String NEXT_ID = "nextId";
 }

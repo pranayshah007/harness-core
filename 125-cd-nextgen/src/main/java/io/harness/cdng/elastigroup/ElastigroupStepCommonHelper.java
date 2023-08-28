@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.elastigroup;
+
 import static io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_NAME;
 import static io.harness.cdng.elastigroup.ElastigroupSetupStep.ELASTIGROUP_SETUP_COMMAND_NAME;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
@@ -75,7 +76,6 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -93,6 +93,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
@@ -249,7 +250,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
   }
 
-  public TaskChainResponse startChainLink(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public TaskChainResponse startChainLink(Ambiance ambiance, StepBaseParameters stepElementParameters,
       ElastigroupExecutionPassThroughData passThroughData) {
     OptionalOutcome startupScriptOptionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.STARTUP_SCRIPT));
@@ -296,9 +297,8 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return fetchElastigroupConfiguration(ambiance, stepElementParameters, unitProgressData, passThroughData);
   }
 
-  private TaskChainResponse fetchElastigroupConfiguration(Ambiance ambiance,
-      StepElementParameters stepElementParameters, UnitProgressData unitProgressData,
-      ElastigroupExecutionPassThroughData passThroughData) {
+  private TaskChainResponse fetchElastigroupConfiguration(Ambiance ambiance, StepBaseParameters stepElementParameters,
+      UnitProgressData unitProgressData, ElastigroupExecutionPassThroughData passThroughData) {
     LogCallback logCallback =
         getLogCallback(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_CONFIGURATION.toString(), ambiance, true);
 
@@ -348,7 +348,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   }
 
   public TaskChainResponse executeNextLink(ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
     UnitProgressData unitProgressData = null;
@@ -387,7 +387,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return elastigroupEntityHelper.getEncryptionDataDetails(connectorInfoDTO, ngAccess);
   }
   private TaskChainResponse handlePreFetchResponse(ElastigroupPreFetchResponse elastigroupPreFetchResponse,
-      ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       ElastigroupExecutionPassThroughData passThroughData) {
     if (elastigroupPreFetchResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return handleFailureElastigroupPrepareRollbackTask(elastigroupPreFetchResponse);
@@ -428,7 +428,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         StepOutcomeGroup.STAGE.name());
   }
 
-  private TaskChainResponse executeArtifactTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+  private TaskChainResponse executeArtifactTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
       UnitProgressData unitProgressData, ElastigroupExecutionPassThroughData passThroughData) {
     // Get ArtifactsOutcome
     Optional<ArtifactOutcome> artifactOutcome = resolveArtifactsOutcome(ambiance);
@@ -450,7 +450,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return executePreFetchTask(ambiance, stepElementParameters, passThroughData, unitProgressData);
   }
 
-  public TaskChainResponse executePreFetchTask(Ambiance ambiance, StepElementParameters stepParameters,
+  public TaskChainResponse executePreFetchTask(Ambiance ambiance, StepBaseParameters stepParameters,
       ElastigroupExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData) {
     ElastigroupInfrastructureOutcome infrastructureOutcome =
         (ElastigroupInfrastructureOutcome) executionPassThroughData.getInfrastructure();
@@ -489,11 +489,11 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         TaskType.ELASTIGROUP_PRE_FETCH_TASK_NG);
   }
 
-  private int getSteadyStateTimeout(StepElementParameters stepParameters) {
+  private int getSteadyStateTimeout(StepBaseParameters stepParameters) {
     return CDStepHelper.getTimeoutInMin(stepParameters);
   }
 
-  private String getElastigroupNamePrefixForBG(Ambiance ambiance, StepElementParameters stepParameters) {
+  private String getElastigroupNamePrefixForBG(Ambiance ambiance, StepBaseParameters stepParameters) {
     ElastigroupBGStageSetupStepParameters elastigroupBGStageSetupStepParameters =
         (ElastigroupBGStageSetupStepParameters) stepParameters.getSpec();
 
@@ -503,7 +503,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         : elastigroupSetupStepParametersName.getValue();
   }
 
-  private String getElastigroupNamePrefixForNonBG(Ambiance ambiance, StepElementParameters stepParameters) {
+  private String getElastigroupNamePrefixForNonBG(Ambiance ambiance, StepBaseParameters stepParameters) {
     ElastigroupSetupStepParameters elastigroupSetupStepParameters =
         (ElastigroupSetupStepParameters) stepParameters.getSpec();
 
@@ -557,7 +557,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return null;
   }
 
-  public TaskChainResponse queueElastigroupTask(StepElementParameters stepElementParameters,
+  public TaskChainResponse queueElastigroupTask(StepBaseParameters stepElementParameters,
       ElastigroupCommandRequest elastigroupCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
       boolean isChainEnd, TaskType taskType) {
     TaskData taskData = TaskData.builder()

@@ -17,8 +17,6 @@ import io.harness.pms.events.base.PmsAbstractMessageListener;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
-import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -27,9 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 public class InitiateNodeEventMessageListener
     extends PmsAbstractMessageListener<InitiateNodeEvent, InitiateNodeHandler> {
   @Inject
-  public InitiateNodeEventMessageListener(
-      InitiateNodeHandler initiateNodeHandler, @Named("EngineExecutorService") ExecutorService executorService) {
-    super(ModuleType.PMS.name(), InitiateNodeEvent.class, initiateNodeHandler, executorService);
+  public InitiateNodeEventMessageListener(InitiateNodeHandler initiateNodeHandler) {
+    super(ModuleType.PMS.name(), InitiateNodeEvent.class, initiateNodeHandler);
   }
 
   @Override

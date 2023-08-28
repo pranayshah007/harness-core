@@ -9,6 +9,7 @@ package io.harness.delegate.task.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
+import static io.harness.rule.OwnerRule.ABOSII;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -154,12 +155,28 @@ public class OciHelmConnectivityDelegateTaskTest extends CategoryTest {
     }
   }
 
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetParsedURI2() throws URISyntaxException {
+    testGetParsedURI("oci://helm.repo/charts", "oci://helm.repo:443/charts");
+    testGetParsedURI("helm.repo/charts", "oci://helm.repo:443/charts");
+    testGetParsedURI("oci://helm.repo/charts/test?s=rt", "oci://helm.repo:443/charts/test?s=rt");
+    testGetParsedURI("helm.repo:3344/charts/test#frag=42,33-69", "oci://helm.repo:3344/charts/test#frag=42,33-69");
+    testGetParsedURI("helm.repo/?test=a+b+c+d+e+f%203d", "oci://helm.repo:443/?test=a+b+c+d+e+f%25203d");
+  }
+
   private void testGetParsedURIHelper(String ociUrl) throws URISyntaxException {
     URI uri = helmTaskHelperBase.getParsedURI(ociUrl);
     assertThat(uri.getScheme()).isEqualTo("oci");
     assertThat(uri.getHost()).isEqualTo("localhost");
     assertThat(uri.getPort()).isEqualTo(443);
     assertThat(uri.toString()).isEqualTo("oci://localhost:443");
+  }
+
+  private void testGetParsedURI(String ociUri, String expectedUri) throws URISyntaxException {
+    URI uri = helmTaskHelperBase.getParsedURI(ociUri);
+    assertThat(uri.toString()).isEqualTo(expectedUri);
   }
 
   @Test

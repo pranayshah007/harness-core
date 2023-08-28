@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.utils;
+package io.harness.ci.execution.utils;
 
 import static io.harness.ci.commonconstants.CIExecutionConstants.BASE_AZURE_HOSTNAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.BASE_ECR_HOSTNAME;
@@ -27,7 +27,7 @@ import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.StepImageConfig;
-import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.beans.connector.ConnectorType;

@@ -19,6 +19,7 @@ import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
 import static io.harness.security.encryption.SecretManagerType.VAULT;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -57,6 +58,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "AwsSecretsManagerConfigKeys")
+@RecasterAlias("software.wings.beans.AwsSecretsManagerConfig")
 public class AwsSecretsManagerConfig extends SecretManagerConfig {
   private static final String TASK_SELECTORS = "Task Selectors";
   @Attributes(title = "Name", required = true) private String name;

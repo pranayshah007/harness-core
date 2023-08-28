@@ -9,6 +9,7 @@ package io.harness.cdng.azure.webapp.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -19,6 +20,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput")
 public class AzureWebAppPreDeploymentDataOutput implements ExecutionSweepingOutput {
   public static final String OUTPUT_NAME = "webAppPreDeploymentData";
 

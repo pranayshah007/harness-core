@@ -44,7 +44,7 @@ import lombok.experimental.UtilityClass;
 public class YamlRefreshHelper {
   private final String DUMMY_NODE = "dummy";
 
-  public final Set<String> oneOfKeysParent = new HashSet<>(List.of("service", "environment"));
+  public final Set<String> oneOfKeysParent = new HashSet<>(List.of("service", "environment", "services"));
   public final Set<String> ignorableKeysToOneOfAtSameLevel =
       new HashSet<>(List.of("service.serviceInputs", "environment.environmentInputs"));
 

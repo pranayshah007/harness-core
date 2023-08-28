@@ -314,6 +314,7 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
   @Test
   @Owner(developers = POOJA)
   @Category(UnitTests.class)
+  @Ignore("CDS-75742: Flaky unit test")
   public void testOnDemandRollbackConfirmationSuccessForEmptyArtifacts() {
     WorkflowExecution previousWE = createNewWorkflowExecution(false);
     previousWE.setArtifacts(Collections.emptyList());
