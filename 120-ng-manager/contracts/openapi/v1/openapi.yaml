@@ -4124,7 +4124,7 @@ components:
         type: string
       description: Identifier field of the scoped infrastructure definition entity to be used in the selected operation.
     GitXWebhookIdentifier:
-      name: GitXWebhookIdentifier
+      name: gitx-webhook
       in: path
       required: true
       schema:
