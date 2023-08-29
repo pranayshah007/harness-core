@@ -553,6 +553,40 @@
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AttestationSpecV1": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AttestationV1": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignAttestationV1"
+              }
+            }
+          }
+        }
+      ]
+    },
     "AwsEcrStepInfo": {
       "allOf": [
         {
@@ -2852,6 +2886,25 @@
               "type": "string"
             },
             "privateKey": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CosignAttestationV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AttestationSpecV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "password": {
+              "type": "string"
+            },
+            "private_key": {
               "type": "string"
             }
           }
@@ -10673,7 +10726,7 @@
       "type": "object",
       "properties": {
         "attestation": {
-          "$ref": "#/definitions/Attestation"
+          "$ref": "#/definitions/AttestationV1"
         },
         "enabled": {
           "oneOf": [
