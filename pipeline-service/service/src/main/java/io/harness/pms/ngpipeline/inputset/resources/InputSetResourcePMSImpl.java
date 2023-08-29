@@ -19,9 +19,6 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
-import io.harness.accesscontrol.acl.api.AccessCheckRequestDTO;
-import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
-import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -89,7 +86,6 @@ import io.harness.utils.ThreadOperationContextHelper;
 
 import com.google.inject.Inject;
 import java.security.AccessControlException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -186,12 +182,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .build();
       resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
-    PermissionCheckDTO permissionCheckDTO =
-        PermissionCheckDTO.builder().resourceType(PIPELINE_RESOURCE_TYPE).permission(permission).build();
-    List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
-    permissionCheckDTOList.add(permissionCheckDTO);
-    AccessCheckResponseDTO accessCheckResponseDTO = accessControlClient.checkForAccess(null, permissionCheckDTOList);
-    if (!accessCheckResponseDTO.getAccessControlList().get(0).isPermitted())
+    if (!accessControlClient.hasAccess(resourceScope, resource, permission))
       throw new AccessDeniedException(ACCESS_DENIED_ERROR_MESSAGE, ErrorCode.ACCESS_DENIED, null);
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountId, yaml);
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityFromVersion(accountId, orgIdentifier,
@@ -208,7 +199,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, GitEntityCreateInfoDTO gitEntityCreateInfo,
       @NotNull String yaml, @NotNull String permission) throws AccessDeniedException {
-    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+    if (permissionsList.contains(permission)) {
       resourceScope = ResourceScope.builder()
                           .accountIdentifier(accountId)
                           .orgIdentifier(orgIdentifier)
@@ -235,7 +226,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
       String pipelineBranch, String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml,
       @NotNull String permission) throws AccessDeniedException {
-    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+    if (permissionsList.contains(permission)) {
       resourceScope = ResourceScope.builder()
                           .accountIdentifier(accountId)
                           .orgIdentifier(orgIdentifier)
@@ -261,7 +252,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
       GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String yaml, @NotNull String permission)
       throws AccessDeniedException {
-    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+    if (permissionsList.contains(permission)) {
       resourceScope = ResourceScope.builder()
                           .accountIdentifier(accountId)
                           .orgIdentifier(orgIdentifier)
@@ -439,7 +430,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier, String pipelineBranch,
       String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String invalidInputSetYaml,
       @NotNull String permission) throws AccessDeniedException {
-    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+    if (permissionsList.contains(permission)) {
       resourceScope = ResourceScope.builder()
                           .accountIdentifier(accountId)
                           .orgIdentifier(orgIdentifier)
@@ -488,7 +479,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier,
       GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO, @NotNull String permission)
       throws AccessControlException {
-    if (permissionsList.contains(PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)) {
+    if (permissionsList.contains(permission)) {
       resourceScope = ResourceScope.builder()
                           .accountIdentifier(accountId)
                           .orgIdentifier(orgIdentifier)
@@ -507,7 +498,8 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
 
   @Override
   public ResponseDTO<InputSetMoveConfigResponseDTO> moveConfig(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String inputSetIdentifier, InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO) {
+      String projectIdentifier, String inputSetIdentifier, InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO,
+      @NotNull String permission) {
     if (!inputSetIdentifier.equals(inputSetMoveConfigRequestDTO.getInputSetIdentifier())) {
       throw new InvalidRequestException("Identifiers given in path param and request body don't match.");
     }

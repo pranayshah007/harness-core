@@ -8,16 +8,9 @@
 package io.harness.pms.ngpipeline.inputset.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.rule.OwnerRule.ADITHYA;
-import static io.harness.rule.OwnerRule.BRIJESH;
-import static io.harness.rule.OwnerRule.NAMAN;
-import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
-import static io.harness.rule.OwnerRule.SAMARTH;
-import static io.harness.rule.OwnerRule.SANDESH_SALUNKHE;
-import static io.harness.rule.OwnerRule.SHALINI;
-import static io.harness.rule.OwnerRule.SHIVAM;
-
+import static io.harness.rule.OwnerRule.*;
 import static junit.framework.TestCase.assertEquals;
+
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -424,6 +417,9 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testCreateInputSetWithPipelineCreateEditPermission() {
     doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).create(any(), anyBoolean());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     ResponseDTO<InputSetResponseDTOPMS> responseDTO =
         inputSetResourcePMSImpl.createInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null,
             null, null, inputSetYaml, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -440,6 +436,9 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testCreateInputSetWithPipelineExecutePermission() {
     doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).create(any(), anyBoolean());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_EXECUTE);
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.createInputSet(ACCOUNT_ID, ORG_IDENTIFIER,
         PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml, PipelineRbacPermissions.PIPELINE_EXECUTE);
     assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYaml);
@@ -455,6 +454,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testCreateInputSetWithInvalidPermission() {
     doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).create(any(), anyBoolean());
+    doReturn(false).when(accessControlClient).hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_VIEW);
     try {
       inputSetResourcePMSImpl.createInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null,
           null, null, inputSetYaml, PipelineRbacPermissions.PIPELINE_VIEW);
@@ -466,8 +466,11 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testCreateOverlayInputSet() {
+  public void testCreateOverlayInputSetWithPipelineCreateEditPermission() {
     doReturn(inputSetEntity).when(pmsInputSetService).create(any(), anyBoolean());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO =
         inputSetResourcePMSImpl.createOverlayInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
             null, overlayInputSetYaml, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -478,11 +481,45 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   }
 
   @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testCreateOverlayInputSetWithPipelineExecutePermission() {
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), anyBoolean());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_EXECUTE);
+    ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO =
+        inputSetResourcePMSImpl.createOverlayInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+            null, overlayInputSetYaml, PipelineRbacPermissions.PIPELINE_EXECUTE);
+    assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
+    assertEquals(responseDTO.getData().getOrgIdentifier(), inputSetEntity.getOrgIdentifier());
+    assertEquals(responseDTO.getData().getProjectIdentifier(), inputSetEntity.getProjectIdentifier());
+    assertEquals(responseDTO.getData().getName(), inputSetEntity.getName());
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testCreateOverlayInputSetWithInvalidPermission() {
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), anyBoolean());
+    doReturn(false).when(accessControlClient).hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_VIEW);
+    try {
+      inputSetResourcePMSImpl.createOverlayInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+          null, overlayInputSetYaml, PipelineRbacPermissions.PIPELINE_VIEW);
+    } catch (AccessDeniedException accessDeniedException) {
+      assertEquals(accessDeniedException.getMessage(), "Access Denied: You don't have necessary permission(s)");
+    }
+  }
+
+  @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testUpdateInputSet() {
+  public void testUpdateInputSetWithPipelineCreateEditPermission() {
     doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), anyBoolean());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     ResponseDTO<InputSetResponseDTOPMS> responseDTO =
         inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
             PIPELINE_IDENTIFIER, null, null, null, inputSetYaml, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -494,10 +531,47 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   }
 
   @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testUpdateInputSetWithPipelineExecutePermission() {
+    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), anyBoolean());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_DELETE);
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO =
+        inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, null, inputSetYaml, PipelineRbacPermissions.PIPELINE_DELETE);
+    assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYaml);
+    assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
+    assertEquals(responseDTO.getData().getOrgIdentifier(), inputSetEntity.getOrgIdentifier());
+    assertEquals(responseDTO.getData().getProjectIdentifier(), inputSetEntity.getProjectIdentifier());
+    assertEquals(responseDTO.getData().getName(), inputSetEntity.getName());
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testUpdateInputSetWithInvalidPermission() {
+    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), anyBoolean());
+    doReturn(false).when(accessControlClient).hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_VIEW);
+    try {
+      inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+          PIPELINE_IDENTIFIER, null, null, null, inputSetYaml, PipelineRbacPermissions.PIPELINE_VIEW);
+    } catch (AccessDeniedException accessDeniedException) {
+      assertEquals(accessDeniedException.getMessage(), "Access Denied: You don't have necessary permission(s)");
+    }
+  }
+
+  @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testUpdateOverlayInputSet() {
+  public void testUpdateOverlayInputSetWithPipelineCreateEditPermission() {
     doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), anyBoolean());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO =
         inputSetResourcePMSImpl.updateOverlayInputSet(null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
             PIPELINE_IDENTIFIER, null, overlayInputSetYaml, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -505,6 +579,37 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     assertEquals(responseDTO.getData().getOrgIdentifier(), inputSetEntity.getOrgIdentifier());
     assertEquals(responseDTO.getData().getProjectIdentifier(), inputSetEntity.getProjectIdentifier());
     assertEquals(responseDTO.getData().getName(), inputSetEntity.getName());
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testUpdateOverlayInputSetWithPipelineExecutePermission() {
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), anyBoolean());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_EXECUTE);
+    ResponseDTO<OverlayInputSetResponseDTOPMS> responseDTO =
+        inputSetResourcePMSImpl.updateOverlayInputSet(null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, overlayInputSetYaml, PipelineRbacPermissions.PIPELINE_EXECUTE);
+    assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
+    assertEquals(responseDTO.getData().getOrgIdentifier(), inputSetEntity.getOrgIdentifier());
+    assertEquals(responseDTO.getData().getProjectIdentifier(), inputSetEntity.getProjectIdentifier());
+    assertEquals(responseDTO.getData().getName(), inputSetEntity.getName());
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testUpdateOverlayInputSetWithInvalidPermission() {
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), anyBoolean());
+    doReturn(false).when(accessControlClient).hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_VIEW);
+    try {
+      inputSetResourcePMSImpl.updateOverlayInputSet(null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+          PIPELINE_IDENTIFIER, null, overlayInputSetYaml, PipelineRbacPermissions.PIPELINE_VIEW);
+    } catch (AccessDeniedException accessDeniedException) {
+      assertEquals(accessDeniedException.getMessage(), "Access Denied: You don't have necessary permission(s)");
+    }
   }
 
   @Test
@@ -676,16 +781,55 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testImportInputSetFromGit() {
+  public void testImportInputSetFromGitWithPipelineCreateEditPermission() {
     doReturn(inputSetEntity)
         .when(pmsInputSetService)
         .importInputSetFromRemote(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, null, true);
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     GitImportInfoDTO gitImportInfoDTO = GitImportInfoDTO.builder().isForceImport(true).build();
     ResponseDTO<InputSetImportResponseDTO> inputSetImportResponse =
         inputSetResourcePMSImpl.importInputSetFromGit(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
             INPUT_SET_ID, gitImportInfoDTO, null, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     assertThat(inputSetImportResponse.getData().getIdentifier()).isEqualTo(INPUT_SET_ID);
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testImportInputSetFromGitWithPipelineExecutePermission() {
+    doReturn(inputSetEntity)
+        .when(pmsInputSetService)
+        .importInputSetFromRemote(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, null, true);
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_EXECUTE);
+    GitImportInfoDTO gitImportInfoDTO = GitImportInfoDTO.builder().isForceImport(true).build();
+    ResponseDTO<InputSetImportResponseDTO> inputSetImportResponse =
+        inputSetResourcePMSImpl.importInputSetFromGit(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+            INPUT_SET_ID, gitImportInfoDTO, null, PipelineRbacPermissions.PIPELINE_EXECUTE);
+    assertThat(inputSetImportResponse.getData().getIdentifier()).isEqualTo(INPUT_SET_ID);
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testImportInputSetFromGitWithInvalifPermission() {
+    doReturn(inputSetEntity)
+        .when(pmsInputSetService)
+        .importInputSetFromRemote(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, null, true);
+    doReturn(false).when(accessControlClient).hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_VIEW);
+    GitImportInfoDTO gitImportInfoDTO = GitImportInfoDTO.builder().isForceImport(true).build();
+    try {
+      inputSetResourcePMSImpl.importInputSetFromGit(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+          INPUT_SET_ID, gitImportInfoDTO, null, PipelineRbacPermissions.PIPELINE_VIEW);
+    } catch (AccessDeniedException accessDeniedException) {
+      assertEquals(accessDeniedException.getMessage(), "Access Denied: You don't have necessary permission(s)");
+    }
   }
 
   @Test
@@ -710,9 +854,12 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
-  public void testCreateInputSetV1() {
+  public void testCreateInputSetV1WithPipelineCreateEditPermission() {
     doReturn(inputSetEntityV1).when(pmsInputSetService).create(any(), anyBoolean());
     doReturn(PipelineVersion.V1).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     ResponseDTO<InputSetResponseDTOPMS> responseDTO =
         inputSetResourcePMSImpl.createInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null,
             null, null, inputSetYamlV1, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -724,11 +871,48 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   }
 
   @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testCreateInputSetV1WithPipelineExecutePermission() {
+    doReturn(inputSetEntityV1).when(pmsInputSetService).create(any(), anyBoolean());
+    doReturn(PipelineVersion.V1).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_EXECUTE);
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO =
+        inputSetResourcePMSImpl.createInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null,
+            null, null, inputSetYamlV1, PipelineRbacPermissions.PIPELINE_EXECUTE);
+    assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYamlV1);
+    assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
+    assertEquals(responseDTO.getData().getOrgIdentifier(), inputSetEntity.getOrgIdentifier());
+    assertEquals(responseDTO.getData().getProjectIdentifier(), inputSetEntity.getProjectIdentifier());
+    assertEquals(responseDTO.getData().getName(), inputSetEntity.getName());
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testCreateInputSetV1WithInvalidPermission() {
+    doReturn(inputSetEntityV1).when(pmsInputSetService).create(any(), anyBoolean());
+    doReturn(PipelineVersion.V1).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    doReturn(false).when(accessControlClient).hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_VIEW);
+    try {
+      inputSetResourcePMSImpl.createInputSet(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null,
+          null, null, inputSetYamlV1, PipelineRbacPermissions.PIPELINE_VIEW);
+    } catch (AccessDeniedException accessDeniedException) {
+      assertEquals(accessDeniedException.getMessage(), "Access Denied: You don't have necessary permission(s)");
+    }
+  }
+
+  @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
-  public void testUpdateInputSetV1() {
+  public void testUpdateInputSetV1WithPipelineCreateEditPermission() {
     doReturn(inputSetEntityV1).when(pmsInputSetService).update(any(), any(), anyBoolean());
     doReturn(PipelineVersion.V1).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
     ResponseDTO<InputSetResponseDTOPMS> responseDTO =
         inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
             PIPELINE_IDENTIFIER, null, null, null, inputSetYamlV1, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
@@ -737,6 +921,40 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     assertEquals(responseDTO.getData().getOrgIdentifier(), inputSetEntity.getOrgIdentifier());
     assertEquals(responseDTO.getData().getProjectIdentifier(), inputSetEntity.getProjectIdentifier());
     assertEquals(responseDTO.getData().getName(), inputSetEntity.getName());
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testUpdateInputSetV1WithPipelineExecutePermission() {
+    doReturn(inputSetEntityV1).when(pmsInputSetService).update(any(), any(), anyBoolean());
+    doReturn(PipelineVersion.V1).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_EXECUTE);
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO =
+        inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+            PIPELINE_IDENTIFIER, null, null, null, inputSetYamlV1, PipelineRbacPermissions.PIPELINE_EXECUTE);
+    assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYamlV1);
+    assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
+    assertEquals(responseDTO.getData().getOrgIdentifier(), inputSetEntity.getOrgIdentifier());
+    assertEquals(responseDTO.getData().getProjectIdentifier(), inputSetEntity.getProjectIdentifier());
+    assertEquals(responseDTO.getData().getName(), inputSetEntity.getName());
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testUpdateInputSetV1WithInvalidPermission() {
+    doReturn(inputSetEntityV1).when(pmsInputSetService).update(any(), any(), anyBoolean());
+    doReturn(PipelineVersion.V1).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    doReturn(false).when(accessControlClient).hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_VIEW);
+    try {
+      inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+          PIPELINE_IDENTIFIER, null, null, null, inputSetYamlV1, PipelineRbacPermissions.PIPELINE_VIEW);
+    } catch (AccessDeniedException accessDeniedException) {
+      assertEquals(accessDeniedException.getMessage(), "Access Denied: You don't have necessary permission(s)");
+    }
   }
 
   @Test
@@ -754,7 +972,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testMoveConfig() {
+  public void testMoveConfigWithPipelineCreateEditPermission() {
     InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO =
         InputSetMoveConfigOperationDTO.builder()
             .moveConfigOperationType(MoveConfigOperationType.INLINE_TO_REMOTE)
@@ -763,6 +981,9 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     doReturn(inputSetEntity)
         .when(pmsInputSetService)
         .moveConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, INPUT_SET_ID, inputSetMoveConfigOperationDTO);
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
 
     InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO =
         InputSetMoveConfigRequestDTO.builder()
@@ -771,10 +992,69 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
             .isNewBranch(false)
             .build();
 
-    ResponseDTO<InputSetMoveConfigResponseDTO> movedInputSet = inputSetResourcePMSImpl.moveConfig(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, INPUT_SET_ID, inputSetMoveConfigRequestDTO);
+    ResponseDTO<InputSetMoveConfigResponseDTO> movedInputSet =
+        inputSetResourcePMSImpl.moveConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, INPUT_SET_ID,
+            inputSetMoveConfigRequestDTO, PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
 
     assertEquals(movedInputSet.getData().getIdentifier(), INPUT_SET_ID);
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testMoveConfigWithPipelineExecutePermission() {
+    InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO =
+        InputSetMoveConfigOperationDTO.builder()
+            .moveConfigOperationType(MoveConfigOperationType.INLINE_TO_REMOTE)
+            .build();
+
+    doReturn(inputSetEntity)
+        .when(pmsInputSetService)
+        .moveConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, INPUT_SET_ID, inputSetMoveConfigOperationDTO);
+    doReturn(true)
+        .when(accessControlClient)
+        .hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_EXECUTE);
+
+    InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO =
+        InputSetMoveConfigRequestDTO.builder()
+            .inputSetIdentifier(INPUT_SET_ID)
+            .moveConfigOperationType(io.harness.gitaware.helper.MoveConfigOperationType.INLINE_TO_REMOTE)
+            .isNewBranch(false)
+            .build();
+
+    ResponseDTO<InputSetMoveConfigResponseDTO> movedInputSet =
+        inputSetResourcePMSImpl.moveConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, INPUT_SET_ID,
+            inputSetMoveConfigRequestDTO, PipelineRbacPermissions.PIPELINE_EXECUTE);
+
+    assertEquals(movedInputSet.getData().getIdentifier(), INPUT_SET_ID);
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testMoveConfigWithInvalidPermission() {
+    InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO =
+        InputSetMoveConfigOperationDTO.builder()
+            .moveConfigOperationType(MoveConfigOperationType.INLINE_TO_REMOTE)
+            .build();
+
+    doReturn(inputSetEntity)
+        .when(pmsInputSetService)
+        .moveConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, INPUT_SET_ID, inputSetMoveConfigOperationDTO);
+    doReturn(true).when(accessControlClient).hasAccess(resourceScope, resource, PipelineRbacPermissions.PIPELINE_VIEW);
+
+    InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO =
+        InputSetMoveConfigRequestDTO.builder()
+            .inputSetIdentifier(INPUT_SET_ID)
+            .moveConfigOperationType(io.harness.gitaware.helper.MoveConfigOperationType.INLINE_TO_REMOTE)
+            .isNewBranch(false)
+            .build();
+    try {
+      inputSetResourcePMSImpl.moveConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, INPUT_SET_ID,
+          inputSetMoveConfigRequestDTO, PipelineRbacPermissions.PIPELINE_VIEW);
+    } catch (AccessDeniedException accessDeniedException) {
+      assertEquals(accessDeniedException.getMessage(), "Access Denied: You don't have necessary permission(s)");
+    }
   }
 
   @Test

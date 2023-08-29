@@ -617,7 +617,7 @@ public interface InputSetResourcePMS {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
           description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE) String inputSetIdentifier,
-      @BeanParam InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO);
+      @BeanParam InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO, @NotNull String permission);
 
   @GET
   @Path("/list-repos")
