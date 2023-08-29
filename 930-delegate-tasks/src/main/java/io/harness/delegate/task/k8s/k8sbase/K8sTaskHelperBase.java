@@ -3255,17 +3255,21 @@ public class K8sTaskHelperBase {
     }
     return kubernetesResourceIds.get(0);
   }
-  public HelmChartInfo getHelmChartDetails(ManifestDelegateConfig manifestDelegateConfig, String manifestFileDir)
-      throws Exception {
+  public HelmChartInfo getHelmChartDetails(ManifestDelegateConfig manifestDelegateConfig, String manifestFileDir) {
     String finalPath = getManifestDirectoryForHelmChartWithSubCharts(
         manifestFileDir, (HelmChartManifestDelegateConfig) manifestDelegateConfig);
-    HelmChartInfo helmChartInfo =
-        helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(Paths.get(finalPath, CHARTS_YAML_KEY).toString());
+    try {
+      HelmChartInfo helmChartInfo =
+          helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(Paths.get(finalPath, CHARTS_YAML_KEY).toString());
 
-    if (helmChartInfo != null) {
-      helmChartInfo.setRepoUrl(manifestDelegateConfig.getStoreDelegateConfig().getRepoUrl());
+      if (helmChartInfo != null) {
+        helmChartInfo.setRepoUrl(manifestDelegateConfig.getStoreDelegateConfig().getRepoUrl());
+      }
+
+      return helmChartInfo;
+    } catch (Exception ex) {
+      log.warn("Unable to retrieve helmChartInfo from the Chart Yaml" + ex);
+      return null;
     }
-
-    return helmChartInfo;
   }
 }
