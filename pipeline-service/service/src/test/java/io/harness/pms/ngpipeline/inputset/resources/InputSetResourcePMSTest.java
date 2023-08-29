@@ -8,9 +8,16 @@
 package io.harness.pms.ngpipeline.inputset.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.rule.OwnerRule.*;
-import static junit.framework.TestCase.assertEquals;
+import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.SANDESH_SALUNKHE;
+import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
