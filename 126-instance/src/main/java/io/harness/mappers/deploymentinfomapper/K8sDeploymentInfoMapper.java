@@ -23,6 +23,7 @@ public class K8sDeploymentInfoMapper {
         .namespaces(k8sDeploymentInfo.getNamespaces())
         .releaseName(k8sDeploymentInfo.getReleaseName())
         .cloudConfigMetadata(k8sDeploymentInfo.getCloudConfigMetadata())
+        .helmChartInfo(k8sDeploymentInfo.getHelmChartInfo())
         .build();
   }
 
@@ -32,6 +33,7 @@ public class K8sDeploymentInfoMapper {
         .namespaces(k8sDeploymentInfoDTO.getNamespaces())
         .releaseName(k8sDeploymentInfoDTO.getReleaseName())
         .cloudConfigMetadata(k8sDeploymentInfoDTO.getCloudConfigMetadata())
+        .helmChartInfo(k8sDeploymentInfoDTO.getHelmChartInfo())
         .build();
   }
 }

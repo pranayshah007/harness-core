@@ -7,10 +7,10 @@
 
 package io.harness.idp.onboarding.mappers;
 
+import static io.harness.idp.backstagebeans.Constants.ENTITY_UNKNOWN_OWNER;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_PROJECT_URL;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_HARNESS_ANNOTATION_SERVICES;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_LIFECYCLE;
-import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_OWNER;
 import static io.harness.rule.OwnerRule.SATHISH;
 
 import static junit.framework.TestCase.assertEquals;
@@ -21,10 +21,10 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.idp.onboarding.beans.BackstageCatalogComponentEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogDomainEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntityTypes;
-import io.harness.idp.onboarding.beans.BackstageCatalogSystemEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogComponentEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogDomainEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntityTypes;
+import io.harness.idp.backstagebeans.BackstageCatalogSystemEntity;
 import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.ng.core.dto.OrganizationDTO;
 import io.harness.ng.core.dto.ProjectDTO;

@@ -20,7 +20,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.govern.ProviderModule;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
+import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
+import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.persistence.HPersistence;
+import io.harness.request.RequestContextFilter;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
@@ -120,6 +128,9 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
     registerResources(environment, injector);
     registerOasResource(sscaManagerConfiguration, environment, injector);
     registerAuthFilters(sscaManagerConfiguration, environment, injector);
+    registerApiResponseFilter(environment, injector);
+    registerCorrelationFilter(environment, injector);
+    registerRequestContextFilter(environment);
     registerCorsFilter(sscaManagerConfiguration, environment);
     MaintenanceController.forceMaintenance(false);
   }
@@ -138,6 +149,16 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
       }
     }
   }
+  private void registerRequestContextFilter(Environment environment) {
+    environment.jersey().register(new RequestContextFilter());
+  }
+  private void registerApiResponseFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(ApiResponseFilter.class));
+  }
+
+  private void registerCorrelationFilter(Environment environment, Injector injector) {
+    environment.jersey().register(injector.getInstance(CorrelationFilter.class));
+  }
 
   private void registerCorsFilter(SSCAManagerConfiguration appConfig, Environment environment) {
     FilterRegistration.Dynamic cors = environment.servlets().addFilter("CORS", CrossOriginFilter.class);
@@ -149,8 +170,13 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
   }
 
   private void registerJerseyProviders(Environment environment, Injector injector) {
-    environment.jersey().register(JsonProcessingExceptionMapper.class);
+    environment.jersey().register(JerseyViolationExceptionMapperV2.class);
+    environment.jersey().register(GenericExceptionMapperV2.class);
+    environment.jersey().register(new JsonProcessingExceptionMapper(true));
     environment.jersey().register(EarlyEofExceptionMapper.class);
+    environment.jersey().register(WingsExceptionMapperV2.class);
+    environment.jersey().register(NotFoundExceptionMapper.class);
+    environment.jersey().register(NotAllowedExceptionMapper.class);
     environment.jersey().register(MultiPartFeature.class);
   }
 

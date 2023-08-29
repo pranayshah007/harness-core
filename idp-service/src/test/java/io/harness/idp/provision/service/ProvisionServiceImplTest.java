@@ -7,6 +7,7 @@
 
 package io.harness.idp.provision.service;
 
+import static io.harness.idp.provision.service.ProvisionServiceImpl.ERROR_MESSAGE;
 import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
@@ -60,8 +61,6 @@ public class ProvisionServiceImplTest {
   @Mock private ProvisionModuleConfig provisionModuleConfig;
   @Mock private OkHttpClient client;
   @Mock private Call call;
-  private static final String ERROR_MESSAGE =
-      "Invalid request: Secret with identifier IDP_BACKEND_SECRET already exists in this scope";
   private static final String ADMIN_USER_ID = "lv0euRhKRCyiXWzS7pOg6g";
   private static final String DEFAULT_USER_ID = "0osgWsTZRsSZ8RWfjLRkEg";
   private static final String ACCOUNT_ID = "123";

@@ -57,6 +57,7 @@
     <logger name="io.kubernetes.client.informer.cache.ReflectorRunnable" level="${KUBE_WATCH_LEVEL:-OFF}"/>
     // todo: Temporarily added till we replace fabric8 dependency
     <logger name="io.fabric8.kubernetes.client.Config" level="CRITICAL"/>
+    <logger name="org.yaml.snakeyaml.introspector" level="ERROR"/>
     <root level="INFO">
         <appender-ref ref="file"/>
         <appender-ref ref="REST2"/>

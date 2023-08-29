@@ -22,9 +22,11 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.provision.terragrunt.TerragruntStepConfigurationParameters.TerragruntStepConfigurationParametersBuilder;
 import io.harness.validation.Validator;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.Getter;
@@ -38,11 +40,13 @@ public class TerragruntStepConfiguration {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
   @NotNull @JsonProperty("type") TerragruntStepConfigurationType terragruntStepConfigurationType;
   @JsonProperty("spec") TerragruntExecutionData terragruntExecutionData;
+  @VariableExpression(skipVariableExpression = true) List<TerragruntCliOptionFlag> commandFlags;
 
   public TerragruntStepConfigurationParameters toStepParameters() {
     TerragruntStepConfigurationParametersBuilder builder = TerragruntStepConfigurationParameters.builder();
     validateParams();
     builder.type(terragruntStepConfigurationType);
+    builder.commandFlags(commandFlags);
     if (terragruntExecutionData != null) {
       builder.spec(terragruntExecutionData.toStepParameters());
     }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.service.services.impl;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -33,7 +34,8 @@ import java.util.List;
 import java.util.Set;
 import lombok.NonNull;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceEntitySetupUsageHelper {

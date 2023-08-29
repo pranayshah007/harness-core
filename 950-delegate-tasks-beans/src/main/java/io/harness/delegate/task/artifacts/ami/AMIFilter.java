@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.ami;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -20,6 +21,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@RecasterAlias("io.harness.delegate.task.artifacts.ami.AMIFilter")
 public class AMIFilter {
   String name;
 

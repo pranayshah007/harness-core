@@ -5,14 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.states.ssca;
+package io.harness.ci.execution.states.ssca;
 
 import static io.harness.beans.steps.outcome.StepArtifacts.StepArtifactsBuilder;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.outcome.StepArtifacts;
-import io.harness.ci.states.AbstractStepExecutable;
+import io.harness.ci.execution.states.AbstractStepExecutable;
 import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadataType;
@@ -21,6 +21,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.spec.server.ssca.v1.model.OrchestrationSummaryResponse;
 import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.ssca.client.beans.SBOMArtifactResponse;
@@ -37,47 +38,82 @@ public class SscaOrchestrationStep extends AbstractStepExecutable {
   protected void modifyStepStatus(Ambiance ambiance, StepStatus stepStatus, String stepIdentifier) {
     String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
 
-    SBOMArtifactResponse sbomArtifactResponse =
-        sscaServiceUtils.getSbomArtifact(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
-            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+    if (sscaServiceUtils.isSSCAManagerEnabled()) {
+      OrchestrationSummaryResponse stepExecutionResponse =
+          sscaServiceUtils.getOrchestrationSummaryResponse(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+              AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+      stepStatus.setArtifactMetadata(ArtifactMetadata.builder()
+                                         .type(ArtifactMetadataType.SSCA_ARTIFACT_METADATA)
+                                         .spec(SscaArtifactMetadata.builder()
+                                                   .id(stepExecutionResponse.getArtifact().getId())
+                                                   .imageName(stepExecutionResponse.getArtifact().getName())
+                                                   .registryUrl(stepExecutionResponse.getArtifact().getRegistryUrl())
+                                                   .registryType(stepExecutionResponse.getArtifact().getType())
+                                                   .isSbomAttested(stepExecutionResponse.isIsAttested())
+                                                   .sbomName(stepExecutionResponse.getSbom().getName())
+                                                   .stepExecutionId(stepExecutionId)
+                                                   .imageTag(stepExecutionResponse.getArtifact().getTag())
+                                                   .build())
+                                         .build());
+    } else {
+      SBOMArtifactResponse sbomArtifactResponse =
+          sscaServiceUtils.getSbomArtifact(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+              AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
 
-    stepStatus.setArtifactMetadata(ArtifactMetadata.builder()
-                                       .type(ArtifactMetadataType.SSCA_ARTIFACT_METADATA)
-                                       .spec(SscaArtifactMetadata.builder()
-                                                 .id(sbomArtifactResponse.getArtifact().getId())
-                                                 .imageName(sbomArtifactResponse.getArtifact().getName())
-                                                 .registryUrl(sbomArtifactResponse.getArtifact().getUrl())
-                                                 .registryType(sbomArtifactResponse.getArtifact().getType())
-                                                 .isSbomAttested(sbomArtifactResponse.getAttestation().isAttested())
-                                                 .sbomName(sbomArtifactResponse.getSbom().getName())
-                                                 .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
-                                                 .stepExecutionId(stepExecutionId)
-                                                 .imageTag(sbomArtifactResponse.getArtifact().getTag())
-                                                 .build())
-                                       .build());
+      stepStatus.setArtifactMetadata(ArtifactMetadata.builder()
+                                         .type(ArtifactMetadataType.SSCA_ARTIFACT_METADATA)
+                                         .spec(SscaArtifactMetadata.builder()
+                                                   .id(sbomArtifactResponse.getArtifact().getId())
+                                                   .imageName(sbomArtifactResponse.getArtifact().getName())
+                                                   .registryUrl(sbomArtifactResponse.getArtifact().getUrl())
+                                                   .registryType(sbomArtifactResponse.getArtifact().getType())
+                                                   .isSbomAttested(sbomArtifactResponse.getAttestation().isAttested())
+                                                   .sbomName(sbomArtifactResponse.getSbom().getName())
+                                                   .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
+                                                   .stepExecutionId(stepExecutionId)
+                                                   .imageTag(sbomArtifactResponse.getArtifact().getTag())
+                                                   .build())
+                                         .build());
+    }
   }
 
   @Override
   protected StepArtifacts handleArtifactForVm(
       ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
     String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    if (sscaServiceUtils.isSSCAManagerEnabled()) {
+      OrchestrationSummaryResponse stepExecutionResponse =
+          sscaServiceUtils.getOrchestrationSummaryResponse(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+              AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+      return StepArtifacts.builder()
+          .publishedSbomArtifact(PublishedSbomArtifact.builder()
+                                     .id(stepExecutionResponse.getArtifact().getId())
+                                     .url(stepExecutionResponse.getArtifact().getRegistryUrl())
+                                     .imageName(stepExecutionResponse.getArtifact().getName())
+                                     .isSbomAttested(stepExecutionResponse.isIsAttested())
+                                     .sbomName(stepExecutionResponse.getSbom().getName())
+                                     .stepExecutionId(stepExecutionId)
+                                     .tag(stepExecutionResponse.getArtifact().getTag())
+                                     .build())
+          .build();
+    } else {
+      SBOMArtifactResponse sbomArtifactResponse =
+          sscaServiceUtils.getSbomArtifact(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+              AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
 
-    SBOMArtifactResponse sbomArtifactResponse =
-        sscaServiceUtils.getSbomArtifact(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
-            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-
-    return StepArtifacts.builder()
-        .publishedSbomArtifact(PublishedSbomArtifact.builder()
-                                   .id(sbomArtifactResponse.getArtifact().getId())
-                                   .url(sbomArtifactResponse.getArtifact().getUrl())
-                                   .imageName(sbomArtifactResponse.getArtifact().getName())
-                                   .isSbomAttested(sbomArtifactResponse.getAttestation().isAttested())
-                                   .sbomName(sbomArtifactResponse.getSbom().getName())
-                                   .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
-                                   .stepExecutionId(stepExecutionId)
-                                   .tag(sbomArtifactResponse.getArtifact().getTag())
-                                   .build())
-        .build();
+      return StepArtifacts.builder()
+          .publishedSbomArtifact(PublishedSbomArtifact.builder()
+                                     .id(sbomArtifactResponse.getArtifact().getId())
+                                     .url(sbomArtifactResponse.getArtifact().getUrl())
+                                     .imageName(sbomArtifactResponse.getArtifact().getName())
+                                     .isSbomAttested(sbomArtifactResponse.getAttestation().isAttested())
+                                     .sbomName(sbomArtifactResponse.getSbom().getName())
+                                     .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
+                                     .stepExecutionId(stepExecutionId)
+                                     .tag(sbomArtifactResponse.getArtifact().getTag())
+                                     .build())
+          .build();
+    }
   }
 
   @Override

@@ -61,6 +61,7 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
     Set<String> waitStepNodeExecutionIds = new HashSet<>();
     Set<String> executionInputNodeExecutionIds = new HashSet<>();
     Set<String> approvalNodeExecutionIds = new HashSet<>();
+    String planId = nodeExecutionsToDelete.get(0).getPlanId();
     for (NodeExecution nodeExecution : nodeExecutionsToDelete) {
       nodeExecutionIds.add(nodeExecution.getUuid());
       if (isNotEmpty(nodeExecution.getTimeoutInstanceIds())) {
@@ -100,7 +101,7 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
     // Delete resource restraint instances
     resourceRestraintInstanceService.deleteInstancesForGivenReleaseType(stageNodeExecutionIds, HoldingScope.STAGE);
     // Delete nodes entity
-    planService.deleteNodesForGivenIds(nodeEntityIds);
+    planService.deleteNodesForGivenIds(planId, nodeEntityIds);
     // Delete NodeExecutionsInfo
     pmsGraphStepDetailsService.deleteNodeExecutionInfoForGivenIds(nodeExecutionIds);
     // Delete WaiStepInstance for given waiStep nodeExecutionIds

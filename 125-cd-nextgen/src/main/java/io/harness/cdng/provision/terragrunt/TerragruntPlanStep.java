@@ -15,10 +15,9 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
+import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_CLI_OPTIONS_NG;
 import static io.harness.provision.TerragruntConstants.FETCH_CONFIG_FILES;
 import static io.harness.provision.TerragruntConstants.PLAN;
-
-import static software.wings.beans.TaskType.TERRAGRUNT_PLAN_TASK_NG;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.CodePulse;
@@ -45,7 +44,6 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -55,6 +53,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.KryoSerializer;
@@ -63,6 +62,8 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -91,11 +92,11 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
 
   @Override
   public Class getStepParametersClass() {
-    return StepElementParameters.class;
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -133,7 +134,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     log.info("Starting execution ObtainTask after Rbac for the Terragrunt Plan Step");
     TerragruntPlanStepParameters planStepParameters = (TerragruntPlanStepParameters) stepParameters.getSpec();
     helper.validatePlanStepConfigFiles(planStepParameters);
@@ -147,6 +148,11 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     builder.tgModuleSourceInheritSSH(
         helper.isExportCredentialForSourceModule(configuration.getConfigFiles(), stepParameters.getType()));
     ParameterField<Boolean> exportTgPlanJsonField = planStepParameters.getConfiguration().getExportTerragruntPlanJson();
+
+    if (cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_CLI_OPTIONS_NG)) {
+      builder.terragruntCommandFlags(
+          helper.getTerragruntCliFlags(planStepParameters.getConfiguration().getCliOptionFlags()));
+    }
 
     EncryptionConfig planSecretManagerConfig = helper.getEncryptionConfig(ambiance, planStepParameters);
     builder.entityId(entityId)
@@ -180,9 +186,10 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
         .encryptDecryptPlanForHarnessSMOnManager(helper.tfPlanEncryptionOnManager(accountId, planSecretManagerConfig))
         .build();
 
+    TaskType terragruntTaskType = builder.build().getDelegateTaskTypeForPlanStep();
     TaskData taskData = TaskData.builder()
                             .async(true)
-                            .taskType(TERRAGRUNT_PLAN_TASK_NG.name())
+                            .taskType(terragruntTaskType.name())
                             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
                             .parameters(new Object[] {builder.build()})
                             .build();
@@ -192,17 +199,16 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     commandUnitsList.add(PLAN);
 
     return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnitsList,
-        TERRAGRUNT_PLAN_TASK_NG.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(planStepParameters.getDelegateSelectors()),
+        terragruntTaskType.getDisplayName(), TaskSelectorYaml.toTaskSelector(planStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<TerragruntPlanTaskResponse> responseSupplier)
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<TerragruntPlanTaskResponse> responseSupplier)
       throws Exception {
     log.info("Handling Task result with Security Context for the Terragrunt Plan Step");
-    TerragruntPlanStepParameters planStepParameters = (TerragruntPlanStepParameters) stepElementParameters.getSpec();
+    TerragruntPlanStepParameters planStepParameters = (TerragruntPlanStepParameters) StepBaseParameters.getSpec();
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     TerragruntPlanTaskResponse terragruntTaskNGResponse = responseSupplier.get();
 

@@ -86,15 +86,6 @@ cimanager-mongo:
   connectionsPerHost: 300
   indexManagerMode: AUTO
   aliasDBName: harnessci
-pmsMongo:
-  uri: mongodb://localhost:27017/pms-harness
-  connectTimeout: 30000
-  serverSelectionTimeout: 90000
-  socketTimeout: 360000
-  maxConnectionIdleTime: 600000
-  connectionsPerHost: 300
-  indexManagerMode: AUTO
-  aliasDBName: pms-harness
 
 enableAuth: false
 
@@ -386,13 +377,13 @@ ciExecutionServiceConfig:
       gitCloneConfig:
         name: github.com/wings-software/drone-git@refs/tags/v1.3.9
       dockerBuildxConfig:
-        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.1
+        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.2
       dockerBuildxEcrConfig:
-        name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
+        name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.2
       dockerBuildxGcrConfig:
-        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.1
+        name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.2
       dockerBuildxAcrConfig:
-        name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.0
+        name: github.com/drone-plugins/drone-buildx-acr@refs/tags/v1.0.1
   gitnessConfig:
     jwtSecret: ${GITNESS_JWT_SECRET:-"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"}
 

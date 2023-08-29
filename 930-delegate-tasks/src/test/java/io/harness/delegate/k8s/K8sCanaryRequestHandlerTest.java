@@ -45,7 +45,9 @@ import io.harness.beans.NGInstanceUnitType;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sCanaryDeployRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
@@ -63,6 +65,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.K8sRequestHandlerContext;
@@ -106,6 +109,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
   @Mock private K8sInfraDelegateConfig k8sInfraDelegateConfig;
   @Mock private ManifestDelegateConfig manifestDelegateConfig;
   @Mock private IK8sRelease release;
+  private static final String CHART_NAME = "CHART_NAME";
 
   private final Integer timeoutIntervalInMin = 10;
   private final long timeoutIntervalInMillis = 60 * timeoutIntervalInMin * 1000;
@@ -318,10 +322,14 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecute() throws Exception {
     String releaseName = "releaseName";
+    ManifestDelegateConfig helmManifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder().chartName(CHART_NAME).helmVersion(HelmVersion.V2).build();
+    HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("haha").repoUrl("sample.com").version("0.2.0").build();
+
     K8sCanaryDeployRequest canaryDeployRequest = K8sCanaryDeployRequest.builder()
                                                      .releaseName(releaseName)
                                                      .timeoutIntervalInMin(timeoutIntervalInMin)
-                                                     .manifestDelegateConfig(manifestDelegateConfig)
+                                                     .manifestDelegateConfig(helmManifestDelegateConfig)
                                                      .accountId(accountId)
                                                      .useDeclarativeRollback(true)
                                                      .build();
@@ -342,7 +350,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     K8sClient k8sClient = mock(K8sClient.class);
     doReturn(k8sClient).when(k8sTaskHelperBase).getKubernetesClient(anyBoolean());
     doReturn(true).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
-
+    doReturn(helmChartInfo).when(k8sTaskHelperBase).getHelmChartDetails(any(), any());
     doNothing().when(spyRequestHandler).init(any(), any(), any(), any());
     doNothing().when(spyRequestHandler).prepareForCanary(canaryDeployRequest, delegateTaskParams, logCallback);
     doReturn(Arrays.asList(K8sPod.builder().build()))
@@ -363,6 +371,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     assertThat(canaryDeployResponse.getCurrentInstances()).isEqualTo(3);
     assertThat(canaryDeployResponse.getReleaseNumber()).isEqualTo(2);
     assertThat(canaryDeployResponse.getK8sPodList()).hasSize(1);
+    assertThat(canaryDeployResponse.getHelmChartInfo()).isEqualTo(helmChartInfo);
   }
 
   @Test

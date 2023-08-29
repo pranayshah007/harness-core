@@ -18,7 +18,7 @@ import java.util.Map;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@StoreIn(DbAliases.PMS)
+@StoreIn(DbAliases.CIMANAGER)
 @Document("schema_ciManager")
 @Persistent
 @OwnedBy(HarnessTeam.CI)

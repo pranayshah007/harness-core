@@ -8,7 +8,7 @@
 package io.harness.ci;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.ci.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
+import static io.harness.ci.execution.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
 
 import static org.mockito.Mockito.mock;
 
@@ -17,8 +17,8 @@ import io.harness.cache.NoOpCache;
 import io.harness.ci.beans.entities.EncryptedDataDetails;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
+import io.harness.ci.execution.serializer.CiExecutionRegistrars;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
-import io.harness.ci.serializer.CiExecutionRegistrars;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;

@@ -26,6 +26,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.rule.Owner;
 
 import java.time.Duration;
@@ -38,7 +39,7 @@ import org.mockito.Mock;
 
 public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase {
   StepType stepType = StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build();
-  Map<String, Object> stepParams = new HashMap<String, Object>() {
+  Map<String, Object> stepParams = new HashMap<>() {
     { put("a", "b"); }
   };
   Ambiance ambiance = Ambiance.newBuilder()
@@ -75,7 +76,7 @@ public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase
     GraphVertex graphVertex = graphVertexConverter.convertFrom(nodeExecution, null);
     assertThat(graphVertex).isNotNull();
     assertThat(graphVertex.getUuid()).isEqualTo(nodeExecution.getUuid());
-    assertThat(graphVertex.getAmbiance()).isEqualTo(ambiance);
+    assertThat(graphVertex.getCurrentLevel()).isEqualTo(AmbianceUtils.obtainCurrentLevel(ambiance));
     assertThat(graphVertex.getPlanNodeId()).isEqualTo("setUpId");
     assertThat(graphVertex.getIdentifier()).isEqualTo("identifier");
     assertThat(graphVertex.getStartTs()).isEqualTo(10L);
@@ -105,13 +106,13 @@ public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase
                                       .stepType(stepType)
                                       .retryId("retryId")
                                       .executionInputConfigured(true)
-                                      .resolvedStepParameters(stepParams)
+                                      .resolvedParams(PmsStepParameters.parse(stepParams))
                                       .mode(ExecutionMode.SYNC)
                                       .build();
     GraphVertex graphVertex = graphVertexConverter.convertFrom(nodeExecution, null, null, null);
     assertThat(graphVertex).isNotNull();
     assertThat(graphVertex.getUuid()).isEqualTo(nodeExecution.getUuid());
-    assertThat(graphVertex.getAmbiance()).isEqualTo(ambiance);
+    assertThat(graphVertex.getCurrentLevel()).isEqualTo(AmbianceUtils.obtainCurrentLevel(ambiance));
     assertThat(graphVertex.getPlanNodeId()).isEqualTo("setUpId");
     assertThat(graphVertex.getIdentifier()).isEqualTo("identifier");
     assertThat(graphVertex.getStartTs()).isEqualTo(10L);
@@ -150,7 +151,7 @@ public class GraphVertexConverterTest extends OrchestrationVisualizationTestBase
         NodeExecutionsInfo.builder().resolvedInputs(PmsStepParameters.parse(stepParams)).build(), null);
     assertThat(graphVertex).isNotNull();
     assertThat(graphVertex.getUuid()).isEqualTo(nodeExecution.getUuid());
-    assertThat(graphVertex.getAmbiance()).isEqualTo(ambiance);
+    assertThat(graphVertex.getCurrentLevel()).isEqualTo(AmbianceUtils.obtainCurrentLevel(ambiance));
     assertThat(graphVertex.getPlanNodeId()).isEqualTo("setUpId");
     assertThat(graphVertex.getIdentifier()).isEqualTo("identifier");
     assertThat(graphVertex.getStartTs()).isEqualTo(10L);

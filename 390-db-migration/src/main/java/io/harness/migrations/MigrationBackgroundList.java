@@ -104,6 +104,7 @@ import io.harness.migrations.all.DisableArtifactCollectionForInactiveAccount;
 import io.harness.migrations.all.DisableServiceGuardsWithDeletedConnectorsMigration;
 import io.harness.migrations.all.EncryptDelegateTokenAndStoreAsNewFieldAndDeleteExistingRecordsMigration;
 import io.harness.migrations.all.EncryptDelegateTokenMigration;
+import io.harness.migrations.all.EncryptDelegateTokenViaPagination;
 import io.harness.migrations.all.ExecuteWorkflowAbortActionMigration;
 import io.harness.migrations.all.ExecuteWorkflowRollbackActionMigration;
 import io.harness.migrations.all.ExplodeLogMLFeedbackRecordsMigration;
@@ -439,6 +440,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(253, SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration.class))
         .add(Pair.of(254, UpdateEncryptedTokenToDelegateToken.class))
         .add(Pair.of(255, EncryptDelegateTokenAndStoreAsNewFieldAndDeleteExistingRecordsMigration.class))
+        .add(Pair.of(256, EncryptDelegateTokenViaPagination.class))
         .build();
   }
 }

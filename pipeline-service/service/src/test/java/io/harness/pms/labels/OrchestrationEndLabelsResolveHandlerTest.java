@@ -19,6 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.pipeline.labels.OrchestrationEndLabelsResolveHandler;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
@@ -77,7 +78,7 @@ public class OrchestrationEndLabelsResolveHandlerTest extends CategoryTest {
     doReturn(dummyLabels)
         .when(pmsEngineExpressionService)
         .resolve(ambiance, dummyEntity.getLabels(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
-    orchestrationEndLabelsResolveHandler.onEnd(ambiance);
+    orchestrationEndLabelsResolveHandler.onEnd(ambiance, Status.SUCCEEDED);
 
     verify(pmsEngineExpressionService, times(1))
         .resolve(ambiance, dummyEntity.getLabels(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
@@ -105,7 +106,7 @@ public class OrchestrationEndLabelsResolveHandlerTest extends CategoryTest {
     doReturn(dummyLabels)
         .when(pmsEngineExpressionService)
         .resolve(ambiance, dummyEntity.getLabels(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
-    orchestrationEndLabelsResolveHandler.onEnd(ambiance);
+    orchestrationEndLabelsResolveHandler.onEnd(ambiance, Status.SUCCEEDED);
 
     verify(pmsEngineExpressionService, times(0))
         .resolve(ambiance, dummyEntity.getLabels(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);

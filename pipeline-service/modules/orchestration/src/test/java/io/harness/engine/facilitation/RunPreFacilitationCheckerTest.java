@@ -88,7 +88,6 @@ public class RunPreFacilitationCheckerTest extends OrchestrationTestBase {
                                       .ambiance(ambiance)
                                       .status(Status.QUEUED)
                                       .mode(ExecutionMode.TASK)
-                                      .planNode(planNode)
                                       .startTs(System.currentTimeMillis())
                                       .build();
     mongoTemplate.save(nodeExecution);
@@ -126,7 +125,6 @@ public class RunPreFacilitationCheckerTest extends OrchestrationTestBase {
                                       .ambiance(ambiance)
                                       .status(Status.QUEUED)
                                       .mode(ExecutionMode.TASK)
-                                      .planNode(planNode)
                                       .startTs(System.currentTimeMillis())
                                       .build();
     mongoTemplate.save(nodeExecution);
@@ -170,7 +168,6 @@ public class RunPreFacilitationCheckerTest extends OrchestrationTestBase {
                                       .ambiance(ambiance)
                                       .status(Status.QUEUED)
                                       .mode(ExecutionMode.TASK)
-                                      .planNode(planNode)
                                       .startTs(System.currentTimeMillis())
                                       .build();
     mongoTemplate.save(nodeExecution);

@@ -27,6 +27,7 @@ import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail.SRMAnalysisStepExecutionDetailsKeys;
 import io.harness.cvng.analysis.entities.SRMAnalysisStepInstanceDetails;
+import io.harness.cvng.beans.change.HarnessCDEventMetadata;
 import io.harness.cvng.beans.change.SRMAnalysisStatus;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.client.NextGenService;
@@ -36,6 +37,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ResourceParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
@@ -63,6 +65,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
@@ -92,6 +95,8 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
   @Inject Clock clock;
 
   @Inject MonitoredServiceService monitoredServiceService;
+
+  @Inject ChangeEventService changeEventService;
 
   @Inject MSHealthReportService msHealthReportService;
 
@@ -135,7 +140,11 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
       executionDetails.setArtifactType(optionalArtifactsOutcome.get().getPrimary().getArtifactType());
       executionDetails.setArtifactTag(optionalArtifactsOutcome.get().getPrimary().getTag());
     }
-    return hPersistence.save(executionDetails);
+    String executionDetailId = hPersistence.save(executionDetails);
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        hPersistence.get(SRMAnalysisStepExecutionDetail.class, executionDetailId);
+    changeEventService.mapSRMAnalysisExecutionsToDeploymentActivities(stepExecutionDetail);
+    return executionDetailId;
   }
 
   @Nullable
@@ -249,6 +258,41 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
                      .analysisStatus(analysisStepExecutionDetail.getAnalysisStatus())
                      .build())
         .build();
+  }
+
+  @Override
+  public List<SRMAnalysisStepDetailDTO> getSRMAnalysisSummaries(
+      String monitoredServiceIdentifier, String planExecutionId, String stageId) {
+    List<SRMAnalysisStepExecutionDetail> analysisStepExecutionDetails =
+        hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class)
+            .filter(SRMAnalysisStepExecutionDetailsKeys.planExecutionId, planExecutionId)
+            .filter(SRMAnalysisStepExecutionDetailsKeys.stageId, stageId)
+            .asList();
+    return analysisStepExecutionDetails.stream()
+        .map(SRMAnalysisStepDetailDTO::getDTOFromEntity)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<HarnessCDEventMetadata.SRMAnalysisStepDetails> getSRMAnalysisStepDetails(
+      List<String> executionDetailIds) {
+    List<SRMAnalysisStepExecutionDetail> stepExecutionDetails =
+        hPersistence.createQuery(SRMAnalysisStepExecutionDetail.class)
+            .field(SRMAnalysisStepExecutionDetailsKeys.uuid)
+            .in(executionDetailIds)
+            .asList();
+    return stepExecutionDetails.stream()
+        .map(executionDetails
+            -> HarnessCDEventMetadata.SRMAnalysisStepDetails.builder()
+                   .analysisStatus(executionDetails.getAnalysisStatus())
+                   .monitoredServiceIdentifier(executionDetails.getMonitoredServiceIdentifier())
+                   .analysisStartTime(executionDetails.getAnalysisStartTime())
+                   .analysisEndTime(executionDetails.getAnalysisEndTime())
+                   .analysisDuration(executionDetails.getAnalysisDuration())
+                   .executionDetailIdentifier(executionDetails.getUuid())
+                   .stepName(executionDetails.getStepName())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -392,8 +436,8 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
                 .equal(monitoredServiceIdentifiersWithParams.get(i).getProjectIdentifier()),
             query.criteria(SRMAnalysisStepExecutionDetailsKeys.monitoredServiceIdentifier)
                 .equal(monitoredServiceIdentifiersWithParams.get(i).getIdentifier())));
-        query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime).greaterThanOrEq(startTime.toEpochMilli());
-        query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime).lessThanOrEq(endTime.toEpochMilli());
+        query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime).greaterThanOrEq(startTime.toEpochMilli());
+        query.criteria(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime).lessThan(endTime.toEpochMilli());
       }
 
     } else {
@@ -402,11 +446,11 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
                   .filter(SRMAnalysisStepExecutionDetailsKeys.projectIdentifier, projectParams.getProjectIdentifier())
                   .field(SRMAnalysisStepExecutionDetailsKeys.monitoredServiceIdentifier)
                   .in(monitoredServiceIdentifiers)
-                  .field(SRMAnalysisStepExecutionDetailsKeys.analysisEndTime)
+                  .field(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime)
                   .greaterThanOrEq(startTime.toEpochMilli())
                   .field(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime)
-                  .lessThanOrEq(endTime.toEpochMilli());
+                  .lessThan(endTime.toEpochMilli());
     }
-    return query;
+    return query.order(Sort.descending(SRMAnalysisStepExecutionDetailsKeys.analysisStartTime));
   }
 }

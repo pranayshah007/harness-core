@@ -908,13 +908,6 @@ public class ViewsQueryBuilder {
       isLabelsPresent = !labelKeysListInCustomFields.isEmpty();
     }
 
-    if (!businessMappings.isEmpty()) {
-      List<String> labelKeysListInBusinessMappings =
-          modifyQueryForBusinessMappingFilterValues(query, businessMappings, false);
-      labelKeysList.addAll(labelKeysListInBusinessMappings);
-      isLabelsPresent = !labelKeysListInBusinessMappings.isEmpty();
-    }
-
     labelKeysList.addAll(collectLabelKeysList(rules, filters));
     if ((isLabelsPresent || evaluateLabelsPresent(rules, filters)) && !isSharedCostOuterQuery) {
       decorateQueryWithLabelsMetadata(query, true, labelKeysList, getIsLabelsKeyFilterQuery(filters));
@@ -1163,39 +1156,6 @@ public class ViewsQueryBuilder {
       if (!labelsKeysList.isEmpty()) {
         List<ViewField> customFieldViewFields = customField.getViewFields();
         for (ViewField viewField : customFieldViewFields) {
-          if (viewField.getIdentifier() != ViewFieldIdentifier.LABEL) {
-            listOfNotNullEntities.add(viewField.getFieldId());
-          }
-        }
-      }
-    }
-    if (!labelsKeysListAcrossCustomFields.isEmpty()) {
-      String[] labelsKeysListAcrossCustomFieldsStringArray =
-          labelsKeysListAcrossCustomFields.toArray(new String[labelsKeysListAcrossCustomFields.size()]);
-
-      List<Condition> conditionList = new ArrayList<>();
-      for (String fieldId : listOfNotNullEntities) {
-        conditionList.add(UnaryCondition.isNotNull(new CustomSql(fieldId)));
-      }
-      conditionList.add(new InCondition(
-          new CustomSql(LABEL_KEY_UN_NESTED.getFieldName()), (Object[]) labelsKeysListAcrossCustomFieldsStringArray));
-      selectQuery.addCondition(getSqlOrCondition(conditionList));
-    }
-    return labelsKeysListAcrossCustomFields;
-  }
-
-  private List<String> modifyQueryForBusinessMappingFilterValues(
-      SelectQuery selectQuery, List<ViewField> businessMappings, boolean includeSharedCostRules) {
-    List<String> labelsKeysListAcrossCustomFields = new ArrayList<>();
-    List<String> listOfNotNullEntities = new ArrayList<>();
-    for (ViewField field : businessMappings) {
-      BusinessMapping businessMapping = businessMappingService.get(field.getFieldId());
-      final List<String> labelsKeysList = getLabelsKeyListFromBusinessMapping(businessMapping, includeSharedCostRules);
-      labelsKeysListAcrossCustomFields.addAll(labelsKeysList);
-      if (!labelsKeysList.isEmpty()) {
-        List<ViewField> viewFieldsFromBusinessMapping =
-            getViewFieldsFromBusinessMapping(businessMapping, includeSharedCostRules);
-        for (ViewField viewField : viewFieldsFromBusinessMapping) {
           if (viewField.getIdentifier() != ViewFieldIdentifier.LABEL) {
             listOfNotNullEntities.add(viewField.getFieldId());
           }

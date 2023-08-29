@@ -8,7 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
-import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
+import static io.harness.ngtriggers.beans.source.artifact.ArtifactoryRegistrySpec.ArtifactoryRegistrySpecBuilder;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.utils.RepositoryType.docker;
@@ -36,7 +36,6 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,28 +67,32 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
   public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     String connectorRef = getConnectorRef(migratedEntities, artifactStream);
-    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
     String imagePath = PLEASE_FIX_ME;
     String repository = PLEASE_FIX_ME;
     String format = docker.name();
     String repositoryUrl = "";
+    boolean isDockerFormat = true;
     if (artifactStream != null) {
       ArtifactoryArtifactStream stream = (ArtifactoryArtifactStream) artifactStream;
       imagePath = stream.getImageName();
       repository = stream.getJobname();
-      format = docker.name().equals(stream.getRepositoryType()) ? docker.name() : "generic";
+      isDockerFormat = docker.name().equals(stream.getRepositoryType());
+      format = isDockerFormat ? docker.name() : "generic";
       repositoryUrl = stream.getDockerRepositoryServer();
     }
-
-    return ArtifactoryRegistrySpec.builder()
-        .connectorRef(connectorRef)
-        .eventConditions(eventConditions)
-        .repositoryFormat(format)
-        .repository(repository)
-        .repositoryUrl(repositoryUrl)
-        .artifactDirectory(imagePath)
-        .artifactPath(TRIGGER_TAG_VALUE_DEFAULT)
-        .build();
+    ArtifactoryRegistrySpecBuilder artifactoryRegistrySpecBuilder = ArtifactoryRegistrySpec.builder()
+                                                                        .connectorRef(connectorRef)
+                                                                        .eventConditions(eventConditions)
+                                                                        .repositoryFormat(format)
+                                                                        .repository(repository)
+                                                                        .repositoryUrl(repositoryUrl);
+    if (isDockerFormat) {
+      artifactoryRegistrySpecBuilder.artifactPath(imagePath);
+    } else {
+      artifactoryRegistrySpecBuilder.artifactDirectory(imagePath);
+    }
+    return artifactoryRegistrySpecBuilder.build();
   }
 
   private ArtifactoryRegistryArtifactConfig generateDockerConfig(

@@ -100,6 +100,34 @@ public interface NGTriggerEventHistoryResource {
       @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort);
 
   @GET
+  @Path("/artifact-manifest-info")
+  @ApiOperation(value = "Get artifact and manifest trigger event history based on build source type",
+      nickname = "triggerEventHistoryBuildSourceType")
+  @Operation(operationId = "triggerEventHistoryBuildSourceType",
+      summary = "Get artifact and manifest trigger event history based on build source type",
+      description = "Get artifact and manifest trigger event history based on build source type",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Trigger Event History response")
+      })
+  ResponseDTO<Page<NGTriggerEventHistoryDTO>>
+  listTriggerEventHistory(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @Parameter(description = "Type of artifact source") @QueryParam("artifactType") String artifactType,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
+      @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort);
+
+  @GET
   @Path("/eventCorrelation/{eventCorrelationId}")
   @ApiOperation(value = "Get Trigger history event correlation", nickname = "triggerHistoryEventCorrelation")
   @Operation(operationId = "triggerHistoryEventCorrelation", summary = "Get Trigger history event correlation",

@@ -7,8 +7,15 @@
 
 package io.harness.delegate.app.modules.platform;
 
+import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.network.Localhost.getLocalHostName;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.service.DelegateAgentService;
+import io.harness.delegate.service.common.config.DelegateContext;
 import io.harness.delegate.service.core.CoreDelegateService;
 import io.harness.exception.KeyManagerBuilderException;
 import io.harness.exception.TrustManagerBuilderException;
@@ -73,6 +80,22 @@ public class DelegateCommonModule extends AbstractModule {
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(DelegateConfiguration.class).toInstance(configuration);
     bind(DelegateAgentService.class).to(CoreDelegateService.class);
+
+    final String hostName = getLocalHostName();
+    final String groupName = System.getenv("DELEGATE_GROUP_NAME");
+    final String delegateName = isNotBlank(System.getenv("DELEGATE_NAME")) ? System.getenv("DELEGATE_NAME") : "";
+    final String groupId = System.getenv("DELEGATE_GROUP_ID");
+    final String tags = System.getenv("DELEGATE_TAGS");
+    final String delegateType = System.getenv("DELEGATE_TYPE");
+    final boolean ng =
+        isNotBlank(System.getenv("DELEGATE_SESSION_IDENTIFIER")) || Boolean.parseBoolean(System.getenv("NEXT_GEN"));
+    final String instanceId = generateUuid();
+    final String orgIdentifier = System.getenv("DELEGATE_ORG_IDENTIFIER");
+    final String projectIdentifier = System.getenv("DELEGATE_PROJECT_IDENTIFIER");
+    final String connectionId = generateTimeBasedUuid();
+    bind(DelegateContext.class)
+        .toInstance(new DelegateContext(hostName, instanceId, connectionId, ng, delegateType, delegateName, groupName,
+            orgIdentifier, projectIdentifier, groupId, tags));
     // FixMe: Might be needed when we support back secrets
     //        bind(SecretsDelegateCacheHelperService.class).to(SecretsDelegateCacheHelperServiceImpl.class);
     //        bind(DelegatePropertyService.class).to(DelegatePropertyServiceImpl.class);
@@ -86,7 +109,7 @@ public class DelegateCommonModule extends AbstractModule {
   }
 
   private void bindExceptionHandlers() {
-    MapBinder<Class<? extends Exception>, ExceptionHandler> exceptionHandlerMapBinder = MapBinder.newMapBinder(
+    MapBinder.newMapBinder(
         binder(), new TypeLiteral<Class<? extends Exception>>() {}, new TypeLiteral<ExceptionHandler>() {});
   }
 }

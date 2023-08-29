@@ -18,6 +18,7 @@ java_library(
     deps = [
         "//:lombok",
         "//930-ng-core-clients:module",
+        "//950-telemetry:module",
         "//953-events-api:module",
         "//955-filters-sdk:module",
         "//955-outbox-sdk:module",

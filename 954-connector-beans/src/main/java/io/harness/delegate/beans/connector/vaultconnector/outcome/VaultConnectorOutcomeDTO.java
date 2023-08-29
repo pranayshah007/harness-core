@@ -21,6 +21,7 @@ import static io.harness.SecretManagerDescriptionConstants.VAULT_K8S_AUTH_ROLE;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.SecretManagerDescriptionConstants;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
@@ -41,6 +42,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("io.harness.delegate.beans.connector.vaultconnector.outcome.VaultConnectorOutcomeDTO")
 public class VaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @SecretReference @Schema(description = SecretManagerDescriptionConstants.AUTH_TOKEN) private SecretRefData authToken;
   @Schema(description = SecretManagerDescriptionConstants.BASE_PATH) private String basePath;

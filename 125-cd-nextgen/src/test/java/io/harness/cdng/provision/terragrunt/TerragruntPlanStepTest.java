@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -24,6 +25,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.manifest.yaml.TerragruntCommandFlagType;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome;
@@ -157,6 +159,10 @@ public class TerragruntPlanStepTest extends CategoryTest {
                                .environmentVariables(envVars)
                                .workspace(ParameterField.createValueField("test-workspace"))
                                .secretManagerRef(ParameterField.createValueField("test-secretManager"))
+                               .cliOptionFlags(List.of(TerragruntCliOptionFlag.builder()
+                                                           .commandType(TerragruntCommandFlagType.PLAN)
+                                                           .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                                           .build()))
                                .build())
             .build();
 
@@ -184,12 +190,18 @@ public class TerragruntPlanStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("PLAN", "-lock-timeout=0s"); }
+    })
+        .when(terragruntStepHelper)
+        .getTerragruntCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
 
     terragruntPlanStep.obtainTaskAfterRbac(getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Plan Task"), any(), any());
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Plan Task V2"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerragruntPlanTaskParameters params =
@@ -207,6 +219,7 @@ public class TerragruntPlanStepTest extends CategoryTest {
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
         .isEqualTo("test-backend-id");
     assertThat(((GitStoreDelegateConfig) params.getConfigFilesStore()).getConnectorName()).isEqualTo("terragrunt");
+    assertThat(params.getTerragruntCommandFlags().get("PLAN")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test

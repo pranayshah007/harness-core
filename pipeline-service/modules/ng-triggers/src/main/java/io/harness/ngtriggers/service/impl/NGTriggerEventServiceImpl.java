@@ -76,6 +76,29 @@ public class NGTriggerEventServiceImpl implements NGTriggerEventsService {
   }
 
   @Override
+  public Criteria formTriggerEventCriteria(
+      String accountId, String orgId, String projectId, String targetIdentifier, String artifactType) {
+    Criteria criteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(accountId)) {
+      criteria.and(TriggerEventHistoryKeys.accountId).is(accountId);
+    }
+    if (EmptyPredicate.isNotEmpty(orgId)) {
+      criteria.and(TriggerEventHistoryKeys.orgIdentifier).is(orgId);
+    }
+    if (EmptyPredicate.isNotEmpty(projectId)) {
+      criteria.and(TriggerEventHistoryKeys.projectIdentifier).is(projectId);
+    }
+    if (EmptyPredicate.isNotEmpty(targetIdentifier)) {
+      criteria.and(TriggerEventHistoryKeys.targetIdentifier).is(targetIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(artifactType)) {
+      criteria.and(TriggerEventHistoryKeys.buildSourceType).is(artifactType);
+    }
+
+    return criteria;
+  }
+
+  @Override
   public Criteria formTriggerEventCriteria(String accountId, String orgId, String projectId, String targetIdentifier,
       String identifier, String searchTerm, List<ExecutionStatus> statusList) {
     Criteria criteria = new Criteria();

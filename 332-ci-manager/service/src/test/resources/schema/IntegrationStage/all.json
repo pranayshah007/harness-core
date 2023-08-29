@@ -3447,8 +3447,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
@@ -4901,8 +4900,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
@@ -5039,8 +5037,7 @@
           "enum": [
             "KubernetesDirect",
             "UseFromStage",
-            "VM",
-            "KubernetesHosted"
+            "VM"
           ]
         }
       },
@@ -5252,6 +5249,9 @@
               "type": "string"
             }
           ]
+        },
+        "slsa": {
+          "$ref": "#/definitions/SlsaConfig"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5621,8 +5621,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }
@@ -6731,7 +6730,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -7542,7 +7541,8 @@
             "Kotlin",
             "Scala",
             "Csharp",
-            "Python"
+            "Python",
+            "Ruby"
           ]
         },
         "executionInput": {
@@ -7573,7 +7573,8 @@
             "Kotlin",
             "Scala",
             "Csharp",
-            "Python"
+            "Python",
+            "Ruby"
           ]
         }
       },
@@ -9068,7 +9069,8 @@
                     "Nunitconsole",
                     "SBT",
                     "Pytest",
-                    "Unittest"
+                    "Unittest",
+                    "Rspec"
                   ]
                 },
                 {
@@ -9142,7 +9144,8 @@
                     "Kotlin",
                     "Scala",
                     "Csharp",
-                    "Python"
+                    "Python",
+                    "Ruby"
                   ]
                 },
                 {
@@ -10017,6 +10020,15 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SbomFile": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SbomOrchestrationSpec": {
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -10228,7 +10240,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -10655,6 +10667,27 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaConfig": {
+      "type": "object",
+      "properties": {
+        "attestation": {
+          "$ref": "#/definitions/Attestation"
+        },
+        "enabled": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "SniperStepInfo": {
@@ -11108,12 +11141,21 @@
         {
           "type": "object",
           "required": [
-            "source",
-            "tool"
+            "source"
           ],
           "properties": {
             "attestation": {
               "$ref": "#/definitions/Attestation"
+            },
+            "ingestion": {
+              "$ref": "#/definitions/SbomFile"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "generation",
+                "ingestion"
+              ]
             },
             "resources": {
               "$ref": "#/definitions/ContainerResource"
@@ -12651,7 +12693,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -13122,7 +13164,8 @@
                     "nunit_console",
                     "sbt",
                     "pytest",
-                    "unittest"
+                    "unittest",
+                    "rspec"
                   ]
                 },
                 {
@@ -13616,8 +13659,7 @@
               "enum": [
                 "KubernetesDirect",
                 "UseFromStage",
-                "VM",
-                "KubernetesHosted"
+                "VM"
               ]
             }
           }

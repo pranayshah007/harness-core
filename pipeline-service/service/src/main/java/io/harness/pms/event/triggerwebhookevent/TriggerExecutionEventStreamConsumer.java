@@ -9,6 +9,7 @@ package io.harness.pms.event.triggerwebhookevent;
 
 import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM;
+import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +22,7 @@ import io.harness.security.dto.ServicePrincipal;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,8 +33,8 @@ public class TriggerExecutionEventStreamConsumer extends PmsAbstractRedisConsume
   @Inject
   public TriggerExecutionEventStreamConsumer(@Named(TRIGGER_EXECUTION_EVENTS_STREAM) Consumer redisConsumer,
       TriggerExecutionEventStreamListener messageListener, @Named("pmsEventsCache") Cache<String, Integer> eventsCache,
-      QueueController queueController) {
-    super(redisConsumer, messageListener, eventsCache, queueController);
+      QueueController queueController, @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
+    super(redisConsumer, messageListener, eventsCache, queueController, executorService);
   }
 
   @Override

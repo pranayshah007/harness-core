@@ -7,74 +7,75 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
-import static io.harness.idp.scorecard.datasources.constants.Constants.GITHUB_PROVIDER;
+import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
+import static io.harness.idp.common.Constants.GITHUB_TOKEN;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
+import io.harness.beans.DecryptedSecretValue;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
+import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
+import io.harness.idp.envvariable.repositories.BackstageEnvVariableRepository;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
-import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
+import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
-import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import lombok.AllArgsConstructor;
 
 @OwnedBy(HarnessTeam.IDP)
-
-@AllArgsConstructor(onConstructor = @__({ @Inject }))
-public class GithubProvider implements DataSourceProvider {
-  private DataSourceLocationFactory dataSourceLocationFactory;
-  private DataPointParserFactory dataPointParserFactory;
-  private DataPointService dataPointService;
-
-  @Override
-  public String getProviderIdentifier() {
-    return GITHUB_PROVIDER;
+public class GithubProvider extends DataSourceProvider {
+  protected GithubProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
+      DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
+      BackstageEnvVariableRepository backstageEnvVariableRepository, SecretManagerClientService ngSecretService) {
+    super(GITHUB_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+        dataPointParserFactory);
+    this.backstageEnvVariableRepository = backstageEnvVariableRepository;
+    this.ngSecretService = ngSecretService;
   }
+
+  final BackstageEnvVariableRepository backstageEnvVariableRepository;
+  final SecretManagerClientService ngSecretService;
 
   @Override
   public Map<String, Map<String, Object>> fetchData(
       String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
-    Set<String> dataPointIdentifiers = dataPointsAndInputValues.keySet();
-    Map<String, List<DataPointEntity>> dataToFetch = dataPointService.getDslDataPointsInfo(
-        accountIdentifier, new ArrayList<>(dataPointIdentifiers), this.getProviderIdentifier());
+    Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier);
+    Map<String, String> replaceableHeaders = new HashMap<>(authHeaders);
 
-    Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
+    String catalogLocation = entity.getMetadata().getAnnotations().get("backstage.io/managed-by-location");
+    Map<String, String> possibleReplaceableRequestBodyPairs = prepareRequestBodyReplaceablePairs(catalogLocation);
 
-    for (String dslIdentifier : dataToFetch.keySet()) {
-      Map<String, Set<String>> dataToFetchWithInputValues = new HashMap<>();
-      dataToFetch.get(dslIdentifier)
-          .forEach(dataPointEntity
-              -> dataToFetchWithInputValues.put(
-                  dataPointEntity.getIdentifier(), dataPointsAndInputValues.get(dataPointEntity.getIdentifier())));
+    return processOut(
+        accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders, possibleReplaceableRequestBodyPairs);
+  }
 
-      DataSourceLocation dataSourceLocation = dataSourceLocationFactory.getDataSourceLocation(dslIdentifier);
-      Map<String, Object> response =
-          dataSourceLocation.fetchData(accountIdentifier, entity, dslIdentifier, dataToFetchWithInputValues);
+  @Override
+  public Map<String, String> getAuthHeaders(String accountIdentifier) {
+    BackstageEnvSecretVariableEntity backstageEnvSecretVariableEntity =
+        (BackstageEnvSecretVariableEntity) backstageEnvVariableRepository
+            .findByEnvNameAndAccountIdentifier(GITHUB_TOKEN, accountIdentifier)
+            .orElse(null);
+    assert backstageEnvSecretVariableEntity != null;
+    String secretIdentifier = backstageEnvSecretVariableEntity.getHarnessSecretIdentifier();
+    DecryptedSecretValue decryptedValue =
+        ngSecretService.getDecryptedSecretValue(accountIdentifier, null, null, secretIdentifier);
+    return Map.of(AUTHORIZATION_HEADER, "Bearer " + decryptedValue.getDecryptedValue());
+  }
 
-      Map<String, Object> dataPointValues = new HashMap<>();
-      for (Map.Entry<String, Set<String>> entry : dataToFetchWithInputValues.entrySet()) {
-        String dataPointIdentifier = entry.getKey();
-        Set<String> inputValues = entry.getValue();
-        DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPointIdentifier);
-        Object values = dataPointParser.parseDataPoint(response, dataPointIdentifier, inputValues);
-        if (values != null) {
-          dataPointValues.put(dataPointIdentifier, values);
-        }
-      }
-      Map<String, Object> providerData = aggregatedData.getOrDefault(getProviderIdentifier(), new HashMap<>());
-      providerData.putAll(dataPointValues);
-      aggregatedData.put(getProviderIdentifier(), providerData);
-    }
+  private Map<String, String> prepareRequestBodyReplaceablePairs(String catalogLocation) {
+    Map<String, String> possibleReplaceableRequestBodyPairs = new HashMap<>();
 
-    return aggregatedData;
+    String[] catalogLocationParts = catalogLocation.split("/");
+
+    possibleReplaceableRequestBodyPairs.put(REPO_SCM, catalogLocationParts[2]);
+    possibleReplaceableRequestBodyPairs.put(REPOSITORY_OWNER, catalogLocationParts[3]);
+    possibleReplaceableRequestBodyPairs.put(REPOSITORY_NAME, catalogLocationParts[4]);
+    possibleReplaceableRequestBodyPairs.put(REPOSITORY_BRANCH, catalogLocationParts[6]);
+
+    return possibleReplaceableRequestBodyPairs;
   }
 }

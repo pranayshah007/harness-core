@@ -6,6 +6,7 @@
  */
 
 package io.harness.gitsync.common.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.gitsync.common.beans.BranchSyncStatus.UNSYNCED;
@@ -766,6 +767,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                                 scmCommitFileResponseDTO.getCommitId(), gitRepositoryDTO))
                             .setRepoUrl(scmFacilitatorService.getRepoUrl(
                                 scope, createFileRequest.getConnectorRef(), createFileRequest.getRepoName()))
+                            .setIsGitDefaultBranch(scmCommitFileResponseDTO.isGitDefaultBranch())
                             .build())
         .build();
   }
@@ -784,6 +786,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                             .setFileUrl(gitFilePathHelper.getFileUrl(scope, updateFileRequest.getConnectorRef(),
                                 updateFileRequest.getBranchName(), updateFileRequest.getFilePath(),
                                 scmCommitFileResponseDTO.getCommitId(), gitRepositoryDTO))
+                            .setIsGitDefaultBranch(scmCommitFileResponseDTO.isGitDefaultBranch())
                             .build())
         .build();
   }

@@ -57,4 +57,10 @@ public class Constants {
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   public static final String DOT_SEPARATOR = ".";
   public static final String SPACE_SEPARATOR = " ";
+  public static final String SUCCESS_RESPONSE = "SUCCESS";
+
+  public static final String HARNESS_IDENTIFIER = "harness";
+  public static final String GITHUB_IDENTIFIER = "gitHub";
+  public static final String CATALOG_IDENTIFIER = "catalog";
+  public static final String CUSTOM_IDENTIFIER = "custom";
 }

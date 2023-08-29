@@ -3,6 +3,13 @@ kind: ConfigMap
 metadata:
   name: {{ include "change-data-capture.name" . }}
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotation }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE }}
   MEMORY: {{ .Values.config.MEMORY | quote }}

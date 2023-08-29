@@ -73,6 +73,7 @@ public class InstanceDetailsMapper {
         .instanceInfoDTO(instanceDTO.getInstanceInfoDTO())
         .instanceKey(instanceDTO.getInstanceKey())
         .infrastructureMappingId(instanceDTO.getInfrastructureMappingId())
+        .rollbackStatus(instanceDTO.getRollbackStatus())
         // TODO set terraform instance
         .build();
   }

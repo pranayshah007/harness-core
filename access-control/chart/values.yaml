@@ -8,6 +8,8 @@
 # --global.imagePullSecrets Global Docker registry secret names as an array
 # --global.storageClass Global StorageClass for Persistent Volume(s)
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   kubeVersion: ""
   loadbalancerURL: ""
   ha: true
@@ -58,6 +60,10 @@ global:
       userKey: "redis-user"
       passwordKey: "redis-password"
       extraArgs: ""
+  monitoring:
+    enabled: false
+    port: 8889
+    path: /metrics
 
   ingress:
     # -- create ingress objects
@@ -183,7 +189,7 @@ image:
   registry: docker.io
   repository: harness/accesscontrol-service-signed
   pullPolicy: IfNotPresent
-  tag: "79300"
+  tag: "79802"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
@@ -255,6 +261,7 @@ containerSecurityContext:
   # runAsUser: 1000
 
 service:
+  annotations: {}
   type: ClusterIP
   port: 9006
 ## Pod resource requests and limits
@@ -465,3 +472,9 @@ mongoSSL:
 
 # -- additionalConfigs Additional configurations for the deployment
 additionalConfigs: {}
+java17flags: ""
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

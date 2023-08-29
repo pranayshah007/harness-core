@@ -15,6 +15,8 @@ import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CvNextGenTestBase;
@@ -75,6 +77,9 @@ public class SLIDataUnavailabilityFilterServiceImplTest extends CvNextGenTestBas
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     EntityUnavailabilityStatusesDTO downtimeEntityUnavailabilityStatusesDTO =
         builderFactory.getDowntimeEntityUnavailabilityStatusesDTO();
+    doReturn(new ArrayList<>())
+        .when(entityUnavailabilityStatusesService)
+        .getAllDataCollectionFailureInstances(any(), anyString(), anyLong(), anyLong());
     doReturn(Collections.singletonList(downtimeEntityUnavailabilityStatusesDTO))
         .when(entityUnavailabilityStatusesService)
         .getAllInstances(any(), any(), any());
@@ -98,9 +103,11 @@ public class SLIDataUnavailabilityFilterServiceImplTest extends CvNextGenTestBas
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     EntityUnavailabilityStatusesDTO sloEntityUnavailabilityStatusesDTO =
         builderFactory.getSLOEntityUnavailabilityStatusesDTO();
+    doReturn(new ArrayList<>()).when(entityUnavailabilityStatusesService).getAllInstances(any(), any(), any());
     doReturn(Collections.singletonList(sloEntityUnavailabilityStatusesDTO))
         .when(entityUnavailabilityStatusesService)
-        .getAllInstances(builderFactory.getProjectParams(), startTime.getEpochSecond(),
+        .getAllDataCollectionFailureInstances(builderFactory.getProjectParams(),
+            sloEntityUnavailabilityStatusesDTO.getEntityId(), startTime.getEpochSecond(),
             startTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
     List<SLIRecordParam> updatedSliRecordParams = sliDataUnavailabilityFilterService.filterSLIRecordsToSkip(
         sliRecordParams, builderFactory.getProjectParams(), startTime, startTime.plus(10, ChronoUnit.MINUTES),

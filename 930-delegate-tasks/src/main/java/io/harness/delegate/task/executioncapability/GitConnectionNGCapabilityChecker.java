@@ -17,6 +17,7 @@ import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
@@ -48,8 +49,9 @@ public class GitConnectionNGCapabilityChecker implements CapabilityCheck {
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     GitConnectionNGCapability capability = (GitConnectionNGCapability) delegateCapability;
     try {
-      if (capability.isOptimizedFilesFetch()) {
-        checkCapabilityForScm(capability.getGitConfig(), capability.getEncryptedDataDetails());
+      ScmConnector scmConnector = capability.getGitConfig();
+      if (scmConnector instanceof GithubConnectorDTO) {
+        checkCapabilityForScm(scmConnector, capability.getEncryptedDataDetails());
       } else {
         checkCapabilityForJgit(capability);
       }

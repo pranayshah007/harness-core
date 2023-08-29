@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ci.execution.CIAccountExecutionMetadata;
+import io.harness.ci.execution.execution.CIAccountExecutionMetadata;
 
 import java.util.Optional;
 import org.springframework.data.repository.PagingAndSortingRepository;

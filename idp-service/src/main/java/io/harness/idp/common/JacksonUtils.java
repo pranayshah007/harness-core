@@ -24,15 +24,31 @@ public class JacksonUtils {
 
   private static final ObjectMapper mapper = new ObjectMapper();
 
-  public static <T> List<T> convert(String entities, Class<?> clazz) {
+  public static <T> List<T> readValue(String entities, Class<?> clazz) {
     try {
       Class<?> clz = Class.forName(clazz.getName());
       JavaType type = mapper.getTypeFactory().constructCollectionType(List.class, clz);
       return mapper.readValue(entities, type);
     } catch (ClassNotFoundException | JsonProcessingException e) {
-      log.error("Error in converting json string to corresponding list<clazz> pojo's. Error = {}", e.getMessage(), e);
+      log.error("Error in readValue json string to corresponding list<clazz> pojo's. Error = {}", e.getMessage(), e);
       throw new UnexpectedException(
-          "Error in converting json string to corresponding list<clazz> pojo's. Error = " + e.getMessage());
+          "Error in readValue json string to corresponding list<clazz> pojo's. Error = " + e.getMessage());
+    }
+  }
+
+  public static <T> List<T> convert(Object entities, Class<?> clazz) {
+    return convert(mapper, entities, clazz);
+  }
+
+  public static <T> List<T> convert(ObjectMapper mapper, Object entities, Class<?> clazz) {
+    try {
+      Class<?> clz = Class.forName(clazz.getName());
+      JavaType type = mapper.getTypeFactory().constructCollectionType(List.class, clz);
+      return mapper.convertValue(entities, type);
+    } catch (ClassNotFoundException e) {
+      log.error("Error in convert json string to corresponding list<clazz> pojo's. Error = {}", e.getMessage(), e);
+      throw new UnexpectedException(
+          "Error in convert json string to corresponding list<clazz> pojo's. Error = " + e.getMessage());
     }
   }
 }

@@ -40,11 +40,11 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CDC)
 public class AwsLambdaServiceV2Mapper implements ServiceV2Mapper {
   private static final String LAMBDA_REQUEST_FORMAT = "{\n"
-      + "   \"FunctionName\": \"%s\",\n"
-      + "   \"Handler\": \"%s\",\n"
-      + "   \"MemorySize\": %d,\n"
-      + "   \"Runtime\": \"%s\",\n"
-      + "   \"Timeout\": %d\n"
+      + "   \"functionName\": \"%s\",\n"
+      + "   \"handler\": \"%s\",\n"
+      + "   \"memorySize\": %d,\n"
+      + "   \"runtime\": \"%s\",\n"
+      + "   \"timeout\": %d\n"
       + "}";
 
   @Override

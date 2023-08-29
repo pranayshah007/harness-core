@@ -203,7 +203,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         PipelineEntity createdEntity;
         PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
         createdEntity = pipelineCRUDResult.getPipelineEntity();
-
+        computeReferencesIfRemotePipeline(createdEntity);
         try {
           String branchInRequest = GitAwareContextHelper.getBranchInRequest();
           pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,
@@ -509,6 +509,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
       PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+      computeReferencesIfRemotePipeline(updatedEntity);
       try {
         String branchInRequest = GitAwareContextHelper.getBranchInRequest();
         pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(updatedEntity,
@@ -1051,5 +1052,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         accountIdentifier, orgIdentifier, projIdentifier, EntityType.PIPELINES);
     gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
     gitXSettingsHelper.setDefaultRepoForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+  }
+
+  private void computeReferencesIfRemotePipeline(PipelineEntity pipelineEntity) {
+    if (PipelineGitXHelper.shouldPublishSetupUsages(pipelineEntity.getStoreType())) {
+      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity);
+    }
   }
 }

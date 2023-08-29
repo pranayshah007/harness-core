@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.terraform;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,6 +41,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("terraformConfig")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.cdng.provision.terraform.TerraformConfig")
 public class TerraformConfig implements PersistentEntity, CreatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

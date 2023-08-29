@@ -44,10 +44,10 @@ fi
 
 # 2. Build config.yml
 echo "accountId: $ACCOUNT_ID" >> config.yml
-if [ ! -e $ACCOUNT_SECRET ]; then
-  echo "delegateToken: $ACCOUNT_SECRET" >> config.yml
-else
+if [ ! -e $DELEGATE_TOKEN ]; then
   echo "delegateToken: $DELEGATE_TOKEN" >> config.yml
+else
+  echo "delegateToken: $ACCOUNT_SECRET" >> config.yml
 fi
 echo "delegateName: $DELEGATE_NAME" >> config.yml
 echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config.yml

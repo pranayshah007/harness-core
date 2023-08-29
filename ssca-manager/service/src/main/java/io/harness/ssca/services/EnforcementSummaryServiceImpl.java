@@ -16,6 +16,7 @@ import io.harness.ssca.entities.EnforcementSummaryEntity;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Optional;
 
 public class EnforcementSummaryServiceImpl implements EnforcementSummaryService {
   @Inject EnforcementSummaryRepo enforcementSummaryRepo;
@@ -43,5 +44,11 @@ public class EnforcementSummaryServiceImpl implements EnforcementSummaryService 
 
     EnforcementSummaryEntity savedEntity = enforcementSummaryRepo.save(summary);
     return savedEntity.getStatus();
+  }
+
+  @Override
+  public Optional<EnforcementSummaryEntity> getEnforcementSummary(
+      String accountId, String orgIdentifier, String projectIdentifier, String enforcementId) {
+    return enforcementSummaryRepo.findByEnforcementId(enforcementId);
   }
 }

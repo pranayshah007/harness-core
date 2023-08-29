@@ -303,7 +303,9 @@ public class EngineExpressionEvaluator {
         if (evaluatedExpression == null && replacerResponse.isOriginalExpressionAltered()) {
           Object evaluateExpressionBlock =
               evaluateExpressionBlock(replacerResponse.getFinalExpressionValue(), ctx, depth - 1, expressionMode);
-          if (evaluateExpressionBlock == null && replacerResponse.isOnlyRenderedExpressions()) {
+          if (isExpressionResolvedValueSameAsGivenExpression(
+                  evaluateExpressionBlock, replacerResponse.getFinalExpressionValue(), expressionMode)
+              && replacerResponse.isOnlyRenderedExpressions()) {
             return replacerResponse.getFinalExpressionValue();
           } else {
             return evaluateExpressionBlock;
@@ -344,6 +346,23 @@ public class EngineExpressionEvaluator {
           JexlRuntimeExceptionHandler.getExplanationMessage(ex),
           new EngineExpressionEvaluationException("Expression evaluation failed", expression));
     }
+  }
+
+  private boolean isExpressionResolvedValueSameAsGivenExpression(
+      Object evaluatedExpression, String originalExpression, ExpressionMode expressionMode) {
+    if (evaluatedExpression == null) {
+      return true;
+    }
+
+    // for RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED, same expression will be returned
+    if (evaluatedExpression instanceof String
+        && expressionMode.equals(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)) {
+      if ((ExpressionConstants.EXPR_START + originalExpression + ExpressionConstants.EXPR_END)
+              .equals(evaluatedExpression)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public PartialEvaluateResult partialRenderExpression(String expression) {

@@ -7,6 +7,8 @@
 
 package io.harness.perpetualtask.example;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.http.HttpTaskParameters;
@@ -41,11 +43,12 @@ public class SamplePerpetualTaskServiceClient implements PerpetualTaskServiceCli
     return DelegateTask.builder()
         .accountId(accountId)
         .data(TaskData.builder()
-                  .async(false)
+                  .async(true)
                   .taskType(TaskType.HTTP.name())
                   .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
                   .timeout(TimeUnit.MINUTES.toMillis(1))
                   .build())
+        .waitId(generateUuid())
         .build();
   }
 }

@@ -169,7 +169,8 @@ public enum ExecutionNodeType {
   AWS_CDK_SYNTH("AWS_CDK_SYNTH", YamlTypes.AWS_CDK_SYNTH),
   AWS_CDK_DIFF("AWS_CDK_DIFF", YamlTypes.AWS_CDK_DIFF),
   AWS_CDK_DEPLOY("AWS_CDK_DEPLOY", YamlTypes.AWS_CDK_DEPLOY),
-  AWS_CDK_DESTROY("AWS_CDK_DESTROY", YamlTypes.AWS_CDK_DESTROY);
+  AWS_CDK_DESTROY("AWS_CDK_DESTROY", YamlTypes.AWS_CDK_DESTROY),
+  AWS_CDK_ROLLBACK("AWS_CDK_ROLLBACK", YamlTypes.AWS_CDK_ROLLBACK);
 
   private final String name;
   private final String yamlType;

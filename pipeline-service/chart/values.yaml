@@ -2,7 +2,13 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  monitoring:
+    enabled: false
+    port: 8889
+    path: /metrics
   kubeVersion: ""
+  commonAnnotations: {}
+  commonLabels: {}
   loadbalancerURL: ""
   stackDriverLoggingEnabled: false
   database:
@@ -68,7 +74,7 @@ global:
       secretName: ''
     # -- add annotations to ingress objects
     objects:
-      annotations: { }
+      annotations: {}
   istio:
     # -- create virtualServices objects
     enabled: false
@@ -93,7 +99,7 @@ image:
   repository: harness/pipeline-service-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.37.12"
+  tag: "1.41.3"
   imagePullSecrets: []
 
 waitForInitContainer:
@@ -168,6 +174,7 @@ probes:
     failureThreshold: 25
 
 service:
+  annotations: {}
   type: ClusterIP
   protocol: TCP
   port: 12001
@@ -223,3 +230,8 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

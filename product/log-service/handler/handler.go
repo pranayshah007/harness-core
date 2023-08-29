@@ -103,6 +103,19 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 		sr.Get("/", HandleDownload(store))
 		sr.Post("/link/upload", HandleUploadLink(store))
 		sr.Post("/link/download", HandleDownloadLink(store))
+		sr.Get("/exists", HandleExists(store))
+
+		return sr
+	}())
+
+	//Internal APIs
+	r.Mount("/internal", func() http.Handler {
+		sr := chi.NewRouter()
+		// Validate the accountId in URL with the token generated above and authorize the request
+		if !config.Auth.DisableAuth {
+			sr.Use(AuthInternalMiddleware(config, true, ngClient))
+		}
+		sr.Delete("/blob", HandleInternalDelete(store))
 
 		return sr
 	}())
@@ -141,12 +154,6 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 			sr.Use(AuthMiddleware(config, ngClient, true))
 		}
 
-		// TODO: delete it after freeze window.
-		sr.
-			With(RequiredQueryParams(accountIDParam, usePrefixParam)).
-			With(ValidatePrefixRequest()).
-			With(CacheRequest(cache)).
-			Get("/", HandleZipLinkPrefix(queue, store, cache, config))
 		sr.
 			With(RequiredQueryParams(accountIDParam, usePrefixParam)).
 			With(ValidatePrefixRequest()).

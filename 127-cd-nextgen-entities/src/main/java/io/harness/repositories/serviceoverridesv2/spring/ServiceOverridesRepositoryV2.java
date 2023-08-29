@@ -28,4 +28,8 @@ public interface ServiceOverridesRepositoryV2
   Optional<NGServiceOverridesEntity>
   getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndSpecExistsAndSpecNotNull(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier);
+
+  Optional<NGServiceOverridesEntity>
+  getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifier);
 }

@@ -47,6 +47,8 @@ import io.harness.remote.client.ClientMode;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.NGAuditServiceRegistrars;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
 import io.harness.token.TokenClientModule;
 import io.harness.version.VersionModule;
@@ -158,6 +160,12 @@ public class AuditServiceModule extends AbstractModule {
         this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), AUDIT_SERVICE.getServiceId()));
     install(new EventsFrameworkModule(this.appConfig.getEventsFrameworkConfiguration()));
     registerEventListeners();
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return appConfig.getSegmentConfiguration();
+      }
+    });
   }
 
   private void registerEventListeners() {

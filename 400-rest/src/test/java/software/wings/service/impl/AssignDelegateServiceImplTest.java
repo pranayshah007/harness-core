@@ -34,6 +34,7 @@ import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.GcpKubernetesInfrastructureMapping.Builder.aGcpKubernetesInfrastructureMapping;
 import static software.wings.service.impl.AssignDelegateServiceImpl.BLACKLIST_TTL;
+import static software.wings.service.impl.AssignDelegateServiceImpl.NON_CONNECTED_DELEGATES;
 import static software.wings.service.impl.AssignDelegateServiceImpl.SCOPE_WILDCARD;
 import static software.wings.service.impl.AssignDelegateServiceImpl.WHITELIST_TTL;
 import static software.wings.service.impl.AssignDelegateServiceImplTest.CriteriaType.MATCHING_CRITERIA;
@@ -1913,6 +1914,37 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
                        DelegateTask.builder().nonAssignableDelegates(new HashMap<>()).accountId("ACCOUNT_ID").build())
                    .size()
         == 2);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testNonActiveDelegatesForTask() throws ExecutionException {
+    Delegate delegate1 = Delegate.builder()
+                             .accountId(ACCOUNT_ID)
+                             .hostName("localhost1")
+                             .delegateName("testDelegateName1")
+                             .status(DelegateInstanceStatus.ENABLED)
+                             .lastHeartBeat(1691124412000L)
+                             .build();
+    persistence.save(delegate1);
+    Delegate delegate2 = Delegate.builder()
+                             .accountId(ACCOUNT_ID)
+                             .hostName("localhost2")
+                             .delegateName("testDelegateName2")
+                             .status(DelegateInstanceStatus.ENABLED)
+                             .lastHeartBeat(1691124412000L)
+                             .build();
+    persistence.save(delegate2);
+
+    when(accountDelegatesCache.get("ACCOUNT_ID")).thenReturn(List.of(delegate1, delegate2));
+
+    DelegateTask delegateTask =
+        DelegateTask.builder().nonAssignableDelegates(new HashMap<>()).accountId("ACCOUNT_ID").build();
+    assignDelegateService.fetchActiveDelegates(delegateTask);
+    assertThat(delegateTask.getNonAssignableDelegates()).hasSize(1);
+    assertThat(delegateTask.getNonAssignableDelegates().get(NON_CONNECTED_DELEGATES))
+        .contains("localhost1", "localhost2");
   }
 
   @Test

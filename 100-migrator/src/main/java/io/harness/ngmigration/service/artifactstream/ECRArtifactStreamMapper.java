@@ -24,6 +24,7 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
 import io.harness.ngtriggers.beans.source.artifact.EcrSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.artifact.ArtifactStream;
@@ -32,7 +33,7 @@ import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,6 +68,7 @@ public class ECRArtifactStreamMapper implements ArtifactStreamMapper {
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     String imagePath = PLEASE_FIX_ME;
     String region = "us-east-1";
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
 
     if (artifactStream != null) {
       EcrArtifactStream ecrArtifactStream = (EcrArtifactStream) artifactStream;
@@ -79,7 +81,7 @@ public class ECRArtifactStreamMapper implements ArtifactStreamMapper {
         .region(region)
         .imagePath(imagePath)
         .tag(TRIGGER_TAG_VALUE_DEFAULT)
-        .eventConditions(Collections.emptyList())
+        .eventConditions(eventConditions)
         .build();
   }
 }

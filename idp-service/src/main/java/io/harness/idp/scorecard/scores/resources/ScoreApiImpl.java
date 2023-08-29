@@ -54,8 +54,6 @@ public class ScoreApiImpl implements ScoresApi {
   public Response getRecalibratedScoreForScorecard(
       String entityIdentifier, String scorecardIdentifier, String harnessAccount) {
     try {
-      scoreService.computeScores(
-          harnessAccount, Collections.singletonList(entityIdentifier), Collections.singletonList(scorecardIdentifier));
       ScorecardSummaryInfo scorecardSummaryInfo = scoreService.getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
           harnessAccount, entityIdentifier, scorecardIdentifier);
       ScorecardRecalibrateResponse scorecardRecalibrateResponse = new ScorecardRecalibrateResponse();
@@ -63,8 +61,8 @@ public class ScoreApiImpl implements ScoresApi {
       return Response.status(Response.Status.OK).entity(scorecardRecalibrateResponse).build();
     } catch (Exception e) {
       log.error(
-          "Error in getting recalibrated score for scorecards details for account - {},  entity - {} and scorecard - {}",
-          harnessAccount, entityIdentifier, scorecardIdentifier);
+          "Error in getting recalibrated score for scorecards details for account - {},  entity - {} and scorecard - {}, error = {}",
+          harnessAccount, entityIdentifier, scorecardIdentifier, e.getMessage(), e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.ssh;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.execution.ExecutionInfoUtility.getScope;
 import static io.harness.cdng.ssh.CommandUnitSpecType.COPY;
@@ -80,7 +81,6 @@ import io.harness.logging.UnitStatus;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.models.Secret;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -92,6 +92,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.secretmanagerclient.SecretType;
@@ -119,9 +120,8 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
-    components = {HarnessModuleComponent.CDS_AMI_ASG, HarnessModuleComponent.CDS_TRADITIONAL,
-        HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Singleton
 @OwnedBy(CDP)
 @Slf4j
@@ -157,7 +157,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     }
   }
 
-  public StepResponse handleTaskException(Ambiance ambiance, StepElementParameters stepElementParameters, Exception e)
+  public StepResponse handleTaskException(Ambiance ambiance, StepBaseParameters stepElementParameters, Exception e)
       throws Exception {
     // Trying to figure out if exception is coming from command task or it is an exception from delegate service.
     // In the second case we need to close log stream and provide unit progress data as part of response
@@ -335,6 +335,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .commandUnits(
             mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate, Collections.emptyMap()))
         .host(onDelegate ? null : getHost(commandStepParameters))
+        .disableEvaluateExportVariable(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_DISABLE_EVALUATE_EXPORT_VARIABLES))
         .build();
   }
 
@@ -359,6 +361,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .commandUnits(
             mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate, Collections.emptyMap()))
         .host(onDelegate ? null : getHost(commandStepParameters))
+        .disableEvaluateExportVariable(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_DISABLE_EVALUATE_EXPORT_VARIABLES))
         .build();
   }
 

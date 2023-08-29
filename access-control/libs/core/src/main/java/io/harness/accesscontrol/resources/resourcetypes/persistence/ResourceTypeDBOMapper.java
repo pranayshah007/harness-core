@@ -20,6 +20,7 @@ public class ResourceTypeDBOMapper {
     return ResourceTypeDBO.builder()
         .identifier(resourceType.getIdentifier())
         .permissionKey(resourceType.getPermissionKey())
+        .isPublic(resourceType.isPublic())
         .build();
   }
 
@@ -27,6 +28,7 @@ public class ResourceTypeDBOMapper {
     return ResourceType.builder()
         .identifier(resourceTypeDBO.getIdentifier())
         .permissionKey(resourceTypeDBO.getPermissionKey())
+        .isPublic(Boolean.TRUE.equals(resourceTypeDBO.getIsPublic()))
         .build();
   }
 }

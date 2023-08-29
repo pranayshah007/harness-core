@@ -51,6 +51,18 @@ public class SCMExceptionHandler implements ExceptionHandler {
         return NestedExceptionUtils.hintWithExplanationException(SCMExceptionHints.SCM_GIT_PROVIDER_ERROR,
             SCMExceptionExplanations.EXCEPTION_MESSAGE_INVALID_CONTENT,
             new InvalidRequestException(scmException.getMessage(), scmException, USER));
+      case INVALID_KEY:
+        return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_MALFORMED_GIT_SSH_KEY,
+            ExplanationException.MALFORMED_GIT_SSH_KEY, new InvalidRequestException(exception.getMessage(), USER));
+      case SSH_CONNECTION_ERROR:
+        return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_INVALID_GIT_SSH_KEY,
+            ExplanationException.INVALID_GIT_SSH_AUTHORIZATION,
+            new InvalidRequestException(exception.getMessage(), USER));
+      case GENERAL_ERROR:
+        return NestedExceptionUtils.hintWithExplanationException(
+            "Try re-connecting the delegate. Make sure credentials are correct",
+            "Something went wrong while processing the request",
+            new InvalidRequestException(exception.getMessage(), USER));
       default:
         return new InvalidRequestException(exception.getMessage(), USER);
     }

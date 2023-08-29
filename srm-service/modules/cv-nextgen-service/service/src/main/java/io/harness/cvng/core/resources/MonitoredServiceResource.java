@@ -49,6 +49,9 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.utils.NGAccessControlClientCheck;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -77,6 +80,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -373,6 +377,34 @@ public class MonitoredServiceResource {
                                                           .build();
     return ResponseDTO.newResponse(
         monitoredServiceService.getCurrentAndDependentServicesScore(serviceEnvironmentParams));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("{identifier}/secondary-events")
+  @ApiOperation(value = "get monitored service secondary events", nickname = "getMSSecondaryEvents")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public ResponseDTO<List<SecondaryEventsResponse>> getMSSecondaryEvents(
+      @NotNull @Valid @BeanParam ProjectParams projectParams,
+      @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
+      @NotNull @Valid @QueryParam("startTime") Long startTime, @NotNull @Valid @QueryParam("endTime") Long endTime) {
+    return ResponseDTO.newResponse(
+        monitoredServiceService.getMSSecondaryEvents(projectParams, identifier, startTime, endTime));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("/secondary-events-details")
+  @ApiOperation(value = "get monitored service secondary events details", nickname = "getMSSecondaryEventsDetails")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public ResponseDTO<SecondaryEventDetailsResponse> getMSSecondaryEventsDetails(
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier @QueryParam(
+          "accountId") @NotNull String accountIdentifier,
+      @NotNull @Valid @QueryParam("secondaryEventType") SecondaryEventsType type,
+      @NotNull @Size(min = 1) @Valid @QueryParam("identifiers") List<String> uuids) {
+    return ResponseDTO.newResponse(monitoredServiceService.getMSSecondaryEventDetails(type, uuids));
   }
 
   @DELETE

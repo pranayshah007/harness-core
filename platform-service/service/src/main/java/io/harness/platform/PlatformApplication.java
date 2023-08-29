@@ -206,11 +206,6 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     if (appConfig.getAuditServiceConfig().isEnableAuditService()) {
       new AuditServiceSetup().setup(appConfig.getAuditServiceConfig(), environment, godInjector.get(AUDIT_SERVICE));
     }
-
-    if (appConfig.getResoureGroupServiceConfig().isEnableResourceGroup()) {
-      blockingMigrations(godInjector.get(RESOURCE_GROUP_SERVICE));
-    }
-
     MaintenanceController.forceMaintenance(false);
   }
 
@@ -226,11 +221,6 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
     openApiResource.setOpenApiConfiguration(appConfig.getOasConfig());
     environment.jersey().register(openApiResource);
-  }
-
-  private void blockingMigrations(Injector injector) {
-    //    This is is temporary one time blocking migration
-    injector.getInstance(PurgeDeletedResourceGroups.class).cleanUp();
   }
 
   private void registerCommonResources(

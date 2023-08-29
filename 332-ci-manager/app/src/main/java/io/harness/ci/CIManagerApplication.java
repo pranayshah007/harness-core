@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.app.CIManagerConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
@@ -35,20 +36,24 @@ import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerDayRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerMonthRestrictionUsageImpl;
 import io.harness.ci.enforcement.TotalBuildsRestrictionUsageImpl;
-import io.harness.ci.execution.CINotifyEventConsumerRedis;
-import io.harness.ci.execution.CINotifyEventPublisher;
-import io.harness.ci.execution.ObserverEventConsumer;
-import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.event.CIDataDeleteJob;
+import io.harness.ci.execution.AccountEventConsumer;
+import io.harness.ci.execution.execution.CINotifyEventConsumerRedis;
+import io.harness.ci.execution.execution.CINotifyEventPublisher;
+import io.harness.ci.execution.execution.ObserverEventConsumer;
+import io.harness.ci.execution.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.plan.creator.CIModuleInfoProvider;
+import io.harness.ci.execution.plan.creator.CIPipelineServiceInfoProvider;
+import io.harness.ci.execution.plan.creator.filter.CIFilterCreationResponseMerger;
 import io.harness.ci.execution.queue.CIExecutionPoller;
-import io.harness.ci.plan.creator.CIModuleInfoProvider;
-import io.harness.ci.plan.creator.CIPipelineServiceInfoProvider;
-import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
+import io.harness.ci.execution.serializer.CiExecutionRegistrars;
+import io.harness.ci.plugin.PluginMetadataRecordsJob;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.ci.registrars.ExecutionRegistrar;
-import io.harness.ci.serializer.CiExecutionRegistrars;
+import io.harness.ci.telemetry.CiTelemetryRecordsJob;
 import io.harness.controller.PrimaryVersionChangeScheduler;
-import io.harness.core.ci.services.CIActiveCommitterUsageImpl;
-import io.harness.core.ci.services.CICacheAllowanceImpl;
+import io.harness.core.ci.dashboard.CIActiveCommitterUsageImpl;
+import io.harness.core.ci.dashboard.CICacheAllowanceImpl;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
@@ -82,7 +87,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.persistence.store.Store;
-import io.harness.plugin.PluginMetadataRecordsJob;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
@@ -118,7 +122,6 @@ import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
-import io.harness.telemetry.CiTelemetryRecordsJob;
 import io.harness.token.remote.TokenClient;
 import io.harness.waiter.NotifierScheduledExecutorService;
 import io.harness.waiter.NotifyEvent;
@@ -346,6 +349,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     initializeCiManagerMonitoring(configuration, injector);
 
+    initializeCiManagerDataDeletion(injector);
     initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
@@ -357,6 +361,9 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     final ExecutorService observerEventConsumerExecutor =
         Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(OBSERVER_EVENT_CHANNEL).build());
     observerEventConsumerExecutor.execute(injector.getInstance(ObserverEventConsumer.class));
+    final ExecutorService accountEventConsumerExecutor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(ENTITY_CRUD).build());
+    accountEventConsumerExecutor.execute(injector.getInstance(AccountEventConsumer.class));
   }
 
   private void registerOasResource(CIManagerConfiguration appConfig, Environment environment, Injector injector) {
@@ -616,6 +623,9 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       log.info("Initializing CI Manager Monitoring");
       injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
     }
+  }
+  private void initializeCiManagerDataDeletion(Injector injector) {
+    injector.getInstance(CIDataDeleteJob.class).scheduleTasks();
   }
 
   private void initializePluginPublisher(Injector injector) {

@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.azureconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialSpecOutcomeDTO;
@@ -29,6 +30,7 @@ import lombok.Value;
 @Schema(name = "AzureInheritFromDelegateDetails",
     description = "This contains Azure inherit from delegate credentials connector details")
 @JsonDeserialize(using = AzureInheritFromDelegateDetailsDTODeserializer.class)
+@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO")
 public class AzureInheritFromDelegateDetailsDTO implements AzureCredentialSpecDTO {
   @NotNull @JsonProperty("auth") @Schema(description = "The auth azure details ") AzureMSIAuthDTO authDTO;
 

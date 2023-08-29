@@ -9,16 +9,14 @@ package io.harness.steps.shellscript.v1;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
-import io.harness.advisers.nextstep.NextStepAdviserParameters;
-import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.DependencyMetadata;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
-import io.harness.pms.contracts.advisers.AdviserObtainment;
-import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
+import io.harness.pms.contracts.plan.HarnessStruct;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -42,11 +40,8 @@ import io.harness.when.utils.RunInfoUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
@@ -69,10 +64,7 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField field) {
     ShellScriptStepNode stepNode = YamlUtils.read(field.getNode().toString(), ShellScriptStepNode.class);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
     StepParameters stepParameters = ((PMSStepInfo) stepNode.getStepSpecType()).getStepParameters(stepNode, null, ctx);
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
-        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, buildAdviser(ctx.getDependency()));
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepNode.getUuid()))
@@ -98,14 +90,26 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
             .expressionMode(stepNode.getStepSpecType().getExpressionMode());
 
     if (field.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField("strategy") == null) {
-      builder.adviserObtainments(buildAdviser(ctx.getDependency()));
+      builder.adviserObtainments(PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));
     }
+    DependencyMetadata dependencyMetadata =
+        StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(kryoSerializer, ctx, field.getUuid(),
+            dependenciesNodeMap, PlanCreatorUtilsV1.getAdviserObtainmentsForStage(kryoSerializer, ctx.getDependency()));
+
+    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+    // bytes for complex objects. We will deprecate the first one in v1
     return PlanCreationResponse.builder()
         .planNode(builder.build())
         .dependencies(
             DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                 .toBuilder()
-                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .putDependencyMetadata(field.getUuid(),
+                    Dependency.newBuilder()
+                        .putAllMetadata(dependencyMetadata.getMetadataMap())
+                        .setNodeMetadata(
+                            HarnessStruct.newBuilder().putAllFields(dependencyMetadata.getNodeMetadataMap()).build())
+                        .build())
                 .build())
         .build();
   }
@@ -113,22 +117,5 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
   @Override
   public Set<String> getSupportedYamlVersions() {
     return Set.of(PipelineVersion.V1);
-  }
-
-  private List<AdviserObtainment> buildAdviser(Dependency dependency) {
-    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
-    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
-        || !dependency.getMetadataMap().containsKey("nextId")) {
-      return adviserObtainments;
-    }
-
-    String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
-    adviserObtainments.add(
-        AdviserObtainment.newBuilder()
-            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-            .setParameters(ByteString.copyFrom(
-                kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
-            .build());
-    return adviserObtainments;
   }
 }
