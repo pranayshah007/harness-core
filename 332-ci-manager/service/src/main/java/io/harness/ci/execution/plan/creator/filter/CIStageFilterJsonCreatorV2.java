@@ -15,6 +15,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
+import static io.harness.yaml.extended.ci.codebase.BuildType.COMMIT_SHA;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,6 +34,7 @@ import io.harness.ci.execution.plan.creator.filter.CIFilter.CIFilterBuilder;
 import io.harness.ci.execution.utils.InfrastructureUtils;
 import io.harness.ci.execution.utils.ValidationUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
@@ -49,6 +51,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
+import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.common.collect.ImmutableSet;
@@ -115,6 +118,10 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
     }
 
     if (ciCodeBase != null) {
+      Build build = ParameterFieldHelper.getParameterFieldValue(ciCodeBase.getBuild());
+      if (build != null && COMMIT_SHA.equals(build.getType())) {
+        throw new CIStageExecutionException("CommitSha build type is not allowed for CI codebase");
+      }
       if (ciCodeBase.getRepoName().getValue() != null) {
         ciFilterBuilder.repoName(ciCodeBase.getRepoName().getValue());
       } else if (ciCodeBase.getConnectorRef().getValue() != null) {

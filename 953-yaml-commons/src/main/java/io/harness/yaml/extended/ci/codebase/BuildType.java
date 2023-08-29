@@ -21,7 +21,8 @@ import org.springframework.data.annotation.TypeAlias;
 public enum BuildType {
   @JsonProperty(BuildTypeConstants.BRANCH) BRANCH(BuildTypeConstants.BRANCH),
   @JsonProperty(BuildTypeConstants.TAG) TAG(BuildTypeConstants.TAG),
-  @JsonProperty(BuildTypeConstants.PR) PR(BuildTypeConstants.PR);
+  @JsonProperty(BuildTypeConstants.PR) PR(BuildTypeConstants.PR),
+  @JsonProperty(BuildTypeConstants.COMMIT_SHA) COMMIT_SHA(BuildTypeConstants.COMMIT_SHA);
 
   private final String yamlProperty;
 
