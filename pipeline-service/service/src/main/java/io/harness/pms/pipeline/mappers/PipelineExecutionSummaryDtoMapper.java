@@ -93,6 +93,7 @@ public class PipelineExecutionSummaryDtoMapper {
         .abortedBy(pipelineExecutionSummaryEntity.getAbortedBy())
         .executionMode(pipelineExecutionSummaryEntity.getExecutionMode())
         .notesExistForPlanExecutionId(checkNotesExistForPlanExecutionId(pipelineExecutionSummaryEntity))
+        .yamlVersion(pipelineExecutionSummaryEntity.getPipelineVersion())
         .build();
   }
 
