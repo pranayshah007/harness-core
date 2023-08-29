@@ -86,6 +86,7 @@ message MatrixMetadata {
   repeated int32 matrixCombination = 2;
   string subType = 3;
   repeated string matrixKeysToSkipInName = 4;
+  string nodeName = 5;
 }
 
 message ChildChainExecutableResponse {

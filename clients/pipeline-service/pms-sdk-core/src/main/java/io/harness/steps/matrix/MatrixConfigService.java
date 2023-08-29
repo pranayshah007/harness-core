@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
+import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -33,8 +34,12 @@ public class MatrixConfigService implements StrategyConfigService {
     MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig().getValue();
     List<String> keys = getKeys(matrixConfig);
 
-    return matrixConfigServiceHelper.fetchChildren(
-        keys, matrixConfig.getAxes(), matrixConfig.getExpressionAxes(), matrixConfig.getExclude(), childNodeId);
+    String nodeName = "";
+    if (!ParameterField.isBlank(matrixConfig.getNodeName())) {
+      nodeName = (String) matrixConfig.getNodeName().fetchFinalValue();
+    }
+    return matrixConfigServiceHelper.fetchChildren(keys, matrixConfig.getAxes(), matrixConfig.getExpressionAxes(),
+        matrixConfig.getExclude(), childNodeId, nodeName);
   }
 
   public StrategyInfo expandJsonNodeFromClass(StrategyConfig strategyConfig, JsonNode jsonNode,
