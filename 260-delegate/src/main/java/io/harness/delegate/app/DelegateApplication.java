@@ -19,7 +19,6 @@ import static io.harness.delegate.message.MessengerType.WATCHER;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.TargetModule;
@@ -69,17 +68,6 @@ public class DelegateApplication {
 
   public static void main(String... args) throws IOException {
     try {
-      String proxyUser = System.getenv("PROXY_USER");
-      if (isNotBlank(proxyUser)) {
-        System.setProperty("http.proxyUser", proxyUser);
-        System.setProperty("https.proxyUser", proxyUser);
-      }
-      String proxyPassword = System.getenv("PROXY_PASSWORD");
-      if (isNotBlank(proxyPassword)) {
-        System.setProperty("http.proxyPassword", proxyPassword);
-        System.setProperty("https.proxyPassword", proxyPassword);
-      }
-
       File configFile = new File(args[0]);
       configuration = new YamlUtils().read(FileUtils.readFileToString(configFile, UTF_8), DelegateConfiguration.class);
 
