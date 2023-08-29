@@ -13,7 +13,9 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -91,17 +93,24 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
 
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
-        if (ociHelmStoreConfig.getOciHelmConnector().getHelmRepoUrl() != null) {
-          OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
+        ConnectorConfigDTO connectorConfigDTO = ociHelmStoreConfig.getOciHelmConnector() == null
+            ? ociHelmStoreConfig.getConnectorConfigDTO()
+            : ociHelmStoreConfig.getOciHelmConnector();
+        if (connectorConfigDTO instanceof AwsConnectorDTO) {
+          capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+              ociHelmStoreConfig.getConnectorConfigDTO(), maskingEvaluator));
+        } else if (connectorConfigDTO instanceof OciHelmConnectorDTO
+            && ((OciHelmConnectorDTO) connectorConfigDTO).getHelmRepoUrl() != null) {
+          OciHelmConnectorDTO ociHelmConnector = (OciHelmConnectorDTO) connectorConfigDTO;
           capabilities.add(HelmInstallationCapability.builder()
                                .version(HelmVersion.V380)
                                .criteria("OCI_HELM_REPO: " + ociHelmConnector.getHelmRepoUrl())
                                .build());
+          populateDelegateSelectorCapability(capabilities, ociHelmConnector.getDelegateSelectors());
         }
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             ociHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
-        populateDelegateSelectorCapability(
-            capabilities, ociHelmStoreConfig.getOciHelmConnector().getDelegateSelectors());
+
         break;
 
       case S3_HELM:

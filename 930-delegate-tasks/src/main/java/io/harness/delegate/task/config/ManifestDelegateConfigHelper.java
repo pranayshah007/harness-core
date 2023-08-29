@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
@@ -60,7 +61,10 @@ public class ManifestDelegateConfigHelper {
 
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
-        for (DecryptableEntity entity : ociHelmStoreConfig.getOciHelmConnector().getDecryptableEntities()) {
+        ConnectorConfigDTO connectorConfigDTO = ociHelmStoreConfig.getOciHelmConnector() == null
+            ? ociHelmStoreConfig.getConnectorConfigDTO()
+            : ociHelmStoreConfig.getOciHelmConnector();
+        for (DecryptableEntity entity : connectorConfigDTO.getDecryptableEntities()) {
           decryptionService.decrypt(entity, ociHelmStoreConfig.getEncryptedDataDetails());
           ExceptionMessageSanitizer.storeAllSecretsForSanitizing(entity, ociHelmStoreConfig.getEncryptedDataDetails());
         }

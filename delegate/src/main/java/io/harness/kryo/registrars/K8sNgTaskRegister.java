@@ -131,6 +131,8 @@ import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.ociHelmResources.OciHelmChartConfigResource;
+import io.harness.delegate.beans.storeconfig.ociHelmResources.OciHelmChartEcrConfigResource;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
@@ -438,6 +440,8 @@ public class K8sNgTaskRegister implements KryoRegistrar {
     kryo.register(AwsSshInfraDelegateConfig.class, 55417);
     kryo.register(AwsWinrmInfraDelegateConfig.class, 55418);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
+    kryo.register(OciHelmChartConfigResource.class, 55432);
+    kryo.register(OciHelmChartEcrConfigResource.class, 55433);
     kryo.register(SshConnectivityExecutionCapability.class, 55435);
     kryo.register(CustomRemoteStoreDelegateConfig.class, 56403);
     kryo.register(EmptyHostDelegateConfig.class, 60015);

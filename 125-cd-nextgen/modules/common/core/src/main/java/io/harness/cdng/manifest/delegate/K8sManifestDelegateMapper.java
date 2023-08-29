@@ -33,10 +33,14 @@ import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreEcrConfig;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifestCommandFlag;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfig;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -50,6 +54,8 @@ import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.ociHelmResources.OciHelmChartConfigResource;
+import io.harness.delegate.beans.storeconfig.ociHelmResources.OciHelmChartEcrConfigResource;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
@@ -252,19 +258,28 @@ public class K8sManifestDelegateMapper {
 
     if (ManifestStoreType.OCI.equals(storeConfig.getKind())) {
       OciHelmChartConfig ociStoreConfig = (OciHelmChartConfig) storeConfig;
-      ConnectorInfoDTO helmConnectorDTO =
+      ConnectorInfoDTO ociConnectorDTO =
           cdStepHelper.getConnector(getParameterFieldValue(ociStoreConfig.getConnectorReference()), ambiance);
-      cdStepHelper.validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
+      cdStepHelper.validateOciManifest(
+          getParameterFieldValue(ociStoreConfig.getConfig()).getType(), ociConnectorDTO, validationErrorMessage);
+      OciHelmChartStoreConfigWrapper ociHelmChartStoreConfigWrapper =
+          getParameterFieldValue(ociStoreConfig.getConfig());
+      OciHelmChartConfigResource ociHelmChartConfigResource = getOciHelmChartConfigResources(
+          ociHelmChartStoreConfigWrapper.getSpec(), ociHelmChartStoreConfigWrapper.getType());
+      String repoName = getOciHelmRepoName(ambiance, ociConnectorDTO.getIdentifier(),
+          (HelmChartManifestOutcome) manifestOutcome, ociHelmChartStoreConfigWrapper.getType());
       Preconditions.checkArgument(
           manifestOutcome instanceof HelmChartManifestOutcome, MANIFEST_OUTCOME_INCOMPATIBLE_ERROR_MESSAGE);
 
       return OciHelmStoreDelegateConfig.builder()
-          .repoName(getRepoName(ambiance, helmConnectorDTO.getIdentifier(), (HelmChartManifestOutcome) manifestOutcome))
+          .repoName(repoName)
           .basePath(getParameterFieldValue(ociStoreConfig.getBasePath()))
-          .repoDisplayName(helmConnectorDTO.getName())
-          .ociHelmConnector((OciHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
+          .repoDisplayName(ociConnectorDTO.getName())
+          .ociHelmConnector((OciHelmConnectorDTO) ociConnectorDTO.getConnectorConfig())
+          .connectorConfigDTO(ociConnectorDTO.getConnectorConfig())
+          .ociHelmChartConfigResource(ociHelmChartConfigResource)
           .encryptedDataDetails(
-              k8sEntityHelper.getEncryptionDataDetails(helmConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
+              k8sEntityHelper.getEncryptionDataDetails(ociConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
           .helmOciEnabled(true)
           .build();
     }
@@ -350,6 +365,19 @@ public class K8sManifestDelegateMapper {
     return paths;
   }
 
+  private String getOciHelmRepoName(Ambiance ambiance, String connectorId, HelmChartManifestOutcome manifestOutcome,
+      OciHelmChartStoreConfigType ociHelmChartStoreConfigType) {
+    switch (ociHelmChartStoreConfigType) {
+      case GENERIC:
+        return getRepoName(ambiance, connectorId, manifestOutcome);
+      case ECR:
+        return getParameterFieldValue(manifestOutcome.getChartName());
+      default:
+        throw new UnsupportedOperationException(
+            format("Unknown manifest store type: [%s]", ociHelmChartStoreConfigType));
+    }
+  }
+
   public String getRepoName(Ambiance ambiance, String connectorId, HelmChartManifestOutcome manifestOutcome) {
     /*
       going forward, we will be creating default cache based on connectorId unless FF is enabled
@@ -386,6 +414,18 @@ public class K8sManifestDelegateMapper {
             getParameterFieldValue(kustomizeManifestCommandFlag.getFlag()));
       }
       return commandFlags;
+    }
+    return null;
+  }
+
+  private OciHelmChartConfigResource getOciHelmChartConfigResources(
+      OciHelmChartStoreConfig ociHelmChartStoreConfig, OciHelmChartStoreConfigType ociHelmChartStoreConfigType) {
+    if (OciHelmChartStoreConfigType.ECR.equals(ociHelmChartStoreConfigType)) {
+      OciHelmChartStoreEcrConfig ociHelmChartStoreEcrConfig = (OciHelmChartStoreEcrConfig) ociHelmChartStoreConfig;
+      return OciHelmChartEcrConfigResource.builder()
+          .region(getParameterFieldValue(ociHelmChartStoreEcrConfig.getRegion()))
+          .registryId(getParameterFieldValue(ociHelmChartStoreEcrConfig.getRegistryId()))
+          .build();
     }
     return null;
   }

@@ -1830,6 +1830,8 @@
 55429:io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig
 55430:io.harness.delegate.task.azure.artifact.JenkinsAzureArtifactRequestDetails
 55431:io.harness.delegate.task.azure.artifact.AzureDevOpsArtifactRequestDetails
+55432:io.harness.delegate.beans.storeconfig.ociHelmResources.OciHelmChartConfigResource
+55433:io.harness.delegate.beans.storeconfig.ociHelmResources.OciHelmChartEcrConfigResource
 55435:io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability
 55436:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest
 55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse

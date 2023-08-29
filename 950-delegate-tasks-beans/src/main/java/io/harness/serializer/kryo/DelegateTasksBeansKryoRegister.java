@@ -404,6 +404,8 @@ import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig;
+import io.harness.delegate.beans.storeconfig.ociHelmResources.OciHelmChartConfigResource;
+import io.harness.delegate.beans.storeconfig.ociHelmResources.OciHelmChartEcrConfigResource;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntApplyTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntCommandType;
@@ -2142,6 +2144,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(FileDelegateConfig.class, 55318);
     kryo.register(HarnessStoreDelegateConfig.class, 55319);
     kryo.register(ConfigFileParameters.class, 55320);
+    kryo.register(OciHelmChartConfigResource.class, 55432);
+    kryo.register(OciHelmChartEcrConfigResource.class, 55433);
     kryo.register(CustomArtifactDelegateConfig.class, 55470);
     kryo.register(ServerlessPrepareRollbackDataRequest.class, 29309);
     kryo.register(ServerlessPrepareRollbackDataResponse.class, 29310);

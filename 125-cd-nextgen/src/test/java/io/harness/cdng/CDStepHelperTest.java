@@ -57,6 +57,8 @@ import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
+import io.harness.cdng.manifest.yaml.oci.OciStoreConfigType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -639,10 +641,25 @@ public class CDStepHelperTest extends CategoryTest {
   public void testValidateManifest() {
     when(connectorInfoDTO.getConnectorConfig()).thenReturn(null);
     String[] manifestStoreTypes = {ManifestStoreType.GIT, ManifestStoreType.GITHUB, ManifestStoreType.BITBUCKET,
-        ManifestStoreType.GITLAB, ManifestStoreType.HTTP, ManifestStoreType.S3, ManifestStoreType.GCS,
-        ManifestStoreType.OCI};
+        ManifestStoreType.GITLAB, ManifestStoreType.HTTP, ManifestStoreType.S3, ManifestStoreType.GCS};
     for (String storeType : manifestStoreTypes) {
       assertThatThrownBy(() -> cdStepHelper.validateManifest(storeType, ConnectorInfoDTO.builder().build(), ""))
+          .isInstanceOf(InvalidRequestException.class);
+    }
+    assertThatThrownBy(
+        () -> cdStepHelper.validateManifest(ManifestStoreType.OCI, ConnectorInfoDTO.builder().build(), ""))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testValidateOciManifest() {
+    when(connectorInfoDTO.getConnectorConfig()).thenReturn(null);
+    OciHelmChartStoreConfigType[] ociHelmChartStoreConfigTypes = {
+        OciHelmChartStoreConfigType.GENERIC, OciHelmChartStoreConfigType.ECR};
+    for (OciHelmChartStoreConfigType storeType : ociHelmChartStoreConfigTypes) {
+      assertThatThrownBy(() -> cdStepHelper.validateOciManifest(storeType, ConnectorInfoDTO.builder().build(), ""))
           .isInstanceOf(InvalidRequestException.class);
     }
   }
