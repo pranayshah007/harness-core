@@ -501,7 +501,15 @@ public enum TaskType {
   COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
   TERRAGRUNT_PLAN_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Plan Task V2", false),
   TERRAGRUNT_APPLY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task V2", false),
-  TERRAGRUNT_DESTROY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task V2", false);
+  TERRAGRUNT_DESTROY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task V2", false),
+  AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Prepare Rollback Data V2"),
+  AWS_ASG_ROLLING_DEPLOY_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Rolling Deploy V2"),
+  AWS_ASG_ROLLING_ROLLBACK_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Rolling Rollback V2"),
+  AWS_ASG_CANARY_DEPLOY_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Canary Deploy V2"),
+  AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Blue Green Prepare Rollback Data V2"),
+  AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Blue Green Deploy V2"),
+  AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Blue Green Swap Service V2"),
+  AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Blue Green Rollback V2");
 
   private final TaskGroup taskGroup;
   private final String displayName;

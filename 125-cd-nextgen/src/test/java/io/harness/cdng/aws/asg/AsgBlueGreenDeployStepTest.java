@@ -403,4 +403,50 @@ public class AsgBlueGreenDeployStepTest extends CategoryTest {
     assertThat(ret.get(0).getStageListenerArn()).isEqualTo("stageListener");
     assertThat(ret.get(0).getStageListenerRuleArn()).isEqualTo("stageListenerRuleArn");
   }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getLoadBalancerConfigsForOutputTest() {
+    List<AwsAsgLoadBalancerConfigYaml> ret =
+        asgBlueGreenDeployStep.getLoadBalancerConfigsForOutput(Collections.EMPTY_LIST);
+    assertThat(ret).isNull();
+
+    String loadBalancer = "loadBalancer";
+    String prodListenerArn = "prodListenerArn";
+    String prodListenerRuleArn = "prodListenerRuleArn";
+    String stageListenerArn = "stageListenerArn";
+    String stageListenerRuleArn = "stageListenerRuleArn";
+    List<String> prodTargetGroupArnsList = List.of("p_gr1", "p_gr2");
+    List<String> stageTargetGroupArnsList = List.of("s_gr1", "s_gr2");
+
+    AsgLoadBalancerConfig asgLoadBalancerConfig = AsgLoadBalancerConfig.builder()
+                                                      .loadBalancer(loadBalancer)
+                                                      .prodListenerArn(prodListenerArn)
+                                                      .prodListenerRuleArn(prodListenerRuleArn)
+                                                      .prodTargetGroupArnsList(prodTargetGroupArnsList)
+                                                      .stageListenerArn(stageListenerArn)
+                                                      .stageListenerRuleArn(stageListenerRuleArn)
+                                                      .stageTargetGroupArnsList(stageTargetGroupArnsList)
+                                                      .build();
+    List<AsgLoadBalancerConfig> loadBalancers = Arrays.asList(asgLoadBalancerConfig);
+
+    ret = asgBlueGreenDeployStep.getLoadBalancerConfigsForOutput(loadBalancers);
+    assertThat(ret.size()).isEqualTo(loadBalancers.size());
+    AwsAsgLoadBalancerConfigYaml awsAsgLoadBalancerConfigYaml = ret.get(0);
+    assertThat(awsAsgLoadBalancerConfigYaml.getLoadBalancer().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getLoadBalancer());
+    assertThat(awsAsgLoadBalancerConfigYaml.getProdListener().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getProdListenerArn());
+    assertThat(awsAsgLoadBalancerConfigYaml.getProdListenerRuleArn().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getProdListenerRuleArn());
+    assertThat(awsAsgLoadBalancerConfigYaml.getProdTargetGroupArnList().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getProdTargetGroupArnsList());
+    assertThat(awsAsgLoadBalancerConfigYaml.getStageListener().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getStageListenerArn());
+    assertThat(awsAsgLoadBalancerConfigYaml.getStageListenerRuleArn().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getStageListenerRuleArn());
+    assertThat(awsAsgLoadBalancerConfigYaml.getStageTargetGroupArnList().getValue())
+        .isEqualTo(asgLoadBalancerConfig.getStageTargetGroupArnsList());
+  }
 }

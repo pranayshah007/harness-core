@@ -1600,11 +1600,23 @@
             "prodListenerRuleArn": {
               "type": "string"
             },
+            "prodTargetGroupArnList": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
             "stageListener": {
               "type": "string"
             },
             "stageListenerRuleArn": {
               "type": "string"
+            },
+            "stageTargetGroupArnList": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }

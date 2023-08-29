@@ -12,6 +12,7 @@ import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -59,6 +60,7 @@ import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.TagDescription;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -89,7 +91,10 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
         (AsgBlueGreenPrepareRollbackDataRequest) asgCommandRequest;
     Map<String, List<String>> asgStoreManifestsContent =
         asgBlueGreenPrepareRollbackDataRequest.getAsgStoreManifestsContent();
-    AsgLoadBalancerConfig lbConfig = asgBlueGreenPrepareRollbackDataRequest.getAsgLoadBalancerConfig();
+
+    List<AsgLoadBalancerConfig> lbConfigs = isNotEmpty(asgBlueGreenPrepareRollbackDataRequest.getLoadBalancers())
+        ? asgBlueGreenPrepareRollbackDataRequest.getLoadBalancers()
+        : Arrays.asList(asgBlueGreenPrepareRollbackDataRequest.getAsgLoadBalancerConfig());
 
     LogCallback logCallback = asgTaskHelper.getLogCallback(
         iLogStreamingTaskClient, AsgCommandUnitConstants.prepareRollbackData.toString(), true, commandUnitsProgress);
@@ -124,7 +129,7 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
 
         String stageAsgName = asgName + VERSION_DELIMITER + 1;
         result = createResult(
-            asgSdkManager, logCallback, lbConfig, null, stageAsgName, null, null, region, awsInternalConfig);
+            asgSdkManager, logCallback, lbConfigs, null, stageAsgName, null, null, region, awsInternalConfig);
       } else if (asg1 != null && asg2 == null) {
         if (!isProdAsg(asg1)) {
           // clean phantom non Prod service
@@ -133,11 +138,11 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
 
           String stageAsgName = asgName + VERSION_DELIMITER + 1;
           result = createResult(
-              asgSdkManager, logCallback, lbConfig, null, stageAsgName, null, null, region, awsInternalConfig);
+              asgSdkManager, logCallback, lbConfigs, null, stageAsgName, null, null, region, awsInternalConfig);
         } else {
           asgSdkManager.info("Found only Prod ASG %s", asg1.getAutoScalingGroupName());
           String stageAsgName = asgName + VERSION_DELIMITER + 2;
-          result = createResult(asgSdkManager, logCallback, lbConfig, asg1.getAutoScalingGroupName(), stageAsgName,
+          result = createResult(asgSdkManager, logCallback, lbConfigs, asg1.getAutoScalingGroupName(), stageAsgName,
               prepareRollbackData(asgSdkManager, asg1.getAutoScalingGroupName()), null, region, awsInternalConfig);
         }
       } else if (asg1 == null && asg2 != null) {
@@ -148,11 +153,11 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
 
           String stageAsgName = asgName + VERSION_DELIMITER + 1;
           result = createResult(
-              asgSdkManager, logCallback, lbConfig, null, stageAsgName, null, null, region, awsInternalConfig);
+              asgSdkManager, logCallback, lbConfigs, null, stageAsgName, null, null, region, awsInternalConfig);
         } else {
           asgSdkManager.info("Found only Prod ASG %s", asg2.getAutoScalingGroupName());
           String stageAsgName = asgName + VERSION_DELIMITER + 1;
-          result = createResult(asgSdkManager, logCallback, lbConfig, asg2.getAutoScalingGroupName(), stageAsgName,
+          result = createResult(asgSdkManager, logCallback, lbConfigs, asg2.getAutoScalingGroupName(), stageAsgName,
               prepareRollbackData(asgSdkManager, asg2.getAutoScalingGroupName()), null, region, awsInternalConfig);
         }
       } else {
@@ -167,7 +172,7 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
           asgSdkManager.deleteAsg(asg1.getAutoScalingGroupName());
 
           String stageAsgName = asgName + VERSION_DELIMITER + 1;
-          result = createResult(asgSdkManager, logCallback, lbConfig, asg2.getAutoScalingGroupName(), stageAsgName,
+          result = createResult(asgSdkManager, logCallback, lbConfigs, asg2.getAutoScalingGroupName(), stageAsgName,
               prepareRollbackData(asgSdkManager, asg2.getAutoScalingGroupName()), null, region, awsInternalConfig);
         } else if (!isAsg1Prod && !isAsg2Prod) {
           // clean buggy Stage(1) and Stage(2) service
@@ -179,7 +184,7 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
           // make it as first deployment
           String stageAsgName = asgName + VERSION_DELIMITER + 1;
           result = createResult(
-              asgSdkManager, logCallback, lbConfig, null, stageAsgName, null, null, region, awsInternalConfig);
+              asgSdkManager, logCallback, lbConfigs, null, stageAsgName, null, null, region, awsInternalConfig);
         } else {
           // having both correct Prod and Stage
           String prodAsgName = isAsg1Prod ? asg1.getAutoScalingGroupName() : asg2.getAutoScalingGroupName();
@@ -187,7 +192,7 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
 
           asgSdkManager.info("Found Prod ASG %s and Stage ASG %s", prodAsgName, stageAsgName);
 
-          result = createResult(asgSdkManager, logCallback, lbConfig, prodAsgName, stageAsgName,
+          result = createResult(asgSdkManager, logCallback, lbConfigs, prodAsgName, stageAsgName,
               prepareRollbackData(asgSdkManager, prodAsgName), prepareRollbackData(asgSdkManager, stageAsgName), region,
               awsInternalConfig);
         }
@@ -240,39 +245,37 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
   }
 
   private AsgBlueGreenPrepareRollbackDataResult createResult(AsgSdkManager asgSdkManager, LogCallback logCallback,
-      AsgLoadBalancerConfig lbConfig, String prodAsgName, String stageAsgName,
+      List<AsgLoadBalancerConfig> lbConfigs, String prodAsgName, String stageAsgName,
       Map<String, List<String>> prodAsgManifestsDataForRollback,
       Map<String, List<String>> stageAsgManifestsDataForRollback, String region, AwsInternalConfig awsInternalConfig) {
-    asgSdkManager.info("Checking ListenerArn and ListenerRuleArn for Prod are valid");
-    checkListenerRuleIsValid(
-        asgSdkManager, lbConfig.getProdListenerArn(), lbConfig.getProdListenerRuleArn(), region, awsInternalConfig);
+    for (AsgLoadBalancerConfig lbCfg : lbConfigs) {
+      asgSdkManager.info(format(
+          "Checking ListenerArn and ListenerRuleArn for Prod are valid for loadBalancer: %s", lbCfg.getLoadBalancer()));
+      checkListenerRuleIsValid(
+          asgSdkManager, lbCfg.getProdListenerArn(), lbCfg.getProdListenerRuleArn(), region, awsInternalConfig);
 
-    asgSdkManager.info("Fetching TargetGroupArns for Prod");
-    List<String> prodTargetGroupArns =
-        asgSdkManager.getTargetGroupArnsFromLoadBalancer(region, lbConfig.getProdListenerArn(),
-            lbConfig.getProdListenerRuleArn(), lbConfig.getLoadBalancer(), awsInternalConfig);
+      asgSdkManager.info(format("Fetching TargetGroupArns for Prod for loadBalancer: %s", lbCfg.getLoadBalancer()));
+      List<String> prodTargetGroupArns = asgSdkManager.getTargetGroupArnsFromLoadBalancer(region,
+          lbCfg.getProdListenerArn(), lbCfg.getProdListenerRuleArn(), lbCfg.getLoadBalancer(), awsInternalConfig);
 
-    asgSdkManager.info("Checking ListenerArn and ListenerRuleArn for Stage are valid");
-    checkListenerRuleIsValid(
-        asgSdkManager, lbConfig.getStageListenerArn(), lbConfig.getStageListenerRuleArn(), region, awsInternalConfig);
+      asgSdkManager.info(format("Checking ListenerArn and ListenerRuleArn for Stage are valid for loadBalancer: %s",
+          lbCfg.getLoadBalancer()));
+      checkListenerRuleIsValid(
+          asgSdkManager, lbCfg.getStageListenerArn(), lbCfg.getStageListenerRuleArn(), region, awsInternalConfig);
 
-    asgSdkManager.info("Fetching TargetGroupArns for Stage");
-    List<String> stageTargetGroupArns =
-        asgSdkManager.getTargetGroupArnsFromLoadBalancer(region, lbConfig.getStageListenerArn(),
-            lbConfig.getStageListenerRuleArn(), lbConfig.getLoadBalancer(), awsInternalConfig);
+      asgSdkManager.info(format("Fetching TargetGroupArns for Stage for loadBalancer: %s", lbCfg.getLoadBalancer()));
+      List<String> stageTargetGroupArns = asgSdkManager.getTargetGroupArnsFromLoadBalancer(region,
+          lbCfg.getStageListenerArn(), lbCfg.getStageListenerRuleArn(), lbCfg.getLoadBalancer(), awsInternalConfig);
 
-    lbConfig.setProdTargetGroupArnsList(prodTargetGroupArns);
-    lbConfig.setStageTargetGroupArnsList(stageTargetGroupArns);
-
-    // TODO next PR use loadBalancers instead
-    List<AsgLoadBalancerConfig> loadBalancers = new ArrayList<>();
-    loadBalancers.add(lbConfig);
+      lbCfg.setProdTargetGroupArnsList(prodTargetGroupArns);
+      lbCfg.setStageTargetGroupArnsList(stageTargetGroupArns);
+    }
 
     return AsgBlueGreenPrepareRollbackDataResult.builder()
         .prodAsgName(prodAsgName)
         .asgName(stageAsgName)
-        .asgLoadBalancerConfig(lbConfig)
-        .loadBalancers(loadBalancers)
+        .asgLoadBalancerConfig(lbConfigs.get(0))
+        .loadBalancers(lbConfigs)
         .prodAsgManifestsDataForRollback(prodAsgManifestsDataForRollback)
         .stageAsgManifestsDataForRollback(stageAsgManifestsDataForRollback)
         .build();

@@ -8,6 +8,7 @@
 package io.harness.cdng.aws.asg;
 
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2;
 
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
@@ -47,6 +48,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -182,15 +185,9 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
         AsgCommandUnitConstants.rollback.toString(), CommandExecutionStatus.RUNNING);
 
     AsgLoadBalancerConfig asgLoadBalancerConfig =
-        AsgLoadBalancerConfig.builder()
-            .loadBalancer(asgBlueGreenPrepareRollbackDataOutcome.getLoadBalancer())
-            .stageListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerArn())
-            .stageListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerRuleArn())
-            .stageTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnsList())
-            .prodListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerArn())
-            .prodListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerRuleArn())
-            .prodTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArnsList())
-            .build();
+        AsgBlueGreenSwapServiceStep.getLoadBalancer(asgBlueGreenPrepareRollbackDataOutcome);
+    List<AsgLoadBalancerConfig> loadBalancers =
+        AsgBlueGreenSwapServiceStep.getLoadBalancers(asgBlueGreenPrepareRollbackDataOutcome);
 
     AsgBlueGreenRollbackRequest asgBlueGreenRollbackRequest =
         AsgBlueGreenRollbackRequest.builder()
@@ -200,6 +197,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
+            .loadBalancers(loadBalancers)
             .prodAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
             .prodAsgManifestsDataForRollback(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgManifestDataForRollback())
             .stageAsgName(asgBlueGreenDeployOutcome.getStageAsg().getAutoScalingGroupName())
@@ -208,10 +206,12 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             .servicesSwapped(trafficShifted)
             .build();
 
+    TaskType taskType =
+        loadBalancers == null ? AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG : AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2;
+
     return asgStepCommonHelper
         .queueAsgTask(stepElementParameters, asgBlueGreenRollbackRequest, ambiance,
-            AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
-            AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG)
+            AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true, taskType)
         .getTaskRequest();
   }
 
