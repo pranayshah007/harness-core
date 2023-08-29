@@ -10,5 +10,5 @@ import com.google.gson.JsonObject;
 import java.util.Map;
 
 public interface PipelineTestSummaryReport {
-  Map<String, Object> getParsedValue(JsonObject testSummaryReport, String dataPointIdentifier);
+  Map<String, Object> getParsedValue(JsonObject testSummaryReport, String dataPointIdentifier, String ciPipelineUrl);
 }

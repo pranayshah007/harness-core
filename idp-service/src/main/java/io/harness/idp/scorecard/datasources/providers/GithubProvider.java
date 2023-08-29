@@ -7,8 +7,8 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
+import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
 import static io.harness.idp.common.Constants.GITHUB_TOKEN;
-import static io.harness.idp.scorecard.datasources.constants.Constants.GITHUB_PROVIDER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -31,7 +31,7 @@ public class GithubProvider extends DataSourceProvider {
   protected GithubProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory,
       BackstageEnvVariableRepository backstageEnvVariableRepository, SecretManagerClientService ngSecretService) {
-    super(GITHUB_PROVIDER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+    super(GITHUB_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
         dataPointParserFactory);
     this.backstageEnvVariableRepository = backstageEnvVariableRepository;
     this.ngSecretService = ngSecretService;

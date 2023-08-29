@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.DbAliases;
@@ -153,8 +154,8 @@ public class HarnessApprovalInstance extends ApprovalInstance {
     HarnessApprovalInstance instance =
         HarnessApprovalInstance.builder()
             .approvalMessage((String) specParameters.getApprovalMessage().fetchFinalValue())
-            .includePipelineExecutionHistory(
-                (boolean) specParameters.getIncludePipelineExecutionHistory().fetchFinalValue())
+            .includePipelineExecutionHistory((boolean) ParameterFieldHelper.getBooleanParameterFieldValue(
+                specParameters.getIncludePipelineExecutionHistory()))
             .approvalActivities(new ArrayList<>())
             .approvers(ApproversDTO.fromApprovers(specParameters.getApprovers()))
             .approverInputs(specParameters.getApproverInputs() == null

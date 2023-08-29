@@ -4,7 +4,13 @@ metadata:
   name: pipeline-service
   namespace: {{ .Release.Namespace }}
   labels:
-        {{- include "pipeline-service.labels" . | nindent 4 }}
+    {{- include "pipeline-service.labels" . | nindent 4 }}
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotation }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -29,6 +35,12 @@ spec:
       labels:
         app: pipeline-service
         {{- include "pipeline-service.selectorLabels" . | nindent 8 }}
+        {{- if .Values.global.commonLabels }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 8 }}
+        {{- end }}
+        {{- if .Values.podLabels }}
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.podLabels "context" $) | nindent 8 }}
+        {{- end }}
     spec:
       {{ include "pipeline-service.pullSecrets" . | nindent 6 }}
       serviceAccountName: {{ include "pipeline-service.serviceAccountName" . }}

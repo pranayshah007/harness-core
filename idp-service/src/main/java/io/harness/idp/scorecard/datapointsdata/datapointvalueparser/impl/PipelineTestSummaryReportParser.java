@@ -6,22 +6,29 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl;
 
+import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
+import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserUtils;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineTestSummaryReport;
 
 import com.google.gson.JsonObject;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public class PipelineTestSummaryReportParser implements PipelineTestSummaryReport {
   @Override
-  public Map<String, Object> getParsedValue(JsonObject reportSummary, String dataPointIdentifier) {
-    Map<String, Object> map = new HashMap<>();
-    map.put(dataPointIdentifier, false);
+  public Map<String, Object> getParsedValue(
+      JsonObject reportSummary, String dataPointIdentifier, String ciPipelineUrl) {
+    Map<String, Object> dataPointInfo =
+        ValueParserUtils.getDataPointsInfoMap(false, Collections.singletonList(ciPipelineUrl));
+
     if (reportSummary != null) {
       int totalTestCases = reportSummary.get("total_tests").getAsInt();
       int failedTestCases = reportSummary.get("failed_tests").getAsInt();
-      map.put(dataPointIdentifier, totalTestCases > 0 && failedTestCases == 0);
+      dataPointInfo.put(ValueParserConstants.DATA_POINT_VALUE_KEY, totalTestCases > 0 && failedTestCases == 0);
     }
-    return map;
+    Map<String, Object> returnMap = new HashMap<>();
+    returnMap.put(dataPointIdentifier, dataPointInfo);
+    return returnMap;
   }
 }

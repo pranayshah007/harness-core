@@ -47,7 +47,6 @@ public abstract class DataSourceProvider {
       DataSourceLocationFactory dataSourceLocationFactory, DataSourceLocationRepository dataSourceLocationRepository,
       DataPointParserFactory dataPointParserFactory) {
     this.identifier = identifier;
-
     this.dataPointService = dataPointService;
     this.dataSourceLocationFactory = dataSourceLocationFactory;
     this.dataSourceLocationRepository = dataSourceLocationRepository;

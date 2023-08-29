@@ -56,6 +56,7 @@ import io.harness.audit.repositories.AuditRepository;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.beans.PageRequest;
 import io.harness.rule.Owner;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.mongodb.BasicDBList;
 import java.time.Instant;
@@ -80,6 +81,8 @@ public class AuditServiceImplTest extends CategoryTest {
   private TransactionTemplate transactionTemplate;
   private AuditSettingsService auditSettingsService;
 
+  private TelemetryReporter telemetryReporter;
+
   private final PageRequest samplePageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
 
   @Before
@@ -89,9 +92,10 @@ public class AuditServiceImplTest extends CategoryTest {
     auditFilterPropertiesValidator = mock(AuditFilterPropertiesValidator.class);
     transactionTemplate = mock(TransactionTemplate.class);
     auditSettingsService = mock(AuditSettingsService.class);
+    telemetryReporter = mock(TelemetryReporter.class);
 
-    auditService = spy(new AuditServiceImpl(
-        auditRepository, auditYamlService, auditFilterPropertiesValidator, transactionTemplate, auditSettingsService));
+    auditService = spy(new AuditServiceImpl(auditRepository, auditYamlService, auditFilterPropertiesValidator,
+        transactionTemplate, auditSettingsService, telemetryReporter));
     doNothing().when(auditFilterPropertiesValidator).validate(any(), any());
   }
 

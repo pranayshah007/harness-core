@@ -28,6 +28,9 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.steps.InfrastructureStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo.CDPipelineModuleInfoBuilder;
 import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo;
@@ -65,6 +68,7 @@ import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +109,19 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
 
     return artifactsSummaryBuilder.build();
   }
+  public ManifestStoreInfo mapManifestsOutcomeToSummary(Optional<ManifestsOutcome> manifestsOutcome) {
+    if (manifestsOutcome.isEmpty()) {
+      return ManifestStoreInfo.builder().build();
+    }
+    List<ManifestOutcome> manifestOutcomes = new ArrayList<>(manifestsOutcome.get().values());
+    for (ManifestOutcome manifestOutcome : manifestOutcomes) {
+      Optional<ManifestStoreInfo> manifestStoreInfo = manifestOutcome.toManifestStoreInfo();
+      if (manifestStoreInfo.isPresent()) {
+        return manifestStoreInfo.get();
+      }
+    }
+    return ManifestStoreInfo.builder().build();
+  }
 
   private Optional<ServiceStepOutcome> getServiceStepOutcome(Ambiance ambiance) {
     OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
@@ -140,6 +157,15 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
       return Optional.empty();
     }
     return Optional.ofNullable((ArtifactsOutcome) optionalOutcome.getOutcome());
+  }
+
+  private Optional<ManifestsOutcome> getManifestOutcome(OrchestrationEvent event) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS));
+    if (!optionalOutcome.isFound()) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable((ManifestsOutcome) optionalOutcome.getOutcome());
   }
 
   private Optional<InfrastructureOutcome> getInfrastructureOutcome(OrchestrationEvent event) {
@@ -291,6 +317,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     if (isServiceNodeAndCompleted(stepType, event.getStatus())) {
       Optional<ServiceStepOutcome> serviceOutcome = getServiceStepOutcome(event.getAmbiance());
       Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(event);
+      Optional<ManifestsOutcome> manifestsOutcome = getManifestOutcome(event);
       serviceOutcome.ifPresent(outcome
           -> cdStageModuleInfoBuilder.serviceInfo(ServiceExecutionSummary.builder()
                                                       .identifier(outcome.getIdentifier())
@@ -298,6 +325,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                       .deploymentType(outcome.getServiceDefinitionType())
                                                       .gitOpsEnabled(outcome.isGitOpsEnabled())
                                                       .artifacts(mapArtifactsOutcomeToSummary(artifactsOutcome))
+                                                      .manifestInfo(mapManifestsOutcomeToSummary(manifestsOutcome))
                                                       .build()));
     } else if (isInfrastructureNodeAndCompleted(stepType, event.getStatus())) {
       Optional<InfrastructureOutcome> infrastructureOutcome = getInfrastructureOutcome(event);

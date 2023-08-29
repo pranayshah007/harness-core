@@ -111,16 +111,16 @@ public class CheckServiceImpl implements CheckService {
   public void deleteCustomCheck(String accountIdentifier, String identifier, boolean forceDelete) {
     if (forceDelete && !isForceDeleteSettingEnabled(accountIdentifier)) {
       throw new InvalidRequestException(
-          format("Parameter forceDelete cannot be true. Force deletion of secret is not enabled for this account [%s]",
+          format("Parameter forceDelete cannot be true. Force deletion of check is not enabled for this account [%s]",
               accountIdentifier));
     }
     if (!forceDelete) {
       validateCheckUsage(accountIdentifier, identifier);
-    } else {
-      UpdateResult updateResult = checkRepository.updateDeleted(accountIdentifier, identifier);
-      if (updateResult.getModifiedCount() == 0) {
-        throw new InvalidRequestException("Default checks cannot be deleted");
-      }
+    }
+
+    UpdateResult updateResult = checkRepository.updateDeleted(accountIdentifier, identifier);
+    if (updateResult.getModifiedCount() == 0) {
+      throw new InvalidRequestException("Default checks cannot be deleted");
     }
   }
 

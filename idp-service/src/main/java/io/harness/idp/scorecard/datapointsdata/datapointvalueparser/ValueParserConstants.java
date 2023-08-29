@@ -8,4 +8,7 @@ package io.harness.idp.scorecard.datapointsdata.datapointvalueparser;
 
 public class ValueParserConstants {
   public static final String CONTENT_KEY = "content";
+
+  public static final String DATA_POINT_VALUE_KEY = "value";
+  public static final String ERROR_MESSAGE_FOR_CHECKS_KEY = "error_messages";
 }

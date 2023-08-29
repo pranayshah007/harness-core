@@ -6,6 +6,7 @@
  */
 
 package io.harness.eventsframework;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.CodePulse;
@@ -38,6 +39,7 @@ public final class EventsFrameworkConstants {
   public static final String WEBHOOK_EVENT = "WebhookEvent";
   public static final String GIT_BRANCH_HOOK_EVENT_STREAM = "git_branch_hook_event_stream";
   public static final String USERMEMBERSHIP = "usermembership";
+  public static final String MODULE_LICENSE = "modulelicense";
   public static final String ORCHESTRATION_LOG = "orchestration_log";
   public static final String NG_ACCOUNT_SETUP = "ng_account_setup";
   public static final String INSTANCE_SYNC_PERPETUAL_TASK_RESPONSE_STREAM = "instance_sync_perpetual_task_stream";
@@ -151,6 +153,7 @@ public final class EventsFrameworkConstants {
   public static final int CUSTOM_CHANGE_EVENT_MAX_TOPIC_SIZE = 5000;
   public static final int DEFAULT_TOPIC_SIZE = 10000;
   public static final int USER_MEMBERSHIP_TOPIC_SIZE = 100000;
+  public static final int MODULE_LICENSE_TOPIC_SIZE = 100000;
   public static final int ENTITY_CRUD_MAX_TOPIC_SIZE = 100000;
   public static final int SETUP_USAGE_MAX_TOPIC_SIZE = 10000;
   public static final int ENTITY_ACTIVITY_MAX_TOPIC_SIZE = 10000;
