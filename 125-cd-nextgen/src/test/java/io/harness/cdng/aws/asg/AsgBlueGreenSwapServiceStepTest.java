@@ -8,6 +8,7 @@
 package io.harness.cdng.aws.asg;
 
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG;
 
@@ -250,5 +251,79 @@ public class AsgBlueGreenSwapServiceStepTest extends CategoryTest {
     verify(asgStepCommonHelper)
         .queueAsgTask(eq(stepElementParameters), eq(asgBlueGreenSwapServiceRequest), eq(ambiance), any(), eq(true),
             eq(AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG));
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getLoadBalancerTest() {
+    String loadBalancer = "loadBalancer";
+    String prodListenerArn = "prodListenerArn";
+    String prodListenerRuleArn = "prodListenerRuleArn";
+    String stageListenerArn = "stageListenerArn";
+    String stageListenerRuleArn = "stageListenerRuleArn";
+    List<String> prodTargetGroupArnsList = List.of("p_gr1", "p_gr2");
+    List<String> stageTargetGroupArnsList = List.of("s_gr1", "s_gr2");
+
+    AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
+        AsgBlueGreenPrepareRollbackDataOutcome.builder()
+            .loadBalancer(loadBalancer)
+            .prodListenerArn(prodListenerArn)
+            .prodListenerRuleArn(prodListenerRuleArn)
+            .prodTargetGroupArnsList(prodTargetGroupArnsList)
+            .stageListenerArn(stageListenerArn)
+            .stageListenerRuleArn(stageListenerRuleArn)
+            .stageTargetGroupArnsList(stageTargetGroupArnsList)
+            .build();
+
+    AsgLoadBalancerConfig ret = AsgBlueGreenSwapServiceStep.getLoadBalancer(asgBlueGreenPrepareRollbackDataOutcome);
+    assertThat(ret.getLoadBalancer()).isEqualTo(loadBalancer);
+    assertThat(ret.getProdListenerArn()).isEqualTo(prodListenerArn);
+    assertThat(ret.getProdListenerRuleArn()).isEqualTo(prodListenerRuleArn);
+    assertThat(ret.getProdTargetGroupArnsList()).isEqualTo(prodTargetGroupArnsList);
+    assertThat(ret.getStageListenerArn()).isEqualTo(stageListenerArn);
+    assertThat(ret.getStageListenerRuleArn()).isEqualTo(stageListenerRuleArn);
+    assertThat(ret.getStageTargetGroupArnsList()).isEqualTo(stageTargetGroupArnsList);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getLoadBalancersTest() {
+    String loadBalancer = "loadBalancer";
+    String prodListenerArn = "prodListenerArn";
+    String prodListenerRuleArn = "prodListenerRuleArn";
+    String stageListenerArn = "stageListenerArn";
+    String stageListenerRuleArn = "stageListenerRuleArn";
+    List<String> prodTargetGroupArnsList = List.of("p_gr1", "p_gr2");
+    List<String> stageTargetGroupArnsList = List.of("s_gr1", "s_gr2");
+
+    AwsAsgLoadBalancerConfigYaml awsAsgLoadBalancerConfigYaml =
+        AwsAsgLoadBalancerConfigYaml.builder()
+            .loadBalancer(ParameterField.createValueField(loadBalancer))
+            .prodListener(ParameterField.createValueField(prodListenerArn))
+            .prodListenerRuleArn(ParameterField.createValueField(prodListenerRuleArn))
+            .stageListener(ParameterField.createValueField(stageListenerArn))
+            .stageListenerRuleArn(ParameterField.createValueField(stageListenerRuleArn))
+            .prodTargetGroupArnList(ParameterField.createValueField(prodTargetGroupArnsList))
+            .stageTargetGroupArnList(ParameterField.createValueField(stageTargetGroupArnsList))
+            .build();
+
+    AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
+        AsgBlueGreenPrepareRollbackDataOutcome.builder()
+            .loadBalancerConfigs(List.of(awsAsgLoadBalancerConfigYaml))
+            .build();
+
+    List<AsgLoadBalancerConfig> ret =
+        AsgBlueGreenSwapServiceStep.getLoadBalancers(asgBlueGreenPrepareRollbackDataOutcome);
+    assertThat(ret.size()).isEqualTo(1);
+    AsgLoadBalancerConfig asgLoadBalancerConfig = ret.get(0);
+    assertThat(asgLoadBalancerConfig.getLoadBalancer()).isEqualTo(loadBalancer);
+    assertThat(asgLoadBalancerConfig.getProdListenerArn()).isEqualTo(prodListenerArn);
+    assertThat(asgLoadBalancerConfig.getProdListenerRuleArn()).isEqualTo(prodListenerRuleArn);
+    assertThat(asgLoadBalancerConfig.getProdTargetGroupArnsList()).isEqualTo(prodTargetGroupArnsList);
+    assertThat(asgLoadBalancerConfig.getStageListenerArn()).isEqualTo(stageListenerArn);
+    assertThat(asgLoadBalancerConfig.getStageListenerRuleArn()).isEqualTo(stageListenerRuleArn);
+    assertThat(asgLoadBalancerConfig.getStageTargetGroupArnsList()).isEqualTo(stageTargetGroupArnsList);
   }
 }
