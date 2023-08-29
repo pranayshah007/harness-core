@@ -50,15 +50,17 @@ public abstract class CreditExpiryIteratorHandler<T extends Credit & PersistentI
   public abstract void registerIterator(int threadPoolSize);
 
   @Override
-  public void handle(T entity) {
-    if (entity == null) {
+  public void handle(T credit) {
+    if (credit == null) {
       log.warn("Credit entity is null for credit expiry check");
       return;
     }
     try {
-      creditService.setCreditStatusExpired(entity);
+      creditService.setCreditStatusExpired(credit);
+      log.info("Credit status has been marked expired for account: {} and creditID: {}", credit.getAccountIdentifier(),
+          credit.getId());
     } catch (Exception ex) {
-      log.error("Error while handling credit expiry check", ex);
+      log.error("Error occurred while marking credit status as EXPIRED: ", ex);
     }
   }
 
