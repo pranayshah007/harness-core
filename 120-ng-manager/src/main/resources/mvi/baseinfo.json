@@ -60,9 +60,9 @@
      ]
    },
    {
-     "moduleName": "STO",
+     "moduleName": "SRT",
      "displayName": "Security Testing Orchestration",
-     "version": "",
+     "version": "Coming Soon",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/security-testing-orchestration",
