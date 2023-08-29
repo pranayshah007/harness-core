@@ -60,7 +60,6 @@ public class UpdateVersionInfoTask {
   private static final String RESOURCE = "resource";
   private static final String VERSION = "version";
   private static final String VERSION_INFO = "versionInfo";
-
   @Inject private MongoTemplate mongoTemplate;
   @Inject NextGenConfiguration nextGenConfiguration;
   List<ModuleVersionInfo> moduleVersionInfos;
@@ -221,6 +220,7 @@ public class UpdateVersionInfoTask {
           JSONObject resourceJsonObject = (JSONObject) jsonObject.get(RESOURCE);
           JSONObject versionInfoJsonObject = (JSONObject) resourceJsonObject.get(VERSION_INFO);
           return versionInfoJsonObject.getString(VERSION);
+      }
     } catch (JSONException je) {
       String errorMsg =
           String.format("Error while trying to jsonify the response=%s for moduleName=%s", responseString, serviceName);
