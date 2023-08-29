@@ -198,11 +198,13 @@ public interface InputSetResourcePMS {
       @RequestBody(required = true,
           description =
               "Input set YAML to be created. The Account, Org, Project, and Pipeline identifiers inside the YAML should match the query parameters.",
-          content = {
+          content =
+          {
             @Content(mediaType = "application/yaml",
                 examples = @ExampleObject(name = "Create", summary = "Sample Input Set YAML",
                     value = PipelineAPIConstants.CREATE_INPUTSET_API, description = "Sample Input Set YAML"))
-          }) @NotNull String yaml);
+          }) @NotNull String yaml,
+      @NotNull String permission);
 
   @POST
   @Path("overlay")
@@ -229,7 +231,8 @@ public interface InputSetResourcePMS {
       @RequestBody(required = true,
           description =
               "Overlay Input Set YAML to be created. The Account, Org, Project, and Pipeline identifiers inside the YAML should match the query parameters")
-      @NotNull String yaml);
+      @NotNull String yaml,
+      @NotNull String permission);
   @PUT
   @Path("{inputSetIdentifier}")
   @ApiOperation(value = "Update an InputSet by identifier", nickname = "updateInputSetForPipeline")
@@ -264,11 +267,13 @@ public interface InputSetResourcePMS {
       @RequestBody(required = true,
           description =
               "Input set YAML to be updated. The query parameters should match the Account, Org, Project, and Pipeline Ids in the YAML.",
-          content = {
+          content =
+          {
             @Content(mediaType = "application/yaml",
                 examples = @ExampleObject(name = "Update", summary = "Sample Input Set YAML",
                     value = PipelineAPIConstants.CREATE_INPUTSET_API, description = "Sample Input Set YAML"))
-          }) @NotNull String yaml);
+          }) @NotNull String yaml,
+      @NotNull String permission);
 
   @PUT
   @Path("overlay/{inputSetIdentifier}")
@@ -298,7 +303,8 @@ public interface InputSetResourcePMS {
       @RequestBody(required = true,
           description =
               "Overlay Input Set YAML to be updated. The Account, Org, Project, and Pipeline identifiers inside the YAML should match the query parameters, and the Overlay Input Set identifier cannot be changed.")
-      @NotNull @ApiParam(hidden = true) String yaml);
+      @NotNull @ApiParam(hidden = true) String yaml,
+      @NotNull String permission);
 
   @DELETE
   @Path("{inputSetIdentifier}")
@@ -531,8 +537,8 @@ public interface InputSetResourcePMS {
       @QueryParam("pipelineRepoID")
       @Parameter(description = "Github Repo Id of the Pipeline for which the Input Set is to be updated")
       String pipelineRepoID, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
-      @RequestBody(required = true,
-          description = "The invalid Input Set Yaml to be sanitized") @NotNull String invalidInputSetYaml);
+      @RequestBody(required = true, description = "The invalid Input Set Yaml to be sanitized")
+      @NotNull String invalidInputSetYaml, @NotNull String permission);
 
   @GET
   @Path("{inputSetIdentifier}/yaml-diff")
@@ -586,7 +592,8 @@ public interface InputSetResourcePMS {
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineIdentifier,
       @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
           description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE) String inputSetIdentifier,
-      @BeanParam GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO);
+      @BeanParam GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO,
+      @NotNull String permission);
 
   @POST
   @Path("/move-config/{inputSetIdentifier}")
