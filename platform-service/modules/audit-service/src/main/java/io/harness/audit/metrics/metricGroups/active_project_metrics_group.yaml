@@ -1,0 +1,7 @@
+name: Active Project Metrics Group
+identifier: active_project_metrics_group
+labels:
+  - projectId
+  - orgId
+  - accountId
+  - identifier
