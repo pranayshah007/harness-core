@@ -43,6 +43,37 @@ function check_file_present(){
      fi
 }
 
+# $1 - semver string
+# $2 - level {release,minor,major} - release by default
+function incr_semver() {
+    IFS='.' read -ra ver <<< "$1"
+    [[ "${#ver[@]}" -ne 3 ]] && echo "Invalid semver string" && return 1
+    [[ "$#" -eq 1 ]] && level='release' || level=$2
+
+    release=${ver[2]}
+    minor=${ver[1]}
+    major=${ver[0]}
+
+    case $level in
+        release)
+            release=$((release+1))
+        ;;
+        minor)
+            release=0
+            minor=$((minor+1))
+        ;;
+        major)
+            release=0
+            minor=0
+            major=$((major+1))
+        ;;
+        *)
+            echo "Invalid level passed"
+            return 2
+    esac
+    echo "$major.$minor.$release"
+}
+
 export PURPOSE=sto-manager
 export STATUS_ID_TO_MOVE=151
 
@@ -80,13 +111,31 @@ fi
 # Bumping version in build.properties in develop branch.
 echo "STEP2: INFO: Bumping version in build.properties in develop branch."
 
-export SHA=`git rev-parse HEAD`
 export VERSION_FILE=315-sto-manager/build.properties
+export CHART_FILE=315-sto-manager/chart/Chart.yaml
+export VALUES_FILE=315-sto-manager/chart/values.yaml
+
 
 export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
 export VERSION=${VERSION%??}
 export NEW_VERSION=$(( ${VERSION}+1 ))
+export HELM_VERSION=`cat ${CHART_FILE} | grep '^version: ' | sed  -e 's:version\: ::g' | sed -e 's/"$//'`
+export NEW_HELM_VERSION=$(incr_semver $HELM_VERSION minor)
 
+# Update Chart.yaml & values.yaml for helm chart
+sed -i "s:tag\:.*-000\":tag\: \"${VERSION}00-000\":g" ${VALUES_FILE}
+sed -i "s:^appVersion.*:appVersion\: \"0.0.${VERSION}00\":g" ${CHART_FILE}
+sed -i "s:^version.*:version\: ${NEW_HELM_VERSION}:g" ${CHART_FILE}
+
+git add ${CHART_FILE}
+git add ${VALUES_FILE}
+git add ${VERSION_FILE}
+git commit -m "Creating new helm chart version ${NEW_HELM_VERSION} with app version: ${NEW_VERSION}xx"
+git push origin develop
+print_err "$?" "Pushing helm chart updates for ${PURPOSE} to develop branch failed"
+
+echo "STEP3: INFO: Updating build properties for ${PURPOSE}"
+export SHA=`git rev-parse HEAD`
 sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
 
 git add ${VERSION_FILE}
@@ -94,14 +143,8 @@ git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_V
 git push origin develop
 print_err "$?" "Pushing build.properties to develop branch failed"
 
-
-echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"
+echo "STEP4: INFO: Creating a release branch for ${PURPOSE}"
 
 git checkout ${SHA}
 git checkout -b release/${PURPOSE}/${VERSION}xx
-
-sed -i "s:build.number=???00:build.number=${VERSION}00:g" ${VERSION_FILE}
-
-git add ${VERSION_FILE}
-git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${VERSION}xx"
 git push origin release/${PURPOSE}/${VERSION}xx
