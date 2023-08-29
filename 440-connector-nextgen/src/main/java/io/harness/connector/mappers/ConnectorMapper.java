@@ -26,6 +26,11 @@ import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsConnector;
 import io.harness.connector.entities.embedded.gcpkmsconnector.GcpKmsConnector;
 import io.harness.connector.entities.embedded.localconnector.LocalConnector;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
+import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
+import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
+import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
+import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
@@ -193,6 +198,26 @@ public class ConnectorMapper {
     if (connectorDTO instanceof ManagerExecutable) {
       final Boolean executeOnDelegate = Optional.ofNullable(connector.getExecuteOnDelegate()).orElse(true);
       ((ManagerExecutable) connectorDTO).setExecuteOnDelegate(executeOnDelegate);
+    }
+    if (connectorDTO instanceof VaultConnectorDTO) {
+      final Boolean executeOnDelegate = Optional.ofNullable(connector.getExecuteOnDelegate()).orElse(true);
+      ((VaultConnectorDTO) connectorDTO).setExecuteOnDelegate(executeOnDelegate);
+    }
+    if (connectorDTO instanceof AwsSecretManagerDTO) {
+      final Boolean executeOnDelegate = Optional.ofNullable(connector.getExecuteOnDelegate()).orElse(true);
+      ((AwsSecretManagerDTO) connectorDTO).setExecuteOnDelegate(executeOnDelegate);
+    }
+    if (connectorDTO instanceof AwsKmsConnectorDTO) {
+      final Boolean executeOnDelegate = Optional.ofNullable(connector.getExecuteOnDelegate()).orElse(true);
+      ((AwsKmsConnectorDTO) connectorDTO).setExecuteOnDelegate(executeOnDelegate);
+    }
+    if (connectorDTO instanceof AzureKeyVaultConnectorDTO) {
+      final Boolean executeOnDelegate = Optional.ofNullable(connector.getExecuteOnDelegate()).orElse(true);
+      ((AzureKeyVaultConnectorDTO) connectorDTO).setExecuteOnDelegate(executeOnDelegate);
+    }
+    if (connectorDTO instanceof GcpKmsConnectorDTO) {
+      final Boolean executeOnDelegate = Optional.ofNullable(connector.getExecuteOnDelegate()).orElse(true);
+      ((GcpKmsConnectorDTO) connectorDTO).setExecuteOnDelegate(executeOnDelegate);
     }
     return connectorDTO;
   }

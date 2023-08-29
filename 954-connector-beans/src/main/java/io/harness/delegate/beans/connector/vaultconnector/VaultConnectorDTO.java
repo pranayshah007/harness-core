@@ -109,7 +109,7 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @Schema(description = K8S_AUTH_ENDPOINT) private String k8sAuthEndpoint;
   @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
   @Schema(description = ENABLE_CACHE) private boolean enableCache = true;
-  @Builder.Default Boolean executeOnDelegate = true;
+  private Boolean executeOnDelegate = true;
 
   @Builder
   public VaultConnectorDTO(SecretRefData authToken, String basePath, String vaultUrl, boolean isReadOnly,
@@ -117,7 +117,8 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
       SecretRefData secretId, boolean isDefault, int secretEngineVersion, Set<String> delegateSelectors,
       String namespace, String sinkPath, boolean useVaultAgent, boolean useAwsIam, String awsRegion,
       String vaultAwsIamRole, SecretRefData headerAwsIam, boolean useK8sAuth, String vaultK8sAuthRole,
-      String serviceAccountTokenPath, String k8sAuthEndpoint, boolean renewAppRoleToken, boolean enableCache) {
+      String serviceAccountTokenPath, String k8sAuthEndpoint, boolean renewAppRoleToken, boolean enableCache,
+      Boolean executeOnDelegate) {
     this.authToken = authToken;
     this.basePath = basePath;
     this.vaultUrl = vaultUrl;
@@ -143,6 +144,7 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
     this.k8sAuthEndpoint = k8sAuthEndpoint;
     this.renewAppRoleToken = renewAppRoleToken;
     this.enableCache = enableCache;
+    this.executeOnDelegate = executeOnDelegate;
   }
 
   public AccessType getAccessType() {

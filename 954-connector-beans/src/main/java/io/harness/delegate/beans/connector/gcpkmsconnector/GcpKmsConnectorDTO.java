@@ -65,11 +65,11 @@ public class GcpKmsConnectorDTO extends ConnectorConfigDTO implements DelegateSe
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @JsonIgnore private boolean harnessManaged;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
-  @Builder.Default Boolean executeOnDelegate = true;
+  private Boolean executeOnDelegate = true;
 
   @Builder
   public GcpKmsConnectorDTO(String projectId, String region, String keyRing, String keyName, SecretRefData credentials,
-      boolean isDefault, Set<String> delegateSelectors) {
+      boolean isDefault, Set<String> delegateSelectors, Boolean executeOnDelegate) {
     this.projectId = projectId;
     this.region = region;
     this.keyRing = keyRing;
@@ -77,6 +77,7 @@ public class GcpKmsConnectorDTO extends ConnectorConfigDTO implements DelegateSe
     this.credentials = credentials;
     this.isDefault = isDefault;
     this.delegateSelectors = delegateSelectors;
+    this.executeOnDelegate = executeOnDelegate;
   }
 
   @Override

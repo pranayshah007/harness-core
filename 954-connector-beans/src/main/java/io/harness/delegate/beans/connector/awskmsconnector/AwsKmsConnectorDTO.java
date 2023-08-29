@@ -68,16 +68,17 @@ public class AwsKmsConnectorDTO extends ConnectorConfigDTO implements DelegateSe
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema @JsonIgnore private boolean harnessManaged;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
-  @Builder.Default Boolean executeOnDelegate = true;
+  private Boolean executeOnDelegate = true;
 
   @Builder
   public AwsKmsConnectorDTO(SecretRefData kmsArn, String region, AwsKmsConnectorCredentialDTO credential,
-      boolean isDefault, Set<String> delegateSelectors) {
+      boolean isDefault, Set<String> delegateSelectors, Boolean executeOnDelegate) {
     this.kmsArn = kmsArn;
     this.region = region;
     this.credential = credential;
     this.isDefault = isDefault;
     this.delegateSelectors = delegateSelectors;
+    this.executeOnDelegate = executeOnDelegate;
   }
 
   @Override
