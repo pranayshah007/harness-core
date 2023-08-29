@@ -168,6 +168,8 @@ enableOpentelemetry: false
 
 policyManagerSecret: secret
 
+enableOpaEvaluation: ${ENABLE_OPA_EVALUATION:-false}
+
 opaClientConfig:
   baseUrl: http://localhost:3000
   connectTimeOutSeconds: 15
