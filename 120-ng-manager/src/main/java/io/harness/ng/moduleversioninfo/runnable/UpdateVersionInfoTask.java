@@ -101,48 +101,33 @@ public class UpdateVersionInfoTask {
   }
 
   private String getBaseUrl(String moduleName) throws IOException {
-    String finalBaseUrl = "";
-    try {
-      if (PLATFORM.equals(moduleName)) {
-        finalBaseUrl = nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
-      }
-      ModuleType moduleType = ModuleType.valueOf(moduleName);
-
-      switch (moduleType) {
-        case CD:
-          finalBaseUrl = nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
-          break;
-        case CHAOS:
-          finalBaseUrl = new StringBuilder(nextGenConfiguration.getChaosServiceClientConfig().getBaseUrl())
-                             .append(CHAOS_MANAGER_API)
-                             .toString();
-          break;
-        case CE:
-          finalBaseUrl = nextGenConfiguration.getCeNextGenClientConfig().getBaseUrl();
-          break;
-        case CF:
-          finalBaseUrl = new StringBuilder(nextGenConfiguration.getFfServerClientConfig().getBaseUrl()).toString();
-          break;
-        case CI:
-          finalBaseUrl = nextGenConfiguration.getCiManagerClientConfig().getBaseUrl();
-          break;
-        case SRM:
-          finalBaseUrl = nextGenConfiguration.getCvngClientConfig().getBaseUrl();
-          break;
-        case STO:
-          finalBaseUrl = nextGenConfiguration.getStoClientConfig().getBaseUrl();
-          break;
-        default:
-          log.error("getBaseUrl() not supported for provided moduleType={}.", moduleType);
-          break;
-      }
-    } catch (Exception e) {
-      log.error("Encountered an error while trying to construct the baseURL for module: {}. {} at {}", moduleName,
-          e.getMessage(), e.getStackTrace());
-      throw new IOException(e);
+    if (PLATFORM.equals(moduleName)) {
+      return nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
     }
+    ModuleType moduleType = ModuleType.valueOf(moduleName);
 
-    return finalBaseUrl;
+    switch (moduleType) {
+      case CD:
+        return nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
+      case CHAOS:
+        return new StringBuilder(nextGenConfiguration.getChaosServiceClientConfig().getBaseUrl())
+            .append(CHAOS_MANAGER_API)
+            .toString();
+      case CE:
+        return nextGenConfiguration.getCeNextGenClientConfig().getBaseUrl();
+      case CF:
+        return new StringBuilder(nextGenConfiguration.getFfServerClientConfig().getBaseUrl()).toString();
+      case CI:
+        return nextGenConfiguration.getCiManagerClientConfig().getBaseUrl();
+      case SRM:
+        return nextGenConfiguration.getCvngClientConfig().getBaseUrl();
+      case STO:
+        return nextGenConfiguration.getStoCoreClientConfig().getBaseUrl();
+      default:
+        String errorMsg = String.format("getBaseUrl() not supported for provided moduleType={}.", moduleType);
+        log.error(errorMsg);
+        throw new IOException(errorMsg);
+    }
   }
 
   private String getLatestVersion(ModuleVersionInfo moduleVersionInfo, String baseUrl)
@@ -174,7 +159,7 @@ public class UpdateVersionInfoTask {
 
   private void getFormattedDateTime(ModuleVersionInfo module) {
     // as we'll add more modules this check will go away
-    if (module.getVersion().equals("Coming Soon")) {
+    if (module.getVersion().equals(COMING_SOON)) {
       return;
     }
 
@@ -210,38 +195,38 @@ public class UpdateVersionInfoTask {
     log.info("Request: {} and Response Body: {}", request, response.body());
     String responseString = response.body().toString().trim();
     JSONObject jsonObject = new JSONObject(responseString);
-    
-    String finalVersion = "";
+
     try {
       ModuleType moduleType = ModuleType.valueOf(serviceName);
       switch (moduleType) {
         case CF:
           if (jsonObject.has(VERSION_INFO)) {
-            finalVersion = jsonObject.get(VERSION_INFO).toString();
+            return jsonObject.get(VERSION_INFO).toString();
           } else {
-            log.error("Response from FF version endpoint doesn't have field 'versionInfo'. response={}", jsonObject);
+            String errorMsg = String.format(
+                "Response from FF version endpoint doesn't have field 'versionInfo'. response={}", jsonObject);
+            log.error(errorMsg);
+            throw new JSONException(errorMsg);
           }
-          break;
         case STO:
           if (jsonObject.has(VERSION)) {
-            finalVersion = jsonObject.get(VERSION).toString();
+            return jsonObject.get(VERSION).toString();
           } else {
-            log.error("Response from STO version endpoint doesn't have field 'version'. response={}", jsonObject);
+            String errorMsg = String.format(
+                "Response from STO version endpoint doesn't have field 'version'. response={}", jsonObject);
+            log.error(errorMsg);
+            throw new JSONException(errorMsg);
           }
-          break;
         default:
           JSONObject resourceJsonObject = (JSONObject) jsonObject.get(RESOURCE);
           JSONObject versionInfoJsonObject = (JSONObject) resourceJsonObject.get(VERSION_INFO);
-          finalVersion = versionInfoJsonObject.getString(VERSION);
-          break;
-      }
+          return versionInfoJsonObject.getString(VERSION);
     } catch (JSONException je) {
       String errorMsg =
           String.format("Error while trying to jsonify the response=%s for moduleName=%s", responseString, serviceName);
       log.error(errorMsg, je);
       throw new JSONException(errorMsg, je);
     }
-    return finalVersion;
   }
 
   private void updateModuleVersionInfoCollection(ModuleVersionInfo module) {
