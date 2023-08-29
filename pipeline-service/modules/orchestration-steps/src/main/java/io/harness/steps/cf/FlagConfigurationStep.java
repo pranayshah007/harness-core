@@ -206,7 +206,7 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
             RemoveSegmentToVariationTargetMapYamlSpec spec =
                 ((RemoveSegmentToVariationTargetMapYaml) patchInstruction).getSpec();
             PatchInstruction instruction =
-                cfApi.getAddSegmentToVariationMapParams(spec.getVariation().getValue(), spec.getSegments().getValue());
+                cfApi.getRemoveSegmentToVariationMapParams(spec.getVariation().getValue(), spec.getSegments().getValue());
             instructions.add(instruction);
           }
         }
