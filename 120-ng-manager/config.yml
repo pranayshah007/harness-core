@@ -143,7 +143,7 @@ cvngClientConfig:
   readTimeOutSeconds: 15
 
 stoCoreClientConfig:
-  baseUrl: http://localhost:4000/api/v2/system/
+  baseUrl: ${STO_CORE_SERVICE_BASE_URL:-http://localhost:4000/api/}v2/system/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 

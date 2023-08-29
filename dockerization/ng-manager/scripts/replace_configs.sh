@@ -602,7 +602,6 @@ replace_key_value ceAzureSetupConfig.azureAppClientSecret "$AZURE_APP_CLIENT_SEC
 replace_key_value pipelineServiceClientConfig.baseUrl "$PIPELINE_SERVICE_CLIENT_BASEURL"
 replace_key_value ciManagerClientConfig.baseUrl "$CI_MANAGER_SERVICE_CLIENT_BASEURL"
 replace_key_value cvngClientConfig.baseUrl "$CVNG_SERVICE_CLIENT_BASEURL"
-replace_key_value stoCoreClientConfig.baseUrl "$STO_CORE_SERVICE_CLIENT_BASEURL"
 replace_key_value scopeAccessCheckEnabled "${SCOPE_ACCESS_CHECK:-true}"
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"

@@ -2,7 +2,7 @@
    {
      "moduleName": "CI",
      "displayName": "Continuous Integration",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/continuous-integration",
@@ -12,7 +12,7 @@
    {
      "moduleName": "CD",
      "displayName": "Continuous Delivery & GitOps",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/continuous-delivery",
@@ -22,7 +22,7 @@
    {
      "moduleName": "CE",
      "displayName": "Cloud Cost Management",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/cloud-cost-management",
@@ -32,7 +32,7 @@
    {
      "moduleName": "CHAOS",
      "displayName": "Chaos Engineering",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/chaos-engineering",
@@ -42,7 +42,7 @@
    {
      "moduleName": "CF",
      "displayName": "Feature Flags",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/feature-flags",
@@ -52,7 +52,7 @@
    {
      "moduleName": "SRM",
      "displayName": "Service Reliability Management",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/service-reliability-management",
@@ -72,7 +72,7 @@
    {
      "moduleName": "Platform",
      "displayName": "Platform",
-     "version": "Coming Soon",
+     "version": "",
      "lastModifiedAt": "",
      "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/platform",

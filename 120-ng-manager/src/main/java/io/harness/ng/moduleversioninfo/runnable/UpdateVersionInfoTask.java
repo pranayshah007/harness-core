@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo.ModuleVersionInfoKeys;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.NextGenConfiguration;
 
@@ -69,7 +70,7 @@ public class UpdateVersionInfoTask {
     moduleVersionInfos = new ArrayList<>();
   }
 
-  public void run() throws InterruptedException {
+  public void run() throws InterruptedException, RuntimeException {
     checkVersionChange();
   }
 
@@ -85,21 +86,19 @@ public class UpdateVersionInfoTask {
           String baseUrl = getBaseUrl(moduleVersionInfo.getModuleName());
           String latestVersion = getLatestVersion(moduleVersionInfo, baseUrl);
           moduleVersionInfo.setVersion(latestVersion);
-        } catch (IOException e) {
-          log.error("Encountered an exception while trying to update the version for module: {}",
-              moduleVersionInfo.getDisplayName());
-          throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
-        } catch (InterruptedException e) {
-          log.error("Encountered an exception while trying to update the version for module: {}",
-              moduleVersionInfo.getDisplayName());
-          throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:", e);
+        } catch (Exception e) {
+          String errorMsg =
+              String.format("Encountered an exception while trying to retrieve latest version of module: {}",
+                  moduleVersionInfo.getDisplayName());
+          log.error(errorMsg, e.getMessage(), e.getStackTrace());
+          throw new UnexpectedException("Update VersionInfo Task Sync job interrupted due to:" + e.getMessage());
         }
       }
       updateModuleVersionInfoCollection(moduleVersionInfo);
     });
   }
 
-  private String getBaseUrl(String moduleName) throws IOException {
+  private String getBaseUrl(String moduleName) throws InvalidRequestException {
     if (PLATFORM.equals(moduleName)) {
       return nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
     }
@@ -125,7 +124,7 @@ public class UpdateVersionInfoTask {
       default:
         String errorMsg = String.format("getBaseUrl() not supported for provided moduleType={}.", moduleType);
         log.error(errorMsg);
-        throw new IOException(errorMsg);
+        throw new InvalidRequestException(errorMsg);
     }
   }
 
