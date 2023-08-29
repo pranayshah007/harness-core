@@ -3931,6 +3931,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     String folderPath = "sample/folder/path";
     GitConfigDTO gitConfigDTO = GitConfigDTO.builder().url(repoUrl).build();
     String manifestFilesDir = "sample/manifest/dir";
+    String chartName = "nginx";
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder().gitConfigDTO(gitConfigDTO).build();
     GcsHelmStoreDelegateConfig gcsHelmStoreDelegateConfig =
         GcsHelmStoreDelegateConfig.builder().bucketName(bucketName).folderPath(folderPath).build();
@@ -3982,20 +3983,26 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("sample/repo/url");
 
     // Test Gcs
-    manifestDelegateConfig =
-        HelmChartManifestDelegateConfig.builder().storeDelegateConfig(gcsHelmStoreDelegateConfig).build();
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(gcsHelmStoreDelegateConfig)
+                                 .chartName(chartName)
+                                 .build();
     helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
     assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("gs://" + bucketName + "/" + folderPath);
 
     // Test HTTP
-    manifestDelegateConfig =
-        HelmChartManifestDelegateConfig.builder().storeDelegateConfig(httpStoreDelegateConfig).build();
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(httpStoreDelegateConfig)
+                                 .chartName(chartName)
+                                 .build();
     helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
     assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo(repoUrl);
 
     // Test S3
-    manifestDelegateConfig =
-        HelmChartManifestDelegateConfig.builder().storeDelegateConfig(s3HelmStoreDelegateConfig).build();
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(s3HelmStoreDelegateConfig)
+                                 .chartName(chartName)
+                                 .build();
     helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
     assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("s3://" + bucketName + "/" + folderPath);
 
@@ -4026,14 +4033,18 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo("harness");
 
     // Test Oci
-    manifestDelegateConfig =
-        HelmChartManifestDelegateConfig.builder().storeDelegateConfig(ociHelmStoreDelegateConfig).build();
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(ociHelmStoreDelegateConfig)
+                                 .chartName(chartName)
+                                 .build();
     helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
     assertThat(helmChartInfoFinal.getRepoUrl()).isEqualTo(repoUrl);
 
     // Test Inline
-    manifestDelegateConfig =
-        HelmChartManifestDelegateConfig.builder().storeDelegateConfig(inlineStoreDelegateConfig).build();
+    manifestDelegateConfig = HelmChartManifestDelegateConfig.builder()
+                                 .storeDelegateConfig(inlineStoreDelegateConfig)
+                                 .chartName(chartName)
+                                 .build();
     helmChartInfoFinal = k8sTaskHelperBase.getHelmChartDetails(manifestDelegateConfig, manifestFilesDir);
     assertThat(helmChartInfoFinal.getRepoUrl()).isEmpty();
 
