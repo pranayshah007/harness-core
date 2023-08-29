@@ -393,6 +393,42 @@ settings :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
+  - identifier: enable_slack_notification
+    name: Enable Slack Notifications
+    category: NOTIFICATIONS
+    groupIdentifier: enabled_notification_channels
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_msTeams_notification
+    name: Enable MS Teams Notifications
+    category: NOTIFICATIONS
+    groupIdentifier: enabled_notification_channels
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_webhook_notification
+    name: Enable Webhook Notifications
+    category: NOTIFICATIONS
+    groupIdentifier: enabled_notification_channels
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_pagerduty_notification
+    name: Enable Pager Duty Notifications
+    category: NOTIFICATIONS
+    groupIdentifier: enabled_notification_channels
+    defaultValue: true
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
   - identifier: trigger_for_all_artifacts_or_manifests
     name: Execute Triggers With All Collected Artifacts or Manifests
     category: PMS
