@@ -49,7 +49,7 @@ public interface PatchInstruction {
     REMOVE_TARGETS_TO_VARIATION_TARGET_MAP("RemoveTargetsToVariationTargetMap"),
     @JsonProperty("AddSegmentToVariationTargetMap")
     ADD_SEGMENT_TO_VARIATION_TARGET_MAP("AddSegmentToVariationTargetMap"),
-    @JsonProperty("RemoveSegmentsToVariationTargetMap")
+    @JsonProperty("RemoveSegmentToVariationTargetMap")
     REMOVE_SEGMENT_TO_VARIATION_TARGET_MAP("RemoveSegmentToVariationTargetMap");
     private final String yamlName;
 
