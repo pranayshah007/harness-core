@@ -100,11 +100,8 @@ import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.progresstaskstreaming.NGDelegateTaskProgressCallback;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
-import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
-import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.beans.taskprogress.TaskProgressCallback;
@@ -3258,15 +3255,21 @@ public class K8sTaskHelperBase {
     }
     return kubernetesResourceIds.get(0);
   }
-  public HelmChartInfo getHelmChartDetails(ManifestDelegateConfig manifestDelegateConfig, String manifestFileDir)
-      throws Exception {
-    HelmChartInfo helmChartInfo =
-        helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(Paths.get(manifestFileDir, CHARTS_YAML_KEY).toString());
+  public HelmChartInfo getHelmChartDetails(ManifestDelegateConfig manifestDelegateConfig, String manifestFileDir) {
+    String finalPath = getManifestDirectoryForHelmChartWithSubCharts(
+        manifestFileDir, (HelmChartManifestDelegateConfig) manifestDelegateConfig);
+    try {
+      HelmChartInfo helmChartInfo =
+          helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(Paths.get(finalPath, CHARTS_YAML_KEY).toString());
 
-    if (helmChartInfo != null) {
-      helmChartInfo.setRepoUrl(manifestDelegateConfig.getStoreDelegateConfig().getRepoUrl());
+      if (helmChartInfo != null) {
+        helmChartInfo.setRepoUrl(manifestDelegateConfig.getStoreDelegateConfig().getRepoUrl());
+      }
+
+      return helmChartInfo;
+    } catch (Exception ex) {
+      log.warn("Unable to retrieve helmChartInfo from the Chart Yaml: " + ExceptionUtils.getMessage(ex));
+      return null;
     }
-
-    return helmChartInfo;
   }
 }
