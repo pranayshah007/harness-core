@@ -97,9 +97,10 @@ public class NodeProjectionUtils {
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.adviserResponse,
           NodeExecutionKeys.failureInfo, NodeExecutionKeys.notifyId, NodeExecutionKeys.endTs);
 
-  public static final Set<String> fieldsForIdentityStrategyStep = Sets.newHashSet(NodeExecutionKeys.identifier,
-      NodeExecutionKeys.name, NodeExecutionKeys.nodeId, NodeExecutionKeys.status, NodeExecutionKeys.executableResponses,
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.oldRetry, NodeExecutionKeys.parentId, NodeExecutionKeys.stepType);
+  public static final Set<String> fieldsForIdentityStrategyStep =
+      Sets.newHashSet(NodeExecutionKeys.identifier, NodeExecutionKeys.name, NodeExecutionKeys.nodeId,
+          NodeExecutionKeys.status, NodeExecutionKeys.executableResponses, NodeExecutionKeys.ambiance,
+          NodeExecutionKeys.oldRetry, NodeExecutionKeys.parentId, NodeExecutionKeys.stepType, NodeExecutionKeys.group);
 
   public static final Set<String> fieldsForNodeExecutionDelete = Sets.newHashSet(NodeExecutionKeys.timeoutInstanceIds,
       NodeExecutionKeys.adviserTimeoutInstanceIds, NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId,

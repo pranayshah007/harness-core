@@ -35,7 +35,6 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.helpers.PrincipalInfoHelper;
-import io.harness.pms.pipeline.service.PipelineMetadataService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -61,19 +60,16 @@ import org.springframework.data.util.CloseableIterator;
 public class RollbackModeExecutionHelper {
   private NodeExecutionService nodeExecutionService;
   private PlanService planService;
-  private PipelineMetadataService pipelineMetadataService;
   private PrincipalInfoHelper principalInfoHelper;
   private RollbackModeYamlTransformer rollbackModeYamlTransformer;
 
   public ExecutionMetadata transformExecutionMetadata(ExecutionMetadata executionMetadata, String planExecutionID,
-      ExecutionTriggerInfo triggerInfo, String accountId, String orgIdentifier, String projectIdentifier,
-      ExecutionMode executionMode, PipelineStageInfo parentStageInfo, List<String> stageNodeExecutionIds) {
+      ExecutionTriggerInfo triggerInfo, ExecutionMode executionMode, PipelineStageInfo parentStageInfo,
+      List<String> stageNodeExecutionIds) {
     String originalPlanExecutionId = executionMetadata.getExecutionUuid();
     Builder newMetadata = executionMetadata.toBuilder()
                               .setExecutionUuid(planExecutionID)
                               .setTriggerInfo(triggerInfo)
-                              .setRunSequence(pipelineMetadataService.incrementExecutionCounter(accountId,
-                                  orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
                               .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
                               .setExecutionMode(executionMode)
                               .setOriginalPlanExecutionIdForRollbackMode(originalPlanExecutionId);

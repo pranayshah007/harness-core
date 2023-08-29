@@ -12,6 +12,7 @@ import static io.harness.pms.contracts.execution.ChildrenExecutableResponse.Chil
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -47,6 +48,7 @@ import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -294,5 +296,66 @@ public class SpawnChildrenRequestProcessorTest extends OrchestrationTestBase {
         .containsExactlyInAnyOrder(runtimeIds.get(0));
 
     verify(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetFilteredChildren() {
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .addLevels(Level.newBuilder().setSetupId("parallelId").build())
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
+                    .addPostExecutionRollbackInfo(
+                        PostExecutionRollbackInfo.newBuilder().setPostExecutionRollbackStageId("stageId").build())
+                    .build())
+            .build();
+    List<Child> children = Collections.singletonList(Child.newBuilder().build());
+    List<Child> filteredChildren = processor.getFilteredChildren(ambiance, children);
+    assertThat(filteredChildren.size()).isEqualTo(1);
+    assertThat(filteredChildren.get(0)).isEqualTo(children.get(0));
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetFilteredChildrenMatrix() {
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .addLevels(Level.newBuilder().setSetupId("stageId").build())
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
+                    .addPostExecutionRollbackInfo(
+                        PostExecutionRollbackInfo.newBuilder()
+                            .setPostExecutionRollbackStageId("stageId")
+                            .setRollbackStageStrategyMetadata(
+                                StrategyMetadata.newBuilder()
+                                    .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(0).build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    List<Child> children = List.of(
+        Child.newBuilder()
+            .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                     .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(0).build())
+                                     .build())
+            .build(),
+        Child.newBuilder()
+            .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                     .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(1).build())
+                                     .build())
+            .build(),
+        Child.newBuilder()
+            .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                     .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(2).build())
+                                     .build())
+            .build());
+    List<Child> filteredChildren = processor.getFilteredChildren(ambiance, children);
+    assertThat(filteredChildren.size()).isEqualTo(1);
+    assertThat(filteredChildren.get(0)).isEqualTo(children.get(0));
   }
 }
