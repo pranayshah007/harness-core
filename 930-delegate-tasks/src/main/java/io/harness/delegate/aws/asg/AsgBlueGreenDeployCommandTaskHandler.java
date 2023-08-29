@@ -68,6 +68,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -92,14 +93,22 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
 
     AsgBlueGreenDeployRequest asgBlueGreenDeployRequest = (AsgBlueGreenDeployRequest) asgCommandRequest;
     Map<String, List<String>> asgStoreManifestsContent = asgBlueGreenDeployRequest.getAsgStoreManifestsContent();
-    AsgLoadBalancerConfig lbConfig = asgBlueGreenDeployRequest.getAsgLoadBalancerConfig();
     String asgName = asgBlueGreenDeployRequest.getAsgName();
     String amiImageId = asgBlueGreenDeployRequest.getAmiImageId();
     boolean isFirstDeployment = asgBlueGreenDeployRequest.isFirstDeployment();
     boolean useAlreadyRunningInstances = asgBlueGreenDeployRequest.isUseAlreadyRunningInstances();
 
+    List<AsgLoadBalancerConfig> lbConfigs = isNotEmpty(asgBlueGreenDeployRequest.getLoadBalancers())
+        ? asgBlueGreenDeployRequest.getLoadBalancers()
+        : Arrays.asList(asgBlueGreenDeployRequest.getAsgLoadBalancerConfig());
+
     List<String> targetGroupArnsList =
-        isFirstDeployment ? lbConfig.getProdTargetGroupArnsList() : lbConfig.getStageTargetGroupArnsList();
+        lbConfigs.stream()
+            .map(lbConfig
+                -> isFirstDeployment ? lbConfig.getProdTargetGroupArnsList() : lbConfig.getStageTargetGroupArnsList())
+            .flatMap(List::stream)
+            .distinct()
+            .collect(Collectors.toList());
 
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));

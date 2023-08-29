@@ -19,6 +19,7 @@ import io.harness.pms.yaml.ParameterField;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -58,6 +59,12 @@ public class AwsAsgLoadBalancerConfigYaml implements LoadBalancerSpec {
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   ParameterField<String> stageListenerRuleArn;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<String>> prodTargetGroupArnList;
+
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<String>> stageTargetGroupArnList;
 
   @Override
   @JsonIgnore

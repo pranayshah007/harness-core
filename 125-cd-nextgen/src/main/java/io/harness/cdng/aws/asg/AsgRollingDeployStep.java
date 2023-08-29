@@ -9,6 +9,7 @@ package io.harness.cdng.aws.asg;
 
 import static software.wings.beans.TaskType.AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG;
 import static software.wings.beans.TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG_V2;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -44,6 +45,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -140,8 +143,13 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .amiImageId(amiImageId)
             .build();
 
-    return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgRollingDeployRequest, ambiance,
-        executionPassThroughData, true, AWS_ASG_ROLLING_DEPLOY_TASK_NG);
+    TaskType taskType = asgStepCommonHelper.isV2Feature(
+                            asgStepExecutorParams.getAsgStoreManifestsContent(), asgSpecParameters.getInstances(), null)
+        ? AWS_ASG_ROLLING_DEPLOY_TASK_NG_V2
+        : AWS_ASG_ROLLING_DEPLOY_TASK_NG;
+
+    return asgStepCommonHelper.queueAsgTask(
+        stepElementParameters, asgRollingDeployRequest, ambiance, executionPassThroughData, true, taskType);
   }
 
   @Override
