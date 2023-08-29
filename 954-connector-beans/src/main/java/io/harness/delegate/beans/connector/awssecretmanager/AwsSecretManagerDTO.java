@@ -63,6 +63,7 @@ public class AwsSecretManagerDTO extends ConnectorConfigDTO implements DelegateS
 
   @Schema(description = SecretManagerDescriptionConstants.AWS_SECRET_NAME_PREFIX) private String secretNamePrefix;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
+  @Builder.Default Boolean executeOnDelegate = true;
 
   @Builder
   public AwsSecretManagerDTO(String region, AwsSecretManagerCredentialDTO credential, boolean isDefault,

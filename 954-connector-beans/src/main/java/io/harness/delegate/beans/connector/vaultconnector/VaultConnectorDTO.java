@@ -109,6 +109,7 @@ public class VaultConnectorDTO extends ConnectorConfigDTO implements DelegateSel
   @Schema(description = K8S_AUTH_ENDPOINT) private String k8sAuthEndpoint;
   @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
   @Schema(description = ENABLE_CACHE) private boolean enableCache = true;
+  @Builder.Default Boolean executeOnDelegate = true;
 
   @Builder
   public VaultConnectorDTO(SecretRefData authToken, String basePath, String vaultUrl, boolean isReadOnly,

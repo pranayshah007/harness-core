@@ -65,6 +65,7 @@ public class GcpKmsConnectorDTO extends ConnectorConfigDTO implements DelegateSe
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @JsonIgnore private boolean harnessManaged;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
+  @Builder.Default Boolean executeOnDelegate = true;
 
   @Builder
   public GcpKmsConnectorDTO(String projectId, String region, String keyRing, String keyName, SecretRefData credentials,

@@ -59,6 +59,7 @@ public class GcpSecretManagerConnectorDTO extends ConnectorConfigDTO implements 
 
   @Schema(description = SecretManagerDescriptionConstants.ASSUME_CREDENTIALS_ON_DELEGATE)
   Boolean assumeCredentialsOnDelegate;
+  @Builder.Default Boolean executeOnDelegate = true;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
