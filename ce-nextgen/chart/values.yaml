@@ -138,7 +138,7 @@ awsSecret:
 
 ceng-gcp-credentials: ""
 
-nameOverride: ""
+nameOverride: "nextgen-ce"
 fullnameOverride: ""
 
 serviceAccount:
