@@ -8,6 +8,9 @@
 package io.harness.pms.approval.resources;
 
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.approval.ApprovalResourceService;
@@ -23,6 +26,8 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 @PipelineServiceAuth
 @Slf4j
 public class ApprovalResourceImpl implements ApprovalResource {
@@ -35,8 +40,9 @@ public class ApprovalResourceImpl implements ApprovalResource {
     this.approvalResourceService = approvalResourceService;
   }
 
-  public ResponseDTO<ApprovalInstanceResponseDTO> getApprovalInstance(@NotEmpty String approvalInstanceId) {
-    return ResponseDTO.newResponse(approvalResourceService.get(approvalInstanceId));
+  public ResponseDTO<ApprovalInstanceResponseDTO> getApprovalInstance(
+      @NotEmpty String approvalInstanceId, @AccountIdentifier String accountId) {
+    return ResponseDTO.newResponse(approvalResourceService.get(approvalInstanceId, accountId));
   }
 
   public ResponseDTO<ApprovalInstanceResponseDTO> addHarnessApprovalActivity(@AccountIdentifier String accountId,

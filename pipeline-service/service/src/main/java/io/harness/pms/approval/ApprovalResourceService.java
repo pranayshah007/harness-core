@@ -7,6 +7,10 @@
 
 package io.harness.pms.approval;
 
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
@@ -19,8 +23,10 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public interface ApprovalResourceService {
-  ApprovalInstanceResponseDTO get(@NotNull String approvalInstanceId);
+  ApprovalInstanceResponseDTO get(@NotNull String approvalInstanceId, @AccountIdentifier String accountId);
   ApprovalInstanceResponseDTO addHarnessApprovalActivity(
       @NotNull String approvalInstanceId, @NotNull @Valid HarnessApprovalActivityRequestDTO request);
   List<ApprovalInstanceResponseDTO> getApprovalInstancesByExecutionId(@NotEmpty String planExecutionId,
