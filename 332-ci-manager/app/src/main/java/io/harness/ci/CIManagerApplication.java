@@ -68,6 +68,9 @@ import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.metrics.MetricRegistryModule;
+import io.harness.metrics.jobs.RecordMetricsJob;
+import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
@@ -133,11 +136,13 @@ import io.harness.yaml.YamlSdkInitHelper;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -189,6 +194,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   private static final SecureRandom random = new SecureRandom();
   public static final Store HARNESSCI_STORE = Store.builder().name(DbAliases.CIMANAGER).build();
   private static final String APP_NAME = "CI Manager Service Application";
+  private final MetricRegistry metricRegistry = new MetricRegistry();
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -323,6 +329,13 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     modules.add(PmsSdkModule.getInstance(ciPmsSdkConfiguration));
 
     modules.add(PipelineServiceUtilityModule.getInstance());
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(MetricRegistry.class).toInstance(metricRegistry);
+      }
+    });
+    modules.add(new MetricRegistryModule(metricRegistry));
 
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);
@@ -351,6 +364,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     initializeCiManagerDataDeletion(injector);
     initializePluginPublisher(injector);
+    initializeMonitoring(configuration, injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
@@ -378,6 +392,17 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListenerNonVersioned.class), 1);
   }
 
+  private void initializeMonitoring(CIManagerConfiguration config, Injector injector) {
+    PmsSdkConfiguration ciSDKConfig = getPmsSdkConfiguration(
+        config, ModuleType.CI, ExecutionRegistrar.getEngineSteps(), CIPipelineServiceInfoProvider.class);
+    // If Deployment mode is REMOTE then monitoring is
+    // initialized as part of the PMS SDK registration step.
+    if (!ciSDKConfig.getDeploymentMode().equals(SdkDeployMode.REMOTE)) {
+      injector.getInstance(MetricService.class).initializeMetrics();
+      injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
+    }
+  }
+
   @Override
   public void initialize(Bootstrap<CIManagerConfiguration> bootstrap) {
     initializeLogging();
@@ -396,6 +421,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         return appConfig.getSwaggerBundleConfiguration();
       }
     });
+    bootstrap.setMetricRegistry(metricRegistry);
     log.info("bootstrapping done.");
   }
 
