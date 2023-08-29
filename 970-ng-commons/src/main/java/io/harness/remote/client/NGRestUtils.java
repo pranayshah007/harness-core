@@ -129,7 +129,7 @@ public class NGRestUtils {
       return response.body().getData();
     }
 
-    log.error("Error response received: {}", response);
+    log.warn("Error response received: {}", response);
     String errorMessage = "";
     try {
       ErrorDTO restResponse = JsonUtils.asObject(response.errorBody().string(), new TypeReference<ErrorDTO>() {});
