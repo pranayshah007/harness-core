@@ -3268,7 +3268,7 @@ public class K8sTaskHelperBase {
 
       return helmChartInfo;
     } catch (Exception ex) {
-      log.warn("Unable to retrieve helmChartInfo from the Chart Yaml" + ex);
+      log.warn("Unable to retrieve helmChartInfo from the Chart Yaml: " + ExceptionUtils.getMessage(ex));
       return null;
     }
   }
