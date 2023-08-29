@@ -52,7 +52,8 @@ public class AnomalyDetectionConfiguration {
   @Bean
   @Qualifier(value = "anomalyDetectionInClusterDailyJob")
   public Job anomalyDetectionInClusterDailyJob(JobBuilderFactory jobBuilderFactory, Step statisticalModelClusterStep,
-      Step statisticalModelNamespaceStep, Step statisticalModelServiceStep, Step removeDuplicatesStep) {
+      Step statisticalModelNamespaceStep, Step statisticalModelServiceStep, Step removeDuplicatesStep,
+      Step slackNotificationStep) {
     return jobBuilderFactory.get(BatchJobType.ANOMALY_DETECTION_K8S.name())
         .incrementer(new RunIdIncrementer())
         .listener(batchJobExecutionListener)
@@ -60,6 +61,7 @@ public class AnomalyDetectionConfiguration {
         .next(statisticalModelNamespaceStep)
         .next(statisticalModelServiceStep)
         .next(removeDuplicatesStep)
+        .next(slackNotificationStep)
         .build();
   }
 
