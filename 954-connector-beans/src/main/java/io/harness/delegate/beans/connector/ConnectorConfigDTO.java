@@ -143,4 +143,5 @@ public abstract class ConnectorConfigDTO implements DecryptableEntity {
     // no op implementation which base classes can override
     return null;
   }
+
 }

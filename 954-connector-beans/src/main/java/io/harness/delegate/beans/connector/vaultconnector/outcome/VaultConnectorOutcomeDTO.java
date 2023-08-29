@@ -74,4 +74,5 @@ public class VaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implemen
   @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
   @Schema(description = ENABLE_CACHE) @Builder.Default private boolean enableCache = true;
   private AccessType accessType;
+  String connectorIdentifier;
 }

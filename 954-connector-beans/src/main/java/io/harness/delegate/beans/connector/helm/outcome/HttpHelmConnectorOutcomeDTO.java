@@ -35,4 +35,5 @@ public class HttpHelmConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO imple
   @URL @NotNull @NotBlank String helmRepoUrl;
   @Valid HttpHelmAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
+  String connectorIdentifier;
 }

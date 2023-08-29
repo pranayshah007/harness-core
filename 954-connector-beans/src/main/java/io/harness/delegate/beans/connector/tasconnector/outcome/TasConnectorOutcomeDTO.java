@@ -30,4 +30,5 @@ public class TasConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements
   @NotNull @Valid TasCredentialOutcomeDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  String connectorIdentifier;
 }

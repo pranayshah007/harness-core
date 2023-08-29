@@ -35,6 +35,7 @@ public class CustomSecretManagerConnectorOutcomeDTO extends ConnectorConfigOutco
   @Builder.Default Boolean onDelegate = Boolean.FALSE;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema private boolean harnessManaged;
+  String connectorIdentifier;
 
   @SecretReference
   @Schema(description = SecretManagerDescriptionConstants.CUSTOM_AUTH_TOKEN)

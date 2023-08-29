@@ -34,6 +34,7 @@ public class AwsCodeCommitConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO 
   @Valid @NotNull AwsCodeCommitAuthenticationOutcomeDTO authentication;
   Set<String> delegateSelectors;
   String gitConnectionUrl;
+  String connectorIdentifier;
 
   @Builder
   public AwsCodeCommitConnectorOutcomeDTO(AwsCodeCommitUrlType type, String url,

@@ -48,6 +48,7 @@ public class ArtifactoryConnectorDTO extends ConnectorConfigDTO implements Deleg
   @Valid ArtifactoryAuthenticationDTO auth;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  String connectorIdentifier;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
@@ -69,7 +70,7 @@ public class ArtifactoryConnectorDTO extends ConnectorConfigDTO implements Deleg
                   .build())
         .artifactoryServerUrl(this.artifactoryServerUrl)
         .delegateSelectors(this.delegateSelectors)
-        .executeOnDelegate(this.executeOnDelegate)
+        .executeOnDelegate(this.executeOnDelegate).connectorIdentifier(this.connectorIdentifier)
         .build();
   }
 }

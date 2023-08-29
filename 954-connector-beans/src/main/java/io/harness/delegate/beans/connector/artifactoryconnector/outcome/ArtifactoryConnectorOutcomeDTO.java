@@ -38,4 +38,5 @@ public class ArtifactoryConnectorOutcomeDTO
   @Valid ArtifactoryAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  String connectorIdentifier;
 }

@@ -46,6 +46,7 @@ public class BitbucketConnectorOutcomeDTO
   private Set<String> delegateSelectors;
   Boolean executeOnDelegate = true;
   private String gitConnectionUrl;
+  private String connectorIdentifier;
 
   @Builder
   public BitbucketConnectorOutcomeDTO(GitConnectionType type, String url, String validationRepo,

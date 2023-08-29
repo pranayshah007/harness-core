@@ -39,6 +39,7 @@ public class AzureArtifactsConnectorOutcomeDTO
   @URL @NotBlank @NotNull String azureArtifactsUrl;
   @Valid @NotNull AzureArtifactsAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
+  String connectorIdentifier;
 
   Boolean executeOnDelegate = true;
 

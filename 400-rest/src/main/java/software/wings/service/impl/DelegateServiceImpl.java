@@ -924,7 +924,7 @@ public class DelegateServiceImpl implements DelegateService {
         })
         .collect(toList());
   }
-
+F
   private boolean isDelegateAlive(Delegate delegate) {
     return delegate.getLastHeartBeat() > System.currentTimeMillis() - ofMinutes(1).toMillis();
   }

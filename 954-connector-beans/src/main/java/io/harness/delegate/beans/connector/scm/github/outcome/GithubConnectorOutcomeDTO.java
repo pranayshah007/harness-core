@@ -43,6 +43,7 @@ public class GithubConnectorOutcomeDTO
   @Valid GithubApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate;
+  String connectorIdentifier;
 
   @Builder
   public GithubConnectorOutcomeDTO(GitConnectionType type, String url, String validationRepo,

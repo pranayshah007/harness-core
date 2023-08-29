@@ -42,4 +42,5 @@ public class AwsKmsConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO impleme
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
   @Schema private boolean harnessManaged;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
+  String connectorIdentifier;
 }

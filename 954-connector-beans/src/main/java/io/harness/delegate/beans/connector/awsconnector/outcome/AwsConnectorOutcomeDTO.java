@@ -32,4 +32,5 @@ public class AwsConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements
   @Valid AwsSdkClientBackoffStrategyOutcomeDTO awsSdkClientBackOffStrategyOverride;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  String connectorIdentifier;
 }

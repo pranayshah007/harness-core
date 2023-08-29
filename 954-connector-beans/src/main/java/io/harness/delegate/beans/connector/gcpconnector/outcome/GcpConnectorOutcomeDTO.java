@@ -34,4 +34,5 @@ public class GcpConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements
   @Valid @NotNull GcpConnectorCredentialOutcomeDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  String connectorIdentifier;
 }

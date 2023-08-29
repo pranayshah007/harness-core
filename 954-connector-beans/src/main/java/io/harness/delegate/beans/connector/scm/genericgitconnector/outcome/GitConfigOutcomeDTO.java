@@ -43,6 +43,7 @@ public class GitConfigOutcomeDTO extends ConnectorConfigOutcomeDTO implements De
   private Set<String> delegateSelectors;
   private Boolean executeOnDelegate;
   private String gitConnectionUrl;
+  public String connectorIdentifier;
 
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)

@@ -40,6 +40,7 @@ public class AwsCapabilityHelper extends ConnectorCapabilityBaseHelper {
         && credential.getAwsCredentialType() != IRSA) {
       throw new UnknownEnumTypeException("AWS Credential Type", String.valueOf(credential.getAwsCredentialType()));
     }
+
     populateDelegateSelectorCapability(capabilityList, awsConnectorDTO.getDelegateSelectors());
     return capabilityList;
   }

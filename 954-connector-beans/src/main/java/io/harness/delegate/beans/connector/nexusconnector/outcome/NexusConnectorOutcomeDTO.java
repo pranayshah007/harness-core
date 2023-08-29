@@ -36,4 +36,5 @@ public class NexusConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implemen
   @NotNull @NotBlank String version;
   @Valid NexusAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
+  String connectorIdentifier;
 }

@@ -41,4 +41,5 @@ public class GcpSecretManagerConnectorOutcomeDTO extends ConnectorConfigOutcomeD
 
   @Schema(description = SecretManagerDescriptionConstants.ASSUME_CREDENTIALS_ON_DELEGATE)
   Boolean assumeCredentialsOnDelegate;
+  String connectorIdentifier;
 }

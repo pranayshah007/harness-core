@@ -49,6 +49,7 @@ public class AppDynamicsConnectorDTO extends ConnectorConfigDTO implements Decry
   @NotNull String accountname;
   @URL @NotNull @NotBlank String controllerUrl;
   Set<String> delegateSelectors;
+  String connectorIdentifier;
 
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData passwordRef;
   @ApiModelProperty(dataType = "string") @SecretReference SecretRefData clientSecretRef;

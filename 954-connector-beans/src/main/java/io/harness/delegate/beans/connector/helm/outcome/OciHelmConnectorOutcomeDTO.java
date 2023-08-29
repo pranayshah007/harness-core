@@ -34,4 +34,5 @@ public class OciHelmConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implem
   @NotNull @NotBlank String helmRepoUrl;
   @Valid OciHelmAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
+  String connectorIdentifier;
 }

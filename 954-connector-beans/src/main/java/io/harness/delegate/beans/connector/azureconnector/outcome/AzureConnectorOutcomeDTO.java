@@ -35,4 +35,5 @@ public class AzureConnectorOutcomeDTO
   Set<String> delegateSelectors;
   @NotNull private AzureEnvironmentType azureEnvironmentType;
   @Builder.Default Boolean executeOnDelegate = true;
+  String connectorIdentifier;
 }

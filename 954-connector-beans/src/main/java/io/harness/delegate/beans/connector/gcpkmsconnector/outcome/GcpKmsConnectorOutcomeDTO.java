@@ -50,4 +50,5 @@ public class GcpKmsConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO impleme
 
   private boolean harnessManaged;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
+  String connectorIdentifier;
 }

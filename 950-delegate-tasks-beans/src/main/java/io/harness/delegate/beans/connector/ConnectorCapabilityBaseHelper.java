@@ -23,4 +23,12 @@ public class ConnectorCapabilityBaseHelper {
       capabilityList.add(SelectorCapability.builder().selectors(delegateSelectors).selectorOrigin(origin).build());
     }
   }
+
+  public static void populateDelegateSelectorCapabilityWithConnectorRef(
+          List<ExecutionCapability> capabilityList, Set<String> delegateSelectors) {
+    if (isNotEmpty(delegateSelectors)) {
+      capabilityList.add(SelectorCapability.builder().selectors(delegateSelectors).selectorOrigin(origin).build());
+    }
+  }
+
 }

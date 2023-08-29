@@ -46,4 +46,5 @@ public class DockerConnectorOutcomeDTO
   @Valid DockerAuthenticationOutcomeDTO auth;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
+  String connectorIdentifier;
 }

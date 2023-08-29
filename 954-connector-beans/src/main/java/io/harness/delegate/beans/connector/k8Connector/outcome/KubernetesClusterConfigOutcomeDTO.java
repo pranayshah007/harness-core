@@ -24,4 +24,5 @@ import lombok.EqualsAndHashCode;
 public class KubernetesClusterConfigOutcomeDTO extends ConnectorConfigOutcomeDTO {
   @Valid @NotNull KubernetesCredentialOutcomeDTO credential;
   Set<String> delegateSelectors;
+  String connectorIdentifier;
 }
