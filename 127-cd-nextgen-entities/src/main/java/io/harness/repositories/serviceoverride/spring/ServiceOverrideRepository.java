@@ -32,4 +32,9 @@ public interface ServiceOverrideRepository
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndTypeAndYamlExistsAndYamlNotNull(
       @NotEmpty String accountId, String orgIdentifier, String projectIdentifier, @NotNull String environmentRef,
       String serviceRef, ServiceOverridesType type);
+
+  Optional<NGServiceOverridesEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvironmentRefAndServiceRefAndType(@NotEmpty String accountId,
+      String orgIdentifier, String projectIdentifier, @NotNull String environmentRef, String serviceRef,
+      ServiceOverridesType type);
 }
