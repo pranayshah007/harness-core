@@ -21,6 +21,7 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ApplicationResource {
   @JsonProperty("agentIdentifier") public String agentIdentifier;
+  @JsonProperty("repoIdentifier") public String repoIdentifier;
   @JsonProperty("clusterIdentifier") public String clusterIdentifier;
   @JsonProperty("name") public String name;
   @JsonProperty("stale") public Boolean stale;
