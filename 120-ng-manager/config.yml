@@ -142,6 +142,11 @@ cvngClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+stoCoreClientConfig:
+  baseUrl: http://localhost:4000/api/v2/system/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
 pipelineServiceClientConfig:
   baseUrl: http://localhost:12001/api/
   connectTimeOutSeconds: 15
