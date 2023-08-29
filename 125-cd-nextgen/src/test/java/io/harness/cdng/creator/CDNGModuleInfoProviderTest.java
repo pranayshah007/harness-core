@@ -49,6 +49,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -108,7 +109,8 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
     CDPipelineModuleInfo pipelineLevelModuleInfo = (CDPipelineModuleInfo) provider.getPipelineLevelModuleInfo(event);
 
     assertThat(pipelineLevelModuleInfo.getServiceIdentifiers()).containsExactlyInAnyOrder("s1");
-    assertThat(pipelineLevelModuleInfo.getArtifactDisplayNames()).containsExactlyInAnyOrder("imagePath:tag");
+    assertThat(pipelineLevelModuleInfo.getArtifactDisplayNames())
+        .containsAll(Lists.newArrayList("imagePath", "imagePath:tag", "tag"));
   }
 
   @Test
