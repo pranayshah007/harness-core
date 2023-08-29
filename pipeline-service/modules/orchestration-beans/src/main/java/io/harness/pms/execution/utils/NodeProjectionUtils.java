@@ -105,8 +105,8 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.adviserTimeoutInstanceIds, NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId,
       NodeExecutionKeys.planId, NodeExecutionKeys.stepType, NodeExecutionKeys.executionInputConfigured);
 
-  public static final Set<String> fieldsForIdentityNodeCreation =
-      Sets.newHashSet(NodeExecutionKeys.uuid, NodeExecutionKeys.stepType, NodeExecutionKeys.planId);
+  public static final Set<String> fieldsForIdentityNodeCreation = Sets.newHashSet(
+      NodeExecutionKeys.uuid, NodeExecutionKeys.stepType, NodeExecutionKeys.planId, NodeExecutionKeys.nodeId);
 
   public static final Set<String> fieldsForNodeAndAmbiance =
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.nodeId);
