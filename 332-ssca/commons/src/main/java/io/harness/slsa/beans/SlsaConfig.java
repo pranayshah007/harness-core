@@ -14,7 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.ssca.beans.Attestation;
+import io.harness.ssca.beans.attestation.v1.AttestationV1;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -34,5 +34,5 @@ public class SlsaConfig {
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> enabled;
 
-  private Attestation attestation;
+  private AttestationV1 attestation;
 }

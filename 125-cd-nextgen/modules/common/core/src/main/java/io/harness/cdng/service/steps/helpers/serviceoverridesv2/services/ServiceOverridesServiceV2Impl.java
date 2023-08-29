@@ -119,11 +119,10 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
     modifyRequestedServiceOverride(requestedEntity);
-    Optional<NGServiceOverridesEntity> existingEntity =
-        serviceOverrideRepositoryV2
-            .getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndSpecExistsAndSpecNotNull(
-                requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(),
-                requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
+
+    Optional<NGServiceOverridesEntity> existingEntity = get(requestedEntity.getAccountId(),
+        requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
+
     if (existingEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("Service Override with identifier [%s] already exists", requestedEntity.getIdentifier()));
@@ -141,13 +140,13 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     Criteria equalityCriteria = ServiceOverrideRepositoryHelper.getEqualityCriteriaForServiceOverride(
         requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(),
         requestedEntity.getIdentifier());
-    Optional<NGServiceOverridesEntity> existingEntityInDb = get(requestedEntity.getAccountId(),
+    Optional<NGServiceOverridesEntity> existingEntity = get(requestedEntity.getAccountId(),
         requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
 
-    if (existingEntityInDb.isPresent()) {
-      overrideValidatorService.checkForImmutablePropertiesOrThrow(existingEntityInDb.get(), requestedEntity);
+    if (existingEntity.isPresent()) {
+      overrideValidatorService.checkForImmutablePropertiesOrThrow(existingEntity.get(), requestedEntity);
       ServiceOverrideAuditEventDTO oldOverrideAuditEventDTO =
-          ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(existingEntityInDb.get());
+          ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(existingEntity.get());
 
       return Failsafe.with(transactionRetryPolicy)
           .get(

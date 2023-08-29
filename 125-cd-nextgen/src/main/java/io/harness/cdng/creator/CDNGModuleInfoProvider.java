@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.creator;
+
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.join;
@@ -69,12 +70,16 @@ import io.harness.utils.NGFeatureFlagHelperService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Singleton
@@ -223,7 +228,8 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
       Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(ambiance);
       artifactsOutcome.ifPresent(outcome -> {
         if (outcome.getPrimary() != null && outcome.getPrimary().getArtifactSummary() != null) {
-          cdPipelineModuleInfoBuilder.artifactDisplayName(outcome.getPrimary().getArtifactSummary().getDisplayName());
+          cdPipelineModuleInfoBuilder.artifactDisplayNames(buildArtifactDisplayNames(outcome.getPrimary().getMetaTags(),
+              Collections.singleton(outcome.getPrimary().getArtifactSummary().getDisplayName())));
         }
       });
     }
@@ -423,5 +429,13 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
         || isGitOpsNodeAndCompleted(stepType, event.getStatus())
         || isRollbackNodeAndCompleted(stepType, event.getStatus())
         || isFetchLinkedAppsNodeAndCompleted(stepType, event.getStatus());
+  }
+
+  private static List<String> buildArtifactDisplayNames(Set<String> items, Set<String> defaultItems) {
+    Set<String> newSet = new HashSet<>(defaultItems);
+    if (EmptyPredicate.isNotEmpty(items)) {
+      newSet.addAll(items.stream().filter(StringUtils::isNotBlank).collect(Collectors.toSet()));
+    }
+    return new ArrayList<>(newSet);
   }
 }

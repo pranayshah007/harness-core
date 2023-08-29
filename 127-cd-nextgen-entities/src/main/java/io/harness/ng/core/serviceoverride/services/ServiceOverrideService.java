@@ -35,6 +35,9 @@ public interface ServiceOverrideService {
   Optional<NGServiceOverridesEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef);
 
+  Optional<NGServiceOverridesEntity> getForV1AndV2(
+      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef);
+
   NGServiceOverridesEntity upsert(NGServiceOverridesEntity requestServiceOverride);
 
   Page<NGServiceOverridesEntity> list(Criteria criteria, Pageable pageable);

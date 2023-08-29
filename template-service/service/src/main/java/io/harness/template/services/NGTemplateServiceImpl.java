@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
+import io.harness.TemplateServiceConfiguration;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -172,6 +173,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Inject private GovernanceService governanceService;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private TemplateServiceConfiguration templateServiceConfiguration;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
@@ -1701,6 +1703,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Override
   public GovernanceMetadata validateGovernanceRules(TemplateEntity templateEntity) {
+    if (!templateServiceConfiguration.isEnableOpaEvaluation()) {
+      return GovernanceMetadata.newBuilder()
+          .setDeny(false)
+          .setMessage("Template OPA is disabled. Configure \"enableOpaRule: true\" in config.yaml file")
+          .build();
+    }
     return governanceService.evaluateGovernancePoliciesForTemplate(templateEntity.getYaml(),
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
         OpaConstants.OPA_EVALUATION_ACTION_SAVE, OpaConstants.OPA_EVALUATION_TYPE_TEMPLATE);

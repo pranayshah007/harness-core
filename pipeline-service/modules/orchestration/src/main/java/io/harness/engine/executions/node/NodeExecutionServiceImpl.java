@@ -865,6 +865,19 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
+  public List<NodeExecution> fetchStageExecutionsWithProjection(
+      String planExecutionId, Set<String> fieldsToBeIncluded) {
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
+                      .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
+    for (String field : fieldsToBeIncluded) {
+      query.fields().include(field);
+    }
+    query.with(by(NodeExecutionKeys.createdAt));
+    return mongoTemplate.find(query, NodeExecution.class);
+  }
+
+  @Override
   public List<NodeExecution> fetchStageExecutionsWithEndTsAndStatusProjection(String planExecutionId) {
     Query query =
         query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))

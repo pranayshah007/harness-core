@@ -1273,20 +1273,6 @@ public class EcsCommandTaskNGHelper {
     return service != null && service.status().equals("ACTIVE");
   }
 
-  public Integer getDesiredCountOfServiceForRollback(
-      EcsInfraConfig ecsInfraConfig, Integer currentCount, String serviceName) {
-    Integer maxDesiredCount = currentCount;
-
-    Optional<Service> optionalService = ecsCommandTaskHelper.describeService(
-        ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-
-    // compare max desired count with live desired count
-    if (optionalService.isPresent() && ecsCommandTaskHelper.isServiceActive(optionalService.get())) {
-      maxDesiredCount = Math.max(maxDesiredCount, optionalService.get().desiredCount());
-    }
-    return maxDesiredCount;
-  }
-
   public boolean isServiceDraining(Service service) {
     return service != null && service.status().equals("DRAINING");
   }

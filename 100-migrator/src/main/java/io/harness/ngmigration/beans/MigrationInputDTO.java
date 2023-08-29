@@ -46,4 +46,5 @@ public class MigrationInputDTO {
   private Map<String, Object> customExpressions;
   private CaseFormat identifierCaseFormat;
   private List<MigrationInputSettings> settings;
+  private NGMigrationEntityType root;
 }

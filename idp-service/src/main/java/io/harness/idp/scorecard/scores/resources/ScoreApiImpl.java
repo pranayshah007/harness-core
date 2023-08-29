@@ -42,8 +42,8 @@ public class ScoreApiImpl implements ScoresApi {
       scorecardSummaryResponse.setScorecardsSummary(scorecardSummaryInfoList);
       return Response.status(Response.Status.OK).entity(scorecardSummaryResponse).build();
     } catch (Exception e) {
-      log.error("Error in getting score summary for scorecards details for account - {} and entity - {}",
-          harnessAccount, entityIdentifier);
+      log.error("Error in getting score summary for scorecards details for account - {} and entity - {},  error = {}",
+          harnessAccount, entityIdentifier, e.getMessage(), e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -81,8 +81,8 @@ public class ScoreApiImpl implements ScoresApi {
       return Response.status(Response.Status.OK).entity(scorecardGraphSummaryInfoResponse).build();
     } catch (Exception e) {
       log.error(
-          "Error in getting score graph summary for scorecards details for account - {},  entity - {} and scorecard - {}",
-          harnessAccount, entityIdentifier, scorecardIdentifier);
+          "Error in getting score graph summary for scorecards details for account - {},  entity - {} and scorecard - {},  error = {}",
+          harnessAccount, entityIdentifier, scorecardIdentifier, e.getMessage(), e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -105,8 +105,8 @@ public class ScoreApiImpl implements ScoresApi {
       }
       return Response.status(Response.Status.OK).entity(scorecardScoreResponse).build();
     } catch (Exception e) {
-      log.error("Error in getting scores overview for scorecards details for account - {},  entity - {} }",
-          harnessAccount, entityIdentifier);
+      log.error("Error in getting scores overview for scorecards details for account - {},  entity - {} ,  error = {}",
+          harnessAccount, entityIdentifier, e.getMessage(), e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

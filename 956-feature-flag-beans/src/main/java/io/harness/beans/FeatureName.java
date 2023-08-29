@@ -865,7 +865,9 @@ public enum FeatureName {
   CDS_ECS_BG_GREEN_SERVICE_ROLLBACK(
       "This flag enables the rollback of green service in ECS BG Deployment", HarnessTeam.CDP),
   SSCA_SLSA_COMPLIANCE("Feature flag for SLSA Compliance", HarnessTeam.SSCA),
-  PL_RUN_INVALID_AUDITS_CLEANUP("Run iterator to cleanup audits with null accountIds", HarnessTeam.PL, Scope.GLOBAL);
+  PL_RUN_INVALID_AUDITS_CLEANUP("Run iterator to cleanup audits with null accountIds", HarnessTeam.PL, Scope.GLOBAL),
+  SSCA_MANAGER_ENABLED("FF to use SSCA manager instead of core", HarnessTeam.SSCA),
+  SSCA_ARTIFACTS_ENABLED("FF to enable SSCA Artifacts on Harness UI", HarnessTeam.SSCA);
   // keep-sorted end
 
   @Deprecated
