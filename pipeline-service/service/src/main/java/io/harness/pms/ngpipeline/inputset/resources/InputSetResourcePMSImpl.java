@@ -182,8 +182,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .build();
       resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
-    if (!accessControlClient.hasAccess(resourceScope, resource, permission))
+    if (!accessControlClient.hasAccess(resourceScope, resource, permission)) {
       throw new AccessDeniedException(ACCESS_DENIED_ERROR_MESSAGE, ErrorCode.ACCESS_DENIED, null);
+    }
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountId, yaml);
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityFromVersion(accountId, orgIdentifier,
         projectIdentifier, pipelineIdentifier, yaml, inputSetVersion, InputSetEntityType.INPUT_SET);
@@ -207,8 +208,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .build();
       resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
-    if (!accessControlClient.hasAccess(resourceScope, resource, permission))
+    if (!accessControlClient.hasAccess(resourceScope, resource, permission)) {
       throw new AccessDeniedException(ACCESS_DENIED_ERROR_MESSAGE, ErrorCode.ACCESS_DENIED, null);
+    }
     InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityForOverlay(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
     log.info(
@@ -234,8 +236,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .build();
       resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
-    if (!accessControlClient.hasAccess(resourceScope, resource, permission))
+    if (!accessControlClient.hasAccess(resourceScope, resource, permission)) {
       throw new AccessDeniedException(ACCESS_DENIED_ERROR_MESSAGE, ErrorCode.ACCESS_DENIED, null);
+    }
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountId, yaml);
@@ -260,8 +263,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .build();
       resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
-    if (!accessControlClient.hasAccess(resourceScope, resource, permission))
+    if (!accessControlClient.hasAccess(resourceScope, resource, permission)) {
       throw new AccessDeniedException(ACCESS_DENIED_ERROR_MESSAGE, ErrorCode.ACCESS_DENIED, null);
+    }
     log.info(
         String.format("Updating overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
             inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
@@ -438,8 +442,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .build();
       resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
-    if (!accessControlClient.hasAccess(resourceScope, resource, permission))
+    if (!accessControlClient.hasAccess(resourceScope, resource, permission)) {
       throw new AccessDeniedException(ACCESS_DENIED_ERROR_MESSAGE, ErrorCode.ACCESS_DENIED, null);
+    }
     String pipelineYaml = validateAndMergeHelper
                               .getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
                                   pipelineBranch, pipelineRepoID, false, false)
@@ -487,8 +492,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                           .build();
       resource = Resource.builder().resourceType(PIPELINE_RESOURCE_TYPE).build();
     }
-    if (!accessControlClient.hasAccess(resourceScope, resource, permission))
+    if (!accessControlClient.hasAccess(resourceScope, resource, permission)) {
       throw new AccessDeniedException(ACCESS_DENIED_ERROR_MESSAGE, ErrorCode.ACCESS_DENIED, null);
+    }
     InputSetEntity inputSetEntity =
         pmsInputSetService.importInputSetFromRemote(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             inputSetIdentifier, inputSetImportRequestDTO, gitImportInfoDTO.getIsForceImport());
