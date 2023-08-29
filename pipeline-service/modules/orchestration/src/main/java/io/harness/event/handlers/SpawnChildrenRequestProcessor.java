@@ -105,17 +105,22 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
           orchestrationEngine.initiateNode(
               ambiance, child.getChildNodeId(), uuid, null, strategyMetadata, InitiateMode.CREATE);
         }
-        MaxConcurrentChildCallback maxConcurrentChildCallback =
-            MaxConcurrentChildCallback.builder()
-                .parentNodeExecutionId(nodeExecutionId)
-                .ambiance(ambiance)
-                .maxConcurrency(maxConcurrency)
-                .proceedIfFailed(request.getChildren().getShouldProceedIfFailed())
-                .build();
 
-        String waitInstanceId = waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, uuid);
-        log.info("SpawnChildrenRequestProcessor registered a waitInstance for maxConcurrency with waitInstanceId: {}",
-            waitInstanceId);
+        // We should register MaxConcurrentChildCallback only when we will use max concurrency.
+        // If there is no need to have concurrency, we should avoid adding callbacks.
+        if (filteredChildren.size() > maxConcurrency) {
+          MaxConcurrentChildCallback maxConcurrentChildCallback =
+              MaxConcurrentChildCallback.builder()
+                  .parentNodeExecutionId(nodeExecutionId)
+                  .planExecutionId(ambiance.getPlanExecutionId())
+                  .maxConcurrency(maxConcurrency)
+                  .proceedIfFailed(request.getChildren().getShouldProceedIfFailed())
+                  .build();
+
+          String waitInstanceId = waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, uuid);
+          log.info("SpawnChildrenRequestProcessor registered a waitInstance for maxConcurrency with waitInstanceId: {}",
+              waitInstanceId);
+        }
         currentChild++;
       }
 

@@ -58,13 +58,13 @@ public class MaxConcurrentChildCallbackTest extends OrchestrationTestBase {
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(PLAN_EXECUTION_ID).build();
     maxConcurrentChildCallback = MaxConcurrentChildCallback.builder()
                                      .ambiance(ambiance)
+                                     .planExecutionId(ambiance.getPlanExecutionId())
                                      .parentNodeExecutionId(PARENT_NODE_EXECUTION_ID)
                                      .engine(engine)
                                      .nodeExecutionService(nodeExecutionService)
                                      .nodeExecutionInfoService(nodeExecutionInfoService)
                                      .maxConcurrency(2)
                                      .publisherName(PUBLISHER_NAME)
-                                     .waitNotifyEngine(waitNotifyEngine)
                                      .persistentLocker(persistentLocker)
                                      .build();
   }
