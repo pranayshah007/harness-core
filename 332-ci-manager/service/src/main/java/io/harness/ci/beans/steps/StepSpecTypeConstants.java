@@ -38,4 +38,6 @@ public interface StepSpecTypeConstants {
   String SECURITY_STAGE = "SecurityTests";
   String CI_STAGE_V2 = "ci";
   String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
+
+  String CI_CD_COMMON_FOLDER = "Containerized Steps";
 }

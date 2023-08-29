@@ -6,6 +6,7 @@
  */
 
 package io.harness.ci.execution.plan.creator;
+import static io.harness.beans.steps.StepSpecTypeConstants.CI_CD_COMMON_FOLDER;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.ssca.SscaBeansRegistrar.sscaStepPaletteSteps;
 import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
@@ -198,14 +199,14 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
         StepInfo.newBuilder()
             .setName("Run")
             .setType(StepSpecTypeConstants.RUN)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths(CI_CD_COMMON_FOLDER).build())
             .build();
 
     StepInfo backgroundStepInfo =
         StepInfo.newBuilder()
             .setName("Background")
             .setType(StepSpecTypeConstants.BACKGROUND)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths(CI_CD_COMMON_FOLDER).build())
             .build();
 
     StepInfo runTestsStepInfo = StepInfo.newBuilder()
@@ -219,14 +220,14 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
         StepInfo.newBuilder()
             .setName("Plugin")
             .setType(StepSpecTypeConstants.PLUGIN)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths(CI_CD_COMMON_FOLDER).build())
             .build();
 
     StepInfo gitCloneStepInfo =
         StepInfo.newBuilder()
             .setName("Git Clone")
             .setType(StepSpecTypeConstants.GIT_CLONE)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths(CI_CD_COMMON_FOLDER).build())
             .build();
 
     StepInfo restoreCacheFromGCS = StepInfo.newBuilder()
@@ -264,7 +265,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
         StepInfo.newBuilder()
             .setName("Github Action plugin")
             .setType(StepSpecTypeConstants.ACTION)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths(CI_CD_COMMON_FOLDER).build())
             .build();
 
     StepInfo bitriseStepInfo = StepInfo.newBuilder()
