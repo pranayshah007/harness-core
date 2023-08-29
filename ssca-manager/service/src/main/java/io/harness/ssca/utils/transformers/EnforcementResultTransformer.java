@@ -7,11 +7,8 @@
 
 package io.harness.ssca.utils.transformers;
 
-import io.harness.spec.server.ssca.v1.model.EnforcementResultDTO;
-import io.harness.ssca.entities.EnforcementResultEntity;
-
-public class EnforcementResultTransformer implements Transformer<EnforcementResultEntity, EnforcementResultDTO> {
-  @Override
+public class EnforcementResultTransformer {
+  /*@Override
   public EnforcementResultEntity toEntity(EnforcementResultDTO dto) {
     // modelMapper.createTypeMap(dto, EnforcementResultEntity.class).addMappings(dto.g);
     return modelMapper.map(dto, EnforcementResultEntity.class);
@@ -20,7 +17,7 @@ public class EnforcementResultTransformer implements Transformer<EnforcementResu
   @Override
   public EnforcementResultDTO toDTO(EnforcementResultEntity entity) {
     return modelMapper.map(entity, EnforcementResultDTO.class);
-  }
+  }*/
 
   /*public static EnforcementResultEntity toEntity(EnforcementResultDTO dto) {
     return EnforcementResultEntity.builder()

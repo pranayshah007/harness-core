@@ -17,6 +17,7 @@ import io.harness.rule.Owner;
 import io.harness.spec.server.ssca.v1.model.NormalizedSbomComponentDTO;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 
+import com.google.inject.Inject;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
@@ -24,12 +25,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
+import org.modelmapper.ModelMapper;
 
 public class NormalizeSbomComponentTransformerTest extends SSCAManagerTestBase {
   private NormalizedSBOMComponentEntity entity;
   private NormalizedSbomComponentDTO dto;
 
-  Transformer<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO> transformer;
+  @Inject ModelMapper modelMapper;
 
   @Before
   public void setup() {
@@ -105,15 +107,14 @@ public class NormalizeSbomComponentTransformerTest extends SSCAManagerTestBase {
               .toolName("toolName")
               .toolVendor("toolVendor")
               .toolVersion("toolVersion");
-
-    transformer = new NormalizeSbomComponentTransformer();
   }
 
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToEntity() {
-    NormalizedSBOMComponentEntity normalizedSBOMComponentEntity = transformer.toEntity(dto);
+    NormalizedSBOMComponentEntity normalizedSBOMComponentEntity =
+        modelMapper.map(dto, NormalizedSBOMComponentEntity.class);
 
     assertThat(normalizedSBOMComponentEntity.equals(entity)).isEqualTo(true);
   }
@@ -122,7 +123,7 @@ public class NormalizeSbomComponentTransformerTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToDTO() {
-    NormalizedSbomComponentDTO normalizedSbomComponentDTO = transformer.toDTO(entity);
+    NormalizedSbomComponentDTO normalizedSbomComponentDTO = modelMapper.map(entity, NormalizedSbomComponentDTO.class);
     assertThat(normalizedSbomComponentDTO.equals(dto)).isEqualTo(true);
   }
 }

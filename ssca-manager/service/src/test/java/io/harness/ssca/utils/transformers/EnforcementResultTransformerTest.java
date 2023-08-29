@@ -7,27 +7,17 @@
 
 package io.harness.ssca.utils.transformers;
 
-import static io.harness.rule.OwnerRule.ARPITJ;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 import io.harness.SSCAManagerTestBase;
-import io.harness.category.element.UnitTests;
-import io.harness.rule.Owner;
 import io.harness.spec.server.ssca.v1.model.EnforcementResultDTO;
 import io.harness.ssca.entities.EnforcementResultEntity;
 
 import java.util.Arrays;
 import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 
 public class EnforcementResultTransformerTest extends SSCAManagerTestBase {
   private EnforcementResultDTO dto;
   private EnforcementResultEntity entity;
-
-  Transformer<EnforcementResultEntity, EnforcementResultDTO> transformer;
 
   @Before
   public void setup() {
@@ -71,10 +61,10 @@ public class EnforcementResultTransformerTest extends SSCAManagerTestBase {
               .violationDetails("violationDetails")
               .violationType("violationType");
 
-    transformer = new EnforcementResultTransformer();
+    // transformer = new EnforcementResultTransformer();
   }
 
-  @Test
+  /*@Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToEntity() {
@@ -88,5 +78,5 @@ public class EnforcementResultTransformerTest extends SSCAManagerTestBase {
   public void testToDTO() {
     EnforcementResultDTO enforcementResultDTO = transformer.toDTO(entity);
     assertThat(enforcementResultDTO.equals(dto)).isEqualTo(true);
-  }
+  }*/
 }

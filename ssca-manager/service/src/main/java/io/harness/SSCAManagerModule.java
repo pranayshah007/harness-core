@@ -10,6 +10,8 @@ package io.harness;
 import static io.harness.annotations.dev.HarnessTeam.SSCA;
 import static io.harness.authorization.AuthorizationServiceHeader.SSCA_SERVICE;
 
+import static org.modelmapper.convention.MatchingStrategies.STRICT;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -25,11 +27,13 @@ import io.harness.spec.server.ssca.v1.EnforcementSummaryApi;
 import io.harness.spec.server.ssca.v1.NormalizeSbomApi;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
 import io.harness.spec.server.ssca.v1.TokenApi;
+import io.harness.spec.server.ssca.v1.model.NormalizedSbomComponentDTO;
 import io.harness.ssca.api.EnforcementResultApiImpl;
 import io.harness.ssca.api.EnforcementSummaryApiImpl;
 import io.harness.ssca.api.NormalizedSbomApiImpl;
 import io.harness.ssca.api.SbomProcessorApiImpl;
 import io.harness.ssca.api.TokenApiImpl;
+import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 import io.harness.ssca.serializer.SSCAManagerModuleRegistrars;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
@@ -61,6 +65,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.modelmapper.PropertyMap;
+import org.modelmapper.TypeMap;
+import org.modelmapper.config.Configuration.AccessLevel;
 import org.springframework.core.convert.converter.Converter;
 
 @Slf4j
@@ -106,6 +114,38 @@ public class SSCAManagerModule extends AbstractModule {
   public ServiceHttpClientConfig ngManagerServiceHttpClientConfig() {
     return this.configuration.getNgManagerServiceHttpClientConfig();
   }
+
+  @Provides
+  @Singleton
+  public ModelMapper modelMapper() {
+    ModelMapper modelMapper = new ModelMapper();
+    modelMapper.getConfiguration().setMatchingStrategy(STRICT).setFieldMatchingEnabled(true).setFieldAccessLevel(
+        AccessLevel.PRIVATE);
+
+    TypeMap<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO> typeMap =
+        modelMapper.getTypeMap(NormalizedSBOMComponentEntity.class, NormalizedSbomComponentDTO.class);
+    PropertyMap<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO> normalizedSbomComponentDTOPropertyMap =
+        new PropertyMap<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO>() {
+          protected void configure() {
+            // map().setCreated(new BigDecimal(source.getCreatedOn().toEpochMilli()));
+            map().sequenceId(source.getSequenceId());
+          }
+        };
+    typeMap.addMappings(normalizedSbomComponentDTOPropertyMap);
+    // Object o = modelMapper.addMappings(normalizedSbomComponentDTOPropertyMap);
+    /*PropertyMap<NormalizedSbomComponentDTO, NormalizedSBOMComponentEntity> normalizedSBOMComponentEntityPropertyMap =
+    new PropertyMap<>() {
+      @Override
+      protected void configure() {
+        map().setCreatedOn(Instant.ofEpochMilli(source.getCreated().longValue()));
+        map().setAccountId("test");
+      }
+    };
+    modelMapper.addMappings(normalizedSBOMComponentEntityPropertyMap);*/
+
+    return modelMapper;
+  }
+
   @Provides
   @Singleton
   @Named("ngManagerServiceSecret")

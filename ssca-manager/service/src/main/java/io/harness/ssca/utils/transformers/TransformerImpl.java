@@ -7,6 +7,14 @@
 
 package io.harness.ssca.utils.transformers;
 
-public interface Transformer {
-  <D> D map(Object source, Class<D> destinationType);
+import com.google.inject.Inject;
+import org.modelmapper.ModelMapper;
+
+public class TransformerImpl implements Transformer {
+  @Inject ModelMapper modelMapper;
+
+  @Override
+  public <D> D map(Object source, Class<D> destinationType) {
+    return modelMapper.map(source, destinationType);
+  }
 }

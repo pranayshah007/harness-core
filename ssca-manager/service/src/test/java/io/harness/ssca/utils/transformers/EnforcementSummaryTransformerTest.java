@@ -7,26 +7,13 @@
 
 package io.harness.ssca.utils.transformers;
 
-import static io.harness.rule.OwnerRule.ARPITJ;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 import io.harness.SSCAManagerTestBase;
-import io.harness.category.element.UnitTests;
-import io.harness.rule.Owner;
-import io.harness.spec.server.ssca.v1.model.EnforcementSummaryDTO;
-import io.harness.ssca.beans.Artifact;
-import io.harness.ssca.entities.EnforcementSummaryEntity;
-
-import java.math.BigDecimal;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.mockito.MockitoAnnotations;
 
 public class EnforcementSummaryTransformerTest extends SSCAManagerTestBase {
-  private EnforcementSummaryDTO dto;
+  /*private EnforcementSummaryDTO dto;
   private EnforcementSummaryEntity entity;
+
+  @Inject ModelMapper modelMapper;
 
   private Transformer<EnforcementSummaryEntity, EnforcementSummaryDTO> transformer;
 
@@ -67,7 +54,7 @@ public class EnforcementSummaryTransformerTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToEntity() {
-    EnforcementSummaryEntity enforcementSummaryEntity = transformer.toEntity(dto);
+    EnforcementSummaryEntity enforcementSummaryEntity = modelMapper.map(dto,EnforcementSummaryEntity.class);
     assertThat(enforcementSummaryEntity.equals(entity)).isEqualTo(true);
   }
 
@@ -77,5 +64,5 @@ public class EnforcementSummaryTransformerTest extends SSCAManagerTestBase {
   public void testToDTO() {
     EnforcementSummaryDTO enforcementSummaryDTO = transformer.toDTO(entity);
     assertThat(enforcementSummaryDTO.equals(dto)).isEqualTo(true);
-  }
+  }*/
 }

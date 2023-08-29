@@ -7,14 +7,8 @@
 
 package io.harness.ssca.utils.transformers;
 
-import io.harness.spec.server.ssca.v1.model.NormalizedSbomComponentDTO;
-import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
-
-import org.modelmapper.TypeMap;
-
-public class NormalizeSbomComponentTransformer
-    implements Transformer<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO> {
-  @Override
+public class NormalizeSbomComponentTransformer {
+  /*@Override
   public NormalizedSBOMComponentEntity toEntity(NormalizedSbomComponentDTO dto) {
     TypeMap<NormalizedSbomComponentDTO, NormalizedSBOMComponentEntity> propertyMap =
         modelMapper.createTypeMap(NormalizedSbomComponentDTO.class, NormalizedSBOMComponentEntity.class);
@@ -26,7 +20,7 @@ public class NormalizeSbomComponentTransformer
   @Override
   public NormalizedSbomComponentDTO toDTO(NormalizedSBOMComponentEntity entity) {
     return modelMapper.map(entity, NormalizedSbomComponentDTO.class);
-  }
+  }*/
 
   /*public static NormalizedSBOMComponentEntity toEntity(NormalizedSbomComponentDTO dto) {
     return NormalizedSBOMComponentEntity.builder()

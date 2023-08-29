@@ -7,13 +7,8 @@
 
 package io.harness.ssca.utils.transformers;
 
-import io.harness.spec.server.ssca.v1.model.EnforcementSummaryDTO;
-import io.harness.ssca.entities.EnforcementSummaryEntity;
-
-import org.modelmapper.TypeMap;
-
-public class EnforcementSummaryTransformer implements Transformer<EnforcementSummaryEntity, EnforcementSummaryDTO> {
-  @Override
+public class EnforcementSummaryTransformer {
+  /*@Override
   public EnforcementSummaryEntity toEntity(EnforcementSummaryDTO dto) {
     TypeMap<EnforcementSummaryDTO, EnforcementSummaryEntity> propertyMap =
         modelMapper.createTypeMap(dto, EnforcementSummaryEntity.class);
@@ -24,7 +19,7 @@ public class EnforcementSummaryTransformer implements Transformer<EnforcementSum
   @Override
   public EnforcementSummaryDTO toDTO(EnforcementSummaryEntity entity) {
     return modelMapper.map(entity, EnforcementSummaryDTO.class);
-  }
+  }*/
 
   /*public static EnforcementSummaryEntity toEntity(EnforcementSummaryDTO dto) {
     return EnforcementSummaryEntity.builder()

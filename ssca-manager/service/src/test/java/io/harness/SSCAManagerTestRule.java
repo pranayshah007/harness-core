@@ -8,6 +8,7 @@
 package io.harness;
 
 import static org.mockito.Mockito.mock;
+import static org.modelmapper.convention.MatchingStrategies.STRICT;
 
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
@@ -27,11 +28,13 @@ import io.harness.spec.server.ssca.v1.EnforcementSummaryApi;
 import io.harness.spec.server.ssca.v1.NormalizeSbomApi;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
 import io.harness.spec.server.ssca.v1.TokenApi;
+import io.harness.spec.server.ssca.v1.model.NormalizedSbomComponentDTO;
 import io.harness.ssca.api.EnforcementResultApiImpl;
 import io.harness.ssca.api.EnforcementSummaryApiImpl;
 import io.harness.ssca.api.NormalizedSbomApiImpl;
 import io.harness.ssca.api.SbomProcessorApiImpl;
 import io.harness.ssca.api.TokenApiImpl;
+import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 import io.harness.ssca.serializer.SSCAManagerModuleRegistrars;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
@@ -66,6 +69,8 @@ import com.google.inject.name.Named;
 import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -73,6 +78,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.modelmapper.ModelMapper;
+import org.modelmapper.PropertyMap;
 import org.springframework.core.convert.converter.Converter;
 
 @Slf4j
@@ -133,6 +140,34 @@ public class SSCAManagerTestRule implements InjectorRuleMixin, MethodRule, Mongo
       @Named("sscaManagerServiceSecret")
       public String sscaManagerServiceSecret() {
         return "sscaManagerServiceSecret";
+      }
+
+      @Provides
+      @Singleton
+      public ModelMapper modelMapper() {
+        ModelMapper modelMapper = new ModelMapper();
+        modelMapper.getConfiguration().setMatchingStrategy(STRICT);
+
+        PropertyMap<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO> normalizedSbomComponentDTOPropertyMap =
+            new PropertyMap<>() {
+              @Override
+              protected void configure() {
+                map().setCreated(new BigDecimal(source.getCreatedOn().toEpochMilli()));
+              }
+            };
+        modelMapper.addMappings(normalizedSbomComponentDTOPropertyMap);
+
+        PropertyMap<NormalizedSbomComponentDTO, NormalizedSBOMComponentEntity>
+            normalizedSBOMComponentEntityPropertyMap = new PropertyMap<>() {
+              @Override
+              protected void configure() {
+                map().setCreatedOn(Instant.ofEpochMilli(source.getCreated().longValue()));
+                map().setAccountId(source.getAccountId() + "testing");
+              }
+            };
+        modelMapper.addMappings(normalizedSBOMComponentEntityPropertyMap);
+
+        return modelMapper;
       }
     });
 

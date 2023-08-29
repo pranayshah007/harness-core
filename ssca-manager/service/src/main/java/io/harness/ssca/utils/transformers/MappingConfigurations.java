@@ -7,6 +7,4 @@
 
 package io.harness.ssca.utils.transformers;
 
-public interface Transformer {
-  <D> D map(Object source, Class<D> destinationType);
-}
+public class MappingConfigurations {}
