@@ -147,7 +147,6 @@ stoCoreClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
-
 pipelineServiceClientConfig:
   baseUrl: http://localhost:12001/api/
   connectTimeOutSeconds: 15
