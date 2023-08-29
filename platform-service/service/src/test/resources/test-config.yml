@@ -190,3 +190,8 @@ resourceGroupServiceConfig:
     readTimeOutSeconds: 15
   distributedLockImplementation: ${DISTRIBUTED_LOCK_IMPLEMENTATION:-MONGO}
 
+segmentConfiguration:
+  enabled: false
+  url: "segment_url_place_holder"
+  apiKey: "segment_api_key"
+  certValidationRequired: false
