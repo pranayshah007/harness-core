@@ -27,8 +27,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo;
-import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaRollbackV2StepInfo;
 import io.harness.connector.services.ConnectorService;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -51,8 +50,6 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Rule;
 import org.junit.Test;
@@ -66,7 +63,7 @@ import org.mockito.junit.MockitoRule;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryTest {
+public class ServerlessAwsLambdaRollbackV2PluginInfoProviderTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private OutcomeService outcomeService;
@@ -76,13 +73,13 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private ServerlessEntityHelper serverlessEntityHelper;
+
+  @Mock private PluginInfoProviderUtils pluginInfoProviderUtils;
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Mock ServerlessV2PluginInfoProviderHelper serverlessV2PluginInfoProviderHelper;
-
-  @Mock PluginInfoProviderUtils pluginInfoProviderUtils;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Mock private ConnectorService connectorService;
-  @InjectMocks @Spy private ServerlessAwsLambdaDeployV2PluginInfoProvider serverlessAwsLambdaDeployV2PluginInfoProvider;
+  @InjectMocks @Spy private ServerlessRollbackV2PluginInfoProvider serverlessRollbackV2PluginInfoProvider;
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -98,29 +95,29 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
     doReturn("name").when(cdAbstractStepNode).getName();
     doReturn("uuid").when(cdAbstractStepNode).getUuid();
 
-    ServerlessAwsLambdaDeployV2StepInfo serverlessAwsLambdaDeployV2StepInfo =
-        ServerlessAwsLambdaDeployV2StepInfo.infoBuilder()
+    ServerlessAwsLambdaRollbackV2StepInfo serverlessAwsLambdaRollbackV2StepInfo =
+        ServerlessAwsLambdaRollbackV2StepInfo.infoBuilder()
             .resources(ContainerResource.builder().build())
             .runAsUser(ParameterField.<Integer>builder().value(1).build())
             .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
             .build();
-    doReturn(serverlessAwsLambdaDeployV2StepInfo).when(cdAbstractStepNode).getStepSpecType();
+    doReturn(serverlessAwsLambdaRollbackV2StepInfo).when(cdAbstractStepNode).getStepSpecType();
     doReturn(Collections.emptyMap()).when(serverlessV2PluginInfoProviderHelper).getEnvironmentVariables(any(), any());
     PluginCreationResponseWrapper pluginCreationResponseWrapper = mock(PluginCreationResponseWrapper.class);
     doReturn(pluginCreationResponseWrapper)
-        .when(serverlessAwsLambdaDeployV2PluginInfoProvider)
+        .when(serverlessRollbackV2PluginInfoProvider)
         .getPluginCreationResponseWrapper(any(), any());
 
-    doReturn(mock(ImageDetails.class)).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getImageDetails(any());
+    doReturn(mock(ImageDetails.class)).when(serverlessRollbackV2PluginInfoProvider).getImageDetails(any());
 
-    PluginDetails.Builder pluginBuilder = PluginDetails.newBuilder();
-    doReturn(pluginBuilder)
-        .when(serverlessAwsLambdaDeployV2PluginInfoProvider)
-        .getPluginDetailsBuilder(any(), any(), any());
-    doReturn(cdAbstractStepNode).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getRead(jsonNode);
+    Mockito.mockStatic(PluginInfoProviderHelper.class);
+    Builder builder = PluginDetails.newBuilder();
+    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any())).thenReturn(builder);
 
-    assertThat(serverlessAwsLambdaDeployV2PluginInfoProvider.getPluginInfo(
-                   pluginCreationRequest, Collections.emptySet(), ambiance))
+    doReturn(cdAbstractStepNode).when(serverlessRollbackV2PluginInfoProvider).read(jsonNode);
+
+    assertThat(
+        serverlessRollbackV2PluginInfoProvider.getPluginInfo(pluginCreationRequest, Collections.emptySet(), ambiance))
         .isEqualTo(pluginCreationResponseWrapper);
   }
 
@@ -138,29 +135,28 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
     doReturn("name").when(cdAbstractStepNode).getName();
     doReturn("uuid").when(cdAbstractStepNode).getUuid();
 
-    ServerlessAwsLambdaDeployV2StepInfo serverlessAwsLambdaDeployV2StepInfo =
-        ServerlessAwsLambdaDeployV2StepInfo.infoBuilder()
+    ServerlessAwsLambdaRollbackV2StepInfo serverlessAwsLambdaRollbackV2StepInfo =
+        ServerlessAwsLambdaRollbackV2StepInfo.infoBuilder()
             .resources(ContainerResource.builder().build())
             .runAsUser(ParameterField.<Integer>builder().value(1).build())
             .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
             .build();
-    doReturn(serverlessAwsLambdaDeployV2StepInfo).when(cdAbstractStepNode).getStepSpecType();
+    doReturn(serverlessAwsLambdaRollbackV2StepInfo).when(cdAbstractStepNode).getStepSpecType();
     doReturn(Collections.emptyMap()).when(serverlessV2PluginInfoProviderHelper).getEnvironmentVariables(any(), any());
     PluginCreationResponseWrapper pluginCreationResponseWrapper = mock(PluginCreationResponseWrapper.class);
     doReturn(pluginCreationResponseWrapper)
-        .when(serverlessAwsLambdaDeployV2PluginInfoProvider)
+        .when(serverlessRollbackV2PluginInfoProvider)
         .getPluginCreationResponseWrapper(any(), any());
 
-    doReturn(mock(ImageDetails.class)).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getImageDetails(any());
+    doReturn(mock(ImageDetails.class)).when(serverlessRollbackV2PluginInfoProvider).getImageDetails(any());
 
-    PluginDetails.Builder pluginBuilder = PluginDetails.newBuilder();
-    doReturn(pluginBuilder)
-        .when(serverlessAwsLambdaDeployV2PluginInfoProvider)
-        .getPluginDetailsBuilder(any(), any(), any());
-    doThrow(IOException.class).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getRead(jsonNode);
+    Mockito.mockStatic(PluginInfoProviderHelper.class);
+    Builder builder = PluginDetails.newBuilder();
+    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any())).thenReturn(builder);
 
-    serverlessAwsLambdaDeployV2PluginInfoProvider.getPluginInfo(
-        pluginCreationRequest, Collections.emptySet(), ambiance);
+    doThrow(IOException.class).when(serverlessRollbackV2PluginInfoProvider).read(jsonNode);
+
+    serverlessRollbackV2PluginInfoProvider.getPluginInfo(pluginCreationRequest, Collections.emptySet(), ambiance);
   }
 
   @Test()
@@ -170,8 +166,7 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
     PluginCreationResponse pluginCreationResponse = mock(PluginCreationResponse.class);
     StepInfoProto stepInfoProto = mock(StepInfoProto.class);
     PluginCreationResponseWrapper pluginCreationResponseWrapper =
-        serverlessAwsLambdaDeployV2PluginInfoProvider.getPluginCreationResponseWrapper(
-            pluginCreationResponse, stepInfoProto);
+        serverlessRollbackV2PluginInfoProvider.getPluginCreationResponseWrapper(pluginCreationResponse, stepInfoProto);
     assertThat(pluginCreationResponseWrapper.getResponse()).isEqualTo(pluginCreationResponse);
     assertThat(pluginCreationResponseWrapper.getStepInfo()).isEqualTo(stepInfoProto);
   }
@@ -179,21 +174,9 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
   @Test()
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void testGetPluginCreationResponse() {
-    Builder builder = mock(Builder.class);
-    PluginDetails pluginDetails = mock(PluginDetails.class);
-    doReturn(pluginDetails).when(builder).build();
-    PluginCreationResponse pluginCreationResponse =
-        serverlessAwsLambdaDeployV2PluginInfoProvider.getPluginCreationResponse(builder);
-    assertThat(pluginCreationResponse.getPluginDetails()).isEqualTo(pluginDetails);
-  }
-
-  @Test()
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
   public void testGetImageDetails() {
-    ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo =
-        ServerlessAwsLambdaDeployV2StepInfo.infoBuilder()
+    ServerlessAwsLambdaRollbackV2StepInfo serverlessAwsLambdaV2BaseStepInfo =
+        ServerlessAwsLambdaRollbackV2StepInfo.infoBuilder()
             .connectorRef(ParameterField.createValueField("ref"))
             .image(ParameterField.createValueField("ref"))
             .imagePullPolicy(ParameterField.createValueField(ImagePullPolicy.ALWAYS))
@@ -201,32 +184,16 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
     Mockito.mockStatic(PluginInfoProviderHelper.class);
     ImageDetails imageDetails = mock(ImageDetails.class);
     when(PluginInfoProviderHelper.getImageDetails(any(), any(), any())).thenReturn(imageDetails);
-    assertThat(serverlessAwsLambdaDeployV2PluginInfoProvider.getImageDetails(serverlessAwsLambdaV2BaseStepInfo))
+    assertThat(serverlessRollbackV2PluginInfoProvider.getImageDetails(serverlessAwsLambdaV2BaseStepInfo))
         .isEqualTo(imageDetails);
   }
 
   @Test()
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void testGetPluginDetailsBuilder() {
-    ContainerResource containerResource = mock(ContainerResource.class);
-    Mockito.mockStatic(PluginInfoProviderHelper.class);
-    ImageDetails imageDetails = mock(ImageDetails.class);
-    Builder builder = mock(Builder.class);
-    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any())).thenReturn(builder);
-    Set<Integer> usedPorts = new HashSet<>();
-    usedPorts.add(1);
-    assertThat(serverlessAwsLambdaDeployV2PluginInfoProvider.getPluginDetailsBuilder(
-                   containerResource, ParameterField.createValueField(1), usedPorts))
-        .isEqualTo(builder);
-  }
-
-  @Test()
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
   public void testIsSupportedWhenTrue() {
-    assertThat(serverlessAwsLambdaDeployV2PluginInfoProvider.isSupported(
-                   StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2))
+    assertThat(
+        serverlessRollbackV2PluginInfoProvider.isSupported(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2))
         .isTrue();
   }
 
@@ -234,6 +201,6 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testIsSupportedWhenFalse() {
-    assertThat(serverlessAwsLambdaDeployV2PluginInfoProvider.isSupported("asdf")).isFalse();
+    assertThat(serverlessRollbackV2PluginInfoProvider.isSupported("asdf")).isFalse();
   }
 }
