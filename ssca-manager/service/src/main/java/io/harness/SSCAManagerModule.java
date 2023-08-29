@@ -25,6 +25,7 @@ import io.harness.spec.server.ssca.v1.EnforcementApi;
 import io.harness.spec.server.ssca.v1.OrchestrationApi;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
 import io.harness.spec.server.ssca.v1.TokenApi;
+import io.harness.ssca.S3Config;
 import io.harness.ssca.api.EnforcementApiImpl;
 import io.harness.ssca.api.OrchestrationApiImpl;
 import io.harness.ssca.api.SbomProcessorApiImpl;
@@ -43,8 +44,15 @@ import io.harness.ssca.services.OrchestrationStepService;
 import io.harness.ssca.services.OrchestrationStepServiceImpl;
 import io.harness.ssca.services.RuleEngineService;
 import io.harness.ssca.services.RuleEngineServiceImpl;
+import io.harness.ssca.services.S3StoreService;
+import io.harness.ssca.services.S3StoreServiceImpl;
 import io.harness.token.TokenClientModule;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -90,6 +98,7 @@ public class SSCAManagerModule extends AbstractModule {
     bind(EnforcementResultService.class).to(EnforcementResultServiceImpl.class);
     bind(EnforcementSummaryService.class).to(EnforcementSummaryServiceImpl.class);
     bind(NextGenService.class).to(NextGenServiceImpl.class);
+    bind(S3StoreService.class).to(S3StoreServiceImpl.class);
     install(new TokenClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
         this.configuration.getNgManagerServiceSecret(), SSCA_SERVICE.getServiceId()));
   }
@@ -112,6 +121,25 @@ public class SSCAManagerModule extends AbstractModule {
   @Named("sscaManagerServiceSecret")
   public String sscaManagerServiceSecret() {
     return this.configuration.getSscaManagerServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  public S3Config s3Config() {
+    return this.configuration.getS3Config();
+  }
+
+  @Provides
+  @Singleton
+  public AmazonS3 s3Client() {
+    BasicAWSCredentials googleCreds = new BasicAWSCredentials(
+        configuration.getS3Config().getAccessKeyId(), configuration.getS3Config().getAccessSecretKey());
+
+    return AmazonS3ClientBuilder.standard()
+        .withEndpointConfiguration(
+            new AwsClientBuilder.EndpointConfiguration(configuration.getS3Config().getEndpoint(), "auto"))
+        .withCredentials(new AWSStaticCredentialsProvider(googleCreds))
+        .build();
   }
 
   @Provides

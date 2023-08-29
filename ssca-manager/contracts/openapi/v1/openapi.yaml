@@ -90,6 +90,32 @@ paths:
       x-internal: true
       security:
         - x-api-key: []
+  '/v1/org/{org}/project/{project}/orchestration/{orchestration-id}/sbom-download':
+    get:
+      summary: Download SBOM for an artifact
+      responses:
+        '200':
+          $ref: '#/components/responses/TokenIssueResponseBody'
+      operationId: download-sbom
+      x-stoplight:
+        id: 65dvz43ksx8pa
+      description: Download SBOM for an artifact
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      x-internal: true
+      security:
+        - x-api-key: []
+      tags:
+        - orchestration
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - schema:
+          type: string
+        name: orchestration-id
+        in: path
+        required: true
+        description: Orchestration Identifier
   '/v1/org/{org}/project/{project}/orchestration/{orchestration-id}/summary':
     parameters:
       - $ref: '#/components/parameters/OrgParam'
@@ -357,6 +383,15 @@ components:
         - token
       title: ''
       x-internal: true
+    ArtifactSbomResponseBody:
+      title: ArtifactSbomResponseBody
+      x-stoplight:
+        id: kubfwxzoybmsz
+      type: object
+      properties:
+        sbom:
+          type: string
+      description: ''
     OrchestrationSummaryResponse:
       title: OrchestrationSummary
       x-stoplight:
@@ -573,6 +608,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/TokenIssueResponseBody'
+    ArtifactSbomResponseBody:
+      description: Response Body for Artifact Sbom
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ArtifactSbomResponseBody'
     OrchestrationSummaryResponseBody:
       description: Step Execution Response
       content:

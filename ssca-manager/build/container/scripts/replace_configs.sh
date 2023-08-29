@@ -81,3 +81,27 @@ fi
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
   export NG_MANAGER_BASE_URL; yq -i '.ngManagerServiceHttpClientConfig.baseUrl=env(NG_MANAGER_BASE_URL)' $CONFIG_FILE
 fi
+
+if [[ "" != "$S3_REGION" ]]; then
+  export S3_REGION; yq -i '.s3Config.region=env(S3_REGION)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_BUCKET" ]]; then
+  export S3_BUCKET; yq -i '.s3Config.bucket=env(S3_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_ENDPOINT" ]]; then
+  export S3_ENDPOINT; yq -i '.s3Config.Endpoint=env(S3_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_POLICY_BUCKET" ]]; then
+  export S3_POLICY_BUCKET; yq -i '.s3Config.policyBucket=env(S3_POLICY_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_ACCESS_KEY_ID" ]]; then
+  export S3_ACCESS_KEY_ID; yq -i '.s3Config.accessKeyId=env(S3_ACCESS_KEY_ID)' $CONFIG_FILE
+fi
+
+if [[ "" != "$S3_ACCESS_SECRET_KEY" ]]; then
+  export S3_ACCESS_SECRET_KEY; yq -i '.s3Config.accessSecretKey=env(S3_ACCESS_SECRET_KEY)' $CONFIG_FILE
+fi

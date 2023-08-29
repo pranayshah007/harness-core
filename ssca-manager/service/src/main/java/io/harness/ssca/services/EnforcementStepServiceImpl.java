@@ -18,6 +18,7 @@ import io.harness.ssca.enforcement.ExecutorRegistry;
 import io.harness.ssca.enforcement.constants.RuleExecutorType;
 import io.harness.ssca.enforcement.rule.Engine;
 import io.harness.ssca.entities.ArtifactEntity;
+import io.harness.ssca.entities.ArtifactEntity.ArtifactEntityKeys;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
 
@@ -26,6 +27,7 @@ import java.util.List;
 import javax.ws.rs.NotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 public class EnforcementStepServiceImpl implements EnforcementStepService {
   @Inject ArtifactRepository artifactRepository;
@@ -37,7 +39,10 @@ public class EnforcementStepServiceImpl implements EnforcementStepService {
   @Override
   public EnforceSbomResponseBody enforceSbom(
       String accountId, String orgIdentifier, String projectIdentifier, EnforceSbomRequestBody body) {
-    ArtifactEntity artifactEntity = artifactRepository.findFirstByUrl(body.getArtifact().getRegistryUrl()).get();
+    ArtifactEntity artifactEntity =
+        artifactRepository
+            .findFirstByUrlLike(body.getArtifact().getRegistryUrl(), Sort.by(ArtifactEntityKeys.createdOn).descending())
+            .get();
 
     RuleDTO ruleDTO = ruleEngineService.getRules(accountId, orgIdentifier, projectIdentifier, body.getPolicyFileId());
 
