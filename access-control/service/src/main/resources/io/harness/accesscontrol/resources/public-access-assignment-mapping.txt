@@ -1,0 +1,7 @@
+publicAccessRoleAssignmentMapping:
+  - resourceType: PIPELINE
+    roleIdentifier: _pipeline_allUsers_access_role
+    principalIdentifier: ALL_USERS
+  - resourceType: PIPELINE
+    roleIdentifier: _pipeline_allAuthenticatedUsers_access_role
+    principalIdentifier: ALL_AUTHENTICATED_USERS
