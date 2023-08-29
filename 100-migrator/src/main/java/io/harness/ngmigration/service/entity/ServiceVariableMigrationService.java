@@ -259,7 +259,8 @@ public class ServiceVariableMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
-    return true;
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
+    NGMigrationEntityType rootType = migrationContext.getRoot();
+    return NGMigrationEntityType.APPLICATION == rootType;
   }
 }

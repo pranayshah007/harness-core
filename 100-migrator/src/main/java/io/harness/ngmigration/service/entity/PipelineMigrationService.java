@@ -1097,7 +1097,7 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     // To avoid migrating Pipelines to NG.
     return true;
   }

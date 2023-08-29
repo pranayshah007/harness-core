@@ -46,6 +46,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
@@ -93,6 +94,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
   @Inject ConfigService configService;
   @Inject ConfigFileMigrationService configFileMigrationService;
   @Inject EnvironmentResourceClient environmentResourceClient;
+  @Inject private HPersistence hPersistence;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -152,6 +154,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                      .build())
                           .collect(Collectors.toList()));
     }
+
     List<ApplicationManifest> applicationManifests =
         applicationManifestService.getAllByEnvId(environment.getAppId(), environment.getUuid());
     if (isNotEmpty(applicationManifests)) {
@@ -310,7 +313,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 }
