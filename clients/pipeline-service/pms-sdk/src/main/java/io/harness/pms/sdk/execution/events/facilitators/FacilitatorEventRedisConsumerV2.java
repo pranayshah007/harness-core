@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.execution.events.facilitators;
 
+import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 import static io.harness.pms.sdk.execution.events.PmsSdkEventFrameworkConstants.SDK_FACILITATOR_CONSUMER;
 
 import io.harness.eventsframework.api.Consumer;
@@ -15,13 +16,14 @@ import io.harness.queue.QueueController;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 
 public class FacilitatorEventRedisConsumerV2 extends PmsAbstractRedisConsumer<FacilitatorEventMessageListener> {
   @Inject
   public FacilitatorEventRedisConsumerV2(@Named(SDK_FACILITATOR_CONSUMER) Consumer redisConsumer,
       FacilitatorEventMessageListener messageListener, @Named("sdkEventsCache") Cache<String, Integer> eventsCache,
-      QueueController queueController) {
-    super(redisConsumer, messageListener, eventsCache, queueController);
+      QueueController queueController, @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
+    super(redisConsumer, messageListener, eventsCache, queueController, executorService);
   }
 }
