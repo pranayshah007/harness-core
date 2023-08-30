@@ -127,6 +127,7 @@ public class PerspectiveToAnomalyQueryHelper {
                 CCMField.WORKLOAD, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
             break;
           case SERVICE_NAME_FIELD_ID:
+          case SERVICE_FIELD_ID:
             stringFilters.add(buildStringFilter(
                 CCMField.SERVICE_NAME, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
             break;
