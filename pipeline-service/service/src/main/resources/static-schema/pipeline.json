@@ -42,6 +42,12 @@
             "type" : "string",
             "pattern" : "^[a-zA-Z_0-9-.][-0-9a-zA-Z_\\s.]{0,127}$"
           },
+          "notificationRules" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/pipeline/NotificationRules"
+            }
+          },
           "orgIdentifier" : {
             "type" : "string"
           },
@@ -120,6 +126,276 @@
           },
           "name" : {
             "type" : "string"
+          }
+        },
+        "$schema" : "http://json-schema.org/draft-07/schema#"
+      },
+      "NotificationRules" : {
+        "title" : "NotificationRules",
+        "type" : "object",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "notificationMethod" : {
+            "$ref" : "#/definitions/pipeline/NotificationChannelWrapper"
+          },
+          "pipelineEvents" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/definitions/pipeline/PipelineEvent"
+            }
+          },
+          "description" : {
+            "desc" : "This is the description for NotificationRules"
+          }
+        },
+        "$schema" : "http://json-schema.org/draft-07/schema#"
+      },
+      "NotificationChannelWrapper" : {
+        "title" : "NotificationChannelWrapper",
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string"
+          },
+          "description" : {
+            "desc" : "This is the description for NotificationChannelWrapper"
+          }
+        },
+        "$schema" : "http://json-schema.org/draft-07/schema#",
+        "allOf" : [ {
+          "if" : {
+            "properties" : {
+              "type" : {
+                "const" : "Email"
+              }
+            }
+          },
+          "then" : {
+            "properties" : {
+              "spec" : {
+                "$ref" : "#/definitions/pipeline/PmsEmailChannel"
+              }
+            }
+          }
+        }, {
+          "if" : {
+            "properties" : {
+              "type" : {
+                "const" : "MsTeams"
+              }
+            }
+          },
+          "then" : {
+            "properties" : {
+              "spec" : {
+                "$ref" : "#/definitions/pipeline/PmsMSTeamChannel"
+              }
+            }
+          }
+        }, {
+          "if" : {
+            "properties" : {
+              "type" : {
+                "const" : "PagerDuty"
+              }
+            }
+          },
+          "then" : {
+            "properties" : {
+              "spec" : {
+                "$ref" : "#/definitions/pipeline/PmsPagerDutyChannel"
+              }
+            }
+          }
+        }, {
+          "if" : {
+            "properties" : {
+              "type" : {
+                "const" : "Slack"
+              }
+            }
+          },
+          "then" : {
+            "properties" : {
+              "spec" : {
+                "$ref" : "#/definitions/pipeline/PmsSlackChannel"
+              }
+            }
+          }
+        }, {
+          "if" : {
+            "properties" : {
+              "type" : {
+                "const" : "Webhook"
+              }
+            }
+          },
+          "then" : {
+            "properties" : {
+              "spec" : {
+                "$ref" : "#/definitions/pipeline/PmsWebhookChannel"
+              }
+            }
+          }
+        } ]
+      },
+      "PmsEmailChannel" : {
+        "title" : "PmsEmailChannel",
+        "allOf" : [ {
+          "$ref" : "#/definitions/pipeline/PmsNotificationChannel"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "recipients" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            },
+            "userGroups" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            }
+          }
+        } ],
+        "$schema" : "http://json-schema.org/draft-07/schema#",
+        "properties" : {
+          "description" : {
+            "desc" : "This is the description for PmsEmailChannel"
+          }
+        }
+      },
+      "PmsNotificationChannel" : {
+        "title" : "PmsNotificationChannel",
+        "type" : "object",
+        "discriminator" : "type",
+        "$schema" : "http://json-schema.org/draft-07/schema#",
+        "properties" : {
+          "description" : {
+            "desc" : "This is the description for PmsNotificationChannel"
+          }
+        }
+      },
+      "PmsMSTeamChannel" : {
+        "title" : "PmsMSTeamChannel",
+        "allOf" : [ {
+          "$ref" : "#/definitions/pipeline/PmsNotificationChannel"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "msTeamKeys" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            },
+            "userGroups" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            }
+          }
+        } ],
+        "$schema" : "http://json-schema.org/draft-07/schema#",
+        "properties" : {
+          "description" : {
+            "desc" : "This is the description for PmsMSTeamChannel"
+          }
+        }
+      },
+      "PmsPagerDutyChannel" : {
+        "title" : "PmsPagerDutyChannel",
+        "allOf" : [ {
+          "$ref" : "#/definitions/pipeline/PmsNotificationChannel"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "integrationKey" : {
+              "type" : "string"
+            },
+            "userGroups" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            }
+          }
+        } ],
+        "$schema" : "http://json-schema.org/draft-07/schema#",
+        "properties" : {
+          "description" : {
+            "desc" : "This is the description for PmsPagerDutyChannel"
+          }
+        }
+      },
+      "PmsSlackChannel" : {
+        "title" : "PmsSlackChannel",
+        "allOf" : [ {
+          "$ref" : "#/definitions/pipeline/PmsNotificationChannel"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "userGroups" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string"
+              }
+            },
+            "webhookUrl" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "$schema" : "http://json-schema.org/draft-07/schema#",
+        "properties" : {
+          "description" : {
+            "desc" : "This is the description for PmsSlackChannel"
+          }
+        }
+      },
+      "PmsWebhookChannel" : {
+        "title" : "PmsWebhookChannel",
+        "allOf" : [ {
+          "$ref" : "#/definitions/pipeline/PmsNotificationChannel"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "webhookUrl" : {
+              "type" : "string"
+            }
+          }
+        } ],
+        "$schema" : "http://json-schema.org/draft-07/schema#",
+        "properties" : {
+          "description" : {
+            "desc" : "This is the description for PmsWebhookChannel"
+          }
+        }
+      },
+      "PipelineEvent" : {
+        "title" : "PipelineEvent",
+        "type" : "object",
+        "properties" : {
+          "forStages" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "AllEvents", "PipelineStart", "PipelineSuccess", "PipelineFailed", "PipelineEnd", "PipelinePaused", "StageSuccess", "StageFailed", "StageStart", "StepFailed" ]
+          },
+          "description" : {
+            "desc" : "This is the description for PipelineEvent"
           }
         },
         "$schema" : "http://json-schema.org/draft-07/schema#"
@@ -6757,8 +7033,10 @@
             "type" : "object",
             "properties" : {
               "metadata" : {
-                "readOnly" : true,
                 "$ref" : "#/definitions/pipeline/stages/cd/ServicesMetadata"
+              },
+              "useFromStage" : {
+                "$ref" : "#/definitions/pipeline/stages/cd/ServiceUseFromStageV2"
               },
               "values" : {
                 "oneOf" : [ {
@@ -14125,7 +14403,7 @@
             "properties" : {
               "type" : {
                 "type" : "string",
-                "enum" : [ "SetFeatureFlagState", "SetOnVariation", "SetOffVariation", "SetDefaultVariations", "AddRule", "UpdateRule", "AddTargetsToVariationTargetMap", "RemoveTargetsToVariationTargetMap", "AddSegmentToVariationTargetMap" ]
+                "enum" : [ "SetFeatureFlagState", "SetOnVariation", "SetOffVariation", "SetDefaultVariations", "AddRule", "UpdateRule", "AddTargetsToVariationTargetMap", "RemoveTargetsToVariationTargetMap", "AddSegmentToVariationTargetMap", "RemoveSegmentsToVariationTargetMap" ]
               },
               "description" : {
                 "desc" : "This is the description for PatchInstruction"
@@ -16519,6 +16797,12 @@
                     "minLength" : 1
                   } ]
                 },
+                "parameters" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "string"
+                  }
+                },
                 "privileged" : {
                   "oneOf" : [ {
                     "type" : "boolean"
@@ -16596,6 +16880,12 @@
                   "pattern" : "(<\\+.+>.*)",
                   "minLength" : 1
                 } ]
+              },
+              "parameters" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "string"
+                }
               },
               "privileged" : {
                 "oneOf" : [ {
@@ -28676,7 +28966,7 @@
             "properties" : {
               "type" : {
                 "type" : "string",
-                "enum" : [ "branch", "tag", "PR" ]
+                "enum" : [ "branch", "tag", "PR", "CommitSha" ]
               },
               "description" : {
                 "desc" : "This is the description for Build"
@@ -28725,6 +29015,21 @@
                 "properties" : {
                   "spec" : {
                     "$ref" : "#/definitions/pipeline/steps/ci/TagBuildSpec"
+                  }
+                }
+              }
+            }, {
+              "if" : {
+                "properties" : {
+                  "type" : {
+                    "const" : "CommitSha"
+                  }
+                }
+              },
+              "then" : {
+                "properties" : {
+                  "spec" : {
+                    "$ref" : "#/definitions/pipeline/steps/ci/CommitShaBuildSpec"
                   }
                 }
               }
@@ -28797,6 +29102,26 @@
             "properties" : {
               "description" : {
                 "desc" : "This is the description for TagBuildSpec"
+              }
+            }
+          },
+          "CommitShaBuildSpec" : {
+            "title" : "CommitShaBuildSpec",
+            "allOf" : [ {
+              "$ref" : "#/definitions/pipeline/steps/ci/BuildSpec"
+            }, {
+              "type" : "object",
+              "required" : [ "commitSha" ],
+              "properties" : {
+                "commitSha" : {
+                  "type" : "string"
+                }
+              }
+            } ],
+            "$schema" : "http://json-schema.org/draft-07/schema#",
+            "properties" : {
+              "description" : {
+                "desc" : "This is the description for CommitShaBuildSpec"
               }
             }
           },
@@ -30813,7 +31138,7 @@
                 "buildTool" : {
                   "oneOf" : [ {
                     "type" : "string",
-                    "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest", "Rspec" ]
+                    "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest" ]
                   }, {
                     "type" : "string",
                     "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -30862,7 +31187,7 @@
                 "language" : {
                   "oneOf" : [ {
                     "type" : "string",
-                    "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python", "Ruby" ]
+                    "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python" ]
                   }, {
                     "type" : "string",
                     "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -30990,7 +31315,7 @@
               "buildTool" : {
                 "oneOf" : [ {
                   "type" : "string",
-                  "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest", "Rspec" ]
+                  "enum" : [ "Maven", "Bazel", "Gradle", "Dotnet", "Nunitconsole", "SBT", "Pytest", "Unittest" ]
                 }, {
                   "type" : "string",
                   "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -31039,7 +31364,7 @@
               "language" : {
                 "oneOf" : [ {
                   "type" : "string",
-                  "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python", "Ruby" ]
+                  "enum" : [ "Java", "Kotlin", "Scala", "Csharp", "Python" ]
                 }, {
                   "type" : "string",
                   "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
@@ -35956,7 +36281,7 @@
               },
               "type" : {
                 "type" : "string",
-                "enum" : [ "Generic" ]
+                "enum" : [ "Generic", "ECR" ]
               },
               "description" : {
                 "desc" : "This is the description for OciHelmChartStoreConfigWrapper"
@@ -35964,6 +36289,21 @@
             },
             "$schema" : "http://json-schema.org/draft-07/schema#",
             "allOf" : [ {
+              "if" : {
+                "properties" : {
+                  "type" : {
+                    "const" : "ECR"
+                  }
+                }
+              },
+              "then" : {
+                "properties" : {
+                  "spec" : {
+                    "$ref" : "#/definitions/pipeline/steps/cd/OciHelmChartStoreEcrConfig"
+                  }
+                }
+              }
+            }, {
               "if" : {
                 "properties" : {
                   "type" : {
@@ -35979,6 +36319,33 @@
                 }
               }
             } ]
+          },
+          "OciHelmChartStoreEcrConfig" : {
+            "title" : "OciHelmChartStoreEcrConfig",
+            "allOf" : [ { }, {
+              "type" : "object",
+              "required" : [ "connectorRef", "region" ],
+              "properties" : {
+                "connectorRef" : {
+                  "type" : "string"
+                },
+                "metadata" : {
+                  "type" : "string"
+                },
+                "region" : {
+                  "type" : "string"
+                },
+                "registryId" : {
+                  "type" : "string"
+                }
+              }
+            } ],
+            "$schema" : "http://json-schema.org/draft-07/schema#",
+            "properties" : {
+              "description" : {
+                "desc" : "This is the description for OciHelmChartStoreEcrConfig"
+              }
+            }
           },
           "OciHelmChartStoreGenericConfig" : {
             "title" : "OciHelmChartStoreGenericConfig",
@@ -36707,6 +37074,12 @@
             "type" : "object",
             "required" : [ "type" ],
             "properties" : {
+              "commandFlags" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/pipeline/steps/cd/TerragruntCliOptionFlag"
+                }
+              },
               "spec" : {
                 "$ref" : "#/definitions/pipeline/steps/cd/TerragruntExecutionData"
               },
@@ -36716,6 +37089,24 @@
               },
               "description" : {
                 "desc" : "This is the description for TerragruntStepConfiguration"
+              }
+            },
+            "$schema" : "http://json-schema.org/draft-07/schema#"
+          },
+          "TerragruntCliOptionFlag" : {
+            "title" : "TerragruntCliOptionFlag",
+            "type" : "object",
+            "required" : [ "commandType", "flag" ],
+            "properties" : {
+              "commandType" : {
+                "type" : "string",
+                "enum" : [ "INIT", "WORKSPACE", "PLAN", "APPLY", "DESTROY" ]
+              },
+              "flag" : {
+                "type" : "string"
+              },
+              "description" : {
+                "desc" : "This is the description for TerragruntCliOptionFlag"
               }
             },
             "$schema" : "http://json-schema.org/draft-07/schema#"
@@ -43617,6 +44008,12 @@
               "type" : "object",
               "required" : [ "provisionerIdentifier" ],
               "properties" : {
+                "commandFlags" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/definitions/pipeline/steps/cd/TerragruntCliOptionFlag"
+                  }
+                },
                 "delegateSelectors" : {
                   "oneOf" : [ {
                     "type" : "array",
@@ -43638,6 +44035,12 @@
             "type" : "object",
             "required" : [ "provisionerIdentifier" ],
             "properties" : {
+              "commandFlags" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/pipeline/steps/cd/TerragruntCliOptionFlag"
+                }
+              },
               "delegateSelectors" : {
                 "oneOf" : [ {
                   "type" : "array",
@@ -47959,6 +48362,12 @@
               "command" : {
                 "type" : "string",
                 "enum" : [ "Apply", "Destroy" ]
+              },
+              "commandFlags" : {
+                "type" : "array",
+                "items" : {
+                  "$ref" : "#/definitions/pipeline/steps/cd/TerragruntCliOptionFlag"
+                }
               },
               "configFiles" : {
                 "$ref" : "#/definitions/pipeline/steps/cd/TerragruntConfigFilesWrapper"
