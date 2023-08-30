@@ -19,9 +19,7 @@ import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAVNEET;
 import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.SAHIL;
-import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
-import static io.harness.rule.OwnerRule.VITALIE;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,8 +65,6 @@ import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.beans.host.HostNamesFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
-import io.harness.cdng.infra.yaml.AsgInfrastructure;
-import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
@@ -78,8 +74,6 @@ import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
-import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
-import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.instance.InstanceOutcomeHelper;
@@ -568,176 +562,6 @@ public class InfrastructureStepTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = VAIBHAV_SI)
-  @Category(UnitTests.class)
-  public void testValidateInfrastructure() {
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(null, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Infrastructure definition can't be null or empty");
-
-    K8SDirectInfrastructureBuilder k8SDirectInfrastructureBuilder = K8SDirectInfrastructure.builder();
-    infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null);
-
-    k8SDirectInfrastructureBuilder.connectorRef(ParameterField.createValueField("connector"));
-    infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null);
-
-    ParameterField param = new ParameterField<>(null, null, true, "expression1", null, true);
-    k8SDirectInfrastructureBuilder.connectorRef(param);
-    doThrow(new InvalidRequestException("Unresolved Expression : [expression1]"))
-        .when(infrastructureStepHelper)
-        .validateExpression(eq(param), any());
-
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expression : [expression1]");
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testValidatePdcInfrastructure() {
-    PdcInfrastructure infrastructure = PdcInfrastructure.builder()
-                                           .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
-                                           .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
-                                           .build();
-
-    infrastructureStep.validateInfrastructure(infrastructure, null);
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testValidatePdcInfrastructureSshKeyExpression() {
-    ParameterField credentialsRef = new ParameterField<>(null, null, true, "expression1", null, true);
-    PdcInfrastructure infrastructure = PdcInfrastructure.builder()
-                                           .credentialsRef(credentialsRef)
-                                           .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
-                                           .build();
-
-    doThrow(new InvalidRequestException("Unresolved Expression : [expression1]"))
-        .when(infrastructureStepHelper)
-        .validateExpression(eq(credentialsRef));
-
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expression : [expression1]");
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testValidatePdcInfrastructureHostsAndConnectorAreExpressions() {
-    ParameterField<String> credentialsRef = ParameterField.createValueField("ssh-key-ref");
-    ParameterField hosts = new ParameterField<>(null, null, true, "expression1", null, true);
-    ParameterField connectorRef = new ParameterField<>(null, null, true, "expression2", null, true);
-    PdcInfrastructure infrastructure =
-        PdcInfrastructure.builder().credentialsRef(credentialsRef).hosts(hosts).connectorRef(connectorRef).build();
-
-    doNothing().when(infrastructureStepHelper).validateExpression(eq(credentialsRef));
-    doThrow(new InvalidRequestException("Unresolved Expressions : [expression1] , [expression2]"))
-        .when(infrastructureStepHelper)
-        .requireOne(eq(hosts), eq(connectorRef));
-
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expressions : [expression1] , [expression2]");
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testValidateSshWinRmAzureInfrastructure() {
-    SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
-                                                     .credentialsRef(ParameterField.createValueField("credentials-ref"))
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
-                                                     .subscriptionId(ParameterField.createValueField("subscription-id"))
-                                                     .resourceGroup(ParameterField.createValueField("resource-group"))
-                                                     .build();
-
-    infrastructureStep.validateInfrastructure(infrastructure, null);
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testValidateSshWinRmAzureInfrastructureCredentialsIsExpression() {
-    ParameterField credentialsRef = new ParameterField<>(null, null, true, "expression1", null, true);
-    SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
-                                                     .credentialsRef(credentialsRef)
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
-                                                     .subscriptionId(ParameterField.createValueField("subscription-id"))
-                                                     .resourceGroup(ParameterField.createValueField("resource-group"))
-                                                     .build();
-
-    doThrow(new InvalidRequestException("Unresolved Expression : [expression1]"))
-        .when(infrastructureStepHelper)
-        .validateExpression(any(), any(), any(), eq(credentialsRef));
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expression : [expression1]");
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testValidateSshWinRmAzureInfrastructureConnectorIsExpression() {
-    ParameterField connectorRef = new ParameterField<>(null, null, true, "expression1", null, true);
-    SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
-                                                     .credentialsRef(ParameterField.createValueField("credentials-ref"))
-                                                     .connectorRef(connectorRef)
-                                                     .subscriptionId(ParameterField.createValueField("subscription-id"))
-                                                     .resourceGroup(ParameterField.createValueField("resource-group"))
-                                                     .build();
-
-    doThrow(new InvalidRequestException("Unresolved Expression : [expression1]"))
-        .when(infrastructureStepHelper)
-        .validateExpression(eq(connectorRef), any(), any(), any());
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expression : [expression1]");
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testValidateSshWinRmAzureInfrastructureSubscriptionIsExpression() {
-    ParameterField subscriptionId = new ParameterField<>(null, null, true, "expression2", null, true);
-    SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
-                                                     .credentialsRef(ParameterField.createValueField("credentials-ref"))
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
-                                                     .subscriptionId(subscriptionId)
-                                                     .resourceGroup(ParameterField.createValueField("resource-group"))
-                                                     .build();
-
-    doThrow(new InvalidRequestException("Unresolved Expression : [expression2]"))
-        .when(infrastructureStepHelper)
-        .validateExpression(any(), eq(subscriptionId), any(), any());
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expression : [expression2]");
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testValidateSshWinRmAzureInfrastructureResourceGroupIsExpression() {
-    ParameterField resourceGroup = new ParameterField<>(null, null, true, "expression2", null, true);
-    SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
-                                                     .credentialsRef(ParameterField.createValueField("credentials-ref"))
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
-                                                     .subscriptionId(ParameterField.createValueField("subscription-id"))
-                                                     .resourceGroup(resourceGroup)
-                                                     .build();
-
-    doThrow(new InvalidRequestException("Unresolved Expression : [expression2]"))
-        .when(infrastructureStepHelper)
-        .validateExpression(any(), any(), eq(resourceGroup), any());
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expression : [expression2]");
-  }
-
-  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testValidateConnector() {
@@ -863,78 +687,6 @@ public class InfrastructureStepTest extends CategoryTest {
   @Test
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
-  public void testValidateElastigroupInfrastructure() {
-    StoreConfig storeConfig =
-        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
-
-    ElastigroupInfrastructure infrastructure =
-        ElastigroupInfrastructure.builder()
-            .connectorRef(ParameterField.createValueField(""))
-            .configuration(
-                ElastigroupConfiguration.builder()
-                    .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
-                    .build())
-            .build();
-    Ambiance ambiance = Mockito.mock(Ambiance.class);
-    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any());
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
-        .isInstanceOf(InvalidRequestException.class);
-    doNothing().when(infrastructureStepHelper).validateExpression(any());
-    assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
-        .doesNotThrowAnyException();
-  }
-
-  @Test
-  @Owner(developers = LOVISH_BANSAL)
-  @Category(UnitTests.class)
-  public void testValidateAsgInfrastructure() {
-    AsgInfrastructure infrastructure = AsgInfrastructure.builder()
-                                           .connectorRef(ParameterField.createValueField(""))
-                                           .region(ParameterField.createValueField("region"))
-                                           .build();
-    Ambiance ambiance = Mockito.mock(Ambiance.class);
-    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any(), any());
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
-        .isInstanceOf(InvalidRequestException.class);
-    doNothing().when(infrastructureStepHelper).validateExpression(any(), any());
-    assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
-        .doesNotThrowAnyException();
-  }
-
-  @Test
-  @Owner(developers = ANIL)
-  @Category(UnitTests.class)
-  public void testValidateTASConnector() {
-    TanzuApplicationServiceInfrastructure infrastructure =
-        TanzuApplicationServiceInfrastructure.builder()
-            .connectorRef(ParameterField.createValueField("tanzuConnector"))
-            .organization(ParameterField.createValueField("devTest"))
-            .space(ParameterField.createValueField("devSpace"))
-            .build();
-
-    Ambiance ambiance = Mockito.mock(Ambiance.class);
-    when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance)).thenReturn(ngLogCallback);
-
-    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
-                                            .connectorConfig(AwsConnectorDTO.builder().build())
-                                            .connectorType(ConnectorType.TAS)
-                                            .build();
-
-    doReturn(Lists.newArrayList(connectorInfoDTO))
-        .when(infrastructureStepHelper)
-        .validateAndGetConnectors(any(), any(), any());
-
-    assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
-        .isInstanceOf(InvalidRequestException.class);
-
-    connectorInfoDTO.setConnectorConfig(TasConnectorDTO.builder().build());
-
-    assertThatCode(() -> infrastructureStep.validateConnector(infrastructure, ambiance)).doesNotThrowAnyException();
-  }
-
-  @Test
-  @Owner(developers = ARVIND)
-  @Category(UnitTests.class)
   public void testValidateElastigroupConnector() {
     StoreConfig storeConfig =
         InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
@@ -963,50 +715,6 @@ public class InfrastructureStepTest extends CategoryTest {
     connectorInfoDTO.setConnectorConfig(SpotConnectorDTO.builder().build());
 
     assertThatCode(() -> infrastructureStep.validateConnector(infrastructure, ambiance)).doesNotThrowAnyException();
-  }
-
-  @Test
-  @Owner(developers = VITALIE)
-  @Category(UnitTests.class)
-  public void testValidateSshWinRmAwsInfrastructure() {
-    SshWinRmAwsInfrastructureBuilder builder = SshWinRmAwsInfrastructure.builder();
-
-    infrastructureStep.validateInfrastructure(builder.build(), null);
-    ParameterField credentialsRef = new ParameterField<>(null, null, true, "expression1", null, true);
-    builder.credentialsRef(credentialsRef).connectorRef(ParameterField.createValueField("value")).build();
-
-    doThrow(new InvalidRequestException("Unresolved Expression : [expression1]"))
-        .when(infrastructureStepHelper)
-        .validateExpression(any(), eq(credentialsRef), any(), any());
-
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build(), null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expression : [expression1]");
-
-    ParameterField connectorRef2 = new ParameterField<>(null, null, true, "expression2", null, true);
-    builder.connectorRef(new ParameterField<>(null, null, true, "expression2", null, true))
-        .credentialsRef(ParameterField.createValueField("value"))
-        .build();
-    doThrow(new InvalidRequestException("Unresolved Expression : [expression2]"))
-        .when(infrastructureStepHelper)
-        .validateExpression(eq(connectorRef2), any(), any(), any());
-
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build(), null))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expression : [expression2]");
-  }
-
-  @Test
-  @Owner(developers = TMACARI)
-  @Category(UnitTests.class)
-  public void testValidateAzureWebAppInfrastructure() {
-    AzureWebAppInfrastructure infrastructure = AzureWebAppInfrastructure.builder()
-                                                   .connectorRef(ParameterField.createValueField("connector-ref"))
-                                                   .subscriptionId(ParameterField.createValueField("subscription-id"))
-                                                   .resourceGroup(ParameterField.createValueField("resource-group"))
-                                                   .build();
-
-    infrastructureStep.validateInfrastructure(infrastructure, null);
   }
 
   @Test
@@ -1082,5 +790,36 @@ public class InfrastructureStepTest extends CategoryTest {
     return InstancesOutcome.builder()
         .instances(List.of(InstanceOutcome.builder().name("instanceName").hostName("instanceHostname").build()))
         .build();
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testValidateTASConnector() {
+    TanzuApplicationServiceInfrastructure infrastructure =
+        TanzuApplicationServiceInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("tanzuConnector"))
+            .organization(ParameterField.createValueField("devTest"))
+            .space(ParameterField.createValueField("devSpace"))
+            .build();
+
+    Ambiance ambiance = Mockito.mock(Ambiance.class);
+    when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance)).thenReturn(ngLogCallback);
+
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorConfig(AwsConnectorDTO.builder().build())
+                                            .connectorType(ConnectorType.TAS)
+                                            .build();
+
+    doReturn(Lists.newArrayList(connectorInfoDTO))
+        .when(infrastructureStepHelper)
+        .validateAndGetConnectors(any(), any(), any());
+
+    assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+
+    connectorInfoDTO.setConnectorConfig(TasConnectorDTO.builder().build());
+
+    assertThatCode(() -> infrastructureStep.validateConnector(infrastructure, ambiance)).doesNotThrowAnyException();
   }
 }

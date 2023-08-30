@@ -43,25 +43,7 @@ import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
-import io.harness.cdng.infra.yaml.AsgInfrastructure;
-import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
-import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
-import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
-import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
-import io.harness.cdng.infra.yaml.EcsInfrastructure;
-import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
-import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
-import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
-import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
-import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
-import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
-import io.harness.cdng.infra.yaml.K8sRancherInfrastructure;
-import io.harness.cdng.infra.yaml.PdcInfrastructure;
-import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
-import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
-import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
-import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.instance.InstanceOutcomeHelper;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
@@ -82,7 +64,6 @@ import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -174,14 +155,16 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     saveExecutionLogSafely(logCallback, "Fetching environment information...");
 
-    validateInfrastructure(infrastructure, ambiance);
+    infrastructureValidator.resolveProvisionerExpressions(ambiance, infrastructure);
+
+    NGLogCallback infraValidationLogCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
+    infrastructureValidator.validateInfrastructure(infrastructure, ambiance, infraValidationLogCallback);
+
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-
-    infrastructureValidator.validate(infrastructure);
 
     final InfrastructureOutcome infrastructureOutcome = infrastructureOutcomeProvider.getOutcome(ambiance,
         infrastructure, environmentOutcome, serviceOutcome, ngAccess.getAccountIdentifier(),
@@ -452,154 +435,6 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     }
 
     saveExecutionLogSafely(logCallback, color("Connector validated", Green));
-  }
-
-  @VisibleForTesting
-  void validateInfrastructure(Infrastructure infrastructure, Ambiance ambiance) {
-    String k8sNamespaceLogLine = "Kubernetes Namespace: %s";
-
-    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
-
-    if (infrastructure == null) {
-      throw new InvalidRequestException("Infrastructure definition can't be null or empty");
-    }
-    switch (infrastructure.getKind()) {
-      case InfrastructureKind.KUBERNETES_DIRECT:
-        K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(
-            k8SDirectInfrastructure.getConnectorRef(), k8SDirectInfrastructure.getNamespace());
-
-        if (k8SDirectInfrastructure.getNamespace() != null
-            && isNotEmpty(k8SDirectInfrastructure.getNamespace().getValue())) {
-          saveExecutionLogSafely(logCallback,
-              color(format(k8sNamespaceLogLine, k8SDirectInfrastructure.getNamespace().getValue()), Yellow));
-        }
-        break;
-
-      case InfrastructureKind.CUSTOM_DEPLOYMENT:
-        CustomDeploymentInfrastructure customDeploymentInfrastructure = (CustomDeploymentInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(customDeploymentInfrastructure.getConnectorReference(),
-            ParameterField.createValueField(customDeploymentInfrastructure.getCustomDeploymentRef().getTemplateRef()),
-            ParameterField.createValueField(customDeploymentInfrastructure.getCustomDeploymentRef().getVersionLabel()));
-        customDeploymentInfrastructureHelper.validateInfra(ambiance, customDeploymentInfrastructure);
-        break;
-
-      case InfrastructureKind.KUBERNETES_GCP:
-        K8sGcpInfrastructure k8sGcpInfrastructure = (K8sGcpInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(k8sGcpInfrastructure.getConnectorRef(),
-            k8sGcpInfrastructure.getNamespace(), k8sGcpInfrastructure.getCluster());
-
-        if (k8sGcpInfrastructure.getNamespace() != null && isNotEmpty(k8sGcpInfrastructure.getNamespace().getValue())) {
-          saveExecutionLogSafely(
-              logCallback, color(format(k8sNamespaceLogLine, k8sGcpInfrastructure.getNamespace().getValue()), Yellow));
-        }
-        break;
-      case InfrastructureKind.SERVERLESS_AWS_LAMBDA:
-        ServerlessAwsLambdaInfrastructure serverlessAwsLambdaInfrastructure =
-            (ServerlessAwsLambdaInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(serverlessAwsLambdaInfrastructure.getConnectorRef(),
-            serverlessAwsLambdaInfrastructure.getRegion(), serverlessAwsLambdaInfrastructure.getStage());
-        break;
-
-      case InfrastructureKind.KUBERNETES_AZURE:
-        K8sAzureInfrastructure k8sAzureInfrastructure = (K8sAzureInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(k8sAzureInfrastructure.getConnectorRef(),
-            k8sAzureInfrastructure.getNamespace(), k8sAzureInfrastructure.getCluster(),
-            k8sAzureInfrastructure.getSubscriptionId(), k8sAzureInfrastructure.getResourceGroup());
-
-        if (k8sAzureInfrastructure.getNamespace() != null
-            && isNotEmpty(k8sAzureInfrastructure.getNamespace().getValue())) {
-          saveExecutionLogSafely(logCallback,
-              color(format(k8sNamespaceLogLine, k8sAzureInfrastructure.getNamespace().getValue()), Yellow));
-        }
-        break;
-
-      case InfrastructureKind.SSH_WINRM_AZURE:
-        SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(sshWinRmAzureInfrastructure.getConnectorRef(),
-            sshWinRmAzureInfrastructure.getSubscriptionId(), sshWinRmAzureInfrastructure.getResourceGroup(),
-            sshWinRmAzureInfrastructure.getCredentialsRef());
-        break;
-
-      case InfrastructureKind.PDC:
-        PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(pdcInfrastructure.getCredentialsRef());
-        infrastructureStepHelper.requireOne(pdcInfrastructure.getHosts(), pdcInfrastructure.getConnectorRef());
-        break;
-      case InfrastructureKind.SSH_WINRM_AWS:
-        SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(),
-            sshWinRmAwsInfrastructure.getCredentialsRef(), sshWinRmAwsInfrastructure.getRegion(),
-            sshWinRmAwsInfrastructure.getHostConnectionType());
-        break;
-
-      case InfrastructureKind.AZURE_WEB_APP:
-        AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(azureWebAppInfrastructure.getConnectorRef(),
-            azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
-        break;
-
-      case InfrastructureKind.ELASTIGROUP:
-        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(elastigroupInfrastructure.getConnectorRef());
-        break;
-
-      case InfrastructureKind.ECS:
-        EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(
-            ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getCluster(), ecsInfrastructure.getRegion());
-        break;
-
-      case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
-        GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(googleFunctionsInfrastructure.getConnectorRef(),
-            googleFunctionsInfrastructure.getProject(), googleFunctionsInfrastructure.getRegion());
-        break;
-
-      case InfrastructureKind.TAS:
-        TanzuApplicationServiceInfrastructure tanzuApplicationServiceInfrastructure =
-            (TanzuApplicationServiceInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(tanzuApplicationServiceInfrastructure.getConnectorRef(),
-            tanzuApplicationServiceInfrastructure.getOrganization(), tanzuApplicationServiceInfrastructure.getSpace());
-        break;
-
-      case InfrastructureKind.ASG:
-        AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(asgInfrastructure.getConnectorRef(), asgInfrastructure.getRegion());
-        break;
-
-      case InfrastructureKind.AWS_SAM:
-        AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(
-            awsSamInfrastructure.getConnectorRef(), awsSamInfrastructure.getRegion());
-        break;
-
-      case InfrastructureKind.AWS_LAMBDA:
-        AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(
-            awsLambdaInfrastructure.getConnectorRef(), awsLambdaInfrastructure.getRegion());
-        break;
-
-      case InfrastructureKind.KUBERNETES_AWS:
-        K8sAwsInfrastructure k8sAwsInfrastructure = (K8sAwsInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(k8sAwsInfrastructure.getConnectorRef(),
-            k8sAwsInfrastructure.getNamespace(), k8sAwsInfrastructure.getCluster());
-
-        if (k8sAwsInfrastructure.getNamespace() != null && isNotEmpty(k8sAwsInfrastructure.getNamespace().getValue())) {
-          saveExecutionLogSafely(
-              logCallback, color(format(k8sNamespaceLogLine, k8sAwsInfrastructure.getNamespace().getValue()), Yellow));
-        }
-        break;
-
-      case InfrastructureKind.KUBERNETES_RANCHER:
-        K8sRancherInfrastructure rancherInfrastructure = (K8sRancherInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(rancherInfrastructure.getConnectorRef(),
-            rancherInfrastructure.getNamespace(), rancherInfrastructure.getCluster());
-        break;
-
-      default:
-        throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
-    }
   }
 
   @Override
