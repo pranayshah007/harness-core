@@ -13,10 +13,6 @@ public class SEILicenseObjectMapper implements LicenseObjectMapper<SEIModuleLice
     public SEIModuleLicenseDTO toDTO(SEIModuleLicense moduleLicense) {
         return SEIModuleLicenseDTO.builder()
                 .numberOfContributors(moduleLicense.getNumberOfContributors())
-               /* .startTime(moduleLicense.getStartTime())
-                .expiryTime(moduleLicense.getExpiryTime())
-                .premiumSupport(moduleLicense.isPremiumSupport())
-                .selfService(moduleLicense.isSelfService())*/
                 .build();
     }
 
@@ -24,10 +20,6 @@ public class SEILicenseObjectMapper implements LicenseObjectMapper<SEIModuleLice
     public SEIModuleLicense toEntity(SEIModuleLicenseDTO moduleLicenseDTO) {
         return SEIModuleLicense.builder()
                 .numberOfContributors(moduleLicenseDTO.getNumberOfContributors())
-               // .startTime(moduleLicenseDTO.getStartTime())
-                //.expiryTime(moduleLicenseDTO.getExpiryTime())
-               // .premiumSupport(moduleLicenseDTO.isPremiumSupport())
-              //  .selfService(moduleLicenseDTO.isSelfService())
                 .build();
     }
 }
