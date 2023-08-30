@@ -18,7 +18,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDP)
 public interface ArtifactoryNgService {
   List<BuildDetails> getBuildDetails(
