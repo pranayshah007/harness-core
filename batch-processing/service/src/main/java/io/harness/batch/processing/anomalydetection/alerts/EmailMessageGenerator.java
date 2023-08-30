@@ -112,7 +112,7 @@ public class EmailMessageGenerator {
 
   private String addServiceInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getServiceName())) {
-      if (anomaly.getEntityType().equals(EntityType.SERVICE_NAME)) {
+      if (anomaly.getEntityType().equals(EntityType.SERVICE)) {
         templateString = templateString
             + String.format(ANOMALY_DETAILS_ITEM_FORMAT_WITH_LINK, "Service", "${SERVICE_URL}",
                 "${" + AnomalyEntityKeys.serviceName + "}");
