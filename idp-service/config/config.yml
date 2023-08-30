@@ -214,6 +214,11 @@ pipelineServiceClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+scorecardScoreComputationIteratorConfig:
+  threadPoolCount: 5
+  enabled: false
+  targetIntervalInSeconds: 43200 #12 hours in seconds
+
 tiServiceConfig:
   internalUrl: ""
   baseUrl: http://localhost:8078

@@ -34,13 +34,17 @@ import io.harness.idp.pipeline.filter.IdpFilterCreationResponseMerger;
 import io.harness.idp.pipeline.provider.IdpModuleInfoProvider;
 import io.harness.idp.pipeline.provider.IdpPipelineServiceInfoProvider;
 import io.harness.idp.pipeline.registrar.IdpStepRegistrar;
+import io.harness.idp.scorecard.scores.iteratorhandler.ScoreComputationHandler;
 import io.harness.idp.user.jobs.UserSyncJob;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.metrics.HarnessMetricRegistry;
+import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
+import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
@@ -169,6 +173,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
     modules.add(new NotificationClientModule(configuration.getNotificationClientConfiguration()));
+    modules.add(new MetricRegistryModule(metricRegistry));
 
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);
@@ -182,7 +187,9 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
     registerNotificationTemplates(configuration, injector);
+    registerIterators(injector, configuration.getScorecardScoreComputationIteratorConfig());
     environment.jersey().register(RequestLoggingFilter.class);
+
     //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
@@ -208,6 +215,12 @@ public class IdpApplication extends Application<IdpConfiguration> {
     log.info("Initializing queue listeners...");
     IdpEventConsumerController controller = injector.getInstance(IdpEventConsumerController.class);
     controller.register(injector.getInstance(EntityCrudStreamConsumer.class), 1);
+  }
+
+  private void registerIterators(Injector injector, IteratorConfig iteratorConfig) {
+    if (iteratorConfig.isEnabled()) {
+      injector.getInstance(ScoreComputationHandler.class).registerIterators(iteratorConfig);
+    }
   }
 
   private void initMetrics(Injector injector) {

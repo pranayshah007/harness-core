@@ -25,6 +25,7 @@ import io.harness.idp.proxy.config.ProxyAllowListConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
+import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
@@ -101,6 +102,8 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceConfiguration;
   @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
   @JsonProperty("tiServiceConfig") private TIServiceConfig tiServiceConfig;
+  @JsonProperty("scorecardScoreComputationIteratorConfig")
+  private IteratorConfig scorecardScoreComputationIteratorConfig;
   private String managerTarget;
   private String managerAuthority;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
