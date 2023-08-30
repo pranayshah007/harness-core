@@ -16,6 +16,7 @@ import io.harness.cvng.beans.activity.ActivityStatusDTO;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
+import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.cdng.beans.CVNGStepParameter;
 import io.harness.cvng.cdng.beans.CVNGStepType;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
@@ -42,6 +43,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ExecutionStatus;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.cvng.verificationjob.utils.VerificationJobInstanceServiceInstanceUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.cdng.execution.StepExecutionInstanceInfo;
 import io.harness.eraro.ErrorCode;
@@ -195,7 +197,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
                 monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceBuilder.monitoredServiceType(monitoredServiceType);
-        verificationJobInstanceBuilder.serviceInstanceDetails(getServiceInstanceDetails(ambiance, stepParameters));
+        verificationJobInstanceBuilder.serviceInstanceDetails(getServiceInstanceDetails(
+            ambiance, stepParameters, verificationJobInstanceBuilder.getResolvedJob().getType()));
         verificationJobInstanceBuilder.nodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
@@ -238,7 +241,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     return identifier.endsWith("_dev");
   }
 
-  private ServiceInstanceDetails getServiceInstanceDetails(Ambiance ambiance, CVNGStepParameter cvngStepParameter) {
+  private ServiceInstanceDetails getServiceInstanceDetails(
+      Ambiance ambiance, CVNGStepParameter cvngStepParameter, VerificationJobType verificationJobType) {
     ServiceInstanceDetailsBuilder serviceInstanceDetailsBuilder =
         ServiceInstanceDetails.builder()
             .shouldUseNodesFromCD(getValueFromParameterisedField(cvngStepParameter.getShouldUseCDNodes(), false))
@@ -279,9 +283,18 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
             .filter(instanceName -> instanceNamesAfterDeployment.contains(instanceName))
             .distinct()
             .collect(Collectors.toList());
-    return serviceInstanceDetailsBuilder.deployedServiceInstances(deployedServiceInstanceDetails)
+
+    serviceInstanceDetailsBuilder.deployedServiceInstances(deployedServiceInstanceDetails)
         .serviceInstancesBeforeDeployment(instanceNamesBeforeDeployment)
-        .serviceInstancesAfterDeployment(instanceNamesAfterDeployment)
+        .serviceInstancesAfterDeployment(instanceNamesAfterDeployment);
+
+    ServiceInstanceDetails preSamplingServiceInstanceDetails = serviceInstanceDetailsBuilder.build();
+
+    return serviceInstanceDetailsBuilder
+        .sampledTestNodes(
+            VerificationJobInstanceServiceInstanceUtils.getSampledTestNodes(preSamplingServiceInstanceDetails))
+        .sampledControlNodes(VerificationJobInstanceServiceInstanceUtils.getSampledControlNodes(
+            verificationJobType, preSamplingServiceInstanceDetails))
         .build();
   }
 
