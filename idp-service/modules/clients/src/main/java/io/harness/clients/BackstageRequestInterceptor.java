@@ -11,8 +11,6 @@ import io.harness.beans.DecryptedSecretValue;
 import io.harness.idp.common.Constants;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
@@ -26,14 +24,17 @@ import java.util.Map;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-public class BackstageAuthInterceptor implements Interceptor {
+public class BackstageRequestInterceptor implements Interceptor {
   private final SecretManagerClientService ngSecretService;
+  private final String env;
   private static final int EXPIRATION_TIME = 3600;
 
-  public BackstageAuthInterceptor(SecretManagerClientService ngSecretService) {
+  public BackstageRequestInterceptor(SecretManagerClientService ngSecretService, String env) {
     this.ngSecretService = ngSecretService;
+    this.env = env;
   }
 
   @NotNull
@@ -41,11 +42,27 @@ public class BackstageAuthInterceptor implements Interceptor {
   public Response intercept(@NotNull Chain chain) throws IOException {
     Request request = chain.request();
     URL url = new URL(chain.request().url().toString());
+    String urlStr = url.toString();
+    urlStr = requestUrlModification(urlStr);
     String path = url.getPath();
     String accountIdentifier = path.split("/")[1];
     String token = getBackstageBackendSecret(accountIdentifier);
-    return chain.proceed(request.newBuilder().header("Authorization", "Bearer " + token).build());
+    return chain.proceed(request.newBuilder().url(urlStr).header("Authorization", "Bearer " + token).build());
   }
+
+  private String requestUrlModification(String urlStr) {
+    if (StringUtils.isEmpty(env)) {
+      urlStr = urlStr.replace("/idp/api/", "/api/");
+
+      StringBuilder localUrl = new StringBuilder(urlStr);
+      int start = urlStr.indexOf("/", 8);
+      int end = urlStr.indexOf("/", 23);
+      localUrl.replace(start, end, "");
+      urlStr = localUrl.toString();
+    }
+    return urlStr;
+  }
+
   private String getBackstageBackendSecret(String harnessAccount) {
     DecryptedSecretValue decryptedValue =
         ngSecretService.getDecryptedSecretValue(harnessAccount, null, null, Constants.IDP_BACKEND_SECRET);

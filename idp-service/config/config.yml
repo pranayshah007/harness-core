@@ -111,7 +111,7 @@ managerClientConfig:
   readTimeOutSeconds: 15
 
 backstageHttpClientConfig:
-  baseUrl: https://localhost:7007
+  baseUrl: http://localhost:7007/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 

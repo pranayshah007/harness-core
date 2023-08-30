@@ -44,6 +44,7 @@ public class BackstageResourceClientHttpFactory implements Provider<BackstageRes
   private final ServiceHttpClientConfig backstageClientConfig;
   private final OkHttpClient httpClient;
   private final SecretManagerClientService secretManagerClientService;
+  private final String env;
   private static final ObjectMapper mapper = new ObjectMapper()
                                                  .registerModule(new Jdk8Module())
                                                  .registerModule(new GuavaModule())
@@ -52,10 +53,11 @@ public class BackstageResourceClientHttpFactory implements Provider<BackstageRes
   @Inject
   public BackstageResourceClientHttpFactory(
       @Named("backstageHttpClientConfig") ServiceHttpClientConfig backstageClientConfig,
-      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService) {
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, @Named("env") String env) {
     this.backstageClientConfig = backstageClientConfig;
     this.secretManagerClientService = secretManagerClientService;
     this.httpClient = this.getSafeOkHttpClient();
+    this.env = env;
   }
   @Override
   public BackstageResourceClient get() {
@@ -83,7 +85,7 @@ public class BackstageResourceClientHttpFactory implements Provider<BackstageRes
         .sslSocketFactory(getSslContext().getSocketFactory(), (X509TrustManager) getTrustManagers()[0])
         .connectTimeout(backstageClientConfig.getConnectTimeOutSeconds(), TimeUnit.SECONDS)
         .readTimeout(backstageClientConfig.getReadTimeOutSeconds(), TimeUnit.SECONDS)
-        .addInterceptor(new BackstageAuthInterceptor(secretManagerClientService))
+        .addInterceptor(new BackstageRequestInterceptor(secretManagerClientService, env))
         .build();
   }
 }
