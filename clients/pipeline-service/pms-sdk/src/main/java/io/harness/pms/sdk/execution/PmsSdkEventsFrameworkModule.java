@@ -86,6 +86,11 @@ public class PmsSdkEventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(PT_INTERRUPT_CONSUMER))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_INTERRUPT_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
       bind(Consumer.class)
           .annotatedWith(Names.named(PT_ORCHESTRATION_EVENT_CONSUMER))
           .toInstance(
@@ -94,6 +99,10 @@ public class PmsSdkEventsFrameworkModule extends AbstractModule {
       // facilitator
       bind(Consumer.class)
           .annotatedWith(Names.named(PT_FACILITATOR_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_FACILITATOR_CONSUMER))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
@@ -113,12 +122,27 @@ public class PmsSdkEventsFrameworkModule extends AbstractModule {
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
       bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_PROGRESS_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+
+      bind(Consumer.class)
           .annotatedWith(Names.named(PT_NODE_ADVISE_CONSUMER))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
       bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_NODE_ADVISE_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+
+      bind(Consumer.class)
           .annotatedWith(Names.named(PT_NODE_RESUME_CONSUMER))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(SDK_NODE_RESUME_CONSUMER))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
 
