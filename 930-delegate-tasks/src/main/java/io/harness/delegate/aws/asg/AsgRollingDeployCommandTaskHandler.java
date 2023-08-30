@@ -85,7 +85,6 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
     }
 
     AsgRollingDeployRequest asgRollingDeployRequest = (AsgRollingDeployRequest) asgCommandRequest;
-    Map<String, List<String>> asgStoreManifestsContent = asgRollingDeployRequest.getAsgStoreManifestsContent();
     Boolean skipMatching = asgRollingDeployRequest.isSkipMatching();
     Boolean useAlreadyRunningInstances = asgRollingDeployRequest.isUseAlreadyRunningInstances();
     Integer instanceWarmup = asgRollingDeployRequest.getInstanceWarmup();
@@ -96,6 +95,8 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
 
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback, elbV2Client);
+      Map<String, List<String>> asgStoreManifestsContent = asgTaskHelper.getAsgStoreManifestsContent(
+          asgCommandRequest.getAsgInfraConfig(), asgRollingDeployRequest.getAsgStoreManifestsContent(), asgSdkManager);
       AsgInfraConfig asgInfraConfig = asgCommandRequest.getAsgInfraConfig();
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
@@ -104,7 +105,7 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
       AutoScalingGroupContainer autoScalingGroupContainer = executeRollingDeployWithInstanceRefresh(asgSdkManager,
           asgStoreManifestsContent, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage,
           asgRollingDeployRequest.getAmiImageId(), awsInternalConfig, region,
-          asgRollingDeployRequest.getAsgCapacityConfig());
+          asgRollingDeployRequest.getAsgCapacityConfig(), asgInfraConfig);
 
       AsgRollingDeployResult asgRollingDeployResult = AsgRollingDeployResult.builder()
                                                           .autoScalingGroupContainer(autoScalingGroupContainer)
@@ -129,17 +130,14 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
   private AutoScalingGroupContainer executeRollingDeployWithInstanceRefresh(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, Boolean skipMatching, Boolean useAlreadyRunningInstances,
       Integer instanceWarmup, Integer minimumHealthyPercentage, String amiImageId, AwsInternalConfig awsInternalConfig,
-      String region, AsgCapacityConfig asgCapacityConfig) {
+      String region, AsgCapacityConfig asgCapacityConfig, AsgInfraConfig asgInfraConfig) {
     // Get the content of all required manifest files
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
     List<String> asgScalingPolicyContent = asgTaskHelper.getAsgScalingPolicyContent(asgStoreManifestsContent);
     List<String> asgScheduledActionContent = asgTaskHelper.getAsgScheduledActionContent(asgStoreManifestsContent);
 
-    // Get ASG name from asg configuration manifest
-    CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
-        AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
-    String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
+    String asgName = asgTaskHelper.getAsgName(asgInfraConfig, asgStoreManifestsContent);
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }

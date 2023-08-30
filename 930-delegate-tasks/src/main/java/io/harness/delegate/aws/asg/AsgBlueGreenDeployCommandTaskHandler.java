@@ -92,8 +92,11 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
     }
 
     AsgBlueGreenDeployRequest asgBlueGreenDeployRequest = (AsgBlueGreenDeployRequest) asgCommandRequest;
-    Map<String, List<String>> asgStoreManifestsContent = asgBlueGreenDeployRequest.getAsgStoreManifestsContent();
     String asgName = asgBlueGreenDeployRequest.getAsgName();
+    if (isEmpty(asgName)) {
+      throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
+    }
+
     String amiImageId = asgBlueGreenDeployRequest.getAmiImageId();
     boolean isFirstDeployment = asgBlueGreenDeployRequest.isFirstDeployment();
     boolean useAlreadyRunningInstances = asgBlueGreenDeployRequest.isUseAlreadyRunningInstances();
@@ -110,16 +113,16 @@ public class AsgBlueGreenDeployCommandTaskHandler extends AsgCommandTaskNGHandle
             .distinct()
             .collect(Collectors.toList());
 
-    if (isEmpty(asgName)) {
-      throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
-    }
-
     LogCallback logCallback = asgTaskHelper.getLogCallback(
         iLogStreamingTaskClient, AsgCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
 
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback, elbV2Client);
       AsgInfraConfig asgInfraConfig = asgCommandRequest.getAsgInfraConfig();
+
+      Map<String, List<String>> asgStoreManifestsContent =
+          asgTaskHelper.getAsgStoreManifestsContent(asgCommandRequest.getAsgInfraConfig(),
+              asgBlueGreenDeployRequest.getAsgStoreManifestsContent(), asgSdkManager);
 
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);

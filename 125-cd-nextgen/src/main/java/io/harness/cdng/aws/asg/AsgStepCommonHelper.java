@@ -135,28 +135,33 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
   public TaskChainResponse startChainLink(
       AsgStepExecutor asgStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
-    // Get ManifestsOutcome
     LogCallback logCallback = getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
-
-    // Get UserDataOutcome and update expressions
-    UserDataOutcome userDataOutcome = resolveAsgUserDataOutcome(ambiance);
-    cdExpressionResolver.updateExpressions(ambiance, userDataOutcome);
-
-    // Get ManifestsOutcome and update expressions
-    ManifestsOutcome manifestsOutcome = resolveAsgManifestsOutcome(ambiance);
-    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
-
-    // Validate ManifestsOutcome
-    validateManifestsOutcome(ambiance, manifestsOutcome);
-    checkRequiredManifests(manifestsOutcome);
 
     // Get InfrastructureOutcome
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
-    Collection<ManifestOutcome> manifestOutcomeList = manifestsOutcome.values();
+    boolean isBaseAsg = isBaseAsgDeployment(ambiance, infrastructureOutcome);
+
+    Collection<ManifestOutcome> manifestOutcomeList = new ArrayList<>();
+
+    if (!isBaseAsg) {
+      // Get ManifestsOutcome and update expressions
+      ManifestsOutcome manifestsOutcome = resolveAsgManifestsOutcome(ambiance);
+      cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
+
+      // Validate ManifestsOutcome
+      validateManifestsOutcome(ambiance, manifestsOutcome);
+      checkRequiredManifests(manifestsOutcome);
+
+      manifestOutcomeList.addAll(manifestsOutcome.values());
+    }
+
+    // Get UserDataOutcome and update expressions
+    UserDataOutcome userDataOutcome = resolveAsgUserDataOutcome(ambiance);
+    cdExpressionResolver.updateExpressions(ambiance, userDataOutcome);
+
     if (userDataOutcome != null) {
-      manifestOutcomeList = new ArrayList<>(manifestOutcomeList);
       manifestOutcomeList.add(convertUserDataOutcomeToManifestOutcome(userDataOutcome));
     }
 
@@ -787,5 +792,21 @@ public class AsgStepCommonHelper extends CDStepHelper {
     }
 
     return false;
+  }
+
+  boolean isBaseAsgDeployment(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
+    AsgInfraConfig asgInfraConfig = getAsgInfraConfig(infrastructureOutcome, ambiance);
+    String baseAsg = asgInfraConfig.getBaseAsgName();
+    String asg = asgInfraConfig.getAsgName();
+
+    if (isNotEmpty(baseAsg) && isEmpty(asg)) {
+      throw new InvalidRequestException("asgName is required if baseAsgName is provided in infrastructure");
+    }
+
+    if (isNotEmpty(asg) && isEmpty(baseAsg)) {
+      throw new InvalidRequestException("baseAsgName is required if asgName is provided in infrastructure");
+    }
+
+    return isNotEmpty(baseAsg) && isNotEmpty(asg);
   }
 }

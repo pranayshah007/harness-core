@@ -92,8 +92,6 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
 
     AsgBlueGreenPrepareRollbackDataRequest asgBlueGreenPrepareRollbackDataRequest =
         (AsgBlueGreenPrepareRollbackDataRequest) asgCommandRequest;
-    Map<String, List<String>> asgStoreManifestsContent =
-        asgBlueGreenPrepareRollbackDataRequest.getAsgStoreManifestsContent();
 
     List<AsgLoadBalancerConfig> lbConfigs = isNotEmpty(asgBlueGreenPrepareRollbackDataRequest.getLoadBalancers())
         ? asgBlueGreenPrepareRollbackDataRequest.getLoadBalancers()
@@ -105,16 +103,13 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback, elbV2Client);
       AsgInfraConfig asgInfraConfig = asgCommandRequest.getAsgInfraConfig();
-
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
 
       asgSdkManager.info("Starting BG Prepare Rollback");
 
-      String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
-      CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
-          AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
-      String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
+      String asgName = asgTaskHelper.getAsgName(
+          asgInfraConfig, asgBlueGreenPrepareRollbackDataRequest.getAsgStoreManifestsContent());
 
       if (isEmpty(asgName)) {
         throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
