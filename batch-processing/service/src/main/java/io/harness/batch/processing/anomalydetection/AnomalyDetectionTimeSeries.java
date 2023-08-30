@@ -8,12 +8,8 @@
 package io.harness.batch.processing.anomalydetection;
 
 import io.harness.batch.processing.anomalydetection.helpers.AnomalyDetectionHelper;
-import io.harness.batch.processing.tasklet.ClusterDataToBigQueryTasklet;
-import io.harness.batch.processing.tasklet.support.HarnessEntitiesService;
 import io.harness.ccm.anomaly.entities.Anomaly;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.inject.Singleton;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -23,7 +19,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -31,9 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Slf4j
 @Singleton
 public class AnomalyDetectionTimeSeries extends Anomaly {
-  @Autowired private HarnessEntitiesService harnessEntitiesService;
-  @Autowired private ClusterDataToBigQueryTasklet clusterDataToBigQueryTasklet;
-
   public static AnomalyDetectionTimeSeries initialiseNewTimeSeries(TimeSeriesMetaData timeSeriesMetaData) {
     AnomalyDetectionTimeSeries timeSeries = AnomalyDetectionTimeSeries.builder()
                                                 .accountId(timeSeriesMetaData.getAccountId())

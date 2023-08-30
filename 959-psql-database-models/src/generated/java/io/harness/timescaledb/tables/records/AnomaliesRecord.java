@@ -516,7 +516,6 @@ public class AnomaliesRecord extends TableRecordImpl<AnomaliesRecord> {
   public String getServicename() {
     return (String) get(32);
   }
-
   // -------------------------------------------------------------------------
   // Constructors
   // -------------------------------------------------------------------------
@@ -524,7 +523,6 @@ public class AnomaliesRecord extends TableRecordImpl<AnomaliesRecord> {
   /**
    * Create a detached AnomaliesRecord
    */
-
   public AnomaliesRecord() {
     super(Anomalies.ANOMALIES);
   }

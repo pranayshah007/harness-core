@@ -343,7 +343,6 @@ public class Anomalies implements Serializable {
     this.servicename = servicename;
     return this;
   }
-
   /**
    * Getter for <code>public.anomalies.region</code>.
    */

@@ -123,7 +123,6 @@ public class EmailMessageGenerator {
     }
     return templateString;
   }
-
   private String addGcpProjectInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getGcpProject())) {
       if (anomaly.getEntityType().equals(EntityType.GCP_PROJECT)) {

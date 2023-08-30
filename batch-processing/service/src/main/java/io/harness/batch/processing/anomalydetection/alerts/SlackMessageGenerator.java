@@ -164,7 +164,6 @@ public class SlackMessageGenerator {
     }
     return templateString;
   }
-
   public String addGcpProjectInfo(String templateString, AnomalyEntity anomaly) {
     if (EmptyPredicate.isNotEmpty(anomaly.getGcpProject())) {
       if (anomaly.getEntityType().equals(EntityType.GCP_PROJECT)) {

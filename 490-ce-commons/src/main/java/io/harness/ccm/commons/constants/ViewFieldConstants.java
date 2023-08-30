@@ -20,7 +20,6 @@ public interface ViewFieldConstants {
   String STORAGE_FIELD_ID = "storage";
   String APP_NAME_FIELD_ID = "appName";
   String ENV_NAME_FIELD_ID = "envName";
-
   String CLOUD_PROVIDER_FIELD_ID = "cloudProvider";
   String CLOUD_SERVICE_NAME_FIELD_ID = "cloudServiceName";
   String TASK_FIELD_ID = "taskId";

@@ -46,7 +46,6 @@ public class AnomalyDetectionHelper {
               timeSeries.getAccountId(), time.toString(), timeSeries.getClusterName(), timeSeries.getClusterId(),
               timeSeries.getNamespace());
           break;
-
         case SERVICE:
           log.warn(
               "Invalid Data for TimeSeries :: AccountId : {} , time : {} , clusterName : {} , clusterId : {} , namespace : {}, service : {} ",
