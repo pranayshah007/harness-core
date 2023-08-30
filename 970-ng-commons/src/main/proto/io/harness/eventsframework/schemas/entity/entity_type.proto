@@ -241,4 +241,5 @@ enum EntityTypeProtoEnum {
   IDP_SCORECARD = 228;
   IDP_CHECK = 229;
   AWS_CDK_ROLLBACK = 230;
+  IACM_COST_ESTIMATION = 231;
 }

@@ -12,7 +12,8 @@ import lombok.Getter;
 
 public enum IACMStepInfoType {
   IACM_TERRAFORM_PLUGIN(IACMStepExecEnvironment.CI_LITE_ENGINE, "IACMTerraformPlugin"),
-  IACM_APPROVAL(IACMStepExecEnvironment.CI_LITE_ENGINE, "IACMApproval");
+  IACM_APPROVAL(IACMStepExecEnvironment.CI_LITE_ENGINE, "IACMApproval"),
+  IACM_COST_ESTIMATION(IACMStepExecEnvironment.CI_LITE_ENGINE, "IACMCostEstimation");
 
   @Getter private final IACMStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;
