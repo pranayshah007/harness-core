@@ -80,11 +80,7 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
 
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
-
-      String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
-      CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
-          AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
-      String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
+      String asgName = asgTaskHelper.getAsgName(asgCommandRequest.getAsgInfraConfig(), asgStoreManifestsContent);
 
       Map<String, List<String>> asgManifestsDataForRollback =
           executePrepareRollbackData(asgSdkManager, logCallback, asgName);

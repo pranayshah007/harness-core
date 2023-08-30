@@ -80,7 +80,6 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
     }
 
     AsgCanaryDeployRequest asgCanaryDeployRequest = (AsgCanaryDeployRequest) asgCommandRequest;
-    Map<String, List<String>> asgStoreManifestsContent = asgCanaryDeployRequest.getAsgStoreManifestsContent();
     String serviceSuffix = asgCanaryDeployRequest.getServiceNameSuffix();
     Integer nrOfInstances = asgCanaryDeployRequest.getUnitValue();
 
@@ -92,8 +91,13 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
       AsgInfraConfig asgInfraConfig = asgCommandRequest.getAsgInfraConfig();
       String region = asgInfraConfig.getRegion();
       AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
-      AutoScalingGroupContainer autoScalingGroupContainer = executeCanaryDeploy(asgSdkManager, asgStoreManifestsContent,
-          serviceSuffix, nrOfInstances, asgCanaryDeployRequest.getAmiImageId(), awsInternalConfig, region);
+
+      Map<String, List<String>> asgStoreManifestsContent = asgTaskHelper.getAsgStoreManifestsContent(
+          asgCommandRequest.getAsgInfraConfig(), asgCanaryDeployRequest.getAsgStoreManifestsContent(), asgSdkManager);
+
+      AutoScalingGroupContainer autoScalingGroupContainer =
+          executeCanaryDeploy(asgSdkManager, asgStoreManifestsContent, serviceSuffix, nrOfInstances,
+              asgCanaryDeployRequest.getAmiImageId(), awsInternalConfig, region, asgInfraConfig);
 
       AsgCanaryDeployResult asgCanaryDeployResult =
           AsgCanaryDeployResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
@@ -115,14 +119,12 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
 
   private AutoScalingGroupContainer executeCanaryDeploy(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgStoreManifestsContent, String serviceSuffix, Integer nrOfInstances,
-      String amiImageId, AwsInternalConfig awsInternalConfig, String region) {
+      String amiImageId, AwsInternalConfig awsInternalConfig, String region, AsgInfraConfig asgInfraConfig) {
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
     String userData = asgTaskHelper.getUserData(asgStoreManifestsContent);
+    String asgName = asgTaskHelper.getAsgName(asgInfraConfig, asgStoreManifestsContent);
 
-    CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
-        AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
-    String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
