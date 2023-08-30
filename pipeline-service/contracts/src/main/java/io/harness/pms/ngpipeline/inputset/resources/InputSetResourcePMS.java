@@ -198,13 +198,11 @@ public interface InputSetResourcePMS {
       @RequestBody(required = true,
           description =
               "Input set YAML to be created. The Account, Org, Project, and Pipeline identifiers inside the YAML should match the query parameters.",
-          content =
-          {
+          content = {
             @Content(mediaType = "application/yaml",
                 examples = @ExampleObject(name = "Create", summary = "Sample Input Set YAML",
                     value = PipelineAPIConstants.CREATE_INPUTSET_API, description = "Sample Input Set YAML"))
-          }) @NotNull String yaml,
-      @NotNull String permission);
+          }) @NotNull String yaml);
 
   @POST
   @Path("overlay")
@@ -231,8 +229,7 @@ public interface InputSetResourcePMS {
       @RequestBody(required = true,
           description =
               "Overlay Input Set YAML to be created. The Account, Org, Project, and Pipeline identifiers inside the YAML should match the query parameters")
-      @NotNull String yaml,
-      @NotNull String permission);
+      @NotNull String yaml);
   @PUT
   @Path("{inputSetIdentifier}")
   @ApiOperation(value = "Update an InputSet by identifier", nickname = "updateInputSetForPipeline")
@@ -267,13 +264,11 @@ public interface InputSetResourcePMS {
       @RequestBody(required = true,
           description =
               "Input set YAML to be updated. The query parameters should match the Account, Org, Project, and Pipeline Ids in the YAML.",
-          content =
-          {
+          content = {
             @Content(mediaType = "application/yaml",
                 examples = @ExampleObject(name = "Update", summary = "Sample Input Set YAML",
                     value = PipelineAPIConstants.CREATE_INPUTSET_API, description = "Sample Input Set YAML"))
-          }) @NotNull String yaml,
-      @NotNull String permission);
+          }) @NotNull String yaml);
 
   @PUT
   @Path("overlay/{inputSetIdentifier}")
@@ -303,8 +298,7 @@ public interface InputSetResourcePMS {
       @RequestBody(required = true,
           description =
               "Overlay Input Set YAML to be updated. The Account, Org, Project, and Pipeline identifiers inside the YAML should match the query parameters, and the Overlay Input Set identifier cannot be changed.")
-      @NotNull @ApiParam(hidden = true) String yaml,
-      @NotNull String permission);
+      @NotNull @ApiParam(hidden = true) String yaml);
 
   @DELETE
   @Path("{inputSetIdentifier}")
@@ -537,8 +531,8 @@ public interface InputSetResourcePMS {
       @QueryParam("pipelineRepoID")
       @Parameter(description = "Github Repo Id of the Pipeline for which the Input Set is to be updated")
       String pipelineRepoID, @BeanParam GitEntityUpdateInfoDTO gitEntityInfo,
-      @RequestBody(required = true, description = "The invalid Input Set Yaml to be sanitized")
-      @NotNull String invalidInputSetYaml, @NotNull String permission);
+      @RequestBody(required = true,
+          description = "The invalid Input Set Yaml to be sanitized") @NotNull String invalidInputSetYaml);
 
   @GET
   @Path("{inputSetIdentifier}/yaml-diff")
@@ -592,8 +586,7 @@ public interface InputSetResourcePMS {
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineIdentifier,
       @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
           description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE) String inputSetIdentifier,
-      @BeanParam GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO,
-      @NotNull String permission);
+      @BeanParam GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO);
 
   @POST
   @Path("/move-config/{inputSetIdentifier}")
@@ -617,7 +610,7 @@ public interface InputSetResourcePMS {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
           description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE) String inputSetIdentifier,
-      @BeanParam InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO, @NotNull String permission);
+      @BeanParam InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO);
 
   @GET
   @Path("/list-repos")
