@@ -11,6 +11,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.servicenow.ServiceNowFieldNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
+import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
 
 import java.util.List;
@@ -26,4 +27,7 @@ public interface ServiceNowResourceService {
       int offset, String templateName, String ticketType);
   List<ServiceNowStagingTable> getStagingTableList(IdentifierRef connectorRef, String orgId, String projectId);
   List<ServiceNowTicketTypeDTO> getTicketTypesV2(IdentifierRef connectorRef, String orgId, String projectId);
+
+  ServiceNowTicketNG getTicketDetails(IdentifierRef connectorRef, String orgId, String projectId, String ticketType,
+      String ticketNumber, List<String> fieldsList);
 }
