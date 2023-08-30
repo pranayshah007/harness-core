@@ -19,7 +19,9 @@ public interface SscaConstants {
 
   String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
   String CD_SSCA_ORCHESTRATION_STEP_NODE = "CdSscaOrchestrationStepNode";
-  String SSCA_STEPS_FOLDER_NAME = "Supply Chain Assurance";
+  String SSCA_STEPS_FOLDER_NAME = "Supply Chain Assurance (Build Steps)";
+
+  String SSCA_STEPS_FOLDER_NAME_CD = "Supply Chain Assurance (Deploy Steps)";
 
   String SSCA_ENFORCEMENT_STEP_NODE = "SscaEnforcementStepNode";
   String SSCA_ENFORCEMENT = "SscaEnforcement";
