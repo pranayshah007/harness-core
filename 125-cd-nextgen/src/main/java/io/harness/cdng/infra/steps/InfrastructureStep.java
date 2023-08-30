@@ -155,8 +155,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     saveExecutionLogSafely(logCallback, "Fetching environment information...");
 
-    infrastructureValidator.resolveProvisionerExpressions(ambiance, infrastructure);
-
+    if (infrastructure.isDynamicallyProvisioned()) {
+      infrastructureValidator.resolveProvisionerExpressions(ambiance, infrastructure);
+    }
     NGLogCallback infraValidationLogCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
     infrastructureValidator.validateInfrastructure(infrastructure, ambiance, infraValidationLogCallback);
 

@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.powermock.api.mockito.PowerMockito.spy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -59,7 +60,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class InfrastructureValidatorTest extends CategoryTest {
-  private InfrastructureValidator validator = new InfrastructureValidator();
+  private InfrastructureValidator validator = spy(new InfrastructureValidator());
   private AutoCloseable mocks;
 
   @Before
@@ -514,7 +515,9 @@ public class InfrastructureValidatorTest extends CategoryTest {
         .hasMessageContaining("Infrastructure definition can't be null or empty");
 
     K8SDirectInfrastructure.K8SDirectInfrastructureBuilder k8SDirectInfrastructureBuilder =
-        K8SDirectInfrastructure.builder();
+        K8SDirectInfrastructure.builder()
+            .namespace(ParameterField.createValueField("name"))
+            .releaseName(ParameterField.createValueField("release"));
     validator.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null, null);
 
     k8SDirectInfrastructureBuilder.connectorRef(ParameterField.createValueField("connector"));
@@ -684,7 +687,7 @@ public class InfrastructureValidatorTest extends CategoryTest {
 
     ElastigroupInfrastructure infrastructure =
         ElastigroupInfrastructure.builder()
-            .connectorRef(ParameterField.createValueField(""))
+            .connectorRef(ParameterField.createValueField("connector"))
             .configuration(
                 ElastigroupConfiguration.builder()
                     .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
@@ -703,7 +706,7 @@ public class InfrastructureValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateAsgInfrastructure() {
     AsgInfrastructure infrastructure = AsgInfrastructure.builder()
-                                           .connectorRef(ParameterField.createValueField(""))
+                                           .connectorRef(ParameterField.createValueField("connector"))
                                            .region(ParameterField.createValueField("region"))
                                            .build();
     Ambiance ambiance = Mockito.mock(Ambiance.class);
@@ -720,7 +723,6 @@ public class InfrastructureValidatorTest extends CategoryTest {
   public void testValidateSshWinRmAwsInfrastructure() {
     SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder builder = SshWinRmAwsInfrastructure.builder();
 
-    validator.validateInfrastructure(builder.build(), null, null);
     ParameterField credentialsRef = new ParameterField<>(null, null, true, "expression1", null, true);
     builder.credentialsRef(credentialsRef).connectorRef(ParameterField.createValueField("value")).build();
 

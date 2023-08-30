@@ -163,8 +163,9 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
     validateConnector(infrastructure, ambiance, logCallback);
 
-    infrastructureValidator.resolveProvisionerExpressions(ambiance, infrastructure);
-
+    if (infrastructure.isDynamicallyProvisioned()) {
+      infrastructureValidator.resolveProvisionerExpressions(ambiance, infrastructure);
+    }
     infrastructureValidator.validateInfrastructure(infrastructure, ambiance, logCallback);
 
     saveExecutionLog(logCallback, "Fetching environment information...");

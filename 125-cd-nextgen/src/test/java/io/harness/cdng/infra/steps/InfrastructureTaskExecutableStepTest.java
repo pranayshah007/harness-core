@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
-import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static java.lang.String.format;
@@ -49,7 +48,6 @@ import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
-import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.instance.InstanceOutcomeHelper;
 import io.harness.cdng.instance.outcome.InstanceOutcome;
@@ -625,51 +623,6 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     assertThat(response.getUnitProgressList()).isNotEmpty();
 
     verify(executionSweepingOutputService, times(0)).consume(any(), any(), any(), any());
-  }
-
-  @Test
-  @Owner(developers = VITALIE)
-  @Category(UnitTests.class)
-  public void testValidateSshWinRmAwsInfrastructure() {
-    SshWinRmAwsInfrastructureBuilder builder = SshWinRmAwsInfrastructure.builder();
-
-    infrastructureStep.validateInfrastructure(builder.build());
-    ParameterField credentialsRef = new ParameterField<>(null, null, true, "expression1", null, true);
-    builder.credentialsRef(credentialsRef).connectorRef(ParameterField.createValueField("value")).build();
-
-    doThrow(new InvalidRequestException("Unresolved Expression : [expression1]"))
-        .when(infrastructureStepHelper)
-        .validateExpression(any(), eq(credentialsRef), any(), any());
-
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build()))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expression : [expression1]");
-
-    ParameterField connectorRef2 = new ParameterField<>(null, null, true, "expression2", null, true);
-    builder.connectorRef(new ParameterField<>(null, null, true, "expression2", null, true))
-        .credentialsRef(ParameterField.createValueField("value"))
-        .build();
-    doThrow(new InvalidRequestException("Unresolved Expression : [expression2]"))
-        .when(infrastructureStepHelper)
-        .validateExpression(eq(connectorRef2), any(), any(), any());
-
-    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build()))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Unresolved Expression : [expression2]");
-  }
-
-  @Test
-  @Owner(developers = FILIP)
-  @Category(UnitTests.class)
-  public void testValidateSshWinRmAzureInfrastructure() {
-    SshWinRmAzureInfrastructure infrastructure = SshWinRmAzureInfrastructure.builder()
-                                                     .credentialsRef(ParameterField.createValueField("credentials-ref"))
-                                                     .connectorRef(ParameterField.createValueField("connector-ref"))
-                                                     .subscriptionId(ParameterField.createValueField("subscription-id"))
-                                                     .resourceGroup(ParameterField.createValueField("resource-group"))
-                                                     .build();
-
-    infrastructureStep.validateInfrastructure(infrastructure);
   }
 
   @Test

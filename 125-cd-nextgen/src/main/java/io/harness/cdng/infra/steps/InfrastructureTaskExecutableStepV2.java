@@ -324,7 +324,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final Infrastructure spec = infrastructure.getInfrastructureDefinitionConfig().getSpec();
     validateConnector(spec, ambiance, logCallback);
     saveExecutionLog(logCallback, "Fetching environment information...");
-    infrastructureValidator.resolveProvisionerExpressions(ambiance, spec);
+    if (spec.isDynamicallyProvisioned()) {
+      infrastructureValidator.resolveProvisionerExpressions(ambiance, spec);
+    }
     infrastructureValidator.validateInfrastructure(spec, ambiance, logCallback);
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);

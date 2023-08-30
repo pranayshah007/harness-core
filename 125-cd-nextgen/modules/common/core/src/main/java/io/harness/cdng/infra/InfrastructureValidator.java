@@ -46,6 +46,7 @@ import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.evaluators.ProviderExpressionEvaluatorProvider;
 import io.harness.evaluators.ProvisionerExpressionEvaluator;
 import io.harness.exception.InvalidArgumentsException;
@@ -121,8 +122,8 @@ public class InfrastructureValidator {
         if (k8sGcpInfrastructure.getNamespace() != null && isNotEmpty(k8sGcpInfrastructure.getNamespace().getValue())) {
           saveExecutionLogSafely(
               logCallback, color(format(k8sNamespaceLogLine, k8sGcpInfrastructure.getNamespace().getValue()), Yellow));
-          validateK8sGcpInfrastructure(k8sGcpInfrastructure);
         }
+        validateK8sGcpInfrastructure(k8sGcpInfrastructure);
         break;
       case InfrastructureKind.SERVERLESS_AWS_LAMBDA:
         ServerlessAwsLambdaInfrastructure serverlessAwsLambdaInfrastructure =
@@ -537,7 +538,7 @@ public class InfrastructureValidator {
   }
 
   private <T> boolean unresolvedExpression(ParameterField<T> input) {
-    return !ParameterField.isNull(input) && input.isExpression();
+    return !ParameterField.isNull(input) && input.isExpression() && input.getValue() == null;
   }
 
   public void requireOne(ParameterField<?> first, ParameterField<?> second) {
