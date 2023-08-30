@@ -106,9 +106,9 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
                               .putMetadata(
                                   YAMLFieldNameConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
                               .setNodeMetadata(HarnessStruct.newBuilder()
-                                                   .putFields(YAMLFieldNameConstants.NEXT_ID,
+                                                   .putData(YAMLFieldNameConstants.NEXT_ID,
                                                        HarnessValue.newBuilder().setStringValue(nextId).build())
-                                                   .putAllFields(ctx.getDependency().getNodeMetadata().getFieldsMap())
+                                                   .putAllData(ctx.getDependency().getNodeMetadata().getDataMap())
                                                    .build())
                               .build())
                       .build())

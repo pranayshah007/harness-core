@@ -108,7 +108,7 @@ public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlFiel
                     Dependency.newBuilder()
                         .putAllMetadata(dependencyMetadata.getMetadataMap())
                         .setNodeMetadata(
-                            HarnessStruct.newBuilder().putAllFields(dependencyMetadata.getNodeMetadataMap()).build())
+                            HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
                         .build())
                 .build())
         .build();

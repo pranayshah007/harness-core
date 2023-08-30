@@ -171,7 +171,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
                     .build())
             .adviserObtainments(
                 PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), true));
-    if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
+    if (EmptyPredicate.isNotEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
     // If strategy present then don't add advisers. Strategy node will take care of running the stage nodes.
@@ -197,7 +197,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
                     Dependency.newBuilder()
                         .putAllMetadata(dependencyMetadata.getMetadataMap())
                         .setNodeMetadata(
-                            HarnessStruct.newBuilder().putAllFields(dependencyMetadata.getNodeMetadataMap()).build())
+                            HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
                         .build())
                 .build())
         .build();
@@ -227,7 +227,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
       stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
     } else {
       EdgeLayoutList edgeLayoutList = EdgeLayoutList.newBuilder().build();
-      if (!EmptyPredicate.isEmpty(nextNodeUuid)) {
+      if (EmptyPredicate.isNotEmpty(nextNodeUuid)) {
         // Add nextChildId in edgeLayoutList if present.
         edgeLayoutList = EdgeLayoutList.newBuilder().addNextIds(nextNodeUuid).build();
       }

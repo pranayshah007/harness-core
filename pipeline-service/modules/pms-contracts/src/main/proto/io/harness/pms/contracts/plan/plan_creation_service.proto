@@ -169,7 +169,7 @@ message Dependency {
 // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto#L51 because it doesn't have a
 // type value bytes in the value which is required in our case for passing kryo serialized complex objects
 message HarnessStruct {
-  map<string, HarnessValue> fields = 1;
+  map<string, HarnessValue> data = 1;
 }
 
 message HarnessValue {

@@ -75,7 +75,7 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
                           Dependency.newBuilder()
                               .putMetadata(
                                   YAMLFieldNameConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
-                              .setNodeMetadata(HarnessStruct.newBuilder().putFields(YAMLFieldNameConstants.NEXT_ID,
+                              .setNodeMetadata(HarnessStruct.newBuilder().putData(YAMLFieldNameConstants.NEXT_ID,
                                   HarnessValue.newBuilder().setStringValue(nextId).build()))
                               .build())
                       .build())

@@ -463,7 +463,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
                     Dependency.newBuilder()
                         .putAllMetadata(dependencyMetadata.getMetadataMap())
                         .setNodeMetadata(
-                            HarnessStruct.newBuilder().putAllFields(dependencyMetadata.getNodeMetadataMap()).build())
+                            HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
                         .build())
                 .build())
         .build();

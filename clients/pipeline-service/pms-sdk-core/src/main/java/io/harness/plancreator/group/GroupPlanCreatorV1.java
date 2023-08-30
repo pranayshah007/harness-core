@@ -9,17 +9,15 @@ package io.harness.plancreator.group;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
-import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
-import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -37,7 +35,6 @@ import io.harness.steps.group.GroupStepV1;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -101,7 +98,7 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
-        .adviserObtainments(getAdviserObtainmentFromMetaData(ctx, config))
+        .adviserObtainments(getAdviserObtainmentFromMetaData(ctx))
         .whenCondition(RunInfoUtilsV1.getStageWhenCondition(config))
         .skipExpressionChain(true)
         .build();
@@ -122,12 +119,7 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     if (children.isEmpty()) {
       return GraphLayoutResponse.builder().build();
     }
-    String nextNodeId = null;
-    if (ctx.getDependency() != null
-        && ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID) != null) {
-      nextNodeId = (String) kryoSerializer.asObject(
-          ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID).toByteArray());
-    }
+    String nextNodeId = PlanCreatorUtilsV1.getNextNodeUuid(kryoSerializer, ctx.getDependency());
     List<String> childrenUuids =
         children.stream().map(YamlField::getNode).map(YamlNode::getUuid).collect(Collectors.toList());
     EdgeLayoutList.Builder stagesEdgesBuilder = EdgeLayoutList.newBuilder().addAllCurrentNodeChildren(childrenUuids);
@@ -158,25 +150,11 @@ public class GroupPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     return GraphLayoutResponse.builder().layoutNodes(layoutNodeMap).build();
   }
 
-  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(PlanCreationContext ctx, YamlField currentField) {
+  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(PlanCreationContext ctx) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
-    String nextNodeId = null;
-    if (ctx.getDependency() != null
-        && ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID) != null) {
-      nextNodeId = (String) kryoSerializer.asObject(
-          ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID).toByteArray());
-    }
-
-    if (currentField != null && currentField.getNode() != null) {
-      if (nextNodeId != null) {
-        AdviserObtainment adviserObtainment =
-            AdviserObtainment.newBuilder()
-                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-                .setParameters(ByteString.copyFrom(
-                    kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextNodeId).build())))
-                .build();
-        adviserObtainments.add(adviserObtainment);
-      }
+    AdviserObtainment nextStepAdviser = PlanCreatorUtilsV1.getNextStepAdviser(kryoSerializer, ctx.getDependency());
+    if (nextStepAdviser != null) {
+      adviserObtainments.add(nextStepAdviser);
     }
     return adviserObtainments;
   }
