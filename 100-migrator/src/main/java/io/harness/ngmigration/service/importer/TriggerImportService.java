@@ -234,11 +234,12 @@ public class TriggerImportService implements ImportService {
         if (firstArtifactSelection.isPresent()) {
           ArtifactSelection artifactSelection = firstArtifactSelection.get();
           String triggerServiceRef = artifactSelection.getServiceName();
-
+          String serviceNGId =
+              MigratorUtility.generateIdentifier(triggerServiceRef, inputDTO.getIdentifierCaseFormat());
           String serviceRef = stageNode.at("/stage/template/templateInputs/spec/service/serviceRef").asText();
           if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(triggerServiceRef)) {
             ObjectNode serviceNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/service");
-            serviceNode.put("serviceRef", triggerServiceRef);
+            serviceNode.put("serviceRef", serviceNGId);
           }
         }
       }
@@ -291,9 +292,8 @@ public class TriggerImportService implements ImportService {
     switch (trigger.getCondition().getConditionType()) {
       case WEBHOOK:
         type = NGTriggerType.WEBHOOK;
-        // TODO Generate the right JEXL condition based on the type
         spec = WebhookTriggerConfigV2.builder()
-                   .spec(CustomTriggerSpec.builder().jexlCondition("__PLEASE_FIX_ME__").build())
+                   .spec(CustomTriggerSpec.builder().build())
                    .type(WebhookTriggerType.CUSTOM)
                    .build();
         //        spec = WebhookFactory.getHandler((WebHookTriggerCondition) trigger.getCondition())
@@ -337,7 +337,7 @@ public class TriggerImportService implements ImportService {
         type = NGTriggerType.WEBHOOK;
         spec = WebhookTriggerConfigV2.builder()
                    .type(WebhookTriggerType.CUSTOM)
-                   .spec(CustomTriggerSpec.builder().jexlCondition("__PLEASE_FIX_ME__").build())
+                   .spec(CustomTriggerSpec.builder().build())
                    .build();
     }
 
