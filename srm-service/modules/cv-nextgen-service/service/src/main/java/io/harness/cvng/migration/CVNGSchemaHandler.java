@@ -7,9 +7,9 @@
 
 package io.harness.cvng.migration;
 
+import io.harness.cvng.core.jobs.SafeHandler;
 import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.migration.service.CVNGMigrationService;
-import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -18,12 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
-public class CVNGSchemaHandler implements Handler<CVNGSchema> {
+public class CVNGSchemaHandler extends SafeHandler<CVNGSchema> {
   @Inject private CVNGMigrationService cvngMigrationService;
   @Inject private HPersistence hPersistence;
 
   @Override
-  public void handle(CVNGSchema entity) {
+  public void handleUnsafely(CVNGSchema entity) {
     cvngMigrationService.runMigrations();
   }
 }

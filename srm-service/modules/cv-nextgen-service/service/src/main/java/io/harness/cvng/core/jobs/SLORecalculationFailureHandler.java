@@ -19,19 +19,18 @@ import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjectiv
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.impl.SLOHealthIndicatorServiceImpl;
 import io.harness.metrics.service.api.MetricService;
-import io.harness.mongo.iterator.MongoPersistenceIterator;
 
 import com.google.inject.Inject;
 import lombok.SneakyThrows;
 
-public class SLORecalculationFailureHandler implements MongoPersistenceIterator.Handler<AbstractServiceLevelObjective> {
+public class SLORecalculationFailureHandler extends SafeHandler<AbstractServiceLevelObjective> {
   @Inject private SLOHealthIndicatorServiceImpl sloHealthIndicatorService;
   @Inject MetricService metricService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   Long recalculationDelayThreshold = 30 * 60 * 1000L;
   @SneakyThrows
   @Override
-  public void handle(AbstractServiceLevelObjective serviceLevelObjective) {
+  public void handleUnsafely(AbstractServiceLevelObjective serviceLevelObjective) {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(serviceLevelObjective.getAccountId())
                                       .orgIdentifier(serviceLevelObjective.getOrgIdentifier())

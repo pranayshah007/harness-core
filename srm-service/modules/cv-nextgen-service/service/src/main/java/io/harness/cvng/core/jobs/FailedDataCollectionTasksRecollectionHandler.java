@@ -15,15 +15,13 @@ import io.harness.cvng.core.services.impl.SLIDataCollectionTaskServiceImpl;
 import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.mongo.iterator.MongoPersistenceIterator;
 
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 
-public class FailedDataCollectionTasksRecollectionHandler
-    implements MongoPersistenceIterator.Handler<EntityUnavailabilityStatuses> {
+public class FailedDataCollectionTasksRecollectionHandler extends SafeHandler<EntityUnavailabilityStatuses> {
   @Inject private DataCollectionTaskService dataCollectionTaskService;
 
   @Inject private VerificationTaskService verificationTaskService;
@@ -35,7 +33,7 @@ public class FailedDataCollectionTasksRecollectionHandler
   @Inject Clock clock;
 
   @Override
-  public void handle(EntityUnavailabilityStatuses entity) {
+  public void handleUnsafely(EntityUnavailabilityStatuses entity) {
     long endTime = entity.getEndTime();
     String sliId =
         verificationTaskService.getSLIVerificationTaskId(entity.getAccountId(), entity.getEntityIdentifier());

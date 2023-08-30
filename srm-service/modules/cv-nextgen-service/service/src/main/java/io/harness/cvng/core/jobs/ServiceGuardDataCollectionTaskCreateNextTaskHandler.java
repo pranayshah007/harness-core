@@ -17,14 +17,13 @@ import com.google.inject.Singleton;
 import java.util.Map;
 
 @Singleton
-public class ServiceGuardDataCollectionTaskCreateNextTaskHandler
-    implements DataCollectionTaskCreateNextTaskHandler<CVConfig> {
+public class ServiceGuardDataCollectionTaskCreateNextTaskHandler extends SafeHandler<CVConfig> {
   @Inject
   private Map<DataCollectionTask.Type, DataCollectionTaskManagementService>
       dataCollectionTaskManagementServiceMapBinder;
 
   @Override
-  public void handle(CVConfig entity) {
+  public void handleUnsafely(CVConfig entity) {
     Preconditions.checkArgument(
         dataCollectionTaskManagementServiceMapBinder.containsKey(DataCollectionTask.Type.SERVICE_GUARD));
     dataCollectionTaskManagementServiceMapBinder.get(DataCollectionTask.Type.SERVICE_GUARD)

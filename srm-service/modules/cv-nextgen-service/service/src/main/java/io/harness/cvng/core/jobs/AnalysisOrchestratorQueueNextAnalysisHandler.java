@@ -12,14 +12,12 @@ import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
-import io.harness.mongo.iterator.MongoPersistenceIterator;
 
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.List;
 
-public class AnalysisOrchestratorQueueNextAnalysisHandler
-    implements MongoPersistenceIterator.Handler<AnalysisOrchestrator> {
+public class AnalysisOrchestratorQueueNextAnalysisHandler extends SafeHandler<AnalysisOrchestrator> {
   private static final List<VerificationTask.TaskType> queueAnalysisFortaskTypeList =
       List.of(VerificationTask.TaskType.COMPOSITE_SLO);
 
@@ -27,7 +25,7 @@ public class AnalysisOrchestratorQueueNextAnalysisHandler
 
   @Inject OrchestrationService orchestrationService;
   @Override
-  public void handle(AnalysisOrchestrator entity) {
+  public void handleUnsafely(AnalysisOrchestrator entity) {
     VerificationTask verificationTask = verificationTaskService.get(entity.getVerificationTaskId());
     if (shouldQueueAnalysisForTaskType(verificationTask)) {
       orchestrationService.queueAnalysisWithoutEventPublish(entity.getAccountId(),

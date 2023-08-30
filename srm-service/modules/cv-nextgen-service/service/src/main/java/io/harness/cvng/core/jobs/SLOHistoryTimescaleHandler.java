@@ -9,14 +9,13 @@ package io.harness.cvng.core.jobs;
 
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
-import io.harness.mongo.iterator.MongoPersistenceIterator;
 
 import com.google.inject.Inject;
 
-public class SLOHistoryTimescaleHandler implements MongoPersistenceIterator.Handler<AbstractServiceLevelObjective> {
+public class SLOHistoryTimescaleHandler extends SafeHandler<AbstractServiceLevelObjective> {
   @Inject SLOTimeScaleService sloTimeScaleService;
   @Override
-  public void handle(AbstractServiceLevelObjective serviceLevelObjective) {
+  public void handleUnsafely(AbstractServiceLevelObjective serviceLevelObjective) {
     sloTimeScaleService.insertSLOHistory(serviceLevelObjective);
   }
 }

@@ -9,16 +9,15 @@ package io.harness.cvng.notification.jobs;
 
 import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
-import io.harness.mongo.iterator.MongoPersistenceIterator;
+import io.harness.cvng.core.jobs.SafeHandler;
 
 import com.google.inject.Inject;
 
-public class SRMAnalysisStepNotificationHandler
-    implements MongoPersistenceIterator.Handler<SRMAnalysisStepExecutionDetail> {
+public class SRMAnalysisStepNotificationHandler extends SafeHandler<SRMAnalysisStepExecutionDetail> {
   @Inject SRMAnalysisStepService srmAnalysisStepService;
 
   @Override
-  public void handle(SRMAnalysisStepExecutionDetail entity) {
+  public void handleUnsafely(SRMAnalysisStepExecutionDetail entity) {
     srmAnalysisStepService.completeSrmAnalysisStep(entity);
   }
 }

@@ -8,16 +8,16 @@
 package io.harness.cvng.notification.jobs;
 
 import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.jobs.SafeHandler;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
-import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 
 import com.google.inject.Inject;
 
-public class MonitoredServiceNotificationHandler implements Handler<MonitoredService> {
+public class MonitoredServiceNotificationHandler extends SafeHandler<MonitoredService> {
   @Inject MonitoredServiceService monitoredServiceService;
 
   @Override
-  public void handle(MonitoredService entity) {
+  public void handleUnsafely(MonitoredService entity) {
     monitoredServiceService.handleNotification(entity);
   }
 }

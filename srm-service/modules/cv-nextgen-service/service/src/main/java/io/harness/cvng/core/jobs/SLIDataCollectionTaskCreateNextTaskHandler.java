@@ -17,12 +17,11 @@ import com.google.inject.Singleton;
 import java.util.Map;
 
 @Singleton
-public class SLIDataCollectionTaskCreateNextTaskHandler
-    implements DataCollectionTaskCreateNextTaskHandler<ServiceLevelIndicator> {
+public class SLIDataCollectionTaskCreateNextTaskHandler extends SafeHandler<ServiceLevelIndicator> {
   @Inject private Map<Type, DataCollectionTaskManagementService> dataCollectionTaskServiceMapBinder;
 
   @Override
-  public void handle(ServiceLevelIndicator entity) {
+  public void handleUnsafely(ServiceLevelIndicator entity) {
     Preconditions.checkArgument(dataCollectionTaskServiceMapBinder.containsKey(Type.SLI));
     dataCollectionTaskServiceMapBinder.get(Type.SLI).handleCreateNextTask(entity);
   }

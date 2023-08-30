@@ -9,14 +9,13 @@ package io.harness.cvng.core.jobs;
 
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.SLOTimeScaleService;
-import io.harness.mongo.iterator.MongoPersistenceIterator;
 
 import com.google.inject.Inject;
 
-public class SLOHealthIndicatorTimescaleHandler implements MongoPersistenceIterator.Handler<SLOHealthIndicator> {
+public class SLOHealthIndicatorTimescaleHandler extends SafeHandler<SLOHealthIndicator> {
   @Inject SLOTimeScaleService sloTimeScaleService;
   @Override
-  public void handle(SLOHealthIndicator sloHealthIndicator) {
+  public void handleUnsafely(SLOHealthIndicator sloHealthIndicator) {
     sloTimeScaleService.upsertSloHealthIndicator(sloHealthIndicator);
   }
 }

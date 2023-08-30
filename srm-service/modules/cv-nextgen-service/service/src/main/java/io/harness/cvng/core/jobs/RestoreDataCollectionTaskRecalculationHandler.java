@@ -15,13 +15,11 @@ import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
-import io.harness.mongo.iterator.MongoPersistenceIterator;
 
 import com.google.inject.Inject;
 import java.time.Instant;
 
-public class RestoreDataCollectionTaskRecalculationHandler
-    implements MongoPersistenceIterator.Handler<EntityUnavailabilityStatuses> {
+public class RestoreDataCollectionTaskRecalculationHandler extends SafeHandler<EntityUnavailabilityStatuses> {
   @Inject EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
 
   @Inject OrchestrationService orchestrationService;
@@ -29,7 +27,7 @@ public class RestoreDataCollectionTaskRecalculationHandler
   @Inject VerificationTaskService verificationTaskService;
 
   @Override
-  public void handle(EntityUnavailabilityStatuses entity) {
+  public void handleUnsafely(EntityUnavailabilityStatuses entity) {
     EntityUnavailabilityStatuses entityUnavailabilityStatuses =
         entityUnavailabilityStatusesService.getMinStartTimeInstanceWithStatus(
             ProjectParams.builder()
