@@ -2172,6 +2172,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
             .repository(ParameterField.createValueField("TEST_REPO"))
             .repositoryFormat(ParameterField.createValueField(RepositoryFormat.generic.name()))
             .artifactPath(LAST_PUBLISHED_EXPRESSION_PARAMETER)
+            .artifactFilter(ParameterField.createValueField("filter"))
             .artifactDirectory(ParameterField.createValueField("IMAGE"))
             .build();
     ArtifactoryConnectorDTO connectorDTO = ArtifactoryConnectorDTO.builder().build();
@@ -2190,6 +2191,7 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(delegateRequest.getArtifactPathFilter()).isEqualTo(".*?");
+    assertThat(delegateRequest.getArtifactFilter()).isEqualTo("filter");
   }
   @Test
   @Owner(developers = vivekveman)
@@ -2218,5 +2220,6 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(delegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.ARTIFACTORY_REGISTRY);
     assertThat(delegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(delegateRequest.getArtifactPathFilter()).isEqualTo(TAG);
+    assertThat(delegateRequest.getArtifactFilter()).isNull();
   }
 }

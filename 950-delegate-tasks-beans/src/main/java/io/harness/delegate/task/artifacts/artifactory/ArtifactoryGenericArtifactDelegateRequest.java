@@ -7,8 +7,11 @@
 
 package io.harness.delegate.task.artifacts.artifactory;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -20,6 +23,9 @@ import lombok.Value;
 /**
  * DTO object to be passed to delegate tasks.
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
@@ -38,4 +44,5 @@ public class ArtifactoryGenericArtifactDelegateRequest implements ArtifactoryBas
   ArtifactoryConnectorDTO artifactoryConnectorDTO;
   /** Artifact Source type.*/
   ArtifactSourceType sourceType;
+  String artifactFilter;
 }

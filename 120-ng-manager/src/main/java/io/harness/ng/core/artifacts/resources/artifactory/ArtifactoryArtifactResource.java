@@ -38,6 +38,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.utils.IdentifierRefHelper;
 
+import software.wings.utils.RepositoryType;
+
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -89,12 +91,13 @@ public class ArtifactoryArtifactResource {
       @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGArtifactConstants.ARTIFACT_FILTER) String artifactFilter,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,
-        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, null);
+        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, null, artifactFilter);
     return ResponseDTO.newResponse(buildDetails);
   }
 
@@ -112,6 +115,7 @@ public class ArtifactoryArtifactResource {
       @QueryParam("repositoryFormat") String repositoryFormat,
       @QueryParam("repositoryUrl") String artifactRepositoryUrl,
       @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+      @QueryParam(NGArtifactConstants.ARTIFACT_FILTER) String artifactFilter,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -136,6 +140,13 @@ public class ArtifactoryArtifactResource {
           artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactPath().fetchFinalValue();
         } else {
           artifactPath = (String) artifactoryRegistryArtifactConfig.getArtifactDirectory().fetchFinalValue();
+        }
+      }
+
+      if (isEmpty(artifactFilter) && ParameterField.isNotNull(artifactoryRegistryArtifactConfig.getArtifactFilter())) {
+        if (RepositoryType.generic.name().equals(
+                artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue())) {
+          artifactFilter = (String) artifactoryRegistryArtifactConfig.getArtifactFilter().fetchFinalValue();
         }
       }
       if (isEmpty(repositoryFormat)) {
@@ -174,14 +185,18 @@ public class ArtifactoryArtifactResource {
     artifactPath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
 
+    artifactFilter = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, artifactFilter, fqnPath, gitEntityBasicInfo, serviceRef);
+
     repository = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, repository, fqnPath, gitEntityBasicInfo, serviceRef);
 
     artifactRepositoryUrl = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, runtimeInputYaml, artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
 
-    ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,
-        artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, tagRegex);
+    ArtifactoryResponseDTO buildDetails =
+        artifactoryResourceService.getBuildDetails(connectorRef, repository, artifactPath, repositoryFormat,
+            artifactRepositoryUrl, orgIdentifier, projectIdentifier, tagRegex, artifactFilter);
     return ResponseDTO.newResponse(buildDetails);
   }
 

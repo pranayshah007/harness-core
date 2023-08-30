@@ -185,7 +185,8 @@ public class ArtifactoryArtifactTaskHelper {
     BuildDetails buildDetails = artifactoryNgService.getLatestArtifact(artifactoryConfigRequest,
         artifactoryGenericArtifactDelegateRequest.getRepositoryName(), artifactDirectory,
         artifactoryGenericArtifactDelegateRequest.getArtifactPathFilter(),
-        artifactoryGenericArtifactDelegateRequest.getArtifactPath(), MAX_NO_OF_TAGS_PER_ARTIFACT);
+        artifactoryGenericArtifactDelegateRequest.getArtifactPath(), MAX_NO_OF_TAGS_PER_ARTIFACT,
+        artifactoryGenericArtifactDelegateRequest.getArtifactFilter());
     artifactoryGenericArtifactDelegateResponse = ArtifactoryRequestResponseMapper.toArtifactoryGenericResponse(
         buildDetails, artifactoryGenericArtifactDelegateRequest);
     addArtifactNameToMetaData(artifactoryGenericArtifactDelegateResponse);

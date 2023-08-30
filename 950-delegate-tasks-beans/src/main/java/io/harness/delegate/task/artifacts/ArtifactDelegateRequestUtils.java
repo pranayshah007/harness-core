@@ -181,14 +181,15 @@ public class ArtifactDelegateRequestUtils {
   public ArtifactSourceDelegateRequest getArtifactoryArtifactDelegateRequest(String repositoryName, String artifactPath,
       String repositoryFormat, String artifactRepositoryUrl, String tag, String tagRegex, String connectorRef,
       ArtifactoryConnectorDTO artifactoryConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails,
-      ArtifactSourceType sourceType) {
+      ArtifactSourceType sourceType, String artifactFilter) {
     if ((!isNull(repositoryFormat)) && repositoryFormat.equals(generic.name())) {
       String artifactDirectory = artifactPath;
-      if (artifactDirectory.isEmpty()) {
+      if (EmptyPredicate.isEmpty(artifactDirectory)) {
         artifactDirectory = "/";
       }
       return getArtifactoryGenericArtifactDelegateRequest(repositoryName, repositoryFormat, artifactDirectory, null,
-          tagRegex, null, artifactoryConnectorDTO, encryptedDataDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY);
+          tagRegex, null, artifactoryConnectorDTO, encryptedDataDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY,
+          artifactFilter);
     }
     return ArtifactoryArtifactDelegateRequest.builder()
         .repositoryName(repositoryName)
@@ -223,7 +224,7 @@ public class ArtifactDelegateRequestUtils {
   public ArtifactoryGenericArtifactDelegateRequest getArtifactoryGenericArtifactDelegateRequest(String repositoryName,
       String repositoryFormat, String artifactDirectory, String artifactPath, String artifactPathFilter,
       String connectorRef, ArtifactoryConnectorDTO artifactoryConnectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType, String artifactFilter) {
     return ArtifactoryGenericArtifactDelegateRequest.builder()
         .repositoryName(repositoryName)
         .repositoryFormat(repositoryFormat)
@@ -231,6 +232,7 @@ public class ArtifactDelegateRequestUtils {
         .artifactPath(artifactPath)
         .artifactPathFilter(artifactPathFilter)
         .connectorRef(connectorRef)
+        .artifactFilter(artifactFilter)
         .artifactoryConnectorDTO(artifactoryConnectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
