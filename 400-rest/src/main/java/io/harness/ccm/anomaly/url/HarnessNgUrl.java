@@ -167,10 +167,11 @@ public class HarnessNgUrl {
         return "Namespace";
       case "workloadname":
         return "Workload";
-      case "awsusageaccountid":
-        return "Account";
+      case "servicename":
       case "awsservicecode":
         return "Service";
+      case "awsusageaccountid":
+        return "Account";
       case "awsinstancetype":
         return "Instance Type";
       case "awsusagetype":
