@@ -125,6 +125,13 @@ public class SSCAManagerModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("jwtAuthSecret")
+  public String jwtAuthSecret() {
+    return this.configuration.getJwtAuthSecret();
+  }
+
+  @Provides
+  @Singleton
   public S3Config s3Config() {
     return this.configuration.getS3Config();
   }
