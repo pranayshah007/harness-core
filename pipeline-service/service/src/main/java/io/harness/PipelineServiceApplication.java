@@ -847,7 +847,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L,
             appConfig.getDelegatePollingConfig().getSyncDelay(), TimeUnit.MILLISECONDS);
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("async-taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateAsyncServiceImpl.class), 0L,
             appConfig.getDelegatePollingConfig().getAsyncDelay(), TimeUnit.MILLISECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
