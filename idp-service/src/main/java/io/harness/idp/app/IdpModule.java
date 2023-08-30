@@ -120,6 +120,7 @@ import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
+import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.event.MessageListener;
@@ -595,5 +596,12 @@ public class IdpModule extends AbstractModule {
   @Named("tiServiceConfig")
   public TIServiceConfig tiServiceConfig() {
     return this.appConfig.getTiServiceConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("scorecardScoreComputationIteratorConfig")
+  public IteratorConfig scorecardScoreComputationIteratorConfig() {
+    return this.appConfig.getScorecardScoreComputationIteratorConfig();
   }
 }

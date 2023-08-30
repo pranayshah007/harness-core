@@ -839,6 +839,7 @@ public enum FeatureName {
       "This flag controls if you want Step execution data saved in mongodb and eventually synced to timescale",
       HarnessTeam.CDP),
   PIE_ERROR_ENHANCEMENTS("Enhance error framework for pipeline exceptions", PIPELINE),
+  CDS_SERVICENOW_FETCH_FIELDS("FF to fetch service now fields", HarnessTeam.CDC),
   CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", PIPELINE),
   CDS_GITHUB_PACKAGES("Used for SSH/WinRm copy and download Github packages artifacts", HarnessTeam.CDP),
   CDS_DISABLE_FIRST_GEN_CD("Used to disable/block customer access to CG after the migration cut-over", SPG),
@@ -867,7 +868,8 @@ public enum FeatureName {
   SSCA_SLSA_COMPLIANCE("Feature flag for SLSA Compliance", HarnessTeam.SSCA),
   PL_RUN_INVALID_AUDITS_CLEANUP("Run iterator to cleanup audits with null accountIds", HarnessTeam.PL, Scope.GLOBAL),
   SSCA_MANAGER_ENABLED("FF to use SSCA manager instead of core", HarnessTeam.SSCA),
-  SSCA_ARTIFACTS_ENABLED("FF to enable SSCA Artifacts on Harness UI", HarnessTeam.SSCA);
+  SSCA_ARTIFACTS_ENABLED("FF to enable SSCA Artifacts on Harness UI", HarnessTeam.SSCA),
+  CDS_JIRA_APPROVAL_OPTIMIZATION("Optimize Jira Approval to only fetch relevant fields", HarnessTeam.CDC);
   // keep-sorted end
 
   @Deprecated

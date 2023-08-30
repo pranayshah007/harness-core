@@ -36,6 +36,12 @@ public class SettingIdentifiers {
   public static String INCLUDE_GCP_TAXES_IDENTIFIER = "include_gcp_taxes";
   public static String SERVICE_OVERRIDE_V2_IDENTIFIER = "service_override_v2";
   public static String EXPORT_SERVICE_VARS_AS_ENV_VARS = "export_service_variables_as_env_variables";
+  public static String ENABLED_NOTIFICATION_CHANNELS_GROUP_IDENTIFIER = "enabled_notification_channels";
+  public static String ENABLE_EMAIL_NOTIFICATION_IDENTIFIER = "enable_email_notification";
+  public static String ENABLE_SLACK_NOTIFICATION_IDENTIFIER = "enable_slack_notification";
+  public static String ENABLE_MSTEAM_NOTIFICATION_IDENTIFIER = "enable_msTeam_notification";
+  public static String ENABLE_WEBHOOK_NOTIFICATION_IDENTIFIER = "enable_webhook_notification";
+  public static String ENABLE_PAGERDUTY_NOTIFICATION_IDENTIFIER = "enable_pagerduty_notification";
   public static String TRIGGER_FOR_ALL_ARTIFACTS_OR_MANIFESTS = "trigger_for_all_artifacts_or_manifests";
   public static String TICKETING_PREFERENCES_GROUP_IDENTIFIER = "ticketing_preferences";
   public static String TICKETING_TOOL_IDENTIFIER = "ticketing_tool";

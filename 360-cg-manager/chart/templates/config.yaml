@@ -400,6 +400,16 @@ data:
         "throttleIntervalInSeconds": 0
       },
       {
+        "name": "DelegateTaskFailOnDMS",
+        "enabled": true,
+        "threadPoolSize": 10,
+        "threadPoolIntervalInSeconds": 30,
+        "nextIterationMode": "TARGET",
+        "targetIntervalInSeconds": 30,
+        "throttleIntervalInSeconds": 0,
+        "iteratorMode": "PUMP"
+      },
+      {
         "name": "DelegateTelemetryPublisherIteration",
         "enabled": true,
         "threadPoolSize": 1,
@@ -409,4 +419,3 @@ data:
         "throttleIntervalInSeconds": 0
       }
     ]
-

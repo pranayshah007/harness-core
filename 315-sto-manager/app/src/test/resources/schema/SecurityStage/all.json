@@ -4944,6 +4944,22 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "IACMCostEstimationInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "IACMStepInfo": {
       "allOf": [
         {
@@ -11734,6 +11750,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/IACMApprovalInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IACMCostEstimation"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMCostEstimationInfo"
               }
             }
           }

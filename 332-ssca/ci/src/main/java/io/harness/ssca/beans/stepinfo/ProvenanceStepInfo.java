@@ -14,8 +14,8 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.ssca.beans.Attestation;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.beans.attestation.v1.AttestationV1;
 import io.harness.ssca.beans.provenance.DockerSourceSpec;
 import io.harness.ssca.beans.provenance.ProvenanceSource;
 import io.harness.ssca.beans.provenance.ProvenanceSourceType;
@@ -41,7 +41,7 @@ public class ProvenanceStepInfo implements PluginCompatibleStep {
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  private Attestation attestation;
+  private AttestationV1 attestation;
   private ProvenanceSource source;
 
   @Override

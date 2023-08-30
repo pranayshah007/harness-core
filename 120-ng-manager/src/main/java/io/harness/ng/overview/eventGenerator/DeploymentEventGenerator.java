@@ -95,6 +95,7 @@ public class DeploymentEventGenerator implements OrchestrationEventHandler {
                     .setPlanExecutionId(event.getAmbiance().getPlanExecutionId())
                     .setStageSetupId(AmbianceUtils.getStageLevelFromAmbiance(event.getAmbiance()).get().getSetupId())
                     .setPipelineId(ambiance.getMetadata().getPipelineIdentifier())
+                    .setRunSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
                     .setStageId(AmbianceUtils.getStageLevelFromAmbiance(event.getAmbiance()).get().getIdentifier())
                     .build())
             .setDeploymentStatus(event.getStatus().name())

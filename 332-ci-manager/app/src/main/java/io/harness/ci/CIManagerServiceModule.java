@@ -7,6 +7,7 @@
 
 package io.harness.app;
 
+import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -14,6 +15,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELEGATE_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned.NG_ORCHESTRATION;
 
 import io.harness.AccessControlClientModule;
@@ -91,6 +93,7 @@ import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.opaclient.OpaClientModule;
+import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -398,6 +401,8 @@ public class CIManagerServiceModule extends AbstractModule {
     install(new CILogServiceClientModule(ciManagerConfiguration.getLogServiceConfig()));
     install(UserClientModule.getInstance(
         ciManagerConfiguration.getManagerClientConfig(), ciManagerConfiguration.getManagerServiceSecret(), serviceId));
+    install(
+        new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, ACCESS_CONTROL_SERVICE.getServiceId(), false));
     install(new ProjectClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));

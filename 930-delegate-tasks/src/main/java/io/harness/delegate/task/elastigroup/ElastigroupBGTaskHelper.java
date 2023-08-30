@@ -8,6 +8,7 @@
 package io.harness.delegate.task.elastigroup;
 
 import static io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper.getElastigroupString;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -68,32 +69,39 @@ public class ElastigroupBGTaskHelper {
 
   private void updateElastigroup(String spotInstToken, String spotInstAccountId, ElastiGroup elastiGroup,
       LogCallback logCallback) throws Exception {
-    Optional<ElastiGroup> elastigroupInitialOptional =
-        spotInstHelperServiceDelegate.getElastiGroupById(spotInstToken, spotInstAccountId, elastiGroup.getId());
+    try {
+      Optional<ElastiGroup> elastigroupInitialOptional =
+          spotInstHelperServiceDelegate.getElastiGroupById(spotInstToken, spotInstAccountId, elastiGroup.getId());
 
-    if (elastigroupInitialOptional.isEmpty()) {
-      String message = format("Did not find Elastigroup: %s", getElastigroupString(elastiGroup));
-      log.error(message);
-      logCallback.saveExecutionLog(message, ERROR, CommandExecutionStatus.FAILURE);
-      throw new InvalidRequestException(message);
+      if (elastigroupInitialOptional.isEmpty()) {
+        String message = format("Did not find Elastigroup: %s", getElastigroupString(elastiGroup));
+        log.error(message);
+        logCallback.saveExecutionLog(message, ERROR, CommandExecutionStatus.FAILURE);
+        throw new InvalidRequestException(message);
+      }
+
+      ElastiGroup elastigroupInitial = elastigroupInitialOptional.get();
+      logCallback.saveExecutionLog(format("Current state of Elastigroup: %s, min: [%d], max: [%d], desired: [%d]",
+          getElastigroupString(elastigroupInitial), elastigroupInitial.getCapacity().getMinimum(),
+          elastigroupInitial.getCapacity().getMaximum(), elastigroupInitial.getCapacity().getTarget()));
+
+      checkAndUpdateElastigroup(elastiGroup, logCallback);
+
+      logCallback.saveExecutionLog(
+          format("Sending request to Spotinst to update Elastigroup: %s with min: [%d], max: [%d] and target: [%d]",
+              getElastigroupString(elastiGroup), elastiGroup.getCapacity().getMinimum(),
+              elastiGroup.getCapacity().getMaximum(), elastiGroup.getCapacity().getTarget()));
+
+      spotInstHelperServiceDelegate.updateElastiGroupCapacity(
+          spotInstToken, spotInstAccountId, elastiGroup.getId(), elastiGroup);
+
+      logCallback.saveExecutionLog("Request sent to update Elastigroup", INFO, SUCCESS);
+    } catch (Exception e) {
+      logCallback.saveExecutionLog(format("Exception while updating Elastigroup: %s, Error message: [%s]",
+                                       getElastigroupString(elastiGroup), e.getMessage()),
+          ERROR, FAILURE);
+      throw e;
     }
-
-    ElastiGroup elastigroupInitial = elastigroupInitialOptional.get();
-    logCallback.saveExecutionLog(format("Current state of Elastigroup: %s, min: [%d], max: [%d], desired: [%d]",
-        getElastigroupString(elastigroupInitial), elastigroupInitial.getCapacity().getMinimum(),
-        elastigroupInitial.getCapacity().getMaximum(), elastigroupInitial.getCapacity().getTarget()));
-
-    checkAndUpdateElastigroup(elastiGroup, logCallback);
-
-    logCallback.saveExecutionLog(
-        format("Sending request to Spotinst to update Elastigroup: %s with min: [%d], max: [%d] and target: [%d]",
-            getElastigroupString(elastiGroup), elastiGroup.getCapacity().getMinimum(),
-            elastiGroup.getCapacity().getMaximum(), elastiGroup.getCapacity().getTarget()));
-
-    spotInstHelperServiceDelegate.updateElastiGroupCapacity(
-        spotInstToken, spotInstAccountId, elastiGroup.getId(), elastiGroup);
-
-    logCallback.saveExecutionLog("Request sent to update Elastigroup", INFO, SUCCESS);
   }
 
   /**
