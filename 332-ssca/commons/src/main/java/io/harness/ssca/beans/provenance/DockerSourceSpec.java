@@ -8,13 +8,17 @@
 package io.harness.ssca.beans.provenance;
 
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
@@ -23,6 +27,9 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.SSCA)
 public class DockerSourceSpec implements ProvenanceSourceSpec {
   @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> connector;
-  String repo;
-  List<String> tags;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> repo;
+  @NotNull
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+  private ParameterField<List<String>> tags;
 }

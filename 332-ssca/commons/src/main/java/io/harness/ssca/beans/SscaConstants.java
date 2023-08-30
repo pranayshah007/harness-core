@@ -29,6 +29,7 @@ public interface SscaConstants {
   String CD_SSCA_ENFORCEMENT_STEP_NODE = "CdSscaEnforcementStepNode";
 
   String SLSA_PROVENANCE = "provenance";
+  String SLSA_PROVENANCE_NODE = "provenanceStepNode";
 
   StepType SSCA_ORCHESTRATION_STEP_TYPE =
       StepType.newBuilder().setType(SSCA_ORCHESTRATION_STEP).setStepCategory(StepCategory.STEP).build();

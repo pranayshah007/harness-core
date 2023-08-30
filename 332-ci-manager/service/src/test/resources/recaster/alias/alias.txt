@@ -331,6 +331,7 @@ io.harness.ci.pipeline.executions.beans.CIInfraDetails
 io.harness.beans.steps.stepinfo.security.PrismaCloudStepInfo
 io.harness.ssca.beans.stepnode.SscaOrchestrationStepNode
 io.harness.ssca.beans.stepnode.SscaEnforcementStepNode
+io.harness.ssca.beans.stepnode.ProvenanceStepNode
 io.harness.beans.steps.nodes.SaveCacheGCSNode
 io.harness.beans.yaml.extended.TISplitStrategy
 io.harness.beans.steps.nodes.security.ProwlerScanNode
