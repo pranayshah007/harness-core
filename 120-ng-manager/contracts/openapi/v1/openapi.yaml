@@ -1546,7 +1546,7 @@ paths:
       summary: Fetch GitX Webhook
       responses:
         '200':
-          $ref: '#/components/responses/GetGitXWebhookResposne'
+          $ref: '#/components/responses/GetGitXWebhookResponse'
       operationId: get-gitx-webhook
       description: Fetch a gitx webhook
       x-internal: true
@@ -2644,6 +2644,8 @@ components:
       type: object
       description: 'Contains information about the GitX webhook updation '
       properties:
+        repo_name:
+          type: string
         folder_paths:
           type: array
           items:
@@ -2681,10 +2683,10 @@ components:
           type: integer
         size:
           type: integer
-    GetGitXWebhookResposne:
-      title: GetGitXWebhookResposne
+    GitXWebhookResponse:
+      title: GitXWebhookResponse
       x-stoplight:
-        id: v56313et2fl5i
+        id: 6c85c8b3744b5
       type: object
       description: 'Contains information about the GitX webhooks '
       properties:
@@ -2702,14 +2704,6 @@ components:
             type: string
         is_enabled:
           type: boolean
-    ListGitXWebhookResponse:
-      title: ListGitXWebhookResponse
-      x-stoplight:
-        id: qpu4dgbo6xr0y
-      type: array
-      items:
-        $ref: '#/components/schemas/GetGitXWebhookResposne'
-      description: 'Contains information about list of GitX webhooks '
     GetGitXWebhookRequest:
       title: GetGitXWebhookRequest
       x-stoplight:
@@ -3340,18 +3334,20 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/DeleteGitXWebhookResponse'
-    GetGitXWebhookResposne:
+    GetGitXWebhookResponse:
       description: Example response
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/GetGitXWebhookResposne'
+            $ref: '#/components/schemas/GitXWebhookResponse'
     ListGitXWebhookResponse:
       description: Example response
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ListGitXWebhookResponse'
+            type: array
+            items:
+              $ref: '#/components/schemas/GitXWebhookResponse'
       headers:
         X-Total-Elements:
           schema:
