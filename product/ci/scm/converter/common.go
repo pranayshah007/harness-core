@@ -32,6 +32,8 @@ func convertAction(a scm.Action) pb.Action {
 		return pb.Action_LABEL
 	case scm.ActionUnlabel:
 		return pb.Action_UNLABEL
+	case scm.ActionReadyForReview:
+		return pb.Action_READY_FOR_REVIEW
 	case scm.ActionSync:
 		return pb.Action_SYNC
 	case scm.ActionMerge:
