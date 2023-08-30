@@ -41,7 +41,7 @@ public class K8sStepGroupHandler implements StepGroupInfraHandler {
     String nextNodeId = stepsField.getNode().asArray().get(0).getField("step").getUuid();
     ByteString advisorParametersInitStep = ByteString.copyFrom(
         kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(nextNodeId).build()));
-    return InitContainerStepPlanCreater.createPlanForField(
+    return InitContainerV2StepPlanCreator.createPlanForField(
         initNodeId, initContainerV2StepInfo, advisorParametersInitStep, "InitializeContainer");
   }
 }

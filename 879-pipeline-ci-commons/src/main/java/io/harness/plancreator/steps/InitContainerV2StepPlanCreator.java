@@ -13,6 +13,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -28,7 +29,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
-public class InitContainerStepPlanCreater {
+public class InitContainerV2StepPlanCreator {
   public PlanNode createPlanForField(
       String runStepNodeId, StepParameters stepElementParameters, ByteString advisorParams, String stepType) {
     return PlanNode.builder()
@@ -49,6 +50,7 @@ public class InitContainerStepPlanCreater {
                 .build())
         .skipGraphType(SkipType.NOOP)
         .skipExpressionChain(false)
+        .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
         .build();
   }
 }
