@@ -7,6 +7,7 @@ package redis
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -56,11 +57,25 @@ func (r Redis) Consume(ctx context.Context, stream string, consumerGroup string,
 		Consumer: name,
 		Count:    1,
 		Block:    0,
-		NoAck:    true,
+		NoAck:    false,
 	}).Result()
 
 	if err != nil {
+		//Delete if something present in stream
+		if len(streams) != 0 {
+			if len(streams[0].Messages) == 0 {
+				r.Client.XDel(context.Background(), stream, streams[0].Messages[0].ID)
+			}
+		}
 		return nil, err
+	}
+
+	if len(streams) == 0 {
+		return nil, nil
+	}
+
+	if len(streams[0].Messages) == 0 {
+		return nil, fmt.Errorf("no messages in the first slice") // No messages in the first slice
 	}
 
 	// after consume delete message from the stream

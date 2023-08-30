@@ -47,9 +47,11 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("ConsumerGroup", cfg.ConsumerWorker.ConsumerGroup).
 				WithError(err).
-				Errorln("consumer execute: cannot process message")
-			continue
+				Errorln("consumer execute: cannot process message, terminating zipworker gracefully")
+			// gracefully exit the loop
+			return
 		}
 
 		var event entity.EventQueue
