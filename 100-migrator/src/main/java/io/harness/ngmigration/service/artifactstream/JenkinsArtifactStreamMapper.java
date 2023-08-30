@@ -40,7 +40,7 @@ public class JenkinsArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     JenkinsArtifactStream jenkinsArtifactStream = (JenkinsArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(jenkinsArtifactStream.getSettingId()).build())
@@ -53,7 +53,7 @@ public class JenkinsArtifactStreamMapper implements ArtifactStreamMapper {
                   .artifactPath(jenkinsArtifactStream.getArtifactPaths() != null
                           ? ParameterField.createValueField(jenkinsArtifactStream.getArtifactPaths().get(0))
                           : null)
-                  .build(ParameterField.createValueField("<+input>"))
+                  .build(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }

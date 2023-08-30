@@ -46,15 +46,15 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     ArtifactoryArtifactStream artifactoryArtifactStream = (ArtifactoryArtifactStream) artifactStream;
     NGYamlFile connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(artifactoryArtifactStream.getSettingId()).build());
     return PrimaryArtifact.builder()
         .sourceType(ArtifactSourceType.ARTIFACTORY_REGISTRY)
         .spec(docker.name().equals(artifactoryArtifactStream.getRepositoryType())
-                ? generateDockerConfig(artifactoryArtifactStream, connector)
-                : generateGeneticConfig(artifactoryArtifactStream, connector))
+                ? generateDockerConfig(artifactoryArtifactStream, connector, version)
+                : generateGeneticConfig(artifactoryArtifactStream, connector, version))
         .build();
   }
 
@@ -96,7 +96,7 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
   }
 
   private ArtifactoryRegistryArtifactConfig generateDockerConfig(
-      ArtifactoryArtifactStream artifactStream, NGYamlFile connector) {
+      ArtifactoryArtifactStream artifactStream, NGYamlFile connector, String version) {
     String repoUrl = artifactStream.getDockerRepositoryServer();
     if (StringUtils.isBlank(repoUrl)) {
       ConnectorDTO connectorDTO = (ConnectorDTO) connector.getYaml();
@@ -113,19 +113,19 @@ public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
         .repositoryUrl(ParameterField.createValueField(repoUrl))
         .artifactPath(ParameterField.createValueField(artifactStream.getImageName()))
         .repositoryFormat(ParameterField.createValueField("docker"))
-        .tag(ParameterField.createValueField("<+input>"))
+        .tag(ParameterField.createValueField(version == null ? "<+input>" : version))
         .build();
   }
 
   private ArtifactoryRegistryArtifactConfig generateGeneticConfig(
-      ArtifactoryArtifactStream artifactStream, NGYamlFile connector) {
+      ArtifactoryArtifactStream artifactStream, NGYamlFile connector, String version) {
     return ArtifactoryRegistryArtifactConfig.builder()
         .connectorRef(
             ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector.getNgEntityDetail())))
         .repository(ParameterField.createValueField(artifactStream.getJobname()))
         .repositoryFormat(ParameterField.createValueField("generic"))
         .artifactDirectory(ParameterField.createValueField(artifactStream.getArtifactPattern()))
-        .artifactPath(ParameterField.createValueField("<+input>"))
+        .artifactPath(ParameterField.createValueField(version == null ? "<+input>" : version))
         .build();
   }
 }
