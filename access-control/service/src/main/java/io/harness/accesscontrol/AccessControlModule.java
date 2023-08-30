@@ -64,6 +64,7 @@ import io.harness.accesscontrol.principals.users.HarnessUserService;
 import io.harness.accesscontrol.principals.users.HarnessUserServiceImpl;
 import io.harness.accesscontrol.principals.users.UserValidator;
 import io.harness.accesscontrol.principals.users.events.UserMembershipEventConsumer;
+import io.harness.accesscontrol.publicaccess.PublicAccessApiImpl;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupServiceImpl;
 import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupEventConsumer;
@@ -130,6 +131,7 @@ import io.harness.spec.server.accesscontrol.v1.OrgRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.OrganizationRolesApi;
 import io.harness.spec.server.accesscontrol.v1.ProjectRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.ProjectRolesApi;
+import io.harness.spec.server.accesscontrol.v1.PublicAccessApi;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
@@ -353,6 +355,7 @@ public class AccessControlModule extends AbstractModule {
     bind(HarnessUserGroupService.class).to(HarnessUserGroupServiceImpl.class);
     bind(HarnessUserService.class).to(HarnessUserServiceImpl.class);
     bind(HarnessServiceAccountService.class).to(HarnessServiceAccountServiceImpl.class);
+    bind(PublicAccessApi.class).to(PublicAccessApiImpl.class);
 
     bind(UserGroupCRUDEventHandler.class).to(PrivilegedRoleAssignmentHandler.class);
     bind(RoleAssignmentCRUDEventHandler.class).to(PrivilegedRoleAssignmentHandler.class);
