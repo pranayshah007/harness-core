@@ -64,7 +64,11 @@ public class ServiceNowTaskNGParameters implements TaskParameters, ExecutionCapa
 
   List<String> delegateSelectors;
 
+  // List of required field append by comma
   String queryFields;
+
+  // Will be used to filter the response
+  String searchTerm;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

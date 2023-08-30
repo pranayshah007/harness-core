@@ -448,7 +448,8 @@ public class ServiceNowTaskNgHelper {
     final Call<JsonNode> request =
         serviceNowRestClient.getTemplateList(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
             serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTemplateListLimit(),
-            serviceNowTaskNGParameters.getTemplateListOffset(), serviceNowTaskNGParameters.getTemplateName());
+            serviceNowTaskNGParameters.getTemplateListOffset(), serviceNowTaskNGParameters.getTemplateName(),
+            serviceNowTaskNGParameters.getSearchTerm());
     Response<JsonNode> response = null;
     try {
       response = Retry.decorateCallable(retry, () -> request.clone().execute()).call();

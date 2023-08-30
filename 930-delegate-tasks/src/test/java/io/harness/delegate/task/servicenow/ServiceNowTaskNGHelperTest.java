@@ -566,7 +566,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
 
     Call mockCall = Mockito.mock(Call.class);
-    when(serviceNowRestClient.getTemplateList(anyString(), anyString(), anyInt(), anyInt(), anyString()))
+    when(serviceNowRestClient.getTemplateList(anyString(), anyString(), anyInt(), eq(100), anyString(), anyString()))
         .thenReturn(mockCall);
 
     ClassLoader classLoader = this.getClass().getClassLoader();
@@ -585,9 +585,10 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                            .action(ServiceNowActionNG.GET_TEMPLATE)
                                                            .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                            .ticketType("incident")
-                                                           .templateListLimit(1)
-                                                           .templateListOffset(0)
+                                                           .templateListLimit(50)
+                                                           .templateListOffset(100)
                                                            .templateName(TEMPLATE_NAME)
+                                                           .searchTerm("filter")
                                                            .build(),
               logStreamingTaskClient);
 
@@ -602,7 +603,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
 
       verify(secretDecryptionService).decrypt(any(), any());
 
-      verify(serviceNowRestClient).getTemplateList(anyString(), eq("incident"), anyInt(), anyInt(), anyString());
+      verify(serviceNowRestClient)
+          .getTemplateList(anyString(), eq("incident"), anyInt(), eq(100), anyString(), eq("filter"));
     }
   }
 
@@ -613,7 +615,7 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
 
     Call mockCall = Mockito.mock(Call.class);
-    when(serviceNowRestClient.getTemplateList(anyString(), anyString(), anyInt(), anyInt(), anyString()))
+    when(serviceNowRestClient.getTemplateList(anyString(), anyString(), anyInt(), anyInt(), anyString(), eq(null)))
         .thenReturn(mockCall);
 
     ClassLoader classLoader = this.getClass().getClassLoader();
@@ -652,7 +654,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
 
       verify(secretDecryptionService).decrypt(any(), any());
 
-      verify(serviceNowRestClient).getTemplateList(anyString(), eq("change_request"), anyInt(), anyInt(), anyString());
+      verify(serviceNowRestClient)
+          .getTemplateList(anyString(), eq("change_request"), anyInt(), anyInt(), anyString(), eq(null));
     }
   }
 

@@ -420,7 +420,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTemplateList(serviceNowFieldNGList1).build());
     assertThat(serviceNowResourceService.getTemplateList(
-                   identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 0, 0, TEMPLATE_NAME, "CHANGE_TASK"))
+                   identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2, TEMPLATE_NAME, "CHANGE_TASK", "filter"))
         .isEqualTo(serviceNowFieldNGList1);
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
@@ -428,6 +428,8 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TEMPLATE);
     assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
+    assertThat(parameters.getSearchTerm()).isEqualTo("filter");
+    assertThat(parameters.getTemplateListOffset()).isEqualTo(100);
   }
 
   @Test

@@ -24,7 +24,7 @@ public interface ServiceNowResourceService {
       IdentifierRef serviceNowConnectorRef, String orgId, String projectId, String ticketType);
 
   List<ServiceNowTemplate> getTemplateList(IdentifierRef connectorRef, String orgId, String projectId, int limit,
-      int offset, String templateName, String ticketType);
+      int offset, String templateName, String ticketType, String searchTerm);
   List<ServiceNowStagingTable> getStagingTableList(IdentifierRef connectorRef, String orgId, String projectId);
   List<ServiceNowTicketTypeDTO> getTicketTypesV2(IdentifierRef connectorRef, String orgId, String projectId);
 

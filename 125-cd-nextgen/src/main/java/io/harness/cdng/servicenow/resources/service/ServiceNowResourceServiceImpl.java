@@ -174,15 +174,18 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
         .getServiceNowFieldNGList();
   }
 
-  @Override
   public List<ServiceNowTemplate> getTemplateList(IdentifierRef connectorRef, String orgId, String projectId, int limit,
-      int offset, String templateName, String ticketType) {
+      int offset, String templateName, String ticketType, String searchTerm) {
+    // Offset provided from ui is equivalent to page number, So calculating the actual offset value.
+    offset = offset * limit;
+
     ServiceNowTaskNGParametersBuilder parametersBuilder = ServiceNowTaskNGParameters.builder()
                                                               .action(ServiceNowActionNG.GET_TEMPLATE)
                                                               .ticketType(ticketType)
                                                               .templateListLimit(limit)
                                                               .templateListOffset(offset)
-                                                              .templateName(templateName);
+                                                              .templateName(templateName)
+                                                              .searchTerm(searchTerm);
 
     return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
         .getServiceNowTemplateList();

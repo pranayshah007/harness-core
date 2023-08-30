@@ -117,7 +117,8 @@ public interface ServiceNowRestClient {
   // Scripted API to list templates
   @GET("/api/x_harne_harness_ap/template/list")
   Call<JsonNode> getTemplateList(@Header("Authorization") String authorization, @Header("ticketType") String ticketType,
-      @Header("limit") int limit, @Header("offset") int offset, @Header("templateName") String templateName);
+      @Header("limit") int limit, @Header("offset") int offset, @Header("templateName") String templateName,
+      @Header("searchTerm") String searchTerm);
 
   // Scripted API to create ticket using template
   @POST("/api/x_harne_harness_ap/template/create")
