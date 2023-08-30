@@ -43,6 +43,7 @@ public class HarnessCDChangeEventTransformer
         .planExecutionId(metaData.getPlanExecutionId())
         .stageStepId(metaData.getStageStepId())
         .pipelineId(metaData.getPipelineId())
+        .runSequence(metaData.getRunSequence())
         .stageId(metaData.getStageId())
         .planExecutionId(metaData.getPlanExecutionId())
         .activityStartTime(Instant.ofEpochMilli(metaData.getDeploymentStartTime()))
@@ -63,6 +64,7 @@ public class HarnessCDChangeEventTransformer
             .planExecutionId(activity.getPlanExecutionId())
             .stageStepId(activity.getStageStepId())
             .pipelineId(activity.getPipelineId())
+            .runSequence(activity.getRunSequence())
             .stageId(activity.getStageId())
             .artifactTag(activity.getArtifactTag())
             .pipelinePath(String.format(PIPELINE_URL_FORMAT, activity.getAccountId(), activity.getOrgIdentifier(),

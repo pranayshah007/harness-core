@@ -372,6 +372,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
             .stageId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getIdentifier())
             .stageStepId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getSetupId())
             .pipelineId(ambiance.getMetadata().getPipelineIdentifier())
+            .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
             .planExecutionId(ambiance.getPlanExecutionId())
             .build();
     deploymentActivity.setVerificationJobs(Collections.singletonList(verificationJob));

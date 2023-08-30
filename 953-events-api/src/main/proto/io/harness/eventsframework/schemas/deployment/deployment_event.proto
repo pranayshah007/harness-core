@@ -28,6 +28,7 @@ message ExecutionDetails {
   string stageSetupId = 2;
   string pipelineId = 3;
   string stageId = 4;
+  string runSequence = 5;
 }
 
 message ArtifactDetails {
