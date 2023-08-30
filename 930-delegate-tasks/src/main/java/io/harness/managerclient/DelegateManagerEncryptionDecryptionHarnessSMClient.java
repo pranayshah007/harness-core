@@ -6,9 +6,11 @@
  */
 
 package io.harness.managerclient;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptedRecord;
 import io.harness.beans.DelegateFileEncryptedDataPackage;
 import io.harness.beans.DelegateFileEncryptedRecordDataPackage;
@@ -23,6 +25,8 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public interface DelegateManagerEncryptionDecryptionHarnessSMClient {
   @POST("encryption/encrypt-harness-sm-secret")

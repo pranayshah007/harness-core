@@ -19,7 +19,6 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -138,12 +137,7 @@ public class StageExecutionHelper {
 
   public void saveStageExecutionDetails(
       Ambiance ambiance, ExecutionInfoKey executionInfoKey, ExecutionDetails executionDetails) {
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      saveStageExecutionInfoV2(ambiance, executionInfoKey, executionDetails);
-    } else {
-      saveStageExecutionInfo(ambiance, executionInfoKey, executionDetails);
-    }
+    saveStageExecutionInfoV2(ambiance, executionInfoKey, executionDetails);
   }
 
   public Optional<ArtifactOutcome> getRollbackArtifact(

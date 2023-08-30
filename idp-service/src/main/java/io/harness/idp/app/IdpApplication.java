@@ -34,18 +34,26 @@ import io.harness.idp.pipeline.filter.IdpFilterCreationResponseMerger;
 import io.harness.idp.pipeline.provider.IdpModuleInfoProvider;
 import io.harness.idp.pipeline.provider.IdpPipelineServiceInfoProvider;
 import io.harness.idp.pipeline.registrar.IdpStepRegistrar;
+import io.harness.idp.scorecard.scores.iteratorhandler.ScoreComputationHandler;
 import io.harness.idp.user.jobs.UserSyncJob;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.metrics.HarnessMetricRegistry;
+import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
+import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.notification.Team;
+import io.harness.notification.module.NotificationClientModule;
+import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -164,6 +172,8 @@ public class IdpApplication extends Application<IdpConfiguration> {
     modules.add(PmsSdkModule.getInstance(idpPmsSdkConfiguration));
     modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
+    modules.add(new NotificationClientModule(configuration.getNotificationClientConfiguration()));
+    modules.add(new MetricRegistryModule(metricRegistry));
 
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);
@@ -176,7 +186,10 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
+    registerNotificationTemplates(configuration, injector);
+    registerIterators(injector, configuration.getScorecardScoreComputationIteratorConfig());
     environment.jersey().register(RequestLoggingFilter.class);
+
     //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
@@ -202,6 +215,12 @@ public class IdpApplication extends Application<IdpConfiguration> {
     log.info("Initializing queue listeners...");
     IdpEventConsumerController controller = injector.getInstance(IdpEventConsumerController.class);
     controller.register(injector.getInstance(EntityCrudStreamConsumer.class), 1);
+  }
+
+  private void registerIterators(Injector injector, IteratorConfig iteratorConfig) {
+    if (iteratorConfig.isEnabled()) {
+      injector.getInstance(ScoreComputationHandler.class).registerIterators(iteratorConfig);
+    }
   }
 
   private void initMetrics(Injector injector) {
@@ -333,5 +352,23 @@ public class IdpApplication extends Application<IdpConfiguration> {
     final HealthService healthService = injector.getInstance(HealthService.class);
     environment.healthChecks().register("IDP", healthService);
     healthService.registerMonitor((HealthMonitor) injector.getInstance(MongoTemplate.class));
+  }
+
+  private void registerNotificationTemplates(IdpConfiguration configuration, Injector injector) {
+    NotificationClient notificationClient = injector.getInstance(NotificationClient.class);
+    List<PredefinedTemplate> templates =
+        new ArrayList<>(List.of(PredefinedTemplate.IDP_PLUGIN_REQUESTS_NOTIFICATION_SLACK));
+
+    if (configuration.getShouldConfigureWithNotification()) {
+      for (PredefinedTemplate template : templates) {
+        try {
+          log.info("Registering {} with NotificationService", template);
+          notificationClient.saveNotificationTemplate(Team.IDP, template, true);
+        } catch (Exception ex) {
+          log.error(
+              "Unable to save {} to NotificationService - skipping register notification templates.", template, ex);
+        }
+      }
+    }
   }
 }

@@ -17,6 +17,7 @@ import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.CD_JIRA_CG_FETCH_ISSUE_DEBUG;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -197,6 +198,7 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
   public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
   @Inject private AlertService alertService;
+
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private NotificationMessageResolver notificationMessageResolver;
   @Inject private NotificationService notificationService;
@@ -640,6 +642,10 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     JiraExecutionData jiraExecutionData =
         jiraHelperService.fetchIssue(jiraApprovalParams, app.getAccountId(), app.getAppId(), approvalId);
 
+    if (featureFlagService.isEnabled(CD_JIRA_CG_FETCH_ISSUE_DEBUG, app.getAccountId())) {
+      log.info("Fetched jiraExecutionData: {}", jiraExecutionData);
+    }
+
     if (jiraExecutionData.getExecutionStatus() != null && FAILED == jiraExecutionData.getExecutionStatus()) {
       return respondWithStatus(context, executionData, null,
           ExecutionResponse.builder()
@@ -652,21 +658,23 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
     executionData.setIssueKey(jiraExecutionData.getIssueKey());
     executionData.setCurrentStatus(jiraExecutionData.getCurrentStatus());
 
-    if (jiraExecutionData.getCurrentStatus().equalsIgnoreCase(jiraApprovalParams.getApprovalValue())) {
-      return respondWithStatus(context, executionData, null,
-          ExecutionResponse.builder()
-              .executionStatus(SUCCESS)
-              .errorMessage("Approval provided on ticket: " + jiraExecutionData.getIssueKey())
-              .stateExecutionData(executionData));
-    }
+    if (jiraExecutionData.getCurrentStatus() != null) {
+      if (jiraExecutionData.getCurrentStatus().equalsIgnoreCase(jiraApprovalParams.getApprovalValue())) {
+        return respondWithStatus(context, executionData, null,
+            ExecutionResponse.builder()
+                .executionStatus(SUCCESS)
+                .errorMessage("Approval provided on ticket: " + jiraExecutionData.getIssueKey())
+                .stateExecutionData(executionData));
+      }
 
-    if (jiraApprovalParams.getRejectionValue() != null
-        && jiraExecutionData.getCurrentStatus().equalsIgnoreCase(jiraApprovalParams.getRejectionValue())) {
-      return respondWithStatus(context, executionData, null,
-          ExecutionResponse.builder()
-              .executionStatus(REJECTED)
-              .errorMessage("Rejection provided on ticket: " + jiraExecutionData.getIssueKey())
-              .stateExecutionData(executionData));
+      if (jiraApprovalParams.getRejectionValue() != null
+          && jiraExecutionData.getCurrentStatus().equalsIgnoreCase(jiraApprovalParams.getRejectionValue())) {
+        return respondWithStatus(context, executionData, null,
+            ExecutionResponse.builder()
+                .executionStatus(REJECTED)
+                .errorMessage("Rejection provided on ticket: " + jiraExecutionData.getIssueKey())
+                .stateExecutionData(executionData));
+      }
     }
 
     ApprovalPollingJobEntity approvalPollingJobEntity =

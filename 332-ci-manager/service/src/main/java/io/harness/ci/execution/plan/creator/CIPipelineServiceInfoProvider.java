@@ -5,43 +5,45 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.plan.creator;
-
+package io.harness.ci.execution.plan.creator;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.ssca.SscaBeansRegistrar.sscaStepPaletteSteps;
 import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.steps.StepSpecTypeConstants;
-import io.harness.ci.creator.variables.ActionStepVariableCreator;
-import io.harness.ci.creator.variables.ArtifactoryUploadStepVariableCreator;
-import io.harness.ci.creator.variables.BackgroundStepVariableCreator;
-import io.harness.ci.creator.variables.BuildAndPushACRStepVariableCreator;
-import io.harness.ci.creator.variables.BuildAndPushECRStepVariableCreator;
-import io.harness.ci.creator.variables.BuildAndPushGCRStepVariableCreator;
-import io.harness.ci.creator.variables.CIStageVariableCreator;
-import io.harness.ci.creator.variables.CIStepVariableCreator;
-import io.harness.ci.creator.variables.DockerStepVariableCreator;
-import io.harness.ci.creator.variables.GCSUploadStepVariableCreator;
-import io.harness.ci.creator.variables.GitCloneStepVariableCreator;
-import io.harness.ci.creator.variables.PluginStepVariableCreator;
-import io.harness.ci.creator.variables.RestoreCacheGCSStepVariableCreator;
-import io.harness.ci.creator.variables.RestoreCacheS3StepVariableCreator;
-import io.harness.ci.creator.variables.RunStepVariableCreator;
-import io.harness.ci.creator.variables.RunTestStepVariableCreator;
-import io.harness.ci.creator.variables.S3UploadStepVariableCreator;
-import io.harness.ci.creator.variables.SaveCacheGCSStepVariableCreator;
-import io.harness.ci.creator.variables.SaveCacheS3StepVariableCreator;
-import io.harness.ci.creator.variables.SecurityStepVariableCreator;
-import io.harness.ci.plan.creator.filter.CIStageFilterJsonCreatorV2;
-import io.harness.ci.plan.creator.stage.IntegrationStagePMSPlanCreatorV2;
-import io.harness.ci.plan.creator.stage.V3.IntegrationStagePMSPlanCreatorV3;
-import io.harness.ci.plan.creator.step.CIPMSStepFilterJsonCreator;
-import io.harness.ci.plan.creator.step.CIPMSStepPlanCreator;
-import io.harness.ci.plan.creator.step.CIStepFilterJsonCreatorV2;
-import io.harness.ci.plan.creator.steps.CIStepsPlanCreator;
+import io.harness.ci.execution.creator.variables.ActionStepVariableCreator;
+import io.harness.ci.execution.creator.variables.ArtifactoryUploadStepVariableCreator;
+import io.harness.ci.execution.creator.variables.BackgroundStepVariableCreator;
+import io.harness.ci.execution.creator.variables.BuildAndPushACRStepVariableCreator;
+import io.harness.ci.execution.creator.variables.BuildAndPushECRStepVariableCreator;
+import io.harness.ci.execution.creator.variables.BuildAndPushGCRStepVariableCreator;
+import io.harness.ci.execution.creator.variables.CIStageVariableCreator;
+import io.harness.ci.execution.creator.variables.CIStepVariableCreator;
+import io.harness.ci.execution.creator.variables.DockerStepVariableCreator;
+import io.harness.ci.execution.creator.variables.GCSUploadStepVariableCreator;
+import io.harness.ci.execution.creator.variables.GitCloneStepVariableCreator;
+import io.harness.ci.execution.creator.variables.PluginStepVariableCreator;
+import io.harness.ci.execution.creator.variables.RestoreCacheGCSStepVariableCreator;
+import io.harness.ci.execution.creator.variables.RestoreCacheS3StepVariableCreator;
+import io.harness.ci.execution.creator.variables.RunStepVariableCreator;
+import io.harness.ci.execution.creator.variables.RunTestStepVariableCreator;
+import io.harness.ci.execution.creator.variables.S3UploadStepVariableCreator;
+import io.harness.ci.execution.creator.variables.SaveCacheGCSStepVariableCreator;
+import io.harness.ci.execution.creator.variables.SaveCacheS3StepVariableCreator;
+import io.harness.ci.execution.creator.variables.SecurityStepVariableCreator;
+import io.harness.ci.execution.plan.creator.filter.CIStageFilterJsonCreatorV2;
+import io.harness.ci.execution.plan.creator.stage.IntegrationStagePMSPlanCreatorV2;
+import io.harness.ci.execution.plan.creator.stage.V3.IntegrationStagePMSPlanCreatorV3;
+import io.harness.ci.execution.plan.creator.step.CIPMSStepFilterJsonCreator;
+import io.harness.ci.execution.plan.creator.step.CIPMSStepPlanCreator;
+import io.harness.ci.execution.plan.creator.step.CIStepFilterJsonCreatorV2;
+import io.harness.ci.execution.plan.creator.steps.CIStepsPlanCreator;
 import io.harness.ci.plancreator.ActionStepPlanCreator;
 import io.harness.ci.plancreator.ArtifactoryUploadStepPlanCreator;
 import io.harness.ci.plancreator.BackgroundStepPlanCreator;
@@ -93,6 +95,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @OwnedBy(HarnessTeam.CI)
 public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvider {

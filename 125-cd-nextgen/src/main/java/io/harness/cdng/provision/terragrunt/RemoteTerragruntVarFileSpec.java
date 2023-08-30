@@ -18,6 +18,7 @@ package io.harness.cdng.provision.terragrunt;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 
@@ -30,6 +31,7 @@ import lombok.NoArgsConstructor;
 @OwnedBy(CDP)
 @Data
 @NoArgsConstructor
+@RecasterAlias("io.harness.cdng.provision.terragrunt.RemoteTerragruntVarFileSpec")
 public class RemoteTerragruntVarFileSpec implements TerragruntVarFileSpec {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String uuid;
 

@@ -6,10 +6,13 @@
  */
 
 package io.harness.filestore.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.filestore.entities.NGFile;
 import io.harness.ng.core.filestore.dto.FileDTO;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 public interface FileFailsafeService {
   /**
    * Save NG file in DB and publish file crete event

@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.pipeline.mappers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -15,7 +14,10 @@ import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -60,6 +62,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class PMSPipelineDtoMapper {
@@ -155,6 +158,7 @@ public class PMSPipelineDtoMapper {
           .name(pipelineName)
           .identifier(pipelineId)
           .tags(TagMapper.convertToList(null))
+          .harnessVersion(PipelineVersion.V1)
           .build();
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage());
@@ -196,13 +200,19 @@ public class PMSPipelineDtoMapper {
     return pipelineEntity;
   }
 
-  public PipelineEntity toPipelineEntity(
-      PipelineRequestInfoDTO requestInfoDTO, String accountId, String orgId, String projectId, Boolean isDraft) {
+  public PipelineEntity toPipelineEntity(PipelineRequestInfoDTO requestInfoDTO, String accountId, String orgId,
+      String projectId, Boolean isDraft, String pipelineVersion) {
     try {
       if (NGExpressionUtils.matchesInputSetPattern(requestInfoDTO.getIdentifier())) {
         throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
       }
-      BasicPipeline basicPipeline = YamlUtils.read(requestInfoDTO.getYaml(), BasicPipeline.class);
+      BasicPipeline basicPipeline = null;
+      if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+        return toSimplifiedPipelineEntity(
+            accountId, orgId, projectId, null, requestInfoDTO.getName(), requestInfoDTO.getYaml());
+      } else {
+        basicPipeline = YamlUtils.read(requestInfoDTO.getYaml(), BasicPipeline.class);
+      }
       if (isNotEmpty(basicPipeline.getIdentifier())
           && !basicPipeline.getIdentifier().equals(requestInfoDTO.getIdentifier())) {
         throw new InvalidRequestException(String.format("Expected Pipeline identifier in YAML to be [%s], but was [%s]",
@@ -326,6 +336,7 @@ public class PMSPipelineDtoMapper {
         .gitDetails(entityGitDetails)
         .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
         .isDraft(pipelineEntity.getIsDraft())
+        .yamlVersion(pipelineEntity.getHarnessVersion())
         .build();
   }
 

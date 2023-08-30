@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
@@ -15,8 +14,11 @@ import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLI
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
 import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
@@ -80,6 +82,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 @Slf4j
@@ -115,11 +119,10 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
     modifyRequestedServiceOverride(requestedEntity);
-    Optional<NGServiceOverridesEntity> existingEntity =
-        serviceOverrideRepositoryV2
-            .getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndSpecExistsAndSpecNotNull(
-                requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(),
-                requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
+
+    Optional<NGServiceOverridesEntity> existingEntity = get(requestedEntity.getAccountId(),
+        requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
+
     if (existingEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("Service Override with identifier [%s] already exists", requestedEntity.getIdentifier()));
@@ -137,13 +140,13 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     Criteria equalityCriteria = ServiceOverrideRepositoryHelper.getEqualityCriteriaForServiceOverride(
         requestedEntity.getAccountId(), requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(),
         requestedEntity.getIdentifier());
-    Optional<NGServiceOverridesEntity> existingEntityInDb = get(requestedEntity.getAccountId(),
+    Optional<NGServiceOverridesEntity> existingEntity = get(requestedEntity.getAccountId(),
         requestedEntity.getOrgIdentifier(), requestedEntity.getProjectIdentifier(), requestedEntity.getIdentifier());
 
-    if (existingEntityInDb.isPresent()) {
-      overrideValidatorService.checkForImmutablePropertiesOrThrow(existingEntityInDb.get(), requestedEntity);
+    if (existingEntity.isPresent()) {
+      overrideValidatorService.checkForImmutablePropertiesOrThrow(existingEntity.get(), requestedEntity);
       ServiceOverrideAuditEventDTO oldOverrideAuditEventDTO =
-          ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(existingEntityInDb.get());
+          ServiceOverrideEventDTOMapper.toOverrideAuditEventDTO(existingEntity.get());
 
       return Failsafe.with(transactionRetryPolicy)
           .get(
@@ -661,7 +664,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
           findAll(addProjectScopeCriteria(accountId, orgId, projectId, criteria));
       if (projectScopedEntity.size() > 1 && logCallback != null) {
         logCallback.saveExecutionLog(
-            "Found more tha one override at project scope. Only one entity will be considered at execution time",
+            "Found more than one override at project scope. Only one entity will be considered at execution time",
             LogLevel.WARN);
       }
       projectScopedEntity.stream().findFirst().ifPresent(
@@ -672,7 +675,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
       List<NGServiceOverridesEntity> orgScopedEntity = findAll(addOrgScopeCriteria(accountId, orgId, criteria));
       if (orgScopedEntity.size() > 1 && logCallback != null) {
         logCallback.saveExecutionLog(
-            "Found more tha one override at org scope. Only one entity will be considered at execution time",
+            "Found more than one override at org scope. Only one entity will be considered at execution time",
             LogLevel.WARN);
       }
       orgScopedEntity.stream().findFirst().ifPresent(overrideEntity -> scopedEntities.put(Scope.ORG, overrideEntity));
@@ -681,7 +684,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     List<NGServiceOverridesEntity> accountScopedEntity = findAll(addAccountScopeCriteria(accountId, criteria));
     if (accountScopedEntity.size() > 1 && logCallback != null) {
       logCallback.saveExecutionLog(
-          "Found more tha one override at account scope. Only one entity will be considered at execution time",
+          "Found more than one override at account scope. Only one entity will be considered at execution time",
           LogLevel.WARN);
     }
     accountScopedEntity.stream().findFirst().ifPresent(

@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.pipeline.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -23,7 +22,10 @@ import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineSettingsService;
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
@@ -49,6 +51,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
@@ -124,6 +127,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE,
+        HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -154,9 +160,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
   @Inject GitXSettingsHelper gitXSettingsHelper;
-
   @Inject private final AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
+  @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -197,7 +203,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         PipelineEntity createdEntity;
         PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
         createdEntity = pipelineCRUDResult.getPipelineEntity();
-
+        computeReferencesIfRemotePipeline(createdEntity);
         try {
           String branchInRequest = GitAwareContextHelper.getBranchInRequest();
           pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(createdEntity,
@@ -503,6 +509,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
       }
       PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
+      computeReferencesIfRemotePipeline(updatedEntity);
       try {
         String branchInRequest = GitAwareContextHelper.getBranchInRequest();
         pipelineAsyncValidationService.createRecordForSuccessfulSyncValidation(updatedEntity,
@@ -935,6 +942,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, updateGitDetailsParams);
+
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, true);
     Update update = PMSPipelineFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);
@@ -946,6 +955,33 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
 
     return pipelineAfterUpdate.getIdentifier();
+  }
+
+  private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    if (isEmpty(updateGitDetailsParams.getRepoName())) {
+      return;
+    }
+
+    String connectorRef = updateGitDetailsParams.getConnectorRef();
+    if (isEmpty(connectorRef)) {
+      Optional<PipelineEntity> optionalPipelineEntity =
+          getPipeline(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+      checkIfPipelineIsPresent(orgIdentifier, projectIdentifier, pipelineIdentifier, optionalPipelineEntity);
+
+      connectorRef = optionalPipelineEntity.get().getConnectorRef();
+    }
+
+    gitAwareEntityHelper.validateRepo(
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, updateGitDetailsParams.getRepoName());
+  }
+
+  private void checkIfPipelineIsPresent(String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
+      Optional<PipelineEntity> optionalPipelineEntity) {
+    if (optionalPipelineEntity.isEmpty()) {
+      throw new EntityNotFoundException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
+          orgIdentifier, projectIdentifier, pipelineIdentifier));
+    }
   }
 
   @VisibleForTesting
@@ -1016,5 +1052,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         accountIdentifier, orgIdentifier, projIdentifier, EntityType.PIPELINES);
     gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
     gitXSettingsHelper.setDefaultRepoForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+  }
+
+  private void computeReferencesIfRemotePipeline(PipelineEntity pipelineEntity) {
+    if (PipelineGitXHelper.shouldPublishSetupUsages(pipelineEntity.getStoreType())) {
+      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity);
+    }
   }
 }

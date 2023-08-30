@@ -6,7 +6,9 @@
  */
 
 package io.harness.git;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.DiffRequest;
@@ -24,6 +26,7 @@ import io.harness.git.model.RevertAndPushResult;
 import java.io.IOException;
 import javax.annotation.Nullable;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 public interface GitClientV2 {
   void ensureRepoLocallyClonedAndUpdated(GitBaseRequest request);
 

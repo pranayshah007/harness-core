@@ -30,7 +30,6 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -46,9 +45,11 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.executable.SyncExecutableWithCapabilities;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
@@ -84,10 +85,10 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
 
   @Inject Clock clock;
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
-  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepBaseParameters stepElementParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     log.info("ExecuteSync called for CVNGAnalyzeDeploymentStep, Step Parameters: {} Ambiance: {}",
         stepElementParameters, ambiance);
@@ -115,7 +116,7 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
     MonitoredServiceSpecType monitoredServiceType = CVNGStepUtils.getMonitoredServiceSpecType(monitoredServiceNode);
     ResolvedCVConfigInfo resolvedCVConfigInfo =
         verifyStepCvConfigServiceMap.get(monitoredServiceType)
-            .fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+            .fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode);
     String monitoredServiceIdentifier = resolvedCVConfigInfo.getMonitoredServiceIdentifier();
     MonitoredServiceParams monitoredServiceParams =
         MonitoredServiceParams.builder()
@@ -142,29 +143,34 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
       SRMStepAnalysisActivity activity =
           getSRMAnalysisActivity(serviceEnvironmentParams, ambiance, monitoredServiceIdentifier);
       String duration = deploymentImpactStepParameter.getDuration();
-      String executionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(
-          ambiance, monitoredServiceIdentifier, serviceEnvironmentParams, getDurationFromString(duration));
-      activity.setExecutionNotificationDetailsId(executionDetailsId);
       Optional<ArtifactsOutcome> optionalArtifactsOutcome = getArtifactOutcomeFromAmbiance(ambiance);
+      String executionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(ambiance,
+          monitoredServiceIdentifier, stepElementParameters.getName(), serviceEnvironmentParams,
+          getDurationFromString(duration), optionalArtifactsOutcome);
+      activity.setExecutionNotificationDetailsId(executionDetailsId);
       if (optionalArtifactsOutcome.isPresent()) {
         activity.setArtifactType(optionalArtifactsOutcome.get().getPrimary().getArtifactType());
         activity.setArtifactTag(optionalArtifactsOutcome.get().getPrimary().getTag());
       }
+      activity.setUuid(executionDetailsId);
       String activityId = activityService.upsert(activity);
       log.info("Saved Step Analysis Activity {}", activityId);
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
           .stepOutcome(StepResponse.StepOutcome.builder()
                            .name("output")
-                           .outcome(AnalyzeDeploymentStepOutcome.builder().activityId(activityId).build())
+                           .outcome(AnalyzeDeploymentStepOutcome.builder()
+                                        .activityId(activityId)
+                                        .executionDetailsId(executionDetailsId)
+                                        .build())
                            .build())
           .build();
     }
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Value
@@ -174,6 +180,7 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
   @RecasterAlias("io.harness.cvng.cdng.services.impl.AnalyzeDeploymentStepOutcome")
   public static class AnalyzeDeploymentStepOutcome implements Outcome {
     String activityId;
+    String executionDetailsId;
   }
 
   @NotNull
@@ -199,7 +206,8 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
     return "SRM Step Analysis of " + monitoredServiceIdentifier;
   }
 
-  private Duration getDurationFromString(String duration) {
+  @VisibleForTesting
+  static Duration getDurationFromString(String duration) {
     String number = duration.substring(0, duration.length() - 1);
     if (duration.charAt(duration.length() - 1) == 'H') {
       return Duration.ofHours(Integer.parseInt(number));

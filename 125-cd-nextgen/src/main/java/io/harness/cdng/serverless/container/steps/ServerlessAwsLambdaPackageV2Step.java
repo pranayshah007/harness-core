@@ -7,8 +7,11 @@
 
 package io.harness.cdng.serverless.container.steps;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.aws.sam.AwsSamStepHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -33,6 +36,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ServerlessAwsLambdaPackageV2Step extends AbstractContainerStepV2<StepElementParameters> {
@@ -71,18 +76,19 @@ public class ServerlessAwsLambdaPackageV2Step extends AbstractContainerStepV2<St
     serverlessStepCommonHelper.verifyPluginImageIsProvider(serverlessAwsLambdaPackageV2StepParameters.getImage());
 
     Map<String, String> envVarMap = new HashMap<>();
+    serverlessStepCommonHelper.putValuesYamlEnvVars(ambiance, serverlessAwsLambdaPackageV2StepParameters, envVarMap);
 
-    return getUnitStep(
-        ambiance, stepElementParameters, accountId, logKey, parkedTaskId, serverlessAwsLambdaPackageV2StepParameters);
+    return getUnitStep(ambiance, stepElementParameters, accountId, logKey, parkedTaskId,
+        serverlessAwsLambdaPackageV2StepParameters, envVarMap);
   }
 
   public UnitStep getUnitStep(Ambiance ambiance, StepElementParameters stepElementParameters, String accountId,
       String logKey, String parkedTaskId,
-      ServerlessAwsLambdaPackageV2StepParameters serverlessAwsLambdaPackageV2StepParameters) {
+      ServerlessAwsLambdaPackageV2StepParameters serverlessAwsLambdaPackageV2StepParameters, Map envVarMap) {
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
         serverlessAwsLambdaPackageV2StepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 

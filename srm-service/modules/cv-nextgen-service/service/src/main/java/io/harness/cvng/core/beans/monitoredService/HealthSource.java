@@ -10,10 +10,26 @@ package io.harness.cvng.core.beans.monitoredService;
 import static io.harness.cvng.CVConstants.DATA_SOURCE_TYPE;
 
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AppDynamicsHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AwsPrometheusHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CloudWatchMetricsHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthSourceLogSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthSourceMetricSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DatadogLogHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DatadogMetricHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DynatraceHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.ELKHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.ErrorTrackingHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDeserializer;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceVersion;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NewRelicHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SplunkHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SplunkMetricHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverLogHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverMetricHealthSourceSpec;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.data.validator.EntityIdentifier;
 
@@ -54,6 +70,13 @@ public class HealthSource {
   @NotNull
   @ApiModelProperty(
       dataType = "io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec", name = "spec")
+  @Schema(name = "Health Source", description = "This is the Health Source entity defined in Harness",
+      anyOf = {AppDynamicsHealthSourceSpec.class, NewRelicHealthSourceSpec.class, StackdriverLogHealthSourceSpec.class,
+          SplunkHealthSourceSpec.class, PrometheusHealthSourceSpec.class, StackdriverMetricHealthSourceSpec.class,
+          DatadogMetricHealthSourceSpec.class, DatadogLogHealthSourceSpec.class, DynatraceHealthSourceSpec.class,
+          ErrorTrackingHealthSourceSpec.class, CustomHealthSourceMetricSpec.class, CustomHealthSourceLogSpec.class,
+          SplunkMetricHealthSourceSpec.class, ELKHealthSourceSpec.class, CloudWatchMetricsHealthSourceSpec.class,
+          AwsPrometheusHealthSourceSpec.class, NextGenHealthSourceSpec.class})
   HealthSourceSpec spec;
 
   @Value

@@ -7,10 +7,16 @@
 
 package io.harness.executions.steps;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.visitor.YamlTypes;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public enum ExecutionNodeType {
   GITOPS_MERGE_PR("GITOPS_MERGE_PR", StepSpecTypeConstants.GITOPS_MERGE_PR),
@@ -160,7 +166,11 @@ public enum ExecutionNodeType {
   SERVERLESS_AWS_LAMBDA_DEPLOY_V2("SERVERLESS_AWS_LAMBDA_DEPLOY_V2", YamlTypes.SERVERLESS_AWS_LAMBDA_DEPLOY_V2),
   SERVERLESS_AWS_LAMBDA_PACKAGE_V2("SERVERLESS_AWS_LAMBDA_DEPLOY_V2", YamlTypes.SERVERLESS_AWS_LAMBDA_PACKAGE_V2),
   AWS_CDK_BOOTSTRAP("AWS_CDK_BOOTSTRAP", YamlTypes.AWS_CDK_BOOTSTRAP),
-  AWS_CDK_SYNTH("AWS_CDK_SYNTH", YamlTypes.AWS_CDK_SYNTH);
+  AWS_CDK_SYNTH("AWS_CDK_SYNTH", YamlTypes.AWS_CDK_SYNTH),
+  AWS_CDK_DIFF("AWS_CDK_DIFF", YamlTypes.AWS_CDK_DIFF),
+  AWS_CDK_DEPLOY("AWS_CDK_DEPLOY", YamlTypes.AWS_CDK_DEPLOY),
+  AWS_CDK_DESTROY("AWS_CDK_DESTROY", YamlTypes.AWS_CDK_DESTROY),
+  AWS_CDK_ROLLBACK("AWS_CDK_ROLLBACK", YamlTypes.AWS_CDK_ROLLBACK);
 
   private final String name;
   private final String yamlType;

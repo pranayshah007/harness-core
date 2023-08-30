@@ -9,13 +9,17 @@ package io.harness.pms.execution.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class NodeProjectionUtils {
@@ -93,17 +97,18 @@ public class NodeProjectionUtils {
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.adviserResponse,
           NodeExecutionKeys.failureInfo, NodeExecutionKeys.notifyId, NodeExecutionKeys.endTs);
 
-  public static final Set<String> fieldsForIdentityStrategyStep = Sets.newHashSet(NodeExecutionKeys.identifier,
-      NodeExecutionKeys.name, NodeExecutionKeys.nodeId, NodeExecutionKeys.status, NodeExecutionKeys.executableResponses,
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.oldRetry, NodeExecutionKeys.planNode, NodeExecutionKeys.parentId);
+  public static final Set<String> fieldsForIdentityStrategyStep =
+      Sets.newHashSet(NodeExecutionKeys.identifier, NodeExecutionKeys.name, NodeExecutionKeys.nodeId,
+          NodeExecutionKeys.status, NodeExecutionKeys.executableResponses, NodeExecutionKeys.ambiance,
+          NodeExecutionKeys.oldRetry, NodeExecutionKeys.parentId, NodeExecutionKeys.stepType, NodeExecutionKeys.group);
 
   public static final Set<String> fieldsForNodeExecutionDelete = Sets.newHashSet(NodeExecutionKeys.timeoutInstanceIds,
       NodeExecutionKeys.adviserTimeoutInstanceIds, NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId,
-      NodeExecutionKeys.stepType, NodeExecutionKeys.executionInputConfigured);
+      NodeExecutionKeys.planId, NodeExecutionKeys.stepType, NodeExecutionKeys.executionInputConfigured);
 
-  public static final Set<String> fieldsForIdentityNodeCreation =
-      Sets.newHashSet(NodeExecutionKeys.planNode, NodeExecutionKeys.stepType, NodeExecutionKeys.uuid);
+  public static final Set<String> fieldsForIdentityNodeCreation = Sets.newHashSet(
+      NodeExecutionKeys.uuid, NodeExecutionKeys.stepType, NodeExecutionKeys.planId, NodeExecutionKeys.nodeId);
 
   public static final Set<String> fieldsForNodeAndAmbiance =
-      Sets.newHashSet(NodeExecutionKeys.planNode, NodeExecutionKeys.ambiance, NodeExecutionKeys.nodeId);
+      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.nodeId);
 }

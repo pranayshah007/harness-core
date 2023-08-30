@@ -3476,7 +3476,8 @@
               "enum": [
                 "UsernamePassword",
                 "ApiClientToken",
-                "None"
+                "None",
+                "Bearer Token(HTTP Header)"
               ]
             },
             "delegateSelectors": {
@@ -6831,7 +6832,7 @@
         },
         "versionLabel": {
           "type": "string",
-          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+          "pattern": "^[0-9a-zA-Z][^\\s/&]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6969,6 +6970,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "enableCache": {
+              "type": "boolean"
             },
             "k8sAuthEndpoint": {
               "type": "string"

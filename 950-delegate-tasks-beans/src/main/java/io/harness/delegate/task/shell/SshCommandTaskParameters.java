@@ -26,6 +26,7 @@ import lombok.experimental.SuperBuilder;
 public class SshCommandTaskParameters extends CommandTaskParameters {
   SshInfraDelegateConfig sshInfraDelegateConfig;
   String host;
+  boolean disableEvaluateExportVariable;
 
   @Override
   public void fetchInfraExecutionCapabilities(

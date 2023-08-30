@@ -69,7 +69,10 @@ import static org.springframework.security.crypto.bcrypt.BCrypt.checkpw;
 import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.LogoutResponse;
 import io.harness.beans.FeatureName;
@@ -306,6 +309,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.cache.Cache;
@@ -328,6 +333,9 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 /**
  * Created by anubhaw on 3/9/16.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_AMI_ASG, HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(PL)
 @ValidateOnExecution
 @Singleton
@@ -365,6 +373,7 @@ public class UserServiceImpl implements UserService {
   private static final String CCM = "CCM";
   private static final String STO = "STO";
   private static final String SRM = "SRM";
+  private static final Pattern EMAIL_PATTERN = Pattern.compile("^\\s*?(.+)@(.+?)\\s*$");
 
   /**
    * The Executor service.
@@ -3029,6 +3038,9 @@ public class UserServiceImpl implements UserService {
       updateOperations.set(UserKeys.externalUserId, user.getExternalUserId());
     }
 
+    if (isNotEmpty(user.getEmail())) {
+      updateOperations.set(UserKeys.email, user.getEmail());
+    }
     return updateUser(user.getUuid(), updateOperations);
   }
 
@@ -3268,7 +3280,7 @@ public class UserServiceImpl implements UserService {
       List<Account> updatedActiveAccounts = userServiceHelper.updatedActiveAccounts(user, accountId);
       List<Account> updatedPendingAccounts = userServiceHelper.updatedPendingAccount(user, accountId);
 
-      if (isUserPartOfAccountInNG.get()) {
+      if (isUserPartOfAccountInNG.get() && removeUserFilter.equals(NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK)) {
         userServiceHelper.deleteUserFromNG(userId, accountId, removeUserFilter);
       }
 
@@ -3278,6 +3290,7 @@ public class UserServiceImpl implements UserService {
 
       if (updatedActiveAccounts.isEmpty() && updatedPendingAccounts.isEmpty()) {
         deleteUser(user);
+        userServiceHelper.deleteUserMetadata(userId);
         return;
       }
 
@@ -3695,7 +3708,7 @@ public class UserServiceImpl implements UserService {
     HashMap<String, Object> userData = new HashMap<>();
     userData.put(UserKeys.email, user.getEmail());
     userData.put("id", user.getUuid());
-    userData.put(UserKeys.name, user.getName());
+    userData.put(UserKeys.name, removeEmailDomainFromUserName(user.getName()));
     userData.put(UserKeys.companyName, user.getCompanyName());
 
     byte[] jwtCannySecretBytes;
@@ -3712,6 +3725,15 @@ public class UserServiceImpl implements UserService {
         .setClaims(userData)
         .signWith(SignatureAlgorithm.HS256, jwtCannySecretBytes)
         .compact();
+  }
+
+  @VisibleForTesting
+  String removeEmailDomainFromUserName(String userName) {
+    if (!isEmpty(userName)) {
+      Matcher emailMatcher = EMAIL_PATTERN.matcher(userName);
+      userName = emailMatcher.matches() ? emailMatcher.group(1) : userName;
+    }
+    return userName;
   }
 
   private Role ensureRolePresent(String roleId) {

@@ -14,6 +14,7 @@ import static io.harness.springdata.SpringDataMongoUtils.setUnset;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.eraro.Level;
 import io.harness.execution.NodeExecution;
@@ -44,6 +45,7 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 public class WaitForExecutionInputCallback implements OldNotifyCallback {
   @Inject private NodeExecutionService nodeExecutionService;
+  @Inject private PlanService planService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private OrchestrationEngine engine;
 
@@ -64,7 +66,7 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
   @Override
   public void notifyTimeout(Map<String, ResponseData> responseMap) {
     NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-    PlanNode node = nodeExecution.getNode();
+    PlanNode node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
     FailureInfo failureInfo =
         FailureInfo.newBuilder()
             .setErrorMessage("ExecutionInputExpired")
@@ -79,6 +81,7 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
                     .build())
             .build();
 
+    // TODO refactor this logic its confusing what should happen if no advisers are present
     // ProceedWithDefault FailureStrategy is not configured, then expire the nodeExecution.
     if (node.getAdviserObtainments().stream().noneMatch(
             o -> o.getType().getType().equals(ProceedWithDefaultValueAdviser.ADVISER_TYPE.getType()))) {
@@ -98,7 +101,8 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
 
   @Override
   public void notify(Map<String, ResponseData> response) {
-    nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.QUEUED, null, EnumSet.of(Status.INPUT_WAITING));
+    nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.QUEUED,
+        ops -> ops.unset(NodeExecutionKeys.resolvedParams), EnumSet.of(Status.INPUT_WAITING));
     executorService.submit(() -> engine.startNodeExecution(ambiance));
   }
 

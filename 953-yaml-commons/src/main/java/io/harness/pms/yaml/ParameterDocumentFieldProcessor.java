@@ -7,8 +7,11 @@
 
 package io.harness.pms.yaml;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionResolver;
@@ -20,8 +23,8 @@ import io.harness.pms.yaml.validation.RuntimeValidatorResponse;
 
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ClassUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ParameterDocumentFieldProcessor {
@@ -73,7 +76,7 @@ public class ParameterDocumentFieldProcessor {
     if (valueField != null) {
       Object finalValue = engineExpressionResolver.resolve(valueField, expressionMode);
       if (finalValue != null) {
-        finalValue = getCastedFinalValueForPrimitiveTypesAndWrappers(finalValue, field);
+        finalValue = ParameterFieldUtils.getCastedFinalValueForPrimitiveTypesAndWrappers(finalValue, field);
         field.updateWithValue(finalValue);
         ProcessorResult processorResult = validateUsingValidator(finalValue, inputSetValidator);
         if (processorResult.isError()) {
@@ -103,39 +106,5 @@ public class ParameterDocumentFieldProcessor {
           .build();
     }
     return ProcessorResult.builder().build();
-  }
-
-  // Handling primitive types and wrappers when value class of document field doesn't match the class of finalValue
-  private Object getCastedFinalValueForPrimitiveTypesAndWrappers(Object finalValue, ParameterDocumentField field) {
-    try {
-      Class<?> fieldClass = Class.forName(field.getValueClass());
-      if (ClassUtils.isPrimitiveOrWrapper(fieldClass) && !fieldClass.isAssignableFrom(finalValue.getClass())) {
-        if (fieldClass.equals(Integer.class)) {
-          if (finalValue.getClass().equals(String.class)) {
-            finalValue = Integer.parseInt(finalValue.toString());
-          } else if (finalValue.getClass().equals(Double.class)) {
-            finalValue = ((Double) finalValue).intValue();
-          } else if (finalValue.getClass().equals(Long.class)) {
-            finalValue = ((Long) finalValue).intValue();
-          }
-        } else if (fieldClass.equals(Double.class)) {
-          if (finalValue.getClass().equals(String.class)) {
-            finalValue = Double.valueOf((String) finalValue);
-          } else if (finalValue.getClass().equals(Integer.class)) {
-            finalValue = new Double((Integer) finalValue);
-          } else if (finalValue.getClass().equals(Long.class)) {
-            finalValue = new Double((Long) finalValue);
-          }
-        } else if (fieldClass.equals(Boolean.class)) {
-          if (finalValue.getClass().equals(String.class)) {
-            finalValue = Boolean.valueOf((String) finalValue);
-          }
-        }
-      }
-    } catch (Exception ex) {
-      log.error(String.format("Exception in casting newValue of type %s into parameter field of type %s",
-          finalValue.getClass().toString(), field.getValueClass()));
-    }
-    return finalValue;
   }
 }

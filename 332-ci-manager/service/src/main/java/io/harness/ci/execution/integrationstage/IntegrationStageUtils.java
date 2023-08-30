@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
@@ -14,7 +14,6 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.HOSTED_VM;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
-import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_BUILD_MULTIPLIER;
 import static io.harness.ci.commonconstants.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
@@ -36,8 +35,11 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.PROPERTIES;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.execution.BranchWebhookEvent;
@@ -66,16 +68,16 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
-import io.harness.ci.buildstate.CodebaseUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.buildstate.InfraInfoUtils;
+import io.harness.ci.execution.buildstate.CodebaseUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.InfraInfoUtils;
+import io.harness.ci.execution.states.RunStep;
+import io.harness.ci.execution.states.RunTestsStep;
+import io.harness.ci.execution.utils.WebhookTriggerProcessorUtils;
 import io.harness.ci.pipeline.executions.beans.CIImageDetails;
 import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
 import io.harness.ci.pipeline.executions.beans.CIScmDetails;
 import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
-import io.harness.ci.states.RunStep;
-import io.harness.ci.states.RunTestsStep;
-import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
@@ -133,6 +135,8 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(HarnessTeam.CI)
 @Slf4j
 public class IntegrationStageUtils {
@@ -850,9 +854,6 @@ public class IntegrationStageUtils {
     } else if (type == VM || type == Infrastructure.Type.DOCKER) {
       infraOSType = InfraInfoUtils.getInfraOS(infrastructure).toString();
       infraHostType = SELF_HOSTED;
-    } else if (infrastructure.getType() == KUBERNETES_HOSTED) {
-      infraOSType = getK8OS(infrastructure).toString();
-      infraHostType = HARNESS_HOSTED;
     } else if (infrastructure.getType() == HOSTED_VM) {
       infraOSType = VmInitializeUtils.getOS(infrastructure).toString();
       infraOSArchType = VmInitializeUtils.getArchType(infrastructure).toString();
@@ -876,7 +877,7 @@ public class IntegrationStageUtils {
   }
 
   public static Long getStageTtl(CILicenseService ciLicenseService, String accountId, Infrastructure infrastructure) {
-    if (infrastructure.getType() != HOSTED_VM && infrastructure.getType() != KUBERNETES_HOSTED) {
+    if (infrastructure.getType() != HOSTED_VM) {
       return CIConstants.STAGE_MAX_TTL_SECS;
     }
 
@@ -895,7 +896,6 @@ public class IntegrationStageUtils {
   public static Double getBuildTimeMultiplierForHostedInfra(Infrastructure infrastructure) {
     CIInfraDetails ciInfraDetails = getCiInfraDetails(infrastructure);
     switch (infrastructure.getType()) {
-      case KUBERNETES_HOSTED:
       case HOSTED_VM:
         if (isNotEmpty(ciInfraDetails.getInfraOSType())) {
           OSType osType = OSType.fromString(ciInfraDetails.getInfraOSType());

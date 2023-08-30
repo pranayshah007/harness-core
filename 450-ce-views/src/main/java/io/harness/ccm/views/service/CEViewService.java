@@ -35,6 +35,8 @@ public interface CEViewService {
   HashMap<String, String> getPerspectiveIdAndFolderId(String accountId, List<String> ceViewIds);
   void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName);
   CEView updateTotalCost(CEView ceView);
+  void updateAllPerspectiveWithPerspectivePreferenceDefaultSettings(
+      String accountId, Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings);
   boolean delete(String uuid, String accountId);
   List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
   List<QLCEView> getAllViews(

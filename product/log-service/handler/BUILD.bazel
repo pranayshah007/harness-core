@@ -30,6 +30,7 @@ go_library(
         "//product/log-service/store",
         "//product/log-service/store/bolt",
         "//product/log-service/stream",
+        "//product/log-service/stream/redis",
         "//product/platform/client",
         "@com_github_aws_aws_sdk_go//aws/awserr",
         "@com_github_aws_aws_sdk_go//service/s3",

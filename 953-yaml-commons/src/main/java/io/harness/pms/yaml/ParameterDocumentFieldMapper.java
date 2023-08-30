@@ -7,11 +7,13 @@
 
 package io.harness.pms.yaml;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.CastedField;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.ParameterFieldCastException;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterDocumentField.ParameterDocumentFieldKeys;
 import io.harness.utils.RecastReflectionUtils;
@@ -23,6 +25,7 @@ import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 @Slf4j
@@ -62,6 +65,11 @@ public class ParameterDocumentFieldMapper {
 
     ParameterFieldValueWrapper<?> parameterFieldValueWrapper =
         RecastOrchestrationUtils.fromMap(documentField.getValueDoc(), ParameterFieldValueWrapper.class);
+    if (parameterFieldValueWrapper != null) {
+      parameterFieldValueWrapper =
+          new ParameterFieldValueWrapper<>(ParameterFieldUtils.getCastedFinalValueForPrimitiveTypesAndWrappers(
+              parameterFieldValueWrapper.getValue(), documentField));
+    }
     checkValueClass(documentField, parameterFieldValueWrapper);
     return ParameterField.builder()
         .expression(documentField.isExpression())
@@ -97,14 +105,15 @@ public class ParameterDocumentFieldMapper {
        */
       if (cls.isEnum() && parameterFieldValueWrapper.getValue().getClass().isAssignableFrom(String.class)) {
         for (Object object : cls.getEnumConstants()) {
-          if (((Enum) object).name().equalsIgnoreCase((String) parameterFieldValueWrapper.getValue())) {
+          if (((Enum) object).name().equalsIgnoreCase((String) parameterFieldValueWrapper.getValue())
+              || object.toString().equalsIgnoreCase((String) parameterFieldValueWrapper.getValue())) {
             return;
           }
         }
       }
-      throw new ParameterFieldCastException(
-          String.format("The field should be of type [%s] but got: [%s] with value [%s]", cls.getSimpleName(),
-              parameterFieldValueWrapper.getValue().getClass().getSimpleName(), parameterFieldValueWrapper.getValue()));
+      // TODO(Shalini): throw error instead of just logging after handling the case of parameterField<Timeout>
+      log.error(String.format("The field should be of type [%s] but got: [%s] with value [%s]", cls.getSimpleName(),
+          parameterFieldValueWrapper.getValue().getClass().getSimpleName(), parameterFieldValueWrapper.getValue()));
     }
   }
 

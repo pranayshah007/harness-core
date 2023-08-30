@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.helpers;
-
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.EXCEPTION_WHILE_PROCESSING;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.FAILED_TO_FETCH_PR_DETAILS;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.INVALID_PAYLOAD;
@@ -27,7 +26,11 @@ import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalSta
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_CONFIRMATION_SUCCESSFUL;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.VALIDATION_FAILED_FOR_TRIGGER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.PlanExecution;
+import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
@@ -36,6 +39,10 @@ import io.harness.ngtriggers.beans.response.TargetExecutionSummary;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus;
 import io.harness.ngtriggers.beans.scm.ParsePayloadResponse;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.dtos.NGPipelineExecutionResponseDTO;
 
 import io.grpc.Status;
@@ -44,6 +51,7 @@ import java.util.EnumSet;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @UtilityClass
 public class TriggerEventResponseHelper {
   public TriggerEventResponse toResponse(TriggerEventResponse.FinalStatus status,
@@ -74,8 +82,8 @@ public class TriggerEventResponseHelper {
 
   public TriggerEventResponse toResponseWithPollingInfo(TriggerEventResponse.FinalStatus status,
       TriggerWebhookEvent triggerWebhookEvent, NGPipelineExecutionResponseDTO pipelineExecutionResponseDTO,
-      NGTriggerEntity ngTriggerEntity, String message, TargetExecutionSummary targetExecutionSummary,
-      String pollingDocId) {
+      NGTriggerEntity ngTriggerEntity, NGTriggerConfigV2 ngTriggerConfigV2, String message,
+      TargetExecutionSummary targetExecutionSummary, String pollingDocId, String build) {
     TriggerEventResponse response =
         TriggerEventResponse.builder()
             .accountId(triggerWebhookEvent.getAccountId())
@@ -91,7 +99,18 @@ public class TriggerEventResponseHelper {
             .ngTriggerType(ngTriggerEntity == null ? null : ngTriggerEntity.getType())
             .targetExecutionSummary(targetExecutionSummary)
             .pollingDocId(pollingDocId)
+            .build(build)
             .build();
+    if (NGTriggerType.ARTIFACT.equals(ngTriggerEntity == null ? null : ngTriggerEntity.getType())) {
+      response.setBuildSourceType(((ArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec()).fetchBuildType());
+    }
+    if (NGTriggerType.MANIFEST.equals(ngTriggerEntity == null ? null : ngTriggerEntity.getType())) {
+      response.setBuildSourceType(((ManifestTriggerConfig) ngTriggerConfigV2.getSource().getSpec()).fetchBuildType());
+    }
+    if (NGTriggerType.MULTI_REGION_ARTIFACT.equals(ngTriggerEntity == null ? null : ngTriggerEntity.getType())) {
+      response.setBuildSourceType(
+          ((MultiRegionArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec()).fetchBuildType());
+    }
     if (pipelineExecutionResponseDTO == null) {
       response.setExceptionOccurred(true);
       return response;
@@ -123,8 +142,8 @@ public class TriggerEventResponseHelper {
   }
 
   public TriggerEventResponse toResponseWithPollingInfo(TriggerEventResponse.FinalStatus status,
-      TriggerWebhookEvent triggerWebhookEvent, NGTriggerEntity ngTriggerEntity, String message,
-      TargetExecutionSummary targetExecutionSummary, String pollingDocId) {
+      TriggerWebhookEvent triggerWebhookEvent, NGTriggerEntity ngTriggerEntity, NGTriggerConfigV2 ngTriggerConfigV2,
+      String message, TargetExecutionSummary targetExecutionSummary, String pollingDocId, String build) {
     TriggerEventResponse response =
         TriggerEventResponse.builder()
             .accountId(triggerWebhookEvent.getAccountId())
@@ -140,8 +159,20 @@ public class TriggerEventResponseHelper {
             .targetExecutionSummary(targetExecutionSummary)
             .ngTriggerType(ngTriggerEntity == null ? null : ngTriggerEntity.getType())
             .pollingDocId(pollingDocId)
+            .build(build)
             .build();
     response.setExceptionOccurred(false);
+
+    if (NGTriggerType.ARTIFACT.equals(ngTriggerEntity == null ? null : ngTriggerEntity.getType())) {
+      response.setBuildSourceType(((ArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec()).fetchBuildType());
+    }
+    if (NGTriggerType.MANIFEST.equals(ngTriggerEntity == null ? null : ngTriggerEntity.getType())) {
+      response.setBuildSourceType(((ManifestTriggerConfig) ngTriggerConfigV2.getSource().getSpec()).fetchBuildType());
+    }
+    if (NGTriggerType.MULTI_REGION_ARTIFACT.equals(ngTriggerEntity == null ? null : ngTriggerEntity.getType())) {
+      response.setBuildSourceType(
+          ((MultiRegionArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec()).fetchBuildType());
+    }
     return response;
   }
 
@@ -190,6 +221,8 @@ public class TriggerEventResponseHelper {
         .triggerIdentifier(response.getTriggerIdentifier())
         .targetExecutionSummary(response.getTargetExecutionSummary())
         .pollingDocId(response.getPollingDocId())
+        .buildSourceType(response.getBuildSourceType())
+        .build(response.getBuild())
         .build();
   }
 

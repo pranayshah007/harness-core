@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.helm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
@@ -20,6 +22,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 public class HelmInstallCommandRequestNG extends HelmCommandRequestNG {
   @Builder.Default private long timeoutInMillis = 600000;
@@ -36,12 +39,12 @@ public class HelmInstallCommandRequestNG extends HelmCommandRequestNG {
       String commandName, boolean useLatestKubectlVersion, Integer prevReleaseVersion, Integer newReleaseVersion,
       String gcpKeyPath, boolean ignoreReleaseHistFailStatus, String releaseHistoryPrefix,
       List<ServiceHookDelegateConfig> serviceHooks, boolean useRefactorSteadyStateCheck, boolean skipSteadyStateCheck,
-      boolean sendTaskProgressEvents) {
+      boolean sendTaskProgressEvents, boolean disableFabric8) {
     super(releaseName, HelmCommandType.INSTALL, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
         useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, useRefactorSteadyStateCheck,
-        skipSteadyStateCheck, sendTaskProgressEvents);
+        skipSteadyStateCheck, sendTaskProgressEvents, disableFabric8);
     this.prevReleaseVersion = prevReleaseVersion;
     this.newReleaseVersion = newReleaseVersion;
     this.ignoreReleaseHistFailStatus = ignoreReleaseHistFailStatus;

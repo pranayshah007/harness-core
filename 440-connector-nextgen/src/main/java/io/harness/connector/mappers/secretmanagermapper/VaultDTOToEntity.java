@@ -46,6 +46,7 @@ public class VaultDTOToEntity implements ConnectorDTOToEntityMapper<VaultConnect
         .serviceAccountTokenPath(connectorDTO.getServiceAccountTokenPath())
         .k8sAuthEndpoint(connectorDTO.getK8sAuthEndpoint())
         .renewAppRoleToken(connectorDTO.isRenewAppRoleToken())
+        .enableCache(connectorDTO.isEnableCache())
         .build();
   }
 }

@@ -1,3 +1,8 @@
+// Copyright 2023 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 package zipwork
 
 import (
@@ -6,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -41,8 +47,11 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
-				Errorln("consumer execute: cannot process message")
-			continue
+				WithField("ConsumerGroup", cfg.ConsumerWorker.ConsumerGroup).
+				WithError(err).
+				Errorln("consumer execute: cannot process message, terminating zipworker gracefully")
+			// gracefully exit the loop
+			return
 		}
 
 		var event entity.EventQueue
@@ -51,15 +60,22 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithError(err).
 				Errorln("consumer execute: cannot unmarshal message")
 			continue
 		}
+
+		logEntryWorker.
+			WithField("files", event.FilesInPage).
+			Infoln("Starting download IN_PROGRESS for prefix:", event.Key)
 
 		var info entity.ResponsePrefixDownload
 		infoBytes, err := c.Get(ctx, event.Key)
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("key", event.Key).
+				WithError(err).
 				Errorln("consumer execute: cannot get info from cache")
 			continue
 		}
@@ -68,6 +84,8 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("key", event.Key).
+				WithError(err).
 				Errorln("consumer execute: cannot unmarshal info from cache")
 			continue
 		}
@@ -77,13 +95,16 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("key", event.Key).
+				WithError(err).
 				Errorln("consumer execute: cannot create update cache info")
 			continue
 		}
 
 		logEntryWorker.
 			WithField("time", time.Now().Format(time.RFC3339)).
-			Infoln("message has been processed by ", wID)
+			WithField("key", event.Key).
+			Infoln("message has been processed to IN_PROGRESS by ", wID)
 
 		internal, cancel := context.WithCancel(context.Background())
 
@@ -92,6 +113,7 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 			cancel()
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("Error While downloadZipUploadRoutine for key:", event.Key).
 				Errorln(err.Error())
 
 			info.Status = entity.ERROR
@@ -101,6 +123,8 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 			if err != nil {
 				logEntryWorker.
 					WithField("time", time.Now().Format(time.RFC3339)).
+					WithField("key", event.Key).
+					WithError(err).
 					Errorln("consumer execute: cannot create update cache info")
 				continue
 			}
@@ -111,9 +135,12 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 		if err != nil {
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
+				WithField("key", event.Key).
+				WithError(err).
 				Errorln("consumer execute: cannot create update cache info")
 			continue
 		}
+		logEntryWorker.WithField("key", event.Key).Infoln("cache marked as SUCCESS")
 	}
 }
 
@@ -136,6 +163,11 @@ func downloadZipUploadRoutine(ctx context.Context, s store.Store, zipPrefix stri
 	// zip
 	gErrGroup.Go(func() error {
 		for _, key := range out {
+			// skip download logs.zip in the new zip
+			if strings.Contains(key, "logs.zip") {
+				continue
+			}
+
 			fileDownloaded, err := s.Download(ctx, key)
 			if err != nil {
 				return fmt.Errorf("zipfile: failed to download: %w", err)

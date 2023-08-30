@@ -18,4 +18,5 @@ pipeline:
                       connectorRef: conn
                       imagePath: test
                       region: us-west-1
+                      registryId: registry
                       tag: <+input>

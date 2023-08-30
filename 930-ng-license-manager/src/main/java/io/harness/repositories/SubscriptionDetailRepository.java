@@ -6,7 +6,6 @@
  */
 
 package io.harness.repositories;
-
 import io.harness.annotation.HarnessRepo;
 import io.harness.subscription.entities.SubscriptionDetail;
 

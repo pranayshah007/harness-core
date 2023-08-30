@@ -2,6 +2,28 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  kubeVersion: ""
+  commonAnnotations: {}
+  commonLabels: {}
+  secrets:
+    app:
+      external:
+        ## if FALSE, Generate all secrets within K8s Namespace
+        ## If TRUE, use one of the followings kids to inject
+        enabled: false
+        kind:
+          # use ExternalSecrets Operator
+          externalSecrets: false
+          # Use CSI Driver volume mount
+          csiSecretDriver: false
+    database:
+      external:
+        enabled: false
+        kind:
+          externalSecrets: false
+          csiSecretDriver: false
+
+  useExternalSecrets: false
   loadbalancerURL: ""
   database:
     postgres:
@@ -38,6 +60,18 @@ global:
       secretName: ""
       userKey: ""
       passwordKey: ""
+      extraArgs: ""
+      certName: ""
+      certKey: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis:6379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
       extraArgs: ""
   license:
     cg: ''
@@ -78,16 +112,16 @@ replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
 
-appLogLevel: "INFO"
-
 allowedOrigins: ""
+
+appLogLevel: "INFO"
 
 image:
   registry: docker.io
   repository: harness/ng-manager-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "76019"
+  tag: "80209"
   digest: ""
   imagePullSecrets: []
 
@@ -97,7 +131,7 @@ initContainer:
     repository: busybox
     tag: "1.35.0"
     digest: ""
-    imagePullSecrets: []
+    imagePullSecrets: []  
 
 waitForInitContainer:
   image:
@@ -193,6 +227,7 @@ probes:
     failureThreshold: 25
 
 service:
+  annotations: {}
   type: ClusterIP
   protocol: TCP
   port: 7090
@@ -202,19 +237,17 @@ service:
 
 resources:
   limits:
-    cpu: 2
     memory: 8192Mi
   requests:
     cpu: 2
     memory: 200Mi
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
+  targetCPU: ""
+  targetMemory: ""
 nodeSelector: {}
 
 tolerations: []
@@ -222,3 +255,35 @@ tolerations: []
 affinity: {}
 
 additionalConfigs: {}
+
+# extraVolumes:
+# - name: volume-test
+#   configMap:
+#     name: test-config
+#     readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: test-volume-mount
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:
+
+# extraEnvVars:
+# - name: POD_NAME
+#   valueFrom:
+#     fieldRef:
+#       fieldPath: metadata.name
+extraEnvVars: []
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

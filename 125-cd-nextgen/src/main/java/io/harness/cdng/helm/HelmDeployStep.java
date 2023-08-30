@@ -9,7 +9,10 @@ package io.harness.cdng.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskChainExecutable;
@@ -40,7 +43,6 @@ import io.harness.delegate.task.helm.HelmInstallCommandRequestNG.HelmInstallComm
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -54,6 +56,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
@@ -62,6 +65,8 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDP)
 @Slf4j
 public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmStepExecutor {
@@ -80,30 +85,29 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
   @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
   }
 
   public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, StepInputPackage inputPackage) {
     return nativeHelmStepHelper.startChainLink(this, ambiance, stepElementParameters);
   }
 
   @Override
   public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
+      StepBaseParameters stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     return nativeHelmStepHelper.executeNextLink(this, ambiance, stepParameters, passThroughData, responseSupplier);
   }
 
   @Override
-  public ProgressData handleProgress(
-      Ambiance ambiance, StepElementParameters stepParameters, ProgressData progressData) {
+  public ProgressData handleProgress(Ambiance ambiance, StepBaseParameters stepParameters, ProgressData progressData) {
     if (progressData instanceof HelmDeployProgressData) {
       if (cdFeatureFlagHelper.isEnabled(
               AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG)) {
@@ -130,7 +134,7 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
 
   @Override
   public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
-      StepElementParameters stepParameters, PassThroughData passThroughData,
+      StepBaseParameters stepParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof CustomFetchResponsePassThroughData) {
       return nativeHelmStepHelper.handleCustomTaskFailure((CustomFetchResponsePassThroughData) passThroughData);
@@ -215,7 +219,7 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
 
   @Override
   public TaskChainResponse executeHelmTask(ManifestOutcome manifestOutcome, Ambiance ambiance,
-      StepElementParameters stepParameters, List<String> valuesFileContents,
+      StepBaseParameters stepParameters, List<String> valuesFileContents,
       NativeHelmExecutionPassThroughData executionPassThroughData, boolean shouldOpenFetchFilesLogStream,
       UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructure = executionPassThroughData.getInfrastructure();
@@ -258,7 +262,8 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
                 AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG))
             .skipSteadyStateCheck(skipSteadyStateCheck)
             .sendTaskProgressEvents(cdFeatureFlagHelper.isEnabled(
-                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG));
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG))
+            .disableFabric8(cdStepHelper.shouldDisableFabric8(AmbianceUtils.getAccountId(ambiance)));
 
     if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       helmCommandRequestBuilder.serviceHooks(nativeHelmStepHelper.getServiceHooks(ambiance));

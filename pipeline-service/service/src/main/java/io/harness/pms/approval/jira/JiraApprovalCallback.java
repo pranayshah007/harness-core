@@ -6,14 +6,16 @@
  */
 
 package io.harness.pms.approval.jira;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.exception.ApprovalStepNGException;
@@ -27,10 +29,12 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.approval.AbstractApprovalCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.evaluation.CriteriaEvaluator;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
@@ -49,6 +53,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Slf4j
@@ -58,6 +63,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
 
   @Builder
   public JiraApprovalCallback(String approvalInstanceId) {
@@ -69,9 +75,12 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
     JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceService.get(approvalInstanceId);
     try (AutoLogContext ignore = instance.autoLogContext()) {
       pushInternal(response);
+    } finally {
+      if (ParameterField.isNotNull(instance.getRetryInterval())) {
+        resetNextIteration(instance);
+      }
     }
   }
-
   private void pushInternal(Map<String, ResponseData> response) {
     JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceService.get(approvalInstanceId);
     log.info("Jira Approval Instance callback for instance id - {}", instance.getId());
@@ -195,6 +204,10 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
   protected void updateTicketFieldsInApprovalInstance(TicketNG ticket, ApprovalInstance instance) {
     approvalInstanceService.updateTicketFieldsInJiraApprovalInstance(
         (JiraApprovalInstance) instance, (JiraIssueNG) ticket);
+  }
+  private void resetNextIteration(JiraApprovalInstance instance) {
+    approvalInstanceService.resetNextIterations(instance.getId(), instance.recalculateNextIterations());
+    irregularApprovalInstanceHandler.wakeup();
   }
 
   @Override

@@ -234,6 +234,10 @@ public interface WorkflowService extends OwnedByApplication, SettingsServiceMani
 
   List<String> getLastSuccessfulWorkflowExecutionIds(String appId, String workflowId, String serviceId);
 
+  WorkflowExecution getLastSuccessfulWorkflowExecution(String accountId, String appId, String serviceId);
+
+  WorkflowExecution getLastWorkflowExecutionByInfrastructure(String accountId, String appId, String infraId);
+
   boolean isStateValid(String appId, String stateExecutionId);
 
   ExecutionStatus getExecutionStatus(String appId, String stateExecutionId);

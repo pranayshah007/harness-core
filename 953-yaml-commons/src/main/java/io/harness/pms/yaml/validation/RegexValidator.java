@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.yaml.validation;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.expression.EngineExpressionResolver;
 
@@ -20,6 +22,8 @@ import java.util.regex.Pattern;
  * ${input}.regex(^prod*) #render and use matcher
  * ${input}.regex(^${env.name}_[a-z]+) #render and use matcher
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RegexValidator implements RuntimeValidator {
   private final EngineExpressionResolver engineExpressionResolver;

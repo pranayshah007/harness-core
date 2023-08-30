@@ -6,12 +6,16 @@
  */
 
 package io.harness.pms.approval;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.security.dto.PrincipalType.USER;
 
+import static java.util.Objects.isNull;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
@@ -61,6 +65,7 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Slf4j
 public class ApprovalResourceServiceImpl implements ApprovalResourceService {
@@ -87,9 +92,15 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
   }
 
   @Override
-  public ApprovalInstanceResponseDTO get(String approvalInstanceId) {
+  public ApprovalInstanceResponseDTO get(String approvalInstanceId, String accountId) {
+    ApprovalInstance approvalInstance = approvalInstanceService.get(approvalInstanceId);
+    if (!isNull(accountId) && !accountId.equals(approvalInstance.getAccountId())) {
+      throw new InvalidRequestException(
+          String.format("Account Identifier provided %s doesn't match with approval instance's account identifier: %s",
+              accountId, approvalInstance.getAccountId()));
+    }
     return approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(
-        approvalInstanceService.get(approvalInstanceId));
+        approvalInstanceService.get(approvalInstanceId), true);
   }
 
   @Override

@@ -6,18 +6,22 @@
  */
 
 package io.harness.helm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by anubhaw on 3/23/18.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDP)
 public final class HelmConstants {
   public static final String HELM_PATH_PLACEHOLDER = "${HELM_PATH}";

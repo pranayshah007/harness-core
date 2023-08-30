@@ -8,10 +8,12 @@
 package io.harness.engine.interrupts.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.interrupts.Interrupt;
 import io.harness.tasks.ResponseData;
@@ -21,6 +23,8 @@ import com.google.inject.Inject;
 import java.util.Map;
 import lombok.Builder;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 public class AllInterruptCallback implements OldNotifyCallback {
   @Inject private InterruptService interruptService;
@@ -34,7 +38,7 @@ public class AllInterruptCallback implements OldNotifyCallback {
 
   @Override
   public void notify(Map<String, ResponseData> response) {
-    interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    // Do nothing. Do not mark the interrupt PROCESSED here. It will be marked on pipeline end.
   }
 
   @Override

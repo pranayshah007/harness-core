@@ -12,8 +12,11 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSource;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.configfile.ConfigFileWrapper;
@@ -37,23 +40,26 @@ import software.wings.beans.artifact.ArtifactStream;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.service.intfc.WorkflowService;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDC)
 public interface ServiceV2Mapper {
   default boolean isMigrationSupported() {
     return true;
   }
 
-  ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
-      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
+  ServiceDefinition getServiceDefinition(WorkflowService workflowService, MigrationContext migrationContext,
+      Service service, List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations);
 
   default List<NGYamlFile> getChildYamlFiles(
@@ -126,7 +132,8 @@ public interface ServiceV2Mapper {
       return null;
     }
     List<HelmChartConfig> helmCharts = manifests.stream()
-                                           .map(applicationManifest -> applicationManifest.getHelmChartConfig())
+                                           .map(ApplicationManifest::getHelmChartConfig)
+                                           .filter(Objects::nonNull)
                                            .collect(Collectors.toList());
     if (helmCharts.size() <= 1) {
       return null;

@@ -6,7 +6,6 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
@@ -18,7 +17,10 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
@@ -41,6 +43,7 @@ import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.ff.FeatureFlagModule;
+import io.harness.filestore.FileStoreClientModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -99,6 +102,7 @@ import io.harness.pms.event.entitycrud.PipelineEntityCRUDStreamListener;
 import io.harness.pms.event.entitycrud.ProjectEntityCrudStreamListener;
 import io.harness.pms.event.pollingevent.PollingEventStreamListener;
 import io.harness.pms.event.triggerwebhookevent.TriggerExecutionEventStreamListener;
+import io.harness.pms.events.base.PmsMessageListener;
 import io.harness.pms.expressions.PMSExpressionEvaluatorProvider;
 import io.harness.pms.health.HealthResource;
 import io.harness.pms.health.HealthResourceImpl;
@@ -150,6 +154,8 @@ import io.harness.pms.plan.creation.NodeTypeLookupServiceImpl;
 import io.harness.pms.plan.execution.PlanExecutionResource;
 import io.harness.pms.plan.execution.PlanExecutionResourceImpl;
 import io.harness.pms.plan.execution.mapper.PipelineExecutionFilterPropertiesMapper;
+import io.harness.pms.plan.execution.service.ExecutionGraphService;
+import io.harness.pms.plan.execution.service.ExecutionGraphServiceImpl;
 import io.harness.pms.plan.execution.service.ExpressionEvaluatorService;
 import io.harness.pms.plan.execution.service.ExpressionEvaluatorServiceImpl;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
@@ -264,6 +270,9 @@ import org.jooq.ExecuteListener;
 import org.redisson.api.RedissonClient;
 import org.springframework.core.convert.converter.Converter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TRIGGERS, HarnessModuleComponent.CDS_PIPELINE,
+        HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class PipelineServiceModule extends AbstractModule {
@@ -399,6 +408,9 @@ public class PipelineServiceModule extends AbstractModule {
     install(new HsqsServiceClientModule(this.configuration.getQueueServiceClientConfig(), BEARER.getServiceId()));
     install(new SSCAServiceClientModuleV2(this.configuration.getSscaServiceConfig(), PIPELINE_SERVICE.getServiceId()));
 
+    install(new FileStoreClientModule(configuration.getNgManagerServiceHttpClientConfig(),
+        configuration.getManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
+
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(PMSOutboxEventHandler.class);
     bind(HPersistence.class).to(MongoPersistence.class);
@@ -414,6 +426,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PipelineRbacService.class).to(PipelineRbacServiceImpl.class);
     bind(PMSInputSetService.class).to(PMSInputSetServiceImpl.class);
     bind(PMSExecutionService.class).to(PMSExecutionServiceImpl.class);
+    bind(ExecutionGraphService.class).to(ExecutionGraphServiceImpl.class);
     bind(ExpressionEvaluatorService.class).to(ExpressionEvaluatorServiceImpl.class);
     bind(PMSYamlSchemaService.class).to(PMSYamlSchemaServiceImpl.class);
     bind(ApprovalNotificationHandler.class).to(ApprovalNotificationHandlerImpl.class);
@@ -534,11 +547,11 @@ public class PipelineServiceModule extends AbstractModule {
         .annotatedWith(Names.named(ACCOUNT_ENTITY + ENTITY_CRUD))
         .to(AccountEntityCrudStreamListener.class);
 
-    bind(MessageListener.class)
+    bind(PmsMessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.POLLING_EVENTS_STREAM))
         .to(PollingEventStreamListener.class);
 
-    bind(MessageListener.class)
+    bind(PmsMessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM))
         .to(TriggerExecutionEventStreamListener.class);
   }

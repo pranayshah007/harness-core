@@ -39,7 +39,7 @@
 					"text": "<${URL}|Change events (${TOTAL_CE_COUNT})>"
 				}
 			]
-		}
+		},
 		{
 			"type": "section",
 			"fields": [
@@ -96,7 +96,14 @@
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "${SLO_PERFORMANCE}"
+                "text": "${SLO_SUMMARY}"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "${SLO_PERFORMANCE_SLACK}"
             }
         },
         {

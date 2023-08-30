@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.git;
-
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.git.model.ChangeType.MODIFY;
@@ -19,16 +18,20 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.gitsync.GitPRCreateRequest;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.GitHubAppAuthenticationHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
@@ -103,6 +106,7 @@ import org.jooq.tools.json.JSONParser;
 import org.jooq.tools.json.ParseException;
 import org.jose4j.lang.JoseException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @Slf4j
 @OwnedBy(GITOPS)
 public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
@@ -120,6 +124,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private AzureRepoApiClient azureRepoApiClient;
   @Inject private BitbucketApiClient bitbucketApiClient;
   @Inject public GitOpsTaskHelper gitOpsTaskHelper;
+  @Inject public GitHubAppAuthenticationHelper gitHubAppAuthenticationHelper;
+  @Inject public ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -427,7 +433,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
         gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig();
     ScmConnector scmConnector = gitStoreDelegateConfig.getGitConfigDTO();
     SSHKeySpecDTO sshKeySpecDTO = gitStoreDelegateConfig.getSshKeySpecDTO();
-    GitConfigDTO gitConfig = ScmConnectorMapper.toGitConfigDTO(scmConnector);
+    GitConfigDTO gitConfig =
+        scmConnectorMapperDelegate.toGitConfigDTO(scmConnector, gitStoreDelegateConfig.getEncryptedDataDetails());
 
     gitConfig.setBranchName(newBranch);
     List<EncryptedDataDetail> encryptionDetails = gitStoreDelegateConfig.getEncryptedDataDetails();
@@ -473,7 +480,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
         gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig();
     ScmConnector scmConnector = gitStoreDelegateConfig.getGitConfigDTO();
     SSHKeySpecDTO sshKeySpecDTO = gitStoreDelegateConfig.getSshKeySpecDTO();
-    GitConfigDTO gitConfig = ScmConnectorMapper.toGitConfigDTO(scmConnector);
+    GitConfigDTO gitConfig =
+        scmConnectorMapperDelegate.toGitConfigDTO(scmConnector, gitStoreDelegateConfig.getEncryptedDataDetails());
 
     gitConfig.setBranchName(newBranch);
     List<EncryptedDataDetail> encryptionDetails = gitStoreDelegateConfig.getEncryptedDataDetails();

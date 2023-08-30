@@ -6,10 +6,12 @@
  */
 
 package io.harness.delegate.task.jira;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
@@ -19,15 +21,15 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.jira.JiraActionNG;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Value
 @Builder
@@ -57,17 +59,6 @@ public class JiraTaskNGParameters implements TaskParameters, ExecutionCapability
   // For new jira server versions old metadata endpoint is deprecated
   boolean newMetadata;
   List<String> delegateSelectors;
-
-  public Set<String> getDelegateSelectors() {
-    Set<String> combinedDelegateSelectors = new HashSet<>();
-    if (jiraConnectorDTO != null && jiraConnectorDTO.getDelegateSelectors() != null) {
-      combinedDelegateSelectors.addAll(jiraConnectorDTO.getDelegateSelectors());
-    }
-    if (delegateSelectors != null) {
-      combinedDelegateSelectors.addAll(delegateSelectors);
-    }
-    return combinedDelegateSelectors;
-  }
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

@@ -6,13 +6,17 @@
  */
 
 package io.harness.template.async.handler;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.logging.ResponseTimeRecorder;
 import io.harness.template.async.beans.SetupUsageParams;
 import io.harness.template.helpers.TemplateReferenceHelper;
 
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Slf4j
 public class TemplateReferencesRunnable implements Runnable {
   SetupUsageParams setupUsageParams;

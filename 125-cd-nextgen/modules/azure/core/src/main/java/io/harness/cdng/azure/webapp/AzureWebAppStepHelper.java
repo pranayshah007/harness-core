@@ -106,7 +106,6 @@ import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -116,6 +115,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -250,7 +250,7 @@ public class AzureWebAppStepHelper {
                                      : NgAppSettingsSweepingOutput.builder().build();
   }
 
-  public TaskRequest prepareGitFetchTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,
+  public TaskRequest prepareGitFetchTaskRequest(StepBaseParameters stepElementParameters, Ambiance ambiance,
       Map<String, GitStoreConfig> gitStoreConfigs, List<String> units) {
     List<GitFetchFilesConfig> gitFetchFilesConfigs = new ArrayList<>();
     for (Map.Entry<String, GitStoreConfig> configEntry : gitStoreConfigs.entrySet()) {
@@ -270,13 +270,13 @@ public class AzureWebAppStepHelper {
         stepElementParameters, ambiance, gitFetchRequest, TaskType.GIT_FETCH_NEXT_GEN_TASK, units);
   }
 
-  public TaskRequest prepareTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,
+  public TaskRequest prepareTaskRequest(StepBaseParameters stepElementParameters, Ambiance ambiance,
       TaskParameters taskParameters, TaskType taskType, List<String> units) {
     return prepareTaskRequest(
         stepElementParameters, ambiance, taskParameters, taskType, taskType.getDisplayName(), units);
   }
 
-  public TaskRequest prepareTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,
+  public TaskRequest prepareTaskRequest(StepBaseParameters stepElementParameters, Ambiance ambiance,
       TaskParameters taskParameters, TaskType taskType, String displayName, List<String> units) {
     AzureWebAppStepParameters stepSpec = (AzureWebAppStepParameters) stepElementParameters.getSpec();
     List<TaskSelectorYaml> taskSelectors = stepSpec.getDelegateSelectors().getValue();

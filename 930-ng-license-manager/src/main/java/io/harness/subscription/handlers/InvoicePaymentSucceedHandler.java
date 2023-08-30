@@ -6,7 +6,6 @@
  */
 
 package io.harness.subscription.handlers;
-
 import io.harness.ModuleType;
 import io.harness.cd.CDLicenseType;
 import io.harness.licensing.Edition;

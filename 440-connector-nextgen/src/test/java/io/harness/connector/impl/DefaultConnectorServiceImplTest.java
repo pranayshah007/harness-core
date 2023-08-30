@@ -561,8 +561,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   public void testConnection() {
     createConnector(identifier, name);
     when(connectionValidatorMap.get(any())).thenReturn(kubernetesConnectionValidator);
-    when(kubernetesConnectionValidator.validate(
-             (ConnectorConfigDTO) any(), anyString(), anyString(), anyString(), anyString()))
+    when(kubernetesConnectionValidator.validate((ConnectorConfigDTO) any(), anyString(), any(), any(), anyString()))
         .thenReturn(ConnectorValidationResult.builder().status(SUCCESS).build());
     connectorService.testConnection(accountIdentifier, null, null, identifier);
     verify(kubernetesConnectionValidator, times(1))

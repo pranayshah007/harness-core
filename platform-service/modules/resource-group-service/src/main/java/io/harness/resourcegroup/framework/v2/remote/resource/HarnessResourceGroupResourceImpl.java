@@ -22,6 +22,9 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -30,28 +33,35 @@ import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.resourcegroup.framework.v2.remote.mapper.ResourceGroupMapper;
 import io.harness.resourcegroup.framework.v2.service.ResourceGroupService;
 import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupValidatorImpl;
 import io.harness.resourcegroup.v1.remote.dto.ManagedFilter;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
+import io.harness.resourcegroup.v2.model.ResourceGroup;
 import io.harness.resourcegroup.v2.model.ScopeSelector;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupRequest;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 import io.harness.resourcegroup.v2.remote.resource.HarnessResourceGroupResource;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.utils.PageUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
@@ -59,6 +69,7 @@ import lombok.AllArgsConstructor;
 public class HarnessResourceGroupResourceImpl implements HarnessResourceGroupResource {
   ResourceGroupService resourceGroupService;
   ResourceGroupValidatorImpl resourceGroupValidator;
+  AccessControlClient accessControlClient;
 
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
   public ResponseDTO<ResourceGroupResponse> get(@ResourceIdentifier String identifier,
@@ -102,7 +113,28 @@ public class HarnessResourceGroupResourceImpl implements HarnessResourceGroupRes
 
   public ResponseDTO<PageResponse<ResourceGroupResponse>> list(
       ResourceGroupFilterDTO resourceGroupFilterDTO, String accountIdentifier, PageRequest pageRequest) {
-    return ResponseDTO.newResponse(getNGPageResponse(resourceGroupService.list(resourceGroupFilterDTO, pageRequest)));
+    if (accessControlClient.hasAccess(
+            ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
+                resourceGroupFilterDTO.getProjectIdentifier()),
+            Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION)) {
+      return ResponseDTO.newResponse(getNGPageResponse(resourceGroupService.list(resourceGroupFilterDTO, pageRequest)));
+    }
+
+    Page<ResourceGroup> allResourceGroups =
+        resourceGroupService.listAll(resourceGroupFilterDTO, PageRequest.builder().pageSize(50000).build());
+    List<ResourceGroup> permittedResourceGroups =
+        new ArrayList<>(resourceGroupService.getPermittedResourceGroups(allResourceGroups.getContent()));
+
+    if (isEmpty(permittedResourceGroups)) {
+      throw new AccessDeniedException(
+          String.format("Missing permission %s on %s", VIEW_RESOURCEGROUP_PERMISSION, RESOURCE_GROUP.toLowerCase()),
+          ErrorCode.NG_ACCESS_DENIED, USER);
+    }
+
+    Collections.sort(permittedResourceGroups, Comparator.comparing(ResourceGroup::getCreatedAt).reversed());
+    Page<ResourceGroup> resourceGroupPage =
+        PageUtils.getPage(permittedResourceGroups, pageRequest.getPageIndex(), pageRequest.getPageSize());
+    return ResponseDTO.newResponse(getNGPageResponse(resourceGroupPage.map(ResourceGroupMapper::toResponseWrapper)));
   }
 
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)

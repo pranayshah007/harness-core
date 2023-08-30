@@ -363,6 +363,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("f", "abc")
             .put("g", "def")
             .put("h", "v2")
+            .put("i", "v")
             .put("company", "harness")
             .put("nested1", "<+nested2>")
             .put("nested2", "<+nested3>")
@@ -379,6 +380,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                     .put("v5", "archit-harness")
                     .put("v6", "<+secrets.getValue('org.v2')>")
                     .put("v7", "<+secret1>")
+                    .put("v8", "<+company>/archit-<+f>")
+                    .put("v9", "<+company>/archit-<+f1>")
                     .build())
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
@@ -418,6 +421,10 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // Nested expression contains string concatenation
     assertThat(evaluator.resolve("<+variables.v3>", true)).isEqualTo("abcdefharness");
     assertThat(evaluator.evaluateExpression("<+variables.v3>")).isEqualTo("abcdefharness");
+    assertThat(evaluator.resolve("<+variables.v8>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-abc");
+    assertThat(evaluator.resolve("<+variables.v9>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-<+f1>");
 
     // OR operators
     assertThat(
@@ -429,6 +436,18 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // Not operator
     assertThat(
         evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
+        .isEqualTo(false);
+    // and operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // or operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" or <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // =~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> =~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // !~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
         .isEqualTo(false);
 
     // Complex double nesting with concatenate expressions with prefix combinations
@@ -476,6 +495,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // an expression used in path of existing expression
     assertThat(evaluator.resolve("<+variables.<+h>>", true)).isEqualTo("harnessabcdef");
     assertThat(evaluator.evaluateExpression("<+variables.<+h>>")).isEqualTo("harnessabcdef");
+    assertThat(evaluator.resolve("<+variables[<+i> + '5']>", true)).isEqualTo("archit-harness");
+    assertThat(evaluator.resolve("<+variables[<+i> + '2']>", true)).isEqualTo("harnessabcdef");
 
     // Unresolved expressions partially should be resolved
     assertThat(evaluator.resolve("<+nested1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
@@ -511,6 +532,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("f", "abc")
             .put("g", "def")
             .put("h", "v2")
+            .put("i", "v")
             .put("productValues", Arrays.asList(1, 2, 3))
             .put("variableValues", Arrays.asList("v1", "v2", "v3"))
             .put("company", "harness")
@@ -529,6 +551,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                     .put("v5", "archit-harness")
                     .put("v6", "<+secrets.getValue('org.v2')>")
                     .put("v7", "<+secret1>")
+                    .put("v8", "<+company>/archit-<+f>")
+                    .put("v9", "<+company>/archit-<+f1>")
                     .build())
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
@@ -570,6 +594,11 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.evaluateExpression("<+variables.v3>")).isEqualTo("abcdef");
     assertThat(evaluator.resolve("harness<+variables.v4><+variables.v3>", true)).isEqualTo("harnessabcdefabcdef");
     assertThat(evaluator.evaluateExpression("harness<+variables.v4><+variables.v3>")).isEqualTo("harnessabcdefabcdef");
+    assertThat(evaluator.resolve("<+variables.v8>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-abc");
+    assertThat(evaluator.resolve("<+variables.v9>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-<+f1>");
+
     // Nested concatenate expression in script
     // Note In script mode -> concatenate expressions can be using + operator between them only
     assertThat(evaluator.evaluateExpression("<+ var traverse = function(key) {\n"
@@ -621,6 +650,18 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(
         evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
         .isEqualTo(false);
+    // and operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // or operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" or <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // =~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> =~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // !~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
 
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");
@@ -633,6 +674,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // an expression used in path of existing expression
     assertThat(evaluator.resolve("<+variables.<+h>>", true)).isEqualTo("harnessabcdef");
     assertThat(evaluator.evaluateExpression("<+variables.<+h>>")).isEqualTo("harnessabcdef");
+    assertThat(evaluator.resolve("<+variables[<+i> + '5']>", true)).isEqualTo("archit-harness");
+    assertThat(evaluator.resolve("<+variables[<+i> + '2']>", true)).isEqualTo("harnessabcdef");
 
     // Unresolved expressions partially should be resolved
     assertThat(evaluator.resolve("<+nested1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))

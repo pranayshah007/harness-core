@@ -123,4 +123,7 @@ public interface InstanceService {
 
   List<InstanceDTO> getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, String agentIdentifier);
+
+  boolean deleteForProject(
+      @NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier);
 }

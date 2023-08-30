@@ -24,10 +24,10 @@ import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.category.element.UnitTests;
-import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.serializer.SerializerUtils;
+import io.harness.ci.execution.utils.HarnessImageUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.serializer.vm.VmPluginStepSerializer;
-import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
@@ -51,6 +51,7 @@ public class VmPluginStepSerializerTest extends CategoryTest {
   @Mock private IACMStepsUtils iacmStepsUtils;
   @Mock private HarnessImageUtils harnessImageUtils;
   @Mock private CIFeatureFlagService ciFeatureFlagService;
+  @Mock private SerializerUtils serializerUtils;
 
   @InjectMocks private VmPluginStepSerializer vmPluginStepSerializer;
   private final Ambiance ambiance = Ambiance.newBuilder()

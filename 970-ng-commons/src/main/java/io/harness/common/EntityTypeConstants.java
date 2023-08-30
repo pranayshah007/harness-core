@@ -9,8 +9,13 @@ package io.harness.common;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(PL)
 public interface EntityTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
@@ -202,6 +207,7 @@ public interface EntityTypeConstants {
   String CONTAINER_STEP = "Container";
   String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
   String IACM_APPROVAL = "IACMApproval";
+  String IACM_COST_ESTIMATION = "IACMCostEstimation";
 
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
@@ -242,6 +248,8 @@ public interface EntityTypeConstants {
   String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
   String TAS_ROUTE_MAPPING = "RouteMapping";
   String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
+  String IDP_SCORECARD = "IdpScorecard";
+  String IDP_CHECK = "IdpCheck";
   String SSCA_ENFORCEMENT = "SscaEnforcement";
   String IDP_CONNECTOR = "IdpConnector";
   String CD_SSCA_ENFORCEMENT = "CdSscaEnforcement";
@@ -252,4 +260,8 @@ public interface EntityTypeConstants {
   String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
   String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
   String AWS_CDK_SYNTH = "AwsCdkSynth";
+  String AWS_CDK_DIFF = "AwsCdkDiff";
+  String AWS_CDK_DEPLOY = "AwsCdkDeploy";
+  String AWS_CDK_DESTROY = "AwsCdkDestroy";
+  String AWS_CDK_ROLLBACK = "AwsCdkRollback";
 }

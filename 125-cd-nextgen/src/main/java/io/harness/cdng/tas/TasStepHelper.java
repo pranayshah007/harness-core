@@ -64,6 +64,9 @@ import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FileReference;
 import io.harness.beans.Scope;
@@ -169,7 +172,6 @@ import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pcf.model.PcfConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -180,6 +182,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -224,6 +227,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Slf4j
 public class TasStepHelper {
   @Inject protected OutcomeService outcomeService;
@@ -251,7 +255,7 @@ public class TasStepHelper {
   public static final String END_SLASH_ALL_MATCH = "/+\\Z";
 
   public TaskChainResponse startChainLink(
-      TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
+      TasStepExecutor tasStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
     cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
     cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
@@ -279,7 +283,7 @@ public class TasStepHelper {
   }
 
   public TaskChainResponse startChainLinkForCommandStep(
-      TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
+      TasStepExecutor tasStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
     TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepElementParameters.getSpec();
 
     UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
@@ -588,7 +592,7 @@ public class TasStepHelper {
   }
 
   private TaskChainResponse prepareManifests(TasStepExecutor tasStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
+      StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
     Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
     if (tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()) {
       LogCallback logCallback = cdStepHelper.getLogCallback(
@@ -864,7 +868,7 @@ public class TasStepHelper {
   }
 
   public TaskChainResponse executeNextLink(TasStepExecutor tasStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     TasStepPassThroughData tasStepPassThroughData = (TasStepPassThroughData) passThroughData;
     TasManifestOutcome tasManifest = tasStepPassThroughData.getTasManifestOutcome();
@@ -905,7 +909,7 @@ public class TasStepHelper {
   }
 
   private TaskChainResponse handleGitFetchFilesResponse(ResponseData responseData, TasStepExecutor tasStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
+      Ambiance ambiance, StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       TasManifestOutcome tasManifest) {
     GitFetchResponse gitFetchResponse = (GitFetchResponse) responseData;
     if (gitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
@@ -933,7 +937,7 @@ public class TasStepHelper {
   }
 
   private TaskChainResponse handleCustomFetchResponse(ResponseData responseData, TasStepExecutor tasStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
+      Ambiance ambiance, StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       ManifestOutcome tasManifestOutcome) {
     CustomManifestValuesFetchResponse customManifestValuesFetchResponse =
         (CustomManifestValuesFetchResponse) responseData;
@@ -1000,7 +1004,7 @@ public class TasStepHelper {
   }
 
   public TaskChainResponse prepareManifestFilesFetchTask(TasStepExecutor tasStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
+      StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
     StoreConfig storeConfig = tasStepPassThroughData.getTasManifestOutcome().getStore();
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
         shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
@@ -1026,7 +1030,7 @@ public class TasStepHelper {
   }
 
   protected TaskChainResponse prepareCustomFetchManifestsTaskChainResponse(StoreConfig storeConfig, Ambiance ambiance,
-      StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
+      StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       List<ManifestOutcome> manifestOutcomeList) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
@@ -1139,7 +1143,7 @@ public class TasStepHelper {
   }
 
   protected TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,
-      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepElementParameters stepElementParameters,
+      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepBaseParameters stepElementParameters,
       TasStepPassThroughData tasStepPassThroughData) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     GitFetchRequest gitFetchRequest =
@@ -1227,7 +1231,7 @@ public class TasStepHelper {
   }
 
   protected TaskChainResponse prepareGitFetchTaskChainResponse(Ambiance ambiance,
-      StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
+      StepBaseParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       StoreConfig storeConfig) {
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapManifestsToGitFetchFileConfig(tasStepPassThroughData.getVarsManifestOutcomeList(),
@@ -1350,7 +1354,7 @@ public class TasStepHelper {
   }
 
   public TaskChainResponse prepareExecuteTasTaskForCommandStep(Ambiance ambiance,
-      StepElementParameters stepElementParameters, TasStepExecutor tasStepExecutor,
+      StepBaseParameters stepElementParameters, TasStepExecutor tasStepExecutor,
       TasStepPassThroughData tasStepPassThroughData, ManifestOutcome tasManifestOutcome) {
     Map<String, String> allFilesFetched = new HashMap<>();
     if (tasStepPassThroughData.getMaxManifestOrder() != null) {
@@ -1406,7 +1410,7 @@ public class TasStepHelper {
         UnitProgressData.builder().unitProgresses(tasStepPassThroughData.getUnitProgresses()).build());
   }
 
-  public TaskChainResponse executeTasTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public TaskChainResponse executeTasTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
       TasStepExecutor tasStepExecutor, TasStepPassThroughData tasStepPassThroughData,
       ManifestOutcome tasManifestOutcome) {
     if (tasStepExecutor instanceof TasCommandStep) {

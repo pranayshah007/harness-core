@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.steps;
 import static io.harness.beans.FeatureName.CDS_ARTIFACTS_PRIMARY_IDENTIFIER;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -184,7 +185,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
     final ArtifactListConfig artifacts = service.getServiceDefinition().getServiceSpec().getArtifacts();
 
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     if (noArtifactConfigured(artifacts)) {
       logCallback.saveExecutionLog(
           "No primary or sidecar artifacts configured in the service. artifact/artifacts expressions will not work",
@@ -330,7 +332,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
     ArtifactsStepV2SweepingOutput artifactsSweepingOutput = (ArtifactsStepV2SweepingOutput) outputOptional.getOutput();
 
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     final ArtifactsOutcomeBuilder outcomeBuilder = ArtifactsOutcome.builder();
     final SidecarsOutcome sidecarsOutcome = new SidecarsOutcome();
     for (String taskId : responseDataMap.keySet()) {
@@ -401,7 +404,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   @Override
   public void handleAbort(
       Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     logCallback.saveExecutionLog("Artifacts Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
   }
 

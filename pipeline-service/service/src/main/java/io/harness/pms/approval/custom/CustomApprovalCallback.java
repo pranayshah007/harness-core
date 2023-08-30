@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.approval.custom;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER_SRE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.exception.ApprovalStepNGException;
@@ -28,7 +30,7 @@ import io.harness.servicenow.misc.TicketNG;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
-import io.harness.steps.approval.step.custom.CustomApprovalInstanceHandler;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalTicketNG;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.custom.evaluation.CustomApprovalCriteriaEvaluator;
@@ -49,6 +51,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Slf4j
@@ -59,7 +62,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private ShellScriptHelperService shellScriptHelperService;
-  @Inject private CustomApprovalInstanceHandler customApprovalInstanceHandler;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
 
   @Builder
   public CustomApprovalCallback(String approvalInstanceId) {
@@ -150,7 +153,7 @@ public class CustomApprovalCallback extends AbstractApprovalCallback implements 
 
   private void resetNextIteration(CustomApprovalInstance instance) {
     approvalInstanceService.resetNextIterations(instance.getId(), instance.recalculateNextIterations());
-    customApprovalInstanceHandler.wakeup();
+    irregularApprovalInstanceHandler.wakeup();
   }
 
   @Override

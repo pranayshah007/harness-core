@@ -6,7 +6,6 @@
  */
 
 package io.harness.subscription.entities;
-
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

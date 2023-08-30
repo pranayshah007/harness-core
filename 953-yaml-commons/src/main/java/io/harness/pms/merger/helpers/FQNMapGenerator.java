@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.merger.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YamlNode.UUID_FIELD_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
@@ -35,6 +37,7 @@ import java.util.Set;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @UtilityClass
 @Slf4j
@@ -63,7 +66,11 @@ public class FQNMapGenerator {
     if (!mapData.containsKey(fqnList.get(index))) {
       mapData.put(fqnList.get(index), new HashMap<>());
     }
-    traverseMap((Map<String, Object>) mapData.get(fqnList.get(index)), fqnList, index + 1, value);
+    if (mapData.get(fqnList.get(index)) instanceof Map) {
+      traverseMap((Map<String, Object>) mapData.get(fqnList.get(index)), fqnList, index + 1, value);
+    } else {
+      log.warn("Value {} not instance of map ", mapData.get(fqnList.get(index)));
+    }
   }
 
   public Map<FQN, Object> generateFQNMap(JsonNode yamlMap, boolean keepUuidFields) {

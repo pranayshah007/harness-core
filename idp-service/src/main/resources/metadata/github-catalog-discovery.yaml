@@ -1,0 +1,21 @@
+identifier: github-catalog-discovery
+name: Github Catalog Discovery
+description: The plugin searches your GitHub orgs and registers any `catalog-info.yaml` files present in any repository.
+createdBy: Spotify
+category: Discovery
+source: https://backstage.io/docs/integrations/github/discovery
+iconUrl: https://roadie.io/images/logos/github.png
+imageUrl: ''
+config: |-
+  catalog:
+    providers:
+      github:
+        providerId:
+          organization: '<your-org-name>'
+          catalogPath: '/catalog-info.yaml'
+          filters:
+            branch: 'main'
+            repository: '<repo>'
+exports:
+  defaultEntityTypes: []
+  exportDetails: []

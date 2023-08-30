@@ -21,16 +21,23 @@ import static com.google.common.collect.ImmutableMap.of;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.audit.eventframework.PlatformEventConsumerService;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.audit.eventframework.AuditEventConsumerService;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
+import io.harness.metrics.jobs.RecordMetricsJob;
+import io.harness.metrics.modules.MetricsModule;
+import io.harness.metrics.service.api.MetricService;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.notification.eventframework.NotificationConsumerService;
 import io.harness.notification.exception.NotificationExceptionMapper;
 import io.harness.platform.audit.AuditServiceModule;
 import io.harness.platform.audit.AuditServiceSetup;
@@ -90,11 +97,13 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.model.Resource;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 @OwnedBy(PL)
 public class PlatformApplication extends Application<PlatformConfiguration> {
   private static final String APPLICATION_NAME = "Platform Microservice";
   public static final String PLATFORM_SERVICE = "PlatformService";
+  public static final String METRICS_MODULE = "PlatformMetrics";
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -127,6 +136,7 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
         bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
     configureObjectMapper(bootstrap.getObjectMapper());
+    bootstrap.setMetricRegistry(metricRegistry);
   }
 
   public static void configureObjectMapper(final ObjectMapper mapper) {
@@ -150,25 +160,30 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
         return appConfig.getDbAliases();
       }
     };
+    Module metricsModule = new MetricsModule();
+    Module metricsRegistryModule = new MetricRegistryModule(metricRegistry);
     GodInjector godInjector = new GodInjector();
     godInjector.put(NOTIFICATION_SERVICE,
         Guice.createInjector(
-            new NotificationServiceModule(appConfig), new MetricRegistryModule(metricRegistry), providerModule));
+            new NotificationServiceModule(appConfig), metricsModule, metricsRegistryModule, providerModule));
     if (appConfig.getResoureGroupServiceConfig().isEnableResourceGroup()) {
       godInjector.put(RESOURCE_GROUP_SERVICE,
           Guice.createInjector(
-              new ResourceGroupServiceModule(appConfig), new MetricRegistryModule(metricRegistry), providerModule));
+              new ResourceGroupServiceModule(appConfig), metricsModule, metricsRegistryModule, providerModule));
     }
     if (appConfig.getAuditServiceConfig().isEnableAuditService()) {
       godInjector.put(AUDIT_SERVICE,
           Guice.createInjector(
-              new AuditServiceModule(appConfig), new MetricRegistryModule(metricRegistry), providerModule));
+              new AuditServiceModule(appConfig), metricsModule, metricsRegistryModule, providerModule));
     }
 
     godInjector.put(PLATFORM_SERVICE,
         Guice.createInjector(new TokenClientModule(appConfig.getRbacServiceConfig(),
             appConfig.getPlatformSecrets().getNgManagerServiceSecret(),
             AuthorizationServiceHeader.PLATFORM_SERVICE.getServiceId())));
+
+    // Create a Metrics Module for the Platform Service
+    godInjector.put(METRICS_MODULE, Guice.createInjector(metricsModule, metricsRegistryModule));
 
     registerCommonResources(appConfig, environment, godInjector);
     registerCorsFilter(appConfig, environment);
@@ -178,7 +193,8 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     registerRequestContextFilter(environment);
     registerOasResource(appConfig, environment, godInjector.get(PLATFORM_SERVICE));
     createConsumerThreadsToListenToEvents(environment, godInjector.get(AUDIT_SERVICE));
-
+    createConsumerThreadsToListenToNotificationEvents(environment, godInjector.get(NOTIFICATION_SERVICE));
+    initMetrics(godInjector);
     new NotificationServiceSetup().setup(
         appConfig.getNotificationServiceConfig(), environment, godInjector.get(NOTIFICATION_SERVICE));
 
@@ -190,27 +206,21 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     if (appConfig.getAuditServiceConfig().isEnableAuditService()) {
       new AuditServiceSetup().setup(appConfig.getAuditServiceConfig(), environment, godInjector.get(AUDIT_SERVICE));
     }
-
-    if (appConfig.getResoureGroupServiceConfig().isEnableResourceGroup()) {
-      blockingMigrations(godInjector.get(RESOURCE_GROUP_SERVICE));
-    }
-
     MaintenanceController.forceMaintenance(false);
   }
 
   private void createConsumerThreadsToListenToEvents(Environment environment, Injector injector) {
-    environment.lifecycle().manage(injector.getInstance(PlatformEventConsumerService.class));
+    environment.lifecycle().manage(injector.getInstance(AuditEventConsumerService.class));
+  }
+
+  private void createConsumerThreadsToListenToNotificationEvents(Environment environment, Injector injector) {
+    environment.lifecycle().manage(injector.getInstance(NotificationConsumerService.class));
   }
 
   private void registerOasResource(PlatformConfiguration appConfig, Environment environment, Injector injector) {
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
     openApiResource.setOpenApiConfiguration(appConfig.getOasConfig());
     environment.jersey().register(openApiResource);
-  }
-
-  private void blockingMigrations(Injector injector) {
-    //    This is is temporary one time blocking migration
-    injector.getInstance(PurgeDeletedResourceGroups.class).cleanUp();
   }
 
   private void registerCommonResources(
@@ -317,6 +327,11 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
                && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(annotation) != null)
         || (resourceInfoAndRequest.getKey().getResourceClass() != null
             && resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(annotation) != null);
+  }
+
+  private void initMetrics(GodInjector injector) {
+    injector.get(METRICS_MODULE).getInstance(MetricService.class).initializeMetrics();
+    injector.get(METRICS_MODULE).getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
   }
 
   private static Set<String> getUniquePackages(Collection<Class<?>> classes) {

@@ -18,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
+import io.debezium.engine.Header;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -65,7 +66,8 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
     // Add the batch records to the stream(s)
     for (ChangeEvent<String, String> record : recordsMap.values()) {
       cnt++;
-      Optional<OpType> opType = getOperationType(((EmbeddedEngineChangeEvent<String, String>) record).sourceRecord());
+      Optional<OpType> opType =
+          getOperationType(((EmbeddedEngineChangeEvent<String, String, List<Header>>) record).sourceRecord());
       if (!opType.isEmpty()) {
         DebeziumChangeEvent debeziumChangeEvent = DebeziumChangeEvent.newBuilder()
                                                       .setKey(getKeyOrDefault(record))

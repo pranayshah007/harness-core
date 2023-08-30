@@ -26,9 +26,13 @@ public class UserRefreshServiceImpl implements UserRefreshService {
   @Override
   public void processEntityUpdate(Message message, EntityChangeDTO entityChangeDTO) {
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
+    String userGroupIdentifier = entityChangeDTO.getIdentifier().getValue();
     if (namespaceService.getAccountIdpStatus(accountIdentifier)) {
-      UserEventEntity userEventEntity =
-          UserEventEntity.builder().accountIdentifier(accountIdentifier).hasEvent(true).build();
+      UserEventEntity userEventEntity = UserEventEntity.builder()
+                                            .accountIdentifier(accountIdentifier)
+                                            .userGroupIdentifier(userGroupIdentifier)
+                                            .hasEvent(true)
+                                            .build();
       userEventRepository.saveOrUpdate(userEventEntity);
     }
   }

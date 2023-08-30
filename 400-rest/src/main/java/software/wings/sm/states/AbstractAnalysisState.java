@@ -6,7 +6,6 @@
  */
 
 package software.wings.sm.states;
-
 import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.beans.FeatureName.CV_SUCCEED_FOR_ANOMALY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -28,8 +27,11 @@ import static software.wings.sm.ExecutionContextImpl.PHASE_PARAM;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
@@ -119,6 +121,8 @@ import org.slf4j.Logger;
 /**
  * Created by rsingh on 7/6/17.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CV)
 @FieldNameConstants(innerTypeName = "AbstractAnalysisStateKeys")
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

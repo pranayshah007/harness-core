@@ -328,6 +328,7 @@ public class GovernanceRuleResource {
     rule.setVersionLabel("0.0.1");
     rule.setDeleted(false);
     rule.setResourceType(governanceRuleService.getResourceType(rule.getRulesYaml()));
+    rule.setUuid(null);
     if (rule.getIsOOTB() && rule.getForRecommendation()
         && accountId.equals(configuration.getGovernanceConfig().getOOTBAccount())) {
       rule.setForRecommendation(true);

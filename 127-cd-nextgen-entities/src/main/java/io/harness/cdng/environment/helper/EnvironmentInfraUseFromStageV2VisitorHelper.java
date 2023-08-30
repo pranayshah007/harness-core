@@ -6,13 +6,17 @@
  */
 
 package io.harness.cdng.environment.helper;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.visitor.helpers.service.ServiceUseFromStageV2VisitorHelper;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
 import lombok.Builder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Builder
 public class EnvironmentInfraUseFromStageV2VisitorHelper implements ConfigValidator {
   @Override

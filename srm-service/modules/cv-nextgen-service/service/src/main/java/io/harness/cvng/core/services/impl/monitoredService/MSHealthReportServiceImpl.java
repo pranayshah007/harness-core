@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.services.impl.monitoredService;
 
+import static io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType.PAGERDUTY;
+
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
@@ -23,6 +25,7 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.NotificationRuleConditionEntity;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
+import io.harness.cvng.notification.utils.NotificationRuleConstants;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
@@ -120,6 +123,9 @@ public class MSHealthReportServiceImpl implements MSHealthReportService {
         notificationRuleTemplateDataGenerator.getTemplateData(projectParams, entityDetails, condition, new HashMap<>());
     String templateId = notificationRuleTemplateDataGenerator.getTemplateId(type, notificationChannel.getType());
     try {
+      if (notificationChannel.getType().equals(PAGERDUTY)) {
+        templateDataMap = removeUnNecessaryKeysForPagerDutyNotification(templateDataMap);
+      }
       NotificationResult notificationResult = notificationClient.sendNotificationAsync(
           notificationChannel.toNotificationChannel(projectParams.getAccountIdentifier(),
               projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), templateId, templateDataMap));
@@ -127,5 +133,12 @@ public class MSHealthReportServiceImpl implements MSHealthReportService {
     } catch (Exception ex) {
       log.error("Unable to send notification because of following exception.", ex);
     }
+  }
+
+  private Map<String, String> removeUnNecessaryKeysForPagerDutyNotification(Map<String, String> templateDataMap) {
+    templateDataMap.remove(NotificationRuleConstants.ANOMALOUS_METRIC);
+    templateDataMap.remove(NotificationRuleConstants.SLO_PERFORMANCE_EMAIL);
+    templateDataMap.remove(NotificationRuleConstants.SLO_PERFORMANCE_SLACK);
+    return templateDataMap;
   }
 }

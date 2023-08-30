@@ -12,7 +12,10 @@ import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_C
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 
@@ -25,6 +28,10 @@ import java.util.List;
 /*
    Todo: Change StepSpecTypeConstants.PLACEHOLDER to their respective type once the StepInfo for those is implemented.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_INFRA_PROVISIONERS,
+        HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(CDP)
 public enum NGStepType {
   // gitops steps
@@ -333,7 +340,19 @@ public enum NGStepType {
       "Infrastructure Provisioners/AWS CDK Bootstrap", StepSpecTypeConstants.AWS_CDK_BOOTSTRAP),
   @JsonProperty(StepSpecTypeConstants.AWS_CDK_SYNTH)
   AWS_CDK_SYNTH("AWS CDK Synth", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/AWS CDK Synth", StepSpecTypeConstants.AWS_CDK_SYNTH);
+      "Infrastructure Provisioners/AWS CDK Synth", StepSpecTypeConstants.AWS_CDK_SYNTH),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_DIFF)
+  AWS_CDK_DIFF("AWS CDK Diff", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Diff", StepSpecTypeConstants.AWS_CDK_DIFF),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_DEPLOY)
+  AWS_CDK_DEPLOY("AWS CDK Deploy", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Deploy", StepSpecTypeConstants.AWS_CDK_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_DESTROY)
+  AWS_CDK_DESTROY("AWS CDK Destroy", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Destroy", StepSpecTypeConstants.AWS_CDK_DESTROY),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_ROLLBACK)
+  AWS_CDK_ROLLBACK("AWS CDK Rollback", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Rollback", StepSpecTypeConstants.AWS_CDK_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

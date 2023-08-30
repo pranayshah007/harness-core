@@ -90,6 +90,14 @@ if [[ "" != "$MONGO_CONNECTIONS_PER_HOST" ]]; then
   export MONGO_CONNECTIONS_PER_HOST; yq -i '.notificationServiceConfig.mongo.connectionsPerHost=env(MONGO_CONNECTIONS_PER_HOST)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export MONGO_MAX_DOCUMENT_LIMIT; yq -i '.notificationServiceConfig.mongo.maxDocumentsToBeFetched=env(MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.notificationServiceConfig.mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MANAGER_CLIENT_SECRET" ]]; then
   export MANAGER_CLIENT_SECRET; yq -i '.secrets.managerServiceSecret=env(MANAGER_CLIENT_SECRET)' $CONFIG_FILE
 fi
@@ -187,6 +195,22 @@ fi
 
 if [[ "" != "$AUDIT_MONGO_CONNECTIONS_PER_HOST" ]]; then
   export AUDIT_MONGO_CONNECTIONS_PER_HOST; yq -i '.auditServiceConfig.mongo.connectionsPerHost=env(AUDIT_MONGO_CONNECTIONS_PER_HOST)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AUDIT_MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export AUDIT_MONGO_MAX_DOCUMENT_LIMIT; yq -i '.auditServiceConfig.mongo.maxDocumentsToBeFetched=env(AUDIT_MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AUDIT_MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export AUDIT_MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.auditServiceConfig.mongo.maxOperationTimeInMillis=env(AUDIT_MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT" ]]; then
+  export RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT; yq -i '.resourceGroupServiceConfig.mongo.maxDocumentsToBeFetched=env(RESOURCEGROUP_MONGO_MAX_DOCUMENT_LIMIT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$RESOURCEGROUP_MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
+  export RESOURCEGROUP_MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.resourceGroupServiceConfig.mongo.maxOperationTimeInMillis=env(RESOURCEGROUP_MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_MONGO_INDEX_MANAGER_MODE" ]]; then
@@ -401,3 +425,7 @@ replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_F
 replace_key_value eventsFramework.redis.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value eventsFramework.redis.retryInterval $REDIS_RETRY_INTERVAL
 
+replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"
+replace_key_value segmentConfiguration.url "$SEGMENT_URL"
+replace_key_value segmentConfiguration.apiKey "$SEGMENT_APIKEY"
+replace_key_value segmentConfiguration.certValidationRequired "$SEGMENT_VERIFY_CERT"

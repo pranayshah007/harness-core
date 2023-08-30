@@ -33,6 +33,7 @@ import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
+import io.harness.cvng.beans.CVNGTaskMetadataConstants;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
@@ -303,12 +304,14 @@ public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
     taskToSave = hPersistence.get(LearningEngineTask.class, taskToSave.getUuid());
     List<ExecutionLogDTO> cvngLogs = cvngLogService.getExecutionLogDTOs(accountId, taskToSave.getVerificationTaskId());
     ExecutionLogDTO executionLogDTO = cvngLogs.get(0);
-    assertThat(executionLogDTO.getTags().get(0).getKey()).isEqualTo("taskId");
+    assertThat(executionLogDTO.getTags().get(0).getKey()).isEqualTo(CVNGTaskMetadataConstants.TASK_ID);
     assertThat(executionLogDTO.getTags().get(0).getValue()).isNotEmpty();
-    assertThat(executionLogDTO.getTags().get(1).getKey()).isEqualTo("waitDuration");
-    assertThat(executionLogDTO.getTags().get(1).getValue()).isEqualTo("00:03:00.000");
-    assertThat(executionLogDTO.getTags().get(2).getKey()).isEqualTo("runningDuration");
-    assertThat(executionLogDTO.getTags().get(2).getValue()).isEqualTo("00:02:00.000");
+    assertThat(executionLogDTO.getTags().get(1).getKey()).isEqualTo(CVNGTaskMetadataConstants.TASK_TYPE);
+    assertThat(executionLogDTO.getTags().get(1).getValue()).isEqualTo("SERVICE_GUARD_LOG_ANALYSIS");
+    assertThat(executionLogDTO.getTags().get(2).getKey()).isEqualTo(CVNGTaskMetadataConstants.WAIT_DURATION);
+    assertThat(executionLogDTO.getTags().get(2).getValue()).isEqualTo("00:03:00.000");
+    assertThat(executionLogDTO.getTags().get(3).getKey()).isEqualTo(CVNGTaskMetadataConstants.RUNNING_DURATION);
+    assertThat(executionLogDTO.getTags().get(3).getValue()).isEqualTo("00:02:00.000");
     assertThat(taskToSave.getTaskStatus().name()).isEqualTo(ExecutionStatus.SUCCESS.name());
   }
 

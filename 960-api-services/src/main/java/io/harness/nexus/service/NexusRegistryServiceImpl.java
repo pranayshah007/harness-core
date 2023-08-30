@@ -9,12 +9,15 @@ package io.harness.nexus.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
-import io.harness.artifacts.gar.service.GARUtils;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.NestedExceptionUtils;
@@ -36,6 +39,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -174,7 +178,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
   }
 
   private String getImage(String repoName, String tag) {
-    if (GARUtils.isSHA(tag)) {
+    if (ArtifactUtils.isSHA(tag)) {
       return String.format("%s@%s", repoName, tag);
     }
     return String.format("%s:%s", repoName, tag);
@@ -197,16 +201,7 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
         groupId, artifactId, extension, classifier, packageName, group, maxBuilds);
     builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
 
-    if (builds.size() == 1) {
-      return builds.get(0);
-    }
-
-    throw NestedExceptionUtils.hintWithExplanationException(
-        "Please check your Nexus repository for artifacts with same tag.",
-        String.format(
-            "Found multiple artifacts for tag [%s] in Nexus repository [%s] for %s artifact [%s] in registry [%s].",
-            tag, repository, repositoryFormat, artifactName, nexusConfig.getNexusUrl()),
-        new NexusRegistryException(String.format("Found multiple artifact tags ('%s'), but expected only one.", tag)));
+    return getBuildDetailsInternal(nexusConfig, repository, artifactName, repositoryFormat, tag, builds);
   }
 
   private BuildDetailsInternal getBuildNumber(NexusRequest nexusConfig, String repository, String port,
@@ -214,8 +209,19 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
     List<BuildDetailsInternal> builds =
         getBuildDetails(nexusConfig, repository, port, artifactName, repositoryFormat, tag);
     builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
+    return getBuildDetailsInternal(nexusConfig, repository, artifactName, repositoryFormat, tag, builds);
+  }
 
-    if (builds.size() == 1) {
+  private BuildDetailsInternal getBuildDetailsInternal(NexusRequest nexusConfig, String repository, String artifactName,
+      String repositoryFormat, String tag, List<BuildDetailsInternal> builds) {
+    if (builds.size() == 0) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check your Nexus repository for artifacts with same tag.",
+          String.format(
+              "Did not find any artifacts for tag [%s] in Nexus repository [%s] for %s artifact [%s] in registry [%s].",
+              tag, repository, repositoryFormat, artifactName, nexusConfig.getNexusUrl()),
+          new NexusRegistryException(String.format("Artifact tag '%s' not found.", tag)));
+    } else if (builds.size() == 1) {
       return builds.get(0);
     }
 

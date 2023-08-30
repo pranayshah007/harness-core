@@ -6,15 +6,19 @@
  */
 
 package io.harness.cdng.manifest;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 public interface ManifestType {
   Set<String> K8S_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(

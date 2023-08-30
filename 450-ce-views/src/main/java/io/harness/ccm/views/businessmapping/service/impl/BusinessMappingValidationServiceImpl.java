@@ -40,6 +40,8 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
   private static final String OTHERS = "Others";
   private static final String UNALLOCATED = "Unallocated";
   private static final int NESTED_BUSINESS_MAPPING_DEPTH = 20;
+  private static final int MAX_COST_BUCKETS_LIMIT = 1_000;
+  private static final int MAX_SHARED_BUCKETS_LIMIT = 10;
 
   @Inject private BusinessMappingDao businessMappingDao;
 
@@ -160,6 +162,9 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
     if (Lists.isNullOrEmpty(businessMapping.getCostTargets())) {
       throw new InvalidRequestException("At least 1 cost bucket must exist");
     }
+    if (businessMapping.getCostTargets().size() > MAX_COST_BUCKETS_LIMIT) {
+      throw new InvalidRequestException(String.format("Max cost buckets limit is %s", MAX_COST_BUCKETS_LIMIT));
+    }
     for (final CostTarget costTarget : businessMapping.getCostTargets()) {
       validateCostBucket(costTarget);
     }
@@ -177,6 +182,9 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
 
   private void validateSharedBuckets(final BusinessMapping businessMapping) {
     if (!Lists.isNullOrEmpty(businessMapping.getSharedCosts())) {
+      if (businessMapping.getSharedCosts().size() > MAX_SHARED_BUCKETS_LIMIT) {
+        throw new InvalidRequestException(String.format("Max shared buckets limit is %s", MAX_SHARED_BUCKETS_LIMIT));
+      }
       for (final SharedCost sharedCost : businessMapping.getSharedCosts()) {
         validateSharedBucket(sharedCost);
         if (sharedCost.getStrategy() == FIXED) {

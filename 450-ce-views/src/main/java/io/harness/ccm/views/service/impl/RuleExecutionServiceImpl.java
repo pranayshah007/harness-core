@@ -49,6 +49,7 @@ import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.fabric8.utils.Lists;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -57,11 +58,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
@@ -162,28 +166,43 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     return overviewExecutionDetails;
   }
 
-  public OverviewExecutionCostDetails getExecutionCostDetails(
-      String accountId, RuleExecutionFilter ruleExecutionFilter) {
-    return getResourcePotentialCost(accountId, ruleExecutionFilter);
+  public OverviewExecutionCostDetails getExecutionCostDetails(String accountId, List<String> recommendationIds) {
+    return getResourcePotentialCost(accountId, recommendationIds);
   }
 
   public <T> AggregationResults<T> aggregate(Aggregation aggregation, Class<T> classToFillResultIn) {
     return mongoTemplate.aggregate(aggregation, RuleExecution.class, classToFillResultIn);
   }
 
-  private OverviewExecutionCostDetails getResourcePotentialCost(
-      String accountId, RuleExecutionFilter ruleExecutionFilter) {
+  private OverviewExecutionCostDetails getResourcePotentialCost(String accountId, List<String> recommendationIds) {
+    // Getting the recommendations data from mongo DB(Only the executions data is projected)
+    List<RuleRecommendation> ruleRecommendationList =
+        rulesExecutionDAO.getGovernanceRecommendations(accountId, recommendationIds);
+    if (Lists.isNullOrEmpty(ruleRecommendationList)) {
+      return OverviewExecutionCostDetails.builder().build();
+    }
+
+    // Extracting the ruleExecutionIds from recommendations data
+    Set<String> ruleExecutionIds = ruleRecommendationList.stream()
+                                       .flatMap(ruleRecommendation -> ruleRecommendation.getExecutions().stream())
+                                       .map(ExecutionSummary::getRuleExecutionID)
+                                       .collect(Collectors.toSet());
+    if (ruleExecutionIds.size() < 1) {
+      return OverviewExecutionCostDetails.builder().build();
+    }
     return OverviewExecutionCostDetails.builder()
-        .awsExecutionCostDetails(getResourcePotentialCostPerCloudProvider(accountId, ruleExecutionFilter, AWS.name()))
-        .azureExecutionCostDetails(
-            getResourcePotentialCostPerCloudProvider(accountId, ruleExecutionFilter, AZURE.name()))
+        .awsExecutionCostDetails(getResourcePotentialCostPerCloudProvider(accountId, AWS.name(), ruleExecutionIds))
+        .azureExecutionCostDetails(getResourcePotentialCostPerCloudProvider(accountId, AZURE.name(), ruleExecutionIds))
         .build();
   }
 
   private Map<String, Double> getResourcePotentialCostPerCloudProvider(
-      String accountId, RuleExecutionFilter ruleExecutionFilter, String cloudProvider) {
+      String accountId, String cloudProvider, Set<String> ruleExecutionIdList) {
+    // Adding ruleExecutionIdList as extra criteria to filter correct executions
     Criteria criteria = Criteria.where(RuleExecutionKeys.accountId)
                             .is(accountId)
+                            .and(MONGODB_ID)
+                            .in(ruleExecutionIdList)
                             .and(RuleExecutionKeys.cost)
                             .ne(null)
                             .and(RuleExecutionKeys.costType)
@@ -192,17 +211,6 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
                             .is(INTERNAL)
                             .and(RuleExecutionKeys.cloudProvider)
                             .is(cloudProvider);
-    if (ruleExecutionFilter.getTime() != null) {
-      for (CCMTimeFilter time : ruleExecutionFilter.getTime()) {
-        switch (time.getOperator()) {
-          case AFTER:
-            criteria.and(RuleExecutionKeys.createdAt).gte(time.getTimestamp());
-            break;
-          default:
-            throw new InvalidRequestException("Operator not supported not supported for time fields");
-        }
-      }
-    }
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation group =
         group(RuleExecutionKeys.resourceType).sum(RuleExecutionKeys.cost).as(ResourceTypeCostKey.cost);
@@ -215,7 +223,6 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
         .forEach(resource
             -> result.put(
                 resource.getResourceName() != null ? resource.getResourceName() : "others", resource.getCost()));
-    log.info("result: {}", result);
     return result;
   }
 
@@ -281,7 +288,9 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     ProjectionOperation projectionStage =
         project().and(MONGODB_ID).as(ResourceTypeCountkey.resourceName).andInclude(ResourceTypeCountkey.count);
     Map<String, Integer> result = new HashMap<>();
-    aggregate(newAggregation(matchStage, sortStage, group, projectionStage), ResourceTypeCount.class)
+    AggregationOptions options = Aggregation.newAggregationOptions().allowDiskUse(true).build();
+    aggregate(
+        newAggregation(matchStage, sortStage, group, projectionStage).withOptions(options), ResourceTypeCount.class)
         .getMappedResults()
         .forEach(resource -> result.put(resource.getResourceName(), resource.getCount()));
     log.info("result: {}", result);

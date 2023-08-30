@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.azureconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureMSIAuthSAOutcomeDTO;
@@ -29,6 +30,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("AzureMSIAuth")
 @Schema(name = "AzureMSIAuth", description = "This contains azure MSI auth details")
+@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO")
 public class AzureMSIAuthSADTO implements AzureMSIAuthDTO {
   @NotNull @JsonProperty("type") AzureManagedIdentityType azureManagedIdentityType;
 

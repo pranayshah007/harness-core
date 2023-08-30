@@ -6,10 +6,12 @@
  */
 
 package io.harness.repositories.custom;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
@@ -42,12 +44,21 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
+import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PIPELINE)
 public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom {
   private final MongoTemplate mongoTemplate;
+  private static final int MAX_BATCH_SIZE = 1000;
+  @Override
+  public CloseableIterator<NGTriggerEntity> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    query.cursorBatchSize(MAX_BATCH_SIZE);
+    return mongoTemplate.stream(query, NGTriggerEntity.class);
+  }
 
   @Override
   public Page<NGTriggerEntity> findAll(Criteria criteria, Pageable pageable) {
@@ -97,8 +108,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
         }
       } else if (pollingSubscriptionStatus != null
           && pollingSubscriptionStatus.getStatusResult() == StatusResult.PENDING) {
-        // TODO: (Vinicius) Set trigger status to PENDING here when UI is capable of handling it.
-        triggerStatus.setStatus(StatusResult.SUCCESS);
+        triggerStatus.setStatus(StatusResult.PENDING);
       } else {
         triggerStatus.setStatus(StatusResult.SUCCESS);
       }
@@ -159,6 +169,37 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying]: Failed hard deleting Trigger; attempt: {}", "[Failed]: Failed deleting Trigger; attempt: {}");
     return Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, NGTriggerEntity.class));
+  }
+
+  public TriggerUpdateCount updateTriggerEnabled(List<NGTriggerEntity> ngTriggerEntityList) {
+    BulkOperations bulkOperations = mongoTemplate.bulkOps(BulkOperations.BulkMode.UNORDERED, NGTriggerEntity.class);
+    for (NGTriggerEntity triggerEntity : ngTriggerEntityList) {
+      Update update = new Update();
+      update.set(NGTriggerEntityKeys.yaml, triggerEntity.getYaml());
+      update.set(NGTriggerEntityKeys.enabled, false);
+      Criteria criteria = Criteria.where(NGTriggerEntityKeys.accountId)
+                              .is(triggerEntity.getAccountId())
+                              .and(NGTriggerEntityKeys.orgIdentifier)
+                              .is(triggerEntity.getOrgIdentifier())
+                              .and(NGTriggerEntityKeys.projectIdentifier)
+                              .is(triggerEntity.getProjectIdentifier())
+                              .and(NGTriggerEntityKeys.targetIdentifier)
+                              .is(triggerEntity.getTargetIdentifier())
+                              .and(NGTriggerEntityKeys.identifier)
+                              .is(triggerEntity.getIdentifier());
+      bulkOperations.updateOne(new Query(criteria), update);
+    }
+    try {
+      long successTriggerUpdateCount = bulkOperations.execute().getModifiedCount();
+      long failedTriggerUpdateCount = ngTriggerEntityList.size() - successTriggerUpdateCount;
+      return TriggerUpdateCount.builder()
+          .failureCount(failedTriggerUpdateCount)
+          .successCount(successTriggerUpdateCount)
+          .build();
+    } catch (Exception ex) {
+      log.error("Error while updating trigger yaml", ex);
+      throw ex;
+    }
   }
 
   @Override

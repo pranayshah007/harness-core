@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.service;
-
 import static io.harness.delegate.clienttools.ClientTool.CHARTMUSEUM;
 import static io.harness.delegate.clienttools.ClientTool.GO_TEMPLATE;
 import static io.harness.delegate.clienttools.ClientTool.HELM;
@@ -15,8 +14,11 @@ import static io.harness.delegate.clienttools.ClientTool.KUSTOMIZE;
 import static io.harness.delegate.clienttools.ClientTool.OC;
 import static io.harness.k8s.model.HelmVersion.V2;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.clienttools.ChartmuseumVersion;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.ClientToolVersion;
@@ -34,6 +36,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * @deprecated use {@link InstallUtils#getPath(ClientTool, ClientToolVersion)} directly instead
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 @Deprecated

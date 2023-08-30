@@ -41,6 +41,7 @@ public class CDNGChangeSourceDemoDataGenerator implements ChangeSourceDemoDataGe
                                            .stageStepId("stageStepId")
                                            .stageId("stageId")
                                            .pipelineId("demoPipelineId")
+                                           .runSequence("1")
                                            .planExecutionId("executionId")
                                            .artifactType("artifactType")
                                            .status("SUCCESS")

@@ -28,9 +28,12 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionMetadataRepositoryCustomImpl implements PlanExecutionMetadataRepositoryCustom {
   private final MongoTemplate secondaryMongoTemplate;
+  private final MongoTemplate mongoTemplate;
 
   @Inject
-  public PlanExecutionMetadataRepositoryCustomImpl(SecondaryMongoTemplateHolder secondaryMongoTemplateHolder) {
+  public PlanExecutionMetadataRepositoryCustomImpl(
+      MongoTemplate mongoTemplate, SecondaryMongoTemplateHolder secondaryMongoTemplateHolder) {
+    this.mongoTemplate = mongoTemplate;
     this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
   }
 
@@ -47,11 +50,20 @@ public class PlanExecutionMetadataRepositoryCustomImpl implements PlanExecutionM
   }
 
   @Override
-  public PlanExecutionMetadata updateExecutionNotes(Criteria criteria, Update update) {
+  public PlanExecutionMetadata updatePlanExecution(Criteria criteria, Update update) {
     Query query = new Query(criteria);
     return Failsafe.with(DEFAULT_RETRY_POLICY)
         .get(()
-                 -> secondaryMongoTemplate.findAndModify(
+                 -> mongoTemplate.findAndModify(
                      query, update, new FindAndModifyOptions().returnNew(true), PlanExecutionMetadata.class));
+  }
+
+  @Override
+  public void multiUpdatePlanExecution(Criteria criteria, Update update) {
+    Query query = new Query(criteria);
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      mongoTemplate.updateMulti(query, update, PlanExecutionMetadata.class);
+      return true;
+    });
   }
 }

@@ -7,8 +7,11 @@
 
 package io.harness;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EntityReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.InputSetReference;
@@ -26,6 +29,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.DX)
 // todo(abhinav): refactor/adapt this according to needs later depending on how service registration comes in
 // one more enum might come in here for product types.
@@ -456,7 +461,6 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_TERRAFORM_PLUGIN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLUGIN, IdentifierRef.class,
       EntityYamlRootNames.IACM_TERRAFORM_PLUGIN),
-
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_APPROVAL(
       ModuleType.IACM, EntityTypeConstants.IACM_APPROVAL, IdentifierRef.class, EntityYamlRootNames.IACM_APPROVAL),
@@ -629,7 +633,25 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.AWS_CDK_BOOTSTRAP, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_BOOTSTRAP),
   @JsonProperty(EntityTypeConstants.AWS_CDK_SYNTH)
   AWS_CDK_SYNTH(
-      ModuleType.CD, EntityTypeConstants.AWS_CDK_SYNTH, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_SYNTH);
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_SYNTH, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_SYNTH),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_DIFF)
+  AWS_CDK_DIFF(ModuleType.CD, EntityTypeConstants.AWS_CDK_DIFF, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DIFF),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_DEPLOY)
+  AWS_CDK_DEPLOY(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_DEPLOY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DEPLOY),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_DESTROY)
+  AWS_CDK_DESTROY(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_DESTROY, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_DESTROY),
+  @JsonProperty(EntityTypeConstants.IDP_SCORECARD)
+  IDP_SCORECARD(ModuleType.IDP, EntityTypeConstants.IDP_SCORECARD, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.IDP_CHECK)
+  IDP_CHECK(ModuleType.IDP, EntityTypeConstants.IDP_CHECK, IdentifierRef.class),
+  @JsonProperty(EntityTypeConstants.AWS_CDK_ROLLBACK)
+  AWS_CDK_ROLLBACK(
+      ModuleType.CD, EntityTypeConstants.AWS_CDK_ROLLBACK, IdentifierRef.class, EntityYamlRootNames.AWS_CDK_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.IACM)
+  IACM_COST_ESTIMATION(ModuleType.IACM, EntityTypeConstants.IACM_COST_ESTIMATION, IdentifierRef.class,
+      EntityYamlRootNames.IACM_COST_ESTIMATION);
 
   private final ModuleType moduleType;
   String yamlName;

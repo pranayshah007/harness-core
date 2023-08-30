@@ -6,10 +6,12 @@
  */
 
 package io.harness.filestore.service;
-
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SearchPageParams;
 import io.harness.filestore.dto.filter.FileStoreNodesFilterQueryPropertiesDTO;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
@@ -30,6 +32,7 @@ import javax.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 public interface FileStoreService {
   /**

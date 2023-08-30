@@ -7,13 +7,18 @@
 
 package io.harness.polling.mapper.artifact;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.polling.bean.PollingInfo;
 import io.harness.polling.bean.artifact.EcrArtifactInfo;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.mapper.PollingInfoBuilder;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDC)
 public class EcrArtifactInfoBuilder implements PollingInfoBuilder {
   @Override
@@ -22,6 +27,7 @@ public class EcrArtifactInfoBuilder implements PollingInfoBuilder {
         .connectorRef(pollingPayloadData.getConnectorRef())
         .imagePath(pollingPayloadData.getEcrPayload().getImagePath())
         .region(pollingPayloadData.getEcrPayload().getRegion())
+        .registryId(pollingPayloadData.getEcrPayload().getRegistryId())
         .build();
   }
 }

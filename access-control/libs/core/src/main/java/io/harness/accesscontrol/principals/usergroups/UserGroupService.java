@@ -23,7 +23,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public interface UserGroupService {
   UserGroup upsert(@NotNull @Valid UserGroup userGroup);
 
-  List<UserGroup> list(String userIdentifier);
+  List<UserGroup> list(@NotEmpty String scopeIdentifier, String userIdentifier);
 
   PageResponse<UserGroup> list(@NotNull PageRequest pageRequest, @NotEmpty String scopeIdentifier);
 

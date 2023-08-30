@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.beans.FeatureName.ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS;
 import static io.harness.beans.FeatureName.SPG_ENFORCE_TIME_RANGE_DEPLOYMENTS_WITHOUT_APP_ID;
 import static io.harness.beans.SearchFilter.Operator;
@@ -16,6 +15,9 @@ import static io.harness.beans.SearchFilter.SearchFilterBuilder;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.SearchFilter;
 import io.harness.exception.InvalidRequestException;
@@ -39,6 +41,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 public class WorkflowExecutionTimeFilterHelper {

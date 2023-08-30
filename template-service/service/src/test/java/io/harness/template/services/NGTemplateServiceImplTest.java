@@ -38,13 +38,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
+import io.harness.TemplateServiceConfiguration;
 import io.harness.TemplateServiceTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.encryption.Scope;
@@ -56,6 +56,7 @@ import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ScmException;
@@ -197,6 +198,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks TemplateMergeServiceImpl templateMergeService;
   @Mock private GovernanceService governanceService;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock TemplateServiceConfiguration templateServiceConfiguration;
 
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -277,14 +279,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     doReturn(ngManagerReconcileCall)
         .when(ngManagerReconcileClient)
         .validateYaml(anyString(), eq(null), eq(null), any(NgManagerRefreshRequestDTO.class));
-
-    doReturn(GovernanceMetadata.newBuilder()
-                 .setDeny(false)
-                 .setMessage(String.format(
-                     "FF: [%s] is disabled for account: [%s]", FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE, ACCOUNT_ID))
-                 .build())
-        .when(governanceService)
-        .evaluateGovernancePoliciesForTemplate(any(), any(), any(), any(), any(), any());
 
     doReturn(Response.success(ResponseDTO.newResponse(InputsValidationResponse.builder().isValid(true).build())))
         .when(ngManagerReconcileCall)
@@ -1493,9 +1487,9 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     TemplateEntity stageTemplate =
         entity.withVersionLabel("v2").withTemplateEntityType(TemplateEntityType.STAGE_TEMPLATE);
     assertThatThrownBy(() -> templateService.create(stageTemplate, false, "", false))
-        .isInstanceOf(InvalidRequestException.class)
+        .isInstanceOf(HintException.class)
         .hasMessage(
-            "Error while saving template [template1] of versionLabel [v2]: Template should have same template entity type Step as other template versions");
+            "Failed to save the template [template1] because an existing template of different type has the same identifier");
 
     TemplateEntity httpStepTemplate = shellStepTemplate.withVersionLabel("v3").withChildType("Http");
     assertThatThrownBy(() -> templateService.create(httpStepTemplate, false, "", false))
@@ -1939,18 +1933,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   }
 
   @Test
-  @Owner(developers = SHIVAM)
-  @Category(UnitTests.class)
-  public void testEvaluateGovernancePoliciesTemplateWithFlagOff() {
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, FeatureName.CDS_OPA_TEMPLATE_GOVERNANCE);
-    GovernanceMetadata flagOffMetadata =
-        templateService.validateGovernanceRules(TemplateEntity.builder().accountId("acc").build());
-    assertThat(flagOffMetadata.getDeny()).isFalse();
-    assertThat(flagOffMetadata.getMessage())
-        .isEqualTo("FF: [CDS_OPA_TEMPLATE_GOVERNANCE] is disabled for account: [acc]");
-  }
-
-  @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testFailOnMoveConfigForNotSupportedTemplates() {
@@ -1982,6 +1964,49 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Template with the given Identifier: template-movetogit and versionLabel version1 cannot be moved to Git as it is not a Git Supported Template Type");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testIfTemplateIsAlreadyRemoteType() {
+    NGTemplateServiceImpl ngTemplateService = spy(templateService);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier("template-movetogit")
+                                        .name("templatemovetogit")
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .templateScope(Scope.PROJECT)
+                                        .templateEntityType(TemplateEntityType.MONITORED_SERVICE_TEMPLATE)
+                                        .storeType(StoreType.REMOTE)
+                                        .yaml(yaml)
+                                        .filePath("FILE_PATH")
+                                        .rootFolder("ROOT")
+                                        .objectIdOfYaml("YAML_ID_TEMPLATE")
+                                        .repo("git")
+                                        .branch("master")
+                                        .build();
+    ngTemplateService.create(templateEntity, true, "", false);
+    doReturn(templateEntity)
+        .when(ngTemplateService)
+        .moveTemplateEntity(any(), any(), any(), any(), any(), any(TemplateMoveConfigOperationDTO.class), any());
+    doReturn(Optional.of(templateEntity))
+        .when(ngTemplateService)
+        .get(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean());
+    TemplateMoveConfigRequestDTO moveConfigOperationDTO =
+        TemplateMoveConfigRequestDTO.builder()
+            .isNewBranch(false)
+            .moveConfigOperationType(TemplateMoveConfigOperationType.INLINE_TO_REMOTE)
+            .versionLabel(TEMPLATE_VERSION_LABEL)
+            .build();
+    assertThatThrownBy(()
+                           -> ngTemplateService.moveTemplateStoreTypeConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               "template-movetogit", moveConfigOperationDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Template with the given Identifier: template-movetogit and versionLabel version1 cannot be moved to Git as it is already Remote Type");
   }
 
   @Test
@@ -2245,5 +2270,17 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThatThrownBy(() -> templateService.updateTemplateEntity(updateTemplate, ChangeType.MODIFY, false, ""))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Error while saving template [template1] of versionLabel [version1] : [null]");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testEvaluateGovernancePoliciesTemplateWithFlagOff() {
+    doReturn(false).when(templateServiceConfiguration).isEnableOpaEvaluation();
+    GovernanceMetadata flagOffMetadata =
+        templateService.validateGovernanceRules(TemplateEntity.builder().accountId("acc").build());
+    assertThat(flagOffMetadata.getDeny()).isFalse();
+    assertThat(flagOffMetadata.getMessage())
+        .isEqualTo("Template OPA is disabled. Configure \"enableOpaRule: true\" in config.yaml file");
   }
 }

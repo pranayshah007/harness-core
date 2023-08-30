@@ -6,7 +6,12 @@
  */
 
 package io.harness.servicenow.auth.refreshtoken;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_APPROVALS, HarnessModuleComponent.CDS_APPROVALS})
 public interface RefreshTokenConstants {
   String CLIENT_ID = "client_id";
   String CLIENT_SECRET = "client_secret";

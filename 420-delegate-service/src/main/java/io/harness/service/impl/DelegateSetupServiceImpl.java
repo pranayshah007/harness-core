@@ -56,6 +56,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateSetupService;
+import io.harness.version.VersionInfoManager;
 
 import software.wings.beans.SelectorType;
 import software.wings.service.impl.DelegateDao;
@@ -69,6 +70,7 @@ import dev.morphia.query.UpdateOperations;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -100,8 +102,12 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
   @Inject private DelegateDao delegateDao;
   @Inject private FilterService filterService;
   @Inject private OutboxService outboxService;
+
+  @Inject private VersionInfoManager versionInfoManager;
+
   // grpc heartbeat thread is scheduled at 5 mins, hence we are allowing a gap of 15 mins
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
+  private static final int DELEGATE_EXPIRY_TIME_IN_WEEKS = 24;
 
   private static final long AUTO_UPGRADE_CHECK_TIME_IN_MINUTES = 90;
 
@@ -431,7 +437,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     String delegateGroupIdentifier = delegateGroup != null ? delegateGroup.getIdentifier() : null;
     Set<String> groupCustomSelectors = delegateGroup != null ? delegateGroup.getTags() : null;
     long upgraderLastUpdated = delegateGroup != null ? delegateGroup.getUpgraderLastUpdated() : 0;
-    long groupExpirationTime = groupDelegates.stream().mapToLong(Delegate::getExpirationTime).min().orElse(0);
     long delegateCreationTime = groupDelegates.stream().mapToLong(Delegate::getCreatedAt).min().orElse(0);
     boolean immutableDelegate = isNotEmpty(groupDelegates) && groupDelegates.get(0).isImmutable();
 
@@ -467,7 +472,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
                   .activelyConnected(isDelegateConnected)
                   .hostName(delegate.getHostName())
                   .tokenActive(isTokenActive)
-                  .delegateExpirationTime(delegate.getExpirationTime())
+                  .delegateExpirationTime(getDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()))
                   .version(delegate.getVersion())
                   .build();
             })
@@ -484,6 +489,12 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
                               .min(Comparator.comparing(Delegate::getVersion))
                               .map(Delegate::getVersion)
                               .orElse(null);
+
+    long groupExpirationTime =
+        connectedDelegates.stream()
+            .mapToLong(delegate -> getDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()))
+            .min()
+            .orElse(0);
 
     return DelegateGroupDetails.builder()
         .groupId(delegateGroupId)
@@ -621,7 +632,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
                   .lastHeartbeat(delegate.getLastHeartBeat())
                   .connected(isDelegateConnected)
                   .hostName(delegate.getHostName())
-                  .expiringAt(delegate.getExpirationTime())
+                  .expiringAt(getDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()))
                   .version(delegate.getVersion())
                   .build();
             })
@@ -650,11 +661,13 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       List<Delegate> delegateList, DelegateInstanceFilter delegateInstanceStatus) {
     if (DelegateInstanceFilter.EXPIRED.equals(delegateInstanceStatus)) {
       return delegateList.stream()
-          .filter(delegate -> delegate.getExpirationTime() < System.currentTimeMillis())
+          .filter(delegate
+              -> getDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()) < System.currentTimeMillis())
           .collect(toList());
     } else if (DelegateInstanceFilter.AVAILABLE.equals(delegateInstanceStatus)) {
       return delegateList.stream()
-          .filter(delegate -> delegate.getExpirationTime() >= System.currentTimeMillis())
+          .filter(delegate
+              -> getDelegateExpirationTime(delegate.getVersion(), delegate.getUuid()) >= System.currentTimeMillis())
           .collect(toList());
     }
     return delegateList;
@@ -1010,6 +1023,33 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     } catch (Exception e) {
       log.info("Exception occurred while updating delegate group validity.", e);
     }
+  }
+
+  /**
+   * Get expiration time. Time after which delegate will be marked expired.
+   * If latest delegate is used (delegate and manager are on same version) then expiration is of 24 weeks
+   *
+   * @param version version of the immutable delegate
+   * @param delegateId delegate id, for logging
+   * @return expiration time
+   */
+  public long getDelegateExpirationTime(final String version, final String delegateId) {
+    int expireAfterWeeks = DELEGATE_EXPIRY_TIME_IN_WEEKS;
+    Calendar cal = Calendar.getInstance();
+    try {
+      String[] split = version.split("\\.");
+      String delegateBuildNumber = split[2];
+
+      // Assuming delegate version will never be higher than manager version.
+      int releaseGap = (Integer.parseInt(versionInfoManager.getVersionInfo().getBuildNo()) / 100)
+          - (Integer.parseInt(delegateBuildNumber) / 100);
+
+      expireAfterWeeks = DELEGATE_EXPIRY_TIME_IN_WEEKS - releaseGap;
+    } catch (Exception ex) {
+      log.warn("Unable to set expiration for delegateId {} with version {}", delegateId, version, ex);
+    }
+    cal.add(Calendar.WEEK_OF_YEAR, expireAfterWeeks);
+    return cal.getTimeInMillis();
   }
 
   private boolean checkForDelegateGroupsHavingAllTags(DelegateGroup delegateGroup, DelegateGroupTags tags) {

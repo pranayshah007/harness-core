@@ -9,6 +9,8 @@ package io.harness.idp.envvariable.service;
 
 import static io.harness.idp.common.Constants.GITHUB_APP_PRIVATE_KEY_REF;
 import static io.harness.idp.common.Constants.LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES;
+import static io.harness.idp.common.Constants.PRIVATE_KEY_END;
+import static io.harness.idp.common.Constants.PRIVATE_KEY_START;
 import static io.harness.idp.k8s.constants.K8sConstants.BACKSTAGE_SECRET;
 
 import static java.lang.String.format;
@@ -250,6 +252,16 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
 
   @Override
   public void deleteMultiUsingEnvNames(List<String> envNames, String accountIdentifier) {
+    // removing from setup usages
+    Iterable<BackstageEnvVariableEntity> envVariableEntities =
+        backstageEnvVariableRepository.findAllByAccountIdentifierAndMultipleEnvNames(accountIdentifier, envNames);
+    List<BackstageEnvVariable> deletedVariables = new ArrayList<>();
+    envVariableEntities.forEach(envVariableEntity -> {
+      BackstageEnvVariableMapper envVariableMapper = getEnvVariableMapper((envVariableEntity.getType()));
+      deletedVariables.add(envVariableMapper.toDto(envVariableEntity));
+    });
+    setupUsageProducer.deleteEnvVariableSetupUsage(deletedVariables, accountIdentifier);
+
     k8sClient.removeSecretData(getNamespaceForAccount(accountIdentifier), BACKSTAGE_SECRET, envNames);
     backstageEnvVariableRepository.deleteAllByAccountIdentifierAndEnvNames(accountIdentifier, envNames);
   }
@@ -263,11 +275,23 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
         backstageEnvVariableRepository.findByAccountIdentifierAndHarnessSecretIdentifier(
             accountIdentifier, secretIdentifier);
     if (envVariableEntityOpt.isPresent()) {
+      log.info("Secret {} is used by backstage env variable {}. Processing secret update for account {}",
+          secretIdentifier, envVariableEntityOpt.get().getEnvName(), accountIdentifier);
       BackstageEnvVariableMapper envVariableMapper = getEnvVariableMapper((envVariableEntityOpt.get().getType()));
       sync(Collections.singletonList(envVariableMapper.toDto(envVariableEntityOpt.get())), accountIdentifier, false);
-    } else {
-      // TODO: There might be too many secrets overall. We might have to consider removing this log line in future
-      log.info("Secret {} is not tracker by IDP, hence not processing it", secretIdentifier);
+    }
+  }
+
+  @Override
+  public void processSecretDelete(EntityChangeDTO entityChangeDTO) {
+    String secretIdentifier = entityChangeDTO.getIdentifier().getValue();
+    secretIdentifier = CommonUtils.removeAccountFromIdentifier(secretIdentifier);
+    String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
+    Optional<BackstageEnvVariableEntity> backstageEnvVariableOpt =
+        backstageEnvVariableRepository.updateSecretIsDeleted(accountIdentifier, secretIdentifier, true);
+    if (backstageEnvVariableOpt.isPresent()) {
+      log.info("Marking backstage env variable {} as deleted as it uses deleted secret {} for account {}",
+          backstageEnvVariableOpt.get().getEnvName(), secretIdentifier, accountIdentifier);
     }
   }
 
@@ -425,6 +449,10 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
             decryptedValue.setDecryptedValue(
                 new String(Base64.getDecoder().decode(decryptedValue.getDecryptedValue()), StandardCharsets.UTF_8));
           }
+          if (secretResponseWrapper.getSecret().getType().equals(SecretType.SecretText)) {
+            String privateKeyFormatted = formatPrivateKey(decryptedValue.getDecryptedValue());
+            decryptedValue.setDecryptedValue(privateKeyFormatted);
+          }
         }
         return decryptedValue.getDecryptedValue();
       } catch (Exception e) {
@@ -443,5 +471,15 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     }
 
     throw new RuntimeException("Failed to retrieve decrypted value after multiple retries.");
+  }
+
+  private String formatPrivateKey(String privateKey) {
+    privateKey = privateKey.replace(PRIVATE_KEY_START + " ", "");
+    privateKey = privateKey.replace(PRIVATE_KEY_END, "");
+    privateKey = privateKey.replace(" ", "\n");
+    String privateKeyFormatted = PRIVATE_KEY_START + "\n";
+    privateKeyFormatted = privateKeyFormatted + privateKey;
+    privateKeyFormatted = privateKeyFormatted + PRIVATE_KEY_END;
+    return privateKeyFormatted;
   }
 }

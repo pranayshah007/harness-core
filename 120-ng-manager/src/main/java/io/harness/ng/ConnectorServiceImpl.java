@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng;
-
 import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
@@ -68,6 +67,7 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.ngexception.beans.ConnectorValidationErrorMetadataDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -90,6 +90,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
+import io.fabric8.utils.Strings;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -616,6 +617,11 @@ public class ConnectorServiceImpl implements ConnectorService {
         validationFailureBuilder.errorSummary(errorSummary).errors(errorDetail);
       }
       connectorValidationResult = validationFailureBuilder.build();
+      // set Delegate taskId as the metadata
+      if (isNotEmpty((String) wingsException.getParams().get("taskId"))) {
+        wingsException.setMetadata(
+            new ConnectorValidationErrorMetadataDTO((String) wingsException.getParams().get("taskId")));
+      }
       throw wingsException;
     } finally {
       if (connectorValidationResult != null) {
@@ -639,6 +645,12 @@ public class ConnectorServiceImpl implements ConnectorService {
           connectorIdentifier);
 
       connectorRepository.save(connector, ChangeType.NONE);
+
+      getConnectorService(connector.getType())
+          .updateActivityDetailsInTheConnector(connector.getAccountIdentifier(), connector.getOrgIdentifier(),
+              connector.getProjectIdentifier(), connector.getIdentifier(), connectorValidationResult,
+              connector.getConnectivityDetails().getTestedAt());
+
     } catch (Exception ex) {
       log.error("Error saving the connector status for the connector {}",
           String.format(CONNECTOR_STRING, connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier),
@@ -706,7 +718,8 @@ public class ConnectorServiceImpl implements ConnectorService {
   private void deletePTForGitConnector(
       ConnectorValidationResult connectorValidationResult, Connector connector, String accountIdentifier) {
     // Delete PT during connection failure if it exist
-    if (connectorValidationResult.getErrorSummary().contains(HINT_INVALID_GIT_API_AUTHORIZATION)
+    if (Strings.isNotBlank(connectorValidationResult.getErrorSummary())
+        && connectorValidationResult.getErrorSummary().contains(HINT_INVALID_GIT_API_AUTHORIZATION)
         && connector.getType() == ConnectorType.GITHUB && connector.getHeartbeatPerpetualTaskId() != null) {
       String fullyQualifiedIdentifier = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
           accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());

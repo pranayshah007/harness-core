@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.usage.impl;
-
 import static io.harness.NGDateUtils.YEAR_MONTH_DAY_DATE_PATTERN;
 import static io.harness.NGDateUtils.getLocalDateOrThrow;
 import static io.harness.cd.CDLicenseType.SERVICES;
@@ -27,8 +26,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.ModuleType;
 import io.harness.aggregates.AggregateNgServiceInstanceStats;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.cd.CDLicenseType;
 import io.harness.cd.NgServiceInfraInfoUtils;
@@ -94,6 +96,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 @Slf4j

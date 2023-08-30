@@ -44,6 +44,7 @@ import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.beans.CVNGTaskMetadataConstants;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
@@ -321,14 +322,16 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
         cvngLogService.getExecutionLogDTOs(accountId, dataCollectionTask.getVerificationTaskId());
     ExecutionLogDTO executionLogDTO = cvngLogs.get(0);
     assertThat(cvngLogs.size()).isEqualTo(2);
-    assertThat(executionLogDTO.getTags().get(0).getKey()).isEqualTo("taskId");
+    assertThat(executionLogDTO.getTags().get(0).getKey()).isEqualTo(CVNGTaskMetadataConstants.TASK_ID);
     assertThat(executionLogDTO.getTags().get(0).getValue()).isNotEmpty();
-    assertThat(executionLogDTO.getTags().get(1).getKey()).isEqualTo("retryCount");
+    assertThat(executionLogDTO.getTags().get(1).getKey()).isEqualTo(CVNGTaskMetadataConstants.RETRY_COUNT);
     assertThat(executionLogDTO.getTags().get(1).getValue()).isEqualTo("1");
-    assertThat(executionLogDTO.getTags().get(2).getKey()).isEqualTo("waitDuration");
-    assertThat(executionLogDTO.getTags().get(2).getValue()).isEqualTo("00:05:00.000");
-    assertThat(executionLogDTO.getTags().get(3).getKey()).isEqualTo("runningDuration");
-    assertThat(executionLogDTO.getTags().get(3).getValue()).isEqualTo("00:03:00.000");
+    assertThat(executionLogDTO.getTags().get(2).getKey()).isEqualTo(CVNGTaskMetadataConstants.TASK_TYPE);
+    assertThat(executionLogDTO.getTags().get(2).getValue()).isEqualTo("SERVICE_GUARD");
+    assertThat(executionLogDTO.getTags().get(3).getKey()).isEqualTo(CVNGTaskMetadataConstants.WAIT_DURATION);
+    assertThat(executionLogDTO.getTags().get(3).getValue()).isEqualTo("00:05:00.000");
+    assertThat(executionLogDTO.getTags().get(4).getKey()).isEqualTo(CVNGTaskMetadataConstants.RUNNING_DURATION);
+    assertThat(executionLogDTO.getTags().get(4).getValue()).isEqualTo("00:03:00.000");
   }
 
   @Test

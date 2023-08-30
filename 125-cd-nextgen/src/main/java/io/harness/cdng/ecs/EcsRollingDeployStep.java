@@ -7,8 +7,11 @@
 
 package io.harness.cdng.ecs;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
@@ -32,7 +35,6 @@ import io.harness.delegate.task.ecs.request.EcsTaskArnRollingDeployRequest.EcsTa
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -44,6 +46,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -53,6 +56,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac implements EcsStepExecutor {
@@ -69,12 +73,12 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // nothing
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
     log.info("Calling executeNextLink");
@@ -83,7 +87,7 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof EcsGitFetchFailurePassThroughData) {
       return ecsStepCommonHelper.handleGitTaskFailure((EcsGitFetchFailurePassThroughData) passThroughData);
@@ -129,17 +133,17 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     return ecsStepCommonHelper.startChainLink(this, ambiance, stepParameters, ecsStepHelper);
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public TaskChainResponse executeEcsTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public TaskChainResponse executeEcsTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
       EcsStepExecutorParams ecsStepExecutorParams) {
     InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
@@ -182,7 +186,7 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
   }
 
   @Override
-  public TaskChainResponse executeEcsPrepareRollbackTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public TaskChainResponse executeEcsPrepareRollbackTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = ecsPrepareRollbackDataPassThroughData.getInfrastructureOutcome();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -201,7 +205,7 @@ public class EcsRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
         ecsPrepareRollbackDataPassThroughData, false, TaskType.ECS_COMMAND_TASK_NG);
   }
 
-  private TaskChainResponse executeEcsTaskWithTaskArn(StepElementParameters stepElementParameters, Ambiance ambiance,
+  private TaskChainResponse executeEcsTaskWithTaskArn(StepBaseParameters stepElementParameters, Ambiance ambiance,
       UnitProgressData unitProgressData, EcsStepExecutorParams ecsStepExecutorParams,
       EcsExecutionPassThroughData executionPassThroughData) {
     InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();

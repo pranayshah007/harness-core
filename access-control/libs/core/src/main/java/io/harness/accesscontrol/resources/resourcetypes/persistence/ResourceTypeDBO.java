@@ -51,7 +51,7 @@ public class ResourceTypeDBO {
   @Setter @Id @dev.morphia.annotations.Id String id;
   @FdUniqueIndex @NotEmpty final String identifier;
   @FdUniqueIndex @NotEmpty final String permissionKey;
-
+  @Builder.Default Boolean isPublic = Boolean.FALSE;
   @Setter @CreatedDate Long createdAt;
   @Setter @LastModifiedDate Long lastModifiedAt;
   @Setter @CreatedBy EmbeddedUser createdBy;

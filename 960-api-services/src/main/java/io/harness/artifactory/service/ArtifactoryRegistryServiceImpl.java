@@ -10,14 +10,17 @@ package io.harness.artifactory.service;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.artifactory.ArtifactoryClientImpl.getBaseUrl;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifactory.ArtifactoryClientImpl;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
-import io.harness.artifacts.gar.service.GARUtils;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactoryRegistryException;
@@ -36,6 +39,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -150,7 +154,7 @@ public class ArtifactoryRegistryServiceImpl implements ArtifactoryRegistryServic
     String tagUrl = getBaseUrl(artifactoryConfig) + repositoryKey + "/" + artifactPath + "/";
     String registryHostname = ArtifactUtilities.extractRegistryHost(repoName);
     Map<String, String> metadata = new HashMap();
-    metadata.put(ArtifactMetadataKeys.IMAGE, GARUtils.getImageName(repoName, tag));
+    metadata.put(ArtifactMetadataKeys.IMAGE, ArtifactUtils.getImageName(repoName, tag));
     metadata.put(ArtifactMetadataKeys.TAG, tag);
     metadata.put(ArtifactMetadataKeys.REGISTRY_HOSTNAME, registryHostname);
     return BuildDetailsInternal.builder()

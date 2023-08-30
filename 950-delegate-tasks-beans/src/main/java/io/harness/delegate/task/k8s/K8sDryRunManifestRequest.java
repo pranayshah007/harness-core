@@ -42,6 +42,7 @@ public class K8sDryRunManifestRequest implements K8sDeployRequest {
   boolean useNewKubectlVersion;
   Boolean useDeclarativeRollback;
   @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
+  boolean disableFabric8;
 
   @Override
   public K8sTaskType getTaskType() {

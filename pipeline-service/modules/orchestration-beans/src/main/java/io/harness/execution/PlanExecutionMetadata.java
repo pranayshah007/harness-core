@@ -6,11 +6,13 @@
  */
 
 package io.harness.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -19,6 +21,7 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.plan.RetryExecutionInfo;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 
 import com.google.common.collect.ImmutableList;
@@ -26,19 +29,25 @@ import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 @Data
 @Builder(builderClassName = "Builder")
+@NoArgsConstructor
+@AllArgsConstructor
 @FieldNameConstants(innerTypeName = "PlanExecutionMetadataKeys")
 @StoreIn(DbAliases.PMS)
 @Entity(value = "planExecutionsMetadata", noClassnameStored = true)
@@ -57,6 +66,9 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
   // Final yaml after merging input sets to given yaml, given to plan creation
   private String yaml;
 
+  // Pipeline yaml before resolving templates and input sets
+  @Transient private String pipelineYaml;
+
   // Yaml having injectedUUid which is processed by PlanCreation
   @With private String processedYaml;
 
@@ -72,6 +84,8 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
   private Boolean notifyOnlyUser;
   @With String notes;
   RetryStagesMetadata retryStagesMetadata;
+
+  RetryExecutionInfo retryExecutionInfo;
 
   @Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 

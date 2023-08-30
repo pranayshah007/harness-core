@@ -14,6 +14,8 @@ import static io.harness.rule.OwnerRule.MEENAKSHI;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -198,6 +200,37 @@ public class RoleAssignmentApiUtilsTest extends AccessControlTestBase {
         roleAssignmentApiUtils.buildRoleAssignmentWithPrincipalScopeLevel(roleAssignmentParam, scope);
     assertThat(resultRoleAssignment).isEqualToComparingFieldByField(expectedRoleAssigment);
     assertThat(resultRoleAssignment.getPrincipalScopeLevel()).isEqualTo(PROJECT);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void buildRoleAssignmentWithPrincipalScopeLevel_whenPrincipalScopeIsNull_forServiceAccount() {
+    io.harness.accesscontrol.roleassignments.RoleAssignment.RoleAssignmentBuilder roleAssignmentBuilder =
+        io.harness.accesscontrol.roleassignments.RoleAssignment.builder()
+            .identifier(ROLE_ASSIGNMENT_ID)
+            .scopeIdentifier(PROJECT_SCOPE_IDENTIFIER)
+            .scopeLevel("project")
+            .resourceGroupIdentifier("_all_project_level_resources")
+            .roleIdentifier("_project_basic")
+            .principalIdentifier(PRINCIPAL_ID)
+            .principalType(PrincipalType.SERVICE_ACCOUNT)
+            .managed(false)
+            .disabled(false)
+            .createdAt(null)
+            .lastModifiedAt(null);
+
+    io.harness.accesscontrol.roleassignments.RoleAssignment roleAssignmentParam = roleAssignmentBuilder.build();
+    io.harness.accesscontrol.roleassignments.RoleAssignment expectedRoleAssigment =
+        roleAssignmentBuilder.principalScopeLevel(PROJECT).build();
+
+    Scope scope = fromParams(harnessProjectScopeParams);
+
+    io.harness.accesscontrol.roleassignments.RoleAssignment resultRoleAssignment =
+        roleAssignmentApiUtils.buildRoleAssignmentWithPrincipalScopeLevel(roleAssignmentParam, scope);
+    assertThat(resultRoleAssignment).isEqualToComparingFieldByField(expectedRoleAssigment);
+    assertThat(resultRoleAssignment.getPrincipalScopeLevel()).isEqualTo(PROJECT);
+    verify(harnessServiceAccountService, times(1)).sync(PRINCIPAL_ID, scope);
   }
   @Test
   @Owner(developers = MEENAKSHI)

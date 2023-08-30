@@ -12,6 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.context.GlobalContext;
@@ -30,6 +33,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.ThreadOperationContextHelper;
@@ -42,6 +46,7 @@ import java.util.EnumSet;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 public class TemplateUtils {
   public static final String TEMPLATE_FIELD_NAME = "template";
@@ -203,5 +208,10 @@ public class TemplateUtils {
     }
     GlobalContextManager.upsertGlobalContextRecord(
         ThreadOperationContextHelper.getOrInitThreadOperationContext().withUserFlow(userFlow));
+  }
+
+  public Scope buildScope(GlobalTemplateEntity globalTemplateEntity) {
+    return Scope.of(globalTemplateEntity.getAccountIdentifier(), globalTemplateEntity.getOrgIdentifier(),
+        globalTemplateEntity.getProjectIdentifier());
   }
 }

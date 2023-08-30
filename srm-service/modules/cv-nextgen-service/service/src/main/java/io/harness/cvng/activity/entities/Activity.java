@@ -23,7 +23,6 @@ import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.CompoundTextMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -130,14 +129,6 @@ public abstract class Activity
                 .field(ActivityKeys.projectIdentifier)
                 .field(ActivityKeys.eventTime)
                 .field(ActivityKeys.type)
-                .build(),
-            CompoundTextMongoIndex.builder()
-                .name("change_event_text_search_index")
-                .field(ActivityKeys.accountId)
-                .field(ActivityKeys.orgIdentifier)
-                .field(ActivityKeys.projectIdentifier)
-                .textField(ActivityKeys.activityName)
-                .rangeField(ActivityKeys.eventTime)
                 .build(),
             CompoundMongoIndex.builder()
                 .name("change_event_infra_service_query_indexv2")

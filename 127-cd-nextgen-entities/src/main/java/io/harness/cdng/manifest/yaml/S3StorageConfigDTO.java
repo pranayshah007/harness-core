@@ -7,6 +7,7 @@
 
 package io.harness.cdng.manifest.yaml;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -20,6 +21,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.cdng.manifest.yaml.S3StorageConfigDTO")
 public class S3StorageConfigDTO implements FileStorageConfigDTO {
   String connectorRef;
   String region;

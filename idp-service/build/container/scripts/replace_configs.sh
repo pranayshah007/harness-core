@@ -252,12 +252,15 @@ replace_key_value accessControlClient.accessControlServiceSecret "$ACCESS_CONTRO
 replace_key_value backstageHttpClientConfig.baseUrl "$BACKSTAGE_BASE_URL"
 replace_key_value backstageServiceSecret "$BACKSTAGE_SERVICE_SECRET"
 replace_key_value onboardingModuleConfig.harnessCiCdAnnotations.projectUrl "$ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATIONS_PROJECT_URL"
+replace_key_value onboardingModuleConfig.harnessCiCdAnnotations.serviceUrl "$ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATIONS_SERVICE_URL"
 replace_key_value env "$ENV"
 replace_key_value prEnvDefaultBackstageNamespace "$DEFAULT_BACKSTAGE_NAMESPACE"
 replace_key_value backstageAppBaseUrl "$BACKSTAGE_APP_BASE_URL"
 replace_key_value backstagePostgresHost "$BACKSTAGE_POSTGRES_HOST"
 replace_key_value onboardingModuleConfig.useGitServiceGrpcForSingleEntityPush $ONBOARDING_MODULE_CONFIG_USE_GIT_SERVICE_GRPC_FOR_SINGLE_ENTITY_PUSH
 replace_key_value delegateSelectorsCacheMode "$DELEGATE_SELECTORS_CACHE_MODE"
+replace_key_value shouldConfigureWithNotification "$SHOULD_CONFIGURE_WITH_NOTIFICATION"
+replace_key_value notificationClient.secrets.notificationClientSecret "$NOTIFICATION_CLIENT_SECRET"
 
 if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   export LOCK_CONFIG_REDIS_URL; yq -i '.singleServerConfig.address=env(LOCK_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
@@ -346,4 +349,48 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
       INDEX=$(expr $INDEX + 1)
     done
   fi
+fi
+
+if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
+  export NOTIFICATION_BASE_URL; yq -i '.notificationClient.httpClient.baseUrl=env(NOTIFICATION_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
+  export NOTIFICATION_MONGO_URI=${NOTIFICATION_MONGO_URI//\\&/&}; yq -i '.notificationClient.messageBroker.uri=env(NOTIFICATION_MONGO_URI)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NOTIFICATION_CONFIGS_PLUGIN_REQUESTS_NOTIFICATION_SLACK" ]]; then
+  export NOTIFICATION_CONFIGS_PLUGIN_REQUESTS_NOTIFICATION_SLACK; yq -i '.notificationConfigs.pluginRequestsNotificationSlack=env(NOTIFICATION_CONFIGS_PLUGIN_REQUESTS_NOTIFICATION_SLACK)' $CONFIG_FILE
+fi
+
+if [[ "" != "$PIPELINE_SERVICE_CLIENT_BASEURL" ]]; then
+  export PIPELINE_SERVICE_CLIENT_BASEURL; yq -i '.pipelineServiceClientConfig.baseUrl=env(PIPELINE_SERVICE_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
+  export PIPELINE_SERVICE_SECRET; yq -i '.pipelineServiceSecret=env(PIPELINE_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TI_SERVICE_ENDPOINT" ]]; then
+  export TI_SERVICE_ENDPOINT; yq -i '.tiServiceConfig.baseUrl=env(TI_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TI_SERVICE_INTERNAL_URL" ]]; then
+  export TI_SERVICE_INTERNAL_URL; yq -i '.tiServiceConfig.internalUrl=env(TI_SERVICE_INTERNAL_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TI_SERVICE_GLOBAL_TOKEN" ]]; then
+  export TI_SERVICE_GLOBAL_TOKEN; yq -i '.tiServiceConfig.globalToken=env(TI_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SCORECARD_ITERATOR_THREAD_POOL_COUNT" ]]; then
+  export SCORECARD_ITERATOR_THREAD_POOL_COUNT; yq -i '.scorecardScoreComputationIteratorConfig.threadPoolCount=env(SCORECARD_ITERATOR_THREAD_POOL_COUNT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SCORECARD_ITERATOR_ENABLED" ]]; then
+  export SCORECARD_ITERATOR_ENABLED; yq -i '.scorecardScoreComputationIteratorConfig.enabled=env(SCORECARD_ITERATOR_ENABLED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS" ]]; then
+  export SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS; yq -i '.scorecardScoreComputationIteratorConfig.targetIntervalInSeconds=env(SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS)' $CONFIG_FILE
 fi

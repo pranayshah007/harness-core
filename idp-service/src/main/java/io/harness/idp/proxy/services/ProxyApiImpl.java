@@ -191,7 +191,7 @@ public class ProxyApiImpl implements ProxyApi {
             proxyAllowListConfig.getServices().get(service).getClientConfig().getReadTimeOutSeconds(), TimeUnit.SECONDS)
         .writeTimeout(proxyAllowListConfig.getServices().get(service).getClientConfig().getConnectTimeOutSeconds(),
             TimeUnit.SECONDS)
-        .retryOnConnectionFailure(false)
+        .retryOnConnectionFailure(true)
         .addInterceptor(
             new IdpAuthInterceptor(tokenGenerator, proxyAllowListConfig.getServices().get(service).getSecret()))
         .addInterceptor(getEncodingInterceptor())

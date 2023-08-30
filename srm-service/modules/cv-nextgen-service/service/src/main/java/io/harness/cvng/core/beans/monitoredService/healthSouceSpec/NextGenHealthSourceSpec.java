@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,6 +50,8 @@ import org.apache.commons.lang3.StringUtils;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "NextGenHealthSource",
+    description = "This is the NextGenHealthSource Health Source spec entity defined in Harness")
 public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
   DataSourceType dataSourceType;
   @UniqueIdentifierCheck List<QueryDefinition> queryDefinitions = Collections.emptyList();

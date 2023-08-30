@@ -6,13 +6,15 @@
  */
 
 package io.harness.pcf;
-
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -20,6 +22,7 @@ import io.harness.logging.LogLevel;
 import java.time.Duration;
 import org.slf4j.Logger;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 public class RetryAbleTaskExecutor {
   public static final int MIN_RETRY = 3;
   private static final int[] exponentialBackOffTime = new int[] {2, 4, 8, 16, 32, 64, 128, 256, 512, 1024};

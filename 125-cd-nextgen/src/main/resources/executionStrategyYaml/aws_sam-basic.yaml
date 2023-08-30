@@ -59,5 +59,6 @@ spec:
           stepGroupInfra:
             type: KubernetesDirect
             spec:
+              connectorRef: <+input>
               namespace: "default"
     rollbackSteps: []

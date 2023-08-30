@@ -11,7 +11,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
+	"net/url"
+	"regexp"
 	"time"
 
 	"github.com/dchest/authcookie"
@@ -65,6 +66,36 @@ func TokenGenerationMiddleware(config config.Config, validateAccount bool, ngCli
 					WriteBadRequest(w, errors.New("token in request not authorized for receiving tokens"))
 					return
 				}
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// AuthInternalMiddleware is middleware to ensure that the incoming request is allowed for internal APIs only
+func AuthInternalMiddleware(config config.Config, validateAccount bool, ngClient *client.HTTPClient) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if validateAccount {
+				accountID := r.FormValue(accountIDParam)
+				if accountID == "" {
+					WriteBadRequest(w, errors.New("no account ID in query params"))
+					return
+				}
+			}
+
+			// Try to get token from the header or the URL param
+			inputToken := r.Header.Get(authHeader)
+			if inputToken == "" {
+				WriteBadRequest(w, errors.New("no token in header"))
+				return
+			}
+
+			if inputToken != config.Auth.GlobalToken {
+				// Error: invalid token
+				WriteBadRequest(w, errors.New("token in request not authorized for receiving tokens"))
+				return
 			}
 
 			next.ServeHTTP(w, r)
@@ -138,11 +169,13 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 			exists := c.Exists(ctx, prefix)
 
 			if exists {
+				logger.FromRequest(r).Infoln("Request found in cache for prefix", prefix)
 				inf, err := c.Get(ctx, prefix)
 				if err != nil {
 					logger.FromRequest(r).
 						WithError(err).
 						WithField("url", r.URL.String()).
+						WithField("Prefix", prefix).
 						WithField("time", time.Now().Format(time.RFC3339)).
 						Errorln("middleware cache: cannot get prefix")
 					WriteInternalError(w, err)
@@ -155,6 +188,7 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 						WithError(err).
 						WithField("url", r.URL.String()).
 						WithField("time", time.Now().Format(time.RFC3339)).
+						WithField("Prefix", prefix).
 						WithField("info", inf).
 						Errorln("middleware cache: failed to unmarshal info")
 					WriteInternalError(w, err)
@@ -164,6 +198,7 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 				switch info.Status {
 				case entity.QUEUED:
 				case entity.IN_PROGRESS:
+					logger.FromRequest(r).Infoln("Returning queued or inprogress for prefix", prefix)
 					WriteJSON(w, info, 200)
 					return
 				case entity.ERROR:
@@ -173,21 +208,26 @@ func CacheRequest(c cache.Cache) func(handler http.Handler) http.Handler {
 							WithError(err).
 							WithField("url", r.URL.String()).
 							WithField("time", time.Now().Format(time.RFC3339)).
+							WithField("Prefix", prefix).
 							WithField("info", inf).
-							Errorln("middleware cache: failed to delete error in c")
+							Errorln("middleware cache: failed to delete error in cache")
 						WriteInternalError(w, err)
 						return
 					}
+					logger.FromRequest(r).WithField("Prefix", prefix).Infoln("Deleted from cache")
 					WriteJSON(w, info, 200)
 					return
 				case entity.SUCCESS:
+					logger.FromRequest(r).Infoln("Returning success found in cache for prefix", prefix)
 					WriteJSON(w, info, 200)
 					return
 				default:
+					logger.FromRequest(r).WithField("Prefix", prefix).Infoln("info status does not match, going to default")
 					next.ServeHTTP(w, r)
 					return
 				}
 			}
+			logger.FromRequest(r).Infoln("Prefix does not exist in cache as it is first attempt", prefix)
 			next.ServeHTTP(w, r)
 			return
 		})
@@ -218,7 +258,28 @@ func RequiredQueryParams(params ...string) func(handler http.Handler) http.Handl
 func ValidatePrefixRequest() func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			containRunSequence := strings.Contains(r.URL.String(), "runSequence")
+			unescapedUrl, err := url.QueryUnescape(r.URL.String())
+			if err != nil {
+				WriteInternalError(w, err)
+				logger.FromRequest(r).
+					WithField("url", r.URL.String()).
+					WithField("time", time.Now().Format(time.RFC3339)).
+					WithError(err).
+					Errorln("middleware validate: cannot match execution in prefix")
+				return
+			}
+
+			containRunSequence, err := regexp.MatchString("runSequence:[\\d+]", unescapedUrl)
+			if err != nil {
+				WriteInternalError(w, err)
+				logger.FromRequest(r).
+					WithField("url", r.URL.String()).
+					WithField("time", time.Now().Format(time.RFC3339)).
+					WithError(err).
+					Errorln("middleware validate: cannot match execution in prefix")
+				return
+			}
+
 			if containRunSequence {
 				logger.WithContext(context.Background(), logger.FromRequest(r))
 				logger.FromRequest(r).
@@ -229,7 +290,7 @@ func ValidatePrefixRequest() func(handler http.Handler) http.Handler {
 				return
 			}
 
-			err := errors.New(fmt.Sprintf("operation not permitted for prefix: %s", r.URL.String()))
+			err = errors.New(fmt.Sprintf("operation not permitted for prefix: %s", r.URL.String()))
 			WriteBadRequest(w, err)
 			logger.FromRequest(r).
 				WithField("url", r.URL.String()).

@@ -16,6 +16,9 @@ import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
@@ -97,7 +100,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -118,6 +120,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
@@ -138,6 +141,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
 public class EcsStepCommonHelper extends EcsStepUtils {
   @Inject private EngineExpressionService engineExpressionService;
@@ -153,7 +157,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       + "in service";
 
   public TaskChainResponse startChainLink(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, EcsStepHelper ecsStepHelper) {
+      StepBaseParameters stepElementParameters, EcsStepHelper ecsStepHelper) {
     // Get ManifestsOutcome
     ManifestsOutcome manifestsOutcome = resolveEcsManifestsOutcome(ambiance);
 
@@ -328,7 +332,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse prepareEcsHarnessStoreTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, EcsHarnessStoreManifestsContent ecsHarnessStoreContent,
+      StepBaseParameters stepElementParameters, EcsHarnessStoreManifestsContent ecsHarnessStoreContent,
       InfrastructureOutcome infrastructureOutcome, LogCallback logCallback) {
     logCallback.saveExecutionLog("Fetched all manifests from Harness Store ", INFO, CommandExecutionStatus.SUCCESS);
 
@@ -388,7 +392,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse prepareEcsRunTaskHarnessStoreTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
+      StepBaseParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
       EcsRunTaskManifestsContent ecsRunTaskManifestsContent, LogCallback logCallback) {
     logCallback.saveExecutionLog("Fetched both task definition and run task request definition from Harness Store ",
         INFO, CommandExecutionStatus.SUCCESS);
@@ -414,7 +418,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   public TaskChainResponse startChainLinkEcsRunTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, EcsStepHelper ecsStepHelper) {
+      StepBaseParameters stepElementParameters, EcsStepHelper ecsStepHelper) {
     // Get InfrastructureOutcome
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -468,7 +472,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     return ecsStepHelper.getEcsManifestOutcome(manifestOutcomes);
   }
 
-  public List<ManifestOutcome> getEcsRunTaskManifestOutcomes(StepElementParameters stepElementParameters) {
+  public List<ManifestOutcome> getEcsRunTaskManifestOutcomes(StepBaseParameters stepElementParameters) {
     EcsRunTaskStepParameters ecsRunTaskStepParameters = (EcsRunTaskStepParameters) stepElementParameters.getSpec();
 
     if ((ecsRunTaskStepParameters.getTaskDefinition() == null
@@ -609,9 +613,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         .build();
   }
 
-  private TaskChainResponse prepareEcsManifestS3FetchTask(Ambiance ambiance,
-      StepElementParameters stepElementParameters, EcsS3FetchPassThroughData ecsS3FetchPassThroughData,
-      EcsS3ManifestFileConfigs ecsS3ManifestFileConfigs) {
+  private TaskChainResponse prepareEcsManifestS3FetchTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
+      EcsS3FetchPassThroughData ecsS3FetchPassThroughData, EcsS3ManifestFileConfigs ecsS3ManifestFileConfigs) {
     // Get EcsS3FetchFileConfig for task definition
 
     EcsS3FetchFileConfig ecsTaskDefinitionS3FetchFileConfig =
@@ -629,7 +632,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse getS3FetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters, EcsS3FetchPassThroughData ecsS3FetchPassThroughData,
+      StepBaseParameters stepElementParameters, EcsS3FetchPassThroughData ecsS3FetchPassThroughData,
       EcsS3FetchFileConfig ecsTaskDefinitionS3FetchFileConfig,
       EcsS3FetchFileConfig ecsServiceDefinitionS3FetchFileConfig,
       List<EcsS3FetchFileConfig> ecsScalableTargetS3FetchFileConfigs,
@@ -669,7 +672,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse prepareEcsManifestGitFetchTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, EcsGitFetchPassThroughData ecsGitFetchPassThroughData,
+      StepBaseParameters stepElementParameters, EcsGitFetchPassThroughData ecsGitFetchPassThroughData,
       List<ManifestOutcome> ecsManifestOutcomes, EcsStepHelper ecsStepHelper) {
     // Get EcsGitFetchFileConfig for task definition
     ManifestOutcome ecsTaskDefinitionManifestOutcome =
@@ -759,9 +762,9 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         .build();
   }
 
-  private TaskChainResponse prepareEcsRunTaskGitFetchTask(Ambiance ambiance,
-      StepElementParameters stepElementParameters, List<ManifestOutcome> ecsRunTaskManifestOutcomes,
-      EcsGitFetchPassThroughData ecsGitFetchPassThroughData, EcsStepHelper ecsStepHelper) {
+  private TaskChainResponse prepareEcsRunTaskGitFetchTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
+      List<ManifestOutcome> ecsRunTaskManifestOutcomes, EcsGitFetchPassThroughData ecsGitFetchPassThroughData,
+      EcsStepHelper ecsStepHelper) {
     ManifestOutcome ecsRunTaskDefinitionManifestOutcome =
         ecsStepHelper.getEcsTaskDefinitionManifestOutcome(ecsRunTaskManifestOutcomes);
     StoreConfig ecsRunTaskDefinitionStoreConfig = ecsRunTaskDefinitionManifestOutcome.getStore();
@@ -788,7 +791,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         taskDefinitionEcsGitFetchRunTaskFileConfig, ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig);
   }
 
-  private TaskChainResponse prepareEcsRunTaskS3FetchTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+  private TaskChainResponse prepareEcsRunTaskS3FetchTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsS3FetchPassThroughData ecsS3FetchRunTaskPassThroughData, EcsRunTaskS3FileConfigs ecsRunTaskS3FileConfigs) {
     EcsS3FetchFileConfig runTaskDefinitionS3FetchFileConfig =
         ecsRunTaskS3FileConfigs.getRunTaskDefinitionS3FetchFileConfig();
@@ -912,7 +915,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse getGitFetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters, EcsGitFetchPassThroughData ecsGitFetchPassThroughData,
+      StepBaseParameters stepElementParameters, EcsGitFetchPassThroughData ecsGitFetchPassThroughData,
       EcsGitFetchFileConfig ecsTaskDefinitionGitFetchFileConfig,
       EcsGitFetchFileConfig ecsServiceDefinitionGitFetchFileConfig,
       List<EcsGitFetchFileConfig> ecsScalableTargetGitFetchFileConfigs,
@@ -953,7 +956,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse getS3FetchFileTaskRunTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters, EcsS3FetchPassThroughData ecsS3FetchRunTaskPassThroughData,
+      StepBaseParameters stepElementParameters, EcsS3FetchPassThroughData ecsS3FetchRunTaskPassThroughData,
       EcsS3FetchFileConfig runTaskDefinitionS3FetchFileConfig,
       EcsS3FetchFileConfig runTaskRequestDefinitionS3FetchFileConfig) {
     EcsS3FetchRunTaskRequest ecsS3FetchRunTaskRequest =
@@ -987,7 +990,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   TaskChainResponse getGitFetchFileRunTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters, EcsGitFetchPassThroughData ecsGitFetchPassThroughData,
+      StepBaseParameters stepElementParameters, EcsGitFetchPassThroughData ecsGitFetchPassThroughData,
       EcsGitFetchRunTaskFileConfig taskDefinitionEcsGitFetchRunTaskFileConfig,
       EcsGitFetchRunTaskFileConfig ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -1025,7 +1028,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   public TaskChainResponse executeNextLinkRolling(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier, EcsStepHelper ecsStepHelper) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
     UnitProgressData unitProgressData = null;
@@ -1071,7 +1074,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   public TaskChainResponse executeNextLinkCanary(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier, EcsStepHelper ecsStepHelper) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
     UnitProgressData unitProgressData = null;
@@ -1108,7 +1111,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   public TaskChainResponse executeNextLinkBlueGreen(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
     UnitProgressData unitProgressData = null;
@@ -1156,7 +1159,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   public TaskChainResponse executeNextLinkRunTask(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier, EcsStepHelper ecsStepHelper) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
     UnitProgressData unitProgressData = null;
@@ -1306,7 +1309,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse handleEcsS3FetchFilesResponseRolling(EcsS3FetchResponse ecsS3FetchResponse,
-      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
     if (ecsS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       return handleFailureS3Task(ecsS3FetchResponse);
@@ -1329,7 +1332,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse handleEcsGitFetchFilesResponseRolling(EcsGitFetchResponse ecsGitFetchResponse,
-      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsGitFetchPassThroughData ecsGitFetchPassThroughData) {
     if (ecsGitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       return handleFailureGitTask(ecsGitFetchResponse);
@@ -1363,7 +1366,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse handleEcsS3FetchFilesResponseCanary(EcsS3FetchResponse ecsS3FetchResponse,
-      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
     if (ecsS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       return handleFailureS3Task(ecsS3FetchResponse);
@@ -1392,7 +1395,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse handleEcsGitFetchFilesResponseCanary(EcsGitFetchResponse ecsGitFetchResponse,
-      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsGitFetchPassThroughData ecsGitFetchPassThroughData) {
     if (ecsGitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       return handleFailureGitTask(ecsGitFetchResponse);
@@ -1433,7 +1436,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse handleEcsGitFetchFilesResponseRunTask(EcsGitFetchRunTaskResponse ecsGitFetchRunTaskResponse,
-      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsGitFetchPassThroughData ecsGitFetchPassThroughData) {
     if (ecsGitFetchRunTaskResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       EcsGitFetchFailurePassThroughData ecsGitFetchFailurePassThroughData =
@@ -1506,7 +1509,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse handleEcsS3FetchFilesResponseRunTask(EcsS3FetchRunTaskResponse ecsS3FetchRunTaskResponse,
-      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
     if (ecsS3FetchRunTaskResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       EcsS3FetchFailurePassThroughData ecsS3FetchFailurePassThroughData =
@@ -1555,7 +1558,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse handleEcsS3FetchFilesResponseBlueGreen(EcsS3FetchResponse ecsS3FetchResponse,
-      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsS3FetchPassThroughData ecsS3FetchPassThroughData) {
     if (ecsS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       return handleFailureS3Task(ecsS3FetchResponse);
@@ -1628,7 +1631,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
   }
 
   private TaskChainResponse handleEcsGitFetchFilesResponseBlueGreen(EcsGitFetchResponse ecsGitFetchResponse,
-      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      EcsStepExecutor ecsStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsGitFetchPassThroughData ecsGitFetchPassThroughData) {
     if (ecsGitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       return handleFailureGitTask(ecsGitFetchResponse);
@@ -1808,7 +1811,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
   private TaskChainResponse handleEcsPrepareRollbackDataResponseRolling(
       EcsPrepareRollbackDataResponse ecsPrepareRollbackDataResponse, EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData) {
+      StepBaseParameters stepElementParameters, EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData) {
     if (ecsPrepareRollbackDataResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       EcsStepExceptionPassThroughData ecsStepExceptionPassThroughData =
           EcsStepExceptionPassThroughData.builder()
@@ -1867,7 +1870,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
   private TaskChainResponse handleEcsBlueGreenPrepareRollbackDataResponse(
       EcsBlueGreenPrepareRollbackDataResponse ecsBlueGreenPrepareRollbackDataResponse, EcsStepExecutor ecsStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters,
+      Ambiance ambiance, StepBaseParameters stepElementParameters,
       EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData) {
     if (ecsBlueGreenPrepareRollbackDataResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       EcsStepExceptionPassThroughData ecsStepExceptionPassThroughData =
@@ -1907,6 +1910,15 @@ public class EcsStepCommonHelper extends EcsStepUtils {
               .stageListenerRuleArn(
                   ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getStageListenerRuleArn())
               .stageTargetGroupArn(stageTargetGroupArn)
+              .greenServiceExist(ecsBlueGreenPrepareRollbackDataResult.isGreenServiceExist())
+              .greenServiceName(ecsBlueGreenPrepareRollbackDataResult.getGreenServiceName())
+              .greenServiceRequestBuilderString(
+                  ecsBlueGreenPrepareRollbackDataResult.getGreenServiceRequestBuilderString())
+              .greenServiceScalableTargetRequestBuilderStrings(
+                  ecsBlueGreenPrepareRollbackDataResult.getGreenServiceScalableTargetRequestBuilderStrings())
+              .greenServiceScalingPolicyRequestBuilderStrings(
+                  ecsBlueGreenPrepareRollbackDataResult.getGreenServiceScalingPolicyRequestBuilderStrings())
+              .greenServiceRollbackDataExist(ecsBlueGreenPrepareRollbackDataResult.isGreenServiceRollbackDataExist())
               .build();
 
       executionSweepingOutputService.consume(ambiance,
@@ -1945,9 +1957,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         ecsBlueGreenPrepareRollbackDataResponse.getUnitProgressData(), ecsStepExecutorParams);
   }
 
-  public TaskChainResponse queueEcsTask(StepElementParameters stepElementParameters,
-      EcsCommandRequest ecsCommandRequest, Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd,
-      TaskType taskType) {
+  public TaskChainResponse queueEcsTask(StepBaseParameters stepElementParameters, EcsCommandRequest ecsCommandRequest,
+      Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {ecsCommandRequest})
                             .taskType(taskType.name())
@@ -1970,7 +1981,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         .build();
   }
 
-  public TaskChainResponse queueEcsRunTaskArnTask(StepElementParameters stepElementParameters,
+  public TaskChainResponse queueEcsRunTaskArnTask(StepBaseParameters stepElementParameters,
       EcsCommandRequest ecsCommandRequest, Ambiance ambiance, PassThroughData passThroughData, boolean isChainEnd) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {ecsCommandRequest})

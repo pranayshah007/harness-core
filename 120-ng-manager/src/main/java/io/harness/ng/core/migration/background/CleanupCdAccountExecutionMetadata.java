@@ -6,13 +6,15 @@
  */
 
 package io.harness.ng.core.migration.background;
-
 import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.account.utils.AccountUtils;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata.CDAccountExecutionMetadataKeys;
 import io.harness.migration.NGMigration;
@@ -27,6 +29,7 @@ import java.util.HashSet;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class CleanupCdAccountExecutionMetadata implements NGMigration {

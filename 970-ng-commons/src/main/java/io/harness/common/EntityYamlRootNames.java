@@ -9,7 +9,10 @@ package io.harness.common;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
@@ -20,6 +23,9 @@ import lombok.experimental.UtilityClass;
  * </p>
  * In this the top element is <b>connector</b>
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @UtilityClass
 @OwnedBy(PL)
 public class EntityYamlRootNames {
@@ -203,7 +209,7 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   public static final String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
   public static final String IACM_APPROVAL = "IACMApproval";
-
+  public static final String IACM_COST_ESTIMATION = "IACMCostEstimation";
   public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   public static final String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
@@ -253,4 +259,8 @@ public class EntityYamlRootNames {
   public static final String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
   public static final String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
   public static final String AWS_CDK_SYNTH = "AwsCdkSynth";
+  public static final String AWS_CDK_DIFF = "AwsCdkDiff";
+  public static final String AWS_CDK_DEPLOY = "AwsCdkDeploy";
+  public static final String AWS_CDK_DESTROY = "AwsCdkDestroy";
+  public static final String AWS_CDK_ROLLBACK = "AwsCdkRollback";
 }

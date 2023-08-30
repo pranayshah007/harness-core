@@ -6,7 +6,6 @@
  */
 
 package io.harness.changehandlers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.execution.step.approval.harness.HarnessApprovalStepExecutionDetails.HarnessApprovalExecutionActivity.HarnessApprovalExecutionActivityKeys;
@@ -14,7 +13,10 @@ import static io.harness.execution.step.approval.harness.HarnessApprovalStepExec
 
 import static java.util.Arrays.asList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser.EmbeddedUserKeys;
 import io.harness.changehandlers.helper.ChangeHandlerHelper;
 import io.harness.changestreamsframework.ChangeEvent;
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 @OwnedBy(CDP)
 public class HarnessApprovalStepExecutionHandler extends AbstractChangeDataHandler {

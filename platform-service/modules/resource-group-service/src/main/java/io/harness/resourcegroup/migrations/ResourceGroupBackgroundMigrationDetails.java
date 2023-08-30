@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
+import io.harness.migration.utils.NoopMigration;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -33,9 +34,9 @@ public class ResourceGroupBackgroundMigrationDetails implements MigrationDetails
   @Override
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
-        .add(Pair.of(1, ResourceGroupAllowedScopeLevelsMigration.class))
-        .add(Pair.of(2, MultipleManagedResourceGroupDeletionMigration.class))
-        .add(Pair.of(3, MigrationOfV1ToV2.class))
+        .add(Pair.of(1, NoopMigration.class))
+        .add(Pair.of(2, NoopMigration.class))
+        .add(Pair.of(3, NoopMigration.class))
         .build();
   }
 }

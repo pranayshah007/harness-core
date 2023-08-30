@@ -6,12 +6,15 @@
  */
 
 package io.harness.delegate.task.k8s;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.k8s.model.K8sPod;
 
 import java.util.Collections;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public interface K8sNGTaskResponse {
   default List<K8sPod> getPreviousK8sPodList() {
     return Collections.emptyList();

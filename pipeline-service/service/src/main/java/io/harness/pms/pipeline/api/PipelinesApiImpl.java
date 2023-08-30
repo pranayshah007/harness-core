@@ -14,8 +14,11 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
@@ -79,6 +82,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @PipelineServiceAuth
@@ -97,9 +101,10 @@ public class PipelinesApiImpl implements PipelinesApi {
     if (requestBody == null) {
       throw new InvalidRequestException("Pipeline Create request body must not be null.");
     }
+    String pipelineVersion = pmsPipelineService.pipelineVersion(account, requestBody.getPipelineYaml());
     GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitCreateDetails(requestBody.getGitDetails()));
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        PipelinesApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, null);
+        PipelinesApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, null, pipelineVersion);
     log.info(String.format("Creating a Pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), project, org, account));
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity, false);
@@ -107,7 +112,7 @@ public class PipelinesApiImpl implements PipelinesApi {
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
       throw new PolicyEvaluationFailureException(
-          "Policy Evaluation Failure", governanceMetadata, createdEntity.getYaml());
+          "Policy Evaluation Failure", governanceMetadata, pipelineEntity.getYaml());
     }
     PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
     responseBody.setIdentifier(createdEntity.getIdentifier());
@@ -299,11 +304,12 @@ public class PipelinesApiImpl implements PipelinesApi {
           String.format("Expected Pipeline identifier in Request Body to be [%s], but was [%s]", pipeline,
               requestBody.getIdentifier()));
     }
+    String pipelineVersion = pmsPipelineService.pipelineVersion(account, requestBody.getPipelineYaml());
     GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format(
         "Updating Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
-        PipelinesApiUtils.mapUpdateToRequestInfoDTO(requestBody), account, org, project, null);
+        PipelinesApiUtils.mapUpdateToRequestInfoDTO(requestBody), account, org, project, null, pipelineVersion);
     PipelineCRUDResult pipelineCRUDResult =
         pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.MODIFY, false);
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();

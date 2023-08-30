@@ -1,0 +1,6 @@
+name: CE Nextgen Application Metrics Group
+identifier: ceNextgenApplicationMetricsGroup
+labels:
+  - namespace
+  - containerName
+  - serviceName

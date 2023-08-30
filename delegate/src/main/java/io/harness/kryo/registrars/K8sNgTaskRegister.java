@@ -6,7 +6,9 @@
  */
 
 package io.harness.kryo.registrars;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.KeyValuePair;
 import io.harness.beans.NGInstanceUnitType;
@@ -262,6 +264,7 @@ import software.wings.beans.TaskType;
 import com.esotericsoftware.kryo.Kryo;
 import java.util.LinkedHashSet;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class K8sNgTaskRegister implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {

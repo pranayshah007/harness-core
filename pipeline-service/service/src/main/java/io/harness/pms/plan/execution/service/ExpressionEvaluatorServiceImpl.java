@@ -9,7 +9,11 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
@@ -36,7 +40,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -46,7 +52,8 @@ public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorServic
   @Override
   public ExpressionEvaluationDetailDTO evaluateExpression(String planExecutionId, String yaml) {
     YamlExpressionEvaluator yamlExpressionEvaluator = new YamlExpressionEvaluator(yaml);
-    List<NodeExecution> nodeExecutions =
+    // TODO Optimise this further to avoid getting ambiance for all the node executions for a planExecution
+    CloseableIterator<NodeExecution> nodeExecutions =
         nodeExecutionService.fetchAllWithPlanExecutionId(planExecutionId, NodeProjectionUtils.withAmbiance);
 
     // This map matches the fqn with each Ambiance. Here the fqn is calculated using level's identifier (till where last
@@ -95,15 +102,16 @@ public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorServic
     return resultedFqn;
   }
 
-  private Map<String, Ambiance> getFQNToAmbianceMap(List<NodeExecution> nodeExecutions) {
+  public Map<String, Ambiance> getFQNToAmbianceMap(CloseableIterator<NodeExecution> nodeExecutions) {
     Map<String, Ambiance> fqnToAmbianceMap = new HashMap<>();
 
-    nodeExecutions.forEach(nodeExecution -> {
+    while (nodeExecutions.hasNext()) {
+      NodeExecution nodeExecution = nodeExecutions.next();
       Ambiance ambiance = nodeExecution.getAmbiance();
 
       String fqn = getFqnTillLastGroupInAmbiance(ambiance);
       fqnToAmbianceMap.put(fqn, ambiance);
-    });
+    }
     return fqnToAmbianceMap;
   }
 
@@ -111,7 +119,7 @@ public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorServic
     List<Level> levelsList = ambiance.getLevelsList();
     int lastGroupIndex = ambiance.getLevelsCount() - 1;
     for (int index = ambiance.getLevelsCount() - 1; index >= 0; index--) {
-      if (levelsList.get(index).getGroup() != null) {
+      if (EmptyPredicate.isNotEmpty(levelsList.get(index).getGroup())) {
         lastGroupIndex = index;
         break;
       }
@@ -154,7 +162,7 @@ public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorServic
 
   This will return <+pipeline.stages.cs.spec.execution.steps.ShellScript_1.name>
    */
-  private static String getExpressionForYamlEvaluator(String fqn, String expression) {
+  public String getExpressionForYamlEvaluator(String fqn, String expression) {
     int dotIndex = expression.indexOf('.');
     String firstString = expression.substring(2, dotIndex);
     if (fqn.contains(firstString)) {

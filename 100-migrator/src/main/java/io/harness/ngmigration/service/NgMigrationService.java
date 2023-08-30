@@ -9,6 +9,9 @@ package io.harness.ngmigration.service;
 
 import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -58,6 +61,7 @@ import okhttp3.RequestBody;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public abstract class NgMigrationService {
   public static final MediaType TEXT_PLAIN = MediaType.parse("text/plain");
@@ -138,7 +142,7 @@ public abstract class NgMigrationService {
   }
 
   public YamlGenerationDetails getYamls(MigrationContext migrationContext, CgEntityId root, CgEntityId entityId) {
-    if (!isNGEntityExists()
+    if (!isNGEntityExists(migrationContext)
         || !canMigrate(entityId, root, migrationContext.getInputDTO().isMigrateReferencedEntities())) {
       return null;
     }
@@ -172,7 +176,7 @@ public abstract class NgMigrationService {
       Map<CgEntityId, NGYamlFile> migratedEntities, CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail,
       String accountIdentifier);
 
-  protected abstract boolean isNGEntityExists();
+  protected abstract boolean isNGEntityExists(MigrationContext migrationContext);
 
   protected <T> MigrationImportSummaryDTO handleResp(NGYamlFile yamlFile, Response<ResponseDTO<T>> resp)
       throws IOException {
@@ -188,10 +192,8 @@ public abstract class NgMigrationService {
     RequestBody type = RequestBody.create(TEXT_PLAIN, "FILE");
     RequestBody parentIdentifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getRootIdentifier());
     RequestBody mimeType = RequestBody.create(TEXT_PLAIN, "txt");
-    RequestBody content = null;
-    if (StringUtils.isNotBlank(fileYamlDTO.getContent())) {
-      content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
-    }
+    RequestBody content = RequestBody.create(
+        MediaType.parse("application/octet-stream"), StringUtils.defaultIfBlank(fileYamlDTO.getContent(), ""));
 
     Response<ResponseDTO<FileDTO>> resp;
     try {

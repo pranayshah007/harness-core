@@ -15,7 +15,10 @@ import static io.harness.logging.LogLevel.INFO;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -26,9 +29,12 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.Misc;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ScriptType;
@@ -46,6 +52,8 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @OwnedBy(CDP)
 @Slf4j
 public class FetchInstanceScriptTaskNG extends AbstractDelegateRunnableTask {
@@ -68,8 +76,8 @@ public class FetchInstanceScriptTaskNG extends AbstractDelegateRunnableTask {
   public FetchInstanceScriptTaskNGResponse run(TaskParameters taskParameters) {
     String workingDir = null;
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    LogCallback logCallback = getLogCallback(getLogStreamingTaskClient(), COMMAND_UNIT, true, commandUnitsProgress);
     try {
-      LogCallback logCallback = getLogCallback(getLogStreamingTaskClient(), COMMAND_UNIT, true, commandUnitsProgress);
       FetchInstanceScriptTaskNGRequest parameters = (FetchInstanceScriptTaskNGRequest) taskParameters;
       String basePath = Paths.get("fetchInstanceScript").toAbsolutePath().toString();
       workingDir = Paths.get(basePath, parameters.getExecutionId()).toString();
@@ -115,11 +123,13 @@ public class FetchInstanceScriptTaskNG extends AbstractDelegateRunnableTask {
         throw new InvalidRequestException("Error occurred while reading output file", e);
       }
     } catch (Exception e) {
-      log.error("Error occurred in the task", e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Error occurred in the task", sanitizedException);
+      Misc.logAllMessages(sanitizedException, logCallback);
       return FetchInstanceScriptTaskNGResponse.builder()
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-          .errorMessage(e.getMessage())
+          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
           .build();
     } finally {
       try {

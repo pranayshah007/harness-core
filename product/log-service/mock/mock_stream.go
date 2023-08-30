@@ -160,7 +160,7 @@ func (mr *MockStreamMockRecorder) Exists(ctx, key interface{}) *gomock.Call {
 }
 
 // ListPrefix mocks base method
-func (m *MockStream) ListPrefix(ctx context.Context, prefix string) ([]string, error) {
+func (m *MockStream) ListPrefix(ctx context.Context, prefix string, scanBatch int64) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListPrefix", ctx, prefix)
 	ret0, _ := ret[0].([]string)
@@ -169,7 +169,7 @@ func (m *MockStream) ListPrefix(ctx context.Context, prefix string) ([]string, e
 }
 
 // ListPrefix indicates an expected call of ListPrefix
-func (mr *MockStreamMockRecorder) ListPrefix(ctx, prefix interface{}) *gomock.Call {
+func (mr *MockStreamMockRecorder) ListPrefix(ctx, prefix, scanBatch interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPrefix", reflect.TypeOf((*MockStream)(nil).ListPrefix), ctx, prefix)
 }

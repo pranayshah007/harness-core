@@ -64,8 +64,9 @@ public class UserGroupDaoImpl implements UserGroupDao {
   }
 
   @Override
-  public List<UserGroup> list(String userIdentifier) {
-    List<UserGroupDBO> userGroupPages = userGroupRepository.findByUsersIn(userIdentifier);
+  public List<UserGroup> list(String scopeIdentifier, String userIdentifier) {
+    List<UserGroupDBO> userGroupPages =
+        userGroupRepository.findByScopeIdentifierAndUsersIn(scopeIdentifier, userIdentifier);
     return userGroupPages.stream().map(UserGroupDBOMapper::fromDBO).collect(Collectors.toList());
   }
 

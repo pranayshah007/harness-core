@@ -15,7 +15,10 @@ import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 import static io.harness.interrupts.Interrupt.State.PROCESSING;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.InterruptHandler;
 import io.harness.engine.interrupts.InterruptProcessingFailedException;
@@ -36,6 +39,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 @OwnedBy(PIPELINE)
 public class AbortInterruptHandler implements InterruptHandler {
@@ -54,8 +59,8 @@ public class AbortInterruptHandler implements InterruptHandler {
     throw new UnsupportedOperationException("ABORT handling Not required for PLAN");
   }
 
-  @Override
-  public Interrupt handleInterruptForNodeExecution(@NotNull Interrupt interrupt, @NotNull String nodeExecutionId) {
+  public Interrupt handleAndMarkInterruptForNodeExecution(
+      @NotNull Interrupt interrupt, @NotNull String nodeExecutionId, boolean markInterruptAsProcessed) {
     try (AutoLogContext ignore = interrupt.autoLogContext()) {
       NodeExecution nodeExecution = nodeExecutionService.updateStatusWithOps(
           nodeExecutionId, Status.DISCONTINUING, null, EnumSet.noneOf(Status.class));
@@ -68,10 +73,20 @@ public class AbortInterruptHandler implements InterruptHandler {
       abortHelper.discontinueMarkedInstance(nodeExecution, interrupt);
 
     } catch (Exception ex) {
-      interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+      if (markInterruptAsProcessed) {
+        interruptService.markProcessed(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
+      }
       throw ex;
     }
-    return interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    if (markInterruptAsProcessed) {
+      return interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
+    }
+    return interrupt;
+  }
+
+  @Override
+  public Interrupt handleInterruptForNodeExecution(@NotNull Interrupt interrupt, @NotNull String nodeExecutionId) {
+    return handleAndMarkInterruptForNodeExecution(interrupt, nodeExecutionId, true);
   }
 
   @VisibleForTesting

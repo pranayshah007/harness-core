@@ -10,10 +10,14 @@ package io.harness.ng.core.serviceoverride.mapper;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
@@ -21,6 +25,8 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServi
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.scope.ScopeHelper;
@@ -30,12 +36,16 @@ import io.harness.yaml.core.variables.NGServiceOverrides;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import groovy.util.logging.Slf4j;
 import java.io.IOException;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
+@Slf4j
 public class ServiceOverridesMapper {
   public NGServiceOverridesEntity toServiceOverridesEntity(
       String accountId, ServiceOverrideRequestDTO serviceOverrideRequestDTO) {
@@ -111,14 +121,35 @@ public class ServiceOverridesMapper {
     return updatedYaml;
   }
 
-  public ServiceOverrideResponseDTO toResponseWrapper(NGServiceOverridesEntity serviceOverridesEntity) {
+  public ServiceOverrideResponseDTO toResponseWrapper(
+      NGServiceOverridesEntity serviceOverridesEntity, boolean v2Enabled) {
+    String yamlFromV2Spec = EMPTY;
+
+    if (serviceOverridesEntity.getSpec() != null && v2Enabled) {
+      ServiceOverridesSpec specV2 = serviceOverridesEntity.getSpec();
+      NGServiceOverrideConfig overrideConfig =
+          NGServiceOverrideConfig.builder()
+              .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
+                                             .environmentRef(serviceOverridesEntity.getEnvironmentRef())
+                                             .serviceRef(serviceOverridesEntity.getServiceRef())
+                                             .variables(specV2.getVariables())
+                                             .manifests(specV2.getManifests())
+                                             .configFiles(specV2.getConfigFiles())
+                                             .applicationSettings(specV2.getApplicationSettings())
+                                             .connectionStrings(specV2.getConnectionStrings())
+                                             .build())
+              .build();
+
+      yamlFromV2Spec = YamlUtils.writeYamlString(overrideConfig);
+    }
+
     return ServiceOverrideResponseDTO.builder()
         .accountId(serviceOverridesEntity.getAccountId())
         .orgIdentifier(serviceOverridesEntity.getOrgIdentifier())
         .projectIdentifier(serviceOverridesEntity.getProjectIdentifier())
         .environmentRef(serviceOverridesEntity.getEnvironmentRef())
         .serviceRef(serviceOverridesEntity.getServiceRef())
-        .yaml(serviceOverridesEntity.getYaml())
+        .yaml(isNotBlank(yamlFromV2Spec) ? yamlFromV2Spec : serviceOverridesEntity.getYaml())
         .build();
   }
 

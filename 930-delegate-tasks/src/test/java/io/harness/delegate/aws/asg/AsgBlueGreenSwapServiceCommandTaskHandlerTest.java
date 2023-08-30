@@ -7,7 +7,9 @@
 
 package io.harness.delegate.aws.asg;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -16,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -49,6 +52,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+@OwnedBy(CDP)
 public class AsgBlueGreenSwapServiceCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -99,7 +103,25 @@ public class AsgBlueGreenSwapServiceCommandTaskHandlerTest extends CategoryTest 
   @Category(UnitTests.class)
   public void executeTaskInternalTest() {
     AsgLoadBalancerConfig lbConfig = getAsgLoadBalancerConfig();
-    AsgBlueGreenSwapServiceRequest request = createRequest(lbConfig);
+    AsgBlueGreenSwapServiceRequest request = createRequest(lbConfig, false);
+
+    AsgBlueGreenSwapServiceResponse response = (AsgBlueGreenSwapServiceResponse) taskHandler.executeTaskInternal(
+        request, iLogStreamingTaskClient, commandUnitsProgress);
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    AsgBlueGreenSwapServiceResult result = response.getAsgBlueGreenSwapServiceResult();
+
+    assertThat(result.getProdAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME_STAGE);
+    assertThat(result.getStageAutoScalingGroupContainer().getAutoScalingGroupName()).isEqualTo(ASG_NAME_PROD);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void executeTaskInternalWithDownsizeTest() {
+    AsgLoadBalancerConfig lbConfig = getAsgLoadBalancerConfig();
+    AsgBlueGreenSwapServiceRequest request = createRequest(lbConfig, true);
 
     AsgBlueGreenSwapServiceResponse response = (AsgBlueGreenSwapServiceResponse) taskHandler.executeTaskInternal(
         request, iLogStreamingTaskClient, commandUnitsProgress);
@@ -124,7 +146,8 @@ public class AsgBlueGreenSwapServiceCommandTaskHandlerTest extends CategoryTest 
         .build();
   }
 
-  private AsgBlueGreenSwapServiceRequest createRequest(AsgLoadBalancerConfig asgLoadBalancerConfig) {
+  private AsgBlueGreenSwapServiceRequest createRequest(
+      AsgLoadBalancerConfig asgLoadBalancerConfig, boolean downsizeOldAsg) {
     return AsgBlueGreenSwapServiceRequest.builder()
         .commandUnitsProgress(commandUnitsProgress)
         .timeoutIntervalInMin(1)
@@ -132,6 +155,7 @@ public class AsgBlueGreenSwapServiceCommandTaskHandlerTest extends CategoryTest 
         .asgInfraConfig(asgInfraConfig)
         .prodAsgName(ASG_NAME_PROD)
         .stageAsgName(ASG_NAME_STAGE)
+        .downsizeOldAsg(downsizeOldAsg)
         .build();
   }
 }

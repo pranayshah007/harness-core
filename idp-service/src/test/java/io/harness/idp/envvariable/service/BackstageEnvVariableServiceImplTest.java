@@ -462,6 +462,27 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
+  public void testProcessSecretDelete() {
+    BackstageEnvVariableEntity envVariable =
+        BackstageEnvSecretVariableEntity.builder().harnessSecretIdentifier(TEST_SECRET_IDENTIFIER).build();
+    envVariable.setAccountIdentifier(TEST_ACCOUNT_IDENTIFIER);
+    envVariable.setEnvName(TEST_ENV_NAME);
+    EntityChangeDTO entityChangeDTO = EntityChangeDTO.newBuilder()
+                                          .setAccountIdentifier(StringValue.of(TEST_ACCOUNT_IDENTIFIER))
+                                          .setIdentifier(StringValue.of(TEST_SECRET_IDENTIFIER))
+                                          .build();
+
+    when(backstageEnvVariableRepository.updateSecretIsDeleted(TEST_ACCOUNT_IDENTIFIER, TEST_SECRET_IDENTIFIER, true))
+        .thenReturn(Optional.of(envVariable));
+
+    backstageEnvVariableService.processSecretDelete(entityChangeDTO);
+
+    verify(backstageEnvVariableRepository).updateSecretIsDeleted(TEST_ACCOUNT_IDENTIFIER, TEST_SECRET_IDENTIFIER, true);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
   public void testSyncConfigValue() {
     checkUserAuth();
     mockAccountNamespaceMapping();

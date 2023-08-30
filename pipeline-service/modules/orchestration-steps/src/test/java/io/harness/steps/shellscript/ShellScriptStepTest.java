@@ -13,7 +13,8 @@ import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -37,14 +38,15 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
-import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -52,8 +54,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
@@ -67,7 +68,7 @@ public class ShellScriptStepTest extends CategoryTest {
   @Mock private StepHelper stepHelper;
   @Mock private ShellScriptHelperService shellScriptHelperService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
-
+  @Mock LogStreamingStepClientImpl logClient;
   @InjectMocks private ShellScriptStep shellScriptStep;
 
   private Ambiance buildAmbiance() {
@@ -78,10 +79,18 @@ public class ShellScriptStepTest extends CategoryTest {
         .build();
   }
 
+  private AutoCloseable mocks;
   @Before
   public void setup() {
-    LogStreamingStepClientImpl logClient = mock(LogStreamingStepClientImpl.class);
+    mocks = MockitoAnnotations.openMocks(this);
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logClient);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
   }
 
   @Test
@@ -92,17 +101,15 @@ public class ShellScriptStepTest extends CategoryTest {
     ShellScriptStepParameters stepParameters =
         ShellScriptStepParameters.infoBuilder().shellType(ShellType.Bash).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
-    ShellScriptTaskParametersNG taskParametersNG = ShellScriptTaskParametersNG.builder().build();
+    ShellScriptTaskParametersNG taskParametersNG = ShellScriptTaskParametersNG.builder().script("echo hello").build();
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
         .buildShellScriptTaskParametersNG(ambiance, stepParameters);
-    try (MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class)) {
-      aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
 
-      TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
-      assertThat(taskRequest).isNotNull();
-    }
+    TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
+    assertThat(taskRequest.getDelegateTaskRequest().getLogKeysList())
+        .containsExactly("accountId:accId/orgId:orgId/projectId:projId/pipelineId:/runSequence:0-commandUnit:Execute");
+    assertThat(taskRequest).isNotNull();
   }
 
   @Test
@@ -113,17 +120,17 @@ public class ShellScriptStepTest extends CategoryTest {
     ShellScriptStepParameters stepParameters =
         ShellScriptStepParameters.infoBuilder().shellType(ShellType.PowerShell).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
-    ShellScriptTaskParametersNG taskParametersNG = ShellScriptTaskParametersNG.builder().build();
+    ShellScriptTaskParametersNG taskParametersNG =
+        ShellScriptTaskParametersNG.builder().script("Write-Host hello").build();
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
         .buildShellScriptTaskParametersNG(ambiance, stepParameters);
-    try (MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class)) {
-      aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
-
-      TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
-      assertThat(taskRequest).isNotNull();
-    }
+    TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
+    assertThat(new HashSet<>(taskRequest.getDelegateTaskRequest().getLogKeysList()))
+        .containsExactlyInAnyOrder(
+            "accountId:accId/orgId:orgId/projectId:projId/pipelineId:/runSequence:0-commandUnit:Initialize",
+            "accountId:accId/orgId:orgId/projectId:projId/pipelineId:/runSequence:0-commandUnit:Execute");
+    assertThat(taskRequest).isNotNull();
   }
 
   @Test
@@ -131,7 +138,8 @@ public class ShellScriptStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleTaskResultForFailedTask() throws Exception {
     Ambiance ambiance = buildAmbiance();
-    ShellScriptStepParameters stepParameters = ShellScriptStepParameters.infoBuilder().build();
+    ShellScriptStepParameters stepParameters =
+        ShellScriptStepParameters.infoBuilder().shellType(ShellType.PowerShell).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
     ShellScriptTaskResponseNG taskResponseNG =
         ShellScriptTaskResponseNG.builder().status(CommandExecutionStatus.FAILURE).errorMessage("Failed").build();
@@ -139,6 +147,9 @@ public class ShellScriptStepTest extends CategoryTest {
     StepResponse stepResponse = shellScriptStep.handleTaskResult(ambiance, stepElementParameters, () -> taskResponseNG);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     assertThat(stepResponse.getFailureInfo().getErrorMessage()).isEqualTo("Failed");
+
+    verify(logClient, times(1)).closeStream("Initialize");
+    verify(logClient, times(1)).closeStream("Execute");
   }
 
   @Test
@@ -148,7 +159,7 @@ public class ShellScriptStepTest extends CategoryTest {
     Ambiance ambiance = buildAmbiance();
     Map<String, Object> outputVariables = new HashMap<>();
     ShellScriptStepParameters stepParameters =
-        ShellScriptStepParameters.infoBuilder().outputVariables(outputVariables).build();
+        ShellScriptStepParameters.infoBuilder().outputVariables(outputVariables).shellType(ShellType.Bash).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
     Map<String, String> envVariables = new HashMap<>();
 
@@ -174,6 +185,7 @@ public class ShellScriptStepTest extends CategoryTest {
     stepResponse = shellScriptStep.handleTaskResult(ambiance, stepElementParameters, () -> successResponse);
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     assertThat(((List<StepOutcome>) stepResponse.getStepOutcomes()).get(0).getOutcome()).isEqualTo(shellScriptOutcome);
+    verify(logClient, times(2)).closeStream("Execute");
   }
 
   @Test

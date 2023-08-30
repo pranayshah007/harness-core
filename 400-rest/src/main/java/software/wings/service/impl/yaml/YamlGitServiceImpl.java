@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.yaml;
-
 import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -64,8 +63,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 import io.harness.alert.AlertData;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.PageRequest;
@@ -182,6 +184,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * The type Yaml git sync service.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @ValidateOnExecution
 @Singleton
 @Slf4j

@@ -64,6 +64,7 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
   @Builder.Default Boolean useVaultAgent = Boolean.FALSE;
   @Setter @NonFinal Long renewedAt;
   @Setter @NonFinal Long lastTokenLookupAt;
+  @Setter @NonFinal @Builder.Default Boolean renewalPaused = Boolean.FALSE;
 
   @Builder.Default Boolean useAwsIam = Boolean.FALSE;
   String awsRegion;
@@ -76,6 +77,8 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
   String k8sAuthEndpoint;
 
   @Setter @NonFinal @Builder.Default Boolean renewAppRoleToken = Boolean.TRUE;
+
+  @Setter @NonFinal @Builder.Default Boolean enableCache = Boolean.TRUE;
 
   public long getRenewedAt() {
     if (renewedAt == null) {
@@ -108,6 +111,10 @@ public class VaultConnector extends Connector implements PersistentRegularIterab
 
   public Boolean getRenewAppRoleToken() {
     return renewAppRoleToken == null ? Boolean.TRUE : renewAppRoleToken;
+  }
+
+  public Boolean getEnableCache() {
+    return enableCache == null ? Boolean.TRUE : enableCache;
   }
 
   @Override

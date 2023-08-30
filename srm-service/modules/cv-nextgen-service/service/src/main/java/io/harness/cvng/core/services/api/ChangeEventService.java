@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.cvng.analysis.entities.SRMAnalysisStepDetailDTO;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
@@ -31,18 +33,22 @@ public interface ChangeEventService {
 
   PageResponse<ChangeEventDTO> getChangeEvents(ProjectParams projectParams, List<String> serviceIdentifiers,
       List<String> environmentIdentifier, List<String> monitoredServiceIdentifiers,
-      boolean isMonitoredServiceIdentifierScoped, String searchText, List<ChangeCategory> changeCategories,
+      boolean isMonitoredServiceIdentifierScoped, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, PageRequest pageRequest);
 
   PageResponse<ChangeEventDTO> getChangeEvents(ProjectParams projectParams, List<String> serviceIdentifiers,
-      List<String> environmentIdentifier, String searchText, List<ChangeCategory> changeCategories,
+      List<String> environmentIdentifier, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, PageRequest pageRequest);
+
+  PageResponse<SRMAnalysisStepDetailDTO> getReportList(ProjectParams projectParams, List<String> serviceIdentifiers,
+      List<String> environmentIdentifier, List<String> monitoredServiceIdentifiers,
+      boolean isMonitoredServiceIdentifierScoped, Instant startTime, Instant endTime, PageRequest pageRequest);
 
   ChangeTimeline getTimeline(ProjectParams projectParams, List<String> serviceIdentifiers,
       List<String> environmentIdentifier, List<String> monitoredServiceIdentifiers,
-      boolean isMonitoredServiceIdentifierScoped, String searchText, List<ChangeCategory> changeCategories,
+      boolean isMonitoredServiceIdentifierScoped, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, Integer pointCount);
-  ChangeTimeline getMonitoredServiceChangeTimeline(MonitoredServiceParams monitoredServiceParams, String searchText,
+  ChangeTimeline getMonitoredServiceChangeTimeline(MonitoredServiceParams monitoredServiceParams,
       List<ChangeSourceType> changeSourceTypes, DurationDTO duration, Instant endTime);
   ChangeSummaryDTO getChangeSummary(ProjectParams projectParams, List<String> serviceIdentifiers,
       List<String> environmentIdentifier, List<ChangeCategory> changeCategories,
@@ -52,4 +58,6 @@ public interface ChangeEventService {
       List<String> monitoredServiceIdentifiers, boolean isMonitoredServiceIdentifierScoped,
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, Instant startTime,
       Instant endTime);
+
+  void mapSRMAnalysisExecutionsToDeploymentActivities(SRMAnalysisStepExecutionDetail stepExecutionDetail);
 }

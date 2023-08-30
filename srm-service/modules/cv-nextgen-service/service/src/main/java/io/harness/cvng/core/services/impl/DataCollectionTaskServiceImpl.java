@@ -216,6 +216,8 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
         cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
             CVNGTaskMetadataConstants.RETRY_COUNT, String.valueOf(dataCollectionTask.getRetryCount())));
       }
+      cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+          CVNGTaskMetadataConstants.TASK_TYPE, String.valueOf(dataCollectionTask.getType())));
       if (dataCollectionTask.getFirstPickedAt() != null) {
         cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
             CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, dataCollectionTask.waitTime()));
@@ -249,6 +251,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
       }
       if (dataCollectionTask.shouldQueueAnalysis()) {
         orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                               .accountId(dataCollectionTask.getAccountId())
                                                .verificationTaskId(dataCollectionTask.getVerificationTaskId())
                                                .startTime(dataCollectionTask.getStartTime())
                                                .endTime(dataCollectionTask.getEndTime())
@@ -352,7 +355,7 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
             .createNextTask(dataCollectionTask);
       }
       // TODO: handle this logic in a better way and setup alert.
-      log.error("Task is in the past. Enqueuing next task with new data collection startTime. {}, {}, {}",
+      log.warn("Task is in the past. Enqueuing next task with new data collection startTime. {}, {}, {}",
           dataCollectionTask.getUuid(), dataCollectionTask.getException(), dataCollectionTask.getStacktrace());
     }
   }

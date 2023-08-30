@@ -6,14 +6,18 @@
  */
 
 package software.wings.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.TaskGroup;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public enum TaskType {
@@ -494,7 +498,10 @@ public enum TaskType {
   HELM_FETCH_CHART_MANIFEST_TASK(TaskGroup.HELM, "Fetch helm chart"),
   COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
   INSTANCE_SYNC_V2_NG_SUPPORT(TaskGroup.K8S_NG, "Instance sync V2 support for NG"),
-  COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task");
+  COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  TERRAGRUNT_PLAN_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Plan Task V2", false),
+  TERRAGRUNT_APPLY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task V2", false),
+  TERRAGRUNT_DESTROY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task V2", false);
 
   private final TaskGroup taskGroup;
   private final String displayName;

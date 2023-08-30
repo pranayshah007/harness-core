@@ -47,6 +47,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(CV)
@@ -157,17 +158,19 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
 
   private static void setApiCallLogDTOWithResponse(CallDetails callDetails, ApiCallLogDTO cvngLogDTO) {
     Object responseObj = null;
-    if (callDetails.getResponse() != null && callDetails.getResponse().body() != null) {
-      responseObj = callDetails.getResponse().body();
-    } else if (callDetails.getResponse() != null && callDetails.getResponse().errorBody() != null) {
+    Response response = callDetails.getResponse();
+    if (response != null && response.body() != null) {
+      responseObj = response.body();
+    } else if (response != null && response.errorBody() != null) {
       try {
-        responseObj = DataCollectionUtils.getErrorBodyString(callDetails.getResponse());
+        responseObj = DataCollectionUtils.getErrorBodyString(response);
       } catch (IOException ignored) {
       }
     } else {
-      responseObj = callDetails.getResponse();
+      responseObj = response;
     }
-    cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(), responseObj, ApiCallLogDTO.FieldType.JSON);
+    long responseTimeinMs = callDetails.getResponseTime().toEpochMilli() - callDetails.getRequestTime().toEpochMilli();
+    cvngLogDTO.addFieldToResponse(response.code(), responseTimeinMs, responseObj, ApiCallLogDTO.FieldType.JSON);
   }
 
   private String parseDSLExceptionMessage(String message) {

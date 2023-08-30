@@ -15,8 +15,11 @@ import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -36,7 +39,10 @@ import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessV2ValuesYamlDataOutcome;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPackageV2StepParameters;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
@@ -95,6 +101,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -124,6 +131,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class ServerlessStepCommonHelper extends ServerlessStepUtils {
@@ -139,7 +148,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "harnessArtifact/sidecar-artifact-";
 
   public TaskChainResponse startChainLink(
-      Ambiance ambiance, StepElementParameters stepElementParameters, ServerlessStepHelper serverlessStepHelper) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, ServerlessStepHelper serverlessStepHelper) {
     ManifestsOutcome manifestsOutcome = resolveServerlessManifestsOutcome(ambiance);
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -198,7 +207,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   public TaskChainResponse executeNextLink(ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier, ServerlessStepHelper serverlessStepHelper) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
     ServerlessStepPassThroughData serverlessStepPassThroughData = (ServerlessStepPassThroughData) passThroughData;
@@ -256,7 +265,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse prepareServerlessManifestGitFetchTask(Ambiance ambiance,
-      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
+      StepBaseParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
       ManifestOutcome manifestOutcome, ServerlessStepHelper serverlessStepHelper) {
     StoreConfig storeConfig = manifestOutcome.getStore();
     GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
@@ -275,7 +284,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse prepareServerlessManifestS3FetchTask(Ambiance ambiance,
-      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
+      StepBaseParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
       ManifestOutcome manifestOutcome, ServerlessStepHelper serverlessStepHelper) {
     StoreConfig storeConfig = manifestOutcome.getStore();
     if (!ManifestStoreType.S3.equals(storeConfig.getKind())) {
@@ -293,7 +302,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         ambiance, true, stepElementParameters, serverlessStepPassThroughData, serverlessS3FetchFileConfig);
   }
 
-  public TaskChainResponse queueServerlessTask(StepElementParameters stepElementParameters,
+  public TaskChainResponse queueServerlessTask(StepBaseParameters stepElementParameters,
       ServerlessCommandRequest serverlessCommandRequest, Ambiance ambiance, PassThroughData passThroughData,
       boolean isChainEnd) {
     TaskData taskData = TaskData.builder()
@@ -341,7 +350,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse handleServerlessGitFetchFilesResponse(ServerlessGitFetchResponse serverlessGitFetchResponse,
-      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       ServerlessStepPassThroughData serverlessStepPassThroughData, ServerlessStepHelper serverlessStepHelper) {
     if (serverlessGitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       ServerlessGitFetchFailurePassThroughData serverlessGitFetchFailurePassThroughData =
@@ -367,7 +376,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse prepareServerlessPrepareRollbackTask(Optional<Pair<String, String>> manifestFilePathContent,
-      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       ServerlessStepPassThroughData serverlessStepPassThroughData, ServerlessStepHelper serverlessStepHelper,
       UnitProgressData unitProgressData) {
     ServerlessArtifactConfig serverlessArtifactConfig = null;
@@ -411,7 +420,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse handleServerlessS3FetchFilesResponse(ServerlessS3FetchResponse serverlessS3FetchResponse,
-      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       ServerlessStepPassThroughData serverlessStepPassThroughData, ServerlessStepHelper serverlessStepHelper) {
     if (serverlessS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       ServerlessS3FetchFailurePassThroughData serverlessS3FetchFailurePassThroughData =
@@ -437,7 +446,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
 
   private TaskChainResponse handleServerlessPrepareRollbackDataResponse(
       ServerlessPrepareRollbackDataResponse serverlessPrepareRollbackDataResponse,
-      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters,
       ServerlessStepPassThroughData serverlessStepPassThroughData) {
     if (serverlessPrepareRollbackDataResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       ServerlessStepExceptionPassThroughData serverlessStepExceptionPassThroughData =
@@ -571,7 +580,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse getGitFetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
+      StepBaseParameters stepElementParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
       ServerlessGitFetchFileConfig serverlessGitFetchFilesConfig) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessGitFetchRequest serverlessGitFetchRequest =
@@ -601,7 +610,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   private TaskChainResponse getS3FetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
+      StepBaseParameters stepElementParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
       ServerlessS3FetchFileConfig serverlessS3FetchFileConfig) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessS3FetchRequest serverlessS3FetchRequest = ServerlessS3FetchRequest.builder()
@@ -718,13 +727,26 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   public void putValuesYamlEnvVars(Ambiance ambiance,
-      ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters,
-      Map<String, String> envVarMap) {
+      ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo, Map<String, String> envVarMap) {
+    final String downManifestsFqn;
+    if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaPrepareRollbackV2StepParameters) {
+      downManifestsFqn = ((ServerlessAwsLambdaPrepareRollbackV2StepParameters) serverlessAwsLambdaV2BaseStepInfo)
+                             .getDownloadManifestsFqn();
+    } else if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaPackageV2StepParameters) {
+      downManifestsFqn =
+          ((ServerlessAwsLambdaPackageV2StepParameters) serverlessAwsLambdaV2BaseStepInfo).getDownloadManifestsFqn();
+    } else if (serverlessAwsLambdaV2BaseStepInfo instanceof ServerlessAwsLambdaDeployV2StepParameters) {
+      downManifestsFqn =
+          ((ServerlessAwsLambdaDeployV2StepParameters) serverlessAwsLambdaV2BaseStepInfo).getDownloadManifestsFqn();
+    } else {
+      downManifestsFqn = null;
+      throw new InvalidRequestException("Cannot put values yaml for this step");
+    }
+
     OptionalSweepingOutput serverlessValuesYamlDataOptionalOutput =
         executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
-                serverlessAwsLambdaPrepareRollbackV2StepParameters.getDownloadManifestsFqn() + "."
-                + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
+                downManifestsFqn + "." + OutcomeExpressionConstants.SERVERLESS_VALUES_YAML_DATA_OUTCOME));
 
     if (serverlessValuesYamlDataOptionalOutput.isFound()) {
       ServerlessV2ValuesYamlDataOutcome serverlessV2ValuesYamlDataOutcome =

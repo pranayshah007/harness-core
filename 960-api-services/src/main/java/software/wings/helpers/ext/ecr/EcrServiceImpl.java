@@ -6,17 +6,19 @@
  */
 
 package software.wings.helpers.ext.ecr;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.beans.BuildDetailsInternal.BuildDetailsInternalMetadataKeys;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
-import io.harness.artifacts.gar.service.GARUtils;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.context.MdcGlobalContextData;
@@ -57,6 +59,8 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Created by brett on 7/15/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -271,7 +275,7 @@ public class EcrServiceImpl implements EcrService {
   @Override
   public BuildDetailsInternal verifyBuildNumber(AwsInternalConfig awsInternalConfig, String registryId, String imageUrl,
       String region, String imageName, String tag) {
-    boolean isSHA = GARUtils.isSHA(tag);
+    boolean isSHA = ArtifactUtils.isSHA(tag);
     ImageIdentifier imageIdentifier;
     if (isSHA) {
       imageIdentifier = new ImageIdentifier().withImageDigest(tag);

@@ -60,8 +60,14 @@ public class SetupUsageGitInfoPopulator {
     }
     EntityDetail referredByEntity = setupUsages.stream().map(EntitySetupUsage::getReferredByEntity).findAny().get();
     final EntityReference referredByEntityRef = referredByEntity.getEntityRef();
-    Boolean isDefault = checkWhetherIsDefaultBranch(referredByEntityRef.getAccountIdentifier(),
-        referredByEntityRef.getOrgIdentifier(), referredByEntityRef.getProjectIdentifier(), repoIdentifier, branch);
+    Boolean isDefault = false;
+    try {
+      isDefault = checkWhetherIsDefaultBranch(referredByEntityRef.getAccountIdentifier(),
+          referredByEntityRef.getOrgIdentifier(), referredByEntityRef.getProjectIdentifier(), repoIdentifier, branch);
+    } catch (Exception exception) {
+      // If any git-sync config doesn't exist / exception occurs from upstream, ignore it and return
+      return;
+    }
     List<EntityDetail> referredEntities =
         setupUsages.stream().map(EntitySetupUsage::getReferredEntity).filter(Objects::nonNull).collect(toList());
     populateRepoBranchInReferredByEntity(referredByEntity, repoIdentifier, branch, isDefault);

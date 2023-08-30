@@ -105,6 +105,6 @@ public class ChangeEventResource {
                                                         .build();
 
     return new RestResponse<>(changeEventService.getMonitoredServiceChangeTimeline(
-        monitoredServiceParams, searchText, changeSourceTypes, durationDTO, Instant.ofEpochMilli(endTime)));
+        monitoredServiceParams, changeSourceTypes, durationDTO, Instant.ofEpochMilli(endTime)));
   }
 }

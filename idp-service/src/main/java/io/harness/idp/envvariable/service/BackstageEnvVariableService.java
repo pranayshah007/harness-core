@@ -24,6 +24,7 @@ public interface BackstageEnvVariableService {
   List<BackstageEnvVariable> createOrUpdate(List<BackstageEnvVariable> requestVariables, String accountIdentifier);
   void deleteMulti(List<String> secretIdentifiers, String accountIdentifier);
   void processSecretUpdate(EntityChangeDTO entityChangeDTO);
+  void processSecretDelete(EntityChangeDTO entityChangeDTO);
   void delete(String secretIdentifier, String harnessAccount);
   void findAndSync(String accountIdentifier);
   List<BackstageEnvSecretVariable> getAllSecretIdentifierForMultipleEnvVariablesInAccount(

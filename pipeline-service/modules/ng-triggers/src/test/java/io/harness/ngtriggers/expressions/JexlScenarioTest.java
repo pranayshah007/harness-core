@@ -174,7 +174,7 @@ public class JexlScenarioTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testJexlScript() {
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        new TriggerExpressionEvaluator(null, null, emptyList(), json);
+        new TriggerExpressionEvaluator(null, null, emptyList(), json, null);
     Object o = triggerExpressionEvaluator.evaluateExpression(
         "for (var item : <+trigger.payload.pull_request.Labels>) { if (item.name == 'java') return true; } return false;");
     assertThat((Boolean) o).isTrue();
@@ -183,7 +183,7 @@ public class JexlScenarioTest extends CategoryTest {
         "for (var item : <+trigger.payload.pull_request.Labels>) { if (item.name == 'go') return true; } return false;");
     assertThat((Boolean) o).isFalse();
 
-    triggerExpressionEvaluator = new TriggerExpressionEvaluator(null, null, emptyList(), jsonGo);
+    triggerExpressionEvaluator = new TriggerExpressionEvaluator(null, null, emptyList(), jsonGo, null);
     o = triggerExpressionEvaluator.evaluateExpression(
         "for (var item : <+trigger.payload.pull_request.Labels>) { if (item.name == 'go') return true; } return false;");
     assertThat((Boolean) o).isTrue();
@@ -198,7 +198,7 @@ public class JexlScenarioTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testMapWebhookEventToTriggers() {
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        new TriggerExpressionEvaluator(null, null, emptyList(), json);
+        new TriggerExpressionEvaluator(null, null, emptyList(), json, null);
     assertThat(triggerExpressionEvaluator.renderExpression("<+trigger.payload.pull_request.Labels[0].name>"))
         .isEqualTo("python");
     Object o =
@@ -214,7 +214,7 @@ public class JexlScenarioTest extends CategoryTest {
   public void testGetHeaderWebhook() {
     TriggerExpressionEvaluator triggerExpressionEvaluator = new TriggerExpressionEvaluator(null, null,
         Arrays.asList(HeaderConfig.builder().key("content-type").values(Arrays.asList("application/json")).build()),
-        json);
+        json, null);
     assertThat(triggerExpressionEvaluator.renderExpression("<+trigger.header['content-type']>"))
         .isEqualTo("application/json");
   }
@@ -224,7 +224,7 @@ public class JexlScenarioTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetMetadataWebhook() {
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        new TriggerExpressionEvaluator(prEvent, null, emptyList(), json);
+        new TriggerExpressionEvaluator(prEvent, null, emptyList(), json, null);
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.sourceBranch>")).isEqualTo("source");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.targetBranch>")).isEqualTo("target");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.event>")).isEqualTo("PR");
@@ -235,7 +235,7 @@ public class JexlScenarioTest extends CategoryTest {
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.gitUser>")).isEqualTo("user");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.prTitle>")).isEqualTo("This is Title");
 
-    triggerExpressionEvaluator = new TriggerExpressionEvaluator(pushEvent, null, emptyList(), json);
+    triggerExpressionEvaluator = new TriggerExpressionEvaluator(pushEvent, null, emptyList(), json, null);
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.commitSha>")).isEqualTo("456");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.repoUrl>")).isEqualTo("https://github.com");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.gitUser>")).isEqualTo("user");
@@ -246,7 +246,7 @@ public class JexlScenarioTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetVariablesManualExecution() {
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        new TriggerExpressionEvaluator(null, null, emptyList(), json);
+        new TriggerExpressionEvaluator(null, null, emptyList(), json, null);
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.sourceBranch>")).isEqualTo("null");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.targetBranch>")).isEqualTo("null");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.event>")).isEqualTo("null");
@@ -266,7 +266,7 @@ public class JexlScenarioTest extends CategoryTest {
     metadata.put("field2", "value2");
     ArtifactData artifactData = ArtifactData.newBuilder().putAllMetadata(metadata).build();
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        new TriggerExpressionEvaluator(null, artifactData, emptyList(), jsonMeta);
+        new TriggerExpressionEvaluator(null, artifactData, emptyList(), jsonMeta, null);
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.artifact.metadata.field1>"))
         .isEqualTo("value1");
     assertThat(triggerExpressionEvaluator.evaluateExpression("<+trigger.artifact.metadata.field2>"))

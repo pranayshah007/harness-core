@@ -6,10 +6,12 @@
  */
 
 package io.harness.ngtriggers.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
@@ -29,6 +31,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 public interface NGTriggerService {
   NGTriggerEntity create(NGTriggerEntity ngTriggerEntity);
@@ -37,7 +40,7 @@ public interface NGTriggerService {
       String targetIdentifier, String identifier, boolean deleted);
 
   NGTriggerEntity update(NGTriggerEntity ngTriggerEntity, NGTriggerEntity oldNgTriggerEntity);
-
+  TriggerUpdateCount disableTriggers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   boolean updateTriggerStatus(NGTriggerEntity ngTriggerEntity, boolean status);
 
   boolean updateTriggerPollingStatus(String accountId, PollingTriggerStatusUpdateDTO statusUpdate);

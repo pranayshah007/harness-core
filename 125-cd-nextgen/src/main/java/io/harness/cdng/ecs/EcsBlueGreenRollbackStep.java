@@ -8,8 +8,12 @@
 package io.harness.cdng.ecs;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsBlueGreenCreateServiceDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
@@ -17,6 +21,7 @@ import io.harness.cdng.ecs.beans.EcsBlueGreenRollbackOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenSwapTargetGroupsStartOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -33,7 +38,6 @@ import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -50,6 +54,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
@@ -58,7 +63,9 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandResponse> {
@@ -69,6 +76,9 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
   public static final String ECS_BLUE_GREEN_ROLLBACK_COMMAND_NAME = "EcsBlueGreenRollback";
   public static final String ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING =
       "Blue Green Create Service step is not configured.";
+  private static final String DUMMY_GREEN_SERVICE = "dummy";
+  private static final String DELIMITER__SERVICE_FIRST_VERSION = "__1";
+  private static final String DELIMITER__SERVICE_SECOND_VERSION = "__2";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
@@ -76,20 +86,21 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
   @Inject private AccountService accountService;
   @Inject private StepHelper stepHelper;
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Nothing to validate
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<EcsCommandResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<EcsCommandResponse> responseDataSupplier) throws Exception {
     StepResponse stepResponse = null;
     try {
       EcsBlueGreenRollbackResponse ecsBlueGreenRollbackResponse =
@@ -155,14 +166,15 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     EcsBlueGreenRollbackStepParameters ecsBlueGreenRollbackStepParameters =
         (EcsBlueGreenRollbackStepParameters) stepParameters.getSpec();
     if (EmptyPredicate.isEmpty(ecsBlueGreenRollbackStepParameters.ecsBlueGreenCreateServiceFnq)) {
       return skipTaskRequest(ambiance, ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING);
     }
-
+    boolean greenServiceRollbackEnabled = cdFeatureFlagHelper.isEnabled(
+        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_ECS_BG_GREEN_SERVICE_ROLLBACK);
     OptionalSweepingOutput ecsBlueGreenPrepareRollbackDataOptional = executionSweepingOutputService.resolveOptional(
         ambiance,
         RefObjectUtils.getSweepingOutputRefObject(ecsBlueGreenRollbackStepParameters.getEcsBlueGreenCreateServiceFnq()
@@ -173,14 +185,14 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
         RefObjectUtils.getSweepingOutputRefObject(ecsBlueGreenRollbackStepParameters.getEcsBlueGreenCreateServiceFnq()
             + "." + OutcomeExpressionConstants.ECS_BLUE_GREEN_CREATE_SERVICE_OUTCOME));
 
-    if (!ecsBlueGreenPrepareRollbackDataOptional.isFound() || !ecsBlueGreenCreateServiceDataOptional.isFound()) {
+    if (!ecsBlueGreenPrepareRollbackDataOptional.isFound()) {
+      return skipTaskRequest(ambiance, ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING);
+    }
+    if (!ecsBlueGreenCreateServiceDataOptional.isFound() && !greenServiceRollbackEnabled) {
       return skipTaskRequest(ambiance, ECS_BLUE_GREEN_CREATE_SERVICE_STEP_MISSING);
     }
     EcsBlueGreenPrepareRollbackDataOutcome ecsBlueGreenPrepareRollbackDataOutcome =
         (EcsBlueGreenPrepareRollbackDataOutcome) ecsBlueGreenPrepareRollbackDataOptional.getOutput();
-
-    EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
-        (EcsBlueGreenCreateServiceDataOutcome) ecsBlueGreenCreateServiceDataOptional.getOutput();
 
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -205,9 +217,7 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
             .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .oldServiceName(ecsBlueGreenPrepareRollbackDataOutcome.getServiceName())
-            .newServiceName(ecsBlueGreenCreateServiceDataOutcome.getServiceName())
             .isFirstDeployment(ecsBlueGreenPrepareRollbackDataOutcome.isFirstDeployment())
-            .isNewServiceCreated(ecsBlueGreenCreateServiceDataOutcome.isNewServiceCreated())
             .oldServiceCreateRequestBuilderString(
                 ecsBlueGreenPrepareRollbackDataOutcome.getCreateServiceRequestBuilderString())
             .oldServiceScalableTargetManifestContentList(
@@ -215,6 +225,34 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
             .oldServiceScalingPolicyManifestContentList(
                 ecsBlueGreenPrepareRollbackDataOutcome.getRegisterScalingPolicyRequestBuilderStrings())
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig);
+    if (greenServiceRollbackEnabled) {
+      if (ecsBlueGreenPrepareRollbackDataOutcome.isGreenServiceRollbackDataExist()) {
+        ecsBlueGreenRollbackRequestBuilder.newServiceName(ecsBlueGreenPrepareRollbackDataOutcome.getGreenServiceName());
+      } else if (ecsBlueGreenCreateServiceDataOptional.isFound()) {
+        EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
+            (EcsBlueGreenCreateServiceDataOutcome) ecsBlueGreenCreateServiceDataOptional.getOutput();
+        ecsBlueGreenRollbackRequestBuilder.newServiceName(ecsBlueGreenCreateServiceDataOutcome.getServiceName());
+      } else {
+        ecsBlueGreenRollbackRequestBuilder.newServiceName(
+            getGreenServiceName(ecsBlueGreenPrepareRollbackDataOutcome.getServiceName()));
+      }
+      ecsBlueGreenRollbackRequestBuilder.greenServiceExisted(
+          ecsBlueGreenPrepareRollbackDataOutcome.isGreenServiceExist());
+      ecsBlueGreenRollbackRequestBuilder.newServiceRequestBuilderString(
+          ecsBlueGreenPrepareRollbackDataOutcome.getGreenServiceRequestBuilderString());
+      ecsBlueGreenRollbackRequestBuilder.newServiceScalableTargetRequestBuilderStrings(
+          ecsBlueGreenPrepareRollbackDataOutcome.getGreenServiceScalableTargetRequestBuilderStrings());
+      ecsBlueGreenRollbackRequestBuilder.newServiceScalingPolicyRequestBuilderStrings(
+          ecsBlueGreenPrepareRollbackDataOutcome.getGreenServiceScalingPolicyRequestBuilderStrings());
+      ecsBlueGreenRollbackRequestBuilder.greenServiceRollbackEnabled(
+          ecsBlueGreenPrepareRollbackDataOutcome.isGreenServiceRollbackDataExist());
+    } else {
+      EcsBlueGreenCreateServiceDataOutcome ecsBlueGreenCreateServiceDataOutcome =
+          (EcsBlueGreenCreateServiceDataOutcome) ecsBlueGreenCreateServiceDataOptional.getOutput();
+      ecsBlueGreenRollbackRequestBuilder.newServiceName(ecsBlueGreenCreateServiceDataOutcome.getServiceName());
+      ecsBlueGreenRollbackRequestBuilder.isNewServiceCreated(
+          ecsBlueGreenCreateServiceDataOutcome.isNewServiceCreated());
+    }
 
     if (EmptyPredicate.isEmpty(ecsBlueGreenRollbackStepParameters.ecsBlueGreenSwapTargetGroupsFnq)) {
       ecsBlueGreenRollbackRequestBuilder.isTargetShiftStarted(false);
@@ -252,5 +290,18 @@ public class EcsBlueGreenRollbackStep extends CdTaskExecutable<EcsCommandRespons
     return TaskRequest.newBuilder()
         .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
         .build();
+  }
+
+  private String getGreenServiceName(String blueServiceName) {
+    if (StringUtils.isBlank(blueServiceName)) {
+      return DUMMY_GREEN_SERVICE;
+    } else if (StringUtils.endsWith(blueServiceName, DELIMITER__SERVICE_FIRST_VERSION)) {
+      return StringUtils.removeEnd(blueServiceName, DELIMITER__SERVICE_FIRST_VERSION)
+          + DELIMITER__SERVICE_SECOND_VERSION;
+    } else if (StringUtils.endsWith(blueServiceName, DELIMITER__SERVICE_SECOND_VERSION)) {
+      return StringUtils.removeEnd(blueServiceName, DELIMITER__SERVICE_SECOND_VERSION)
+          + DELIMITER__SERVICE_FIRST_VERSION;
+    }
+    return DUMMY_GREEN_SERVICE;
   }
 }

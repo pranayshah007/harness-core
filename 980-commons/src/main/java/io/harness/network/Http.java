@@ -6,15 +6,17 @@
  */
 
 package io.harness.network;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.KeyValuePair;
 import io.harness.security.AllTrustingX509TrustManager;
 
@@ -53,6 +55,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpHost;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @UtilityClass
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
@@ -558,13 +562,12 @@ public class Http {
       String password = getProxyPassword();
       builder.proxyAuthenticator((route, response) -> {
         if (response == null || response.code() == 407) {
-          return null;
+          log.warn("Proxy authentication failed with 407, proceeding ahead");
         }
         String credential = Credentials.basic(user, password);
         return response.request().newBuilder().header("Proxy-Authorization", credential).build();
       });
     }
-
     return builder;
   }
 

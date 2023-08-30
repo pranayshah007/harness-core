@@ -82,7 +82,7 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 		}
 
 		sr.Post("/", HandleOpen(stream))
-		sr.Delete("/", HandleClose(stream, store))
+		sr.Delete("/", HandleClose(stream, store, config.Redis.ScanBatch))
 		sr.Put("/", HandleWrite(stream))
 		sr.Get("/", HandleTail(stream))
 		sr.Get("/info", HandleInfo(stream))
@@ -103,6 +103,19 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 		sr.Get("/", HandleDownload(store))
 		sr.Post("/link/upload", HandleUploadLink(store))
 		sr.Post("/link/download", HandleDownloadLink(store))
+		sr.Get("/exists", HandleExists(store))
+
+		return sr
+	}())
+
+	//Internal APIs
+	r.Mount("/internal", func() http.Handler {
+		sr := chi.NewRouter()
+		// Validate the accountId in URL with the token generated above and authorize the request
+		if !config.Auth.DisableAuth {
+			sr.Use(AuthInternalMiddleware(config, true, ngClient))
+		}
+		sr.Delete("/blob", HandleInternalDelete(store))
 
 		return sr
 	}())
@@ -136,17 +149,16 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 	// Format: /blob/download?accountID=&prefix=
 	r.Mount("/blob/download", func() http.Handler {
 		sr := chi.NewRouter()
-		sr.Use(RequiredQueryParams(accountIDParam, usePrefixParam))
-		sr.Use(ValidatePrefixRequest())
-		sr.Use(CacheRequest(cache))
 
 		if !config.Auth.DisableAuth {
 			sr.Use(AuthMiddleware(config, ngClient, true))
 		}
 
-		// TODO: delete it after freeze window.
-		sr.Get("/", HandleZipLinkPrefix(queue, store, cache, config))
-		sr.Post("/", HandleZipLinkPrefix(queue, store, cache, config))
+		sr.
+			With(RequiredQueryParams(accountIDParam, usePrefixParam)).
+			With(ValidatePrefixRequest()).
+			With(CacheRequest(cache)).
+			Post("/", HandleZipLinkPrefix(queue, store, cache, config))
 
 		return sr
 	}())

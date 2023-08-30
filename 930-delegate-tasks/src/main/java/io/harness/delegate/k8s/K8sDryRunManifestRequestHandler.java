@@ -148,10 +148,10 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
     List<String> manifestOverrideFiles =
         getManifestOverrideFlies(request, releaseDetails != null ? releaseDetails.toContextMap() : emptyMap());
 
-    this.resources =
-        k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,
-            this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName, request.isLocalOverrideFeatureFlag(),
-            isErrorFrameworkSupported(), request.isInCanaryWorkflow(), executionLogCallback);
+    this.resources = k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams,
+        manifestOverrideFiles, this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName,
+        request.isLocalOverrideFeatureFlag(), isErrorFrameworkSupported(), request.isInCanaryWorkflow(),
+        request.isDisableFabric8(), executionLogCallback);
     return dryRunManifests(k8sDelegateTaskParams, executionLogCallback);
   }
 

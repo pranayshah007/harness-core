@@ -7,8 +7,11 @@
 
 package io.harness.cdng.aws.sam;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -28,6 +31,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(HarnessTeam.CDP)
 public class AwsSamBuildStep extends AbstractContainerStepV2<StepElementParameters> {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
@@ -54,7 +59,7 @@ public class AwsSamBuildStep extends AbstractContainerStepV2<StepElementParamete
     AwsSamBuildStepParameters awsSamBuildStepParameters = (AwsSamBuildStepParameters) stepElementParameters.getSpec();
 
     // Check if image exists
-    awsSamStepHelper.verifyPluginImageIsProvider(awsSamBuildStepParameters.getImage());
+    awsSamStepHelper.verifyPluginImageIsProvider(awsSamStepHelper.getImage(awsSamBuildStepParameters));
 
     Map<String, String> envVarMap = new HashMap<>();
 
@@ -64,7 +69,7 @@ public class AwsSamBuildStep extends AbstractContainerStepV2<StepElementParamete
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
         stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
-        awsSamBuildStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
+        awsSamStepHelper.getImage(awsSamBuildStepParameters).getValue(), Collections.EMPTY_LIST);
   }
 
   @Override

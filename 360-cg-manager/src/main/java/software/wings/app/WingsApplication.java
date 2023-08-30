@@ -154,6 +154,7 @@ import io.harness.queue.consumers.GeneralEventConsumerCg;
 import io.harness.queue.consumers.NotifyEventConsumerCg;
 import io.harness.queue.publishers.CgGeneralEventPublisher;
 import io.harness.queue.publishers.CgNotifyEventPublisher;
+import io.harness.redis.DelegateHeartBeatSyncFromRedis;
 import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.reflection.HarnessReflections;
 import io.harness.request.RequestContextFilter;
@@ -260,6 +261,7 @@ import software.wings.service.impl.ExecutionEventListener;
 import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
 import software.wings.service.impl.SettingsServiceImpl;
+import software.wings.service.impl.UpdateHeartBeatIntervalAndResetPerpetualTaskJob;
 import software.wings.service.impl.UserAccountLevelDataMigrationJob;
 import software.wings.service.impl.WorkflowExecutionServiceHelper;
 import software.wings.service.impl.WorkflowExecutionServiceImpl;
@@ -278,6 +280,7 @@ import software.wings.service.impl.instance.AuditCleanupJob;
 import software.wings.service.impl.instance.DeploymentEventListener;
 import software.wings.service.impl.instance.InstanceEventListener;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskMigrationJob;
+import software.wings.service.impl.instance.StaleAuditCleanupJob;
 import software.wings.service.impl.trigger.ScheduledTriggerHandler;
 import software.wings.service.impl.workflow.WorkflowServiceImpl;
 import software.wings.service.impl.yaml.YamlPushServiceImpl;
@@ -1210,6 +1213,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().manage(injector.getInstance(AuditCleanupJob.class));
     environment.lifecycle().manage(injector.getInstance(RedisConsumerControllerCg.class));
     environment.lifecycle().manage(injector.getInstance(UserAccountLevelDataMigrationJob.class));
+    environment.lifecycle().manage(injector.getInstance(UpdateHeartBeatIntervalAndResetPerpetualTaskJob.class));
+    environment.lifecycle().manage(injector.getInstance(StaleAuditCleanupJob.class));
   }
 
   private void registerManagedBeansManager(
@@ -1385,6 +1390,14 @@ public class WingsApplication extends Application<MainConfiguration> {
           new Schedulable("Failed while auto revoking delegate tokens",
               () -> injector.getInstance(DelegateNgTokenServiceImpl.class).autoRevokeExpiredTokens()),
           1L, 1L, TimeUnit.HOURS);
+
+      if (configuration.isEnableRedisForDelegateService()) {
+        // Sync HB from redis cache to mongo
+        delegateExecutor.scheduleWithFixedDelay(
+            new Schedulable(
+                "Sync delegate HB from redis", () -> injector.getInstance(DelegateHeartBeatSyncFromRedis.class).run()),
+            3L, 3L, TimeUnit.MINUTES);
+      }
     }
   }
 

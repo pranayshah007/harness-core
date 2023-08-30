@@ -10,8 +10,11 @@ package io.harness.gitaware.helper;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -41,6 +44,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.log4j.Log4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PL)
 @Log4j
 @Singleton
@@ -51,6 +55,7 @@ public class GitAwareEntityHelper {
   public static final String FILE_PATH_INVALID_HINT = "Please check if the requested filepath is valid.";
   public static final String FILE_PATH_INVALID_EXTENSION_EXPLANATION =
       "Harness File should have [.yaml] or [.yml] extension.";
+  public static final String READ_ME_FILE_PATH_INVALID_EXTENSION_EXPLANATION = "Harness File should have [.md].";
 
   public static final String FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT = "FilePath [%s] doesn't have right extension.";
 
@@ -340,5 +345,53 @@ public class GitAwareEntityHelper {
       return branchName;
     }
     return gitEntityInfo.getParentEntityRepoName().equals(repoName) ? branchName : "";
+  }
+
+  public void validateRepo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repo) {
+    scmGitSyncHelper.validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repo);
+  }
+
+  public String fetchReadMeFileFromRemote(
+      GitAware entity, Scope scope, GitContextRequestParams gitContextRequestParams, Map<String, String> contextMap) {
+    String repoName = gitContextRequestParams.getRepoName();
+    // if branch is empty, then git sdk will figure out the default branch for the repo by itself
+    String branch =
+        isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
+    String commitId =
+        isNullOrDefault(gitContextRequestParams.getCommitId()) ? "" : gitContextRequestParams.getCommitId();
+
+    GitAwareContextHelper.setIsDefaultBranchInGitEntityInfoWithParameter(branch);
+
+    String filePath = gitContextRequestParams.getFilePath();
+    if (isNullOrDefault(filePath)) {
+      throw new InvalidRequestException("No file path provided.");
+    }
+    validateReadMeFilePathHasCorrectExtension(filePath);
+    String connectorRef = gitContextRequestParams.getConnectorRef();
+    boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
+    EntityType entityType = gitContextRequestParams.getEntityType();
+    boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
+
+    log.info(String.format("Fetching Remote Entity : %s , %s , %s , %s", entityType, repoName, branch, filePath));
+    ScmGetFileResponse scmGetFileResponse =
+        scmGitSyncHelper.getFileByBranch(Scope.builder()
+                                             .accountIdentifier(scope.getAccountIdentifier())
+                                             .orgIdentifier(scope.getOrgIdentifier())
+                                             .projectIdentifier(scope.getProjectIdentifier())
+                                             .build(),
+            repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap,
+            getFileContentOnly, gitContextRequestParams.isApplyRepoAllowListFilter());
+    GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
+    return scmGetFileResponse.getFileContent();
+  }
+
+  @VisibleForTesting
+  void validateReadMeFilePathHasCorrectExtension(String filePath) {
+    if (!filePath.endsWith(".md")) {
+      throw NestedExceptionUtils.hintWithExplanationException(FILE_PATH_INVALID_HINT,
+          READ_ME_FILE_PATH_INVALID_EXTENSION_EXPLANATION,
+          new InvalidRequestException(String.format(FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT, filePath)));
+    }
   }
 }

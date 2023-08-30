@@ -6,7 +6,11 @@
  */
 
 package io.harness.exception;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class CastedFieldException extends RuntimeException {
   // fieldPath is to store the path of the field for which classCastException was caught and messageWithoutFieldPath
   // contains %s, which can be replaced with fieldPath while building the exception

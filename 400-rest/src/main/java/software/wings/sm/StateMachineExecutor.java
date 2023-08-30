@@ -6,7 +6,6 @@
  */
 
 package software.wings.sm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionInterruptType.CONTINUE_PIPELINE_STAGE;
 import static io.harness.beans.ExecutionInterruptType.PAUSE_ALL;
@@ -32,7 +31,6 @@ import static io.harness.beans.ExecutionStatus.brokeStatuses;
 import static io.harness.beans.ExecutionStatus.isBrokeStatus;
 import static io.harness.beans.ExecutionStatus.isFinalStatus;
 import static io.harness.beans.ExecutionStatus.isPositiveStatus;
-import static io.harness.beans.FeatureName.SPG_FIX_APPROVAL_WAITING_FOR_INPUTS;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -73,8 +71,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EventType;
 import io.harness.beans.ExecutionInterruptType;
@@ -194,6 +195,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author Rishi
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -1857,11 +1860,8 @@ public class StateMachineExecutor implements StateInspectionListener {
    */
   private StateExecutionInstance clone(StateExecutionInstance stateExecutionInstance, State nextState) {
     StateExecutionInstance cloned = kryoSerializer.clone(stateExecutionInstance);
-    if (featureFlagService.isEnabled(SPG_FIX_APPROVAL_WAITING_FOR_INPUTS, stateExecutionInstance.getAccountId())) {
-      cloned.setWaitingForInputs(false);
-      cloned.setActionOnTimeout(null);
-    }
-
+    cloned.setWaitingForInputs(false);
+    cloned.setActionOnTimeout(null);
     cloned.setContinued(false);
     cloned.setInterruptHistory(null);
     cloned.setStateExecutionDataHistory(null);

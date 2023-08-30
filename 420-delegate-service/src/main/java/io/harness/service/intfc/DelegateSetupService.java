@@ -93,4 +93,5 @@ public interface DelegateSetupService {
       String version, String delegateType);
 
   void updateDelegateGroupValidity(@NotNull String accountId, @NotNull String delegateGroupId);
+  long getDelegateExpirationTime(String version, String delegateId);
 }

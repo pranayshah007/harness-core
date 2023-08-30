@@ -34,4 +34,13 @@ public class STOYamlSBOM {
   @YamlSchemaTypes(value = {expression})
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlSBOMFormat")
   protected ParameterField<STOYamlSBOMFormat> format;
+
+  public STOYamlSBOMFormat getFormat() {
+    if (format.fetchFinalValue() instanceof String) {
+      String sbomFormat = (String) format.fetchFinalValue();
+      return STOYamlSBOMFormat.getValue(sbomFormat);
+    } else {
+      return (STOYamlSBOMFormat) format.fetchFinalValue();
+    }
+  }
 }

@@ -1,10 +1,10 @@
 # timescaledb
 
-![Version: 0.2.19](https://img.shields.io/badge/Version-0.2.19-informational?style=flat-square)
+![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square)
 
 TimescaleDB HA Deployment.
 
-**Homepage:** <https://github.com/hanress/helm-timescale>
+**Homepage:** <https://github.com/harness/helm-timescale>
 
 ## Requirements
 
@@ -48,7 +48,7 @@ TimescaleDB HA Deployment.
 | curlImage.pullPolicy | string | `"Always"` |  |
 | curlImage.registry | string | `"docker.io"` |  |
 | curlImage.repository | string | `"curlimages/curl"` |  |
-| curlImage.tag | string | `"latest"` |  |
+| curlImage.tag | string | `"8.1.2"` |  |
 | debug.execStartPre | string | `nil` |  |
 | env | string | `nil` |  |
 | envFrom | string | `nil` |  |
@@ -65,7 +65,7 @@ TimescaleDB HA Deployment.
 | image.pullPolicy | string | `"Always"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"timescale/timescaledb-ha"` |  |
-| image.tag | string | `"pg13-ts2.6-oss-latest"` |  |
+| image.tag | string | `"pg13-ts2.9-oss-latest"` |  |
 | loadBalancer.annotations."service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout" | string | `"4000"` |  |
 | loadBalancer.enabled | bool | `false` |  |
 | loadBalancer.port | int | `5432` |  |

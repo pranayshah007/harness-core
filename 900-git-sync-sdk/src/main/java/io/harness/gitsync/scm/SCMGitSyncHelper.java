@@ -40,6 +40,8 @@ import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoSe
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.UpdateFileResponse;
+import io.harness.gitsync.ValidateRepoRequest;
+import io.harness.gitsync.ValidateRepoResponse;
 import io.harness.gitsync.common.beans.GitOperation;
 import io.harness.gitsync.common.helper.CacheRequestMapper;
 import io.harness.gitsync.common.helper.ChangeTypeMapper;
@@ -327,6 +329,28 @@ public class SCMGitSyncHelper {
     }
 
     return prepareScmGetBatchFilesResponse(getBatchFilesResponse);
+  }
+
+  public void validateRepo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repo) {
+    Scope scope = Scope.builder()
+                      .accountIdentifier(accountIdentifier)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(projectIdentifier)
+                      .build();
+    final ValidateRepoResponse validateRepoResponse =
+        GitSyncGrpcClientUtils.retryAndProcessExceptionV2(harnessToGitPushInfoServiceBlockingStub::validateRepo,
+            ValidateRepoRequest.newBuilder()
+                .setScope(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
+                .setConnectorRef(connectorRef)
+                .setRepo(repo)
+                .build());
+
+    if (isFailureResponse(validateRepoResponse.getStatusCode())) {
+      log.error("Git SDK validateRepo Failure: {}", validateRepoResponse);
+      scmErrorHandler.processAndThrowException(validateRepoResponse.getStatusCode(),
+          getScmErrorDetailsFromGitProtoResponse(validateRepoResponse.getError()));
+    }
   }
 
   private ScmGetBatchFilesResponse prepareScmGetBatchFilesResponse(GetBatchFilesResponse getBatchFilesResponse) {

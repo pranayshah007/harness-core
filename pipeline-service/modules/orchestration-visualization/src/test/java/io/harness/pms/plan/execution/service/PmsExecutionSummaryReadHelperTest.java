@@ -166,22 +166,4 @@ public class PmsExecutionSummaryReadHelperTest extends OrchestrationVisualizatio
     }
     assertThat(pipelineExecutionSummaryEntityList.size()).isEqualTo(2);
   }
-
-  @Test
-  @Owner(developers = SHALINI)
-  @Category(UnitTests.class)
-  public void testFindListOfUniqueBranches() {
-    List<String> branches = pmsExecutionSummaryReadHelper.findListOfUniqueBranches(query);
-    assertEquals(branches.size(), 2);
-    assertThat(branches).contains(BRANCH_NAME, "branch2");
-  }
-
-  @Test
-  @Owner(developers = SHALINI)
-  @Category(UnitTests.class)
-  public void testFindListOfUniqueRepositories() {
-    List<String> repos = pmsExecutionSummaryReadHelper.findListOfUniqueRepositories(query);
-    assertEquals(repos.size(), 2);
-    assertThat(repos).contains(REPO_NAME, "repo2");
-  }
 }

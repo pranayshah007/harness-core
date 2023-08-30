@@ -17,13 +17,13 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.IACMApprovalInfo;
 import io.harness.category.element.UnitTests;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.buildstate.PluginSettingUtils;
-import io.harness.ci.execution.CIExecutionConfigService;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.serializer.vm.VmIACMApprovalStepSerializer;
-import io.harness.ci.utils.CIStepInfoUtils;
-import io.harness.ci.utils.HarnessImageUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.serializer.SerializerUtils;
+import io.harness.ci.execution.utils.CIStepInfoUtils;
+import io.harness.ci.execution.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
 import io.harness.iacm.execution.IACMStepsUtils;
@@ -47,6 +47,7 @@ public class VmIACMApprovalStepSerializerTest {
   @Mock private CIExecutionConfigService ciExecutionConfigService;
   @Mock private ConnectorUtils connectorUtils;
   @Mock private HarnessImageUtils harnessImageUtils;
+  @Mock private SerializerUtils serializerUtils;
 
   @Mock IACMStepsUtils iacmStepsUtils;
   @InjectMocks private VmIACMApprovalStepSerializer vmIACMApprovalStepSerializer;

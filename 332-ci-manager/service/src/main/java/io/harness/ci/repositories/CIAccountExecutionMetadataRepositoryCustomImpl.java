@@ -10,8 +10,8 @@ package io.harness.repositories;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ci.execution.CIAccountExecutionMetadata;
-import io.harness.ci.execution.CIAccountExecutionMetadata.CIAccountExecutionMetadataKeys;
+import io.harness.ci.execution.execution.CIAccountExecutionMetadata;
+import io.harness.ci.execution.execution.CIAccountExecutionMetadata.CIAccountExecutionMetadataKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -127,6 +127,11 @@ public class CIAccountExecutionMetadataRepositoryCustomImpl implements CIAccount
 
       mongoTemplate.save(accountExecutionMetadata);
     }
+  }
+
+  public void deleteAllByAccountId(String accountId) {
+    Query query = new Query(Criteria.where(CIAccountExecutionMetadataKeys.accountId).is(accountId));
+    mongoTemplate.findAllAndRemove(query, CIAccountExecutionMetadata.class);
   }
 
   private void updateCIMonthlyBuilds(CIAccountExecutionMetadata accountExecutionMetadata, Long startTS) {

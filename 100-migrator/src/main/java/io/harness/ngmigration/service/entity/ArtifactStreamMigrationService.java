@@ -106,7 +106,7 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return false;
   }
 

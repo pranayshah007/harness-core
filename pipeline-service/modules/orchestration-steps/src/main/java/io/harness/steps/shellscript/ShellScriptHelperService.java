@@ -6,11 +6,13 @@
  */
 
 package io.harness.steps.shellscript;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -27,6 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 public interface ShellScriptHelperService {
   // Handles ParameterField and String type Objects, else throws Exception
@@ -35,13 +39,14 @@ public interface ShellScriptHelperService {
   List<String> getOutputVars(Map<String, Object> outputVariables, Set<String> secretOutputVariables);
   List<String> getSecretOutputVars(Map<String, Object> outputVariables, Set<String> secretOutputVariables);
 
-  K8sInfraDelegateConfig getK8sInfraDelegateConfig(@Nonnull Ambiance ambiance, @Nonnull String shellScript);
+  K8sInfraDelegateConfig getK8sInfraDelegateConfig(
+      @Nonnull Ambiance ambiance, @Nonnull String shellScript, Boolean includeInfraSelectors);
 
   void prepareTaskParametersForExecutionTarget(@Nonnull Ambiance ambiance,
       @Nonnull ShellScriptStepParameters shellScriptStepParameters,
       @Nonnull ShellScriptTaskParametersNGBuilder taskParametersNGBuilder);
 
-  String getShellScript(@Nonnull ShellScriptStepParameters stepParameters);
+  String getShellScript(@Nonnull ShellScriptStepParameters stepParameters, Ambiance ambiance);
 
   String getWorkingDirectory(
       ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate);

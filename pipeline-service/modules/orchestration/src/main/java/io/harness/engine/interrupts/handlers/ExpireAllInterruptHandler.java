@@ -15,7 +15,10 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_UNSUCCESSFULLY;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.InterruptHandler;
@@ -39,6 +42,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implements InterruptHandler {
@@ -103,7 +108,10 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
 
   @Override
   public Interrupt handleInterrupt(Interrupt interrupt) {
-    return handleAllNodes(interrupt);
+    try (AutoLogContext ignore = interrupt.autoLogContext()) {
+      log.info("Stating to handle interrupt for Plan Execution");
+      return handleAllNodes(interrupt);
+    }
   }
 
   @Override
@@ -113,7 +121,10 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
 
   @Override
   public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
-    return handleChildNodes(interrupt, nodeExecutionId);
+    try (AutoLogContext ignore = interrupt.autoLogContext()) {
+      log.info("Stating to handle interrupt for Node Execution");
+      return handleChildNodes(interrupt, nodeExecutionId);
+    }
   }
 
   protected Interrupt processDiscontinuedInstances(

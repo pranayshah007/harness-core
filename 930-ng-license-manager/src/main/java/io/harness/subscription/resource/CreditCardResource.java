@@ -38,9 +38,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
@@ -79,6 +81,18 @@ public class CreditCardResource {
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Valid @RequestBody(description = "Non-sensitive credit card information") @NotNull CreditCardDTO creditCardDTO) {
     return ResponseDTO.newResponse(creditCardService.saveCreditCard(creditCardDTO));
+  }
+
+  @DELETE
+  @Path("{identifier}")
+  @ApiOperation(value = "Deletes credit card information", nickname = "delete card")
+  @Operation(operationId = "deleteCreditCard", summary = "Deletes credit card information")
+  public ResponseDTO<CreditCardResponse> deleteCreditCard(
+      @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(required = true, description = "Credit Card Identifier") @NotNull @Valid @PathParam(
+          "identifier") @NotNull String creditCardIdentifier) {
+    return ResponseDTO.newResponse(creditCardService.deleteCreditCard(accountIdentifier, creditCardIdentifier));
   }
 
   @GET

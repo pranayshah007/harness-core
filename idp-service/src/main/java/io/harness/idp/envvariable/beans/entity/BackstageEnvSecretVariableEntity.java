@@ -29,6 +29,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("io.harness.idp.secret.beans.entity.BackstageEnvSecretVariableEntity")
 public class BackstageEnvSecretVariableEntity extends BackstageEnvVariableEntity {
   private String harnessSecretIdentifier;
+  private boolean isDeleted;
 
   @Override
   public BackstageEnvVariableType getType() {
@@ -42,6 +43,7 @@ public class BackstageEnvSecretVariableEntity extends BackstageEnvVariableEntity
       BackstageEnvSecretVariableEntity envSecretVariableEntity =
           BackstageEnvSecretVariableEntity.builder()
               .harnessSecretIdentifier(envVariable.getHarnessSecretIdentifier())
+              .isDeleted(envVariable.isIsDeleted())
               .build();
       setCommonFieldsEntity(envVariable, envSecretVariableEntity, accountIdentifier);
       return envSecretVariableEntity;
@@ -51,6 +53,7 @@ public class BackstageEnvSecretVariableEntity extends BackstageEnvVariableEntity
     public BackstageEnvSecretVariable toDto(BackstageEnvSecretVariableEntity envVariableEntity) {
       BackstageEnvSecretVariable envSecretVariable = new BackstageEnvSecretVariable();
       envSecretVariable.setHarnessSecretIdentifier(envVariableEntity.getHarnessSecretIdentifier());
+      envSecretVariable.setIsDeleted(envVariableEntity.isDeleted);
       setCommonFieldsDto(envVariableEntity, envSecretVariable);
       envSecretVariable.setType(BackstageEnvVariable.TypeEnum.SECRET);
       return envSecretVariable;

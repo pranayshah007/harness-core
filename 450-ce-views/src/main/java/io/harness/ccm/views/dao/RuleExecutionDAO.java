@@ -6,11 +6,13 @@
  */
 
 package io.harness.ccm.views.dao;
+
 import static io.harness.persistence.HQuery.excludeValidate;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.CCMSortOrder;
@@ -35,6 +37,7 @@ import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -154,6 +157,7 @@ public class RuleExecutionDAO {
     overviewExecutionDetails.setTotalRuleEnforcements(ruleEnforcementDAO.list(accountId).size());
     return overviewExecutionDetails;
   }
+
   public void updateJiraInGovernanceRecommendation(
       @NonNull String accountId, @NonNull String id, CCMJiraDetails jiraDetails) {
     hPersistence.upsert(hPersistence.createQuery(RuleRecommendation.class)
@@ -161,6 +165,15 @@ public class RuleExecutionDAO {
                             .filter(RuleRecommendationId.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(RuleRecommendation.class)
             .set(RuleRecommendationId.jiraDetails, jiraDetails));
+  }
+
+  public void updateServicenowDetailsInGovernanceRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(RuleRecommendation.class)
+                            .filter(RuleRecommendationId.accountId, accountId)
+                            .filter(RuleRecommendationId.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(RuleRecommendation.class)
+            .set(RuleRecommendationId.serviceNowDetails, serviceNowDetails));
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
@@ -201,5 +214,18 @@ public class RuleExecutionDAO {
       condition.or(CE_RECOMMENDATIONS.GOVERNANCERULEID.eq(governanceRuleId.getRuleId()));
     }
     return condition;
+  }
+
+  @NonNull
+  public List<RuleRecommendation> getGovernanceRecommendations(
+      @NonNull String accountId, @NonNull List<String> recommendationIds) {
+    List<ObjectId> recommendationObjectIds = recommendationIds.stream().map(ObjectId::new).collect(Collectors.toList());
+    return hPersistence.createQuery(RuleRecommendation.class)
+        .project(RuleRecommendationId.executions, true)
+        .field(RuleRecommendationId.accountId)
+        .equal(accountId)
+        .field(RuleRecommendationId.uuid)
+        .in(recommendationObjectIds)
+        .asList();
   }
 }

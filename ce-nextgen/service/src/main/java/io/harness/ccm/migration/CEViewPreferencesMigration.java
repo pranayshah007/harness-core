@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -13,21 +13,21 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.entities.CEView;
-import io.harness.ccm.views.entities.ViewType;
-import io.harness.ccm.views.utils.CEViewPreferenceUtils;
+import io.harness.ccm.views.entities.ViewPreferences;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CE)
 public class CEViewPreferencesMigration implements NGMigration {
   @Inject private CEViewDao ceViewDao;
+  @Inject private CEViewPreferenceService ceViewPreferenceService;
   @Inject private HPersistence hPersistence;
 
   @Override
@@ -49,20 +49,8 @@ public class CEViewPreferencesMigration implements NGMigration {
   }
 
   private void migrateCEViewPreferences(final CEView ceView) {
-    modifyCEView(ceView);
-    ceViewDao.update(ceView);
-  }
-
-  private void modifyCEView(final CEView ceView) {
-    ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferencesForMigration(ceView));
-    if (Objects.isNull(ceView.getViewRules())) {
-      ceView.setViewRules(Collections.emptyList());
-    }
-    if (Objects.isNull(ceView.getDataSources())) {
-      ceView.setDataSources(Collections.emptyList());
-    }
-    if (Objects.isNull(ceView.getViewType())) {
-      ceView.setViewType(ViewType.CUSTOMER);
-    }
+    final ViewPreferences viewPreferences =
+        ceViewPreferenceService.getCEViewPreferences(ceView, Collections.emptySet());
+    ceViewDao.updateViewPreferences(ceView.getUuid(), ceView.getAccountId(), viewPreferences);
   }
 }

@@ -19,7 +19,7 @@ import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECT
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.UNIQUE_STEP_IDENTIFIERS;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT;
-import static io.harness.ci.states.InitializeTaskStep.TASK_BUFFER_TIMEOUT_MILLIS;
+import static io.harness.ci.execution.states.InitializeTaskStep.TASK_BUFFER_TIMEOUT_MILLIS;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -54,20 +54,20 @@ import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.callback.DelegateCallbackToken;
-import io.harness.ci.buildstate.BuildSetupUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.executable.CiAsyncExecutable;
-import io.harness.ci.execution.BackgroundTaskUtility;
-import io.harness.ci.execution.QueueExecutionUtils;
+import io.harness.ci.execution.buildstate.BuildSetupUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.execution.QueueExecutionUtils;
+import io.harness.ci.execution.integrationstage.DockerInitializeTaskParamsBuilder;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.K8InitializeServiceUtils;
+import io.harness.ci.execution.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.execution.utils.CIStagePlanCreationUtils;
+import io.harness.ci.execution.validation.CIAccountValidationService;
+import io.harness.ci.execution.validation.CIYAMLSanitizationService;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.integrationstage.K8InitializeServiceUtils;
-import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
-import io.harness.ci.utils.CIStagePlanCreationUtils;
-import io.harness.ci.validation.CIAccountValidationService;
-import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -249,6 +249,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       sdkGraphVisualizationDataService.publishStepDetailInformation(
           ambiance, initStepV2DelegateTaskInfo, "initStepV2DelegateTaskInfo");
     }
+    log.info("Submitted initialise step request for taskid {}", taskId);
 
     return responseBuilder.build();
   }
@@ -429,8 +430,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
   private void sanitizeExecution(InitializeStepInfo initializeStepInfo, String accountIdentifier) {
     List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
-    if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED
-        || initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
+    if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
       sanitizationService.validate(steps);
     }
   }
@@ -776,14 +776,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       }
       return entityDetails;
     }
-
-    if (infrastructure.getType() != Infrastructure.Type.KUBERNETES_HOSTED) {
-      if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
-        throw new CIStageExecutionException("Input infrastructure can not be empty");
-      }
-      String infraConnectorRef = ((K8sDirectInfraYaml) infrastructure).getSpec().getConnectorRef().getValue();
-      entityDetails.add(createEntityDetails(infraConnectorRef, accountIdentifier, projectIdentifier, orgIdentifier));
+    if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
+      throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
+    String infraConnectorRef = ((K8sDirectInfraYaml) infrastructure).getSpec().getConnectorRef().getValue();
+    entityDetails.add(createEntityDetails(infraConnectorRef, accountIdentifier, projectIdentifier, orgIdentifier));
 
     entityDetails.addAll(connectorRefs.stream()
                              .map(connectorIdentifier -> {

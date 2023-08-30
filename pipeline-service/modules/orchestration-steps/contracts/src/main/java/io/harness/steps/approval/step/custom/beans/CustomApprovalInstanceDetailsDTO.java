@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.steps.approval.step.beans.ApprovalInstanceDetailsDTO;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
@@ -25,9 +26,14 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @ApiModel("CustomApprovalInstanceDetails")
 @Schema(name = "CustomApprovalInstanceDetails", description = "This contains details of Custom Approval Instance")
 public class CustomApprovalInstanceDetailsDTO implements ApprovalInstanceDetailsDTO {
   @NotNull CriteriaSpecWrapperDTO approvalCriteria;
   @NotNull CriteriaSpecWrapperDTO rejectionCriteria;
+
+  // id of the delegate task created in the latest polling event
+  String latestDelegateTaskId;
+  String delegateTaskName;
 }

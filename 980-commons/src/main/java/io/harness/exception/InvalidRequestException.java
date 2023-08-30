@@ -6,20 +6,29 @@
  */
 
 package io.harness.exception;
-
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.exception.ngexception.ErrorMetadataDTO;
 
 import java.util.EnumSet;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_PIPELINE})
 public class InvalidRequestException extends WingsException {
   private static final String MESSAGE_ARG = "message";
 
   public InvalidRequestException(String message, ErrorMetadataDTO metadata) {
     super(message, null, INVALID_REQUEST, Level.ERROR, null, null, metadata);
+    super.param(MESSAGE_ARG, message);
+  }
+
+  public InvalidRequestException(String message, ErrorMetadataDTO metadata, ErrorCode errorCode) {
+    super(message, null, errorCode, Level.ERROR, null, null, metadata);
     super.param(MESSAGE_ARG, message);
   }
 

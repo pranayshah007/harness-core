@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng;
-
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
@@ -23,8 +22,11 @@ import io.harness.PluginModule;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.clients.NoOpAccessControlClientImpl;
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -151,6 +153,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMixin {
@@ -311,6 +314,9 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagServiceImpl.class));
         bind(CDStepHelper.class).toProvider(() -> mock(CDStepHelper.class)).asEagerSingleton();
         bind(LicenseService.class).toInstance(mock(DefaultLicenseServiceImpl.class));
+        bind(AccessControlClient.class)
+            .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
+            .to(NoOpAccessControlClientImpl.class);
       }
     });
 

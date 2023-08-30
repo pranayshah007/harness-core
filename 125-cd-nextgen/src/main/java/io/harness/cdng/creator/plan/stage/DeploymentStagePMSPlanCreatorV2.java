@@ -10,8 +10,15 @@ package io.harness.cdng.creator.plan.stage;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.lang.Boolean.parseBoolean;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
@@ -33,10 +40,14 @@ import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.pipeline.steps.DeploymentStageStep;
 import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.cdng.service.beans.ServicesMetadata;
+import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGFreezeException;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
@@ -45,6 +56,7 @@ import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -63,6 +75,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
+import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -76,12 +89,14 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacUtility;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.strategy.StrategyValidationUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -131,6 +146,8 @@ import lombok.extern.slf4j.Slf4j;
  *          execution
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @Slf4j
 public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<DeploymentStageNode> {
@@ -144,6 +161,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private ServicePlanCreatorHelper servicePlanCreatorHelper;
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
+  @Inject private NGSettingsClient settingsClient;
+
+  private static final String PROJECT_SCOPED_RESOURCE_CONSTRAINT_SETTING_ID =
+      "project_scoped_resource_constraint_queue";
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -239,8 +260,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         throw new InvalidRequestException("Execution section cannot be absent in deploy stage");
       }
 
-      final boolean isProjectScopedResourceConstraintQueue = featureFlagHelperService.isEnabled(
-          ctx.getAccountIdentifier(), FeatureName.CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE);
+      final boolean isProjectScopedResourceConstraintQueue = isProjectScopedResourceConstraintQueueByFFOrSetting(ctx);
       if (v2Flow(stageNode)) {
         if (isGitopsEnabled(stageNode.getDeploymentStageConfig())) {
           // GitOps flow doesn't fork on environments, so handling it in this function.
@@ -277,6 +297,15 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
   }
 
+  private boolean isProjectScopedResourceConstraintQueueByFFOrSetting(PlanCreationContext ctx) {
+    return featureFlagHelperService.isEnabled(
+               ctx.getAccountIdentifier(), FeatureName.CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE)
+        || parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                PROJECT_SCOPED_RESOURCE_CONSTRAINT_SETTING_ID, ctx.getAccountIdentifier(), null, null))
+                            .getValue());
+  }
+
   private LinkedHashMap<String, PlanCreationResponse> buildPlanCreationResponse(PlanCreationContext ctx,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
       YamlField specField, YamlField executionField) throws IOException {
@@ -288,7 +317,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     addSpecNode(planCreationResponseMap, specField, serviceNodeId);
 
     addCDExecutionDependencies(planCreationResponseMap, executionField);
-    addMultiDeploymentDependencyForGitOps(planCreationResponseMap, stageNode, ctx);
+    addMultiDeploymentDependencyForGitOps(planCreationResponseMap, stageNode, ctx, specField);
 
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), stageNode.getName(),
         stageNode.getIdentifier(), planCreationResponseMap, new HashMap<>(),
@@ -394,8 +423,13 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   private void addMultiDeploymentDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      DeploymentStageNode stageNode, PlanCreationContext ctx, YamlField specField) {
+      DeploymentStageNode stageNode, PlanCreationContext ctx, YamlField specField) throws IOException {
     DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
+    ServicesYaml finalServicesYaml = useFromStage(stageConfig.getServices())
+        ? useServicesYamlFromStage(stageConfig, specField)
+        : stageConfig.getServices();
+    stageConfig.setServices(finalServicesYaml);
+
     MultiDeploymentSpawnerUtils.validateMultiServiceInfra(stageConfig);
     if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
         && stageConfig.getEnvironmentGroup() == null) {
@@ -438,6 +472,81 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     buildMultiDeploymentMetadata(planCreationResponseMap, stageNode, ctx, stepParameters);
   }
 
+  private ServicesMetadata getServicesMetadataOfCurrentStage(DeploymentStageConfig stageConfig) {
+    if (stageConfig.getServices() != null && stageConfig.getServices().getServicesMetadata() != null
+        && ParameterField.isNotNull(stageConfig.getServices().getServicesMetadata().getParallel())) {
+      return stageConfig.getServices().getServicesMetadata();
+    }
+
+    return ServicesMetadata.builder().parallel(ParameterField.createValueField(Boolean.TRUE)).build();
+  }
+
+  @VisibleForTesting
+  ServicesYaml useServicesYamlFromStage(DeploymentStageConfig currentStageConfig, YamlField specField) {
+    ServiceUseFromStageV2 useFromStage = currentStageConfig.getServices().getUseFromStage();
+    final YamlField serviceField = specField.getNode().getField(YamlTypes.SERVICE_ENTITIES);
+    String stage = useFromStage.getStage();
+    if (isBlank(stage)) {
+      throw new InvalidArgumentsException("Stage identifier is empty in useFromStage");
+    }
+
+    try {
+      YamlField propagatedFromStageConfig = PlanCreatorUtils.getStageConfig(serviceField, stage);
+      if (propagatedFromStageConfig == null) {
+        throw new InvalidArgumentsException(
+            "Stage with identifier [" + stage + "] given for service propagation does not exist.");
+      }
+
+      DeploymentStageNode stageElementConfigPropagatedFrom =
+          YamlUtils.read(propagatedFromStageConfig.getNode().toString(), DeploymentStageNode.class);
+      DeploymentStageConfig deploymentStagePropagatedFrom = stageElementConfigPropagatedFrom.getDeploymentStageConfig();
+      if (deploymentStagePropagatedFrom != null) {
+        if (deploymentStagePropagatedFrom.getServices() != null
+            && useFromStage(deploymentStagePropagatedFrom.getServices())) {
+          throw new InvalidArgumentsException("Invalid identifier [" + stage
+              + "] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+        }
+
+        if (deploymentStagePropagatedFrom.getServices() == null) {
+          throw new InvalidRequestException(String.format(
+              "Could not find multi service configuration in stage [%s], hence not possible to propagate service from that stage",
+              stage));
+        }
+
+        if (deploymentStagePropagatedFrom.getDeploymentType() != null
+            && isNotBlank(deploymentStagePropagatedFrom.getDeploymentType().getYamlName())
+            && specField.getNode().getField("deploymentType").getNode() != null) {
+          if (!deploymentStagePropagatedFrom.getDeploymentType().getYamlName().equals(
+                  specField.getNode().getField("deploymentType").getNode().asText())) {
+            throw new InvalidRequestException(String.format(
+                "Deployment type: [%s] of stage: [%s] does not match with deployment type: [%s] of stage: [%s] from which service propagation is configured",
+                specField.getNode().getField("deploymentType").getNode().asText(),
+                specField.getNode().getParentNode().getIdentifier(),
+                deploymentStagePropagatedFrom.getDeploymentType().getYamlName(), stage));
+          }
+        }
+
+        ServicesYaml propagatedServices = deploymentStagePropagatedFrom.getServices();
+        ServicesYaml currentStageServices = ServicesYaml.builder()
+                                                .values(propagatedServices.getValues())
+                                                .servicesMetadata(getServicesMetadataOfCurrentStage(currentStageConfig))
+                                                .build();
+
+        String svcYaml = YamlUtils.writeYamlString(currentStageServices);
+        String injectUuidSvc = YamlUtils.injectUuid(svcYaml);
+        return YamlUtils.read(injectUuidSvc, ServicesYaml.class);
+      } else {
+        throw new InvalidArgumentsException("Stage identifier given in useFromStage doesn't exist");
+      }
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Cannot parse stage: " + stage);
+    }
+  }
+
+  private boolean useFromStage(ServicesYaml services) {
+    return services != null && services.getUseFromStage() != null && isNotBlank(services.getUseFromStage().getStage());
+  }
+
   private ServiceYamlV2 getServiceYaml(YamlField specField, DeploymentStageConfig stageConfig) {
     if (stageConfig.getService() != null && ServiceAllInOnePlanCreatorUtils.useFromStage(stageConfig.getService())) {
       return ServiceAllInOnePlanCreatorUtils.useServiceYamlFromStage(
@@ -453,12 +562,17 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
    */
   private void addMultiDeploymentDependencyForGitOps(
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
-      PlanCreationContext ctx) {
+      PlanCreationContext ctx, YamlField specField) {
     DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
     if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
         && stageConfig.getEnvironmentGroup() == null) {
       return;
     }
+
+    final ServicesYaml finalServicesYaml = useFromStage(stageConfig.getServices())
+        ? useServicesYamlFromStage(stageConfig, specField)
+        : stageConfig.getServices();
+    stageConfig.setServices(finalServicesYaml);
 
     String subType;
     if (stageConfig.getServices() != null) {

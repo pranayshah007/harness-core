@@ -6,14 +6,16 @@
  */
 
 package io.harness.steps.container.utils;
-
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_REQUEST_MILLI_CPU;
 import static io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils.getKubernetesStandardPodName;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @UtilityClass
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -52,44 +55,47 @@ public class ContainerStepV2DefinitionCreator {
     initContainerV2StepInfo.getPluginsData().forEach((stepInfo1, value) -> {
       for (PluginCreationResponseWrapper response : value.getResponseList()) {
         PluginDetails pluginDetails = response.getResponse().getPluginDetails();
-        StepInfoProto stepInfo = response.getStepInfo();
-        String stepIdentifier = stepInfo.getIdentifier();
-        if (Strings.isNotBlank(stepGroupIdentifier)) {
-          stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
+        if (!response.getShouldSkip()) {
+          StepInfoProto stepInfo = response.getStepInfo();
+          String stepIdentifier = stepInfo.getIdentifier();
+          if (Strings.isNotBlank(stepGroupIdentifier)) {
+            stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
+          }
+          String identifier = getKubernetesStandardPodName(stepInfo.getIdentifier());
+          String containerName = String.format("%s%s", STEP_PREFIX, identifier).toLowerCase();
+          Map<String, String> envMap = new HashMap<>(pluginDetails.getEnvVariablesMap());
+          List<SecretNGVariable> secretNGVariableMap = pluginDetails.getSecretVariableList()
+                                                           .stream()
+                                                           .map(SecretNgVariableUtils::getSecretNgVariable)
+                                                           .collect(Collectors.toList());
+          containerDefinitionInfos.add(
+              ContainerDefinitionInfo.builder()
+                  .name(containerName)
+                  .commands(StepContainerUtils.getCommand(
+                      os.getValue() != null ? OSType.getOSType(String.valueOf(os.getValue())) : null))
+                  .args(StepContainerUtils.getArguments(pluginDetails.getPortUsed(0)))
+                  .envVars(envMap)
+                  .secretVariables(secretNGVariableMap)
+                  .containerImageDetails(
+                      ContainerImageDetails.builder()
+                          .imageDetails(
+                              ImageDetailsUtils.getImageDetails(pluginDetails.getImageDetails().getImageInformation()))
+                          .connectorIdentifier(pluginDetails.getImageDetails().getConnectorDetails().getConnectorRef())
+                          .build())
+                  .isHarnessManagedImage(
+                      !pluginDetails.hasIsHarnessManaged() || pluginDetails.getIsHarnessManaged().getValue())
+                  .containerResourceParams(getContainerResourceParams(pluginDetails))
+                  // Using this as proto object is being serialized
+                  .ports(new ArrayList<Integer>(pluginDetails.getPortUsedList()))
+                  .containerType(CIContainerType.PLUGIN)
+                  .stepIdentifier(stepIdentifier)
+                  .stepName(stepInfo.getIdentifier())
+                  .imagePullPolicy(StringValueUtils.getStringFromStringValue(
+                      pluginDetails.getImageDetails().getImageInformation().getImagePullPolicy()))
+                  .privileged(pluginDetails.getPrivileged())
+                  .runAsUser(pluginDetails.getRunAsUser())
+                  .build());
         }
-        String identifier = getKubernetesStandardPodName(stepInfo.getIdentifier());
-        String containerName = String.format("%s%s", STEP_PREFIX, identifier).toLowerCase();
-        Map<String, String> envMap = new HashMap<>(pluginDetails.getEnvVariablesMap());
-        List<SecretNGVariable> secretNGVariableMap = pluginDetails.getSecretVariableList()
-                                                         .stream()
-                                                         .map(SecretNgVariableUtils::getSecretNgVariable)
-                                                         .collect(Collectors.toList());
-        containerDefinitionInfos.add(
-            ContainerDefinitionInfo.builder()
-                .name(containerName)
-                .commands(StepContainerUtils.getCommand(
-                    os.getValue() != null ? OSType.getOSType(String.valueOf(os.getValue())) : null))
-                .args(StepContainerUtils.getArguments(pluginDetails.getPortUsed(0)))
-                .envVars(envMap)
-                .secretVariables(secretNGVariableMap)
-                .containerImageDetails(
-                    ContainerImageDetails.builder()
-                        .imageDetails(
-                            ImageDetailsUtils.getImageDetails(pluginDetails.getImageDetails().getImageInformation()))
-                        .connectorIdentifier(pluginDetails.getImageDetails().getConnectorDetails().getConnectorRef())
-                        .build())
-                .isHarnessManagedImage(true)
-                .containerResourceParams(getContainerResourceParams(pluginDetails))
-                // Using this as proto object is being serialized
-                .ports(new ArrayList<Integer>(pluginDetails.getPortUsedList()))
-                .containerType(CIContainerType.PLUGIN)
-                .stepIdentifier(stepIdentifier)
-                .stepName(stepInfo.getIdentifier())
-                .imagePullPolicy(StringValueUtils.getStringFromStringValue(
-                    pluginDetails.getImageDetails().getImageInformation().getImagePullPolicy()))
-                .privileged(pluginDetails.getPrivileged())
-                .runAsUser(pluginDetails.getRunAsUser())
-                .build());
       }
     });
     return containerDefinitionInfos;

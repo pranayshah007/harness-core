@@ -6,7 +6,6 @@
  */
 
 package io.harness.subscription.helpers.impl;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.exception.InvalidRequestException;

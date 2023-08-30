@@ -1,0 +1,20 @@
+identifier: confluence
+name: Confluence Search
+description: Index Confluence pages into IDP to allow you to search them with the IDP Search feature.
+createdBy: K-Phoen
+category: Search
+source: https://github.com/K-Phoen/backstage-plugin-confluence/tree/main/plugins/search-confluence-backend
+iconUrl: https://seeklogo.com/images/C/confluence-logo-D9B07137C2-seeklogo.com.png
+imageUrl: ''
+config: |-
+  confluence:
+    wikiUrl: https://<your-org-name>.atlassian.net/wiki
+    spaces: [ENG]
+    auth:
+      username: <your-username>
+      password: ${CONFLUENCE_TOKEN}
+environmentVariables:
+  - CONFLUENCE_TOKEN
+exports:
+  defaultEntityTypes: []
+  exportDetails: []

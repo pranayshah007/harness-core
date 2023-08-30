@@ -55,6 +55,10 @@ if [[ "" != "$LE_IMAGE" ]]; then
   export LE_IMAGE; yq -i '.ciExecutionServiceConfig.liteEngineImage=env(LE_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TMATE_ENDPOINT" ]]; then
+  export TMATE_ENDPOINT; yq -i '.ciExecutionServiceConfig.tmateEndpoint=env(TMATE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$GIT_CLONE_IMAGE" ]]; then
   export GIT_CLONE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.gitCloneConfig.image=env(GIT_CLONE_IMAGE)' $CONFIG_FILE
 fi
@@ -351,10 +355,6 @@ fi
 
 if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
   export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
-fi
-
-if [[ "" != "$PMS_MONGO_URI" ]]; then
-  export PMS_MONGO_URI=${PMS_MONGO_URI//\\&/&}; yq -i '.pmsMongo.uri=env(PMS_MONGO_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then

@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.execution.utils;
-
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_REJECTED;
 import static io.harness.pms.contracts.execution.Status.APPROVAL_WAITING;
@@ -33,8 +32,11 @@ import static io.harness.pms.contracts.execution.Status.TIMED_WAITING;
 import static io.harness.pms.contracts.execution.Status.UNRECOGNIZED;
 import static io.harness.pms.contracts.execution.Status.WAIT_STEP_RUNNING;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.execution.Status;
 
@@ -44,6 +46,7 @@ import java.util.List;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -190,7 +193,7 @@ public class StatusUtils {
       case DISCONTINUING:
         return EnumSet.of(QUEUED, RUNNING, INTERVENTION_WAITING, TIMED_WAITING, ASYNC_WAITING, TASK_WAITING, PAUSING,
             RESOURCE_WAITING, APPROVAL_WAITING, WAIT_STEP_RUNNING, PAUSED, FAILED, SUSPENDED, EXPIRED,
-            APPROVAL_REJECTED, INPUT_WAITING);
+            APPROVAL_REJECTED, INPUT_WAITING, QUEUED_LICENSE_LIMIT_REACHED);
       case QUEUED:
         return EnumSet.of(PAUSED, PAUSING);
       case ABORTED:

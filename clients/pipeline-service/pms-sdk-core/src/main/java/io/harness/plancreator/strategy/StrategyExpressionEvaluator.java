@@ -6,7 +6,9 @@
  */
 
 package io.harness.plancreator.strategy;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.common.ExpressionMode;
@@ -16,6 +18,7 @@ import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class StrategyExpressionEvaluator extends EngineExpressionEvaluator {
   private Map<String, String> combinations;
   private int currentIteration;

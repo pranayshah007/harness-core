@@ -6,7 +6,6 @@
  */
 
 package io.harness.logging;
-
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployMode.isOnPrem;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -17,6 +16,9 @@ import static io.harness.network.Localhost.getLocalHostName;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.version.VersionInfoManager;
 
 import ch.qos.logback.classic.Level;
@@ -56,6 +58,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 public abstract class RemoteStackdriverLogAppender<E> extends AppenderBase<E> {
   public static final int MIN_BATCH_SIZE = 100;

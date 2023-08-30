@@ -9,12 +9,17 @@ package io.harness.cdng.visitor;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 public interface YamlTypes {
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
@@ -232,4 +237,8 @@ public interface YamlTypes {
   String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2;
   String AWS_CDK_BOOTSTRAP = StepSpecTypeConstants.AWS_CDK_BOOTSTRAP;
   String AWS_CDK_SYNTH = StepSpecTypeConstants.AWS_CDK_SYNTH;
+  String AWS_CDK_DIFF = StepSpecTypeConstants.AWS_CDK_DIFF;
+  String AWS_CDK_DEPLOY = StepSpecTypeConstants.AWS_CDK_DEPLOY;
+  String AWS_CDK_DESTROY = StepSpecTypeConstants.AWS_CDK_DESTROY;
+  String AWS_CDK_ROLLBACK = StepSpecTypeConstants.AWS_CDK_ROLLBACK;
 }

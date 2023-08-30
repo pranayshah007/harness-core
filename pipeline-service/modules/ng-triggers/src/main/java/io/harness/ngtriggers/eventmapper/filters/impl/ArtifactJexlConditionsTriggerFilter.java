@@ -5,7 +5,6 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 package io.harness.ngtriggers.eventmapper.filters.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -13,7 +12,10 @@ import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalSta
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.TriggerException;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -44,6 +46,7 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @Singleton
@@ -127,16 +130,17 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
     ArtifactData artifactData = ArtifactData.newBuilder().putAllMetadata(metadata).setBuild(build).build();
     String jsonMetadata = "";
     jsonMetadata = JsonPipelineUtils.getJsonString(metadata);
-    return checkIfJexlConditionsMatch(artifactData, jsonMetadata, triggerJexlCondition);
+    return checkIfJexlConditionsMatch(artifactData, jsonMetadata, triggerJexlCondition, spec);
   }
 
-  public boolean checkIfJexlConditionsMatch(ArtifactData artifactData, String payload, String jexlExpression) {
+  public boolean checkIfJexlConditionsMatch(
+      ArtifactData artifactData, String payload, String jexlExpression, NGTriggerSpecV2 spec) {
     if (isBlank(jexlExpression)) {
       return true;
     }
 
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), payload);
+        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), payload, spec);
     Object result = triggerExpressionEvaluator.evaluateExpression(jexlExpression);
     if (result != null && Boolean.class.isAssignableFrom(result.getClass())) {
       return (Boolean) result;

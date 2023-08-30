@@ -10,7 +10,10 @@ package io.harness.cdng.configfile.steps;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.configfile.validator.IndividualConfigFileStepValidator.validateConfigFileAttributes;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.mapper.ConfigFileOutcomeMapper;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -27,7 +30,8 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -48,7 +52,7 @@ public class IndividualConfigFileStep
     ConfigFileAttributes finalConfigFile = applyConfigFileOverrides(stepParameters);
     cdExpressionResolver.updateStoreConfigExpressions(ambiance, finalConfigFile.getStore().getValue());
     validateConfigFileAttributes(stepParameters.getIdentifier(), finalConfigFile, true);
-    verifyConfigFileReference(stepParameters.getIdentifier(), finalConfigFile, ambiance);
+    verifyConfigFileReference(stepParameters.getIdentifier(), finalConfigFile, ambiance, null);
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()

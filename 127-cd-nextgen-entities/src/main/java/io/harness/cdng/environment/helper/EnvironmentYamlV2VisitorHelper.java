@@ -6,13 +6,15 @@
  */
 
 package io.harness.cdng.environment.helper;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PARENT_PATH_KEY;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
 import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.VALUES;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
@@ -35,6 +37,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 public class EnvironmentYamlV2VisitorHelper implements ConfigValidator, EntityReferenceExtractor {
   public static final String ENV_REF = "envRef";

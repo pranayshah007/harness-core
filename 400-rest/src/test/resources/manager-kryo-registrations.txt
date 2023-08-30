@@ -1393,6 +1393,8 @@
 9152:io.harness.cvng.beans.AzureLogsDataCollectionInfo
 9153:io.harness.cvng.beans.azure.AzureMetricsSampleDataRequest
 9154:io.harness.cvng.beans.azure.AzureServiceInstanceFieldDataRequest
+9155:io.harness.cvng.beans.AzureMetricsDataCollectionInfo
+9156:io.harness.cvng.beans.AzureMetricsDataCollectionInfo.MetricCollectionInfo
 9501:io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
@@ -2304,6 +2306,7 @@
 88516:io.harness.yaml.registry.RegistryCredential
 88517:io.harness.yaml.options.Options
 88518:io.harness.yaml.clone.Clone
+88519:io.harness.yaml.extended.ci.codebase.impl.CommitShaBuildSpec
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback
@@ -2991,6 +2994,21 @@
 878020:io.harness.pms.sdk.core.execution.async.AsyncProgressData
 878021:io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters
 878022:io.harness.advisers.nextstep.NextStageAdviserParameters
+878023:io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig
+878024:io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig
+878025:io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig
+878026:io.harness.yaml.core.failurestrategy.manualintervention.OnTimeoutConfig
+878027:io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfig
+878028:io.harness.yaml.core.failurestrategy.NGFailureActionType
+878029:io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig
+878030:io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig
+878031:io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig
+878032:io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig
+878033:io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig
+878034:io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig
+878035:io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
+878036:io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
+878037:io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO
@@ -3108,6 +3126,8 @@
 9000313:io.harness.provision.model.TfConfigInspectVersion
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
+9300130:io.harness.beans.RepoFilterDelegateTaskParams
+9300131:io.harness.beans.BranchFilterDelegateTaskParams
 9800001:io.harness.beans.RecasterMap
 9800002:io.harness.licensing.beans.modules.ChaosModuleLicenseDTO
 9800003:io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig

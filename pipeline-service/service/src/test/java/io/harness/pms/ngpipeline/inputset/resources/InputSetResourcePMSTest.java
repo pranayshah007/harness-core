@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
+import static io.harness.rule.OwnerRule.SANDESH_SALUNKHE;
 import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
@@ -587,11 +588,34 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     when(InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, pmsInputSetService, pipelineService,
              validateAndMergeHelper, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID,
              "branch", "repo", inputSetsApiUtils))
-        .thenReturn(InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").build());
+        .thenReturn(
+            InputSetYamlDiffDTO.builder().oldYAML("old: yaml").newYAML("new: yaml").yamlDiffPresent(true).build());
     ResponseDTO<InputSetYamlDiffDTO> inputSetYAMLDiff = inputSetResourcePMSImpl.getInputSetYAMLDiff(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, "branch", "repo", null);
     assertThat(inputSetYAMLDiff.getData().getOldYAML()).isEqualTo("old: yaml");
     assertThat(inputSetYAMLDiff.getData().getNewYAML()).isEqualTo("new: yaml");
+    assertThat(inputSetYAMLDiff.getData().isYamlDiffPresent()).isTrue();
+    mockSettings.close();
+  }
+
+  @Test
+  @Owner(developers = SANDESH_SALUNKHE)
+  @Category(UnitTests.class)
+  public void testGetInputSetYAMLDiffWithNoDiff() {
+    MockedStatic<InputSetValidationHelper> mockSettings = Mockito.mockStatic(InputSetValidationHelper.class);
+    when(InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, pmsInputSetService, pipelineService,
+             validateAndMergeHelper, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID,
+             "branch", "repo", inputSetsApiUtils))
+        .thenReturn(InputSetYamlDiffDTO.builder()
+                        .oldYAML("string: yaml")
+                        .newYAML("string: yaml")
+                        .yamlDiffPresent(false)
+                        .build());
+    ResponseDTO<InputSetYamlDiffDTO> inputSetYAMLDiff = inputSetResourcePMSImpl.getInputSetYAMLDiff(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, "branch", "repo", null);
+    assertThat(inputSetYAMLDiff.getData().getOldYAML()).isEqualTo("string: yaml");
+    assertThat(inputSetYAMLDiff.getData().getNewYAML()).isEqualTo("string: yaml");
+    assertThat(inputSetYAMLDiff.getData().isYamlDiffPresent()).isFalse();
     mockSettings.close();
   }
 

@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngtriggers.beans.entity;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -35,6 +37,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "TriggerEventHistoryKeys")
@@ -76,6 +79,15 @@ public class TriggerEventHistory implements PersistentEntity {
                  .field(TriggerEventHistoryKeys.accountId)
                  .field(TriggerEventHistoryKeys.eventCorrelationId)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("build_source_type")
+                 .field(TriggerEventHistoryKeys.accountId)
+                 .field(TriggerEventHistoryKeys.orgIdentifier)
+                 .field(TriggerEventHistoryKeys.projectIdentifier)
+                 .field(TriggerEventHistoryKeys.targetIdentifier)
+                 .field(TriggerEventHistoryKeys.buildSourceType)
+                 .descSortField(TriggerEventHistoryKeys.createdAt)
+                 .build())
         .build();
   }
 
@@ -87,6 +99,8 @@ public class TriggerEventHistory implements PersistentEntity {
   String eventCorrelationId;
   @Nullable String pollingDocId;
   String payload;
+  @Nullable String buildSourceType;
+  @Nullable String build;
   Long eventCreatedAt;
   String finalStatus;
   String message;

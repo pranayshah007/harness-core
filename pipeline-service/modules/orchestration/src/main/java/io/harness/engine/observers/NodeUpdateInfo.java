@@ -15,6 +15,7 @@ import io.harness.logging.AutoLogContext.OverrideBehavior;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
+import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.NonNull;
@@ -25,6 +26,7 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeUpdateInfo {
   @NonNull NodeExecution nodeExecution;
+  List<String> timeoutInstanceIds;
   @Builder.Default long updatedTs = System.currentTimeMillis();
 
   public String getNodeExecutionId() {

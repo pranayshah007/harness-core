@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.connector.vaultconnector.outcome;
 
 import static io.harness.SecretManagerDescriptionConstants.AWS_REGION;
+import static io.harness.SecretManagerDescriptionConstants.ENABLE_CACHE;
 import static io.harness.SecretManagerDescriptionConstants.K8S_AUTH_ENDPOINT;
 import static io.harness.SecretManagerDescriptionConstants.RENEW_APPROLE_TOKEN;
 import static io.harness.SecretManagerDescriptionConstants.SERVICE_ACCOUNT_TOKEN_PATH;
@@ -20,6 +21,7 @@ import static io.harness.SecretManagerDescriptionConstants.VAULT_K8S_AUTH_ROLE;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.SecretManagerDescriptionConstants;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
@@ -40,6 +42,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@RecasterAlias("io.harness.delegate.beans.connector.vaultconnector.outcome.VaultConnectorOutcomeDTO")
 public class VaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implements DelegateSelectable {
   @SecretReference @Schema(description = SecretManagerDescriptionConstants.AUTH_TOKEN) private SecretRefData authToken;
   @Schema(description = SecretManagerDescriptionConstants.BASE_PATH) private String basePath;
@@ -71,5 +74,6 @@ public class VaultConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO implemen
   @Schema(description = SERVICE_ACCOUNT_TOKEN_PATH) private String serviceAccountTokenPath;
   @Schema(description = K8S_AUTH_ENDPOINT) private String k8sAuthEndpoint;
   @Schema(description = RENEW_APPROLE_TOKEN) private boolean renewAppRoleToken;
+  @Schema(description = ENABLE_CACHE) @Builder.Default private boolean enableCache = true;
   private AccessType accessType;
 }

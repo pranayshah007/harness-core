@@ -7,8 +7,11 @@
 
 package io.harness.cdng.provision.awscdk;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
@@ -34,12 +37,16 @@ import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class AwsCdkSynthStep extends AbstractContainerStepV2<StepElementParameters> {
   @Inject Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
 
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
+
+  @Inject private AwsCdkHelper awsCdkStepHelper;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AWS_CDK_SYNTH.getYamlType())
@@ -61,12 +68,10 @@ public class AwsCdkSynthStep extends AbstractContainerStepV2<StepElementParamete
       String logKey, long timeout, String parkedTaskId) {
     AwsCdkSynthStepParameters awsCdkSynthStepParameters = (AwsCdkSynthStepParameters) stepElementParameters.getSpec();
 
-    Map<String, String> envVarMap = new HashMap<>();
-
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, envVarMap,
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
         awsCdkSynthStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 
@@ -78,10 +83,15 @@ public class AwsCdkSynthStep extends AbstractContainerStepV2<StepElementParamete
     if (stepStatusTaskResponseData != null
         && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
       StepMapOutput stepOutput = (StepMapOutput) stepStatusTaskResponseData.getStepStatus().getOutput();
-      Map<String, String> decodedOutput = new HashMap<>();
-      stepOutput.getMap().forEach(
-          (key, value) -> decodedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "=")))));
-      stepOutput.setMap(decodedOutput);
+      Map<String, String> processedOutput = new HashMap<>();
+      stepOutput.getMap().forEach((key, value) -> {
+        if (key.endsWith("template.json")) {
+          processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+        } else {
+          processedOutput.put(key, value);
+        }
+      });
+      stepOutput.setMap(processedOutput);
     }
     return super.handleAsyncResponse(ambiance, stepParameters, responseDataMap);
   }
@@ -94,6 +104,7 @@ public class AwsCdkSynthStep extends AbstractContainerStepV2<StepElementParamete
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    // we need to check if rbac check is req or not.
+    awsCdkStepHelper.validateFeatureEnabled(ambiance);
+    awsCdkStepHelper.validateRuntimePermissions(ambiance, (AwsCdkBaseStepInfo) stepParameters.getSpec());
   }
 }

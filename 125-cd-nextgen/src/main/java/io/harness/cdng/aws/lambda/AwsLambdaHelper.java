@@ -15,6 +15,9 @@ import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.v2.lambda.AwsLambdaCommandUnitConstants;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
@@ -64,7 +67,6 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -83,6 +85,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.TaskRequestsUtils;
@@ -108,6 +111,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class AwsLambdaHelper extends CDStepHelper {
   @Inject private CDExpressionResolver cdExpressionResolver;
@@ -127,7 +131,7 @@ public class AwsLambdaHelper extends CDStepHelper {
     return awsLambdaEntityHelper.getInfraConfig(infrastructure, AmbianceUtils.getNgAccess(ambiance));
   }
 
-  public TaskChainResponse queueTask(StepElementParameters stepElementParameters,
+  public TaskChainResponse queueTask(StepBaseParameters stepElementParameters,
       AwsLambdaCommandRequest awsLambdaCommandRequest, TaskType taskType, Ambiance ambiance,
       PassThroughData passThroughData, boolean isChainEnd) {
     TaskData taskData = TaskData.builder()
@@ -157,7 +161,7 @@ public class AwsLambdaHelper extends CDStepHelper {
         .collect(Collectors.toList());
   }
 
-  public TaskChainResponse executeNextLink(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public TaskChainResponse executeNextLink(Ambiance ambiance, StepBaseParameters stepElementParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
 
@@ -192,7 +196,7 @@ public class AwsLambdaHelper extends CDStepHelper {
 
   protected TaskChainResponse handlePrepareRollbackDataResponse(
       AwsLambdaPrepareRollbackResponse awsLambdaPrepareRollbackResponse, Ambiance ambiance,
-      StepElementParameters stepElementParameters, AwsLambdaStepPassThroughData awsLambdaStepPassThroughData) {
+      StepBaseParameters stepElementParameters, AwsLambdaStepPassThroughData awsLambdaStepPassThroughData) {
     if (awsLambdaPrepareRollbackResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       AwsLambdaStepExceptionPassThroughData awsLambdaStepExceptionPassThroughData =
           AwsLambdaStepExceptionPassThroughData.builder()
@@ -228,7 +232,7 @@ public class AwsLambdaHelper extends CDStepHelper {
         awsLambdaPrepareRollbackResponse.getUnitProgressData());
   }
 
-  private TaskChainResponse handleGitFetchFilesResponse(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskChainResponse handleGitFetchFilesResponse(Ambiance ambiance, StepBaseParameters stepParameters,
       GitTaskNGResponse gitTaskResponse, AwsLambdaStepPassThroughData awsLambdaStepPassThroughData) {
     if (gitTaskResponse.getTaskStatus() != TaskStatus.SUCCESS) {
       AwsLambdaStepExceptionPassThroughData awsLambdaStepExceptionPassThroughData =
@@ -259,7 +263,7 @@ public class AwsLambdaHelper extends CDStepHelper {
         gitTaskResponse.getUnitProgressData());
   }
 
-  private TaskChainResponse executePrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskChainResponse executePrepareRollbackTask(Ambiance ambiance, StepBaseParameters stepParameters,
       AwsLambdaStepPassThroughData awsLambdaStepPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = awsLambdaStepPassThroughData.getInfrastructureOutcome();
 
@@ -372,7 +376,7 @@ public class AwsLambdaHelper extends CDStepHelper {
         .build();
   }
 
-  public TaskChainResponse startChainLink(Ambiance ambiance, StepElementParameters stepElementParameters) {
+  public TaskChainResponse startChainLink(Ambiance ambiance, StepBaseParameters stepElementParameters) {
     // Get ManifestsOutcome
     ManifestsOutcome manifestsOutcome = resolveAwsLambdaManifestsOutcome(ambiance);
 
@@ -414,7 +418,7 @@ public class AwsLambdaHelper extends CDStepHelper {
     return taskChainResponse;
   }
 
-  private TaskChainResponse prepareManifestHarnessStoreTask(Ambiance ambiance, StepElementParameters stepParameters,
+  private TaskChainResponse prepareManifestHarnessStoreTask(Ambiance ambiance, StepBaseParameters stepParameters,
       InfrastructureOutcome infrastructureOutcome, AwsLambdaStepPassThroughData awsLambdaStepPassThroughData,
       LogCallback logCallback) {
     TaskChainResponse taskChainResponse = null;
@@ -513,7 +517,7 @@ public class AwsLambdaHelper extends CDStepHelper {
   }
 
   private TaskChainResponse prepareManifestGitFetchTask(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance,
-      StepElementParameters stepElementParameters, List<ManifestOutcome> awsLambdaManifestOutcomeList,
+      StepBaseParameters stepElementParameters, List<ManifestOutcome> awsLambdaManifestOutcomeList,
       AwsLambdaStepPassThroughData awsLambdaStepPassThroughData) {
     List<GitRequestFileConfig> gitRequestFileConfigs = new ArrayList<>();
 
@@ -557,7 +561,7 @@ public class AwsLambdaHelper extends CDStepHelper {
   }
 
   private TaskChainResponse getGitFetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters, AwsLambdaStepPassThroughData awsLambdaStepPassThroughData,
+      StepBaseParameters stepElementParameters, AwsLambdaStepPassThroughData awsLambdaStepPassThroughData,
       List<GitRequestFileConfig> gitRequestFileConfigs) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
@@ -597,7 +601,7 @@ public class AwsLambdaHelper extends CDStepHelper {
         .build();
   }
 
-  public TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
+  public TaskChainResponse executeTask(Ambiance ambiance, StepBaseParameters stepParameters,
       AwsLambdaStepPassThroughData awsLambdaStepPassThroughData, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = awsLambdaStepPassThroughData.getInfrastructureOutcome();
 

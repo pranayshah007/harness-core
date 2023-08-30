@@ -21,8 +21,6 @@ import io.harness.eventsframework.api.Consumer;
 import io.harness.rule.Owner;
 import io.harness.service.GraphGenerationService;
 
-import java.util.List;
-import org.assertj.core.util.Lists;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -37,13 +35,10 @@ public class GraphUpdateDispatcherTest extends OrchestrationVisualizationTestBas
   @Category(UnitTests.class)
   public void testMessageAck() {
     String planExecutionId = generateUuid();
-    String mid1 = generateUuid();
-    String mid2 = generateUuid();
     String mid3 = generateUuid();
-    List<String> messageIds = Lists.newArrayList(mid1, mid2, mid3);
     GraphUpdateDispatcher dispatcher = GraphUpdateDispatcher.builder()
                                            .planExecutionId(planExecutionId)
-                                           .messageIds(messageIds)
+                                           .messageId(mid3)
                                            .startTs(System.currentTimeMillis())
                                            .consumer(consumer)
                                            .graphGenerationService(graphGenerationService)
@@ -51,8 +46,8 @@ public class GraphUpdateDispatcherTest extends OrchestrationVisualizationTestBas
     when(graphGenerationService.updateGraph(planExecutionId)).thenReturn(true);
     dispatcher.run();
     ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
-    verify(consumer, times(3)).acknowledge(stringArgumentCaptor.capture());
-    assertThat(stringArgumentCaptor.getAllValues()).containsExactlyInAnyOrder(mid1, mid2, mid3);
+    verify(consumer, times(1)).acknowledge(stringArgumentCaptor.capture());
+    assertThat(stringArgumentCaptor.getAllValues()).containsExactlyInAnyOrder(mid3);
   }
 
   @Test
@@ -60,13 +55,10 @@ public class GraphUpdateDispatcherTest extends OrchestrationVisualizationTestBas
   @Category(UnitTests.class)
   public void testNoMessageAck() {
     String planExecutionId = generateUuid();
-    String mid1 = generateUuid();
-    String mid2 = generateUuid();
     String mid3 = generateUuid();
-    List<String> messageIds = Lists.newArrayList(mid1, mid2, mid3);
     GraphUpdateDispatcher dispatcher = GraphUpdateDispatcher.builder()
                                            .planExecutionId(planExecutionId)
-                                           .messageIds(messageIds)
+                                           .messageId(mid3)
                                            .startTs(System.currentTimeMillis())
                                            .consumer(consumer)
                                            .graphGenerationService(graphGenerationService)

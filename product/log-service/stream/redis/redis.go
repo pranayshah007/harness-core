@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -36,9 +37,7 @@ const (
 	// Maximum number of keys that we will return with a given prefix. If there are more than maxPrefixes keys with a given prefix,
 	// only the first maxPrefixes keys will be returned.
 	maxPrefixes = 200
-	// scan redis keys in batches
-	scanBatch = 2000
-	entryKey  = "line"
+	entryKey    = "line"
 
 	// Redis TTL error values
 	TTL_NOT_SET          = -1
@@ -49,12 +48,12 @@ type Redis struct {
 	Client redis.Cmdable
 }
 
-func NewWithClient(cmdable *redis.Cmdable, disableExpiryWatcher bool) *Redis {
+func NewWithClient(cmdable *redis.Cmdable, disableExpiryWatcher bool, scanBatch int64) *Redis {
 	rc := &Redis{Client: *cmdable}
 	if !disableExpiryWatcher {
 		logrus.Infof("starting expiry watcher thread on Redis instance")
 		s := gocron.NewScheduler(time.UTC)
-		s.Every(defaultKeyExpiryTimeSeconds).Seconds().Do(rc.expiryWatcher, defaultKeyExpiryTimeSeconds*time.Second)
+		s.Every(defaultKeyExpiryTimeSeconds).Seconds().Do(rc.expiryWatcher, defaultKeyExpiryTimeSeconds*time.Second, scanBatch)
 		s.StartAsync()
 	}
 	return rc
@@ -64,6 +63,7 @@ func NewWithClient(cmdable *redis.Cmdable, disableExpiryWatcher bool) *Redis {
 func (r *Redis) Create(ctx context.Context, key string) error {
 	// Delete if a stream already exists with the same key
 	r.Delete(ctx, key)
+	key = createLogStreamPrefixedKey(key)
 
 	// Insert a dummy entry into the stream
 	// Trimming with MaxLen can be expensive. We use MaxLenApprox here -
@@ -88,9 +88,16 @@ func (r *Redis) Create(ctx context.Context, key string) error {
 
 // Delete deletes a stream
 func (r *Redis) Delete(ctx context.Context, key string) error {
-	exists := r.Client.Exists(ctx, key)
+	prefixedKey := createLogStreamPrefixedKey(key)
+	exists := r.Client.Exists(ctx, prefixedKey)
 	if exists.Err() != nil || exists.Val() == 0 {
-		return stream.ErrNotFound
+		key = removeLogStreamPrefixedKey(key)
+		exists := r.Client.Exists(ctx, key)
+		if exists.Err() != nil || exists.Val() == 0 {
+			return stream.ErrNotFound
+		}
+	} else {
+		key = prefixedKey
 	}
 
 	resp := r.Client.Del(ctx, key)
@@ -103,9 +110,16 @@ func (r *Redis) Delete(ctx context.Context, key string) error {
 // Write writes information into the Redis stream
 func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) error {
 	var werr error
-	exists := r.Client.Exists(ctx, key)
+	prefixedKey := createLogStreamPrefixedKey(key)
+	exists := r.Client.Exists(ctx, prefixedKey)
 	if exists.Err() != nil || exists.Val() == 0 {
-		return stream.ErrNotFound
+		key = removeLogStreamPrefixedKey(key)
+		exists := r.Client.Exists(ctx, key)
+		if exists.Err() != nil || exists.Val() == 0 {
+			return stream.ErrNotFound
+		}
+	} else {
+		key = prefixedKey
 	}
 
 	// Write input to redis stream. "*" tells Redis to auto-generate a unique incremental ID.
@@ -133,9 +147,16 @@ func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) er
 func (r *Redis) Tail(ctx context.Context, key string) (<-chan *stream.Line, <-chan error) {
 	handler := make(chan *stream.Line, bufferSize)
 	err := make(chan error, 1)
-	exists := r.Client.Exists(ctx, key)
+	prefixedKey := createLogStreamPrefixedKey(key)
+	exists := r.Client.Exists(ctx, prefixedKey)
 	if exists.Err() != nil || exists.Val() == 0 {
-		return nil, nil
+		key = removeLogStreamPrefixedKey(key)
+		exists := r.Client.Exists(ctx, key)
+		if exists.Err() != nil || exists.Val() == 0 {
+			return nil, nil
+		}
+	} else {
+		key = prefixedKey
 	}
 	go func() {
 		// Keep reading from the stream and writing to the channel
@@ -190,14 +211,19 @@ func (r *Redis) Tail(ctx context.Context, key string) (<-chan *stream.Line, <-ch
 
 // Exists checks whether the key exists in the stream
 func (r *Redis) Exists(ctx context.Context, key string) error {
-	exists := r.Client.Exists(ctx, key)
+	prefixedKey := createLogStreamPrefixedKey(key)
+	exists := r.Client.Exists(ctx, prefixedKey)
 	if exists.Err() != nil || exists.Val() == 0 {
-		return stream.ErrNotFound
+		key = removeLogStreamPrefixedKey(key)
+		exists := r.Client.Exists(ctx, key)
+		if exists.Err() != nil || exists.Val() == 0 {
+			return stream.ErrNotFound
+		}
 	}
 	return nil
 }
 
-func (r *Redis) ListPrefix(ctx context.Context, prefix string) ([]string, error) {
+func (r *Redis) ListPrefix(ctx context.Context, prefix string, scanBatch int64) ([]string, error) {
 	// Return all the keys with the given prefix
 	l := []string{}
 	if len(prefix) == 0 {
@@ -207,6 +233,18 @@ func (r *Redis) ListPrefix(ctx context.Context, prefix string) ([]string, error)
 		prefix = prefix + "*"
 	}
 
+	prefixedPrefix := createLogStreamPrefixedKey(prefix)
+	l, err := ScanPrefix(ctx, r, prefixedPrefix, scanBatch, l)
+	if err != nil || len(l) == 0 {
+		prefix := removeLogStreamPrefixedKey(prefix)
+		l, err = ScanPrefix(ctx, r, prefix, scanBatch, l)
+		if err != nil {
+			return l, err
+		}
+	}
+	return l, err
+}
+func ScanPrefix(ctx context.Context, r *Redis, prefix string, scanBatch int64, l []string) ([]string, error) {
 	var cursor uint64
 	keyM := make(map[string]struct{})
 	for {
@@ -222,6 +260,7 @@ func (r *Redis) ListPrefix(ctx context.Context, prefix string) ([]string, error)
 				continue
 			}
 			keyM[k] = struct{}{}
+			k = removeLogStreamPrefixedKey(k)
 			l = append(l, k)
 		}
 		if cursor == 0 || len(l) > maxPrefixes {
@@ -235,9 +274,16 @@ func (r *Redis) ListPrefix(ctx context.Context, prefix string) ([]string, error)
 // CopyTo copies the contents from the redis stream to the writer
 func (r *Redis) CopyTo(ctx context.Context, key string, wc io.WriteCloser) error {
 	defer wc.Close()
-	exists := r.Client.Exists(ctx, key)
+	prefixedKey := createLogStreamPrefixedKey(key)
+	exists := r.Client.Exists(ctx, prefixedKey)
 	if exists.Err() != nil || exists.Val() == 0 {
-		return stream.ErrNotFound
+		key = removeLogStreamPrefixedKey(key)
+		exists := r.Client.Exists(ctx, key)
+		if exists.Err() != nil || exists.Val() == 0 {
+			return stream.ErrNotFound
+		}
+	} else {
+		key = prefixedKey
 	}
 
 	lastID := "0"
@@ -338,7 +384,7 @@ func (r *Redis) setExpiry(key string, expiry time.Duration) error {
 }
 
 // Scan all the keys and set an expiry on them if it's not set
-func (r *Redis) expiryWatcher(expiry time.Duration) {
+func (r *Redis) expiryWatcher(expiry time.Duration, scanBatch int64) {
 	logrus.Infof("running expiry watcher thread")
 	st := time.Now()
 	var cursor uint64
@@ -353,9 +399,11 @@ func (r *Redis) expiryWatcher(expiry time.Duration) {
 			return
 		}
 		for _, k := range keys {
-			if err := r.setExpiry(k, expiry); err == nil {
-				logrus.Infof("set an expiry %s on non-volatile key: %s", expiry, k)
-				cnt++
+			if strings.HasPrefix(k, stream.Prefix) {
+				if err := r.setExpiry(k, expiry); err == nil {
+					logrus.Infof("set an expiry %s on non-volatile key: %s", expiry, k)
+					cnt++
+				}
 			}
 		}
 		if cursor == 0 {
@@ -363,4 +411,15 @@ func (r *Redis) expiryWatcher(expiry time.Duration) {
 		}
 	}
 	logrus.Infof("done running expiry watcher thread in %s time and expired %d keys", time.Since(st), cnt)
+}
+
+func createLogStreamPrefixedKey(key string) string {
+	return stream.Prefix + key
+}
+
+func removeLogStreamPrefixedKey(key string) string {
+	if strings.HasPrefix(key, stream.Prefix) {
+		return key[len(stream.Prefix):]
+	}
+	return key
 }

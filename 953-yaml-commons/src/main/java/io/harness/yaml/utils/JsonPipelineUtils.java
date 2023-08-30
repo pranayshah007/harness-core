@@ -7,9 +7,15 @@
 
 package io.harness.yaml.utils;
 
+import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
+
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.yaml.SchemaFieldConstants;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.JsonSubtypeResolver;
 import io.harness.serializer.jackson.PipelineJacksonModule;
@@ -23,6 +29,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -42,9 +50,12 @@ import lombok.extern.slf4j.Slf4j;
  * End user will typically extend interface and define {@link com.fasterxml.jackson.annotation.JsonTypeName} annotation
  * with proper type name. This way framework is decoupled from concrete implementations.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @Slf4j
 public class JsonPipelineUtils {
+  private final String EMPTY_STRING = "";
   private static final ObjectMapper mapper;
 
   static {
@@ -146,5 +157,76 @@ public class JsonPipelineUtils {
 
   public static Map<String, Object> jsonNodeToMap(JsonNode node) {
     return NG_DEFAULT_OBJECT_MAPPER.convertValue(node, new TypeReference<LinkedHashMap<String, Object>>() {});
+  }
+  public boolean isPresent(JsonNode jsonNode, SchemaFieldConstants field) {
+    return get(jsonNode, field) != null;
+  }
+
+  public boolean isPresent(JsonNode jsonNode, String field) {
+    return get(jsonNode, field) != null;
+  }
+
+  public String getText(JsonNode jsonNode, SchemaFieldConstants field) {
+    return get(jsonNode, field).asText();
+  }
+  public String getText(JsonNode jsonNode, String field) {
+    return get(jsonNode, field).asText();
+  }
+
+  public String getTextOrEmpty(JsonNode jsonNode, SchemaFieldConstants field) {
+    if (isPresent(jsonNode, field)) {
+      return getText(jsonNode, field);
+    }
+    return EMPTY_STRING;
+  }
+
+  public ArrayNode getArrayNode(JsonNode jsonNode, SchemaFieldConstants field) {
+    return (ArrayNode) get(jsonNode, field);
+  }
+
+  public JsonNode get(JsonNode jsonNode, SchemaFieldConstants field) {
+    return get(jsonNode, field.name());
+  }
+
+  public JsonNode get(JsonNode jsonNode, String field) {
+    return jsonNode.get(field);
+  }
+
+  public boolean isStringTypeField(JsonNode jsonNode, SchemaFieldConstants field) {
+    return isStringTypeField(jsonNode, field.name());
+  }
+
+  public boolean isStringTypeField(JsonNode jsonNode, String field) {
+    return checkNodeType(jsonNode, field, JsonNodeType.STRING);
+  }
+
+  public boolean isObjectTypeField(JsonNode jsonNode, String field) {
+    return checkNodeType(jsonNode, field, JsonNodeType.OBJECT);
+  }
+
+  public boolean isArrayNodeField(JsonNode jsonNode, String fieldName) {
+    return checkNodeType(jsonNode, fieldName, JsonNodeType.ARRAY);
+  }
+
+  private boolean checkNodeType(JsonNode jsonNode, String field, JsonNodeType jsonNodeType) {
+    if (isPresent(jsonNode, field)) {
+      return jsonNode.get(field).getNodeType() == jsonNodeType;
+    }
+    return false;
+  }
+
+  public JsonNode getJsonNodeByPath(JsonNode jsonNode, String path) {
+    String[] pathComponents = path.split("/");
+    int i = 0;
+    if (pathComponents[0].equals("#") && pathComponents.length > 1 && DEFINITIONS_NODE.equals(pathComponents[1])) {
+      i++;
+    }
+    for (; i < pathComponents.length; i++) {
+      if (jsonNode == null) {
+        break;
+      }
+      jsonNode = jsonNode.get(pathComponents[i]);
+    }
+    return jsonNode;
   }
 }

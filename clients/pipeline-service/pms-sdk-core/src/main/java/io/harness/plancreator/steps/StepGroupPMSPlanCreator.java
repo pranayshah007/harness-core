@@ -6,7 +6,6 @@
  */
 
 package io.harness.plancreator.steps;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
@@ -15,10 +14,12 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.retry.RetryStepGroupAdvisor;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.govern.Switch;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -67,6 +68,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE,
+        HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(PIPELINE)
 public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElementConfig> {
   @Inject private KryoSerializer kryoSerializer;
@@ -90,7 +94,8 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
               .build());
     }
     addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, config.getUuid(), config.getName(), config.getIdentifier(),
-        responseMap, new HashMap<>(), getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false));
+        responseMap, new HashMap<>(),
+        getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false, false));
 
     return responseMap;
   }
@@ -99,7 +104,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
       String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap,
       HashMap<Object, Object> objectObjectHashMap, List<AdviserObtainment> adviserObtainmentFromMetaData) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, uuid, name, identifier, responseMap,
-        new HashMap<>(), getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false));
+        new HashMap<>(), getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false, false));
   }
 
   @Override
@@ -129,7 +134,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
         .adviserObtainments(getAdviserObtainmentFromMetaData(
-            kryoSerializer, ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
+            kryoSerializer, ctx.getCurrentField(), StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField()), true))
         .skipExpressionChain(false)
         .build();
   }
@@ -144,10 +149,12 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
     return Collections.singletonMap(STEP_GROUP, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
-  protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(
-      KryoSerializer kryoSerializer, YamlField currentField, boolean checkForStrategy) {
-    List<AdviserObtainment> adviserObtainments =
-        new ArrayList<>(getAdviserObtainmentForFailureStrategy(kryoSerializer, currentField));
+  protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(KryoSerializer kryoSerializer,
+      YamlField currentField, boolean checkForStrategy, boolean addAdvisorObtainmentForFailureStrategy) {
+    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    if (addAdvisorObtainmentForFailureStrategy) {
+      adviserObtainments = getAdviserObtainmentForFailureStrategy(kryoSerializer, currentField);
+    }
     if (checkForStrategy) {
       return adviserObtainments;
     }
@@ -221,7 +228,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
             adviserObtainmentBuilder, retrySGAction, retrySGCount, currentField));
         break;
       default:
-        Switch.unhandled(actionType);
+        // do nothing
     }
   }
 

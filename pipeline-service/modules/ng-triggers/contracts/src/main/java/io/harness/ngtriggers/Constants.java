@@ -9,8 +9,12 @@ package io.harness.ngtriggers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 public interface Constants {
   int COMMIT_SHA_STRING_LENGTH = 7;
@@ -79,6 +83,9 @@ public interface Constants {
   String GIT_USER = "gitUser";
   String TAG = "tag";
   String PR_TITLE = "prTitle";
+  String SOURCE = "source";
+  String CONNECTOR_REF = "connectorRef";
+  String IMAGE_PATH = "imagePath";
   String SOURCE_TYPE = "sourceType";
   String ARTIFACT_EXPR = "artifact";
   String MANIFEST_EXPR = "manifest";

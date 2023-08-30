@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.principals.usergroups.UserGroup;
@@ -77,7 +79,7 @@ public class UserGroupChangeConsumer implements AccessControlChangeConsumer<User
       return true;
     }
     long startTime = System.currentTimeMillis();
-    Pattern startsWithScope = Pattern.compile("^".concat(userGroup.getScopeIdentifier()));
+    Pattern startsWithScope = Pattern.compile("^".concat(userGroup.getScopeIdentifier()).concat("/"));
     String principalScopeLevel =
         scopeService.buildScopeFromScopeIdentifier(userGroup.getScopeIdentifier()).getLevel().toString();
 
@@ -87,8 +89,9 @@ public class UserGroupChangeConsumer implements AccessControlChangeConsumer<User
                             .is(userGroup.getIdentifier())
                             .and(RoleAssignmentDBOKeys.principalScopeLevel)
                             .is(principalScopeLevel)
-                            .and(RoleAssignmentDBOKeys.scopeIdentifier)
-                            .regex(startsWithScope);
+                            .andOperator(new Criteria().orOperator(
+                                where(RoleAssignmentDBOKeys.scopeIdentifier).is(userGroup.getScopeIdentifier()),
+                                where(RoleAssignmentDBOKeys.scopeIdentifier).regex(startsWithScope)));
     List<ReProcessRoleAssignmentOnUserGroupUpdateTask> tasksToExecute =
         roleAssignmentRepository.findAll(criteria, Pageable.ofSize(10000))
             .stream()
@@ -116,10 +119,10 @@ public class UserGroupChangeConsumer implements AccessControlChangeConsumer<User
     long aclProcessingTime = System.currentTimeMillis() - startTime;
     try (DelayLogContext ignore = new DelayLogContext(aclProcessingTime, OVERRIDE_ERROR)) {
       log.info(
-          "UserGroupChangeConsumer.consumeUpdateEvent: Number of ACLs created: {} for {} at scope {} Time taken: {}",
+          "UserGroupChangeConsumer.consumeUpdateEvent: Number of ACLs created: {} for identifier: {}, scope: {} Time taken: {}",
           numberOfACLsCreated, userGroup.getIdentifier(), userGroup.getScopeIdentifier(), aclProcessingTime);
       log.info(
-          "UserGroupChangeConsumer.consumeUpdateEvent: Number of ACLs deleted: {} for {} at scope {} Time taken: {}",
+          "UserGroupChangeConsumer.consumeUpdateEvent: Number of ACLs deleted: {} for identifier: {}, scope: {} Time taken: {}",
           numberOfACLsDeleted, userGroup.getIdentifier(), userGroup.getScopeIdentifier(), aclProcessingTime);
     }
     return true;

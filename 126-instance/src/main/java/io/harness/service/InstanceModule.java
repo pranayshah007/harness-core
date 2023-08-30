@@ -16,6 +16,8 @@ import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
 import io.harness.persistence.HPersistence;
 import io.harness.repositories.instancestats.InstanceStatsRepository;
 import io.harness.repositories.instancestats.InstanceStatsRepositoryImpl;
+import io.harness.repositories.instancestatsiterator.InstanceStatsIteratorRepository;
+import io.harness.repositories.instancestatsiterator.InstanceStatsIteratorRepositoryImpl;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.deploymentsummary.DeploymentSummaryServiceImpl;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
@@ -72,6 +74,7 @@ public class InstanceModule extends AbstractModule {
     bind(InstanceStatsService.class).to(InstanceStatsServiceImpl.class);
     bind(UsageMetricsEventPublisher.class).to(UsageMetricsEventPublisherImpl.class);
     bind(InstanceStatsRepository.class).to(InstanceStatsRepositoryImpl.class);
+    bind(InstanceStatsIteratorRepository.class).to(InstanceStatsIteratorRepositoryImpl.class);
     bind(BroadcasterFactory.class).to(DefaultBroadcasterFactory.class);
     bind(GitopsInstanceSyncService.class).to(GitopsInstanceSyncServiceImpl.class);
     bind(InstanceSyncPerpetualTaskMappingService.class).to(InstanceSyncPerpetualTaskMappingServiceImpl.class);

@@ -7,6 +7,9 @@
 
 package io.harness.ngmigration.expressions;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -40,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @Singleton
 public class MigratorExpressionUtils {
@@ -181,7 +185,7 @@ public class MigratorExpressionUtils {
     context.put("servicevariable", new ServiceVariablesMigratorFunctor());
     context.put("environmentVariable", new EnvVariablesMigratorFunctor());
     context.put("environmentVariables", new EnvVariablesMigratorFunctor());
-    context.put("configFile", new ConfigFileMigratorFunctor());
+    context.put("configFile", new ConfigFileMigratorFunctor(identifierCaseFormat));
 
     // Secrets
     context.put(

@@ -367,7 +367,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: b4486350
+scmVersion: 93b3c9f1
 
 ngAuthUIEnabled: false
 
@@ -707,7 +707,7 @@ delegateQueueServiceConfig:
     enableQueueAndDequeue: false
     queueServiceClientConfig:
       httpClientConfig:
-        baseUrl: http://localhost:9091/
+        baseUrl: http://localhost:9544/
         connectTimeOutSeconds: 15
         readTimeOutSeconds: 15
       queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
@@ -761,6 +761,8 @@ dataReconciliation:
 disableDelegateMgmtInManager: false
 
 enableRedisForDelegateService: ${ENABLE_REDIS_DELEGATE_SERVICE:-false}
+
+saasDelegateHelmChartRepo: "https://app.harness.io/storage/harness-download/delegate-helm-chart/"
 
 runScheduleJobsInManagerIteratorOnly: ${RUN_SCHEDULE_JOBS:-true}
 

@@ -9,11 +9,16 @@ package io.harness.eventsframework;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.time.Duration;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TRIGGERS, HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @OwnedBy(PL)
 public final class EventsFrameworkConstants {
@@ -34,6 +39,7 @@ public final class EventsFrameworkConstants {
   public static final String WEBHOOK_EVENT = "WebhookEvent";
   public static final String GIT_BRANCH_HOOK_EVENT_STREAM = "git_branch_hook_event_stream";
   public static final String USERMEMBERSHIP = "usermembership";
+  public static final String MODULE_LICENSE = "modulelicense";
   public static final String ORCHESTRATION_LOG = "orchestration_log";
   public static final String NG_ACCOUNT_SETUP = "ng_account_setup";
   public static final String INSTANCE_SYNC_PERPETUAL_TASK_RESPONSE_STREAM = "instance_sync_perpetual_task_stream";
@@ -117,6 +123,9 @@ public final class EventsFrameworkConstants {
   public static final String PMS_ORCHESTRATION_NOTIFY_EVENT = "pms_orchestration_notify_event";
   public static final String CI_ORCHESTRATION_NOTIFY_EVENT = "ci_orchestration_notify_event";
   public static final String STO_ORCHESTRATION_NOTIFY_EVENT = "sto_orchestration_notify_event";
+
+  public static final String IACM_ORCHESTRATION_NOTIFY_EVENT = "iacm_orchestration_notify_event";
+
   public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE = 20;
   public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_MAX_TOPIC_SIZE = 5000;
 
@@ -144,6 +153,7 @@ public final class EventsFrameworkConstants {
   public static final int CUSTOM_CHANGE_EVENT_MAX_TOPIC_SIZE = 5000;
   public static final int DEFAULT_TOPIC_SIZE = 10000;
   public static final int USER_MEMBERSHIP_TOPIC_SIZE = 100000;
+  public static final int MODULE_LICENSE_TOPIC_SIZE = 100000;
   public static final int ENTITY_CRUD_MAX_TOPIC_SIZE = 100000;
   public static final int SETUP_USAGE_MAX_TOPIC_SIZE = 10000;
   public static final int ENTITY_ACTIVITY_MAX_TOPIC_SIZE = 10000;
@@ -157,7 +167,7 @@ public final class EventsFrameworkConstants {
   public static final int GIT_BRANCH_HOOK_EVENT_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int GIT_CONFIG_STREAM_MAX_TOPIC_SIZE = 10000;
   public static final int FULL_SYNC_STREAM_MAX_TOPIC_SIZE = 10000;
-  public static final int ORCHESTRATION_LOG_MAX_TOPIC_SIZE = 100000;
+  public static final int ORCHESTRATION_LOG_MAX_TOPIC_SIZE = 200000;
 
   public static final Duration DEFAULT_MAX_PROCESSING_TIME = Duration.ofSeconds(10);
   public static final Duration ENTITY_CRUD_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
@@ -174,7 +184,7 @@ public final class EventsFrameworkConstants {
   public static final Duration HARNESS_TO_GIT_PUSH_MAX_PROCESSING_TIME = Duration.ofSeconds(50);
   public static final Duration GIT_CONFIG_STREAM_PROCESSING_TIME = Duration.ofSeconds(20);
   public static final Duration FULL_SYNC_STREAM_PROCESSING_TIME = Duration.ofSeconds(20);
-  public static final Duration ORCHESTRATION_LOG_MAX_PROCESSING_TIME = Duration.ofSeconds(30);
+  public static final Duration ORCHESTRATION_LOG_MAX_PROCESSING_TIME = Duration.ofSeconds(60);
   public static final Duration PLAN_NOTIFY_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
   public static final Duration CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
 

@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.beans.MigrationInputSettingsType.SIMULTANEOUS_DEPLOYMENT_ON_SAME_INFRA;
 
 import static software.wings.api.CloudProviderType.AWS;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
@@ -251,6 +252,11 @@ public class InfraMigrationService extends NgMigrationService {
                                                      .build()))
           .build();
     }
+
+    String value = MigratorUtility.getSettingValue(inputDTO, SIMULTANEOUS_DEPLOYMENT_ON_SAME_INFRA, null);
+
+    boolean allowSimultaneousDeployments = "true".equalsIgnoreCase(value);
+
     InfrastructureConfig infrastructureConfig =
         InfrastructureConfig.builder()
             .infrastructureDefinitionConfig(
@@ -263,6 +269,7 @@ public class InfraMigrationService extends NgMigrationService {
                     .spec(infraSpec)
                     .type(infraDefMapper.getInfrastructureType(infra))
                     .deploymentType(infraDefMapper.getServiceDefinition(infra))
+                    .allowSimultaneousDeployments(allowSimultaneousDeployments)
                     .build())
             .build();
 
@@ -311,7 +318,7 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 

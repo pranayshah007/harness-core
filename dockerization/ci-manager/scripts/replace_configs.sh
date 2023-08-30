@@ -55,6 +55,10 @@ if [[ "" != "$LE_IMAGE" ]]; then
   export LE_IMAGE; yq -i '.ciExecutionServiceConfig.liteEngineImage=env(LE_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TMATE_ENDPOINT" ]]; then
+  export TMATE_ENDPOINT; yq -i '.ciExecutionServiceConfig.tmateEndpoint=env(TMATE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$GIT_CLONE_IMAGE" ]]; then
   export GIT_CLONE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.gitCloneConfig.image=env(GIT_CLONE_IMAGE)' $CONFIG_FILE
 fi
@@ -256,10 +260,6 @@ if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
   export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
 fi
 
-if [[ "" != "$PMS_MONGO_URI" ]]; then
-  export PMS_MONGO_URI=${PMS_MONGO_URI//\\&/&}; yq -i '.pmsMongo.uri=env(PMS_MONGO_URI)' $CONFIG_FILE
-fi
-
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then
   export GRPC_SERVER_PORT; yq -i '.pmsSdkGrpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
 fi
@@ -346,6 +346,15 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   INDEX=0
   for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
     export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFramework.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
+if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
     INDEX=$(expr $INDEX + 1)
   done
 fi

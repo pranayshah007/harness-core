@@ -324,6 +324,20 @@ public class RESTToGraphQLHelper {
             .identifier(ViewFieldIdentifier.AWS)
             .identifierName(ViewFieldIdentifier.AWS.getDisplayName())
             .build());
+    viewFieldHashMap.put("AWS_BILLING_ENTITY",
+        QLCEViewFieldInput.builder()
+            .fieldId(awsFields.get(4).getFieldId())
+            .fieldName(awsFields.get(4).getFieldId())
+            .identifier(ViewFieldIdentifier.AWS)
+            .identifierName(ViewFieldIdentifier.AWS.getDisplayName())
+            .build());
+    viewFieldHashMap.put("AWS_LINE_ITEM_TYPE",
+        QLCEViewFieldInput.builder()
+            .fieldId(awsFields.get(5).getFieldId())
+            .fieldName(awsFields.get(5).getFieldId())
+            .identifier(ViewFieldIdentifier.AWS)
+            .identifierName(ViewFieldIdentifier.AWS.getDisplayName())
+            .build());
 
     List<QLCEViewField> gcpFields = ViewFieldUtils.getGcpFields();
     viewFieldHashMap.put("GCP_PRODUCT",

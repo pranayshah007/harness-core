@@ -59,6 +59,7 @@ type Config struct {
 		UseSentinel          bool     `envconfig:"LOG_SERVICE_REDIS_USE_SENTINEL"`
 		MasterName           string   `envconfig:"LOG_SERVICE_REDIS_MASTER_NAME"`
 		SentinelAddrs        []string `envconfig:"LOG_SERVICE_REDIS_SENTINEL_ADDRS"`
+		ScanBatch            int64    `envconfig:"LOG_SERVICE_REDIS_SCAN_BATCH" default:"1000"`
 	}
 
 	ConsumerWorker struct {

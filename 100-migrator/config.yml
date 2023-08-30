@@ -361,7 +361,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: b4486350
+  scmVersion: 93b3c9f1
 
   ngAuthUIEnabled: false
 
@@ -710,7 +710,7 @@ cg:
     enableQueueAndDequeue: false
     queueServiceClientConfig:
       httpClientConfig:
-        baseUrl: http://localhost:9091/
+        baseUrl: http://localhost:9544/
         connectTimeOutSeconds: 15
         readTimeOutSeconds: 15
       queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret

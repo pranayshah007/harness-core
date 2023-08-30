@@ -9,10 +9,10 @@ package io.harness.expression;
 
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ADWAIT;
-import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static java.util.Arrays.asList;
@@ -113,7 +113,7 @@ public class ExpressionEvaluatorTest extends CategoryTest {
     Map<String, Object> context = new HashMap<>();
     context.put("name", null);
     assertThat(expressionEvaluator.substitute("${name}", context)).isEqualTo("null");
-    assertThat(expressionEvaluator.evaluate("name", context)).isNull();
+    assertThat(expressionEvaluator.evaluate("\nname", context)).isNull();
   }
 
   @Test
@@ -187,20 +187,7 @@ public class ExpressionEvaluatorTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = GEORGE)
-  @Category(UnitTests.class)
-  public void shouldEvaluateWithDefaultPrefix() {
-    ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();
-
-    String expr = "sam.age < bob.age && sam.address.city.length() > address.city.length()";
-    Object retValue = expressionEvaluator.evaluate(expr, persons, "bob");
-    assertThat(retValue).isNotNull();
-    assertThat(retValue).isInstanceOf(Boolean.class);
-    assertThat(retValue).isEqualTo(true);
-  }
-
-  @Test
-  @Owner(developers = ARVIND)
+  @Owner(developers = SARTHAK_KASAT)
   @Category(UnitTests.class)
   public void shouldEvaluateWithDefaultPrefixNewLine() {
     ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();
@@ -214,6 +201,19 @@ public class ExpressionEvaluatorTest extends CategoryTest {
                               .build();
     Object retValue = expressionEvaluator.evaluate(expression, context);
     assertThat(retValue).isEqualTo("encoded\n" + toEncode);
+  }
+
+  @Test
+  @Owner(developers = GEORGE)
+  @Category(UnitTests.class)
+  public void shouldEvaluateWithDefaultPrefix() {
+    ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();
+
+    String expr = "sam.age < bob.age && sam.address.city.length() > address.city.length()";
+    Object retValue = expressionEvaluator.evaluate(expr, persons, "bob");
+    assertThat(retValue).isNotNull();
+    assertThat(retValue).isInstanceOf(Boolean.class);
+    assertThat(retValue).isEqualTo(true);
   }
 
   @Test

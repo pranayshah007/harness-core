@@ -6,14 +6,16 @@
  */
 
 package io.harness.delegate.task.azure.artifact;
-
 import static io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig.toInternalConfig;
 import static io.harness.delegate.utils.AzureArtifactsUtils.getDecryptedToken;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsDownloadHelper;
@@ -32,6 +34,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class AzureArtifactsHelper {

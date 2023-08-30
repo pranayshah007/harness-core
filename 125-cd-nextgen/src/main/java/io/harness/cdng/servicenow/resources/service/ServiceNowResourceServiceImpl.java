@@ -11,7 +11,11 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
@@ -49,10 +53,12 @@ import io.harness.servicenow.ServiceNowFieldSchemaNG;
 import io.harness.servicenow.ServiceNowFieldTypeNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
+import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
 import io.harness.servicenow.ServiceNowTicketTypeNG;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.api.client.util.Joiner;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
@@ -63,6 +69,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 public class ServiceNowResourceServiceImpl implements ServiceNowResourceService {
   private static final Duration TIMEOUT = Duration.ofSeconds(30);
@@ -210,6 +217,21 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
     }
   }
 
+  @Override
+  public ServiceNowTicketNG getTicketDetails(IdentifierRef connectorRef, String orgId, String projectId,
+      String ticketType, String ticketNumber, List<String> fieldsList) {
+    String queryFields = null;
+    if (fieldsList != null) {
+      queryFields = Joiner.on(',').join(fieldsList);
+    }
+    ServiceNowTaskNGParametersBuilder parametersBuilder = ServiceNowTaskNGParameters.builder()
+                                                              .action(ServiceNowActionNG.GET_TICKET)
+                                                              .queryFields(isBlank(queryFields) ? null : queryFields)
+                                                              .ticketType(ticketType)
+                                                              .ticketNumber(ticketNumber);
+    return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder).getTicket();
+  }
+
   private ServiceNowTaskNGResponse obtainServiceNowTaskNGResponse(IdentifierRef serviceNowConnectorRef, String orgId,
       String projectId, ServiceNowTaskNGParametersBuilder parametersBuilder) {
     ServiceNowConnectorDTO connector = getConnector(serviceNowConnectorRef);
@@ -287,7 +309,6 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
         .accountId(baseNGAccess.getAccountIdentifier())
         .taskType(NGTaskType.SERVICENOW_TASK_NG.name())
         .taskParameters(taskNGParameters)
-        .taskSelectors(taskNGParameters.getDelegateSelectors())
         .executionTimeout(TIMEOUT)
         .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
         .build();

@@ -6,11 +6,13 @@
  */
 
 package io.harness.ng.rollback;
-
 import static io.harness.beans.FeatureName.POST_PROD_ROLLBACK;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.dtos.rollback.PostProdRollbackCheckDTO;
@@ -29,11 +31,13 @@ import com.google.inject.Inject;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 public class PostProdRollbackServiceImpl implements PostProdRollbackService {
   // Each instanceType will have its own separate FF.
   private static final Map<InstanceType, FeatureName> INSTANCE_TYPE_TO_FF_MAP = Map.of(InstanceType.K8S_INSTANCE,
-      POST_PROD_ROLLBACK, InstanceType.TAS_INSTANCE, POST_PROD_ROLLBACK, InstanceType.ECS_INSTANCE, POST_PROD_ROLLBACK);
+      POST_PROD_ROLLBACK, InstanceType.TAS_INSTANCE, POST_PROD_ROLLBACK, InstanceType.ECS_INSTANCE, POST_PROD_ROLLBACK,
+      InstanceType.ASG_INSTANCE, POST_PROD_ROLLBACK, InstanceType.SPOT_INSTANCE, POST_PROD_ROLLBACK);
   private static final Set<RollbackStatus> ALLOWED_ROLLBACK_START_STATUSES =
       Set.of(RollbackStatus.NOT_STARTED, RollbackStatus.UNAVAILABLE);
   @Inject private PipelineServiceClient pipelineServiceClient;

@@ -6,10 +6,12 @@
  */
 
 package software.wings.helpers.ext.ecr;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.aws.beans.AwsInternalConfig;
 
@@ -19,6 +21,8 @@ import java.util.Map;
 /**
  * Created by brett on 7/15/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface EcrService {
   int MAX_NO_OF_IMAGES = 1000;

@@ -24,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.istio.IstioTaskHelper;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
@@ -64,6 +65,7 @@ public class K8sRollingBaseHandler {
   public static final Map.Entry<String, String> HARNESS_TRACK_STABLE_SELECTOR =
       Maps.immutableEntry(HarnessLabels.track, HarnessLabelValues.trackStable);
   @Inject K8sTaskHelperBase k8sTaskHelperBase;
+  @Inject IstioTaskHelper istioTaskHelper;
 
   @VisibleForTesting
   public void updateManagedWorkloadsRevision(
@@ -150,13 +152,13 @@ public class K8sRollingBaseHandler {
 
   public void updateDestinationRuleWithSubsets(LogCallback executionLogCallback, List<KubernetesResource> resources,
       KubernetesConfig kubernetesConfig) throws IOException {
-    k8sTaskHelperBase.updateDestinationRuleManifestFilesWithSubsets(resources,
+    istioTaskHelper.updateDestinationRuleManifestFilesWithSubsets(resources,
         asList(HarnessLabelValues.trackCanary, HarnessLabelValues.trackStable), kubernetesConfig, executionLogCallback);
   }
 
   public void updateVirtualServiceWithRoutes(LogCallback executionLogCallback, List<KubernetesResource> resources,
       KubernetesConfig kubernetesConfig) throws IOException {
-    k8sTaskHelperBase.updateVirtualServiceManifestFilesWithRoutesForCanary(
+    istioTaskHelper.updateVirtualServiceManifestFilesWithRoutesForCanary(
         resources, kubernetesConfig, executionLogCallback);
   }
 
@@ -236,7 +238,7 @@ public class K8sRollingBaseHandler {
       K8sDelegateTaskParams k8sDelegateTaskParams, List<String> manifestOverrideFiles,
       KubernetesConfig kubernetesConfig, String manifestFilesDirectory, String releaseName,
       boolean isLocalOverrideFeatureFlag, boolean isErrorFrameworkSupported, boolean isInCanaryWorkflow,
-      LogCallback executionLogCallback) throws Exception {
+      boolean shouldDisableFabric8, LogCallback executionLogCallback) throws Exception {
     k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);
 
     List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
@@ -248,8 +250,8 @@ public class K8sRollingBaseHandler {
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());
 
     if (isInCanaryWorkflow) {
-      updateDestinationRuleWithSubsets(executionLogCallback, resources, kubernetesConfig);
-      updateVirtualServiceWithRoutes(executionLogCallback, resources, kubernetesConfig);
+      updateDestinationRuleWithSubsets(executionLogCallback, resources, shouldDisableFabric8 ? null : kubernetesConfig);
+      updateVirtualServiceWithRoutes(executionLogCallback, resources, shouldDisableFabric8 ? null : kubernetesConfig);
     }
 
     executionLogCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));

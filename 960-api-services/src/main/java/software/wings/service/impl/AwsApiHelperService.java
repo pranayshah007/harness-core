@@ -10,7 +10,7 @@ package software.wings.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.AWS_ACCESS_DENIED;
-import static io.harness.exception.WingsException.EVERYBODY;
+import static io.harness.exception.WingsException.ADMIN_SRE;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
@@ -22,8 +22,11 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
@@ -36,6 +39,7 @@ import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.ArtifactServerException;
 import io.harness.exception.AwsAutoScaleException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;
@@ -117,6 +121,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TRIGGERS, HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -188,9 +194,14 @@ public class AwsApiHelperService {
     try {
       tracker.trackECRCall("List Repositories");
       return getAmazonEcrClient(awsConfig, region).describeRepositories(describeRepositoriesRequest);
+    } catch (AmazonECRException e) {
+      handleExceptionWhileFetchingRepositories(e.getStatusCode(), e.getErrorMessage());
     } catch (Exception e) {
-      throw new InvalidRequestException("Please input a valid AWS Connector and corresponding region.");
+      throw new InvalidRequestException(
+          "Please input a valid AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user",
+          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
+    return null;
   }
 
   public ListObjectsV2Result listObjectsInS3(
@@ -338,7 +349,7 @@ public class AwsApiHelperService {
           getArtifactBuildDetails(awsInternalConfig, bucketName, filePath, versioningEnabledForBucket, 1, region, true);
 
     } catch (WingsException e) {
-      e.excludeReportTarget(AWS_ACCESS_DENIED, EVERYBODY);
+      e.excludeReportTarget(AWS_ACCESS_DENIED, ADMIN_SRE);
       throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
     } catch (RuntimeException e) {
       throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
@@ -745,5 +756,38 @@ public class AwsApiHelperService {
     }
 
     objectSummaryList.sort((o1, o2) -> o2.getLastModified().compareTo(o1.getLastModified()));
+  }
+  public static void handleExceptionWhileFetchingRepositories(int code, String errormessage) {
+    switch (code) {
+      case 404:
+        throw new InvalidRequestException(
+            "Please check if repositories exist with the provided AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user",
+            new ArtifactServerException(errormessage, WingsException.USER));
+
+      case 400:
+        if (errormessage.contains("not authorized to perform: ecr:DescribeRepositories")) {
+          throw new InvalidRequestException(
+              "Please input a valid AWS Connector and corresponding region. Check if permission ecr:DescribeRepositories are scoped for the authenticated user",
+              new ArtifactServerException(errormessage, WingsException.USER));
+        }
+        throw new InvalidRequestException(
+            "Please input a valid AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user",
+            new ArtifactServerException(errormessage, WingsException.USER));
+      case 429:
+        throw new InvalidRequestException(
+            "The connector provided had Rate limit exceeded while fetching repositories, Please check rate limit on connector's request",
+            new InvalidArtifactServerException(errormessage, USER));
+      case 403:
+        throw new InvalidRequestException(
+            "connector provided does not have permissions granted to use Amazon ECR, Please verify that the user has been granted permissions to access that repository",
+            new InvalidArtifactServerException(errormessage, USER));
+      default:
+        throw new InvalidRequestException(
+            "The server could have failed to authenticate ,Please check your credentials. Server responded with the following error code",
+            new InvalidArtifactServerException(StringUtils.isNotBlank(errormessage)
+                    ? errormessage
+                    : String.format("Server responded with the following error code - %d", code),
+                USER));
+    }
   }
 }

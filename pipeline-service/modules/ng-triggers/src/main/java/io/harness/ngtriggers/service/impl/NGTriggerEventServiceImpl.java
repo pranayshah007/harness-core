@@ -6,10 +6,12 @@
  */
 
 package io.harness.ngtriggers.service.impl;
-
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.PollingInfoForTriggers;
 import io.harness.exception.InvalidRequestException;
@@ -33,6 +35,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -70,6 +73,29 @@ public class NGTriggerEventServiceImpl implements NGTriggerEventsService {
       log.error(msg);
       throw new InvalidRequestException(msg);
     }
+  }
+
+  @Override
+  public Criteria formTriggerEventCriteria(
+      String accountId, String orgId, String projectId, String targetIdentifier, String artifactType) {
+    Criteria criteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(accountId)) {
+      criteria.and(TriggerEventHistoryKeys.accountId).is(accountId);
+    }
+    if (EmptyPredicate.isNotEmpty(orgId)) {
+      criteria.and(TriggerEventHistoryKeys.orgIdentifier).is(orgId);
+    }
+    if (EmptyPredicate.isNotEmpty(projectId)) {
+      criteria.and(TriggerEventHistoryKeys.projectIdentifier).is(projectId);
+    }
+    if (EmptyPredicate.isNotEmpty(targetIdentifier)) {
+      criteria.and(TriggerEventHistoryKeys.targetIdentifier).is(targetIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(artifactType)) {
+      criteria.and(TriggerEventHistoryKeys.buildSourceType).is(artifactType);
+    }
+
+    return criteria;
   }
 
   @Override

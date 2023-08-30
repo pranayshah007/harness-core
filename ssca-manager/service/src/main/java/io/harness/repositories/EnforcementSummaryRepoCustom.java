@@ -10,6 +10,12 @@ package io.harness.repositories;
 import static io.harness.annotations.dev.HarnessTeam.SSCA;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ssca.entities.EnforcementSummaryEntity;
+
+import java.util.Optional;
 
 @OwnedBy(SSCA)
-public interface EnforcementSummaryRepoCustom {}
+public interface EnforcementSummaryRepoCustom {
+  Optional<EnforcementSummaryEntity> findByEnforcementId(String enforcementId);
+  ;
+}

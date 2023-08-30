@@ -407,12 +407,35 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     HeaderConfig headerConfig =
         HeaderConfig.builder().key(X_HARNESS_TRIGGER_ID).values(Collections.singletonList("custom")).build();
     headerConfigs.add(headerConfig);
+    when(pmsFeatureFlagService.isEnabled("account", FeatureName.CDS_NG_SERVICE_PRINCIPAL_FOR_CUSTOM_WEBHOOK))
+        .thenReturn(false);
     TriggerWebhookEvent triggerWebhookEvent = ngTriggerElementMapper
                                                   .toNGTriggerWebhookEventForCustom("account", "org", "project",
                                                       "pipeline", "identifier", "payload", headerConfigs)
                                                   .build();
     assertThat(triggerWebhookEvent.getSourceRepoType()).isEqualTo("CUSTOM");
     assertThat(triggerWebhookEvent.getPrincipal()).isEqualToComparingFieldByField(principal);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testToNGTriggerWebhookEventForCustomWithServicePrincipalFFEnabled() {
+    io.harness.security.dto.UserPrincipal principal =
+        new io.harness.security.dto.UserPrincipal("name", "email", "username", "accountId");
+    SecurityContextBuilder.setContext(principal);
+    List<HeaderConfig> headerConfigs = new ArrayList<>();
+    HeaderConfig headerConfig =
+        HeaderConfig.builder().key(X_HARNESS_TRIGGER_ID).values(Collections.singletonList("custom")).build();
+    headerConfigs.add(headerConfig);
+    when(pmsFeatureFlagService.isEnabled("account", FeatureName.CDS_NG_SERVICE_PRINCIPAL_FOR_CUSTOM_WEBHOOK))
+        .thenReturn(true);
+    TriggerWebhookEvent triggerWebhookEvent = ngTriggerElementMapper
+                                                  .toNGTriggerWebhookEventForCustom("account", "org", "project",
+                                                      "pipeline", "identifier", "payload", headerConfigs)
+                                                  .build();
+    assertThat(triggerWebhookEvent.getSourceRepoType()).isEqualTo("CUSTOM");
+    assertThat(triggerWebhookEvent.getPrincipal()).isNull();
   }
 
   @Test

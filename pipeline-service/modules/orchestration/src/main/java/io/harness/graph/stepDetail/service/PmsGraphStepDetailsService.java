@@ -15,6 +15,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,4 +45,11 @@ public interface PmsGraphStepDetailsService {
    * @param nodeExecutionIds
    */
   void deleteNodeExecutionInfoForGivenIds(Set<String> nodeExecutionIds);
+
+  /**
+   * Updates TTL for all nodeExecutionInfo for given planExecutionId
+   * Uses - nodeExecutionId_unique_idx index
+   * @param planExecutionId
+   */
+  void updateTTLForNodesForGivenPlanExecutionId(String planExecutionId, Date ttlDate);
 }

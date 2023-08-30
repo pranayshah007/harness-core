@@ -20,6 +20,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
+import io.debezium.engine.Header;
+import java.util.List;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,21 +34,21 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class EmbeddedEngineChangeEventTest extends CategoryTest {
   @Mock SourceRecord sourceRecord;
-  @InjectMocks EmbeddedEngineChangeEvent<String, String> embeddedEngineChangeEvent;
+  @InjectMocks EmbeddedEngineChangeEvent<String, String, List<Header>> embeddedEngineChangeEvent;
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testKey() {
-    EmbeddedEngineChangeEvent<String, String> embeddedEngineChangeEvent1 =
-        new EmbeddedEngineChangeEvent<>("key", "value", sourceRecord);
+    EmbeddedEngineChangeEvent<String, String, List<Header>> embeddedEngineChangeEvent1 =
+        new EmbeddedEngineChangeEvent<>("key", "value", null, sourceRecord);
     assertEquals("key", embeddedEngineChangeEvent1.key());
   }
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testValue() {
-    EmbeddedEngineChangeEvent<String, String> embeddedEngineChangeEvent1 =
-        new EmbeddedEngineChangeEvent<>("key", "value", sourceRecord);
+    EmbeddedEngineChangeEvent<String, String, List<Header>> embeddedEngineChangeEvent1 =
+        new EmbeddedEngineChangeEvent<>("key", "value", null, sourceRecord);
     assertEquals("value", embeddedEngineChangeEvent1.value());
   }
 
@@ -54,8 +56,8 @@ public class EmbeddedEngineChangeEventTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testRecord() {
-    EmbeddedEngineChangeEvent<String, String> embeddedEngineChangeEvent1 =
-        new EmbeddedEngineChangeEvent<>("key", "value", sourceRecord);
+    EmbeddedEngineChangeEvent<String, String, List<Header>> embeddedEngineChangeEvent1 =
+        new EmbeddedEngineChangeEvent<>("key", "value", null, sourceRecord);
     assertEquals("value", embeddedEngineChangeEvent1.record());
   }
 

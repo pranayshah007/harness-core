@@ -18,6 +18,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface StreamingDestinationRepositoryCustom {
   Page<StreamingDestination> findAll(Criteria criteria, Pageable pageable);
 
+  Page<String> findAllStreamingDestinationIdentifiers(Criteria criteria, Pageable pageable);
+
   boolean deleteByCriteria(Criteria criteria);
 
   List<StatusWiseCount> countByStatus(Criteria criteria);

@@ -5,9 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 package io.harness.execution.expansion;
-
 import io.harness.OrchestrationModuleConfig;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.PlanExecutionExpansion;
+import io.harness.execution.PlanExecutionExpansion.PlanExecutionExpansionKeys;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -23,6 +26,7 @@ import io.harness.serializer.JsonUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +38,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 public class PlanExpansionServiceImpl implements PlanExpansionService {
@@ -149,5 +154,14 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   @Override
   public void deleteAllExpansions(Set<String> planExecutionIds) {
     planExecutionExpansionRepository.deleteAllExpansions(planExecutionIds);
+  }
+
+  @Override
+  public void updateTTL(String planExecutionId, Date ttlDate) {
+    Criteria criteria = Criteria.where(PlanExecutionExpansionKeys.planExecutionId).is(planExecutionId);
+    Query query = new Query(criteria);
+    Update ops = new Update();
+    ops.set(PlanExecutionExpansionKeys.validUntil, ttlDate);
+    planExecutionExpansionRepository.multiUpdate(query, ops);
   }
 }

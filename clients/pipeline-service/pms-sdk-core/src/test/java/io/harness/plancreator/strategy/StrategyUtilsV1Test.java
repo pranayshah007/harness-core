@@ -12,11 +12,13 @@ import static io.harness.plancreator.strategy.StrategyConstants.TOTAL_GLOBAL_ITE
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.category.element.UnitTests;
+import io.harness.plancreator.DependencyMetadata;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext.PlanCreationContextBuilder;
@@ -28,7 +30,6 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -165,23 +166,24 @@ public class StrategyUtilsV1Test extends PmsSdkCoreTestBase {
     assertThat(stagesYamlField).isNotNull();
     List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
     LinkedHashMap<String, YamlField> dependenciesMap = new LinkedHashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
     YamlField stageWithStrategy = new YamlField(stageYamlNodes.get(0));
     YamlField stageWithoutStrategy = new YamlField(stageYamlNodes.get(1));
     doReturn("".getBytes(StandardCharsets.UTF_8)).when(kryoSerializer).asDeflatedBytes(any());
     // Stage does not have any strategy. So metadata map and dependencyMap both will be empty.
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer,
+    DependencyMetadata dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(kryoSerializer,
         PlanCreationContext.builder().currentField(stageWithoutStrategy).build(), stageWithStrategy.getNode().getName(),
-        dependenciesMap, metadataMap, new ArrayList<>());
-    assertThat(metadataMap.size()).isEqualTo(0);
+        dependenciesMap, new ArrayList<>());
+    assertThat(dependencyMetadata.getMetadataMap().size()).isEqualTo(0);
     assertThat(dependenciesMap.size()).isEqualTo(0);
+    assertEquals(dependencyMetadata.getNodeMetadataMap().size(), 0);
 
     // Stage has the strategy. So metadata map and dependencyMap will have size 1.
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer,
+    dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(kryoSerializer,
         PlanCreationContext.builder().currentField(stageWithStrategy).build(), stageWithStrategy.getNode().getName(),
-        dependenciesMap, metadataMap, new ArrayList<>());
-    assertThat(metadataMap.size()).isEqualTo(1);
+        dependenciesMap, new ArrayList<>());
+    assertThat(dependencyMetadata.getMetadataMap().size()).isEqualTo(1);
     assertThat(dependenciesMap.size()).isEqualTo(1);
+    assertEquals(dependencyMetadata.getNodeMetadataMap().size(), 1);
   }
 
   @Test

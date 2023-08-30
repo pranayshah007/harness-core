@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.helm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.chartmuseum.ChartMuseumConstants.CHART_MUSEUM_SERVER_URL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -52,7 +51,10 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.chartmuseum.ChartMuseumServer;
 import io.harness.chartmuseum.ChartmuseumClient;
@@ -137,6 +139,7 @@ import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -192,17 +195,6 @@ public class HelmTaskHelperBase {
         .normalize()
         .toString();
   }
-
-  public List<K8sPod> markNewPods(List<K8sPod> latestK8sPods, List<K8sPod> previousK8sPods) {
-    Set<String> olderPodNames = previousK8sPods.stream().map(K8sPod::getName).collect(Collectors.toSet());
-    latestK8sPods.forEach(pod -> {
-      if (!olderPodNames.contains(pod.getName())) {
-        pod.setNewPod(true);
-      }
-    });
-    return latestK8sPods;
-  }
-
   public boolean doesChartExistInLocalRepo(String repoName, String chartName, String chartVersion) {
     if (isEmpty(chartVersion)) {
       chartVersion = "latest";
@@ -395,6 +387,13 @@ public class HelmTaskHelperBase {
     addRepoInternal(repoName, repoDisplayName, chartRepoUrl, username, password, chartDirectory, helmVersion,
         timeoutInMillis, cacheDir, helmCommandFlag);
     updateRepo(repoName, chartDirectory, helmVersion, timeoutInMillis, cacheDir, helmCommandFlag);
+  }
+
+  public void tryAddRepo(String repoName, String repoDisplayName, String chartRepoUrl, String username, char[] password,
+      String chartDirectory, HelmVersion helmVersion, long timeoutInMillis, String cacheDir,
+      HelmCommandFlag helmCommandFlag) {
+    addRepoInternal(repoName, repoDisplayName, chartRepoUrl, username, password, chartDirectory, helmVersion,
+        timeoutInMillis, isEmpty(cacheDir) ? EMPTY : cacheDir, helmCommandFlag);
   }
 
   private ProcessResult executeAddRepo(String addCommand, Map<String, String> env, String chartDirectory,
@@ -854,7 +853,7 @@ public class HelmTaskHelperBase {
         chartmuseumClient.stop(chartMuseumServer);
       }
 
-      if (repoName != null) {
+      if (repoName != null && !manifest.isUseCache()) {
         removeRepo(repoName, destinationDirectory, manifest.getHelmVersion(), timeoutInMillis);
       }
 
@@ -1331,8 +1330,11 @@ public class HelmTaskHelperBase {
     String username = getHttpHelmUsername(httpHelmConnector);
     char[] password = getHttpHelmPassword(httpHelmConnector);
     try {
-      removeRepo(storeDelegateConfig.getRepoName(), destinationDirectory, manifest.getHelmVersion(), timeoutInMillis,
-          cacheDir);
+      if (!manifest.isUseCache()) {
+        removeRepo(storeDelegateConfig.getRepoName(), destinationDirectory, manifest.getHelmVersion(), timeoutInMillis,
+            cacheDir);
+      }
+
       addRepo(storeDelegateConfig.getRepoName(), storeDelegateConfig.getRepoDisplayName(),
           httpHelmConnector.getHelmRepoUrl(), username, password, destinationDirectory, manifest.getHelmVersion(),
           timeoutInMillis, cacheDir, manifest.getHelmCommandFlag());
@@ -1526,7 +1528,9 @@ public class HelmTaskHelperBase {
       default:
         throw new ManifestCollectionException("Manifest collection not supported for other helm repos");
     }
-    removeRepo(repoName, workingDirectory, config.getHelmVersion(), timeoutInMillis);
+    if (!config.isUseCache()) {
+      removeRepo(repoName, workingDirectory, config.getHelmVersion(), timeoutInMillis);
+    }
     cleanup(workingDirectory);
   }
 
@@ -1637,7 +1641,8 @@ public class HelmTaskHelperBase {
     }
     URI uri = new URI(ociUrl);
     if (uri.getPort() < 0) {
-      uri = URI.create(uri + ":" + DEFAULT_PORT);
+      uri = new URI(uri.getScheme(), uri.getRawUserInfo(), uri.getHost(), DEFAULT_PORT, uri.getRawPath(),
+          uri.getRawQuery(), uri.getRawFragment());
     }
     return uri;
   }

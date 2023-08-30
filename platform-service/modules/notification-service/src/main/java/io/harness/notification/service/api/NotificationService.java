@@ -23,4 +23,6 @@ public interface NotificationService {
   Optional<Notification> getnotification(String notificationId);
 
   Page<Notification> list(Team team, PageRequest pageRequest);
+
+  void deleteByAccountIdentifier(String accountIdentifier);
 }

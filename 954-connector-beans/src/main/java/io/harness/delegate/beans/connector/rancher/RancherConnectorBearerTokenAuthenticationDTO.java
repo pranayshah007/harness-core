@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.rancher;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.SecretRefData;
@@ -23,6 +24,7 @@ import lombok.Data;
 @Builder
 @Schema(
     name = "RancherConnectorBearerTokenAuthentication", description = "This contains rancher bearer token auth details")
+@RecasterAlias("io.harness.delegate.beans.connector.rancher.RancherConnectorBearerTokenAuthenticationDTO")
 public class RancherConnectorBearerTokenAuthenticationDTO implements RancherConnectorConfigAuthenticationSpecDTO {
   @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;
 }

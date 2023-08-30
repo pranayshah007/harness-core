@@ -1,9 +1,5 @@
-Var jobsUrl = concat(Env:baseUrl, "services/search/jobs/?output_mode=json&exec_mode=blocking")
+Var jobsUrl = concat(Env:baseUrl, "services/server/info?output_mode=json")
 Var bodyMap = {}
-Var hostQuery = "search exception"
-Var:bodyMap.put("search", Var:hostQuery)
-Var:bodyMap.put("earliest_time", Env:startTimeSeconds)
-Var:bodyMap.put("latest_time", Env:endTimeSeconds)
-Var job = sync-call(url=Var:jobsUrl, header=Env:commonHeaders, body=Var:bodyMap, bodyType=FORM_URL_ENCODED)
+Var job = sync-call(url=Var:jobsUrl, header=Env:commonHeaders, method='GET')
 Var t = "true"
 return Var:t

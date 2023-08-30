@@ -7,10 +7,14 @@
 
 package io.harness.cdng.service.beans;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.utils.YamlConstants.INPUT;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.common.NGExpressionUtils;
 import io.harness.pms.yaml.ParameterField;
@@ -28,10 +32,13 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
-import lombok.Value;
+import lombok.Setter;
 
-@Value
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
+@Data
 @Builder
 @RecasterAlias("io.harness.cdng.service.beans.Services")
 @SimpleVisitorHelper(helperClass = ServicesVisitorHelper.class)
@@ -46,12 +53,14 @@ public class ServicesYaml implements Visitable {
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<ServiceYamlV2>> values;
 
-  @JsonProperty("metadata") ServicesMetadata servicesMetadata;
+  @VariableExpression(skipVariableExpression = true) ServiceUseFromStageV2 useFromStage;
+
+  @Setter @JsonProperty("metadata") ServicesMetadata servicesMetadata;
 
   @Override
   public VisitableChildren getChildrenToWalk() {
     List<VisitableChild> children = new ArrayList<>();
-    if (!values.isExpression()) {
+    if (!values.isExpression() && isNotEmpty(values.getValue())) {
       for (ServiceYamlV2 serviceYamlV2 : values.getValue()) {
         children.add(VisitableChild.builder().value(serviceYamlV2).fieldName("values").build());
       }

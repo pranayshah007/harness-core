@@ -93,6 +93,8 @@ public class JiraUpdateStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.jira_update.spec.delegateSelectors",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.spec.connectorRef",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.spec.issueKey",
+            "pipeline.stages.stage1.spec.execution.steps.jira_update.spec.issueType",
+            "pipeline.stages.stage1.spec.execution.steps.jira_update.spec.projectKey",
             "pipeline.stages.stage1.spec.execution.steps.jira_update.when");
 
     // yaml extra properties

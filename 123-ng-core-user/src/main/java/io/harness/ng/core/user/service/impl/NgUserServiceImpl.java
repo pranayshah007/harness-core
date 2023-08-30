@@ -22,6 +22,7 @@ import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.createRoleAssignmentDTOs;
@@ -56,9 +57,9 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
 import io.harness.beans.ScopeLevel;
+import io.harness.configuration.DeployVariant;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
-import io.harness.licensing.Edition;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
@@ -396,7 +397,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public List<UserMetadataDTO> listUsersHavingRole(Scope scope, String roleIdentifier) {
-    if (Edition.COMMUNITY.equals(licenseService.calculateAccountEdition(scope.getAccountIdentifier()))) {
+    if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
       return listUsers(scope);
     }
     PageResponse<RoleAssignmentResponseDTO> roleAssignmentPage =
@@ -959,6 +960,11 @@ public class NgUserServiceImpl implements NgUserService {
     return true;
   }
 
+  public boolean deleteUserMetadata(String userId) {
+    userMetadataRepository.deleteById(userId);
+    return true;
+  }
+
   private void validateUserMembershipsDeletion(Scope scope, String userId, NGRemoveUserFilter removeUserFilter) {
     if (!NGRemoveUserFilter.STRICTLY_FORCE_REMOVE_USER.equals(removeUserFilter) && isEmpty(scope.getOrgIdentifier())) {
       checkIfUserIsLastAccountAdmin(scope.getAccountIdentifier(), userId);
@@ -1004,7 +1010,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   @Override
   public boolean isAccountAdmin(String userId, String accountIdentifier) {
-    if (Edition.COMMUNITY.equals(licenseService.calculateAccountEdition(accountIdentifier))) {
+    if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
       return isUserAtScope(userId, Scope.of(accountIdentifier, null, null));
     }
     PrincipalDTO principalDTO = PrincipalDTO.builder().identifier(userId).type(PrincipalType.USER).build();
@@ -1099,6 +1105,17 @@ public class NgUserServiceImpl implements NgUserService {
                    .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
                    .is(scope.getProjectIdentifier());
     return UsersCountDTO.builder().totalCount(userMembershipRepository.count(criteria)).newCount(newUsersCount).build();
+  }
+
+  @Override
+  public Long getNgUsersCount(Scope scope) {
+    Criteria criteria = Criteria.where(UserMembershipKeys.scope + "." + ScopeKeys.accountIdentifier)
+                            .is(scope.getAccountIdentifier())
+                            .and(UserMembershipKeys.scope + "." + ScopeKeys.orgIdentifier)
+                            .is(scope.getOrgIdentifier())
+                            .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
+                            .is(scope.getProjectIdentifier());
+    return userMembershipRepository.count(criteria);
   }
 
   @Override

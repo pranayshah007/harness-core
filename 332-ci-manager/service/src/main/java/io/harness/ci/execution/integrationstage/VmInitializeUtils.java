@@ -5,10 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_ARCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_MACHINE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_NAME;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_OS;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_TYPE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ACCOUNT_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOLUME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOL_MOUNT_PATH;
@@ -37,7 +43,7 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_C
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_DIR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_ENV_NAME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_PIPELINE;
-import static io.harness.ci.utils.UsageUtils.getExecutionUser;
+import static io.harness.ci.execution.utils.UsageUtils.getExecutionUser;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -48,6 +54,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
@@ -62,7 +69,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
-import io.harness.ci.buildstate.PluginSettingUtils;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -205,6 +212,7 @@ public class VmInitializeUtils {
     envVars.put(PLUGIN_PIPELINE, pipelineID);
     envVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildNumber));
     envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
+    envVars.put(DRONE_STAGE_NAME, stageID);
     envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
     return envVars;
   }
@@ -213,6 +221,23 @@ public class VmInitializeUtils {
     Map<String, String> envVars = new HashMap<>();
     envVars.put(GOLANG_CACHE_ENV_NAME, GOLANG_CACHE_DIR);
     envVars.put(GRADLE_CACHE_ENV_NAME, GRADLE_CACHE_DIR);
+    return envVars;
+  }
+  public Map<String, String> getStageEnvVars(
+      ParameterField<Platform> platform, OSType os, String workDir, String poolID, Infrastructure infrastructure) {
+    Map<String, String> envVars = new HashMap<>();
+
+    if (platform != null && platform.getValue() != null && platform.getValue().getArch() != null) {
+      ArchType arch = RunTimeInputHandler.resolveArchType(platform.getValue().getArch());
+      envVars.put(DRONE_STAGE_ARCH, arch.toString());
+    }
+    envVars.put(DRONE_STAGE_OS, os.toString());
+    envVars.put(DRONE_STAGE_MACHINE, poolID);
+    envVars.put(DRONE_STAGE_TYPE, infrastructure.getType().toString());
+    if (infrastructure.getType() != Infrastructure.Type.DOCKER) {
+      envVars.put(DRONE_WORKSPACE, workDir);
+    }
+
     return envVars;
   }
 
@@ -325,5 +350,33 @@ public class VmInitializeUtils {
     tags.put(STAGE_RUNTIME_ID_ATTR, stageRuntimeID);
     tags.put(BUILD_NUMBER_ATTR, String.valueOf(buildNumber));
     return tags;
+  }
+
+  public boolean validateDebug(Infrastructure infrastructure, Ambiance ambiance) {
+    OSType os = OSType.Linux;
+
+    try {
+      if (ambiance.getMetadata().getIsDebug()) {
+        if (infrastructure.getType() == Infrastructure.Type.VM) {
+          VmInfraYaml vmInfraYaml = (VmInfraYaml) infrastructure;
+          VmPoolYaml poolYaml = (VmPoolYaml) vmInfraYaml.getSpec();
+          os = resolveOSType(poolYaml.getSpec().getOs());
+        }
+
+        if (infrastructure.getType() == Infrastructure.Type.HOSTED_VM) {
+          HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) infrastructure;
+          HostedVmInfraYaml.HostedVmInfraSpec spec = (HostedVmInfraYaml.HostedVmInfraSpec) hostedVmInfraYaml.getSpec();
+          os = resolveOSType(spec.getPlatform().getValue().getOs());
+        }
+      }
+    } catch (Exception e) {
+      log.error("Error extracting OS type for validating Debug mode", e);
+    }
+
+    if (os != OSType.Linux) {
+      throw new CIStageExecutionException(
+          "Running the pipeline in debug mode is not supported for the selected Operating System:" + os.toString());
+    }
+    return true;
   }
 }

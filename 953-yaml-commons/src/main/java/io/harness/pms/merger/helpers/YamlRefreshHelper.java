@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.merger.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -35,12 +37,14 @@ import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @UtilityClass
 public class YamlRefreshHelper {
   private final String DUMMY_NODE = "dummy";
 
-  public final Set<String> oneOfKeysParent = new HashSet<>(List.of("service", "environment"));
+  public final Set<String> oneOfKeysParent = new HashSet<>(List.of("service", "environment", "services"));
   public final Set<String> ignorableKeysToOneOfAtSameLevel =
       new HashSet<>(List.of("service.serviceInputs", "environment.environmentInputs"));
 

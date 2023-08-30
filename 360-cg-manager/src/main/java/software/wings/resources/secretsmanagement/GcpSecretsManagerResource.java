@@ -14,6 +14,8 @@ import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SECRET_MANAGERS;
 import static software.wings.security.PermissionAttribute.ResourceType.SETTING;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -157,7 +159,7 @@ public class GcpSecretsManagerResource {
       gcpKmsConfig.setEncryptionType(encryptionType);
       gcpKmsConfig.setUsageRestrictions(usageRestrictions);
       GcpKmsConfig globalKmsConfig = gcpSecretsManagerService.getGlobalKmsConfig();
-      if (globalKmsConfig.getUuid().equals(secretMangerId)) {
+      if (!isNull(globalKmsConfig) && globalKmsConfig.getUuid().equals(secretMangerId)) {
         return accountPermissionUtils.getErrorResponse("User not allowed to update global KMS");
       } else {
         return new RestResponse<>(gcpSecretsManagerService.updateGcpKmsConfig(accountId, gcpKmsConfig));

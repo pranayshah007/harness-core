@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.workflow;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
@@ -121,8 +120,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.atteo.evo.inflector.English.plural;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
@@ -343,6 +345,8 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
  *
  * @author Rishi
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @ValidateOnExecution
@@ -4322,6 +4326,31 @@ public class WorkflowServiceImpl implements WorkflowService {
       }
     }
     return workflowExecutionIds;
+  }
+
+  public WorkflowExecution getLastSuccessfulWorkflowExecution(String accountId, String appId, String serviceId) {
+    if (isEmpty(serviceId)) {
+      return null;
+    }
+    return wingsPersistence.createQuery(WorkflowExecution.class)
+        .filter(WorkflowExecutionKeys.accountId, accountId)
+        .filter(WorkflowExecutionKeys.appId, appId)
+        .filter(WorkflowExecutionKeys.serviceIds, serviceId)
+        .filter(WorkflowExecutionKeys.status, SUCCESS)
+        .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+        .get();
+  }
+
+  public WorkflowExecution getLastWorkflowExecutionByInfrastructure(String accountId, String appId, String infraId) {
+    if (isEmpty(infraId)) {
+      return null;
+    }
+    return wingsPersistence.createQuery(WorkflowExecution.class)
+        .filter(WorkflowExecutionKeys.accountId, accountId)
+        .filter(WorkflowExecutionKeys.appId, appId)
+        .filter(WorkflowExecutionKeys.infraDefinitionIds, infraId)
+        .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+        .get();
   }
 
   @Override
