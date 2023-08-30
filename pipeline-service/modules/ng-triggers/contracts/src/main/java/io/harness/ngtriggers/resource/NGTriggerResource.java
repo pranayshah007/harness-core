@@ -33,6 +33,7 @@ import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
+import io.harness.ngtriggers.beans.dto.NGTriggersFilterPropertiesDTO;
 import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
@@ -70,6 +71,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.springframework.data.domain.Page;
+import retrofit2.http.Body;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Api("triggers")
@@ -240,7 +242,9 @@ public interface NGTriggerResource {
       @Parameter(description = "Identifier of the target pipeline") @NotNull @QueryParam("targetIdentifier")
       @ResourceIdentifier String targetIdentifier, @QueryParam("filter") String filterQuery,
       @QueryParam("page") @DefaultValue("0") int page, @QueryParam("size") @DefaultValue("25") int size,
-      @QueryParam("sort") List<String> sort, @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm);
+      @QueryParam("sort") List<String> sort, @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = "This contains details of Trigger filters based on Trigger Types and Trigger Names ")
+      @Body NGTriggersFilterPropertiesDTO filterProperties);
 
   @GET
   @Operation(operationId = "getTriggerDetails",
