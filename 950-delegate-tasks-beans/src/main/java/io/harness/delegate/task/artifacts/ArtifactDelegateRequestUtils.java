@@ -116,8 +116,7 @@ public class ArtifactDelegateRequestUtils {
   }
   public DockerArtifactDelegateRequest getDockerDelegateRequest(String imagePath, String tag, String tagRegex,
       List<String> tagsList, String connectorRef, DockerConnectorDTO dockerConnectorDTO,
-      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType,
-      Boolean shouldFetchDockerV2DigestSHA256) {
+      List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
     return DockerArtifactDelegateRequest.builder()
         .imagePath(trim(imagePath))
         .tag(trim(tag))
@@ -127,7 +126,6 @@ public class ArtifactDelegateRequestUtils {
         .dockerConnectorDTO(dockerConnectorDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .sourceType(sourceType)
-        .shouldFetchDockerV2DigestSHA256(shouldFetchDockerV2DigestSHA256)
         .build();
   }
   public NexusArtifactDelegateRequest getNexusArtifactDelegateRequest(String repositoryName, String repositoryPort,

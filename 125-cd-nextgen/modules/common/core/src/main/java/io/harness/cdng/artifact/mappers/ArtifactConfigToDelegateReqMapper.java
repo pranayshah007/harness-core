@@ -132,11 +132,9 @@ public class ArtifactConfigToDelegateReqMapper {
       tagRegex = ACCEPT_ALL_REGEX;
     }
 
-    boolean shouldFetchDockerV2DigestSHA256 =
-        artifactConfig.getDigest() != null && isNotEmpty((String) artifactConfig.getDigest().fetchFinalValue());
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(
         (String) artifactConfig.getImagePath().fetchFinalValue(), tag, tagRegex, null, connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY, shouldFetchDockerV2DigestSHA256);
+        encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY);
   }
 
   public boolean isLastPublishedExpression(String tag) {

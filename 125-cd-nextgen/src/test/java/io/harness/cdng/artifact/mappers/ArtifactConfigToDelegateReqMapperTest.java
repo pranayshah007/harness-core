@@ -136,7 +136,6 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(dockerDelegateRequest.getTag()).isEqualTo("");
     assertThat(dockerDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo("\\*");
-    assertThat(dockerDelegateRequest.getShouldFetchDockerV2DigestSHA256()).isEqualTo(false);
   }
 
   @Test
@@ -161,7 +160,6 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(dockerDelegateRequest.getTag()).isEqualTo("");
     assertThat(dockerDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo("\\*");
-    assertThat(dockerDelegateRequest.getShouldFetchDockerV2DigestSHA256()).isEqualTo(true);
   }
 
   @Test
@@ -728,7 +726,6 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(dockerDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.DOCKER_REGISTRY);
     assertThat(dockerDelegateRequest.getTagsList()).isNull();
     assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo(".*?");
-    assertThat(dockerDelegateRequest.getShouldFetchDockerV2DigestSHA256()).isEqualTo(false);
   }
 
   @Test
@@ -752,7 +749,6 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(dockerDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.DOCKER_REGISTRY);
     assertThat(dockerDelegateRequest.getTagsList()).isNull();
     assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo(ACCEPT_ALL_REGEX);
-    assertThat(dockerDelegateRequest.getShouldFetchDockerV2DigestSHA256()).isEqualTo(false);
   }
 
   @Test
@@ -775,7 +771,6 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(dockerDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.DOCKER_REGISTRY);
     assertThat(dockerDelegateRequest.getTagsList()).isNull();
     assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo(TAG);
-    assertThat(dockerDelegateRequest.getShouldFetchDockerV2DigestSHA256()).isEqualTo(false);
   }
 
   @Test
