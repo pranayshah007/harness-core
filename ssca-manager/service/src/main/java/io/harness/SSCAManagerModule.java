@@ -27,13 +27,13 @@ import io.harness.spec.server.ssca.v1.EnforcementSummaryApi;
 import io.harness.spec.server.ssca.v1.NormalizeSbomApi;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
 import io.harness.spec.server.ssca.v1.TokenApi;
-import io.harness.spec.server.ssca.v1.model.NormalizedSbomComponentDTO;
+import io.harness.spec.server.ssca.v1.model.EnforcementSummaryDTO;
 import io.harness.ssca.api.EnforcementResultApiImpl;
 import io.harness.ssca.api.EnforcementSummaryApiImpl;
 import io.harness.ssca.api.NormalizedSbomApiImpl;
 import io.harness.ssca.api.SbomProcessorApiImpl;
 import io.harness.ssca.api.TokenApiImpl;
-import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
+import io.harness.ssca.entities.EnforcementSummaryEntity;
 import io.harness.ssca.serializer.SSCAManagerModuleRegistrars;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
@@ -51,6 +51,8 @@ import io.harness.ssca.services.ProcessSbomWorkflowService;
 import io.harness.ssca.services.ProcessSbomWorkflowServiceImpl;
 import io.harness.ssca.services.RuleEngineService;
 import io.harness.ssca.services.RuleEngineServiceImpl;
+import io.harness.ssca.utils.transformers.Transformer;
+import io.harness.ssca.utils.transformers.TransformerImpl;
 import io.harness.token.TokenClientModule;
 
 import com.google.common.collect.ImmutableList;
@@ -68,7 +70,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.modelmapper.TypeMap;
-import org.modelmapper.config.Configuration.AccessLevel;
 import org.springframework.core.convert.converter.Converter;
 
 @Slf4j
@@ -104,6 +105,7 @@ public class SSCAManagerModule extends AbstractModule {
     bind(EnforcementResultService.class).to(EnforcementResultServiceImpl.class);
     bind(EnforcementSummaryService.class).to(EnforcementSummaryServiceImpl.class);
     bind(NextGenService.class).to(NextGenServiceImpl.class);
+    bind(Transformer.class).to(TransformerImpl.class);
     install(new TokenClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
         this.configuration.getNgManagerServiceSecret(), SSCA_SERVICE.getServiceId()));
   }
@@ -119,19 +121,18 @@ public class SSCAManagerModule extends AbstractModule {
   @Singleton
   public ModelMapper modelMapper() {
     ModelMapper modelMapper = new ModelMapper();
-    modelMapper.getConfiguration().setMatchingStrategy(STRICT).setFieldMatchingEnabled(true).setFieldAccessLevel(
-        AccessLevel.PRIVATE);
+    modelMapper.getConfiguration().setMatchingStrategy(STRICT);
 
-    TypeMap<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO> typeMap =
-        modelMapper.getTypeMap(NormalizedSBOMComponentEntity.class, NormalizedSbomComponentDTO.class);
-    PropertyMap<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO> normalizedSbomComponentDTOPropertyMap =
-        new PropertyMap<NormalizedSBOMComponentEntity, NormalizedSbomComponentDTO>() {
+    TypeMap<EnforcementSummaryEntity, EnforcementSummaryDTO> typeMap =
+        modelMapper.createTypeMap(EnforcementSummaryEntity.class, EnforcementSummaryDTO.class);
+    log.info(typeMap.getMappings().toString());
+    PropertyMap<EnforcementSummaryEntity, EnforcementSummaryDTO> normalizedSbomComponentDTOPropertyMap =
+        new PropertyMap<>() {
           protected void configure() {
-            // map().setCreated(new BigDecimal(source.getCreatedOn().toEpochMilli()));
-            map().sequenceId(source.getSequenceId());
+            map().setStatus(source.getStatus());
           }
         };
-    typeMap.addMappings(normalizedSbomComponentDTOPropertyMap);
+    modelMapper.addMappings(normalizedSbomComponentDTOPropertyMap);
     // Object o = modelMapper.addMappings(normalizedSbomComponentDTOPropertyMap);
     /*PropertyMap<NormalizedSbomComponentDTO, NormalizedSBOMComponentEntity> normalizedSBOMComponentEntityPropertyMap =
     new PropertyMap<>() {

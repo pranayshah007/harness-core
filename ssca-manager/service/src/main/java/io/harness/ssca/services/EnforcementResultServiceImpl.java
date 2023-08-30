@@ -17,6 +17,7 @@ import io.harness.ssca.beans.Supplier;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
+import io.harness.ssca.utils.transformers.Transformer;
 
 import com.google.inject.Inject;
 import java.lang.reflect.Field;
@@ -24,12 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.BadRequestException;
 import org.eclipse.jgit.ignore.internal.Strings;
-import org.modelmapper.ModelMapper;
 
 public class EnforcementResultServiceImpl implements EnforcementResultService {
   @Inject EnforcementResultRepo enforcementResultRepo;
-
-  @Inject ModelMapper modelMapper;
+  @Inject Transformer transformer;
   @Override
   public List<EnforcementResultEntity> getEnforcementResults(List<NormalizedSBOMComponentEntity> violatedComponents,
       String violationType, String violationDetails, ArtifactEntity artifact, String enforcementId) {
@@ -101,7 +100,7 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
 
   @Override
   public void create(EnforcementResultDTO enforcementResultDTO) {
-    enforcementResultRepo.save(modelMapper.map(enforcementResultDTO, EnforcementResultEntity.class));
+    enforcementResultRepo.save(transformer.map(enforcementResultDTO, EnforcementResultEntity.class));
   }
 
   private String getSupplierViolationDetails(String packageName, String packageSupplier, List<Supplier> suppliers) {

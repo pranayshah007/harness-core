@@ -25,13 +25,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
-import org.modelmapper.ModelMapper;
 
 public class NormalizeSbomComponentTransformerTest extends SSCAManagerTestBase {
   private NormalizedSBOMComponentEntity entity;
   private NormalizedSbomComponentDTO dto;
 
-  @Inject ModelMapper modelMapper;
+  @Inject Transformer transformer;
 
   @Before
   public void setup() {
@@ -114,7 +113,7 @@ public class NormalizeSbomComponentTransformerTest extends SSCAManagerTestBase {
   @Category(UnitTests.class)
   public void testToEntity() {
     NormalizedSBOMComponentEntity normalizedSBOMComponentEntity =
-        modelMapper.map(dto, NormalizedSBOMComponentEntity.class);
+        transformer.map(dto, NormalizedSBOMComponentEntity.class);
 
     assertThat(normalizedSBOMComponentEntity.equals(entity)).isEqualTo(true);
   }
@@ -123,7 +122,7 @@ public class NormalizeSbomComponentTransformerTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testToDTO() {
-    NormalizedSbomComponentDTO normalizedSbomComponentDTO = modelMapper.map(entity, NormalizedSbomComponentDTO.class);
+    NormalizedSbomComponentDTO normalizedSbomComponentDTO = transformer.map(entity, NormalizedSbomComponentDTO.class);
     assertThat(normalizedSbomComponentDTO.equals(dto)).isEqualTo(true);
   }
 }

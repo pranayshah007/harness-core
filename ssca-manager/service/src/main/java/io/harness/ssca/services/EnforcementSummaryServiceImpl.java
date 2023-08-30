@@ -14,17 +14,17 @@ import io.harness.ssca.enforcement.constants.EnforcementStatus;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.EnforcementResultEntity;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
+import io.harness.ssca.utils.transformers.Transformer;
 
 import com.google.inject.Inject;
 import java.util.List;
-import org.modelmapper.ModelMapper;
 
 public class EnforcementSummaryServiceImpl implements EnforcementSummaryService {
   @Inject EnforcementSummaryRepo enforcementSummaryRepo;
-  @Inject ModelMapper modelMapper;
+  @Inject Transformer transformer;
 
-  @ @
-  Override public String persistEnforcementSummary(String enforcementId, List<EnforcementResultEntity> denyListResult,
+  @Override
+  public String persistEnforcementSummary(String enforcementId, List<EnforcementResultEntity> denyListResult,
       List<EnforcementResultEntity> allowListResult, ArtifactEntity artifact) {
     String status = EnforcementStatus.ENFORCEMENT_STATUS_PASS.getValue();
     if (!denyListResult.isEmpty() || !allowListResult.isEmpty()) {
@@ -51,6 +51,6 @@ public class EnforcementSummaryServiceImpl implements EnforcementSummaryService 
 
   @Override
   public void create(EnforcementSummaryDTO enforcementSummaryDTO) {
-    enforcementSummaryRepo.save(modelMapper.map(enforcementSummaryDTO, EnforcementSummaryEntity.class));
+    enforcementSummaryRepo.save(transformer.map(enforcementSummaryDTO, EnforcementSummaryEntity.class));
   }
 }
