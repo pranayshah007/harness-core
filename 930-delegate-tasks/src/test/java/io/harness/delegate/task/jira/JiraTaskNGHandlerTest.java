@@ -245,6 +245,35 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetIssueWithFilterFields() throws Exception {
+    wireMockRule.stubFor(
+        get(urlPathEqualTo("/rest/api/2/issue/issuekey"))
+            .willReturn(aResponse().withStatus(200).withBody(
+                "{\"id\": \"ID\", \"name\": \"NAME\" , \"self\": \"self\",\"key\": \"key\",\"subtask\": true,\"statuses\" :[{\"id\":\"ID\",\"name\" :\"NAME\"}]}")));
+
+    Map<String, String> properties1 = new HashMap<>();
+    properties1.put("self", "self");
+    properties1.put("id", "ID");
+    properties1.put("key", "key");
+    properties1.put("url", "http://localhost:" + wireMockRule.port() + "/browse/key");
+
+    JsonNodeUtils.updatePropertiesInJsonNode(jsonissueNode, properties1);
+    JiraIssueNG jiraIssueNG = new JiraIssueNG(jsonissueNode);
+    jiraIssueNG.setUrl("http://localhost:" + wireMockRule.port() + "/browse/key");
+    jiraIssueNG.getFields().put("url", "http://localhost:" + wireMockRule.port() + "/browse/key");
+    JiraTaskNGResponse jiraTaskNGResponse = JiraTaskNGResponse.builder().issue(jiraIssueNG).build();
+    assertThat(jiraTaskNGHandler.getIssue(createJiraTaskParametersBuilder()
+                                              .projectKey("projectkey")
+                                              .issueType("NAME")
+                                              .issueKey("issuekey")
+                                              .filterFields("status")
+                                              .build()))
+        .isEqualTo(jiraTaskNGResponse);
+  }
+
+  @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void testgetIssueCreateMetadata() throws Exception {

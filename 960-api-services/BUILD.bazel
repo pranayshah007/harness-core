@@ -157,6 +157,7 @@ java_library(
     ],
     resources = [
         "//980-commons/src/main/resources:resource",
+        "//960-api-services/src/test/resources:resource"
     ],
     visibility = ["//visibility:public"],
     deps = [
