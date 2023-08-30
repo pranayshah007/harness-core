@@ -114,7 +114,7 @@ public class GraphStatusUpdateHelper {
     GraphVertexBuilder prevValueBuilder =
         prevValue.toBuilder()
             .uuid(nodeExecution.getUuid())
-            .ambiance(nodeExecution.getAmbiance())
+            .currentLevel(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()))
             .planNodeId(level.getSetupId())
             .identifier(level.getIdentifier())
             .name(nodeExecution.getName())
@@ -132,7 +132,8 @@ public class GraphStatusUpdateHelper {
             .retryIds(nodeExecution.getRetryIds())
             .skipType(nodeExecution.getSkipGraphType())
             .unitProgresses(nodeExecution.getUnitProgresses())
-            .progressData(nodeExecution.getPmsProgressData());
+            .progressData(nodeExecution.getPmsProgressData())
+            .baseFqn(AmbianceUtils.getFQNUsingLevels(nodeExecution.getAmbiance().getLevelsList()));
     if (prevValue.getStepParameters() == null) {
       prevValueBuilder.stepParameters(nodeExecution.getResolvedParams());
     }

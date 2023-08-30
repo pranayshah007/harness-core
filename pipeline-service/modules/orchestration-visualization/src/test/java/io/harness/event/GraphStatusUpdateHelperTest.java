@@ -346,7 +346,7 @@ public class GraphStatusUpdateHelperTest extends OrchestrationVisualizationTestB
         .isEqualTo(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getIdentifier());
     assertThat(newValue.getUuid()).isEqualTo(nodeExecution.getUuid());
     assertThat(newValue.getStartTs()).isEqualTo(nodeExecution.getStartTs());
-    assertThat(newValue.getAmbiance()).isEqualTo(nodeExecution.getAmbiance());
+    assertThat(newValue.getCurrentLevel()).isEqualTo(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
     assertThat(newValue.getStepType())
         .isEqualTo(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStepType().getType());
     assertThat(newValue.getStatus()).isEqualTo(nodeExecution.getStatus());

@@ -26,11 +26,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GraphVertexDTOConverter {
   public Function<GraphVertex, GraphVertexDTO> toGraphVertexDTO = graphVertex -> {
-    Level level = AmbianceUtils.obtainCurrentLevel(graphVertex.getAmbiance());
     GraphVertexDTOBuilder builder =
         GraphVertexDTO.builder()
             .uuid(graphVertex.getUuid())
-            .ambiance(AmbianceDTOConverter.toAmbianceDTO.apply(graphVertex.getAmbiance()))
             .planNodeId(graphVertex.getPlanNodeId())
             .identifier(graphVertex.getIdentifier())
             .name(graphVertex.getName())
@@ -56,9 +54,16 @@ public class GraphVertexDTOConverter {
             .progressData(graphVertex.getPmsProgressData())
             .executionInputConfigured(graphVertex.getExecutionInputConfigured())
             .logBaseKey(graphVertex.getLogBaseKey())
-            .stepDetails(graphVertex.getStepDetails());
-    if (level != null && level.hasStrategyMetadata()) {
-      builder.strategyMetadata(level.getStrategyMetadata());
+            .stepDetails(graphVertex.getStepDetails())
+            .baseFqn(graphVertex.getBaseFqn());
+    if (graphVertex.getAmbiance() != null) {
+      Level level = AmbianceUtils.obtainCurrentLevel(graphVertex.getAmbiance());
+      if (level != null && level.hasStrategyMetadata()) {
+        builder.strategyMetadata(level.getStrategyMetadata());
+      }
+    }
+    if (graphVertex.getCurrentLevel() != null && graphVertex.getCurrentLevel().hasStrategyMetadata()) {
+      builder.strategyMetadata(graphVertex.getCurrentLevel().getStrategyMetadata());
     }
     return builder.build();
   };
