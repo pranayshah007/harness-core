@@ -55,4 +55,5 @@ public class PMSPipelineSummaryResponseDTO {
   StoreType storeType;
   String connectorRef;
   Boolean isDraft;
+  String yamlVersion;
 }

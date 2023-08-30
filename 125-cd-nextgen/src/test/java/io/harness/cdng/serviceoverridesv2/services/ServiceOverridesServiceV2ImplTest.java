@@ -36,6 +36,7 @@ import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.repositories.serviceoverride.spring.ServiceOverrideRepository;
 import io.harness.repositories.serviceoverridesv2.spring.ServiceOverridesRepositoryV2;
 import io.harness.rule.Owner;
 import io.harness.yaml.core.variables.NGVariable;
@@ -64,6 +65,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   @Inject private ServiceOverridesRepositoryV2 serviceOverridesRepositoryV2;
+  @Inject private ServiceOverrideRepository serviceOverrideRepositoryV1;
   @Mock private OutboxService outboxService;
   @Inject private ServiceOverrideValidatorService overrideValidatorService;
   @Inject private RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;

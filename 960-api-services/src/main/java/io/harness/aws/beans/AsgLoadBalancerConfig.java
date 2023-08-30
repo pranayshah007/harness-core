@@ -9,6 +9,7 @@ package io.harness.aws.beans;
 
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.Expression;
@@ -23,6 +24,7 @@ import lombok.experimental.NonFinal;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.aws.beans.AsgLoadBalancerConfig")
 public class AsgLoadBalancerConfig {
   @NonFinal @Expression(ALLOW_SECRETS) String loadBalancer;
   @NonFinal @Expression(ALLOW_SECRETS) String stageListenerArn;

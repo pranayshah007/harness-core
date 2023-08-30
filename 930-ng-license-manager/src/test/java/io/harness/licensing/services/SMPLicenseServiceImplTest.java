@@ -12,6 +12,7 @@ import static io.harness.licensing.LicenseConstant.UNLIMITED;
 import static io.harness.licensing.LicenseTestConstant.ACCOUNT_IDENTIFIER;
 import static io.harness.rule.OwnerRule.KAPIL_GARG;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,6 +23,7 @@ import io.harness.ModuleType;
 import io.harness.account.services.AccountService;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.license.remote.CeLicenseClient;
+import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
@@ -75,6 +77,7 @@ public class SMPLicenseServiceImplTest extends CategoryTest {
   @Mock LicenseValidator licenseValidator;
   @Mock SMPLicenseMapper smpLicenseMapper;
   @Mock SMPLicenseValidationJob smpLicenseValidationJob;
+  @Mock Producer eventProducer;
   @InjectMocks SMPLicenseServiceImpl licenseService;
 
   @Before
@@ -124,6 +127,7 @@ public class SMPLicenseServiceImplTest extends CategoryTest {
     verify(accountService, times(1)).createAccount(Mockito.any(AccountDTO.class));
     verify(smpLicenseValidationJob, times(1))
         .scheduleValidation(Mockito.anyString(), Mockito.any(), Mockito.eq(60), Mockito.any());
+    verify(eventProducer, times(1)).send(any());
   }
 
   @Test
@@ -153,6 +157,7 @@ public class SMPLicenseServiceImplTest extends CategoryTest {
     verify(accountService, times(0)).createAccount(Mockito.any(AccountDTO.class));
     verify(smpLicenseValidationJob, times(1))
         .scheduleValidation(Mockito.anyString(), Mockito.any(), Mockito.eq(60), Mockito.any());
+    verify(eventProducer, times(1)).send(any());
   }
 
   @Test

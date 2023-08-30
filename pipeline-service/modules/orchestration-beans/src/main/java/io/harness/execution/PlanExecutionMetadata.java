@@ -21,6 +21,7 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.plan.RetryExecutionInfo;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 
 import com.google.common.collect.ImmutableList;
@@ -83,6 +84,8 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
   private Boolean notifyOnlyUser;
   @With String notes;
   RetryStagesMetadata retryStagesMetadata;
+
+  RetryExecutionInfo retryExecutionInfo;
 
   @Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 

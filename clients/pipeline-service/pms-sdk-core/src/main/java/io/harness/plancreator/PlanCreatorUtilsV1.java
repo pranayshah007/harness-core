@@ -15,6 +15,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.protobuf.ByteString;
@@ -29,11 +30,12 @@ public class PlanCreatorUtilsV1 {
   public List<AdviserObtainment> getAdviserObtainmentsForStage(KryoSerializer kryoSerializer, Dependency dependency) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
-        || !dependency.getMetadataMap().containsKey("nextId")) {
+        || !dependency.getMetadataMap().containsKey(YAMLFieldNameConstants.NEXT_ID)) {
       return adviserObtainments;
     }
 
-    String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
+    String nextId =
+        (String) kryoSerializer.asObject(dependency.getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID).toByteArray());
     adviserObtainments.add(
         AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())

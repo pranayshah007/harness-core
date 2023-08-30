@@ -1001,6 +1001,10 @@ components:
           description: Specifies whether Pipeline is a valid or not.
         git_details:
           $ref: '#/components/schemas/GitDetails'
+        yaml_version:
+          type: string
+          x-stoplight:
+            id: k7tmju7cw6n8o
     PipelineCreateRequestBody:
       title: Pipeline Create Request Body
       x-stoplight:

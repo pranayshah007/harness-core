@@ -1,0 +1,17 @@
+{
+"filterable": true,
+"canmatch": true,
+"label": "SLA due",
+"type": "due_date",
+"max_unit": "days",
+"mandatory": false,
+"default": "",
+"base_type": "datetime",
+"read_only": true,
+"hint": "Date by which the SLA expects this task to be completed",
+"name": "sla_due",
+"column_type": "element",
+"internal_type": "due_date",
+"cansort": true,
+"max_length": 40
+}

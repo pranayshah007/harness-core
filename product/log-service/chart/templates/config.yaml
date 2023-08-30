@@ -3,6 +3,13 @@ kind: ConfigMap
 metadata:
   name: log-service
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotation }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotation "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   LOG_SERVICE_S3_BUCKET: {{ .Values.s3.bucketName }}
   LOG_SERVICE_S3_REGION: {{ .Values.s3.region }}

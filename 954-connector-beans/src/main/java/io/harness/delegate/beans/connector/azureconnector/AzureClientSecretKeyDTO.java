@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.azureconnector;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureClientSecretKeyOutcomeDTO;
@@ -28,6 +29,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(HarnessTeam.CDP)
 @Schema(name = "AzureClientSecretKey", description = "This contains azure client secret key details")
+@RecasterAlias("io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO")
 public class AzureClientSecretKeyDTO extends AzureAuthCredentialDTO {
   @ApiModelProperty(dataType = "string") @NotNull @JsonProperty("secretRef") @SecretReference SecretRefData secretKey;
   @Override

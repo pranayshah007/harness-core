@@ -64,6 +64,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
                                                                 .pipelineIdentifier(pipelineId)
                                                                 .runSequence(1)
                                                                 .planExecutionId(planId)
+                                                                .pipelineVersion("0")
                                                                 .build();
     PipelineExecutionSummaryDTO executionSummaryDTO =
         PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
@@ -82,6 +83,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
     assertThat(executionSummaryDTO.getGitDetails().getRootFolder()).isNull();
     assertThat(executionSummaryDTO.getStoreType()).isNull();
     assertThat(executionSummaryDTO.getConnectorRef()).isNull();
+    assertThat(executionSummaryDTO.getYamlVersion()).isEqualTo("0");
 
     entityGitDetails = EntityGitDetails.builder()
                            .branch(branch)
@@ -157,12 +159,14 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
                                                                 .executionInputConfigured(false)
                                                                 .planExecutionId(planId)
                                                                 .storeType(StoreType.INLINE)
+                                                                .pipelineVersion("1")
                                                                 .build();
     PipelineExecutionSummaryDTO executionSummaryDTO =
         PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
     assertThat(executionSummaryDTO.getStoreType()).isEqualTo(StoreType.INLINE);
     assertThat(executionSummaryDTO.getConnectorRef()).isNull();
     assertThat(executionSummaryDTO.getExecutionInputConfigured()).isEqualTo(false);
+    assertThat(executionSummaryDTO.getYamlVersion()).isEqualTo("1");
 
     executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
                                  .accountId(accountId)
@@ -177,6 +181,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
 
     executionSummaryDTO = PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
     assertThat(executionSummaryDTO.getExecutionInputConfigured()).isEqualTo(true);
+    assertThat(executionSummaryDTO.getYamlVersion()).isEqualTo("0");
   }
 
   @Test

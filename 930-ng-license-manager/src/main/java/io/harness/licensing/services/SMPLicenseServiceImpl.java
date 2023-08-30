@@ -13,6 +13,8 @@ import io.harness.ModuleType;
 import io.harness.account.services.AccountService;
 import io.harness.ccm.license.remote.CeLicenseClient;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
@@ -56,9 +58,11 @@ public class SMPLicenseServiceImpl extends DefaultLicenseServiceImpl {
       AccountService accountService, TelemetryReporter telemetryReporter, CeLicenseClient ceLicenseClient,
       LicenseComplianceResolver licenseComplianceResolver, @Named(LICENSE_CACHE_NAMESPACE) Cache<String, List> cache,
       LicenseGenerator licenseGenerator, LicenseValidator licenseValidator, SMPLicenseMapper smpLicenseMapper,
-      SMPLicenseValidationJob licenseValidationJob) {
+      SMPLicenseValidationJob licenseValidationJob,
+      @Named(EventsFrameworkConstants.MODULE_LICENSE) Producer eventProducer) {
     super(moduleLicenseRepository, licenseObjectConverter, licenseInterface, accountService, telemetryReporter,
-        ceLicenseClient, licenseComplianceResolver, cache, licenseGenerator, licenseValidator, smpLicenseMapper);
+        ceLicenseClient, licenseComplianceResolver, cache, licenseGenerator, licenseValidator, smpLicenseMapper,
+        eventProducer);
     this.licenseValidationJob = licenseValidationJob;
   }
 

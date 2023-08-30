@@ -98,7 +98,7 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     if (ParameterField.isNotNull(awsSamDeployStepInfo.getConnectorRef())
         || isNotEmpty(awsSamDeployStepInfo.getConnectorRef().getValue())) {
       imageDetails = PluginInfoProviderHelper.getImageDetails(awsSamDeployStepInfo.getConnectorRef(),
-          awsSamDeployStepInfo.getImage(), awsSamDeployStepInfo.getImagePullPolicy());
+          awsSamStepHelper.getImage(awsSamDeployStepInfo), awsSamDeployStepInfo.getImagePullPolicy());
 
     } else {
       // todo: If image is not provided by user, default to an harness provided image

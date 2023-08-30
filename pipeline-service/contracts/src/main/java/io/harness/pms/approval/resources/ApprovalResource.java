@@ -10,6 +10,9 @@ package io.harness.pms.approval.resources;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -42,6 +45,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Tag(name = "Approvals", description = "This contains APIs related to Pipeline approvals")
 @Api("approvals")
 @Path("approvals")
@@ -87,7 +92,9 @@ public interface ApprovalResource {
   @Hidden
   ResponseDTO<ApprovalInstanceResponseDTO>
   getApprovalInstance(@Parameter(description = APPROVAL_PARAM_MESSAGE) @NotEmpty @PathParam(
-      "approvalInstanceId") String approvalInstanceId);
+                          "approvalInstanceId") String approvalInstanceId,
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
+          description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountId);
 
   @POST
   @Path("/{approvalInstanceId}/harness/activity")

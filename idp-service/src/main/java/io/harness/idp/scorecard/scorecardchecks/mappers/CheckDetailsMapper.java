@@ -7,6 +7,7 @@
 
 package io.harness.idp.scorecard.scorecardchecks.mappers;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.SPACE_SEPARATOR;
 
@@ -18,6 +19,7 @@ import io.harness.spec.server.idp.v1.model.Rule;
 
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
@@ -60,7 +62,7 @@ public class CheckDetailsMapper {
   }
 
   String getExpression(Rule rule) {
-    if (!rule.getConditionalInputValue().isEmpty()) {
+    if (StringUtils.isNotBlank(rule.getConditionalInputValue())) {
       return rule.getDataSourceIdentifier() + DOT_SEPARATOR + rule.getDataPointIdentifier() + DOT_SEPARATOR
           + rule.getConditionalInputValue() + rule.getOperator() + rule.getValue();
     } else {

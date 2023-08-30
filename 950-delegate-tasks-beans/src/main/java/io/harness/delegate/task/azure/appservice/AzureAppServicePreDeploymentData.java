@@ -10,6 +10,7 @@ package io.harness.delegate.task.azure.appservice;
 import static io.harness.azure.model.AzureConstants.SLOT_NAME_BLANK_ERROR_MSG;
 import static io.harness.azure.model.AzureConstants.WEB_APP_NAME_BLANK_ERROR_MSG;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceApplicationSettingDTO;
 import io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceConnectionStringDTO;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
@@ -21,6 +22,7 @@ import org.hibernate.validator.constraints.NotBlank;
 
 @Data
 @Builder
+@RecasterAlias("io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData")
 public class AzureAppServicePreDeploymentData {
   @NotBlank(message = WEB_APP_NAME_BLANK_ERROR_MSG) private String appName;
   @NotBlank(message = SLOT_NAME_BLANK_ERROR_MSG) private String slotName;
