@@ -38,7 +38,6 @@ public class ExportExecutionsFileService {
 
   public String uploadFile(@NotNull String accountId, @NotNull File file) {
     try (FileInputStream in = new FileInputStream(file)) {
-      // TODO(gpahal): Try to save file with an expiration.
       return fileService.saveFile(prepareFileMetadata(accountId, file), in, FILE_BUCKET);
     } catch (Exception ex) {
       throw new ExportExecutionsException("Unable to upload file for export executions request", ex);
