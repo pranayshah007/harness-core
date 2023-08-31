@@ -1917,22 +1917,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @VisibleForTesting
-  List<NotificationRule> getEnabledAndEligibleNotificationRules(MonitoredService monitoredService) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(monitoredService.getAccountId())
-                                      .orgIdentifier(monitoredService.getOrgIdentifier())
-                                      .projectIdentifier(monitoredService.getProjectIdentifier())
-                                      .build();
-    List<String> notificationRuleRefs = monitoredService.getNotificationRuleRefs()
-                                            .stream()
-                                            .filter(ref -> ref.isEligible(clock.instant(), COOL_OFF_DURATION))
-                                            .filter(NotificationRuleRef::isEnabled)
-                                            .map(NotificationRuleRef::getNotificationRuleRef)
-                                            .collect(Collectors.toList());
-    return notificationRuleService.getEntities(projectParams, notificationRuleRefs);
-  }
-
-  @VisibleForTesting
   List<NotificationRule> getEnabledNotificationRules(MonitoredService monitoredService) {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(monitoredService.getAccountId())
@@ -1954,33 +1938,51 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                       .orgIdentifier(monitoredService.getOrgIdentifier())
                                       .projectIdentifier(monitoredService.getProjectIdentifier())
                                       .build();
-    List<NotificationRule> notificationRules = getEnabledAndEligibleNotificationRules(monitoredService);
+
+    Map<String, NotificationRuleRef> notificationRuleRefByRef =
+        monitoredService.getNotificationRuleRefs()
+            .stream()
+            .filter(NotificationRuleRef::isEnabled)
+            .collect(Collectors.toMap(NotificationRuleRef::getNotificationRuleRef, obj -> obj));
+
+    List<NotificationRule> notificationRules =
+        notificationRuleService.getEntities(projectParams, new ArrayList<>(notificationRuleRefByRef.keySet()));
+
     Set<String> notificationRuleRefsWithChange = new HashSet<>();
 
     for (NotificationRule notificationRule : notificationRules) {
       List<MonitoredServiceNotificationRuleCondition> conditions =
           ((MonitoredServiceNotificationRule) notificationRule).getConditions();
+      boolean isCooledOff =
+          notificationRuleRefByRef.get(notificationRule.getIdentifier()).isEligible(clock.instant(), COOL_OFF_DURATION);
       for (MonitoredServiceNotificationRuleCondition condition : conditions) {
-        NotificationData notificationData;
+        NotificationData notificationData = NotificationData.builder().shouldSendNotification(false).build();
         switch (condition.getType()) {
           case HEALTH_SCORE:
-            notificationData =
-                getHealthScoreNotificationData(monitoredService, (MonitoredServiceHealthScoreCondition) condition);
+            if (isCooledOff) {
+              notificationData =
+                  getHealthScoreNotificationData(monitoredService, (MonitoredServiceHealthScoreCondition) condition);
+            }
             break;
           case CHANGE_OBSERVED:
-            notificationData = getChangeObservedNotificationData(
-                monitoredService, (MonitoredServiceChangeObservedCondition) condition);
+            if (isCooledOff) {
+              notificationData = getChangeObservedNotificationData(
+                  monitoredService, (MonitoredServiceChangeObservedCondition) condition);
+            }
             break;
           case CHANGE_IMPACT:
-            notificationData =
-                getChangeImpactNotificationData(monitoredService, (MonitoredServiceChangeImpactCondition) condition);
+            if (isCooledOff) {
+              notificationData =
+                  getChangeImpactNotificationData(monitoredService, (MonitoredServiceChangeImpactCondition) condition);
+            }
             break;
           case CODE_ERRORS:
+            // Cool off doesn't apply to Code Errors condition types
             notificationData = getCodeErrorsNotificationData(
                 monitoredService, (MonitoredServiceCodeErrorCondition) condition, notificationRule);
             break;
           default:
-            notificationData = NotificationData.builder().shouldSendNotification(false).build();
+            // notificationData is set to the default before the switch statement
             break;
         }
         if (notificationData.shouldSendNotification()) {
