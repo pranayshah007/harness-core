@@ -1532,8 +1532,12 @@ paths:
         - GitX Webhooks
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/ListGitXWebhookRequest'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - schema:
+            type: string
+          in: query
+          name: webhook_identifier
       x-internal: true
   '/v1/gitx-webhooks/{gitx-webhook}':
     parameters:
@@ -1552,8 +1556,6 @@ paths:
         - GitX Webhooks
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/GetGitXWebhookRequest'
     put:
       summary: Updates a GitX Webhook
       operationId: update-gitx-webhook
@@ -1584,8 +1586,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
       x-internal: true
-      requestBody:
-        $ref: '#/components/requestBodies/DeleteGitXWebhookRequest'
 components:
   schemas:
     Service:
@@ -2642,12 +2642,16 @@ components:
       properties:
         repo_name:
           type: string
+        webhook_name:
+          type: string
         folder_paths:
           type: array
           items:
             type: string
         is_enabled:
           type: boolean
+        connector_ref:
+          type: string
     UpdateGitXWebhookResponse:
       title: UpdateGitXWebhookResponse
       x-stoplight:
@@ -2657,28 +2661,6 @@ components:
       properties:
         webhook_identifier:
           type: string
-    DeleteGitXWebhookResponse:
-      title: DeleteGitXWebhookResponse
-      x-stoplight:
-        id: 3m4rl2h5i2b4b
-      type: object
-      description: 'Contains information about the GitX webhook response '
-      properties:
-        successfully_deleted:
-          type: boolean
-    ListGitXWebhookRequest:
-      title: ListGitXWebhookRequest
-      x-stoplight:
-        id: 40nc5ftckw9pe
-      type: object
-      description: 'Contains information about the GitX webhook request '
-      properties:
-        webhook_search_term:
-          type: string
-        page:
-          type: integer
-        size:
-          type: integer
     GitXWebhookResponse:
       title: GitXWebhookResponse
       x-stoplight:
@@ -2700,24 +2682,6 @@ components:
             type: string
         is_enabled:
           type: boolean
-    GetGitXWebhookRequest:
-      title: GetGitXWebhookRequest
-      x-stoplight:
-        id: geekj36uejdva
-      type: object
-      properties:
-        repo_name:
-          type: string
-      description: 'Contains information about the GitX webhooks '
-    DeleteGitXWebhookRequest:
-      title: DeleteGitXWebhookRequest
-      x-stoplight:
-        id: 0d5x0gh1zynp7
-      type: object
-      description: 'Contains information about the GitX webhook response '
-      properties:
-        repo_name:
-          type: string
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3324,12 +3288,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/UpdateGitXWebhookResponse'
-    DeleteGitXWebhookResponse:
-      description: Example response
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/DeleteGitXWebhookResponse'
     GetGitXWebhookResponse:
       description: Example response
       content:
@@ -3925,24 +3883,6 @@ components:
           schema:
             $ref: '#/components/schemas/UpdateGitXWebhookRequest'
       description: Update GitX webhook request
-    ListGitXWebhookRequest:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ListGitXWebhookRequest'
-      description: List GitX webhook request
-    GetGitXWebhookRequest:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/GetGitXWebhookRequest'
-      description: Get GitX webhook request
-    DeleteGitXWebhookRequest:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/DeleteGitXWebhookRequest'
-      description: Delete GitX webhook request
   parameters:
     Page:
       name: page
