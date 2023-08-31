@@ -1,0 +1,8 @@
+name: Delegate Details
+identifier: delegate_details
+metricGroup: delegate_details
+metrics:
+  - metricName: register_delegate
+    metricDefinition: Register delegate
+    type: Count
+    unit: "1"

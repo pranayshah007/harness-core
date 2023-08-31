@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Path("/metrics")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@HarnessApiKeyAuth(clientTypes = ClientType.PROMETHEUS)
+//@HarnessApiKeyAuth(clientTypes = ClientType.PROMETHEUS)
 @Slf4j
 public class MetricResource {
   @Inject private HarnessMetricRegistry metricRegistry;

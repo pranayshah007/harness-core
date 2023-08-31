@@ -38,6 +38,7 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DISCON
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION_FAILED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.REGISTER_DELEGATE;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -2525,6 +2526,9 @@ public class DelegateServiceImpl implements DelegateService {
                                                      .delegateType(delegateParams.getDelegateType())
                                                      .build(),
         DELEGATE_REGISTRATION);
+    delegateMetricsService.recordDelegateDetails(delegateParams.getAccountId(), delegateParams.getOrgIdentifier(),
+        delegateParams.getProjectIdentifier(), delegateParams.getDelegateName(), delegateParams.getDelegateId(),
+        delegateParams.getVersion(), delegateParams.isNg(), delegateParams.isImmutable(), REGISTER_DELEGATE);
     // TODO: remove broadcasts from the flow of this function. Because it's called only in the first registration,
     // which is before the open of websocket connection.
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {

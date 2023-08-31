@@ -1,0 +1,11 @@
+name: Delegate details
+identifier: delegate_details
+labels:
+  - accountId
+  - orgId
+  - projectId
+  - delegateName
+  - delegateId
+  - delegateVersion
+  - isNg
+  - isImmutable

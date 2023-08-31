@@ -14,6 +14,7 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.beans.DelegateAccountMetricContext;
+import io.harness.metrics.beans.DelegateDetailsMetricContext;
 import io.harness.metrics.beans.DelegateTaskTypeMetricContext;
 import io.harness.metrics.beans.HeartbeatMetricContext;
 import io.harness.metrics.beans.PerpetualTaskMetricContext;
@@ -22,7 +23,6 @@ import io.harness.metrics.service.api.MetricService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.text.SimpleDateFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,6 +43,7 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String DELEGATE_TASK_NO_FIRST_WHITELISTED = "delegate_task_no_first_whitelisted";
   public static final String DELEGATE_REGISTRATION_FAILED = "delegate_registration_failed";
   public static final String DELEGATE_REGISTRATION = "delegate_registration";
+  public static final String REGISTER_DELEGATE = "register_delegate";
   public static final String DELEGATE_RESTARTED = "delegate_restarted";
   public static final String DELEGATE_DISCONNECTED = "delegate_disconnected";
   public static final String DELEGATE_DESTROYED = "destroy_delegate";
@@ -133,15 +134,22 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   }
 
   @Override
+  public void recordDelegateDetails(String accountId, String orgId, String projectId, String delegateName,
+      String delegateId, String delegateVersion, boolean isNg, boolean isImmutable, String metricName) {
+    try (DelegateDetailsMetricContext ignore = new DelegateDetailsMetricContext(
+             accountId, orgId, projectId, delegateName, delegateId, delegateVersion, isNg, isImmutable)) {
+      metricService.incCounter(metricName);
+    }
+  }
+
+  @Override
   public void recordDelegateHeartBeatMetricsPerAccount(long time, String accountId, String orgId, String projectId,
       String delegateName, String delegateId, String delegateVersion, String delegateConnectionStatus,
       String delegateEventType, boolean isNg, boolean isImmutable, String cpuUsage, String memeUsage, long lastHB,
       String metricName) {
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    try (HeartbeatMetricContext ignore = new HeartbeatMetricContext(dateFormat.format(time), accountId, orgId,
-             projectId, delegateName, delegateId, delegateVersion, delegateConnectionStatus, delegateEventType, isNg,
-             isImmutable, cpuUsage, memeUsage, dateFormat.format(lastHB))) {
-      metricService.incCounter(metricName);
+    try (HeartbeatMetricContext ignore = new HeartbeatMetricContext(
+             accountId, delegateId, delegateConnectionStatus, delegateEventType, cpuUsage, memeUsage)) {
+      metricService.recordMetric(metricName, lastHB);
     }
   }
 }

@@ -1,17 +1,9 @@
 name: HeartBeat
 identifier: heartbeat_entry
 labels:
-  - time
   - accountId
-  - orgId
-  - projectId
-  - delegateName
   - delegateId
-  - delegateVersion
   - delegateConnectionStatus
   - delegateEventType
-  - isNg
-  - isImmutable
   - cpuUsage
   - memUsage
-  - lastHB

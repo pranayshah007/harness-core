@@ -9,31 +9,14 @@ package io.harness.metrics.beans;
 
 import io.harness.metrics.AutoMetricContext;
 
-import java.text.SimpleDateFormat;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@Builder
-@NoArgsConstructor
 public class HeartbeatMetricContext extends AutoMetricContext {
-  public HeartbeatMetricContext(String time, String accountId, String orgId, String projectId, String delegateName,
-      String delegateId, String delegateVersion, String delegateConnectionStatus, String delegateEventType,
-      boolean isNg, boolean isImmutable, String cpuUsage, String memeUsage, String lastHB) {
-    put("time", time);
+  public HeartbeatMetricContext(String accountId, String delegateId, String delegateConnectionStatus,
+      String delegateEventType, String cpuUsage, String memeUsage) {
     put("accountId", accountId);
-    put("orgId", orgId);
-    put("projectId", projectId);
-    put("delegateName", delegateName);
     put("delegateId", delegateId);
-    put("delegateVersion", delegateVersion);
     put("delegateConnectionStatus", delegateConnectionStatus);
     put("delegateEventType", delegateEventType);
-    put("isNg", String.valueOf(isNg));
-    put("isImmutable", String.valueOf(isImmutable));
     put("cpuUsage", cpuUsage);
     put("memUsage", memeUsage);
-    put("lastHB", lastHB);
   }
 }
