@@ -73,7 +73,7 @@ public class IrregularApprovalInstanceHandler implements MongoPersistenceIterato
       return;
     }
 
-    iterator = persistenceIteratorFactory.createLoopIteratorWithDedicatedThreadPool(
+    iterator = persistenceIteratorFactory.createLoopIteratorWithDedicatedThreadPoolNoRecoverAfterPause(
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("CustomApprovalInstanceHandler")
             .poolSize(iteratorConfig.getThreadPoolCount())
