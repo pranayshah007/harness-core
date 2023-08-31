@@ -37,8 +37,11 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "TriggerFilterProperties", description = "This contains details of the Trigger Filter")
 @JsonTypeName(TRIGGER_FILTER)
 public class NGTriggersFilterPropertiesDTO extends FilterPropertiesDTO {
+  @Schema(description = "This is the list of the Trigger names on which the filter will be applied.")
   List<String> triggerNames;
+  @Schema(description = "This is the list of the Trigger identifiers on which the filter will be applied.")
   List<String> triggerIdentifiers;
+  @Schema(description = "This is the list of the Trigger types on which the filter will be applied.")
   List<NGTriggerType> triggerTypes;
 
   @Override
