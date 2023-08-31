@@ -249,6 +249,20 @@ spec:
                   number: {{ $.Values.service.port }}
             path: /(v1/eula/.+)
             pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/gitx-webhooks/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/gitx-webhooks)
+            pathType: ImplementationSpecific
     {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}
   tls:
