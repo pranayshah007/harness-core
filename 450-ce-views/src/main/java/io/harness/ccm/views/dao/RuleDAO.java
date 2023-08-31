@@ -7,6 +7,7 @@
 
 package io.harness.ccm.views.dao;
 
+import io.harness.ccm.commons.entities.CCMField;
 import io.harness.ccm.commons.entities.CCMSort;
 import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.views.entities.Rule;
@@ -105,7 +106,8 @@ public class RuleDAO {
       for (CCMSort sort : governancePolicyFilter.getOrderBy()) {
         switch (sort.getField()) {
           case RULE_NAME:
-            sortByRuleName(rules, sort.getOrder());
+          case RULE_UPDATED_AT:
+            sortByField(rules, sort.getField(), sort.getOrder());
             break;
           default:
             throw new InvalidRequestException("Sort field " + sort.getField() + " is not supported");
@@ -122,12 +124,22 @@ public class RuleDAO {
     return ruleList;
   }
 
-  public Query<Rule> sortByRuleName(Query<Rule> rules, CCMSortOrder order) {
+  public Query<Rule> sortByField(Query<Rule> rules, CCMField field, CCMSortOrder order) {
+    String sortField;
+    switch (field) {
+      case RULE_NAME:
+        sortField = RuleId.name;
+        break;
+      case RULE_UPDATED_AT:
+      default:
+        sortField = RuleId.lastUpdatedAt;
+    }
+
     switch (order) {
       case ASCENDING:
-        return rules.order(Sort.ascending(RuleId.name));
+        return rules.order(Sort.ascending(sortField));
       case DESCENDING:
-        return rules.order(Sort.descending(RuleId.name));
+        return rules.order(Sort.descending(sortField));
       default:
         throw new InvalidRequestException("Operator not supported not supported for time fields");
     }
