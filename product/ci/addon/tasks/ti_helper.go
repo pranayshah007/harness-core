@@ -194,7 +194,7 @@ func getTestTime(ctx context.Context, log *zap.SugaredLogger, splitStrategy stri
 
 // selectTests takes a list of files which were changed as input and gets the tests
 // to be run corresponding to that.
-func selectTests(ctx context.Context, files []types.File, runSelected bool, stepID string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+func selectTests(ctx context.Context, files []types.File, runSelected bool, stepID string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 	res := types.SelectTestsResp{}
 	repo, err := external.GetRepo()
 	if err != nil {
@@ -223,7 +223,7 @@ func selectTests(ctx context.Context, files []types.File, runSelected bool, step
 	if err != nil {
 		return res, err
 	}
-	b, err := json.Marshal(&types.SelectTestsReq{SelectAll: !runSelected, Files: files, TiConfig: ticonfig})
+	b, err := json.Marshal(&types.SelectTestsReq{SelectAll: !runSelected, Files: files, TiConfig: ticonfig, Language: "test", TestGlobs: testGlobs})
 	if err != nil {
 		return res, err
 	}
@@ -355,7 +355,7 @@ func getChangedFilesPushTrigger(ctx context.Context, stepID, lastSuccessfulCommi
 	}
 	defer client.CloseConn()
 	req := &pb.GetChangedFilesPushTriggerRequest{
-		StepId: stepID,
+		StepId:         stepID,
 		LastSuccCommit: lastSuccessfulCommitID,
 	}
 	resp, err := client.Client().GetChangedFilesPushTrigger(ctx, req)
