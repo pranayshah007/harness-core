@@ -1044,8 +1044,11 @@ public class PipelineMigrationService extends NgMigrationService {
                   primaryArtifact = artifacts.get("primary");
                   if (primaryArtifact != null) {
                     ObjectNode objectNode = (ObjectNode) primaryArtifact;
-                    objectNode.put("primaryArtifactRef", sources.get(0).getIdentifier())
-                        .set("sources", MIGRATION_DEFAULT_OBJECT_MAPPER.valueToTree(sources));
+                    ArtifactSource artifactSource = sources.get(0);
+                    if (artifactSource != null) {
+                      objectNode.put("primaryArtifactRef", artifactSource.getIdentifier())
+                          .set("sources", MIGRATION_DEFAULT_OBJECT_MAPPER.valueToTree(sources));
+                    }
                   }
                 }
               }
