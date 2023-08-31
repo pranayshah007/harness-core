@@ -1492,11 +1492,7 @@ paths:
       operationId: validate-eula-sign
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-        - schema:
-            $ref: '#/components/schemas/AgreementType'
-          name: agreement-type
-          in: query
-          required: true
+        - $ref: '#/components/parameters/AgreementType'
       description: Check whether End User License Agreement has been signed for specified agreement type.
       security:
         - x-api-key: []
@@ -4098,6 +4094,15 @@ components:
           - SECRET
           - PROJECT
       description: Determines the type of favorite entity requested.
+    AgreementType:
+      name: agreement_type
+      in: query
+      required: true
+      schema:
+        type: string
+        enum:
+          - AIDA
+      description: Type of Agreements.
     ConnectorPathParam:
       name: connector
       in: path
