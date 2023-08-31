@@ -17,10 +17,14 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 public class ProjectAuditMetricContext extends AutoMetricContext {
-  public ProjectAuditMetricContext(String projectId, String orgId, String accountId, String identifier) {
-    put("projectId", projectId);
-    put("orgId", orgId);
-    put("accountId", accountId);
-    put("identifier", identifier);
+  public static final String ACCOUNT_ID = "accountId";
+  public static final String ORG_ID = "orgId";
+  public static final String PROJECT_ID = "projectId";
+  public static final String IDENTIFIER = "identifier";
+  public ProjectAuditMetricContext(String accountId, String orgId, String projectId, String identifier) {
+    put(ACCOUNT_ID, accountId);
+    put(ORG_ID, orgId);
+    put(PROJECT_ID, projectId);
+    put(IDENTIFIER, identifier);
   }
 }

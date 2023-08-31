@@ -26,13 +26,14 @@ public class ProjectAuditMetricsServiceImpl {
 
   @Inject private MetricService metricService;
 
+  public void recordAuditMetricForActiveProject(String accountId, String orgId, String projectId, String identifier) {
+    recordAuditMetricForActiveProject(accountId, orgId, projectId, identifier, ACTIVE_PROJECT);
+  }
+
   private void recordAuditMetricForActiveProject(
-      String projectId, String orgId, String accountId, String identifier, String metricName) {
-    try (ProjectAuditMetricContext ignore = new ProjectAuditMetricContext(projectId, orgId, accountId, identifier)) {
+      String accountId, String orgId, String projectId, String identifier, String metricName) {
+    try (ProjectAuditMetricContext ignore = new ProjectAuditMetricContext(accountId, orgId, projectId, identifier)) {
       metricService.incCounter(metricName);
     }
-  }
-  public void recordAuditMetricForActiveProject(String projectId, String orgId, String accountId, String identifier) {
-    recordAuditMetricForActiveProject(projectId, orgId, accountId, identifier, ACTIVE_PROJECT);
   }
 }
