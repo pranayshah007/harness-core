@@ -90,23 +90,6 @@ public class ApprovalinstanceHandlerTest extends CategoryTest {
     approvalInstanceHandler.handle(entity);
     verify(jiraApprovalHelperService, times(1)).handlePollingEvent(null, jiraApprovalInstance);
   }
-
-  @Test
-  @Owner(developers = vivekveman)
-  @Category(UnitTests.class)
-  public void testApprovalInstanceHandlerServiceWithFFOff() {
-    ApprovalInstanceHandler approvalInstanceHandler =
-        new ApprovalInstanceHandler(jiraApprovalHelperService, mongoTemplate, persistenceIteratorFactory,
-            iteratorsConfig, serviceNowApprovalHelperService, pmsFeatureFlagHelper);
-    when(pmsFeatureFlagHelper.isEnabled(null, FeatureName.CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL))
-        .thenReturn(false);
-    StepElementParameters stepElementParameters = getStepElementParametersWithoutRetryInterval();
-    JiraApprovalInstance jiraApprovalInstance =
-        JiraApprovalInstance.fromStepParameters(ambiance, stepElementParameters);
-    ApprovalInstance entity = (ApprovalInstance) jiraApprovalInstance;
-    approvalInstanceHandler.handle(entity);
-    verify(jiraApprovalHelperService, times(0)).handlePollingEvent(null, jiraApprovalInstance);
-  }
   private StepElementParameters getStepElementParametersWithRetryInterval() {
     return StepElementParameters.builder()
         .type("JiraApproval")

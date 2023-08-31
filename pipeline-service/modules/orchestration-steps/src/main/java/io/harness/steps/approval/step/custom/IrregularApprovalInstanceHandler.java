@@ -24,7 +24,6 @@ import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceRequiredProvider;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
-import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance.CustomApprovalInstanceKeys;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
@@ -92,11 +91,10 @@ public class IrregularApprovalInstanceHandler implements MongoPersistenceIterato
             .acceptableNoAlertDelay(ofSeconds(iteratorConfig.getTargetIntervalInSeconds() * 2))
             .handler(this)
             .filterExpander(query
-                -> query.addCriteria(
-                    Criteria.where(ApprovalInstanceKeys.status)
-                        .is(ApprovalStatus.WAITING)
-                        .and(ApprovalInstanceKeys.type)
-                        .in(CUSTOM_APPROVAL, ApprovalType.JIRA_APPROVAL, ApprovalType.SERVICENOW_APPROVAL)))
+                -> query.addCriteria(Criteria.where(ApprovalInstanceKeys.status)
+                                         .is(ApprovalStatus.WAITING)
+                                         .and(ApprovalInstanceKeys.type)
+                                         .is(CUSTOM_APPROVAL)))
             .schedulingType(SchedulingType.IRREGULAR)
             .persistenceProvider(new SpringPersistenceRequiredProvider<>(mongoTemplate))
             .redistribute(true));

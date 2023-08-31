@@ -14,14 +14,11 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.PipelineServiceIteratorsConfig;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceRequiredProvider;
-import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
@@ -99,21 +96,11 @@ public class ApprovalInstanceHandler implements MongoPersistenceIterator.Handler
     switch (entity.getType()) {
       case JIRA_APPROVAL:
         JiraApprovalInstance jiraApprovalInstance = (JiraApprovalInstance) entity;
-        if (!pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(entity.getAmbiance()),
-                FeatureName.CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL)
-            && ParameterField.isNotNull(jiraApprovalInstance.getRetryInterval())) {
-          return;
-        }
         log.info("Executing Jira approval instance with id: {}", jiraApprovalInstance.getId());
         jiraApprovalHelperService.handlePollingEvent(null, jiraApprovalInstance);
         break;
       case SERVICENOW_APPROVAL:
         ServiceNowApprovalInstance serviceNowApprovalInstance = (ServiceNowApprovalInstance) entity;
-        if (!pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(entity.getAmbiance()),
-                FeatureName.CDS_DISABLE_JIRA_SERVICENOW_RETRY_INTERVAL)
-            && ParameterField.isNotNull(serviceNowApprovalInstance.getRetryInterval())) {
-          return;
-        }
         log.info("Executing ServiceNow approval instance with id: {}", serviceNowApprovalInstance.getId());
         serviceNowApprovalHelperService.handlePollingEvent(null, serviceNowApprovalInstance);
         break;
