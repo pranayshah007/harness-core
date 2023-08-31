@@ -71,6 +71,20 @@ spec:
                   number: 12001
             path: /(v1/orgs/.+/projects/.+/input-sets.*)
             pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: pipeline-service
+                port:
+                  number: 12001
+            path: /(v1/pipeline-schema.*)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: pipeline-service
+                port:
+                  number: 12001
+            path: /(v1/orgs/.+/projects/.+/pipelines/.+/execute)
+            pathType: ImplementationSpecific
     {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}
   tls:

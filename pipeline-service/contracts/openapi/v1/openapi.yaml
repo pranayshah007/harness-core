@@ -724,7 +724,7 @@ paths:
       tags:
         - Schemas
       x-internal: true
-  '/v1/orgs/{org}/projects/{project}/pipeline/{pipeline}/execute':
+  '/v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/execute':
     parameters:
       - $ref: '#/components/parameters/OrgParam'
       - $ref: '#/components/parameters/ProjectParam'
