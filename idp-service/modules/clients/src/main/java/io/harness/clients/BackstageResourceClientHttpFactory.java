@@ -56,8 +56,10 @@ public class BackstageResourceClientHttpFactory implements Provider<BackstageRes
       @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, @Named("env") String env) {
     this.backstageClientConfig = backstageClientConfig;
     this.secretManagerClientService = secretManagerClientService;
-    this.httpClient = this.getSafeOkHttpClient();
     this.env = env;
+
+    // CAUTION: getSafeOkHttpClient should be at the end as it depends on the above fields
+    this.httpClient = this.getSafeOkHttpClient();
   }
   @Override
   public BackstageResourceClient get() {

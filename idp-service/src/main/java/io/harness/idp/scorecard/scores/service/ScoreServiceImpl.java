@@ -67,6 +67,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Pair;
 
@@ -74,7 +75,7 @@ import org.apache.commons.math3.util.Pair;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class ScoreServiceImpl implements ScoreService {
-  private static final String CATALOG_API_SUFFIX = "%s/idp/api/catalog/entities?filter=%s";
+  private static final String CATALOG_API_SUFFIX = "%s/idp/api/catalog/entities?%s";
   @Inject TransactionHelper transactionHelper;
   @Inject CheckRepository checkRepository;
   @Inject DataPointsRepository datapointRepository;
@@ -246,6 +247,7 @@ public class ScoreServiceImpl implements ScoreService {
 
       try {
         String url = String.format(CATALOG_API_SUFFIX, accountIdentifier, filterStringBuilder);
+        log.info("Making backstage API request: {}", url);
         Object entitiesResponse = getGeneralResponse(backstageResourceClient.getCatalogEntities(url));
         List<BackstageCatalogEntity> entities = convert(mapper, entitiesResponse, BackstageCatalogEntity.class);
         filterEntitiesByTags(entities, filter.getTags());
@@ -415,7 +417,12 @@ public class ScoreServiceImpl implements ScoreService {
       IdpExpressionEvaluator evaluator, CheckEntity checkEntity) {
     String expression = constructExpressionFromRules(
         checkEntity.getRules(), checkEntity.getRuleStrategy(), DATA_POINT_VALUE_KEY, false);
-    Object value = evaluator.evaluateExpression(expression, RETURN_NULL_IF_UNRESOLVED);
+    Object value = null;
+    try {
+      value = evaluator.evaluateExpression(expression, RETURN_NULL_IF_UNRESOLVED);
+    } catch (JexlException e) {
+      log.error("Expression evaluation failed. Falling back to default check behaviour", e);
+    }
     if (value == null) {
       log.warn("Could not evaluate check status for {}", checkEntity.getIdentifier());
       return new Pair<>(CheckStatus.StatusEnum.valueOf(checkEntity.getDefaultBehaviour().toString()), null);
