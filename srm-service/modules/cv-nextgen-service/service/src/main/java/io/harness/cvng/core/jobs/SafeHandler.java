@@ -17,7 +17,7 @@ public abstract class SafeHandler<T> implements MongoPersistenceIterator.Handler
     try {
       handleUnsafely(entity);
     } catch (Exception exception) {
-      log.error("Error while handling entity {}", entity.getClass().getSimpleName(), exception);
+      log.warn("Exception while handling entity {}", entity.getClass().getSimpleName(), exception);
       // TODO: Add metrics for iterator execution
     }
   }
