@@ -1,3 +1,7 @@
 DOCKER_FILE_PATH: /harness/harness-core/platform-service/build/container/Dockerfile-platform-service-multistage
 CONTEXT_PATH: /harness/harness-core
+DOCKER_ARGS:
+  - ARG1: abc
+  - ARG2: def
+  - ARG3: xyz
 HELM_CHART_SOURCE_DIRECTORY: harness-core/platform-service/chart
