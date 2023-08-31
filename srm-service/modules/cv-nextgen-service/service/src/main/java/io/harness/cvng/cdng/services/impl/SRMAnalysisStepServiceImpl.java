@@ -15,7 +15,6 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTIT
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.MS_HEALTH_REPORT;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_ID;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.PIPELINE_URL_FORMAT;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.PLAN_EXECUTION_ID;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.STAGE_STEP_ID;
@@ -56,6 +55,7 @@ import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
@@ -121,6 +121,8 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
         SRMAnalysisStepExecutionDetail.builder()
             .stageId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getIdentifier())
             .stageStepId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getSetupId())
+            .stageExecutionId(AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance))
+            .stepRuntimeId(AmbianceUtils.getRuntimeIdForGivenCategory(ambiance, StepCategory.STEP))
             .pipelineId(ambiance.getMetadata().getPipelineIdentifier())
             .planExecutionId(ambiance.getPlanExecutionId())
             .stepName(stepName)
@@ -331,8 +333,7 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
         entityDetails.put(STAGE_STEP_ID, stepExecutionDetail.getStageStepId());
         entityDetails.put(ANALYSIS_STARTED_AT, formattedStartDate);
         entityDetails.put(ANALYSIS_ENDED_AT, formattedEndDate);
-        entityDetails.put(
-            ANALYSIS_DURATION, String.valueOf(stepExecutionDetail.getAnalysisDuration().toDays()) + " days");
+        entityDetails.put(ANALYSIS_DURATION, stepExecutionDetail.getAnalysisDuration().toDays() + " days");
         entityDetails.put(ANALYSIS_PIPELINE_NAME,
             stepExecutionDetail.getPipelineName().equals(null) ? "" : stepExecutionDetail.getPipelineName());
         msHealthReportService.sendReportNotification(projectParams, entityDetails,
@@ -350,13 +351,6 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
         .filter(SRMAnalysisStepExecutionDetailsKeys.orgIdentifier, projectParams.getOrgIdentifier())
         .filter(SRMAnalysisStepExecutionDetailsKeys.projectIdentifier, projectParams.getProjectIdentifier())
         .filter(SRMAnalysisStepExecutionDetailsKeys.monitoredServiceIdentifier, monitoredServiceIdentifier);
-  }
-
-  private String getPipelineUrl(
-      String baseUrl, ProjectParams projectParams, SRMAnalysisStepExecutionDetail stepExecutionDetail) {
-    return String.format(PIPELINE_URL_FORMAT, baseUrl, projectParams.getAccountIdentifier(),
-        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), stepExecutionDetail.getPipelineId(),
-        stepExecutionDetail.getPlanExecutionId(), stepExecutionDetail.getStageStepId());
   }
 
   @Override

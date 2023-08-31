@@ -218,8 +218,8 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
   private EcsBlueGreenPrepareRollbackDataResponse getFirstTimeDeploymentResponse(LogCallback logCallback,
       CreateServiceRequest createServiceRequest, EcsLoadBalancerConfig ecsLoadBalancerConfig,
       boolean prepareRollbackNewFlow) throws Exception {
-    logCallback.saveExecutionLog("Blue version of Service doesn't exist. Skipping Prepare Rollback Data..",
-        LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    logCallback.saveExecutionLog(
+        "Blue version of Service doesn't exist. Skipping Prepare Rollback Data..", LogLevel.INFO);
 
     // Send EcsBlueGreenPrepareRollbackDataResult with isFirstDeployment as true
     EcsBlueGreenPrepareRollbackDataResult ecsBlueGreenPrepareRollbackDataResult =
@@ -230,6 +230,7 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
     if (prepareRollbackNewFlow) {
       prepareGreenServiceRollbackData(createServiceRequest, logCallback, ecsBlueGreenPrepareRollbackDataResult);
     }
+    logCallback.saveExecutionLog("Preparing Rollback Data complete", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
     return EcsBlueGreenPrepareRollbackDataResponse.builder()
         .ecsBlueGreenPrepareRollbackDataResult(ecsBlueGreenPrepareRollbackDataResult)

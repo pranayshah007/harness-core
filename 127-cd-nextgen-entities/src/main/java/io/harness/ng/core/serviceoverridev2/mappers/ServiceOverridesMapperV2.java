@@ -12,8 +12,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
+import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
@@ -54,6 +60,39 @@ public class ServiceOverridesMapperV2 {
         .type(entity.getType())
         .isNewlyCreated(isNewlyCreated)
         .yamlInternal(entity.getYamlInternal())
+        .build();
+  }
+
+  // This method is used for redirecting overrides v1 request overrides v2
+  public ServiceOverrideRequestDTOV2 toRequestV2(NGServiceOverridesEntity requestedEntity) {
+    NGServiceOverrideConfig serviceOverrideConfig =
+        NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(requestedEntity);
+    NGServiceOverrideInfoConfig serviceOverrideInfoConfig = serviceOverrideConfig.getServiceOverrideInfoConfig();
+    return ServiceOverrideRequestDTOV2.builder()
+        .orgIdentifier(requestedEntity.getOrgIdentifier())
+        .projectIdentifier(requestedEntity.getProjectIdentifier())
+        .serviceRef(requestedEntity.getServiceRef())
+        .environmentRef(requestedEntity.getEnvironmentRef())
+        .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+        .spec(ServiceOverridesSpec.builder()
+                  .variables(serviceOverrideInfoConfig.getVariables())
+                  .manifests(serviceOverrideInfoConfig.getManifests())
+                  .configFiles(serviceOverrideInfoConfig.getConfigFiles())
+                  .applicationSettings(serviceOverrideInfoConfig.getApplicationSettings())
+                  .connectionStrings(serviceOverrideInfoConfig.getConnectionStrings())
+                  .build())
+        .v1Api(true)
+        .build();
+  }
+
+  public ServiceOverrideResponseDTO toResponseDTOV1(ServiceOverridesResponseDTOV2 responseDTOV2, String yaml) {
+    return ServiceOverrideResponseDTO.builder()
+        .accountId(responseDTOV2.getAccountId())
+        .orgIdentifier(responseDTOV2.getOrgIdentifier())
+        .projectIdentifier(responseDTOV2.getProjectIdentifier())
+        .environmentRef(responseDTOV2.getEnvironmentRef())
+        .serviceRef(responseDTOV2.getServiceRef())
+        .yaml(yaml)
         .build();
   }
 }

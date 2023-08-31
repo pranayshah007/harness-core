@@ -66,6 +66,7 @@ public class OrchestrationStepServiceImpl implements OrchestrationStepService {
 
     artifactEntity = artifactRepository.save(artifactEntity);
     s3StoreService.uploadSBOM(sbomDumpFile, artifactEntity);
+    sbomDumpFile.delete();
 
     SettingsDTO settingsDTO =
         getSettingsDTO(accountId, orgIdentifier, projectIdentifier, sbomProcessRequestBody, artifactEntity);
@@ -74,7 +75,6 @@ public class OrchestrationStepServiceImpl implements OrchestrationStepService {
     List<NormalizedSBOMComponentEntity> sbomEntityList = normalizer.normaliseSBOM(sbomDTO, settingsDTO);
 
     SBOMComponentRepo.saveAll(sbomEntityList);
-    sbomDumpFile.delete();
 
     log.info(String.format("SBOM Processed Successfully, Artifact ID: %s", artifactEntity.getArtifactId()));
     return artifactEntity.getArtifactId();

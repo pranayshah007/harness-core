@@ -23,6 +23,7 @@ import lombok.experimental.UtilityClass;
 public class YAMLFieldNameConstants {
   public final String EXECUTION = "execution";
   public final String PIPELINE = "pipeline";
+  public final String TRIGGER = "trigger";
   public final String POLICY_OUTPUT = "policyOutput";
   public final String CI_CODE_BASE = "codebase";
   public final String PROPERTIES = "properties";

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.gitops.syncstep;
+package io.harness.cdng.gitops;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.rule.OwnerRule.MEENA;
@@ -26,13 +26,10 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(GITOPS)
-public class SyncRunnableTest extends CategoryTest {
-  @InjectMocks private SyncRunnable syncRunnable;
-
+public class GitOpsStepUtilsTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
@@ -55,7 +52,7 @@ public class SyncRunnableTest extends CategoryTest {
     GitopsClustersOutcome.ClusterData cluster6 =
         GitopsClustersOutcome.ClusterData.builder().clusterId("cid6").scope("organization").agentId("agent6").build();
 
-    assertThat(syncRunnable.getScopedClusterIdsInPipelineExecution(new GitopsClustersOutcome(
+    assertThat(GitOpsStepUtils.getScopedClusterIdsInPipelineExecution(new GitopsClustersOutcome(
                    Arrays.asList(cluster1, cluster2, cluster3, cluster4, cluster5, cluster6))))
         .isEqualTo(new HashMap<String, Set<String>>() {
           {

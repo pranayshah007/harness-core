@@ -6,6 +6,7 @@
  */
 
 package software.wings.helpers.ext.ecr;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -22,7 +23,8 @@ import java.util.Map;
  * Created by brett on 7/15/17
  */
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface EcrService {
   int MAX_NO_OF_IMAGES = 1000;

@@ -16,6 +16,7 @@ import io.harness.gitops.models.Application;
 import io.harness.gitops.models.ApplicationQuery;
 import io.harness.gitops.models.ApplicationResource;
 import io.harness.gitops.models.ApplicationSyncRequest;
+import io.harness.gitops.models.ApplicationUpdateRequest;
 import io.harness.gitops.models.Cluster;
 import io.harness.gitops.models.ClusterQuery;
 import io.harness.gitops.models.Repository;
@@ -27,6 +28,7 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -67,4 +69,13 @@ public interface GitopsResourceClient {
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) @NotEmpty String orgIdentifier,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) @NotEmpty String projectIdentifier);
+
+  @PUT("agents/{agentIdentifier}/applications/{applicationName}")
+  Call<ApplicationResource> updateApplication(@Path("agentIdentifier") String agentId,
+      @Path("applicationName") String applicationName,
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) @NotEmpty String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) @NotEmpty String projectIdentifier,
+      @Query(value = "clusterIdentifier") @NotEmpty String clusterIdentifier,
+      @Query(value = "repoIdentifier") @NotEmpty String repoIdentifier, @Body ApplicationUpdateRequest updateRequest);
 }

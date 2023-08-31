@@ -26,12 +26,15 @@ import io.harness.timescaledb.routines.TimeBucket6;
 import io.harness.timescaledb.routines.TimeBucket7;
 import io.harness.timescaledb.routines.TimeBucket8;
 import io.harness.timescaledb.routines.TimeBucket9;
+import io.harness.timescaledb.tables.TimeBucketListCdStatus;
+import io.harness.timescaledb.tables.records.TimeBucketListCdStatusRecord;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import org.jooq.Configuration;
 import org.jooq.Field;
+import org.jooq.Result;
 import org.jooq.types.YearToSecond;
 
 /**
@@ -629,5 +632,34 @@ public class Routines {
     f.setTs(ts);
 
     return f.asField();
+  }
+
+  /**
+   * Call <code>public.time_bucket_list_cd_status</code>.
+   */
+  public static Result<TimeBucketListCdStatusRecord> timeBucketListCdStatus(Configuration configuration, Long pInterval,
+      Long pStarttsBegin, Long pStarttsEnd, String[] pStatusList, Boolean pDebug) {
+    return configuration.dsl()
+        .selectFrom(io.harness.timescaledb.tables.TimeBucketListCdStatus.TIME_BUCKET_LIST_CD_STATUS.call(
+            pInterval, pStarttsBegin, pStarttsEnd, pStatusList, pDebug))
+        .fetch();
+  }
+
+  /**
+   * Get <code>public.time_bucket_list_cd_status</code> as a table.
+   */
+  public static TimeBucketListCdStatus timeBucketListCdStatus(
+      Long pInterval, Long pStarttsBegin, Long pStarttsEnd, String[] pStatusList, Boolean pDebug) {
+    return io.harness.timescaledb.tables.TimeBucketListCdStatus.TIME_BUCKET_LIST_CD_STATUS.call(
+        pInterval, pStarttsBegin, pStarttsEnd, pStatusList, pDebug);
+  }
+
+  /**
+   * Get <code>public.time_bucket_list_cd_status</code> as a table.
+   */
+  public static TimeBucketListCdStatus timeBucketListCdStatus(Field<Long> pInterval, Field<Long> pStarttsBegin,
+      Field<Long> pStarttsEnd, Field<String[]> pStatusList, Field<Boolean> pDebug) {
+    return io.harness.timescaledb.tables.TimeBucketListCdStatus.TIME_BUCKET_LIST_CD_STATUS.call(
+        pInterval, pStarttsBegin, pStarttsEnd, pStatusList, pDebug);
   }
 }

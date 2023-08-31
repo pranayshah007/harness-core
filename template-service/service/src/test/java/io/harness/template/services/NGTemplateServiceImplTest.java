@@ -38,6 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
+import io.harness.TemplateServiceConfiguration;
 import io.harness.TemplateServiceTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -73,6 +74,7 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitx.GitXSettingsHelper;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.OrganizationResponse;
@@ -196,6 +198,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks TemplateMergeServiceImpl templateMergeService;
   @Mock private GovernanceService governanceService;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock TemplateServiceConfiguration templateServiceConfiguration;
 
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -2267,5 +2270,17 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThatThrownBy(() -> templateService.updateTemplateEntity(updateTemplate, ChangeType.MODIFY, false, ""))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Error while saving template [template1] of versionLabel [version1] : [null]");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testEvaluateGovernancePoliciesTemplateWithFlagOff() {
+    doReturn(false).when(templateServiceConfiguration).isEnableOpaEvaluation();
+    GovernanceMetadata flagOffMetadata =
+        templateService.validateGovernanceRules(TemplateEntity.builder().accountId("acc").build());
+    assertThat(flagOffMetadata.getDeny()).isFalse();
+    assertThat(flagOffMetadata.getMessage())
+        .isEqualTo("Template OPA is disabled. Configure \"enableOpaRule: true\" in config.yaml file");
   }
 }

@@ -276,6 +276,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO.EnvironmentResponseDTOBuilder;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
@@ -1070,6 +1071,7 @@ public class BuilderFactory {
         .deploymentTag("deploymentTag")
         .stageId("stageId")
         .pipelineId("pipelineId")
+        .runSequence("1")
         .planExecutionId(generateUuid())
         .artifactType("artifactType")
         .artifactTag("artifactTag")
@@ -1128,6 +1130,7 @@ public class BuilderFactory {
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())
         .setStageExecutionId(generateUuid())
+        .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build())
         .addLevels(Level.newBuilder()
                        .setRuntimeId(generateUuid())
                        .setStartTs(clock.millis())
@@ -1322,6 +1325,7 @@ public class BuilderFactory {
                       .stageStepId("stageStepId")
                       .stageId("stageId")
                       .pipelineId("pipelineId")
+                      .runSequence("1")
                       .planExecutionId("executionId")
                       .artifactType("artifactType")
                       .artifactTag("artifactTag")
@@ -1447,6 +1451,7 @@ public class BuilderFactory {
         .setExecutionDetails(ExecutionDetails.newBuilder()
                                  .setStageId("stageId")
                                  .setPipelineId("pipelineId")
+                                 .setRunSequence("1")
                                  .setPlanExecutionId("planExecutionId")
                                  .setStageSetupId("stageStepId")
                                  .build())

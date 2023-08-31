@@ -52,6 +52,8 @@ public interface ShellScriptHelperService {
       ParameterField<String> workingDirectory, @Nonnull ScriptType scriptType, boolean onDelegate);
 
   TaskParameters buildShellScriptTaskParametersNG(
+      @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters, String sessionTimeout);
+  TaskParameters buildShellScriptTaskParametersNG(
       @Nonnull Ambiance ambiance, @Nonnull ShellScriptStepParameters shellScriptStepParameters);
 
   ShellScriptOutcome prepareShellScriptOutcome(

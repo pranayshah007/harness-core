@@ -453,6 +453,18 @@ public class K8sRecommendationDAO {
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public List<CeRecommendations> getNodepoolsAlreadyUpdated(
+      @NonNull String accountId, @NonNull JobConstants jobConstants, List<String> clusterNames) {
+    return dslContext.selectFrom(CE_RECOMMENDATIONS)
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId))
+        .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.NODE_POOL.name()))
+        .and(CE_RECOMMENDATIONS.CLUSTERNAME.in(clusterNames))
+        .and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
+            toOffsetDateTime(Instant.ofEpochMilli(jobConstants.getJobEndTime()))))
+        .fetchInto(CeRecommendations.class);
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
   public void upsertCeRecommendation(String entityUuid, @NonNull JobConstants jobConstants,
       @NonNull NodePoolId nodePoolId, String clusterName, @NonNull RecommendationOverviewStats stats,
       Instant lastReceivedUntilAt, String cloudProvider) {

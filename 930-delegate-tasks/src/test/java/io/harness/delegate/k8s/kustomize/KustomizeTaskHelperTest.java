@@ -26,6 +26,9 @@ import io.harness.delegate.task.k8s.k8sbase.KustomizeTaskHelper;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KustomizeCommand;
+import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.kustomize.KustomizeClient;
 import io.harness.kustomize.KustomizeClientFactory;
 import io.harness.logging.CommandExecutionStatus;
@@ -51,6 +54,8 @@ public class KustomizeTaskHelperTest extends CategoryTest {
   @Mock LogCallback logCallback;
   @Mock KustomizeClientFactory kustomizeClientFactory;
   @Mock K8sTaskManifestValidator k8sTaskManifestValidator;
+  @Mock Kubectl kubectl;
+  @Mock KustomizeCommand kustomizeCommand;
 
   @InjectMocks KustomizeTaskHelper kustomizeTaskHelper;
   @Spy @InjectMocks KustomizeTaskHelper spyKustomizeTaskHelper;
@@ -76,28 +81,34 @@ public class KustomizeTaskHelperTest extends CategoryTest {
 
   private void shouldHandleClientBuildFailure() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().kustomizeBinaryPath(RANDOM).build();
+
     CliResponse cliResponse =
         CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).output(RANDOM).build();
     doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
-    assertThatThrownBy(
-        () -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback, Collections.emptyMap()))
+    assertThatThrownBy(()
+                           -> kustomizeTaskHelper.build(
+                               RANDOM, k8sDelegateTaskParams, null, RANDOM, logCallback, Collections.emptyMap()))
         .isInstanceOf(HintException.class)
         .hasMessage(
             "Please validate the path to the folder that contains the correct kustomization yaml file.\n- Validate the files that are being used to build the kustomize manifest.")
         .hasCauseInstanceOf(ExplanationException.class)
         .hasRootCauseInstanceOf(InvalidRequestException.class)
-        .hasRootCauseMessage("Kustomize build failed. Msg: " + RANDOM);
+        .hasRootCauseMessage("Kustomize command failed. Msg: " + RANDOM);
   }
 
   private void testClientBuildFailureWithNoOutput() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().kustomizeBinaryPath(RANDOM).build();
+
     CliResponse cliResponse =
         CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).error(RANDOM).build();
     doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
-    assertThatThrownBy(
-        () -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback, Collections.emptyMap()))
+    assertThatThrownBy(()
+                           -> kustomizeTaskHelper.build(
+                               RANDOM, k8sDelegateTaskParams, null, RANDOM, logCallback, Collections.emptyMap()))
         .isInstanceOf(HintException.class)
         .hasMessage(
             "Please validate the path to the folder that contains the correct kustomization yaml file.\n- Validate the files that are being used to build the kustomize manifest.")
@@ -108,20 +119,26 @@ public class KustomizeTaskHelperTest extends CategoryTest {
 
   private void shouldHandleInterrupedException() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().kustomizeBinaryPath(RANDOM).build();
+
     doThrow(InterruptedException.class).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
-    assertThatThrownBy(
-        () -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback, Collections.emptyMap()))
+    assertThatThrownBy(()
+                           -> kustomizeTaskHelper.build(
+                               RANDOM, k8sDelegateTaskParams, null, RANDOM, logCallback, Collections.emptyMap()))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Kustomize build interrupted");
+        .hasMessageContaining("Kustomize command interrupted");
   }
 
   private void shouldHandleIOException() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().kustomizeBinaryPath(RANDOM).build();
+
     doThrow(IOException.class).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
-    assertThatThrownBy(
-        () -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback, Collections.emptyMap()))
+    assertThatThrownBy(()
+                           -> kustomizeTaskHelper.build(
+                               RANDOM, k8sDelegateTaskParams, null, RANDOM, logCallback, Collections.emptyMap()))
         .isInstanceOf(HintException.class)
         .hasMessage(
             "Please connect remotely to Harness delegate and verify network connection between Kubernetes cluster and Harness delegate.")
@@ -131,10 +148,13 @@ public class KustomizeTaskHelperTest extends CategoryTest {
 
   private void shouldHandleTimeoutException() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().kustomizeBinaryPath(RANDOM).build();
+
     doThrow(TimeoutException.class).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
-    assertThatThrownBy(
-        () -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback, Collections.emptyMap()))
+    assertThatThrownBy(()
+                           -> kustomizeTaskHelper.build(
+                               RANDOM, k8sDelegateTaskParams, null, RANDOM, logCallback, Collections.emptyMap()))
         .isInstanceOf(HintException.class)
         .hasMessage(
             "Please connect remotely to Harness delegate and verify if Harness delegate is whitelisted to access Kubernetes API.")
@@ -144,24 +164,26 @@ public class KustomizeTaskHelperTest extends CategoryTest {
 
   private void shouldCallClientBuildWithPlugins() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().kustomizeBinaryPath(RANDOM).build();
     CliResponse cliResponse =
         CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).output(RANDOM).build();
     doReturn(cliResponse).when(kustomizeClient).buildWithPlugins(RANDOM, RANDOM, RANDOM, logCallback);
 
     List<FileData> manifestFiles =
-        kustomizeTaskHelper.build(RANDOM, RANDOM, RANDOM, RANDOM, logCallback, Collections.emptyMap());
+        kustomizeTaskHelper.build(RANDOM, k8sDelegateTaskParams, RANDOM, RANDOM, logCallback, Collections.emptyMap());
     assertThat(manifestFiles).hasSize(1);
     assertThat(manifestFiles.get(0).getFileContent()).isEqualTo(RANDOM);
   }
 
   private void shouldCallClientBuild() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
+    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().kustomizeBinaryPath(RANDOM).build();
     CliResponse cliResponse =
         CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).output(RANDOM).build();
     doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, logCallback);
 
     List<FileData> manifestFiles =
-        kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback, Collections.emptyMap());
+        kustomizeTaskHelper.build(RANDOM, delegateTaskParams, null, RANDOM, logCallback, Collections.emptyMap());
     assertThat(manifestFiles).hasSize(1);
     assertThat(manifestFiles.get(0).getFileContent()).isEqualTo(RANDOM);
   }
@@ -176,6 +198,7 @@ public class KustomizeTaskHelperTest extends CategoryTest {
 
   private void shouldCallKustomizeBuild() {
     String RANDOM = "RANDOM";
+    K8sDelegateTaskParams k8sDelegateTaskParams = K8sDelegateTaskParams.builder().kustomizeBinaryPath(RANDOM).build();
     List<String> file = Collections.singletonList("file");
     FileData manifestFile = FileData.builder().build();
     List<FileData> manifestFiles = Collections.singletonList(manifestFile);
@@ -183,11 +206,11 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     ArgumentCaptor<String> kustomizeDirPathCaptor = ArgumentCaptor.forClass(String.class);
     doReturn(manifestFiles)
         .when(spyKustomizeTaskHelper)
-        .build(eq(RANDOM), eq(RANDOM), pluginRootCaptor.capture(), kustomizeDirPathCaptor.capture(), eq(logCallback),
-            eq(Collections.emptyMap()));
+        .build(eq(RANDOM), eq(k8sDelegateTaskParams), pluginRootCaptor.capture(), kustomizeDirPathCaptor.capture(),
+            eq(logCallback), eq(Collections.emptyMap()));
 
-    List<FileData> actualManifestFiles = spyKustomizeTaskHelper.buildForApply(
-        RANDOM, RANDOM, RANDOM, file, false, Collections.emptyList(), logCallback, Collections.emptyMap());
+    List<FileData> actualManifestFiles = spyKustomizeTaskHelper.buildForApply(k8sDelegateTaskParams, RANDOM, RANDOM,
+        file, false, Collections.emptyList(), logCallback, Collections.emptyMap());
 
     assertThat(actualManifestFiles).isEqualTo(manifestFiles);
     assertThat(kustomizeDirPathCaptor.getValue()).isEqualTo("file");
@@ -226,7 +249,10 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     doReturn(kustomizeClient).when(kustomizeClientFactory).getClient(any(), any());
     doReturn(cliResponse).when(kustomizeClient).build(error, error, logCallback);
 
-    assertThatThrownBy(() -> kustomizeTaskHelper.build(error, error, null, error, logCallback, Collections.emptyMap()))
+    assertThatThrownBy(
+        ()
+            -> kustomizeTaskHelper.build(error, K8sDelegateTaskParams.builder().kustomizeBinaryPath(error).build(),
+                null, error, logCallback, Collections.emptyMap()))
         .isInstanceOf(HintException.class)
         .hasMessage(
             "All the resources that are required to compile the manifest must be present within Kustomize Base Path. Please check manifest(s) for any references to missing resources and create them.")

@@ -7,6 +7,9 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
+import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
@@ -98,9 +101,18 @@ public abstract class DataSourceProvider {
     Map<String, Object> dataPointValues = new HashMap<>();
     for (Map.Entry<DataPointEntity, Set<String>> entry : dataToFetchWithInputValues.entrySet()) {
       DataPointEntity dataPointEntity = entry.getKey();
-      Set<String> inputValues = entry.getValue();
-      DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPointEntity.getIdentifier());
-      Object values = dataPointParser.parseDataPoint(response, dataPointEntity, inputValues);
+
+      Object values;
+      if (response.containsKey(ERROR_MESSAGE_KEY)) {
+        Map<String, Object> dataPoint = new HashMap<>();
+        dataPoint.put(DATA_POINT_VALUE_KEY, null);
+        dataPoint.put(ERROR_MESSAGE_KEY, response.get(ERROR_MESSAGE_KEY));
+        values = dataPoint;
+      } else {
+        Set<String> inputValues = entry.getValue();
+        DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPointEntity.getIdentifier());
+        values = dataPointParser.parseDataPoint(response, dataPointEntity, inputValues);
+      }
       if (values != null) {
         dataPointValues.put(dataPointEntity.getIdentifier(), values);
       }

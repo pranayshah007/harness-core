@@ -15,7 +15,7 @@
       }
     ],
     "expression": "github.meanTimeToMerge < 48",
-    "labels": ["Development maturity"],
+    "tags": ["Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Mean time to merge PR is more than 2 days"
   },
@@ -35,7 +35,7 @@
       }
     ],
     "expression": "catalog.pagerdutyAnnotation != null",
-    "labels": ["DevOps maturity"],
+    "tags": ["DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Pagerduty is not setup"
   },
@@ -55,7 +55,7 @@
       }
     ],
     "expression": "github.isBranchProtected == true",
-    "labels": ["Software quality", "Development maturity"],
+    "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Branch protection is not set"
   },
@@ -75,7 +75,7 @@
       }
     ],
     "expression": "catalog.techDocsAnnotation != null",
-    "labels": ["Software quality", "Development maturity" ,"DevOps maturity"],
+    "tags": ["Software quality", "Development maturity" ,"DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Tech docs doesn't exists"
   },
@@ -95,8 +95,29 @@
       }
     ],
     "expression": "catalog.specOwner != null",
-    "labels": ["Software quality", "Development maturity" ,"DevOps maturity"],
+    "tags": ["Software quality", "Development maturity" ,"DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Spec owner doesn't exists"
+  },
+  {
+    "id": "64ede62a8b4004661f8e59aa",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__b9a99e87-d9c1-4c5e-9ba6-4605a771dbc4",
+    "name": "Gitleaks file exists",
+    "description": "Gitleaks file exists",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "github",
+        "data_point_identifier": "isFileExists",
+        "conditional_input_value": "gitleaks.toml",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "github.isFileExists.gitleaks.toml == true",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Gitleaks file does not exist"
   }
 ]

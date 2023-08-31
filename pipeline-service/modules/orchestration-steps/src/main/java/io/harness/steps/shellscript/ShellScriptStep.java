@@ -71,8 +71,8 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     ShellScriptStepParameters shellScriptStepParameters = (ShellScriptStepParameters) stepParameters.getSpec();
-    TaskParameters taskParameters =
-        shellScriptHelperService.buildShellScriptTaskParametersNG(ambiance, shellScriptStepParameters);
+    TaskParameters taskParameters = shellScriptHelperService.buildShellScriptTaskParametersNG(ambiance,
+        shellScriptStepParameters, stepParameters.getTimeout() != null ? stepParameters.getTimeout().getValue() : null);
 
     switch (shellScriptStepParameters.getShell()) {
       case Bash:

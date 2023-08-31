@@ -31,6 +31,7 @@ import io.harness.iacm.plan.creator.filter.IACMStageFilterJsonCreator;
 import io.harness.iacm.plan.creator.stage.IACMStagePMSPlanCreator;
 import io.harness.iacm.plan.creator.stage.IACMStagePMSPlanCreatorV1;
 import io.harness.iacm.plan.creator.step.IACMApprovalStepVariableCreator;
+import io.harness.iacm.plan.creator.step.IACMCostEstimationStepVariableCreator;
 import io.harness.iacm.plan.creator.step.IACMPMSStepFilterJsonCreator;
 import io.harness.iacm.plan.creator.step.IACMPMSStepFilterJsonCreatorV1;
 import io.harness.iacm.plan.creator.step.IACMPluginStepPlanCretorV1;
@@ -109,6 +110,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     variableCreators.add(new PluginStepVariableCreator()); // variable creator for the plugin step
     variableCreators.add(new IACMTerraformPluginStepVariableCreator());
     variableCreators.add(new IACMApprovalStepVariableCreator());
+    variableCreators.add(new IACMCostEstimationStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
     variableCreators.add(new ActionStepVariableCreator()); // variable creator for the action step
     variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));

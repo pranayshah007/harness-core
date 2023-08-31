@@ -6,7 +6,8 @@
     "name": "Github mean time to merge PR hours",
     "type": "NUMBER",
     "dataSourceIdentifier": "github",
-    "dataSourceLocationIdentifier": "github_mean_time_to_merge_pr"
+    "dataSourceLocationIdentifier": "github_mean_time_to_merge_pr",
+    "isConditional": true
   },
   {
     "id": "64d5c505c94f589f936c04d7",
@@ -22,10 +23,11 @@
     "id": "64d5f2bc387ee61486eed6f6",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "isBranchProtected",
-    "name": "Github default branch protection set",
+    "name": "Github branch protection set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "github",
-    "dataSourceLocationIdentifier": "github_is_branch_protection_set"
+    "dataSourceLocationIdentifier": "github_is_branch_protection_set",
+    "isConditional": true
   },
   {
     "id": "64d5f56280f63a315c9e08b5",
@@ -46,5 +48,15 @@
     "dataSourceIdentifier": "catalog",
     "outcomeExpression":  "catalog.spec.owner",
     "dataSourceLocationIdentifier": "catalog"
+  },
+  {
+    "id": "64ecede6b5fd454d919d01f0",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isFileExists",
+    "name": "Github file exists",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_is_file_exists",
+    "isConditional": true
   }
 ]

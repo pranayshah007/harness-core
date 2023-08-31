@@ -175,6 +175,7 @@ public class NextGenConfiguration extends Configuration {
   private static final String EOL_BANNER_RESOURCE_PACKAGE = "io.harness.ng.core.eolbanner.resources";
   private static final String TERRAFORM_RESOURCE_PACKAGE = "io.harness.ng.core.terraform.resources";
   private static final String TERRAGRUNT_RESOURCE_PACKAGE = "io.harness.ng.core.terragrunt.resources";
+  private static final String GITX_WEBHOOKS_PACKAGE = "io.harness.ng.gitxwebhook";
 
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
@@ -339,7 +340,8 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE, NextGenConfiguration.TERRAFORM_RESOURCE_PACKAGE,
                 NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE,
                 NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE,
-                NextGenConfiguration.EULA_PACKAGE, NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE))
+                NextGenConfiguration.EULA_PACKAGE, NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE,
+                NextGenConfiguration.GITX_WEBHOOKS_PACKAGE))
         .collect(Collectors.toSet());
   }
 

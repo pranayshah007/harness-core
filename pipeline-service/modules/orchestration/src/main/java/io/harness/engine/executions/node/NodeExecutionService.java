@@ -354,6 +354,8 @@ public interface NodeExecutionService {
 
   List<NodeExecution> fetchStageExecutions(String planExecutionId);
 
+  List<NodeExecution> fetchStageExecutionsWithProjection(String planExecutionId, Set<String> fieldsToBeIncluded);
+
   // TODO(Projection): Make it paginated, and projection, in retry flow
   List<NodeExecution> fetchStrategyNodeExecutions(String planExecutionId, List<String> stageFQNs);
 

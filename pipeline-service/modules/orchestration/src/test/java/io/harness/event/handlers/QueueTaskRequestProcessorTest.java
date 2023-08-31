@@ -128,6 +128,6 @@ public class QueueTaskRequestProcessorTest extends OrchestrationTestBase {
     assertThat(update.getUpdateObject().values()).hasSize(1);
     verify(waitNotifyEngine)
         .waitForAllOn(null, EngineResumeCallback.builder().ambiance(ambiance).build(),
-            EngineProgressCallback.builder().ambiance(ambiance).build(), taskId);
+            EngineProgressCallback.builder().nodeExecutionId(nodeExecutionId).build(), taskId);
   }
 }
