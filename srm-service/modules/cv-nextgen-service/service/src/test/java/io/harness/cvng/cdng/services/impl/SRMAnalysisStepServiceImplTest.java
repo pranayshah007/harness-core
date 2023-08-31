@@ -228,6 +228,11 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
         srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
     SRMAnalysisStepDetailDTO analysisStepDetailDTO = srmAnalysisStepService.getSRMAnalysisSummary(activityId);
 
+    assertThat(analysisStepDetailDTO.getAccountId()).isEqualTo(builderFactory.getContext().getAccountId());
+    assertThat(analysisStepDetailDTO.getOrgIdentifier()).isEqualTo(builderFactory.getContext().getOrgIdentifier());
+    assertThat(analysisStepDetailDTO.getProjectIdentifier())
+        .isEqualTo(builderFactory.getContext().getProjectIdentifier());
+    assertThat(analysisStepDetailDTO.getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
     assertThat(analysisStepDetailDTO.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
     assertThat(analysisStepDetailDTO.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(analysisStepDetailDTO.getServiceIdentifier()).isEqualTo(serviceEnvironmentParams.getServiceIdentifier());
@@ -238,6 +243,8 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
     assertThat(analysisStepDetailDTO.getAnalysisEndTime()).isEqualTo(stepExecutionDetail.getAnalysisEndTime());
     assertThat(analysisStepDetailDTO.getStepName()).isEqualTo(stepName);
     assertThat(analysisStepDetailDTO.getExecutionDetailIdentifier()).isEqualTo(analysisExecutionDetailsId);
+    assertThat(analysisStepDetailDTO.getPlanExecutionId()).isEqualTo(stepExecutionDetail.getPlanExecutionId());
+    assertThat(analysisStepDetailDTO.getPipelinePath()).isNotEmpty();
   }
 
   @Test

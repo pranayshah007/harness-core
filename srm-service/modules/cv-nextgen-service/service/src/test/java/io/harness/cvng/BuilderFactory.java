@@ -276,6 +276,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO.EnvironmentResponseDTOBuilder;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.ParameterField;
@@ -1129,6 +1130,7 @@ public class BuilderFactory {
     return Ambiance.newBuilder()
         .setPlanExecutionId(generateUuid())
         .setStageExecutionId(generateUuid())
+        .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build())
         .addLevels(Level.newBuilder()
                        .setRuntimeId(generateUuid())
                        .setStartTs(clock.millis())

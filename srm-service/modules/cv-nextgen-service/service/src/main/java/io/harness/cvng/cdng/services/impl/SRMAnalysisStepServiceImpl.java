@@ -55,6 +55,7 @@ import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
@@ -120,6 +121,8 @@ public class SRMAnalysisStepServiceImpl implements SRMAnalysisStepService, Secon
         SRMAnalysisStepExecutionDetail.builder()
             .stageId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getIdentifier())
             .stageStepId(AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getSetupId())
+            .stageExecutionId(AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance))
+            .stepRuntimeId(AmbianceUtils.getRuntimeIdForGivenCategory(ambiance, StepCategory.STEP))
             .pipelineId(ambiance.getMetadata().getPipelineIdentifier())
             .planExecutionId(ambiance.getPlanExecutionId())
             .stepName(stepName)
