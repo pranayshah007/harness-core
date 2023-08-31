@@ -45,12 +45,19 @@ func Work(ctx context.Context, wID string, q queue.Queue, c cache.Cache, s store
 
 		message, err := q.Consume(ctx, cfg.ConsumerWorker.StreamName, cfg.ConsumerWorker.ConsumerGroup, wID)
 		if err != nil {
+			if strings.Contains(err.Error(), "redis: nil") {
+				logEntryWorker.
+					WithField("time", time.Now().Format(time.RFC3339)).
+					WithField("ConsumerGroup", cfg.ConsumerWorker.ConsumerGroup).
+					WithError(err).
+					Errorln("consumer execute: continuing to poll redis queue")
+				continue
+			}
 			logEntryWorker.
 				WithField("time", time.Now().Format(time.RFC3339)).
 				WithField("ConsumerGroup", cfg.ConsumerWorker.ConsumerGroup).
 				WithError(err).
-				Errorln("consumer execute: cannot process message, terminating zipworker gracefully")
-			// gracefully exit the loop
+				Errorln("consumer execute: cannot process message, terminating zip worker")
 			return
 		}
 
