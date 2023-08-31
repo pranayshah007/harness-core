@@ -36,7 +36,7 @@ public class SchemasApiImpl implements SchemasApi {
   public Response getIndividualStaticSchema(
       String harnessAccount, String nodeGroup, String nodeType, String nodeGroupDifferentiator) {
     ObjectNode schema =
-        pmsYamlSchemaService.getIndividualStaticSchema(harnessAccount, nodeGroup, nodeType, nodeGroupDifferentiator);
+        pmsYamlSchemaService.getStaticSchemaForAllEntities(nodeGroup, nodeType, nodeGroupDifferentiator);
     IndividualSchemaResponseBody responseBody = new IndividualSchemaResponseBody();
     responseBody.setData(schema);
     return Response.ok().entity(responseBody).build();

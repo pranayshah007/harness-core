@@ -700,6 +700,7 @@ paths:
               - pipeline
               - strategy
               - step_group
+              - trigger
           in: query
           name: node_group
         - schema:

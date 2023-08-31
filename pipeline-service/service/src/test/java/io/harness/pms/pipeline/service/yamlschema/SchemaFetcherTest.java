@@ -8,15 +8,18 @@
 package io.harness.pms.pipeline.service.yamlschema;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.ModuleType;
 import io.harness.SchemaCacheKey;
@@ -28,6 +31,8 @@ import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperV
 import io.harness.pms.pipeline.service.yamlschema.cache.SchemaCacheUtils;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
+import io.harness.pms.yaml.individualschema.AbstractStaticSchemaParser;
+import io.harness.pms.yaml.individualschema.StaticSchemaParserFactory;
 import io.harness.rule.Owner;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
@@ -36,6 +41,7 @@ import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -55,6 +61,8 @@ public class SchemaFetcherTest {
   @Mock Cache<SchemaCacheKey, PartialSchemaDTOWrapperValue> schemaCache;
   @Mock SchemaGetterFactory schemaGetterFactory;
   @Mock LocalSchemaGetter localSchemaGetter;
+  @Mock StaticSchemaParserFactory staticSchemaParserFactory;
+  @Mock AbstractStaticSchemaParser abstractStaticSchemaParser;
 
   @Mock Cache<SchemaCacheKey, String> staticSchemaCache;
   @InjectMocks SchemaFetcher schemaFetcher;
@@ -177,8 +185,26 @@ public class SchemaFetcherTest {
     verify(schemaDetailsCache, times(1)).clear();
   }
 
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testIndividualSchema() throws IOException {
+    JsonNode expected = readJsonNode("individual-schema-short.json");
+    when(staticSchemaParserFactory.getParser(any(), any(), any())).thenReturn(abstractStaticSchemaParser);
+    when(abstractStaticSchemaParser.getIndividualSchema(any())).thenReturn(expected.deepCopy());
+    ObjectNode result = schemaFetcher.getIndividualSchema("step", "K8sApplyStepNode", null);
+    assertThat(result).isNotNull();
+    assertThat(result.get("data").get("title").asText()).isEqualTo("K8sApplyStepNode");
+  }
+
   private String getResource() throws IOException {
     return IOUtils.resourceToString(
         "approvalStageSchema.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
+  }
+
+  private JsonNode readJsonNode(String resourceName) throws IOException {
+    final String resource = IOUtils.resourceToString(resourceName, StandardCharsets.UTF_8, getClass().getClassLoader());
+    ObjectMapper objectMapper = new ObjectMapper();
+    return objectMapper.readTree(resource);
   }
 }
