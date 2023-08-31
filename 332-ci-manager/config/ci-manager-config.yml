@@ -350,6 +350,10 @@ ciExecutionServiceConfig:
       image: harness/ssca-plugin:0.3.0
       entrypoint:
         - /bin/ssca-plugin
+    provenanceConfig:
+      image: harness/ssca-plugin:latest
+      entrypoint:
+        - /bin/ssca-plugin
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.3.3

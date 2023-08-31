@@ -138,6 +138,9 @@ public class CIExecutionConfigService {
       case SSCA_ENFORCEMENT:
         executionConfig.setSscaEnforcementTag(value);
         break;
+      case PROVENANCE:
+        executionConfig.setProvenanceTag(value);
+        break;
       default:
         throw new BadRequestException(format("Field %s does not exist for infra type: K8", field));
     }
@@ -363,6 +366,7 @@ public class CIExecutionConfigService {
         .securityTag(config.getSecurityConfig().getImage())
         .sscaOrchestrationTag(config.getSscaOrchestrationConfig().getImage())
         .sscaEnforcementTag(config.getSscaEnforcementConfig().getImage())
+        .provenanceTag(config.getProvenanceConfig().getImage())
         .build();
   }
 
@@ -383,6 +387,7 @@ public class CIExecutionConfigService {
         .securityTag(config.getSecurityImage())
         .sscaOrchestrationTag(config.getSscaOrchestrationTag())
         .sscaEnforcementTag(config.getSscaEnforcementTag())
+        .provenanceTag(config.getProvenanceTag())
         .build();
   }
 
@@ -526,6 +531,11 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getSscaEnforcementTag();
         }
         break;
+      case PROVENANCE:
+        if (Strings.isNotBlank(ciExecutionConfig.getProvenanceTag())) {
+          image = ciExecutionConfig.getProvenanceTag();
+        }
+        break;
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
@@ -567,6 +577,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
       case SSCA_ENFORCEMENT:
         return ciExecutionServiceConfig.getStepConfig().getSscaEnforcementConfig();
+      case PROVENANCE:
+        return ciExecutionServiceConfig.getStepConfig().getProvenanceConfig();
       case IACM_TERRAFORM_PLUGIN:
       case IACM_APPROVAL:
         return ciExecutionServiceConfig.getStepConfig().getIacmTerraform();

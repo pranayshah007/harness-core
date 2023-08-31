@@ -77,8 +77,10 @@ import io.harness.plugin.service.PluginServiceImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.beans.stepinfo.ProvenanceStepInfo;
 import io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
+import io.harness.ssca.execution.ProvenancePluginHelper;
 import io.harness.ssca.execution.SscaEnforcementPluginHelper;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
 import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
@@ -195,6 +197,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMTerraformPluginInfo) stepInfo);
       case IACM_APPROVAL:
         return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMApprovalInfo) stepInfo);
+      case PROVENANCE:
+        return ProvenancePluginHelper.getProvenanceStepEnvVariables((ProvenanceStepInfo) stepInfo, identifier);
       default:
         throw new IllegalStateException(
             "Unexpected value in getPluginCompatibleEnvVariables: " + stepInfo.getNonYamlInfo().getStepInfoType());
@@ -211,6 +215,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
             (SscaEnforcementStepInfo) step, identifier);
       case IACM_TERRAFORM_PLUGIN:
         return iacmStepsUtils.getSecretVariablesForKubernetes((IACMTerraformPluginInfo) step);
+      case PROVENANCE:
+        return ProvenancePluginHelper.getProvenanceStepSecretVariables((ProvenanceStepInfo) step);
       default:
         return new HashMap<>();
     }
@@ -264,6 +270,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return map;
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case PROVENANCE:
         return SscaOrchestrationStepPluginUtils.getConnectorSecretEnvMap();
       case UPLOAD_ARTIFACTORY:
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);

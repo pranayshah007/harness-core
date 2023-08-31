@@ -322,6 +322,7 @@ public class K8InitializeStepUtils {
       case SSCA_ENFORCEMENT:
       case IACM_TERRAFORM_PLUGIN:
       case IACM_APPROVAL:
+      case PROVENANCE:
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, stageNode,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
@@ -1066,6 +1067,7 @@ public class K8InitializeStepUtils {
       case SSCA_ENFORCEMENT:
       case IACM_TERRAFORM_PLUGIN:
       case IACM_APPROVAL:
+      case PROVENANCE:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       default:
         throw new CIStageExecutionException(
