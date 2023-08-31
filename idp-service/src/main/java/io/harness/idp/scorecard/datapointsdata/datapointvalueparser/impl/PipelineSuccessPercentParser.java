@@ -6,6 +6,7 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl;
 
+import io.harness.idp.common.Constants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserUtils;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineSuccessPercent;
@@ -32,7 +33,7 @@ public class PipelineSuccessPercentParser implements PipelineSuccessPercent {
     Map<String, Object> dataPointInfo =
         ValueParserUtils.getDataPointsInfoMap(0, Collections.singletonList(ciPipelineUrl));
     if (dashboardPipelineHealthInfoObject != null) {
-      dataPointInfo.put(ValueParserConstants.DATA_POINT_VALUE_KEY, percentage);
+      dataPointInfo.put(Constants.DATA_POINT_VALUE_KEY, percentage);
     }
     Map<String, Object> returnMap = new HashMap<>();
     returnMap.put(dataPointIdentifier, dataPointInfo);

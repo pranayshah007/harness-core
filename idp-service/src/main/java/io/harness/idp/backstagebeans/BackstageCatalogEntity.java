@@ -12,6 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -28,10 +30,22 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = BackstageCatalogApiEntity.class, name = "Api")
+  , @JsonSubTypes.Type(value = BackstageCatalogComponentEntity.class, name = "Component"),
+      @JsonSubTypes.Type(value = BackstageCatalogDomainEntity.class, name = "Domain"),
+      @JsonSubTypes.Type(value = BackstageCatalogGroupEntity.class, name = "Group"),
+      @JsonSubTypes.Type(value = BackstageCatalogLocationEntity.class, name = "Location"),
+      @JsonSubTypes.Type(value = BackstageCatalogResourceEntity.class, name = "Resource"),
+      @JsonSubTypes.Type(value = BackstageCatalogSystemEntity.class, name = "System"),
+      @JsonSubTypes.Type(value = BackstageCatalogTemplateEntity.class, name = "Template"),
+      @JsonSubTypes.Type(value = BackstageCatalogUserEntity.class, name = "User")
+})
 public abstract class BackstageCatalogEntity {
   private String apiVersion = "backstage.io/v1alpha1";
   private Metadata metadata;
-  private String kind;
+  @JsonIgnore private String kind;
 
   @Data
   @Builder

@@ -20,9 +20,4 @@ public class GithubMeanTimeToMergeParser implements DataPointParser {
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> strings) {
     throw new UnsupportedOperationException();
   }
-
-  @Override
-  public String getReplaceKey() {
-    throw new UnsupportedOperationException();
-  }
 }

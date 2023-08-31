@@ -21,9 +21,4 @@ public class GithubIsBranchProtectedParser implements DataPointParser {
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
     return new HashMap<>();
   }
-
-  @Override
-  public String getReplaceKey() {
-    return "";
-  }
 }

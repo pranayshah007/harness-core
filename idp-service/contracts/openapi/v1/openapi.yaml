@@ -924,13 +924,18 @@ paths:
           in: header
           name: Harness-Account
           description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
-        - $ref: '#/components/parameters/EntityIdentifier'
         - schema:
             type: string
           in: query
           name: scorecard_identifier
           description: 'Identifier for score card '
-          required: true
+          required: false
+        - schema:
+            type: string
+          in: query
+          name: entity_identifier
+          required: false
+          description: 'Identifier for entity to get the scores for score card '
     parameters: []
   /v1/checks:
     get:

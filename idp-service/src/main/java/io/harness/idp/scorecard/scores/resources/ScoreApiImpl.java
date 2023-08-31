@@ -52,7 +52,7 @@ public class ScoreApiImpl implements ScoresApi {
 
   @Override
   public Response getRecalibratedScoreForScorecard(
-      String entityIdentifier, String scorecardIdentifier, String harnessAccount) {
+      String harnessAccount, String scorecardIdentifier, String entityIdentifier) {
     try {
       ScorecardSummaryInfo scorecardSummaryInfo = scoreService.getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
           harnessAccount, entityIdentifier, scorecardIdentifier);

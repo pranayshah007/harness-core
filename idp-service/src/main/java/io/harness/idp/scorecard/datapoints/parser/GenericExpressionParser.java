@@ -7,6 +7,9 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
+import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_FOR_CHECKS_KEY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.common.ExpressionMode;
@@ -31,16 +34,14 @@ public class GenericExpressionParser implements DataPointParser {
     expressionData.put(dataPoint.getDataSourceIdentifier(), data);
     IdpExpressionEvaluator evaluator = new IdpExpressionEvaluator(expressionData);
 
+    Map<String, Object> dataPointResponse = new HashMap<>();
     Object value = evaluator.evaluateExpression(outcomeExpression, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
     if (value == null) {
       log.warn("Could not evaluate expression for data point {}", dataPoint.getIdentifier());
     }
-    return value;
-  }
-
-  @Override
-  public String getReplaceKey() {
-    throw new UnsupportedOperationException();
+    dataPointResponse.put(DATA_POINT_VALUE_KEY, value);
+    dataPointResponse.put(ERROR_MESSAGE_FOR_CHECKS_KEY, "");
+    return dataPointResponse;
   }
 
   private Map<String, Object> replaceCharsNotSupportedByJexlWithUnderscore(Map<String, Object> map) {

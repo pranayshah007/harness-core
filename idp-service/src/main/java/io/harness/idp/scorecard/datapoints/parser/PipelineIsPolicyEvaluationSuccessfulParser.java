@@ -19,9 +19,4 @@ public class PipelineIsPolicyEvaluationSuccessfulParser implements DataPointPars
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> strings) {
     return data.get(dataPoint.getIdentifier());
   }
-
-  @Override
-  public String getReplaceKey() {
-    throw new UnsupportedOperationException();
-  }
 }

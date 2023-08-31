@@ -6,6 +6,7 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl;
 
+import io.harness.idp.common.Constants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserUtils;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineTestSummaryReport;
@@ -25,7 +26,7 @@ public class PipelineTestSummaryReportParser implements PipelineTestSummaryRepor
     if (reportSummary != null) {
       int totalTestCases = reportSummary.get("total_tests").getAsInt();
       int failedTestCases = reportSummary.get("failed_tests").getAsInt();
-      dataPointInfo.put(ValueParserConstants.DATA_POINT_VALUE_KEY, totalTestCases > 0 && failedTestCases == 0);
+      dataPointInfo.put(Constants.DATA_POINT_VALUE_KEY, totalTestCases > 0 && failedTestCases == 0);
     }
     Map<String, Object> returnMap = new HashMap<>();
     returnMap.put(dataPointIdentifier, dataPointInfo);

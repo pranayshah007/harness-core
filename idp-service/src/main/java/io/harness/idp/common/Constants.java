@@ -63,4 +63,6 @@ public class Constants {
   public static final String GITHUB_IDENTIFIER = "gitHub";
   public static final String CATALOG_IDENTIFIER = "catalog";
   public static final String CUSTOM_IDENTIFIER = "custom";
+  public static final String DATA_POINT_VALUE_KEY = "value";
+  public static final String ERROR_MESSAGE_FOR_CHECKS_KEY = "error_messages";
 }
