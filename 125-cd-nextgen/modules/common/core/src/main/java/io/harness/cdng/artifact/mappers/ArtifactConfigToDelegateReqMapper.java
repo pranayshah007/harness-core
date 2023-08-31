@@ -132,11 +132,9 @@ public class ArtifactConfigToDelegateReqMapper {
       tagRegex = ACCEPT_ALL_REGEX;
     }
 
-    boolean shouldFetchDockerV2DigestSHA256 =
-        artifactConfig.getDigest() != null && isNotEmpty((String) artifactConfig.getDigest().fetchFinalValue());
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(
         (String) artifactConfig.getImagePath().fetchFinalValue(), tag, tagRegex, null, connectorRef, connectorDTO,
-        encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY, shouldFetchDockerV2DigestSHA256);
+        encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY);
   }
 
   public boolean isLastPublishedExpression(String tag) {
@@ -774,7 +772,7 @@ public class ArtifactConfigToDelegateReqMapper {
         (String) artifactConfig.getRepository().fetchFinalValue(),
         (String) artifactConfig.getArtifactPath().fetchFinalValue(),
         (String) artifactConfig.getRepositoryFormat().fetchFinalValue(), artifactRepositoryUrl, tag, tagRegex,
-        connectorRef, artifactoryConnectorDTO, encryptedDataDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY);
+        connectorRef, artifactoryConnectorDTO, encryptedDataDetails, ArtifactSourceType.ARTIFACTORY_REGISTRY, null);
   }
 
   private ArtifactoryGenericArtifactDelegateRequest getArtifactoryGenericArtifactDelegateRequest(
@@ -792,6 +790,10 @@ public class ArtifactConfigToDelegateReqMapper {
         ? null
         : (String) artifactConfig.getArtifactDirectory().fetchFinalValue();
 
+    String artifactFilter = ParameterField.isNull(artifactConfig.getArtifactFilter())
+        ? null
+        : (String) artifactConfig.getArtifactFilter().fetchFinalValue();
+
     if (isLastPublishedExpression(artifactPath)) {
       artifactPathFilter = ALL_REGEX;
     }
@@ -805,7 +807,7 @@ public class ArtifactConfigToDelegateReqMapper {
         (String) artifactConfig.getRepository().fetchFinalValue(),
         (String) artifactConfig.getRepositoryFormat().fetchFinalValue(), artifactDirectory, artifactPath,
         artifactPathFilter, connectorRef, artifactoryConnectorDTO, encryptedDataDetails,
-        ArtifactSourceType.ARTIFACTORY_REGISTRY);
+        ArtifactSourceType.ARTIFACTORY_REGISTRY, artifactFilter);
   }
 
   public static ArtifactSourceDelegateRequest getAcrDelegateRequest(AcrArtifactConfig acrArtifactConfig,

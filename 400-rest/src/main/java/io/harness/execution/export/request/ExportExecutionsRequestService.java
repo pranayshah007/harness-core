@@ -45,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class ExportExecutionsRequestService {
-  private static final long EXPIRE_MILLIS = 75L * 60 * 60 * 1000; // 75 hours
+  private static final long EXPIRE_MILLIS = 12L * 60 * 60 * 1000; // 12 hours
 
   private static final long MAX_QUEUED_REQUESTS = 3;
   private static final long MAX_WORKFLOW_EXECUTIONS = 1000;

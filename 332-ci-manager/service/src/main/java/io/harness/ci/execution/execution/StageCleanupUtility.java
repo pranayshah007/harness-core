@@ -9,9 +9,11 @@ package io.harness.ci.execution.execution;
 
 import static io.harness.beans.sweepingoutputs.PodCleanupDetails.CLEANUP_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_PORT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
@@ -21,6 +23,7 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
@@ -36,6 +39,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.steps.StepUtils;
 
@@ -52,6 +56,8 @@ import lombok.extern.slf4j.Slf4j;
 public class StageCleanupUtility {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private OutcomeService outcomeService;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   public List<TaskSelector> fetchDelegateSelector(Ambiance ambiance) {
     return connectorUtils.fetchDelegateSelector(ambiance, executionSweepingOutputResolver);
@@ -119,11 +125,21 @@ public class StageCleanupUtility {
 
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, clusterConnectorRef);
 
+    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
+    String liteEngineIp = null;
+    if (liteEnginePodDetailsOutcome != null) {
+      liteEngineIp = liteEnginePodDetailsOutcome.getIpAddress();
+    }
+
     return CIK8CleanupTaskParams.builder()
         .k8sConnector(connectorDetails)
         .cleanupContainerNames(k8StageInfraDetails.getContainerNames())
         .namespace(namespace)
         .podNameList(podNames)
+        .LiteEnginePort(LITE_ENGINE_PORT)
+        .isLocal(ciExecutionServiceConfig.isLocal())
+        .LiteEngineIP(liteEngineIp)
         .serviceNameList(new ArrayList<>())
         .build();
   }

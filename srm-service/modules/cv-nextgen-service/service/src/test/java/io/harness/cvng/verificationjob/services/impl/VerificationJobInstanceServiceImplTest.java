@@ -47,6 +47,9 @@ import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
+import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.beans.cvnglog.CVNGLogType;
+import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
@@ -54,8 +57,10 @@ import io.harness.cvng.cdng.beans.v2.Baseline;
 import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.VerificationManagerService;
+import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.beans.params.logsFilterParams.DeploymentLogsFilter;
 import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo;
@@ -63,6 +68,7 @@ import io.harness.cvng.core.entities.AppDynamicsCVConfig.MetricInfo.MetricInfoBu
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.services.api.CVConfigService;
+import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -75,6 +81,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.AnalysisProgressLog;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ExecutionStatus;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceKeys;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.persistence.HPersistence;
@@ -99,6 +106,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -121,6 +131,8 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
 
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
+
+  @Inject private CVNGLogService cvngLogService;
 
   @Mock private Clock clock;
   private Instant fakeNow;
@@ -206,6 +218,58 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     assertThat(
         verificationJobInstanceService.getEmbeddedCVConfig(cvConfig.getUuid(), verificationJobInstance.getUuid()))
         .isEqualTo(cvConfig);
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testProcessVerificationJobInstance_ExecutionLogForRegExPattern() {
+    VerificationJobInstance verificationJobInstance = newVerificationJobInstance();
+    verificationJobInstance.setServiceInstanceDetails(
+        ServiceInstanceDetails.builder().testNodeRegExPattern(".*").controlNodeRegExPattern(".*").build());
+    verificationJobInstance.getResolvedJob().setCvConfigs(null);
+    cvConfigService.save(cvConfig);
+    verificationJobInstanceService.create(Arrays.asList(verificationJobInstance));
+
+    verificationJobInstanceService.processVerificationJobInstance(verificationJobInstance);
+
+    PageResponse<CVNGLogDTO> cvngLogDTOPageResponse = cvngLogService.getCVNGLogs(accountId,
+        verificationJobInstance.getUuid(), DeploymentLogsFilter.builder().logType(CVNGLogType.EXECUTION_LOG).build(),
+        PageParams.builder().page(0).size(10).build());
+
+    assertThat(cvngLogDTOPageResponse.getPageItemCount()).isEqualTo(1);
+    assertThat(((ExecutionLogDTO) cvngLogDTOPageResponse.getContent().get(0)).getLog())
+        .contains("Verify step configured to filter out nodes based on Regex. \n"
+            + "Test node regex pattern: .*\n"
+            + "Control node regex pattern: .*");
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testProcessVerificationJobInstance_ExecutionLogForNodesFromCDValid() {
+    VerificationJobInstance verificationJobInstance = newCanaryVerificationJobInstance();
+    verificationJobInstance.setServiceInstanceDetails(
+        ServiceInstanceDetails.builder()
+            .deployedServiceInstances(IntStream.range(0, 51).boxed().map(i -> "c" + i).collect(Collectors.toList()))
+            .serviceInstancesBeforeDeployment(
+                IntStream.range(0, 51).boxed().map(i -> "p" + i).collect(Collectors.toList()))
+            .serviceInstancesAfterDeployment(
+                IntStream.range(0, 51).boxed().flatMap(i -> Stream.of("p" + i, "c" + i)).collect(Collectors.toList()))
+            .shouldUseNodesFromCD(true)
+            .build());
+    cvConfigService.save(cvConfig);
+    verificationJobInstanceService.create(Arrays.asList(verificationJobInstance));
+
+    verificationJobInstanceService.processVerificationJobInstance(verificationJobInstance);
+
+    PageResponse<CVNGLogDTO> cvngLogDTOPageResponse = cvngLogService.getCVNGLogs(accountId,
+        verificationJobInstance.getUuid(), DeploymentLogsFilter.builder().logType(CVNGLogType.EXECUTION_LOG).build(),
+        PageParams.builder().page(0).size(10).build());
+
+    assertThat(cvngLogDTOPageResponse.getPageItemCount()).isEqualTo(1);
+    assertThat(((ExecutionLogDTO) cvngLogDTOPageResponse.getContent().get(0)).getLog())
+        .contains("Verify step configured to use deployed node(service instance) details from CD.");
   }
 
   @Test
@@ -1185,7 +1249,10 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   }
 
   private VerificationJobInstance createVerificationJobInstance() {
-    VerificationJob verificationJob = builderFactory.canaryVerificationJobBuilder().build();
+    CVConfig newCVConfig = newCVConfig();
+    newCVConfig.setUuid(cvConfigId);
+    VerificationJob verificationJob =
+        builderFactory.canaryVerificationJobBuilder().cvConfigs(Arrays.asList(newCVConfig)).build();
     VerificationJobInstance verificationJobInstance =
         VerificationJobInstance.builder()
             .accountId(accountId)
@@ -1194,6 +1261,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
             .deploymentStartTime(Instant.ofEpochMilli(deploymentStartTimeMs))
             .resolvedJob(verificationJob)
             .startTime(Instant.ofEpochMilli(deploymentStartTimeMs + Duration.ofMinutes(2).toMillis()))
+            .cvConfigMap(Collections.singletonMap(cvConfigId, newCVConfig))
             .build();
     verificationJobInstanceService.create(verificationJobInstance);
     verificationTaskService.createDeploymentVerificationTask(
@@ -1207,6 +1275,27 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         .startTime(Instant.ofEpochMilli(deploymentStartTimeMs + Duration.ofMinutes(2).toMillis()))
         .dataCollectionDelay(Duration.ofMinutes(5))
         .build();
+  }
+
+  private VerificationJobInstance newCanaryVerificationJobInstance() {
+    CVConfig newCVConfig = newCVConfig();
+    newCVConfig.setUuid(cvConfigId);
+    VerificationJob verificationJob =
+        builderFactory.canaryVerificationJobBuilder().cvConfigs(Arrays.asList(newCVConfig)).build();
+    VerificationJobInstance verificationJobInstance =
+        VerificationJobInstance.builder()
+            .accountId(accountId)
+            .executionStatus(ExecutionStatus.QUEUED)
+            .verificationStatus(ActivityVerificationStatus.NOT_STARTED)
+            .deploymentStartTime(Instant.ofEpochMilli(deploymentStartTimeMs))
+            .resolvedJob(verificationJob)
+            .cvConfigMap(Collections.singletonMap(cvConfigId, newCVConfig))
+            .deploymentStartTime(Instant.ofEpochMilli(deploymentStartTimeMs))
+            .startTime(Instant.ofEpochMilli(deploymentStartTimeMs + Duration.ofMinutes(2).toMillis()))
+            .dataCollectionDelay(Duration.ofMinutes(5))
+            .build();
+    verificationJobInstanceService.create(verificationJobInstance);
+    return verificationJobInstance;
   }
 
   private VerificationJobInstance newVerificationJobInstance(Duration duration) {

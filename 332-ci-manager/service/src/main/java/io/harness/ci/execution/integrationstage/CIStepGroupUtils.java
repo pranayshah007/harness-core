@@ -61,6 +61,7 @@ import io.harness.ci.execution.execution.CIExecutionConfigService;
 import io.harness.ci.execution.utils.CIStepInfoUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.cimanager.stages.IntegrationStageConfig;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
@@ -68,6 +69,7 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.execution.provenance.ProvenanceStepGenerator;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
 import io.harness.yaml.core.failurestrategy.OnFailureConfig;
@@ -98,6 +100,7 @@ public class CIStepGroupUtils {
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private ProvenanceStepGenerator provenanceStepGenerator;
 
   private static final String STRING_TRUE = "true";
   private static final String STRING_FALSE = "false";
@@ -131,6 +134,11 @@ public class CIStepGroupUtils {
     boolean enableCacheIntel = saveCache && isHosted;
     if (enableCacheIntel) {
       initializeExecutionSections.add(getRestoreCacheStep(caching, accountId));
+    }
+    if (featureFlagService.isEnabled(FeatureName.SSCA_SLSA_COMPLIANCE, accountId)
+        && (integrationStageConfig instanceof IntegrationStageConfigImpl)) {
+      provenanceStepGenerator.encapsulateBuildAndPushStepsWithStepGroup(
+          executionSections, ((IntegrationStageConfigImpl) integrationStageConfig).getSlsa(), infrastructure.getType());
     }
     initializeExecutionSections.addAll(executionSections);
 

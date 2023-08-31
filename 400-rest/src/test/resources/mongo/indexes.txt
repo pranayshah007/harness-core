@@ -305,6 +305,7 @@ experimentalTimeSeriesAnalysisRecords {"name": "validUntil_1", "background": tru
 exportExecutionsRequests {"name": "accountId_status", "background": true} {"accountId": 1, "status": 1}
 exportExecutionsRequests {"name": "status_expiresAt_nextCleanupIteration", "background": true} {"status": 1, "expiresAt": 1, "nextCleanupIteration": 1}
 exportExecutionsRequests {"name": "status_nextIteration", "background": true} {"status": 1, "nextIteration": 1}
+exportExecutionsRequests {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 externalServiceAuthTokens {"name": "appId_1", "background": true} {"appId": 1}
 externalServiceAuthTokens {"name": "createdAt_1", "background": true} {"createdAt": 1}
 featureFlag {"name": "name_1", "background": true} {"name": 1}

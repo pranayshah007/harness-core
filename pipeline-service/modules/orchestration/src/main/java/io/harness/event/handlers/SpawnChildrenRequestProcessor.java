@@ -36,6 +36,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
@@ -105,18 +106,28 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
           orchestrationEngine.initiateNode(
               ambiance, child.getChildNodeId(), uuid, null, strategyMetadata, InitiateMode.CREATE);
         }
-        MaxConcurrentChildCallback maxConcurrentChildCallback =
-            MaxConcurrentChildCallback.builder()
-                .parentNodeExecutionId(nodeExecutionId)
-                .ambiance(ambiance)
-                .maxConcurrency(maxConcurrency)
-                .proceedIfFailed(request.getChildren().getShouldProceedIfFailed())
-                .build();
 
-        String waitInstanceId = waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, uuid);
-        log.info("SpawnChildrenRequestProcessor registered a waitInstance for maxConcurrency with waitInstanceId: {}",
-            waitInstanceId);
+        // We should register MaxConcurrentChildCallback only when we will use max concurrency.
+        // If there is no need to have concurrency, we should avoid adding callbacks.
+        if (filteredChildren.size() > maxConcurrency) {
+          MaxConcurrentChildCallback maxConcurrentChildCallback =
+              MaxConcurrentChildCallback.builder()
+                  .parentNodeExecutionId(nodeExecutionId)
+                  .planExecutionId(ambiance.getPlanExecutionId())
+                  .maxConcurrency(maxConcurrency)
+                  .proceedIfFailed(request.getChildren().getShouldProceedIfFailed())
+                  .build();
+
+          String waitInstanceId = waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, uuid);
+          log.info("SpawnChildrenRequestProcessor registered a waitInstance for maxConcurrency with waitInstanceId: {}",
+              waitInstanceId);
+        }
         currentChild++;
+      }
+
+      if (callbackIds.isEmpty()) {
+        orchestrationEngine.resumeNodeExecution(ambiance, new HashMap<>(), false);
+        return;
       }
 
       // If some children were skipped due to rollback mode. Then update the concurrent children info.
@@ -162,7 +173,8 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
    *  - If the service being rolled back is not inside matrix, then we want to do a
    *  no-op
    */
-  private List<Child> getFilteredChildren(Ambiance ambiance, List<Child> children) {
+  @VisibleForTesting
+  List<Child> getFilteredChildren(Ambiance ambiance, List<Child> children) {
     if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
       List<PostExecutionRollbackInfo> postExecutionRollbackInfos =
           ambiance.getMetadata().getPostExecutionRollbackInfoList();
@@ -172,10 +184,15 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       String parentNodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
       List<Child> filteredChild = new LinkedList<>();
       for (Child child : children) {
+        StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
         // If the parentNodeId is present in the list of stages being rolledBack. Then initiate the child only if its
         // strategyMetadata matches the strategyMetadata of stage being rolledBack.
-        if (!strategyMetadataMap.containsKey(parentNodeId)
-            || !strategyMetadataMap.get(parentNodeId).contains(child.getStrategyMetadata())) {
+        if (strategyMetadataMap.containsKey(parentNodeId)
+            && !strategyMetadataMap.get(parentNodeId).contains(child.getStrategyMetadata())) {
+          continue;
+        }
+
+        if (!strategyMetadataMap.containsKey(parentNodeId) && strategyMetadata != null) {
           continue;
         }
         filteredChild.add(child);

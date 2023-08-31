@@ -11,9 +11,11 @@ import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
 import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBACK;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
@@ -22,6 +24,9 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -62,12 +67,14 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
         + "      identifier: \"s1\"\n"
         + "  - stage:\n"
         + "      identifier: \"s2\"\n";
+    doReturn(Collections.singletonList(
+                 NodeExecution.builder().uuid("uuid").identifier("s1").status(Status.SUCCEEDED).build()))
+        .when(nodeExecutionService)
+        .fetchStageExecutionsWithProjection(eq("ogId"), anySet());
     String transformedYaml =
-        rollbackModeYamlTransformer.transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, null);
+        rollbackModeYamlTransformer.transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, "ogId");
     String expected = "pipeline:\n"
         + "  stages:\n"
-        + "    - stage:\n"
-        + "        identifier: s2\n"
         + "    - stage:\n"
         + "        identifier: s1\n";
     assertThat(transformedYaml).isEqualTo(expected);
@@ -194,5 +201,91 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
     assertThat(reversedStages.size()).isEqualTo(2);
     assertThat(reversedStages.get(1))
         .isEqualTo(pipelineNode.get(YAMLFieldNameConstants.PIPELINE).get(YAMLFieldNameConstants.STAGES).get(1));
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testTransformProcessedYamlWithParallelStagesForPostExecutionRollback() {
+    doReturn(Collections.singletonList(NodeExecution.builder().identifier("s1").build()))
+        .when(nodeExecutionService)
+        .getAllWithFieldIncluded(anySet(), anySet());
+    String original = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s1\"\n"
+        + "  - parallel:\n"
+        + "    - stage:\n"
+        + "        identifier: \"s2\"\n"
+        + "    - stage:\n"
+        + "        identifier: \"s3\"\n"
+        + "    - stage:\n"
+        + "        identifier: \"s4\"\n";
+    doReturn(List.of(NodeExecution.builder().uuid("uuid").identifier("s1").status(Status.SUCCEEDED).build(),
+                 NodeExecution.builder().uuid("uuid2").identifier("s2").status(Status.SUCCEEDED).build(),
+                 NodeExecution.builder().uuid("uuid4").identifier("s4").status(Status.SUCCEEDED).build(),
+                 NodeExecution.builder()
+                     .uuid("uuid3")
+                     .identifier("s3")
+                     .stepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                     .status(Status.RUNNING)
+                     .build()))
+        .when(nodeExecutionService)
+        .fetchStageExecutionsWithProjection(eq("ogId"), anySet());
+    String transformedYaml =
+        rollbackModeYamlTransformer.transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, "ogId");
+    String expected = "pipeline:\n"
+        + "  stages:\n"
+        + "    - parallel:\n"
+        + "        - stage:\n"
+        + "            identifier: s2\n"
+        + "        - stage:\n"
+        + "            identifier: s4\n"
+        + "    - stage:\n"
+        + "        identifier: s1\n";
+    assertThat(transformedYaml).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testHandleParallelStageForPostExecutionRollback() throws IOException {
+    String original = "pipeline:\n"
+        + "  stages:\n"
+        + "  - parallel:\n"
+        + "    - stage:\n"
+        + "        identifier: \"s1\"\n"
+        + "    - stage:\n"
+        + "        identifier: \"s2\"\n"
+        + "  - stage:\n"
+        + "        identifier: s3\n";
+    YamlField yamlField = YamlUtils.readTree(original);
+    JsonNode pipelineNode;
+    try {
+      pipelineNode = YamlUtils.readTree(original).getNode().getCurrJsonNode();
+    } catch (IOException e) {
+      throw new UnexpectedException("Unable to transform processed YAML while executing in Rollback Mode");
+    }
+    ArrayNode stagesList =
+        (ArrayNode) pipelineNode.get(YAMLFieldNameConstants.PIPELINE).get(YAMLFieldNameConstants.STAGES);
+
+    ArrayNode reversedStages = stagesList.deepCopy().removeAll();
+    rollbackModeYamlTransformer.handleParallelStagesForPostExecutionRollback(
+        yamlField.fromYamlPath("pipeline").fromYamlPath("stages").getNode().asArray().get(0).getCurrJsonNode(),
+        Collections.singletonList("s1"), reversedStages);
+    assertThat(reversedStages.size()).isEqualTo(1);
+    assertThat(reversedStages.get(0).get(YAMLFieldNameConstants.PARALLEL).size()).isEqualTo(1);
+    assertThat(reversedStages.get(0).get(YAMLFieldNameConstants.PARALLEL).get(0))
+        .isEqualTo(pipelineNode.get(YAMLFieldNameConstants.PIPELINE)
+                       .get(YAMLFieldNameConstants.STAGES)
+                       .get(0)
+                       .get(YAMLFieldNameConstants.PARALLEL)
+                       .get(0));
+
+    reversedStages = stagesList.deepCopy().removeAll();
+    rollbackModeYamlTransformer.handleParallelStagesForPostExecutionRollback(
+        yamlField.fromYamlPath("pipeline").fromYamlPath("stages").getNode().asArray().get(0).getCurrJsonNode(),
+        Collections.singletonList("s3"), reversedStages);
+    assertThat(reversedStages.size()).isEqualTo(0);
   }
 }

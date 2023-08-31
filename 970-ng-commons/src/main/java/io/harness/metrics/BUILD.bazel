@@ -16,7 +16,11 @@ java_library(
     name = "module",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
-    deps = ["@maven//:org_apache_logging_log4j_log4j_api"],
+    deps = [
+        "//:lombok",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+    ],
 )
 
 run_analysis_per_module()

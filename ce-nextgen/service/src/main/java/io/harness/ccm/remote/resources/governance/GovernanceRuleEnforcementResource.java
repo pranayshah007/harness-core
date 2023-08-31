@@ -500,7 +500,7 @@ public class GovernanceRuleEnforcementResource {
   @ApiOperation(value = "Get enforcement list", nickname = "getRuleEnforcement")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "getRuleEnforcement", description = "Fetch Rule Enforcement ",
-      summary = "Fetch Rule Enforcement for account",
+      summary = "Fetch Rule Enforcements for account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns List of rules  Enforcement",
@@ -547,7 +547,7 @@ public class GovernanceRuleEnforcementResource {
   @ApiOperation(value = "execution Detail", nickname = "getExecutionDetail")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "getExecutionDetail", description = "execution Detail",
-      summary = "Fetch Rule Enforcement count for account",
+      summary = "Fetch Rule Enforcement execution details for account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -556,7 +556,7 @@ public class GovernanceRuleEnforcementResource {
   public ResponseDTO<ExecutionDetails>
   executionDetail(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Request body containing  Rule Enforcement count object")
+      @RequestBody(required = true, description = "Request body containing  Execution detail object")
       @Valid ExecutionDetailDTO executionDetailDTO) {
     if (executionDetailDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);

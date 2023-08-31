@@ -24,4 +24,10 @@ public class ProxyThroughDsl implements DataSourceLocation {
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs) {
     return null;
   }
+
+  @Override
+  public String replaceRequestBodyInputValuePlaceholdersIfAny(
+      Map<String, Set<String>> dataPointIdsAndInputValues, String requestBody) {
+    return null;
+  }
 }

@@ -924,13 +924,18 @@ paths:
           in: header
           name: Harness-Account
           description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
-        - $ref: '#/components/parameters/EntityIdentifier'
         - schema:
             type: string
           in: query
           name: scorecard_identifier
           description: 'Identifier for score card '
-          required: true
+          required: false
+        - schema:
+            type: string
+          in: query
+          name: entity_identifier
+          required: false
+          description: 'Identifier for entity to get the scores for score card '
     parameters: []
   /v1/checks:
     get:
@@ -975,7 +980,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CheckDetailsRequest'
       x-internal: true
-  /v1/checks/{check-id}:
+  '/v1/checks/{check-id}':
     get:
       summary: Get check details for given checkId
       tags:
@@ -1072,7 +1077,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ScorecardDetailsRequest'
       x-internal: true
-  /v1/scorecards/{scorecard-id}:
+  '/v1/scorecards/{scorecard-id}':
     get:
       summary: Get scorecard details for given scorecardId
       tags:
@@ -1133,7 +1138,7 @@ paths:
     get:
       summary: Get all entity facets for given kind
       tags:
-       - Scorecards
+        - Scorecards
       responses:
         '200':
           $ref: '#/components/responses/FacetsResponse'
@@ -2278,7 +2283,7 @@ components:
           type: string
           x-stoplight:
             id: ps0abyx9gk9is
-        labels:
+        tags:
           type: array
           x-stoplight:
             id: jvxsddo5xl3u2
@@ -2390,6 +2395,7 @@ components:
       x-stoplight:
         id: qg6l73nz6jl5o
       type: object
+      x-internal: true
       properties:
         data_source_identifier:
           type: string
@@ -2416,8 +2422,6 @@ components:
         - data_point_identifier
         - operator
         - value
-        - conditional_input_value
-      x-internal: true
     ScorecardChecks:
       title: ScorecardChecks
       x-stoplight:
@@ -2768,14 +2772,20 @@ components:
           x-stoplight:
             id: 7wrcffd5ubf5z
         status:
+          type: string
           x-stoplight:
             id: pblstkz463ptv
           enum:
             - PASS
             - FAIL
+        weight:
+          type: integer
+          x-stoplight:
+            id: xp87r8p7xwfgm
       required:
         - name
         - status
+        - weight
     ScorecardSummaryInfo:
       title: ScorecardSummaryInfo
       x-stoplight:
@@ -2793,10 +2803,6 @@ components:
           x-stoplight:
             id: 52k4qmnsh5ng9
           format: int64
-        entity_identifier:
-          type: string
-          x-stoplight:
-            id: z9yqnn9ti3i5r
         score:
           type: integer
           x-stoplight:
@@ -2807,12 +2813,16 @@ components:
             id: edl8hdvg9ingt
           items:
             $ref: '#/components/schemas/CheckStatus'
+        description:
+          type: string
+          x-stoplight:
+            id: mp6ecvb3rzwui
       required:
         - scorecard_name
         - timestamp
-        - entity_identifier
         - score
         - checks_statuses
+        - description
     ScorecardSummaryResponse:
       title: ScorecardSummaryResponse
       x-stoplight:
@@ -2931,25 +2941,15 @@ components:
       description: Request Content for fetching the data point data from data source
       x-internal: true
       properties:
-        ci_pipeline_url:
-          type: string
-          x-stoplight:
-            id: r53d288yjhv45
-        service_url:
-          type: string
-          x-stoplight:
-            id: tm3qx5d51qp2s
         data_source_location:
           $ref: '#/components/schemas/DataSourceLocationInfo'
-        github_url:
+        catalog_info_yaml:
           type: string
           x-stoplight:
-            id: nphiny6fsdwgd
+            id: vq58vp3kej201
       required:
-        - ci_pipeline_url
-        - service_url
         - data_source_location
-        - github_url
+        - catalog_info_yaml
     DataPointInputValues:
       title: DataPointInputValues
       x-stoplight:

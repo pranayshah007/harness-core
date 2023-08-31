@@ -57,6 +57,7 @@ public class DelegateAgentModule extends AbstractModule {
       log.info("Delegate is running with mTLS enabled.");
     }
 
+    setupProxyConfig();
     install(new DelegateTokensModule(configuration));
     install(new DelegateServiceTokenModule(configuration));
     install(new SchedulingTaskEventMessageModule(configuration));
@@ -130,5 +131,20 @@ public class DelegateAgentModule extends AbstractModule {
         .clientCertificateKeyFilePath(configuration.getClientCertificateKeyFilePath())
         .trustAllCertificates(configuration.isTrustAllCertificates())
         .build();
+  }
+
+  private static void setupProxyConfig() {
+    final String proxyUser = System.getenv().get("PROXY_USER");
+    if (isNotBlank(proxyUser)) {
+      System.setProperty("http.proxyUser", proxyUser);
+      System.setProperty("https.proxyUser", proxyUser);
+      System.setProperty("org.asynchttpclient.AsyncHttpClientConfig.proxy.user", proxyUser);
+    }
+    final String proxyPassword = System.getenv().get("PROXY_PASSWORD");
+    if (isNotBlank(proxyPassword)) {
+      System.setProperty("http.proxyPassword", proxyPassword);
+      System.setProperty("https.proxyPassword", proxyPassword);
+      System.setProperty("org.asynchttpclient.AsyncHttpClientConfig.proxy.password", proxyPassword);
+    }
   }
 }

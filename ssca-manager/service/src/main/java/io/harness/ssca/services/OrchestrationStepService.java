@@ -18,4 +18,6 @@ public interface OrchestrationStepService {
 
   OrchestrationSummaryResponse getOrchestrationSummary(
       String accountId, String orgIdentifier, String projectIdentifier, String orchestrationId);
+
+  String sbom(String org, String project, String orchestrationId, String harnessAccount);
 }

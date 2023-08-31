@@ -9,7 +9,6 @@ package io.harness.steps.customstage.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
@@ -88,16 +87,16 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     // bytes for complex objects. We will deprecate the first one in v1
     planCreationResponseMap.put(stepsField.getNode().getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
-                              .toBuilder()
-                              .putDependencyMetadata(field.getUuid(),
-                                  Dependency.newBuilder()
-                                      .putAllMetadata(dependencyMetadata.getMetadataMap())
-                                      .setNodeMetadata(HarnessStruct.newBuilder()
-                                                           .putAllFields(dependencyMetadata.getNodeMetadataMap())
-                                                           .build())
-                                      .build())
-                              .build())
+            .dependencies(
+                DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                    .toBuilder()
+                    .putDependencyMetadata(field.getUuid(),
+                        Dependency.newBuilder()
+                            .putAllMetadata(dependencyMetadata.getMetadataMap())
+                            .setNodeMetadata(
+                                HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
+                            .build())
+                    .build())
             .build());
 
     return planCreationResponseMap;
@@ -107,12 +106,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, YamlField config) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField stageYamlField = context.getCurrentField();
-    String nextNodeUuid = null;
-    if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
-        && context.getDependency().getMetadataMap().containsKey(YAMLFieldNameConstants.NEXT_ID)) {
-      nextNodeUuid = (String) kryoSerializer.asObject(
-          context.getDependency().getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID).toByteArray());
-    }
+    String nextNodeUuid = PlanCreatorUtilsV1.getNextNodeUuid(kryoSerializer, context.getDependency());
     if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
       stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
     }

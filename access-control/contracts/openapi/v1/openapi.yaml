@@ -13,22 +13,22 @@ servers:
 tags:
   - name: Account Roles
     description: This contains APIs for Account-scoped Roles.
-    x-displayName: Account Roles [Beta]
+    x-displayName: 'Account Roles [Beta]'
   - name: Organization Roles
     description: This contains APIs for Organization-scoped Roles.
-    x-displayName: Organization Roles [Beta]
+    x-displayName: 'Organization Roles [Beta]'
   - name: Project Roles
     description: This contains APIs for Project-scoped Roles.
-    x-displayName: Project Roles [Beta]
+    x-displayName: 'Project Roles [Beta]'
   - name: Account Role Assignments
     description: This contains APIs for Account-scoped Role Assignments.
-    x-displayName: Account Role Assignments [Beta]
+    x-displayName: 'Account Role Assignments [Beta]'
   - name: Org Role Assignments
     description: This contains APIs for Organization-scoped Role Assignments.
-    x-displayName: Organization Role Assignments [Beta]
+    x-displayName: 'Organization Role Assignments [Beta]'
   - name: Project Role Assignments
     description: This contains APIs for Project-scoped Role Assignments.
-    x-displayName: Project Role Assignments [Beta]
+    x-displayName: 'Project Role Assignments [Beta]'
 paths:
   /v1/roles:
     parameters: []
@@ -65,6 +65,24 @@ paths:
         - x-api-key: []
       tags:
         - Account Roles
+  /v1/public-access/enable:
+    parameters: []
+    post:
+      summary: Enable Public Access for a Resource
+      operationId: enable-public-access
+      description: Enable Public Access for a Resource
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/PublicAccessRequest'
+      responses:
+        '204':
+          description: No Content
+      security:
+        - x-api-key: []
+      tags:
+        - Public Access
+      x-internal: true
   '/v1/roles/{role}':
     parameters:
       - $ref: '#/components/parameters/RoleParam'
@@ -701,6 +719,43 @@ components:
         harness_managed:
           type: boolean
           description: Is harness managed
+    PublicAccessRequest:
+      title: PublicAccessRequest
+      x-stoplight:
+        id: iwewenxaom066
+      type: object
+      description: Request to mark a resource as public
+      properties:
+        resource_identifier:
+          type: string
+          description: Identifier of the resource
+        resource_type:
+          type: string
+          description: Type of the resource.
+        resource_scope:
+          $ref: '#/components/schemas/Scope'
+      required:
+        - resource_identifier
+        - resource_type
+        - resource_scope
+    Scope:
+      title: Scope
+      x-stoplight:
+        id: 5ozno3ho0k6r7
+      type: object
+      description: Scope of the Resource
+      properties:
+        account:
+          type: string
+          description: Account Identifier
+        org:
+          type: string
+          description: Org Identifier
+        project:
+          type: string
+          description: Project Identifier
+      required:
+        - account
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1064,3 +1119,8 @@ components:
                 managed: false
       description: Role Request body
       required: true
+    PublicAccessRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PublicAccessRequest'

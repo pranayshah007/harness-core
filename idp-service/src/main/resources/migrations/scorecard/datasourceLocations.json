@@ -37,5 +37,21 @@
       },
       "requestBody": "{\"query\":\"query {\\n    repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    {REPOSITORY_BRANCH_NAME_REPLACER}{\\n      name\\n      branchProtectionRule{\\n          allowsDeletions\\n          allowsForcePushes\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
+  },
+  {
+    "id": "64edb326148f531a384f0107",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_is_file_exists",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "https://api.github.com/graphql",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      },
+      "requestBody": "{\"query\":\"query {\\n  repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    defaultBranchRef {\\n      repository {\\n        object(expression : \\\"{FILE_EXISTS_REPLACER}\\\") {\\n          ... on Tree {\\n            id\\n            entries {\\n              name\\n              path\\n              type\\n            }\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+    }
   }
 ]

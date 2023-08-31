@@ -27,6 +27,7 @@ import io.harness.ng.core.migration.timescale.CreateRuntimeInputsInfoTable;
 import io.harness.ng.core.migration.timescale.CreateServiceInstancesLicenseDailyReport;
 import io.harness.ng.core.migration.timescale.CreateServicesLicenseDailyReport;
 import io.harness.ng.core.migration.timescale.CreateStageTable;
+import io.harness.ng.core.migration.timescale.CreateTimeBucketListCDStatusFunction;
 import io.harness.ng.core.migration.timescale.GetActiveServicesByDateFunction;
 import io.harness.ng.core.migration.timescale.GetServiceInstancesByDateFunction;
 
@@ -68,6 +69,7 @@ public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(17, CreateServicesLicenseDailyReport.class))
         .add(Pair.of(18, CreateCDStageHelmManifestTable.class))
         .add(Pair.of(19, AddChartVersionToCDStageHelmManifestTable.class))
+        .add(Pair.of(20, CreateTimeBucketListCDStatusFunction.class))
         .build();
   }
 }

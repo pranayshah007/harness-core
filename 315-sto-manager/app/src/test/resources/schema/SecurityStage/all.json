@@ -1611,12 +1611,29 @@
           "enum": [
             "branch",
             "tag",
-            "PR"
+            "PR",
+            "CommitSha"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CommitSha"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CommitShaBuildSpec"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -2503,6 +2520,25 @@
           "format": "int64"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CommitShaBuildSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BuildSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "commitSha"
+          ],
+          "properties": {
+            "commitSha": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ConnectorConversionInfo": {
@@ -4893,6 +4929,22 @@
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "IACMApprovalInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "IACMCostEstimationInfo": {
       "allOf": [
         {
           "$ref": "#/definitions/StepSpecType"
@@ -11698,6 +11750,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/IACMApprovalInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IACMCostEstimation"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMCostEstimationInfo"
               }
             }
           }

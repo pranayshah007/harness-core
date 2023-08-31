@@ -8,6 +8,7 @@
 package io.harness.cdng.manifest.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
@@ -15,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo.ManifestStoreInfoBuilder;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -102,5 +104,10 @@ public class CustomRemoteStoreConfig implements StoreConfig {
       invalidParameters.add(CustomRepoStoreConfigKeys.filePath);
     }
     return invalidParameters;
+  }
+
+  @Override
+  public void populateManifestStoreInfo(ManifestStoreInfoBuilder manifestStoreInfoBuilder) {
+    manifestStoreInfoBuilder.folderPath(getParameterFieldValue(this.getFilePath()));
   }
 }

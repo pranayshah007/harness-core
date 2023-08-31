@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.config;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.FileYamlDTO;
@@ -60,12 +62,16 @@ public class ManifestFileHandlerImpl extends FileHandler<ManifestFile> {
   public String getIdentifier(MigrationContext context, ManifestFile manifestFile) {
     String prefix = getPrefix();
     MigrationInputDTO inputDTO = context.getInputDTO();
+
+    String fileName = manifestFile.getFileName();
     String identifier = MigratorUtility.generateManifestIdentifier(
-        prefix + manifestFile.getFileName(), inputDTO.getIdentifierCaseFormat());
+        isEmpty(prefix) ? fileName : prefix + fileName, inputDTO.getIdentifierCaseFormat());
+
     String kind = handleKind(applicationManifest);
     if (StringUtils.isNotBlank(kind)) {
       identifier = MigratorUtility.generateManifestIdentifier(
-          prefix + kind + manifestFile.getFileName(), inputDTO.getIdentifierCaseFormat());
+          isEmpty(prefix) ? kind + manifestFile.getFileName() : prefix + " " + kind + manifestFile.getFileName(),
+          inputDTO.getIdentifierCaseFormat());
     }
     return identifier;
   }
@@ -81,24 +87,26 @@ public class ManifestFileHandlerImpl extends FileHandler<ManifestFile> {
     if (fileName.contains("/")) {
       fileName = Lists.reverse(Lists.newArrayList(fileName.split("/"))).get(0);
     }
-    String name =
-        MigratorUtility.generateManifestIdentifier(prefix + " " + fileName, inputDTO.getIdentifierCaseFormat());
+    String name = MigratorUtility.generateManifestIdentifier(
+        isEmpty(prefix) ? fileName : prefix + " " + fileName, inputDTO.getIdentifierCaseFormat());
+
     String kind = handleKind(applicationManifest);
     if (StringUtils.isNotBlank(kind)) {
-      name = MigratorUtility.generateManifestIdentifier(prefix + kind + fileName, inputDTO.getIdentifierCaseFormat());
+      name = isEmpty(prefix) ? (kind + fileName) : (prefix + " " + kind + fileName);
+      name = MigratorUtility.generateManifestIdentifier(name, inputDTO.getIdentifierCaseFormat());
     }
     return handleExtension(name);
   }
 
   private static String handleKind(ApplicationManifest applicationManifest) {
     if (applicationManifest.getKind().equals(AppManifestKind.VALUES)) {
-      return " ValuesOverride ";
+      return "ValuesOverride ";
     }
     if (applicationManifest.getKind().equals(AppManifestKind.OC_PARAMS)) {
-      return " OpenShift ";
+      return "OpenShift ";
     }
     if (applicationManifest.getKind().equals(AppManifestKind.KUSTOMIZE_PATCHES)) {
-      return " Kustomize ";
+      return "Kustomize ";
     }
     return null;
   }
