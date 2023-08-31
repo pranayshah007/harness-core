@@ -76,8 +76,8 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/PublicAccessRequest'
       responses:
-        '204':
-          description: No Content
+        '201':
+          $ref: '#/components/responses/PublicAccessResponse'
       security:
         - x-api-key: []
       tags:
@@ -1052,6 +1052,12 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    PublicAccessResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: object
   requestBodies:
     CreateRoleRequest:
       content:
