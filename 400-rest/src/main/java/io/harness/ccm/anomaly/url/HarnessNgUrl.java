@@ -127,6 +127,9 @@ public class HarnessNgUrl {
         if (StringUtils.isNotEmpty(anomalyEntity.getWorkloadType())) {
           filters.add(getFilter("workloadType", anomalyEntity.getWorkloadType(), cloudProvider));
         }
+        if (StringUtils.isNotEmpty(anomalyEntity.getServiceName())) {
+          filters.add(getFilter("serviceName", anomalyEntity.getServiceName(), cloudProvider));
+        }
         break;
       default:
         throw new InternalError("Invalid cloudProvider");
