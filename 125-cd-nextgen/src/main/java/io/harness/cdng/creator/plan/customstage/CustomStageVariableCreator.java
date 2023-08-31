@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.plan.customstage;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.cdng.creator.plan.stage.CustomStageNode;
@@ -57,7 +58,7 @@ public class CustomStageVariableCreator extends AbstractStageVariableCreator<Cus
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(YAMLFieldNameConstants.STAGE, Collections.singleton("Custom"));
+    return Collections.singletonMap(YAMLFieldNameConstants.STAGE, Collections.singleton(CUSTOM));
   }
 
   @Override

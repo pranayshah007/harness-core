@@ -38,6 +38,7 @@ public class YAMLFieldNameConstants {
   public final String CLONE_CODEBASE = "cloneCodebase";
   public final String DISABLED = "disabled";
   public final String WHEN = "when";
+  public final String CUSTOM = "Custom";
 
   public final String STEP = "step";
   public final String STEPS = "steps";

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.steps.StepSpecTypeConstants.INIT_CONTAINER_V2_STEP_TYPE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.creator.plan.customstage.CustomStageStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyInternalStep;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStrategyStep;
@@ -79,7 +80,7 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(ServiceNowImportSetStep.STEP_TYPE, ServiceNowImportSetStep.class);
     engineSteps.put(StagesStep.STEP_TYPE, StagesStep.class);
     engineSteps.put(StagesStep.DEPRECATED_STEP_TYPE, StagesStep.class);
-    // engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
+    engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
 
     // Feature Flag
     engineSteps.put(FlagConfigurationStep.STEP_TYPE, FlagConfigurationStep.class);

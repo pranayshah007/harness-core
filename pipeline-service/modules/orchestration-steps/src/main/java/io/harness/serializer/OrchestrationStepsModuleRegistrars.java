@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.creator.plan.stage.CustomStageNode;
 import io.harness.cf.pipeline.FeatureFlagStageNode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.plancreator.pipeline.PipelineConfig;
@@ -154,18 +155,18 @@ public class OrchestrationStepsModuleRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
                                            .build())
                    .build())
-          //          .add(YamlSchemaRootClass.builder()
-          //                   .entityType(EntityType.CUSTOM_STAGE)
-          //                   .availableAtProjectLevel(true)
-          //                   .availableAtOrgLevel(false)
-          //                   .availableAtAccountLevel(false)
-          //                   .clazz(CustomStageNode.class)
-          //                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-          //                                           .namespace(SchemaNamespaceConstants.CUSTOM)
-          //                                           .modulesSupported(ImmutableList.of(ModuleType.PMS))
-          //                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
-          //                                           .build())
-          //                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.CUSTOM_STAGE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(CustomStageNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CUSTOM)
+                                           .modulesSupported(ImmutableList.of(ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
+                                           .build())
+                   .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.FEATURE_FLAG_STAGE)
                    .availableAtProjectLevel(true)

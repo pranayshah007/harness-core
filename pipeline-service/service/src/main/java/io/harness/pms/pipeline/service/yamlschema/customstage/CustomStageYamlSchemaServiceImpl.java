@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.yaml;
+package io.harness.pms.pipeline.service.yamlschema.customstage;
 
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;

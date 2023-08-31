@@ -16,7 +16,7 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaService;
-// import io.harness.cdng.yaml.CustomStageYamlSchemaService;
+// import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
 import io.harness.yaml.schema.YamlSchemaProvider;

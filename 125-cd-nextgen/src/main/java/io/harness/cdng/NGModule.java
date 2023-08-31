@@ -119,8 +119,6 @@ import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageReportServiceImpl;
 import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.cdng.yaml.CdYamlSchemaServiceImpl;
-import io.harness.cdng.yaml.CustomStageYamlSchemaService;
-import io.harness.cdng.yaml.CustomStageYamlSchemaServiceImpl;
 import io.harness.filter.FilterType;
 import io.harness.filter.impl.FilterServiceImpl;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -185,7 +183,6 @@ public class NGModule extends AbstractModule {
     bind(EcrResourceService.class).to(EcrResourceServiceImpl.class);
     bind(JiraResourceService.class).to(JiraResourceServiceImpl.class);
     bind(CdYamlSchemaService.class).to(CdYamlSchemaServiceImpl.class);
-    bind(CustomStageYamlSchemaService.class).to(CustomStageYamlSchemaServiceImpl.class);
     bind(GcpResourceService.class).to(GcpResourceServiceImpl.class);
     bind(S3ResourceService.class).to(S3ResourceServiceImpl.class);
     bind(GcsResourceService.class).to(GcsResourceServiceImpl.class);
