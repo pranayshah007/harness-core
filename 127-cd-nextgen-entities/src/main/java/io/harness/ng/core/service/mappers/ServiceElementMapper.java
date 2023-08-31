@@ -16,6 +16,10 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -23,6 +27,7 @@ import io.harness.ng.core.service.entity.ServiceBasicInfo;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 
 import lombok.experimental.UtilityClass;
 
@@ -31,6 +36,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class ServiceElementMapper {
+  public static final String BOOLEAN_TRUE_VALUE = "true";
   public ServiceEntity toServiceEntity(String accountId, ServiceRequestDTO serviceRequestDTO) {
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .identifier(serviceRequestDTO.getIdentifier())
@@ -71,12 +77,43 @@ public class ServiceElementMapper {
                                                 .tags(convertToMap(serviceEntity.getTags()))
                                                 .version(serviceEntity.getVersion())
                                                 .yaml(serviceEntity.getYaml())
+                                                .entityGitDetails(getEntityGitDetails(serviceEntity))
+                                                .storeType(serviceEntity.getStoreType())
+                                                .connectorRef(serviceEntity.getConnectorRef())
+                                                .cacheResponseMetadataDTO(getCacheResponse(serviceEntity))
                                                 .build();
 
     if (includeVersionInfo && serviceEntity.getType() != null) {
       serviceResponseDTO.setV2Service(true);
     }
     return serviceResponseDTO;
+  }
+
+  private EntityGitDetails getEntityGitDetails(ServiceEntity serviceEntity) {
+    if (serviceEntity.getStoreType() == StoreType.REMOTE) {
+      return GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata();
+    }
+    return null; // Default if storeType is not remote
+  }
+
+  private CacheResponseMetadataDTO getCacheResponse(ServiceEntity serviceEntity) {
+    if (serviceEntity.getStoreType() == StoreType.REMOTE) {
+      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+
+      if (cacheResponse != null) {
+        return createCacheResponseMetadataDTO(cacheResponse);
+      }
+    }
+
+    return null;
+  }
+
+  private CacheResponseMetadataDTO createCacheResponseMetadataDTO(CacheResponse cacheResponse) {
+    return CacheResponseMetadataDTO.builder()
+        .cacheState(cacheResponse.getCacheState())
+        .ttlLeft(cacheResponse.getTtlLeft())
+        .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+        .build();
   }
 
   public ServiceResponseDTO writeAccessListDTO(ServiceEntity serviceEntity) {

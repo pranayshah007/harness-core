@@ -176,13 +176,18 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
+
+      // cannot rely on Mongo repository throwing DuplicateKeyException since we're saving to git first
+      validateIdentifierIsUnique(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
+          serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier());
+
       Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(serviceEntity);
       ServiceEntityValidator serviceEntityValidator =
           serviceEntityValidatorFactory.getServiceEntityValidator(serviceEntity);
       serviceEntityValidator.validate(serviceEntity);
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity service = serviceRepository.save(serviceEntity);
+            ServiceEntity service = serviceRepository.saveGitAware(serviceEntity);
             outboxService.save(getServiceCreateEvent(serviceEntity));
             return service;
           }));
@@ -190,11 +195,22 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(),
           serviceEntity.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdService;
-    } catch (DuplicateKeyException ex) {
+    } catch (Exception ex) {
+      log.error(String.format("Error while saving service [%s]", serviceEntity.getIdentifier()), ex);
+      throw new InvalidRequestException(
+          String.format("Error while saving service [%s]: %s", serviceEntity.getIdentifier(), ex.getMessage()));
+    }
+  }
+
+  private void validateIdentifierIsUnique(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    Optional<ServiceEntity> serviceEntity =
+        serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+    if (serviceEntity.isPresent()) {
       throw new DuplicateFieldException(
-          getDuplicateServiceExistsErrorMessage(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
-              serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier()),
-          USER_SRE, ex);
+          getDuplicateServiceExistsErrorMessage(accountId, orgIdentifier, projectIdentifier, serviceIdentifier),
+          USER_SRE);
     }
   }
 
