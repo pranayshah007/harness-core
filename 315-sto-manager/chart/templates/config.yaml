@@ -69,3 +69,4 @@ data:
   OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
   OPA_SERVER_SECRET: "dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq"
   {{- end }}
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
