@@ -20,10 +20,11 @@ public class RunnersModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    final var delegateName = System.getenv().get("DELEGATE_GROUP_NAME");
+    final var delegateName = System.getenv().get("DELEGATE_NAME");
     final var delegateNamespace = System.getenv().get("DELEGATE_NAMESPACE");
-    final var runnerConfig = new K8SRunnerConfig(
-        delegateNamespace, delegateName, configuration.getAccountId(), configuration.getLogStreamingServiceBaseUrl());
+    final var delegateTaskParamsFile = System.getenv().get("DELEGATE_TASK_PATH");
+    final var runnerConfig = new K8SRunnerConfig(delegateNamespace, delegateName, configuration.getDelegateToken(),
+        delegateTaskParamsFile, configuration.getAccountId(), configuration.getLogStreamingServiceBaseUrl());
     install(new K8SRunnerModule(runnerConfig));
   }
 }
