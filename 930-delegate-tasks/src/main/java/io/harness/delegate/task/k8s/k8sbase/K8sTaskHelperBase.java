@@ -2329,7 +2329,7 @@ public class K8sTaskHelperBase {
 
         String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlFolderPath).toString();
         savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
-        return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
+        return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams,
             kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback,
             kustomizeManifest.getCommandFlags());
 
@@ -2381,9 +2381,9 @@ public class K8sTaskHelperBase {
 
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
-        return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            kustomizeManifest.getPluginPath(), manifestFilesDirectory, filesList, true, manifestOverrideFiles,
-            executionLogCallback, kustomizeManifest.getCommandFlags());
+        return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams, kustomizeManifest.getPluginPath(),
+            manifestFilesDirectory, filesList, true, manifestOverrideFiles, executionLogCallback,
+            kustomizeManifest.getCommandFlags());
 
       default:
         throw new UnsupportedOperationException(

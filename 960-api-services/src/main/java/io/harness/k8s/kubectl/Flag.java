@@ -42,7 +42,13 @@ public enum Flag {
     }
   },
   client,
-  output;
+  output,
+  enableAlphaPlugins {
+    @Override
+    public String toString() {
+      return "enable-alpha-plugins";
+    }
+  };
 
   TreeMap<Version, String> kubectlVersionMap;
   TreeMap<Version, String> ocVersionMap;
