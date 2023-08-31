@@ -61,11 +61,11 @@ public class SendProvisionedCICreditsToSegmentHandler extends CreditExpiryIterat
     try {
       telemetryReporter.sendGroupEvent(ciCredit.getAccountIdentifier(), userId, map,
           Collections.singletonMap(ALL, true), TelemetryOption.builder().sendForCommunity(true).build());
-      log.info("Successfully sent ci_build_credits_provisioned telemetry event for account {}",
-          ciCredit.getAccountIdentifier());
+      log.info("Successfully sent ci_build_credits_provisioned telemetry event for account: {} and creditID: {}",
+          ciCredit.getAccountIdentifier(), ciCredit.getUuid());
     } catch (Exception ex) {
-      log.error("Failed to send ci_build_credits_provisioned telemetry event for account {}",
-          ciCredit.getAccountIdentifier(), ex);
+      log.error("Failed to send ci_build_credits_provisioned telemetry event for account: {} and creditID: {}",
+          ciCredit.getAccountIdentifier(), ciCredit.getUuid(), ex);
     }
   }
 
