@@ -8,7 +8,7 @@
 package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
-import static io.harness.idp.common.Constants.ERROR_MESSAGE_FOR_CHECKS_KEY;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,7 +40,7 @@ public class GenericExpressionParser implements DataPointParser {
       log.warn("Could not evaluate expression for data point {}", dataPoint.getIdentifier());
     }
     dataPointResponse.put(DATA_POINT_VALUE_KEY, value);
-    dataPointResponse.put(ERROR_MESSAGE_FOR_CHECKS_KEY, "");
+    dataPointResponse.put(ERROR_MESSAGE_KEY, "");
     return dataPointResponse;
   }
 

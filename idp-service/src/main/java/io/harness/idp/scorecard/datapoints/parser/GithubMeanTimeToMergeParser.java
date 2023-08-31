@@ -7,10 +7,17 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
+import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.common.CommonUtils;
+import io.harness.idp.common.DateUtils;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,6 +25,27 @@ import java.util.Set;
 public class GithubMeanTimeToMergeParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> strings) {
-    throw new UnsupportedOperationException();
+    Map<String, Object> dataPointInfo = new HashMap<>();
+    List<Map<String, Object>> edges = (List<Map<String, Object>>) CommonUtils.findObjectByName(data, "edges");
+
+    int numberOfPullRequests = 0;
+    long totalTimeToMerge = 0;
+    for (Map<String, Object> edge : edges) {
+      Map<String, Object> node = (Map<String, Object>) edge.get("node");
+      long createdAtMillis = DateUtils.parseTimestamp((String) node.get("createdAt"));
+      long mergedAtMillis = DateUtils.parseTimestamp((String) node.get("mergedAt"));
+      long timeToMergeMillis = mergedAtMillis - createdAtMillis;
+      totalTimeToMerge += timeToMergeMillis;
+      numberOfPullRequests++;
+    }
+
+    long value = 0;
+    if (numberOfPullRequests != 0) {
+      double meanTimeToMergeMillis = (double) totalTimeToMerge / numberOfPullRequests;
+      value = (long) (meanTimeToMergeMillis / (60 * 60 * 1000));
+    }
+    dataPointInfo.put(DATA_POINT_VALUE_KEY, value);
+    dataPointInfo.put(ERROR_MESSAGE_KEY, null);
+    return dataPointInfo;
   }
 }

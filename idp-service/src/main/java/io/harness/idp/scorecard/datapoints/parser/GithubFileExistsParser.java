@@ -17,28 +17,31 @@ import io.harness.idp.common.CommonUtils;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.IDP)
-public class GithubIsBranchProtectedParser implements DataPointParser {
+public class GithubFileExistsParser implements DataPointParser {
   @Override
-  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
+  public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPointIdentifier, Set<String> inputValues) {
     Map<String, Object> dataPointInfo = new HashMap<>();
-    if (CommonUtils.findObjectByName(data, "ref") == null) {
+    if (CommonUtils.findObjectByName(data, "object") == null) {
       dataPointInfo.put(DATA_POINT_VALUE_KEY, null);
       dataPointInfo.put(ERROR_MESSAGE_KEY, INVALID_BRANCH_NAME_ERROR);
       return dataPointInfo;
     }
-    Map<String, Object> branchProtectionRule =
-        (Map<String, Object>) CommonUtils.findObjectByName(data, "branchProtectionRule");
-
-    boolean value = false;
-    if (branchProtectionRule != null) {
-      value = !(boolean) branchProtectionRule.get("allowsDeletions")
-          && !(boolean) branchProtectionRule.get("allowsForcePushes");
+    List<Map<String, Object>> entries = (List<Map<String, Object>>) CommonUtils.findObjectByName(data, "entries");
+    boolean isPresent = false;
+    for (Map<String, Object> entry : entries) {
+      String fileName = (String) entry.get("name");
+      if (fileName.contains(inputValues.iterator().next())) {
+        isPresent = true;
+        break;
+      }
     }
-    dataPointInfo.put(DATA_POINT_VALUE_KEY, value);
+
+    dataPointInfo.put(DATA_POINT_VALUE_KEY, isPresent);
     dataPointInfo.put(ERROR_MESSAGE_KEY, null);
     return dataPointInfo;
   }

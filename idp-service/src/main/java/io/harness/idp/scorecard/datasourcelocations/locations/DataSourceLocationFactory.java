@@ -23,7 +23,7 @@ import lombok.AllArgsConstructor;
 public class DataSourceLocationFactory {
   private GithubMeanTimeToMergePRDsl githubMeanTimeToMergePRDsl;
   private GithubIsBranchProtectionSetDsl githubIsBranchProtectionSetDsl;
-  private GithubGitLeaksFileExistsDsl githubGitLeaksFileExistsDsl;
+  private GithubFileExistsDsl githubFileExistsDsl;
   private NoOpDsl noOpDsl;
 
   public DataSourceLocation getDataSourceLocation(String identifier) {
@@ -34,7 +34,7 @@ public class DataSourceLocationFactory {
       case GITHUB_IS_BRANCH_PROTECTION_SET:
         return githubIsBranchProtectionSetDsl;
       case GITHUB_GIT_LEAKS_FILE_EXISTS:
-        return githubGitLeaksFileExistsDsl;
+        return githubFileExistsDsl;
 
       // Catalog
       case CATALOG:

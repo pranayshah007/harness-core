@@ -2283,7 +2283,7 @@ components:
           type: string
           x-stoplight:
             id: ps0abyx9gk9is
-        labels:
+        tags:
           type: array
           x-stoplight:
             id: jvxsddo5xl3u2

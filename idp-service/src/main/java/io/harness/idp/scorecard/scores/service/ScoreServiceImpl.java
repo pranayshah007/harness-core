@@ -9,7 +9,7 @@ package io.harness.idp.scorecard.scores.service;
 
 import static io.harness.expression.common.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
-import static io.harness.idp.common.Constants.ERROR_MESSAGE_FOR_CHECKS_KEY;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.JacksonUtils.convert;
 import static io.harness.idp.common.JacksonUtils.readValue;
 import static io.harness.idp.scorecard.scorecardchecks.mappers.CheckDetailsMapper.constructExpressionFromRules;
@@ -429,7 +429,7 @@ public class ScoreServiceImpl implements ScoreService {
         StringBuilder reasonBuilder = new StringBuilder();
         for (Rule rule : checkEntity.getRules()) {
           String errorMessageExpression = constructExpressionFromRules(
-              Collections.singletonList(rule), checkEntity.getRuleStrategy(), ERROR_MESSAGE_FOR_CHECKS_KEY, true);
+              Collections.singletonList(rule), checkEntity.getRuleStrategy(), ERROR_MESSAGE_KEY, true);
           String lhsExpression = constructExpressionFromRules(
               Collections.singletonList(rule), checkEntity.getRuleStrategy(), DATA_POINT_VALUE_KEY, true);
           Object lhsValue = evaluator.evaluateExpression(lhsExpression, RETURN_NULL_IF_UNRESOLVED);

@@ -24,8 +24,7 @@ public class ValueParserUtils {
   public Map<String, Object> getDataPointsInfoMap(Object dataPointValue, List<String> pipelinesForErrorMessage) {
     Map<String, Object> dataPointsInfo = new HashMap<>();
     dataPointsInfo.put(Constants.DATA_POINT_VALUE_KEY, dataPointValue);
-    dataPointsInfo.put(
-        Constants.ERROR_MESSAGE_FOR_CHECKS_KEY, getErrorMessageForChecksFromPipelineUrls(pipelinesForErrorMessage));
+    dataPointsInfo.put(Constants.ERROR_MESSAGE_KEY, getErrorMessageForChecksFromPipelineUrls(pipelinesForErrorMessage));
     return dataPointsInfo;
   }
 

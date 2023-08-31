@@ -87,7 +87,7 @@ public class CheckEntity implements PersistentEntity, CreatedByAware, UpdatedByA
   private boolean harnessManaged = true; // dropdown (default or custom) - we know data source and data point
   private boolean isCustom; // for the purpose of UI
 
-  private List<String> labels;
+  private List<String> tags;
   private CheckDetails.DefaultBehaviourEnum defaultBehaviour;
   private String failMessage;
   private boolean isDeleted;

@@ -7,7 +7,6 @@
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser.impl;
 
 import io.harness.idp.common.Constants;
-import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserConstants;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.ValueParserUtils;
 import io.harness.idp.scorecard.datapointsdata.datapointvalueparser.base.PipelineTestSummaryReport;
 

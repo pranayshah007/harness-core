@@ -11,7 +11,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
+import io.harness.eraro.ResponseMessage;
 
 import java.util.Map;
 import java.util.Objects;
@@ -71,7 +71,9 @@ public class DirectDslClient implements DslClient {
       return Response.status(response.code()).entity(Objects.requireNonNull(response.body()).string()).build();
     } catch (Exception e) {
       log.error("Error in request execution through direct dsl client. Error = {}", e.getMessage(), e);
-      throw new InvalidRequestException("Request execution failed in direct dsl client");
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message("Error occurred while fetching data").build())
+          .build();
     }
   }
 }

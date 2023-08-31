@@ -36,7 +36,7 @@ public class CheckDetailsMapper {
     checkDetails.setFailMessage(checkEntity.getFailMessage());
     checkDetails.setRuleStrategy(checkEntity.getRuleStrategy());
     checkDetails.setRules(checkEntity.getRules());
-    checkDetails.setLabels(checkEntity.getLabels());
+    checkDetails.setTags(checkEntity.getTags());
     return checkDetails;
   }
 
@@ -54,7 +54,7 @@ public class CheckDetailsMapper {
         .failMessage(checkDetails.getFailMessage())
         .ruleStrategy(checkDetails.getRuleStrategy())
         .rules(checkDetails.getRules())
-        .labels(checkDetails.getLabels())
+        .tags(checkDetails.getTags())
         .build();
   }
 

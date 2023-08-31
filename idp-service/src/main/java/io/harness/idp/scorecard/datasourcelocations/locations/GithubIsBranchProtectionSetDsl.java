@@ -7,6 +7,8 @@
 
 package io.harness.idp.scorecard.datasourcelocations.locations;
 
+import static io.harness.idp.common.Constants.DSL_RESPONSE;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_BRANCH_PROTECTED;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,9 +20,9 @@ import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
-import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
 
 import com.google.inject.Inject;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.core.Response;
@@ -37,27 +39,28 @@ public class GithubIsBranchProtectionSetDsl implements DataSourceLocation {
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs) {
-    ApiRequestDetails apiRequestDetails =
-        ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
-    String apiUrl = apiRequestDetails.getUrl();
-    String method = apiRequestDetails.getMethod();
+    ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
     Map<String, String> headers = apiRequestDetails.getHeaders();
-    String requestBody = apiRequestDetails.getRequestBody();
-
     matchAndReplaceHeaders(headers, replaceableHeaders);
-    requestBody = replaceRequestBodyPlaceholdersIfAny(possibleReplaceableRequestBodyPairs, requestBody);
-    Map<String, Set<String>> dataPointIdsAndInputValues =
-        convertDataPointEntityMapToDataPointIdMap(dataPointsAndInputValues);
-    requestBody = replaceRequestBodyInputValuePlaceholdersIfAny(dataPointIdsAndInputValues, requestBody);
-
+    String requestBody =
+        constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPointsAndInputValues);
     DslClient dslClient =
         dslClientFactory.getClient(accountIdentifier, possibleReplaceableRequestBodyPairs.get("{REPO_SCM}"));
-    Response response = dslClient.call(accountIdentifier, apiUrl, method, headers, requestBody);
 
-    return GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
+    Response response;
+    Map<String, Object> data = new HashMap<>();
+    response = dslClient.call(
+        accountIdentifier, apiRequestDetails.getUrl(), apiRequestDetails.getMethod(), headers, requestBody);
+    if (response.getStatus() == 200) {
+      data.put(DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
+    } else {
+      data.put(ERROR_MESSAGE_KEY, ((Map<String, Object>) response.getEntity()).get("message"));
+    }
+    return data;
   }
 
-  private String replaceRequestBodyInputValuePlaceholdersIfAny(
+  @Override
+  public String replaceRequestBodyInputValuePlaceholdersIfAny(
       Map<String, Set<String>> dataPointsAndInputValues, String requestBody) {
     if (dataPointsAndInputValues.containsKey(GITHUB_IS_BRANCH_PROTECTED)
         && !CollectionUtils.isEmpty(dataPointsAndInputValues.get(GITHUB_IS_BRANCH_PROTECTED))) {

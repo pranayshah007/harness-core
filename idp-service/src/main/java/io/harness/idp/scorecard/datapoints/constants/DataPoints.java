@@ -18,6 +18,7 @@ public class DataPoints {
   // Github
   public static final String GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
   public static final String GITHUB_IS_BRANCH_PROTECTED = "isBranchProtected";
+  public static final String GITHUB_IS_FILE_EXISTS = "isFileExists";
 
   // Catalog
   public static final String CATALOG_TECH_DOCS = "techDocsAnnotation";
@@ -29,4 +30,5 @@ public class DataPoints {
   public static final String IS_POLICY_EVALUATION_SUCCESSFUL_IN_PIPELINE = "isPolicyEvaluationSuccessful";
   public static final String PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS = "%ofCIPipelinePassingInPast7Days";
   public static final String PIPELINE_TEST_FAILING_IN_CI_IS_ZERO = "noTestsFailingInCiPipeline";
+  public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
 }
