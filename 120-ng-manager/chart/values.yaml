@@ -83,6 +83,13 @@ global:
   chaos:
     enabled: false
   stackDriverLoggingEnabled: false
+  smtpCreateSecret:
+    enabled: false
+    SMTP_PASSWORD: ""
+    SMTP_HOST: ""
+    SMTP_USERNAME: ""
+    SMTP_USE_SSL: "true"
+    SMTP_PORT: "465"
   ingress:
     # -- create ingress objects
     enabled: false
@@ -131,7 +138,7 @@ initContainer:
     repository: busybox
     tag: "1.35.0"
     digest: ""
-    imagePullSecrets: []  
+    imagePullSecrets: []
 
 waitForInitContainer:
   image:
