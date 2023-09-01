@@ -128,22 +128,26 @@ public class ScoreServiceImpl implements ScoreService {
 
   @Override
   public List<ScorecardSummaryInfo> getScoresSummaryForAnEntity(String accountIdentifier, String entityIdentifier) {
-    Map<String, ScoreEntity> lastComputesScoresForScorecards = getScoreEntityAndScoreCardIdentifierMapping(
-        scoreRepository.getAllLatestScoresByScorecardsForAnEntity(accountIdentifier, entityIdentifier)
-            .getMappedResults());
-
-    Map<String, Scorecard> scoreCardIdentifierMapping =
+    Map<String, Scorecard> scorecardIdentifierEntityMapping =
         scorecardService.getAllScorecardsAndChecksDetails(accountIdentifier)
             .stream()
             .collect(Collectors.toMap(Scorecard::getIdentifier, Function.identity()));
 
-    return scoreCardIdentifierMapping.keySet()
+    Map<String, ScoreEntity> lastComputedScoresForScorecards = getScoreEntityAndScoreCardIdentifierMapping(
+        scoreRepository.getAllLatestScoresByScorecardsForAnEntity(accountIdentifier, entityIdentifier)
+            .getMappedResults());
+
+    // deleting scores for deleted scorecards
+    deleteScoresForDeletedScoreCards(
+        accountIdentifier, scorecardIdentifierEntityMapping, lastComputedScoresForScorecards);
+
+    return lastComputedScoresForScorecards.keySet()
         .stream()
-        .filter(scoreCardIdentifier -> scoreCardIdentifierMapping.get(scoreCardIdentifier).isPublished())
+        .filter(scoreCardIdentifier -> scorecardIdentifierEntityMapping.get(scoreCardIdentifier).isPublished())
         .map(scoreCardIdentifier
-            -> ScorecardSummaryInfoMapper.toDTO(lastComputesScoresForScorecards.get(scoreCardIdentifier),
-                scoreCardIdentifierMapping.get(scoreCardIdentifier).getName(),
-                scoreCardIdentifierMapping.get(scoreCardIdentifier).getDescription()))
+            -> ScorecardSummaryInfoMapper.toDTO(lastComputedScoresForScorecards.get(scoreCardIdentifier),
+                scorecardIdentifierEntityMapping.get(scoreCardIdentifier).getName(),
+                scorecardIdentifierEntityMapping.get(scoreCardIdentifier).getDescription()))
         .collect(Collectors.toList());
   }
 
@@ -158,20 +162,24 @@ public class ScoreServiceImpl implements ScoreService {
 
   @Override
   public List<ScorecardScore> getScorecardScoreOverviewForAnEntity(String accountIdentifier, String entityIdentifier) {
-    Map<String, ScoreEntity> lastComputesScoresForScorecards = getScoreEntityAndScoreCardIdentifierMapping(
-        scoreRepository.getAllLatestScoresByScorecardsForAnEntity(accountIdentifier, entityIdentifier)
-            .getMappedResults());
-
     Map<String, Scorecard> scorecardIdentifierEntityMapping =
         scorecardService.getAllScorecardsAndChecksDetails(accountIdentifier)
             .stream()
             .collect(Collectors.toMap(Scorecard::getIdentifier, Function.identity()));
 
-    return scorecardIdentifierEntityMapping.keySet()
+    Map<String, ScoreEntity> lastComputedScoresForScorecards = getScoreEntityAndScoreCardIdentifierMapping(
+        scoreRepository.getAllLatestScoresByScorecardsForAnEntity(accountIdentifier, entityIdentifier)
+            .getMappedResults());
+
+    // deleting scores for deleted scorecards
+    deleteScoresForDeletedScoreCards(
+        accountIdentifier, scorecardIdentifierEntityMapping, lastComputedScoresForScorecards);
+
+    return lastComputedScoresForScorecards.keySet()
         .stream()
         .filter(scorecardIdentifier -> scorecardIdentifierEntityMapping.get(scorecardIdentifier).isPublished())
         .map(scorecardIdentifier
-            -> ScorecardScoreMapper.toDTO(lastComputesScoresForScorecards.get(scorecardIdentifier),
+            -> ScorecardScoreMapper.toDTO(lastComputedScoresForScorecards.get(scorecardIdentifier),
                 scorecardIdentifierEntityMapping.get(scorecardIdentifier).getName(),
                 scorecardIdentifierEntityMapping.get(scorecardIdentifier).getDescription()))
         .collect(Collectors.toList());
@@ -455,5 +463,17 @@ public class ScoreServiceImpl implements ScoreService {
       List<ScoreEntityByScorecardIdentifier> scoreEntityByScorecardIdentifierList) {
     return scoreEntityByScorecardIdentifierList.stream().collect(Collectors.toMap(
         ScoreEntityByScorecardIdentifier::getScorecardIdentifier, ScoreEntityByScorecardIdentifier::getScoreEntity));
+  }
+
+  private void deleteScoresForDeletedScoreCards(String accountIdentifier,
+      Map<String, Scorecard> scorecardIdentifierMapping, Map<String, ScoreEntity> lastComputedScores) {
+    List<String> scoreIdsToBeDeleted = new ArrayList<>();
+
+    for (Map.Entry<String, ScoreEntity> lastComputedScore : lastComputedScores.entrySet()) {
+      if (!scorecardIdentifierMapping.containsKey(lastComputedScore.getKey())) {
+        scoreIdsToBeDeleted.add(lastComputedScore.getValue().getId());
+      }
+    }
+    scoreRepository.deleteAllByAccountIdentifierAndIdIn(accountIdentifier, scoreIdsToBeDeleted);
   }
 }
