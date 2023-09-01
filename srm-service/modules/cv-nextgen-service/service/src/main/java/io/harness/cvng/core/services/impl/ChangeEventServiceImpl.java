@@ -416,11 +416,9 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   @Override
   public void mapSRMAnalysisExecutionsToDeploymentActivities(SRMAnalysisStepExecutionDetail stepExecutionDetail) {
     List<DeploymentActivity> deploymentActivities =
-        hPersistence.createQuery(DeploymentActivity.class)
-            .filter(DeploymentActivityKeys.planExecutionId, stepExecutionDetail.getPlanExecutionId())
-            .filter(DeploymentActivityKeys.stageId, stepExecutionDetail.getStageId())
-            .filter(ActivityKeys.type, ActivityType.DEPLOYMENT)
-            .asList();
+        getAnalysisStepAssociatedDeploymentActivities(stepExecutionDetail.getAccountId(),
+            stepExecutionDetail.getOrgIdentifier(), stepExecutionDetail.getProjectIdentifier(),
+            stepExecutionDetail.getPlanExecutionId(), stepExecutionDetail.getStageId());
     if (isNotEmpty(deploymentActivities)) {
       deploymentActivities.forEach(activity -> {
         List<String> analysisImpactExecutionIds = activity.getAnalysisImpactExecutionIds();
@@ -431,11 +429,25 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     }
   }
 
+  @Override
+  public List<DeploymentActivity> getAnalysisStepAssociatedDeploymentActivities(
+      String accountId, String orgIdentifier, String projectIdentifier, String planExecutionId, String stageId) {
+    return hPersistence.createQuery(DeploymentActivity.class)
+        .filter(ActivityKeys.accountId, accountId)
+        .filter(ActivityKeys.orgIdentifier, orgIdentifier)
+        .filter(ActivityKeys.projectIdentifier, projectIdentifier)
+        .filter(DeploymentActivityKeys.planExecutionId, planExecutionId)
+        .filter(DeploymentActivityKeys.stageId, stageId)
+        .filter(ActivityKeys.type, ActivityType.DEPLOYMENT)
+        .asList();
+  }
+
   private void mapSRMAnalysisExecutionsToDeploymentActivities(String activityId) {
     DeploymentActivity deploymentActivity = hPersistence.get(DeploymentActivity.class, activityId);
     if (deploymentActivity != null) {
       List<SRMAnalysisStepDetailDTO> analysisStepDetails =
-          srmAnalysisStepService.getSRMAnalysisSummaries(deploymentActivity.getMonitoredServiceIdentifier(),
+          srmAnalysisStepService.getSRMAnalysisSummaries(deploymentActivity.getAccountId(),
+              deploymentActivity.getOrgIdentifier(), deploymentActivity.getProjectIdentifier(),
               deploymentActivity.getPlanExecutionId(), deploymentActivity.getStageId());
       List<String> analysisImpactExecutionIds = deploymentActivity.getAnalysisImpactExecutionIds();
       analysisImpactExecutionIds.addAll(analysisStepDetails.stream()
