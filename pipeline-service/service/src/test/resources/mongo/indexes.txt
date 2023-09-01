@@ -140,6 +140,7 @@ triggersNG {"name": "accId_signature_index", "background": true} {"accountId": 1
 triggersNG {"name": "accId_signature_index_for_multibuildmetadata", "background": true} {"accountId": 1, "metadata.multiBuildMetadata.pollingConfig.signature": 1}
 triggersNG {"name": "accId_sourcerepo_index", "background": true} {"accountId": 1, "metadata.webhook.type": 1}
 triggersNG {"name": "nextIterations_1", "background": true} {"nextIterations": 1}
+triggersNG {"name": "type_nextIterations", "background": true} {"type": 1, "nextIterations": 1}
 triggersNG {"name": "type_repoUrl", "background": true} {"type": 1, "metadata.webhook.git.connectorIdentifier": 1, "accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 triggersNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_identifier", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 triggersNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_targetIdentifier_triggerType_identifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "targetIdentifier": 1, "targetType": 1, "identifier": 1}
