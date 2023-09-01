@@ -8,6 +8,7 @@
 package io.harness.ng.core.dto;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
@@ -20,6 +21,7 @@ import io.harness.ng.core.notification.NotificationSettingConfigDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -65,4 +67,8 @@ public class UserGroupRequestV2DTO {
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) @Size(max = 1024) String description;
   @Schema(description = NGCommonEntityConstants.TAGS) @Size(max = 128) Map<String, String> tags;
   @Schema(description = "Specifies whether or not the userGroup is managed by harness.") private boolean harnessManaged;
+
+  public List<String> getUsers() {
+    return isEmpty(users) ? new ArrayList<>() : users;
+  }
 }
