@@ -53,7 +53,9 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -557,11 +559,13 @@ public class InfrastructureValidatorTest extends CategoryTest {
     ParameterField connectorRef = new ParameterField<>(null, null, true, "expression2", null, true);
     PdcInfrastructure infrastructure =
         PdcInfrastructure.builder().credentialsRef(credentialsRef).hosts(hosts).connectorRef(connectorRef).build();
-
+    List<ParameterField<?>> fieldList = new ArrayList<>();
+    fieldList.add(hosts);
+    fieldList.add(connectorRef);
     doNothing().when(validator).validateExpression(eq(credentialsRef));
     doThrow(new InvalidRequestException("Unresolved Expressions : [expression1] , [expression2]"))
         .when(validator)
-        .requireOne(eq(hosts), eq(connectorRef));
+        .requireOne((fieldList));
 
     assertThatThrownBy(() -> validator.validateInfrastructure(infrastructure, null, null))
         .isInstanceOf(InvalidRequestException.class)

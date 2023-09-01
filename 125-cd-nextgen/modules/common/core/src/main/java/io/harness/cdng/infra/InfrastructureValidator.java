@@ -56,8 +56,10 @@ import io.harness.pms.yaml.ParameterField;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
@@ -154,7 +156,10 @@ public class InfrastructureValidator {
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
         validateExpression(pdcInfrastructure.getCredentialsRef());
         if (!infrastructure.isDynamicallyProvisioned()) {
-          requireOne(pdcInfrastructure.getHosts(), pdcInfrastructure.getConnectorRef());
+          List<ParameterField<?>> fields = new ArrayList<>();
+          fields.add(pdcInfrastructure.getHosts());
+          fields.add(pdcInfrastructure.getConnectorRef());
+          requireOne(fields);
         }
         validatePdcInfrastructure((PdcInfrastructure) infrastructure);
         break;
@@ -538,10 +543,15 @@ public class InfrastructureValidator {
     return !ParameterField.isNull(input) && input.isExpression() && input.getValue() == null;
   }
 
-  public void requireOne(ParameterField<?> first, ParameterField<?> second) {
-    if (unresolvedExpression(first) && unresolvedExpression(second)) {
-      throw new InvalidRequestException(
-          format("Unresolved Expressions : [%s] , [%s]", first.getExpressionValue(), second.getExpressionValue()));
+  public void requireOne(List<ParameterField<?>> parameterFields) {
+    for (ParameterField<?> field : parameterFields) {
+      if (!unresolvedExpression(field)) {
+        return;
+      }
     }
+    List<String> listOfUnresolvedExpressions =
+        parameterFields.stream().map(ParameterField::getExpressionValue).collect(Collectors.toList());
+    String unresolvedExpressions = "[" + String.join(",", listOfUnresolvedExpressions) + "]";
+    throw new InvalidRequestException(format("Unresolved Expressions : %s", unresolvedExpressions));
   }
 }
