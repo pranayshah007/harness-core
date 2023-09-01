@@ -577,6 +577,8 @@ components:
           - identifier
           - created
           - updated
+          - license
+          - supplier
         default: name
       description: Parameter on the basis of which sorting is done.
   requestBodies:
