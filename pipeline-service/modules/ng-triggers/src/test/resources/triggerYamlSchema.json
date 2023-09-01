@@ -728,6 +728,9 @@
           "artifactDirectory" : {
             "type" : "string"
           },
+          "artifactFilter" : {
+            "type" : "string"
+          },
           "artifactPath" : {
             "type" : "string"
           },
