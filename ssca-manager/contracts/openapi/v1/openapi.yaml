@@ -95,8 +95,8 @@ paths:
       summary: Download SBOM for an artifact
       responses:
         '200':
-          $ref: '#/components/responses/TokenIssueResponseBody'
-      operationId: download-sbom
+          $ref: '#/components/responses/ArtifactSbomResponseBody'
+      operationId: downloadSbom
       x-stoplight:
         id: 65dvz43ksx8pa
       description: Download SBOM for an artifact
