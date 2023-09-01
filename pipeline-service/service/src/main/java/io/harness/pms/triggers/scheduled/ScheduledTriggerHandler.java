@@ -64,7 +64,7 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
   @Inject private TriggerExecutionHelper triggerExecutionHelper;
 
   public void registerIterators(IteratorConfig iteratorConfig) {
-    persistenceIteratorFactory.createLoopIteratorWithDedicatedThreadPool(
+    persistenceIteratorFactory.createLoopIteratorWithDedicatedThreadPoolNoRecoverAfterPause(
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("ScheduledTriggerProcessor")
             .poolSize(iteratorConfig.getThreadPoolCount())
