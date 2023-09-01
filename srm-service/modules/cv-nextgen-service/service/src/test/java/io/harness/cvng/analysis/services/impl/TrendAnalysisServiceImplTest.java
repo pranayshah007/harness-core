@@ -34,7 +34,6 @@ import io.harness.cvng.analysis.entities.ServiceGuardLogAnalysisTask;
 import io.harness.cvng.analysis.entities.TimeSeriesAnomalousPatterns;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
-import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.TrendAnalysisService;
 import io.harness.cvng.beans.TimeSeriesMetricType;
@@ -205,9 +204,6 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
                                                         .filter("verificationTaskId", verificationTaskId)
                                                         .get();
     assertThat(anomalousPatterns).isNotNull();
-    TimeSeriesShortTermHistory shortTermHistory = hPersistence.createQuery(TimeSeriesShortTermHistory.class)
-                                                      .filter("verificationTaskId", verificationTaskId)
-                                                      .get();
 
     List<LogAnalysisCluster> savedClusters =
         hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
@@ -258,9 +254,6 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
                                                         .filter("verificationTaskId", verificationTaskId)
                                                         .get();
     assertThat(anomalousPatterns).isNotNull();
-    TimeSeriesShortTermHistory shortTermHistory = hPersistence.createQuery(TimeSeriesShortTermHistory.class)
-                                                      .filter("verificationTaskId", verificationTaskId)
-                                                      .get();
 
     List<LogAnalysisCluster> savedClusters =
         hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
@@ -298,9 +291,6 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
                                                         .filter("verificationTaskId", verificationTaskId)
                                                         .get();
     assertThat(anomalousPatterns).isNotNull();
-    TimeSeriesShortTermHistory shortTermHistory = hPersistence.createQuery(TimeSeriesShortTermHistory.class)
-                                                      .filter("verificationTaskId", verificationTaskId)
-                                                      .get();
 
     List<LogAnalysisCluster> savedClusters =
         hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
@@ -374,7 +364,6 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
           ServiceGuardTxnMetricAnalysisDataDTO.builder()
               .isKeyTransaction(false)
               .cumulativeSums(ServiceGuardTxnMetricAnalysisDataDTO.MetricSumDTO.builder().risk(0.5).data(0.9).build())
-              .shortTermHistory(Arrays.asList(0.1, 0.2, 0.3, 0.4))
               .anomalousPatterns(
                   Collections.singletonList(TimeSeriesAnomaliesDTO.builder()
                                                 .transactionName(txn)
@@ -412,7 +401,6 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
       ServiceGuardTxnMetricAnalysisDataDTO txnMetricData =
           ServiceGuardTxnMetricAnalysisDataDTO.builder()
               .isKeyTransaction(false)
-              .shortTermHistory(Arrays.asList(0.1, 0.2, 0.3, 0.4))
               .anomalousPatterns(
                   Collections.singletonList(TimeSeriesAnomaliesDTO.builder()
                                                 .transactionName(txn)
