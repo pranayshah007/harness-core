@@ -82,6 +82,7 @@ public class IrregularApprovalInstanceHandler implements MongoPersistenceIterato
         IrregularApprovalInstanceHandler.class,
         MongoPersistenceIterator.<ApprovalInstance, SpringFilterExpander>builder()
             .mode(ProcessMode.PUMP)
+            .unsorted(true)
             .clazz(ApprovalInstance.class)
             .fieldName(CustomApprovalInstanceKeys.nextIterations)
             .targetInterval(ofSeconds(iteratorConfig.getTargetIntervalInSeconds()))
