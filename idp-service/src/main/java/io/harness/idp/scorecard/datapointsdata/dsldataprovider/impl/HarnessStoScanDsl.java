@@ -40,6 +40,9 @@ public class HarnessStoScanDsl implements DslDataProvider {
   public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
     Map<String, Object> returnData = new HashMap<>();
 
+    log.info("STO scan setup DSL invoked for account - {} datapoints - {}", accountIdentifier,
+        dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());
+
     // ci pipeline detail
     Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
         DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));

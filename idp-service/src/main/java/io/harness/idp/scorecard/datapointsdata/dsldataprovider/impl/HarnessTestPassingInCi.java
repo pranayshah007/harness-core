@@ -45,6 +45,9 @@ public class HarnessTestPassingInCi implements DslDataProvider {
   public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
     Map<String, Object> returnData = new HashMap<>();
 
+    log.info("HarnessTestPassingInCi DSL invoked for account - {} datapoints - {}", accountIdentifier,
+        dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());
+
     Map<String, String> ciIdentifiers = DslUtils.getCiPipelineUrlIdentifiers(
         DslUtils.getCiUrlFromCatalogInfoYaml(dataSourceDataPointInfo.getCatalogInfoYaml()));
     Object responseCI = null;

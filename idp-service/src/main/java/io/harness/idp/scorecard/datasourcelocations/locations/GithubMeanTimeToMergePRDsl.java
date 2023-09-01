@@ -41,7 +41,8 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs) {
+      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
+      Map<String, String> possibleReplaceableUrlPairs) {
     ApiRequestDetails apiRequestDetails = fetchApiRequestDetails(dataSourceLocationEntity);
     Map<String, String> headers = apiRequestDetails.getHeaders();
     matchAndReplaceHeaders(headers, replaceableHeaders);

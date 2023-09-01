@@ -1152,29 +1152,29 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/CatalogKind'
   '/v1/data-sources/{data-source}/data-point/values':
-    get:
-      summary: Get data points data for data source
-      responses:
-        '200':
-          $ref: '#/components/responses/DataSourceDataPointInfoResponse'
-      operationId: get-data-source-data-point-values
-      x-stoplight:
-        id: n763zvcv8fxcy
-      x-internal: true
-      security:
-        - x-api-key: []
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/DataSourceDataPointInfoRequest'
-      tags:
-        - DataPointsData
     parameters:
       - schema:
           type: string
         name: data-source
         in: path
         required: true
+    post:
+      summary: Get data points data for data source
+      operationId: get-data-source-data-point-values
+      responses:
+        '200':
+          $ref: '#/components/responses/DataSourceDataPointInfoResponse'
+      x-stoplight:
+        id: zfs23nua6987g
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/DataSourceDataPointInfoRequest'
+      x-internal: true
+      tags:
+        - DataPointsData
   /v1/data-sources/data-points/map:
     get:
       summary: Get Data Sources and Data Points Map for Account
@@ -2985,13 +2985,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DataPointInputValues'
-        data_source_location_identifier:
-          type: string
-          x-stoplight:
-            id: wu0w94s9gbsdn
       required:
         - data_points
-        - data_source_location_identifier
     DataSourceDataPointInfoResponse:
       title: DataSourceDataPointInfoResponse
       x-stoplight:

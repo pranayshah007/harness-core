@@ -58,5 +58,43 @@
     "dataSourceIdentifier": "github",
     "dataSourceLocationIdentifier": "github_is_file_exists",
     "isConditional": true
+  },
+  {
+    "id": "64ef7973f616c89330020df5",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "stoStageAdded",
+    "name": "STO Stage Added In Pipeline",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "harness",
+    "dataSourceLocationIdentifier": "harness_sto_scan_dsl",
+    "isConditional": true
+  },
+  {
+    "id": "64ef79bbf616c89330020df6",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isPolicyEvaluationSuccessful",
+    "name": "Policy Evaluation Success",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "harness",
+    "dataSourceLocationIdentifier": "harness_policy_evaluation_dsl",
+    "isConditional": true
+  },
+  {
+    "id": "64ef7a5ff616c89330020df7",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "%ofCIPipelinePassingInPast7Days",
+    "name": "Percentage of CI Pipeline passing in Past 7 days",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "harness",
+    "dataSourceLocationIdentifier": "harness_ci_success_percent_in_seven_days"
+  },
+  {
+    "id": "64ef7ac1f616c89330020df8",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "noTestsFailingInCiPipeline",
+    "name": "No Test Failing CI Pipeline",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "harness",
+    "dataSourceLocationIdentifier": "harness_test_passing_on_ci_is_zero"
   }
 ]

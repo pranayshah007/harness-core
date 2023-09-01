@@ -66,4 +66,23 @@ public class Constants {
   public static final String DSL_RESPONSE = "dsl_response";
   public static final String DATA_POINT_VALUE_KEY = "value";
   public static final String ERROR_MESSAGE_KEY = "error_messages";
+
+  public static final String QA_HOST = "qa.harness.io";
+  public static final String PRE_QA_HOST = "stress.harness.io";
+  public static final String PROD_HOST = "app.harness.io";
+
+  public static final String LOCAL_HOST = "localhost:8181";
+
+  public static final String QA_ENV = "qa";
+  public static final String PRE_QA_ENV = "stress";
+
+  public static final String LOCAL_ENV = "local";
+
+  public static final String COMPLIANCE_ENV = "compliance";
+
+  public static final String HARNESS_STO_SCAN_SETUP_DSL = "harness_sto_scan_dsl";
+  public static final String HARNESS_POLICY_EVALUATION_DSL = "harness_policy_evaluation_dsl";
+  public static final String HARNESS_CI_SUCCESS_PERCENT_IN_SEVEN_DAYS = "harness_ci_success_percent_in_seven_days";
+
+  public static final String HARNESS_TEST_PASSING_ON_CI_IS_ZERO = "harness_test_passing_on_ci_is_zero";
 }

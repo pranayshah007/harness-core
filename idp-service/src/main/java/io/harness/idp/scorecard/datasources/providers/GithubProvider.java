@@ -22,6 +22,8 @@ import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocation
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -49,8 +51,8 @@ public class GithubProvider extends DataSourceProvider {
     String catalogLocation = entity.getMetadata().getAnnotations().get("backstage.io/managed-by-location");
     Map<String, String> possibleReplaceableRequestBodyPairs = prepareRequestBodyReplaceablePairs(catalogLocation);
 
-    return processOut(
-        accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders, possibleReplaceableRequestBodyPairs);
+    return processOut(accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders,
+        possibleReplaceableRequestBodyPairs, Collections.emptyMap());
   }
 
   @Override
