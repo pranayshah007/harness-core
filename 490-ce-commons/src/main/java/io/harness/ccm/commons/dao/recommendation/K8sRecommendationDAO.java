@@ -161,7 +161,7 @@ public class K8sRecommendationDAO {
       @NonNull String accountId, @Nullable Condition condition, @NonNull Long offset, @NonNull Long limit) {
     return dslContext.selectFrom(CE_RECOMMENDATIONS)
         .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId).and(firstNonNull(condition, DSL.noCondition())))
-        .orderBy(CE_RECOMMENDATIONS.MONTHLYSAVING.desc().nullsLast())
+        .orderBy(CE_RECOMMENDATIONS.MONTHLYSAVING.desc().nullsLast(), CE_RECOMMENDATIONS.ID.asc().nullsLast())
         .offset(offset)
         .limit(limit)
         .fetchInto(CeRecommendations.class);
