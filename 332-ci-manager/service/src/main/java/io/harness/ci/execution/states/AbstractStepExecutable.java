@@ -393,13 +393,9 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
     return CIStepGroupUtils.getUniqueStepIdentifier(ambiance.getLevelsList(), stepIdentifier);
   }
 
-  protected StepArtifacts handleArtifact(ArtifactMetadata artifactMetadata, StepElementParameters stepParameters) {
-    return null;
-  }
-
   protected StepArtifacts handleArtifactForVm(
       ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
-    return handleArtifact(artifactMetadata, stepParameters);
+    return handleArtifact(artifactMetadata, stepParameters, ambiance);
   }
 
   protected boolean shouldPublishArtifactForVm(CommandExecutionStatus commandExecutionStatus) {

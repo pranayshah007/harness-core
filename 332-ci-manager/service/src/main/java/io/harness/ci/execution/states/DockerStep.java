@@ -14,27 +14,66 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.beans.execution.ProvenanceArtifact;
 import io.harness.beans.execution.PublishedImageArtifact;
+import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.steps.outcome.StepArtifacts.StepArtifactsBuilder;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
+import io.harness.ci.config.StepImageConfig;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadataType;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.serializer.JsonUtils;
+import io.harness.ssca.beans.provenance.ProvenanceBuilderData;
+import io.harness.ssca.beans.provenance.ProvenanceGenerator;
+import io.harness.ssca.beans.provenance.ProvenancePredicate;
+
+import com.google.inject.Inject;
 
 @OwnedBy(HarnessTeam.CI)
 public class DockerStep extends AbstractStepExecutable {
   public static final StepType STEP_TYPE = DockerStepInfo.STEP_TYPE;
   private static final String DOCKER_URL_FORMAT = "https://hub.docker.com/layers/%s/%s/images/%s/";
+
+  @Inject CIExecutionConfigService ciExecutionConfigService;
+  @Inject CIFeatureFlagService featureFlagService;
+  @Inject ProvenanceGenerator provenanceGenerator;
+
   @Override
-  protected StepArtifacts handleArtifact(ArtifactMetadata artifactMetadata, StepElementParameters stepParameters) {
+  protected StepArtifacts handleArtifactForVm(
+      ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
     StepArtifactsBuilder stepArtifactsBuilder = StepArtifacts.builder();
     if (artifactMetadata == null) {
       return stepArtifactsBuilder.build();
     }
 
+    populateArtifact(artifactMetadata, stepParameters, stepArtifactsBuilder);
+    return stepArtifactsBuilder.build();
+  }
+
+  @Override
+  protected StepArtifacts handleArtifact(
+      ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
+    StepArtifactsBuilder stepArtifactsBuilder = StepArtifacts.builder();
+    if (artifactMetadata == null) {
+      return stepArtifactsBuilder.build();
+    }
+
+    populateArtifact(artifactMetadata, stepParameters, stepArtifactsBuilder);
+    populateProvenanceInStepOutcome(ambiance, stepArtifactsBuilder);
+    return stepArtifactsBuilder.build();
+  }
+
+  private void populateArtifact(ArtifactMetadata artifactMetadata, StepElementParameters stepParameters,
+      StepArtifactsBuilder stepArtifactsBuilder) {
     String identifier = stepParameters.getIdentifier();
     DockerStepInfo dockerStepInfo = (DockerStepInfo) stepParameters.getSpec();
     final String repo =
@@ -58,6 +97,27 @@ public class DockerStep extends AbstractStepExecutable {
         });
       }
     }
-    return stepArtifactsBuilder.build();
+  }
+
+  private void populateProvenanceInStepOutcome(Ambiance ambiance, StepArtifactsBuilder stepArtifactsBuilder) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    if (!featureFlagService.isEnabled(FeatureName.SSCA_SLSA_COMPLIANCE, accountId)) {
+      return;
+    }
+    StepImageConfig defaultImageConfig =
+        ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.DOCKER, accountId);
+    ProvenanceBuilderData provenanceBuilder =
+        ProvenanceBuilderData.builder()
+            .accountId(accountId)
+            .stepExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
+            .pipelineExecutionId(AmbianceUtils.getPipelineExecutionIdentifier(ambiance))
+            .pipelineIdentifier(AmbianceUtils.getPipelineIdentifier(ambiance))
+            .startTime(ambiance.getStartTs())
+            .triggerBy(AmbianceUtils.getTriggerBy(ambiance).getTriggerIdentifier())
+            .pluginInfo(defaultImageConfig.getImage())
+            .build();
+    ProvenancePredicate predicate = provenanceGenerator.buildProvenancePredicate(provenanceBuilder);
+    stepArtifactsBuilder.provenanceArtifact(
+        ProvenanceArtifact.builder().predicate(JsonUtils.asTree(predicate)).build());
   }
 }
