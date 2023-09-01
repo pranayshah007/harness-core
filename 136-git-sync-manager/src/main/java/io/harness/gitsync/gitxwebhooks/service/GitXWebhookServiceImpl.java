@@ -80,10 +80,10 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
 
   @Override
   public CreateGitXWebhookResponseDTO createGitXWebhook(CreateGitXWebhookRequestDTO createGitXWebhookRequestDTO) {
-    Map<String, String> contextMap =
-        GitXWebhookLogContextHelper.setContextMap(createGitXWebhookRequestDTO.getAccountIdentifier(),
-            createGitXWebhookRequestDTO.getWebhookIdentifier(), createGitXWebhookRequestDTO.getConnectorRef(),
-            createGitXWebhookRequestDTO.getRepoName(), createGitXWebhookRequestDTO.getWebhookName());
+    Map<String, String> contextMap = GitXWebhookLogContextHelper.setContextMap(
+        createGitXWebhookRequestDTO.getAccountIdentifier(), createGitXWebhookRequestDTO.getWebhookIdentifier(),
+        createGitXWebhookRequestDTO.getConnectorRef(), createGitXWebhookRequestDTO.getRepoName(),
+        createGitXWebhookRequestDTO.getWebhookName(), createGitXWebhookRequestDTO.getFolderPaths());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       GitXWebhook gitXWebhook = buildGitXWebhooks(createGitXWebhookRequestDTO);
@@ -115,7 +115,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   public Optional<GetGitXWebhookResponseDTO> getGitXWebhook(GetGitXWebhookRequestDTO getGitXWebhookRequestDTO) {
     Map<String, String> contextMap =
         GitXWebhookLogContextHelper.setContextMap(getGitXWebhookRequestDTO.getAccountIdentifier(),
-            getGitXWebhookRequestDTO.getWebhookIdentifier(), null, null, null);
+            getGitXWebhookRequestDTO.getWebhookIdentifier(), null, null, null, null);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       log.info(String.format("Retrieving Webhook with identifier %s in account %s.",
@@ -143,10 +143,10 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   @Override
   public UpdateGitXWebhookResponseDTO updateGitXWebhook(UpdateGitXWebhookCriteriaDTO updateGitXWebhookCriteriaDTO,
       UpdateGitXWebhookRequestDTO updateGitXWebhookRequestDTO) {
-    Map<String, String> contextMap =
-        GitXWebhookLogContextHelper.setContextMap(updateGitXWebhookCriteriaDTO.getAccountIdentifier(),
-            updateGitXWebhookCriteriaDTO.getWebhookIdentifier(), updateGitXWebhookRequestDTO.getConnectorRef(),
-            updateGitXWebhookRequestDTO.getRepoName(), updateGitXWebhookRequestDTO.getWebhookName());
+    Map<String, String> contextMap = GitXWebhookLogContextHelper.setContextMap(
+        updateGitXWebhookCriteriaDTO.getAccountIdentifier(), updateGitXWebhookCriteriaDTO.getWebhookIdentifier(),
+        updateGitXWebhookRequestDTO.getConnectorRef(), updateGitXWebhookRequestDTO.getRepoName(),
+        updateGitXWebhookRequestDTO.getWebhookName(), updateGitXWebhookRequestDTO.getFolderPaths());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       log.info(String.format("Updating Webhook with identifier %s in account %s",
@@ -178,7 +178,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   @Override
   public ListGitXWebhookResponseDTO listGitXWebhooks(ListGitXWebhookRequestDTO listGitXWebhookRequestDTO) {
     Map<String, String> contextMap = GitXWebhookLogContextHelper.setContextMap(
-        listGitXWebhookRequestDTO.getAccountIdentifier(), null, null, null, null);
+        listGitXWebhookRequestDTO.getAccountIdentifier(), null, null, null, null, null);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       log.info(String.format("Get List of pipelines in account %s", listGitXWebhookRequestDTO.getAccountIdentifier()));
@@ -194,7 +194,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   public DeleteGitXWebhookResponseDTO deleteGitXWebhook(DeleteGitXWebhookRequestDTO deleteGitXWebhookRequestDTO) {
     Map<String, String> contextMap =
         GitXWebhookLogContextHelper.setContextMap(deleteGitXWebhookRequestDTO.getAccountIdentifier(),
-            deleteGitXWebhookRequestDTO.getWebhookIdentifier(), null, null, null);
+            deleteGitXWebhookRequestDTO.getWebhookIdentifier(), null, null, null, null);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       log.info(String.format("Deleting Webhook with identifier %s in account %s",
