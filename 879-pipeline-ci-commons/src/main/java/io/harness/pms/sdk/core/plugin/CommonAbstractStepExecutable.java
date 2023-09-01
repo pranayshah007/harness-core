@@ -307,7 +307,11 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     ContainerPortDetails containerPortDetails = (ContainerPortDetails) executionSweepingOutputResolver.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(PORT_DETAILS));
 
-    List<Integer> ports = containerPortDetails.getPortDetails().get(stepIdentifier);
+    String originalIdentifier = ambiance.getLevels(ambiance.getLevelsCount() - 1).getOriginalIdentifier();
+    String modifiedIdentifier =
+        AmbianceUtils.modifyIdentifier(ambiance.getLevels(ambiance.getLevelsCount() - 1), originalIdentifier, false);
+    String modifiedStepIdentifier = getUniqueStepIdentifier(ambiance, modifiedIdentifier);
+    List<Integer> ports = containerPortDetails.getPortDetails().get(modifiedStepIdentifier);
 
     if (ports.size() != 1) {
       throw new CIStageExecutionException(format("Step [%s] should map to single port", stepIdentifier));
