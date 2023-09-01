@@ -62,8 +62,6 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
 
   @Inject private MetricPackService metricPackService;
 
-  FeatureFlagService featureFlagService;
-
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
@@ -259,11 +257,6 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
   public void testDSLVersioningWithFeatureFlag() throws IllegalAccessException, IOException {
-    featureFlagService = mock(FeatureFlagService.class);
-    when(featureFlagService.isFeatureFlagEnabled(eq(builderFactory.getContext().getAccountId()),
-             eq(FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name())))
-        .thenReturn(true);
-    FieldUtils.writeField(mapper, "featureFlagService", featureFlagService, true);
     List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
         DataSourceType.APP_DYNAMICS);
@@ -292,9 +285,6 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
         .isEqualTo(readDSL("prometheus-v2-dsl-metric.datacollection"));
     assertThat(prometheusDataCollectionInfo.getMetricCollectionInfoList().get(0).getQuery())
         .isEqualTo(PrometheusQueryUtils.formGroupByQuery(query, serviceInstanceFieldName));
-    when(featureFlagService.isFeatureFlagEnabled(eq(builderFactory.getContext().getAccountId()),
-             eq(FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name())))
-        .thenReturn(false);
     prometheusDataCollectionInfo =
         mapper.toDataCollectionInfo(prometheusCVConfig, VerificationTask.TaskType.DEPLOYMENT);
     assertThat(prometheusDataCollectionInfo.getMetricCollectionInfoList().get(0).getQuery()).isEqualTo(query);
