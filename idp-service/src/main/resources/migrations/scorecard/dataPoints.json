@@ -16,7 +16,7 @@
     "name": "Catalog pagerduty annotation",
     "type": "STRING",
     "dataSourceIdentifier": "catalog",
-    "outcomeExpression":  "catalog.metadata.annotations.pagerduty_com_service_id",
+    "outcomeExpression":  "catalog.metadata.annotations.\"pagerduty.com/service-id\"",
     "dataSourceLocationIdentifier": "catalog"
   },
   {
@@ -36,7 +36,7 @@
     "name": "Catalog TechDocs annotation",
     "type": "STRING",
     "dataSourceIdentifier": "catalog",
-    "outcomeExpression":  "catalog.metadata.annotations.backstage_io_techdocs_ref",
+    "outcomeExpression":  "catalog.metadata.annotations.\"backstage.io/techdocs-ref\"",
     "dataSourceLocationIdentifier": "catalog"
   },
   {

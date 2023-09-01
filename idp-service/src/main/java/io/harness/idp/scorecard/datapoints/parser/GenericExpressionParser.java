@@ -26,9 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 public class GenericExpressionParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
-    if (dataPoint.getDataSourceIdentifier().equals("catalog")) {
-      data = replaceCharsNotSupportedByJexlWithUnderscore(data);
-    }
     String outcomeExpression = dataPoint.getOutcomeExpression();
     Map<String, Map<String, Object>> expressionData = new HashMap<>();
     expressionData.put(dataPoint.getDataSourceIdentifier(), data);
@@ -42,20 +39,5 @@ public class GenericExpressionParser implements DataPointParser {
     dataPointResponse.put(DATA_POINT_VALUE_KEY, value);
     dataPointResponse.put(ERROR_MESSAGE_KEY, "");
     return dataPointResponse;
-  }
-
-  private Map<String, Object> replaceCharsNotSupportedByJexlWithUnderscore(Map<String, Object> map) {
-    Map<String, Object> modifiedMap = new HashMap<>();
-    for (Map.Entry<String, Object> entry : map.entrySet()) {
-      String newKey = entry.getKey().replace("-", "_");
-      newKey = newKey.replace(".", "_");
-      newKey = newKey.replace("/", "_");
-      if (entry.getValue() instanceof Map) {
-        modifiedMap.put(newKey, replaceCharsNotSupportedByJexlWithUnderscore((Map<String, Object>) entry.getValue()));
-      } else {
-        modifiedMap.put(newKey, entry.getValue());
-      }
-    }
-    return modifiedMap;
   }
 }
