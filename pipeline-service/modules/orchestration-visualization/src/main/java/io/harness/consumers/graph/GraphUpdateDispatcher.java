@@ -5,9 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.consumers;
+package io.harness.consumers.graph;
 
-import io.harness.eventsframework.api.Consumer;
 import io.harness.logging.AutoLogContext;
 import io.harness.service.GraphGenerationService;
 
@@ -23,33 +22,24 @@ public class GraphUpdateDispatcher implements Runnable {
   private final String planExecutionId;
   private final GraphGenerationService graphGenerationService;
   private final long startTs;
-  private final String messageId;
-  private final Consumer consumer;
 
   @Builder
-  public GraphUpdateDispatcher(String planExecutionId, GraphGenerationService graphGenerationService, long startTs,
-      String messageId, Consumer consumer) {
+  public GraphUpdateDispatcher(String planExecutionId, GraphGenerationService graphGenerationService, long startTs) {
     this.planExecutionId = planExecutionId;
     this.graphGenerationService = graphGenerationService;
     this.startTs = startTs;
-    this.messageId = messageId;
-    this.consumer = consumer;
   }
 
   @Override
   public void run() {
-    try (AutoLogContext ignore =
-             new AutoLogContext(ImmutableMap.of("planExecutionId", planExecutionId, "messageId", messageId),
-                 AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
-      log.info("Start processing graph update via dispatcher for {} messageId", messageId);
+    try (AutoLogContext ignore = new AutoLogContext(
+             ImmutableMap.of("planExecutionId", planExecutionId), AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
+      log.info("Start processing graph update via dispatcher for planExecutionId: {}", planExecutionId);
       checkAndLogSchedulingDelays(planExecutionId, startTs);
-      boolean shouldAck = graphGenerationService.updateGraph(planExecutionId);
-      if (shouldAck) {
-        consumer.acknowledge(messageId);
-        log.debug("Successfully acked the messageId: {}", messageId);
-        return;
+      boolean success = graphGenerationService.updateGraph(planExecutionId);
+      if (!success) {
+        log.info("Graph update failed for planExecutionId {}", planExecutionId);
       }
-      log.info("Graph update failed not acking the following message id {}", messageId);
     }
   }
 

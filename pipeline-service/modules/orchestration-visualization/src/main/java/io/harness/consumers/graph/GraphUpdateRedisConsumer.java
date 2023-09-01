@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.consumers;
+package io.harness.consumers.graph;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -15,7 +15,11 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
@@ -26,39 +30,46 @@ import io.harness.pms.events.base.PmsRedisConsumer;
 import io.harness.queue.QueueController;
 import io.harness.service.GraphGenerationService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(PIPELINE)
 @Singleton
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = HarnessModuleComponent.CDS_PIPELINE)
 public class GraphUpdateRedisConsumer implements PmsRedisConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 30;
 
-  Consumer eventConsumer;
-  GraphGenerationService graphGenerationService;
-  QueueController queueController;
-  ExecutorService executorService;
-  private AtomicBoolean shouldStop = new AtomicBoolean(false);
+  private final Consumer eventConsumer;
+  private final GraphGenerationService graphGenerationService;
+  private final QueueController queueController;
+  private final ExecutorService executorService;
+
+  private final Duration sleepMs;
+  private final AtomicBoolean shouldStop = new AtomicBoolean(false);
 
   @Inject
   public GraphUpdateRedisConsumer(@Named(ORCHESTRATION_LOG) Consumer redisConsumer,
       GraphGenerationService graphGenerationService, QueueController queueController,
-      @Named("OrchestrationVisualizationExecutorService") ExecutorService executorService) {
+      @Named("OrchestrationVisualizationExecutorService") ExecutorService executorService,
+      @Named("GraphConsumerSleepMs") int sleepMs) {
     this.eventConsumer = redisConsumer;
     this.graphGenerationService = graphGenerationService;
     this.queueController = queueController;
     this.executorService = executorService;
+    this.sleepMs = Duration.ofMillis(sleepMs);
   }
 
   @Override
@@ -98,38 +109,57 @@ public class GraphUpdateRedisConsumer implements PmsRedisConsumer {
 
   private void pollAndProcessMessages() {
     List<Message> messages = eventConsumer.read(Duration.ofSeconds(WAIT_TIME_IN_SECONDS));
-    Map<String, String> planExIdToMessageMap = mapPlanExecutionToMessages(messages);
-    for (Map.Entry<String, String> entry : planExIdToMessageMap.entrySet()) {
-      executorService.submit(GraphUpdateDispatcher.builder()
-                                 .planExecutionId(entry.getKey())
-                                 .startTs(System.currentTimeMillis())
-                                 .graphGenerationService(graphGenerationService)
-                                 .messageId(entry.getValue())
-                                 .consumer(eventConsumer)
-                                 .build());
+    if (EmptyPredicate.isEmpty(messages)) {
+      return;
+    }
+    ReadResult readResult = mapPlanExecutionToMessages(messages);
+    log.info("read: {}, processable: {}, bulkAcking : {}", messages.size(), readResult.planExecutionIds.size(),
+        readResult.tobeAcked.length);
+
+    try {
+      if (EmptyPredicate.isNotEmpty(readResult.tobeAcked)) {
+        eventConsumer.acknowledge(readResult.tobeAcked);
+      }
+    } catch (Exception ex) {
+      log.error("error while acknowledging messages", ex);
+    }
+
+    try {
+      for (String planExecutionId : readResult.planExecutionIds) {
+        executorService.submit(GraphUpdateDispatcher.builder()
+                                   .planExecutionId(planExecutionId)
+                                   .startTs(System.currentTimeMillis())
+                                   .graphGenerationService(graphGenerationService)
+                                   .build());
+      }
+    } finally {
+      if (messages.size() < eventConsumer.getBatchSize()) {
+        // Adding thread sleep when the events read are less than the batch-size. This way when the load is high,
+        // consumer will query the events quickly. And in case of low load, thread will sleep for some time.
+        log.info("Sleeping the thread for {}", sleepMs);
+        if (!sleepMs.isNegative() && !sleepMs.isZero()) {
+          sleep(sleepMs);
+        }
+      }
     }
   }
 
-  private Map<String, String> mapPlanExecutionToMessages(List<Message> messages) {
-    Map<String, String> resultMap = new HashMap<>();
+  @VisibleForTesting
+  ReadResult mapPlanExecutionToMessages(List<Message> messages) {
+    Set<String> toBeAcked = new HashSet<>();
+    Set<String> planExecutionIds = new HashSet<>();
     for (Message message : messages) {
       try (AutoLogContext ignore = new MessageLogContext(message)) {
-        log.info("Read message with message id {} from redis", message.getId());
         OrchestrationLogEvent event = buildEventFromMessage(message);
         if (event == null) {
-          eventConsumer.acknowledge(message.getId());
+          toBeAcked.add(message.getId());
           continue;
         }
-
-        resultMap.compute(event.getPlanExecutionId(), (k, v) -> {
-          if (v != null) {
-            eventConsumer.acknowledge(v);
-          }
-          return message.getId();
-        });
+        planExecutionIds.add(event.getPlanExecutionId());
+        toBeAcked.add(message.getId());
       }
     }
-    return resultMap;
+    return new ReadResult(planExecutionIds, toBeAcked.toArray(String[] ::new));
   }
 
   private OrchestrationLogEvent buildEventFromMessage(Message message) {
@@ -144,5 +174,11 @@ public class GraphUpdateRedisConsumer implements PmsRedisConsumer {
   @Override
   public void shutDown() {
     shouldStop.set(true);
+  }
+
+  @AllArgsConstructor
+  static class ReadResult {
+    Set<String> planExecutionIds;
+    String[] tobeAcked;
   }
 }
