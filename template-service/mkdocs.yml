@@ -1,0 +1,7 @@
+site_name: 'template-service'
+
+nav:
+  - Home: index.md
+
+plugins:
+  - techdocs-core
