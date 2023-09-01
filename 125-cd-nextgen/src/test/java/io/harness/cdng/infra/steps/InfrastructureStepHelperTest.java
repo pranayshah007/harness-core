@@ -170,32 +170,4 @@ public class InfrastructureStepHelperTest extends CategoryTest {
 
     verify(ngLogCallback, times(1)).saveExecutionLog(any());
   }
-
-  @Test
-  @Owner(developers = ACASIAN)
-  @Category(UnitTests.class)
-  public void testValidateExpressions() {
-    infrastructureStepHelper.validateExpression(ParameterField.createValueField("test"));
-
-    assertThatThrownBy(()
-                           -> infrastructureStepHelper.validateExpression(
-                               ParameterField.createExpressionField(true, "<+test>", null, true)))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Unresolved Expression : [<+test>]");
-  }
-
-  @Test
-  @Owner(developers = ACASIAN)
-  @Category(UnitTests.class)
-  public void testRequireOne() {
-    infrastructureStepHelper.requireOne(
-        ParameterField.createValueField("test"), ParameterField.createValueField("passed"));
-
-    assertThatThrownBy(
-        ()
-            -> infrastructureStepHelper.requireOne(ParameterField.createExpressionField(true, "<+test1>", null, true),
-                ParameterField.createExpressionField(true, "<+test2>", null, true)))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Unresolved Expressions : [<+test1>] , [<+test2>]");
-  }
 }

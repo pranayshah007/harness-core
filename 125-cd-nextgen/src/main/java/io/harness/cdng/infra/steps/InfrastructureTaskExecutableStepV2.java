@@ -149,6 +149,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
+  @Inject private InfrastructureTaskHelper infrastructureTaskHelper;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -325,7 +326,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     validateConnector(spec, ambiance, logCallback);
     saveExecutionLog(logCallback, "Fetching environment information...");
     if (spec.isDynamicallyProvisioned()) {
-      infrastructureValidator.resolveProvisionerExpressions(ambiance, spec);
+      infrastructureTaskHelper.resolveProvisionerExpressions(ambiance, spec);
     }
     infrastructureValidator.validateInfrastructure(spec, ambiance, logCallback);
 

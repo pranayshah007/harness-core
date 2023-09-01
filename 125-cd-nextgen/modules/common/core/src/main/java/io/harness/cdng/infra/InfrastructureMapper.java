@@ -72,6 +72,7 @@ import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
+import io.harness.evaluators.ProvisionerExpressionEvaluator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
@@ -98,7 +99,7 @@ public class InfrastructureMapper {
   @NotNull
   public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome,
       ServiceStepOutcome service, String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      Map<String, String> tags) {
+      Map<String, String> tags, ProvisionerExpressionEvaluator expressionEvaluator) {
     Map<String, String> mergedTags = new HashMap<>();
     Map<String, String> hostTags;
 
@@ -181,6 +182,11 @@ public class InfrastructureMapper {
 
       case InfrastructureKind.PDC:
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
+        if (infrastructure.isDynamicallyProvisioned()) {
+          infrastructureOutcome = pdcProvisionedInfrastructureMapper.toOutcome(
+              pdcInfrastructure, expressionEvaluator, environmentOutcome, service);
+          break;
+        }
         setPdcInfrastructureHostValueSplittingStringToListIfNeeded(pdcInfrastructure);
         PdcInfrastructureOutcome pdcInfrastructureOutcome =
             PdcInfrastructureOutcome.builder()

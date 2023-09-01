@@ -134,6 +134,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject protected InstanceOutcomeHelper instanceOutcomeHelper;
   @Inject protected InfrastructureOutcomeProvider infrastructureOutcomeProvider;
+  @Inject private InfrastructureTaskHelper infrastructureTaskHelper;
 
   @Data
   @AllArgsConstructor
@@ -164,7 +165,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     validateConnector(infrastructure, ambiance, logCallback);
 
     if (infrastructure.isDynamicallyProvisioned()) {
-      infrastructureValidator.resolveProvisionerExpressions(ambiance, infrastructure);
+      infrastructureTaskHelper.resolveProvisionerExpressions(ambiance, infrastructure);
     }
     infrastructureValidator.validateInfrastructure(infrastructure, ambiance, logCallback);
 

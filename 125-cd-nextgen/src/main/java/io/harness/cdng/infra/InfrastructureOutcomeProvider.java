@@ -14,6 +14,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.evaluators.ProviderExpressionEvaluatorProvider;
+import io.harness.evaluators.ProvisionerExpressionEvaluator;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.steps.environment.EnvironmentOutcome;
 
@@ -31,7 +32,10 @@ public class InfrastructureOutcomeProvider {
   public InfrastructureOutcome getOutcome(Ambiance ambiance, @Nonnull Infrastructure infrastructure,
       EnvironmentOutcome environmentOutcome, ServiceStepOutcome service, final String accountIdentifier,
       final String orgIdentifier, final String projectIdentifier, Map<String, String> tags) {
-    return infrastructureMapper.toOutcome(
-        infrastructure, environmentOutcome, service, accountIdentifier, orgIdentifier, projectIdentifier, tags);
+    ProvisionerExpressionEvaluator expressionEvaluator =
+        providerExpressionEvaluatorProvider.getProviderExpressionEvaluator(
+            ambiance, infrastructure.getProvisionerStepIdentifier());
+    return infrastructureMapper.toOutcome(infrastructure, environmentOutcome, service, accountIdentifier, orgIdentifier,
+        projectIdentifier, tags, expressionEvaluator);
   }
 }

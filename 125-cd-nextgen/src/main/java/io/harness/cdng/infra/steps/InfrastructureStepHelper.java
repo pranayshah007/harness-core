@@ -137,26 +137,6 @@ public class InfrastructureStepHelper {
     return connectorInfoDTO;
   }
 
-  @SafeVarargs
-  public final <T> void validateExpression(ParameterField<T>... inputs) {
-    for (ParameterField<T> input : inputs) {
-      if (unresolvedExpression(input)) {
-        throw new InvalidRequestException(format("Unresolved Expression : [%s]", input.getExpressionValue()));
-      }
-    }
-  }
-
-  private <T> boolean unresolvedExpression(ParameterField<T> input) {
-    return !ParameterField.isNull(input) && input.isExpression();
-  }
-
-  public void requireOne(ParameterField<?> first, ParameterField<?> second) {
-    if (unresolvedExpression(first) && unresolvedExpression(second)) {
-      throw new InvalidRequestException(
-          format("Unresolved Expressions : [%s] , [%s]", first.getExpressionValue(), second.getExpressionValue()));
-    }
-  }
-
   public boolean getSkipInstances(Infrastructure infrastructure) {
     boolean skipInstances = false;
     if (stageExecutionHelper.isSshWinRmInfrastructureKind(infrastructure.getKind())

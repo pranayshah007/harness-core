@@ -46,12 +46,8 @@ import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
-import io.harness.data.structure.EmptyPredicate;
-import io.harness.evaluators.ProviderExpressionEvaluatorProvider;
-import io.harness.evaluators.ProvisionerExpressionEvaluator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.common.ExpressionMode;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -78,7 +74,6 @@ public class InfrastructureValidator {
   private static final String SUBSCRIPTION = "subscription";
   private static final String RESOURCE_GROUP = "resourceGroup";
   @Inject private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
-  @Inject private ProviderExpressionEvaluatorProvider providerExpressionEvaluatorProvider;
 
   @VisibleForTesting
   public void validateInfrastructure(Infrastructure infrastructure, Ambiance ambiance, NGLogCallback logCallback) {
@@ -158,7 +153,9 @@ public class InfrastructureValidator {
       case InfrastructureKind.PDC:
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
         validateExpression(pdcInfrastructure.getCredentialsRef());
-        requireOne(pdcInfrastructure.getHosts(), pdcInfrastructure.getConnectorRef());
+        if (!infrastructure.isDynamicallyProvisioned()) {
+          requireOne(pdcInfrastructure.getHosts(), pdcInfrastructure.getConnectorRef());
+        }
         validatePdcInfrastructure((PdcInfrastructure) infrastructure);
         break;
       case InfrastructureKind.SSH_WINRM_AWS:
@@ -545,163 +542,6 @@ public class InfrastructureValidator {
     if (unresolvedExpression(first) && unresolvedExpression(second)) {
       throw new InvalidRequestException(
           format("Unresolved Expressions : [%s] , [%s]", first.getExpressionValue(), second.getExpressionValue()));
-    }
-  }
-
-  public void resolveProvisionerExpressions(Ambiance ambiance, Infrastructure infrastructure) {
-    ProvisionerExpressionEvaluator expressionEvaluator =
-        providerExpressionEvaluatorProvider.getProviderExpressionEvaluator(
-            ambiance, infrastructure.getProvisionerStepIdentifier());
-
-    switch (infrastructure.getKind()) {
-      case InfrastructureKind.KUBERNETES_DIRECT:
-        K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            k8SDirectInfrastructure.getNamespace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            k8SDirectInfrastructure.getReleaseName(), ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.KUBERNETES_GCP:
-        K8sGcpInfrastructure k8sGcpInfrastructure = (K8sGcpInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            k8sGcpInfrastructure.getNamespace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            k8sGcpInfrastructure.getCluster(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            k8sGcpInfrastructure.getReleaseName(), ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.SERVERLESS_AWS_LAMBDA:
-        ServerlessAwsLambdaInfrastructure serverlessAwsLambdaInfrastructure =
-            (ServerlessAwsLambdaInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            serverlessAwsLambdaInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            serverlessAwsLambdaInfrastructure.getStage(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.KUBERNETES_AZURE:
-        K8sAzureInfrastructure k8sAzureInfrastructure = (K8sAzureInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            k8sAzureInfrastructure.getNamespace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            k8sAzureInfrastructure.getCluster(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            k8sAzureInfrastructure.getReleaseName(), ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            k8sAzureInfrastructure.getSubscriptionId(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            k8sAzureInfrastructure.getResourceGroup(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.PDC:
-        PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
-
-        List<Map<String, Object>> hostObjects = (List<Map<String, Object>>) expressionEvaluator.evaluateExpression(
-            getParameterFieldValue(pdcInfrastructure.getHostArrayPath()), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        if (isNotEmpty(hostObjects)) {
-          for (Object hostObject : hostObjects) {
-            expressionEvaluator.evaluateProperties(
-                getParameterFieldValue(pdcInfrastructure.getHostAttributes()), (Map<String, Object>) hostObject);
-          }
-        }
-        break;
-
-      case InfrastructureKind.SSH_WINRM_AWS:
-        SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            sshWinRmAwsInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.evaluateExpression(
-            sshWinRmAwsInfrastructure.getAwsInstanceFilter().getTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.SSH_WINRM_AZURE:
-        SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            sshWinRmAzureInfrastructure.getSubscriptionId(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            sshWinRmAzureInfrastructure.getResourceGroup(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.evaluateExpression(
-            sshWinRmAzureInfrastructure.getTags(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.AZURE_WEB_APP:
-        AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            azureWebAppInfrastructure.getSubscriptionId(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            azureWebAppInfrastructure.getResourceGroup(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.ECS:
-        EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            ecsInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            ecsInfrastructure.getCluster(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
-        GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            googleFunctionsInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            googleFunctionsInfrastructure.getProject(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.ELASTIGROUP:
-        break;
-
-      case InfrastructureKind.ASG:
-        AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            asgInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.CUSTOM_DEPLOYMENT:
-        break;
-
-      case InfrastructureKind.TAS:
-        TanzuApplicationServiceInfrastructure tanzuInfrastructure =
-            (TanzuApplicationServiceInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            tanzuInfrastructure.getOrganization(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            tanzuInfrastructure.getSpace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.AWS_SAM:
-        AwsSamInfrastructure awsSamInfrastructure = (AwsSamInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            awsSamInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.AWS_LAMBDA:
-        AwsLambdaInfrastructure awsLambdaInfrastructure = (AwsLambdaInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            awsLambdaInfrastructure.getRegion(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.KUBERNETES_AWS:
-        K8sAwsInfrastructure k8sAwsInfrastructure = (K8sAwsInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            k8sAwsInfrastructure.getNamespace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            k8sAwsInfrastructure.getCluster(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            k8sAwsInfrastructure.getReleaseName(), ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-        break;
-
-      case InfrastructureKind.KUBERNETES_RANCHER:
-        K8sRancherInfrastructure rancherInfrastructure = (K8sRancherInfrastructure) infrastructure;
-        expressionEvaluator.resolveExpression(
-            rancherInfrastructure.getNamespace(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            rancherInfrastructure.getCluster(), ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
-        expressionEvaluator.resolveExpression(
-            rancherInfrastructure.getReleaseName(), ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-        break;
     }
   }
 }
