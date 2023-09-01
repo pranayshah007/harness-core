@@ -8,7 +8,7 @@
 package io.harness.idp.scorecard.datasourcelocations.locations;
 
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.CATALOG;
-import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_GIT_LEAKS_FILE_EXISTS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_MERGE_PR;
 
@@ -33,7 +33,7 @@ public class DataSourceLocationFactory {
         return githubMeanTimeToMergePRDsl;
       case GITHUB_IS_BRANCH_PROTECTION_SET:
         return githubIsBranchProtectionSetDsl;
-      case GITHUB_GIT_LEAKS_FILE_EXISTS:
+      case GITHUB_FILE_EXISTS:
         return githubFileExistsDsl;
 
       // Catalog

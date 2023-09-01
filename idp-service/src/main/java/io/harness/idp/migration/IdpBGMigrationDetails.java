@@ -45,6 +45,7 @@ public class IdpBGMigrationDetails implements MigrationDetails {
         .add(Pair.of(11, ScorecardMigration.class))
         .add(Pair.of(12, NameSpaceEntityNextIterationMigration.class))
         .add(Pair.of(13, ScorecardMigration.class))
+        .add(Pair.of(14, ScorecardMigration.class))
         .build();
   }
 }

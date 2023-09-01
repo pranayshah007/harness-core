@@ -73,8 +73,11 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
       String dataPointInputValue =
           dataPointsAndInputValues.get(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE).iterator().next();
       if (dataPointInputValue != null) {
-        requestBody =
-            requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER, ",baseRefName: \"" + dataPointInputValue + "\"");
+        requestBody = requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER,
+            ",baseRefName:"
+                + "\\"
+                + "\"" + dataPointInputValue + "\\"
+                + "\"");
       } else {
         requestBody = requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER, "");
       }

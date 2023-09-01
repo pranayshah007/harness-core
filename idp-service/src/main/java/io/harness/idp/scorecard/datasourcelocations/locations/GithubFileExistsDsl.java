@@ -9,7 +9,6 @@ package io.harness.idp.scorecard.datasourcelocations.locations;
 
 import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_FILE_EXISTS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,15 +20,17 @@ import io.harness.idp.scorecard.datasourcelocations.client.DslClient;
 import io.harness.idp.scorecard.datasourcelocations.client.DslClientFactory;
 import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEntity;
 
+import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.ws.rs.core.Response;
-import org.apache.commons.collections.CollectionUtils;
+import lombok.AllArgsConstructor;
 
+@AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
 public class GithubFileExistsDsl implements DataSourceLocation {
-  private static final String FILE_EXISTS_REPLACER = "{FILE_EXISTS_REPLACER}";
+  private static final String GITHUB_FILE_EXISTS_REPLACER = "{GITHUB_FILE_EXISTS_REPLACER}";
   DslClientFactory dslClientFactory;
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
@@ -58,17 +59,6 @@ public class GithubFileExistsDsl implements DataSourceLocation {
   @Override
   public String replaceRequestBodyInputValuePlaceholdersIfAny(
       Map<String, Set<String>> dataPointsAndInputValues, String requestBody) {
-    if (dataPointsAndInputValues.containsKey(GITHUB_IS_FILE_EXISTS)
-        && !CollectionUtils.isEmpty(dataPointsAndInputValues.get(GITHUB_IS_FILE_EXISTS))) {
-      String dataPointInputValue = dataPointsAndInputValues.get(GITHUB_IS_FILE_EXISTS).iterator().next();
-      if (dataPointInputValue != null) {
-        requestBody = requestBody.replace(FILE_EXISTS_REPLACER, "\"" + dataPointInputValue + ":\")");
-      } else {
-        requestBody = requestBody.replace(FILE_EXISTS_REPLACER, "HEAD:");
-      }
-    } else {
-      requestBody = requestBody.replace(FILE_EXISTS_REPLACER, "HEAD:");
-    }
-    return requestBody;
+    return requestBody.replace(GITHUB_FILE_EXISTS_REPLACER, "HEAD:");
   }
 }

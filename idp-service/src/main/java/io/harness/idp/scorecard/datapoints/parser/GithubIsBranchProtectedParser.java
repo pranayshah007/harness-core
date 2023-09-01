@@ -25,7 +25,8 @@ public class GithubIsBranchProtectedParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
     Map<String, Object> dataPointInfo = new HashMap<>();
-    if (CommonUtils.findObjectByName(data, "ref") == null) {
+    if (CommonUtils.findObjectByName(data, "defaultBranchRef") == null
+        && CommonUtils.findObjectByName(data, "ref") == null) {
       dataPointInfo.put(DATA_POINT_VALUE_KEY, null);
       dataPointInfo.put(ERROR_MESSAGE_KEY, INVALID_BRANCH_NAME_ERROR);
       return dataPointInfo;

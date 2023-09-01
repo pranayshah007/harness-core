@@ -110,12 +110,12 @@
       {
         "data_source_identifier": "github",
         "data_point_identifier": "isFileExists",
-        "conditional_input_value": "gitleaks.toml",
+        "conditional_input_value": "\".gitleaks.toml\"",
         "operator": "==",
         "value": "true"
       }
     ],
-    "expression": "github.isFileExists.gitleaks.toml == true",
+    "expression": "github.isFileExists.\".gitleaks.toml\" == true",
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Gitleaks file does not exist"

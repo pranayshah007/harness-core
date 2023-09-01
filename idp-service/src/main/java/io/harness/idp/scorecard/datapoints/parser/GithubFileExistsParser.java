@@ -33,15 +33,17 @@ public class GithubFileExistsParser implements DataPointParser {
     }
     List<Map<String, Object>> entries = (List<Map<String, Object>>) CommonUtils.findObjectByName(data, "entries");
     boolean isPresent = false;
+    String inputFile = inputValues.iterator().next();
+    inputFile = inputFile.replace("\"", "");
     for (Map<String, Object> entry : entries) {
       String fileName = (String) entry.get("name");
-      if (fileName.contains(inputValues.iterator().next())) {
+      if (fileName.equals(inputFile)) {
         isPresent = true;
         break;
       }
     }
 
-    dataPointInfo.put(DATA_POINT_VALUE_KEY, isPresent);
+    dataPointInfo.put(inputFile, Map.of(DATA_POINT_VALUE_KEY, isPresent));
     dataPointInfo.put(ERROR_MESSAGE_KEY, null);
     return dataPointInfo;
   }

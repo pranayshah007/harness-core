@@ -35,7 +35,7 @@
         "Content-Type": "application/json",
         "Authorization": "{BEARER_AUTH}"
       },
-      "requestBody": "{\"query\":\"query {\\n    repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    {REPOSITORY_BRANCH_NAME_REPLACER}{\\n      name\\n      branchProtectionRule{\\n          allowsDeletions\\n          allowsForcePushes\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+      "requestBody": "{\"query\":\"query {\\n    repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    {REPOSITORY_BRANCH_NAME_REPLACER} {\\n      name\\n      branchProtectionRule{\\n          allowsDeletions\\n          allowsForcePushes\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
   },
   {
@@ -51,7 +51,7 @@
         "Content-Type": "application/json",
         "Authorization": "{BEARER_AUTH}"
       },
-      "requestBody": "{\"query\":\"query {\\n  repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    defaultBranchRef {\\n      repository {\\n        object(expression : \\\"{FILE_EXISTS_REPLACER}\\\") {\\n          ... on Tree {\\n            id\\n            entries {\\n              name\\n              path\\n              type\\n            }\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+      "requestBody": "{\"query\":\"{\\n  repository(owner: \\\"{REPOSITORY_OWNER}\\\", name: \\\"{REPOSITORY_NAME}\\\") {\\n    defaultBranchRef {\\n      repository {\\n        object(expression : \\\"{GITHUB_FILE_EXISTS_REPLACER}\\\") {\\n          ... on Tree {\\n            id\\n            entries {\\n              name\\n              path\\n              type\\n            }\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
   }
 ]
