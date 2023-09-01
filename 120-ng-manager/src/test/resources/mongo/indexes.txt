@@ -87,8 +87,8 @@ gitSyncErrorNG {"name": "accountId_repo_branch_errorType_status_filePath_sort_In
 gitSyncErrorNG {"name": "accountId_repo_errorType_status_sort_Index", "background": true} {"accountIdentifier": 1, "repoUrl": 1, "errorType": 1, "status": 1, "createdAt": -1}
 gitSyncSettings {"name": "account_org_project_index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 gitToHarnessProgress {"name": "yamlChangeSetId_1", "background": true} {"yamlChangeSetId": 1}
-gitXWebhooks {"name": "accountIdentifier_identifier_repoName_unique_idx", "unique": true} {"accountIdentifier": 1, "identifier": 1, "repoName": 1}
-gitXWebhooks {"name": "createdAt_1", "background": true} {"createdAt": 1}
+gitXWebhook {"name": "accountIdentifier_identifier_repoName_unique_idx", "unique": true} {"accountIdentifier": 1, "identifier": 1, "repoName": 1}
+gitXWebhook {"name": "createdAt_1", "background": true} {"createdAt": 1}
 gitopsClusters {"name": "accountId_orgId_projId_envRef_createdAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "agentIdentifier": 1, "envRef": 1, "createdAt": 1}
 gitopsClusters {"name": "unique_accountId_orgId_projId_envRef_id", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "agentIdentifier": 1, "envRef": 1, "clusterRef": 1}
 gitopsproviders {"name": "unique_accIdentifier_orgIdentifier_projectIdentifier_gitOpsProvider_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}

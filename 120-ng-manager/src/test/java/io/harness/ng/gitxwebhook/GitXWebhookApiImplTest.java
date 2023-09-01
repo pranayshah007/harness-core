@@ -43,7 +43,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class GitXWebhooksApiImplTest extends CategoryTest {
+public class GitXWebhookApiImplTest extends CategoryTest {
   private GitXWebhooksApiImpl gitXWebhooksApi;
   @Mock GitXWebhookService gitXWebhookService;
 

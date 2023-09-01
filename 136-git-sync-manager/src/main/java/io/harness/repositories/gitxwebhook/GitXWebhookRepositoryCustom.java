@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.gitsync.gitxwebhooks.entity.GitXWebhooks;
+import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 
 import com.mongodb.client.result.DeleteResult;
 import java.util.List;
@@ -25,11 +25,11 @@ import org.springframework.data.mongodb.core.query.Update;
 @HarnessRepo
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface GitXWebhookRepositoryCustom {
-  GitXWebhooks create(GitXWebhooks gitXWebhooks);
+  GitXWebhook create(GitXWebhook gitXWebhook);
 
   DeleteResult delete(Criteria criteria);
 
-  List<GitXWebhooks> list(Criteria criteria);
+  List<GitXWebhook> list(Criteria criteria);
 
-  GitXWebhooks update(Query query, Update update);
+  GitXWebhook update(Query query, Update update);
 }

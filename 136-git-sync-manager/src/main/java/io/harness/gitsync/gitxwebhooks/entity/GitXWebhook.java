@@ -51,12 +51,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @EqualsAndHashCode(callSuper = false)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @StoreIn(DbAliases.NG_MANAGER)
-@Entity(value = "gitXWebhooks", noClassnameStored = true)
-@Document("gitXWebhooks")
-@TypeAlias("io.harness.gitsync.gitxwebhooks.entity.gitXWebhooks")
-@FieldNameConstants(innerTypeName = "GitXWebhooksKeys")
+@Entity(value = "gitXWebhook", noClassnameStored = true)
+@Document("gitXWebhook")
+@TypeAlias("io.harness.gitsync.gitxwebhooks.entity.gitXWebhook")
+@FieldNameConstants(innerTypeName = "GitXWebhookKeys")
 @OwnedBy(PIPELINE)
-public class GitXWebhooks implements PersistentEntity, UuidAccess {
+public class GitXWebhook implements PersistentEntity, UuidAccess {
   @Wither @Id @dev.morphia.annotations.Id String uuid;
   String accountIdentifier;
   String name;
@@ -73,9 +73,9 @@ public class GitXWebhooks implements PersistentEntity, UuidAccess {
         .add(CompoundMongoIndex.builder()
                  .name("accountIdentifier_identifier_repoName_unique_idx")
                  .unique(true)
-                 .field(GitXWebhooksKeys.accountIdentifier)
-                 .field(GitXWebhooksKeys.identifier)
-                 .field(GitXWebhooksKeys.repoName)
+                 .field(GitXWebhookKeys.accountIdentifier)
+                 .field(GitXWebhookKeys.identifier)
+                 .field(GitXWebhookKeys.repoName)
                  .build())
         .build();
   }

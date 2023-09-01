@@ -7,7 +7,7 @@
 
 package io.harness.repositories.gitxwebhook;
 
-import io.harness.gitsync.gitxwebhooks.entity.GitXWebhooks;
+import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 
 import com.mongodb.client.result.DeleteResult;
 import java.util.List;
@@ -24,25 +24,25 @@ public class GitXWebhookRepositoryCustomImpl implements GitXWebhookRepositoryCus
   private final MongoTemplate mongoTemplate;
 
   @Override
-  public GitXWebhooks create(GitXWebhooks gitXWebhooks) {
-    return mongoTemplate.save(gitXWebhooks);
+  public GitXWebhook create(GitXWebhook gitXWebhook) {
+    return mongoTemplate.save(gitXWebhook);
   }
 
   @Override
   public DeleteResult delete(Criteria criteria) {
     Query query = new Query(criteria);
-    return mongoTemplate.remove(query, GitXWebhooks.class);
+    return mongoTemplate.remove(query, GitXWebhook.class);
   }
 
   @Override
-  public List<GitXWebhooks> list(Criteria criteria) {
+  public List<GitXWebhook> list(Criteria criteria) {
     Query query = new Query(criteria);
-    return mongoTemplate.find(query, GitXWebhooks.class);
+    return mongoTemplate.find(query, GitXWebhook.class);
   }
 
   @Override
-  public GitXWebhooks update(Query query, Update update) {
+  public GitXWebhook update(Query query, Update update) {
     return mongoTemplate.findAndModify(
-        query, update, new FindAndModifyOptions().returnNew(true).upsert(true), GitXWebhooks.class);
+        query, update, new FindAndModifyOptions().returnNew(true).upsert(true), GitXWebhook.class);
   }
 }

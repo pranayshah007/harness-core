@@ -32,7 +32,7 @@ import io.harness.gitsync.core.fullsync.entity.GitFullSyncJob;
 import io.harness.gitsync.gitfileactivity.beans.GitFileActivity;
 import io.harness.gitsync.gitfileactivity.beans.GitFileActivitySummary;
 import io.harness.gitsync.gitsyncerror.beans.GitSyncError;
-import io.harness.gitsync.gitxwebhooks.entity.GitXWebhooks;
+import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -58,7 +58,7 @@ public class GitSyncMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(GitFullSyncJob.class);
     set.add(GitFileCache.class);
     set.add(GitDefaultBranchCache.class);
-    set.add(GitXWebhooks.class);
+    set.add(GitXWebhook.class);
     set.add(UserSourceCodeManager.class);
     set.add(AzureRepoSCM.class);
     set.add(GithubSCM.class);
