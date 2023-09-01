@@ -72,6 +72,7 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
             .build(),
         ScheduledTriggerHandler.class,
         MongoPersistenceIterator.<NGTriggerEntity, SpringFilterExpander>builder()
+            .unsorted(true)
             .clazz(NGTriggerEntity.class)
             .fieldName(NGTriggerEntityKeys.nextIterations)
             .targetInterval(ofMinutes(5))
