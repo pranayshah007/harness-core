@@ -148,7 +148,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         GitXWebhookLogContextHelper.setContextMap(updateGitXWebhookCriteriaDTO.getAccountIdentifier(),
             updateGitXWebhookCriteriaDTO.getWebhookIdentifier(), updateGitXWebhookRequestDTO.getConnectorRef(),
             updateGitXWebhookRequestDTO.getRepoName(), updateGitXWebhookRequestDTO.getWebhookName(),
-            updateGitXWebhookRequestDTO.getFolderPaths(), updateGitXWebhookRequestDTO.isEnabled());
+            updateGitXWebhookRequestDTO.getFolderPaths(), updateGitXWebhookRequestDTO.getIsEnabled());
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       log.info(String.format("Updating Webhook with identifier %s in account %s",
