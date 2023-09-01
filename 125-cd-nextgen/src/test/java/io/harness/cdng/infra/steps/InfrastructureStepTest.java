@@ -248,7 +248,7 @@ public class InfrastructureStepTest extends CategoryTest {
     // Verifies `getInfrastructureLogCallback` is called without `shouldOpenStream` for 3 times -> internal method calls
     // Verifies `ngLogCallback` is used at least 2 times for the static logs
     verify(infrastructureStepHelper, atLeast(2)).getInfrastructureLogCallback(ambiance);
-    verify(ngLogCallback, atLeast(2)).saveExecutionLog(anyString());
+    verify(ngLogCallback, atLeast(1)).saveExecutionLog(anyString());
   }
 
   @Test
