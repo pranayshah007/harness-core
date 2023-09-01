@@ -27,16 +27,18 @@ public class GitXWebhookLogContextHelper {
   public static final String WEBHOOK_NAME_KEY = "webhookName";
   public static final String CONNECTOR_REF_KEY = "connectorRef";
   public static final String FOLDER_PATHS_KEY = "folderPaths";
+  public static final String IS_ENABLED_KEY = "isEnabled";
   public static final String CONTEXT_KEY = "contextKey";
 
   public static Map<String, String> setContextMap(String accountIdentifier, String webhookIdentifier,
-      String connectorRef, String repoName, String webhookName, List<String> folderPaths) {
+      String connectorRef, String repoName, String webhookName, List<String> folderPaths, Boolean isEnabled) {
     Map<String, String> logContextMap = new HashMap<>();
     setContextIfNotNull(logContextMap, ACCOUNT_KEY, accountIdentifier);
     setContextIfNotNull(logContextMap, WEBHOOK_IDENTIFIER_KEY, webhookIdentifier);
     setContextIfNotNull(logContextMap, REPO_NAME_KEY, repoName);
     setContextIfNotNull(logContextMap, WEBHOOK_NAME_KEY, webhookName);
     setContextIfNotNull(logContextMap, CONNECTOR_REF_KEY, connectorRef);
+    setContextIfNotNull(logContextMap, IS_ENABLED_KEY, valueOf(isEnabled));
     setContextIfListNotNull(logContextMap, FOLDER_PATHS_KEY, folderPaths);
     setContextIfNotNull(logContextMap, CONTEXT_KEY, String.valueOf(java.util.UUID.randomUUID()));
     return logContextMap;
@@ -52,5 +54,9 @@ public class GitXWebhookLogContextHelper {
     if (isNotEmpty(folderPaths)) {
       logContextMap.putIfAbsent(key, StringUtils.join(folderPaths, ", "));
     }
+  }
+
+  private static String valueOf(Object obj) {
+    return (obj == null) ? "null" : obj.toString();
   }
 }
