@@ -34,12 +34,14 @@ import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure.ElastigroupInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8SDirectInfrastructure.K8SDirectInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -514,7 +516,7 @@ public class InfrastructureValidatorTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Infrastructure definition can't be null or empty");
 
-    K8SDirectInfrastructure.K8SDirectInfrastructureBuilder k8SDirectInfrastructureBuilder =
+    K8SDirectInfrastructureBuilder k8SDirectInfrastructureBuilder =
         K8SDirectInfrastructure.builder()
             .namespace(ParameterField.createValueField("name"))
             .releaseName(ParameterField.createValueField("release"));
@@ -721,7 +723,7 @@ public class InfrastructureValidatorTest extends CategoryTest {
   @Owner(developers = VITALIE)
   @Category(UnitTests.class)
   public void testValidateSshWinRmAwsInfrastructure() {
-    SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder builder = SshWinRmAwsInfrastructure.builder();
+    SshWinRmAwsInfrastructureBuilder builder = SshWinRmAwsInfrastructure.builder();
 
     ParameterField credentialsRef = new ParameterField<>(null, null, true, "expression1", null, true);
     builder.credentialsRef(credentialsRef).connectorRef(ParameterField.createValueField("value")).build();
