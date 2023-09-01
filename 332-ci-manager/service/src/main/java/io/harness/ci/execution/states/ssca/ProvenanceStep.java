@@ -5,21 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ssca.beans.provenance;
+package io.harness.ci.execution.states.ssca;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ci.execution.states.AbstractStepExecutable;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.ssca.beans.SscaConstants;
 
-import java.util.List;
-import lombok.Builder;
-import lombok.Data;
-
-@Data
-@Builder
 @OwnedBy(HarnessTeam.SSCA)
-public class BuildDefinition {
-  private String buildType;
-  private ExternalParameters externalParameters;
-  private InternalParameters internalParameters;
-  private List<ResourceDescriptor> resolvedDependencies;
+public class ProvenanceStep extends AbstractStepExecutable {
+  public static final StepType STEP_TYPE = SscaConstants.PROVENANCE_STEP_TYPE;
 }

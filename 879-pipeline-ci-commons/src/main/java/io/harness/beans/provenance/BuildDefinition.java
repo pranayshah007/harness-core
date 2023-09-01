@@ -5,25 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ssca.beans.provenance;
+package io.harness.beans.provenance;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import com.google.protobuf.ByteString;
-import java.util.Map;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 @OwnedBy(HarnessTeam.SSCA)
-public class ResourceDescriptor {
-  private String uri;
-  private Map<String, String> digest;
-  private String name;
-  private String downloadLocation;
-  private String mediaType;
-  private ByteString content;
-  private Object annotations;
+public class BuildDefinition {
+  private String buildType;
+  private ExternalParameters externalParameters;
+  private InternalParameters internalParameters;
+  private List<ResourceDescriptor> resolvedDependencies;
 }

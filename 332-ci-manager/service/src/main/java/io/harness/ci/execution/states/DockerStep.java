@@ -17,6 +17,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.execution.ProvenanceArtifact;
 import io.harness.beans.execution.PublishedImageArtifact;
+import io.harness.beans.provenance.ProvenanceBuilderData;
+import io.harness.beans.provenance.ProvenanceGenerator;
+import io.harness.beans.provenance.ProvenancePredicate;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.steps.outcome.StepArtifacts.StepArtifactsBuilder;
@@ -31,10 +34,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.serializer.JsonUtils;
-import io.harness.ssca.beans.provenance.ProvenanceBuilderData;
-import io.harness.ssca.beans.provenance.ProvenanceGenerator;
-import io.harness.ssca.beans.provenance.ProvenancePredicate;
 
 import com.google.inject.Inject;
 
@@ -68,7 +67,9 @@ public class DockerStep extends AbstractStepExecutable {
     }
 
     populateArtifact(artifactMetadata, stepParameters, stepArtifactsBuilder);
-    populateProvenanceInStepOutcome(ambiance, stepArtifactsBuilder);
+    if (artifactMetadata.getType() == ArtifactMetadataType.DOCKER_ARTIFACT_METADATA) {
+      populateProvenanceInStepOutcome(ambiance, stepArtifactsBuilder);
+    }
     return stepArtifactsBuilder.build();
   }
 
@@ -117,7 +118,6 @@ public class DockerStep extends AbstractStepExecutable {
             .pluginInfo(defaultImageConfig.getImage())
             .build();
     ProvenancePredicate predicate = provenanceGenerator.buildProvenancePredicate(provenanceBuilder);
-    stepArtifactsBuilder.provenanceArtifact(
-        ProvenanceArtifact.builder().predicate(JsonUtils.asTree(predicate)).build());
+    stepArtifactsBuilder.provenanceArtifact(ProvenanceArtifact.builder().predicate(predicate).build());
   }
 }

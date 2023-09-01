@@ -27,7 +27,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ProvenanceStepUtils {
   public static final String PROVENANCE_STEP_GROUP = "ProvenanceStepGroup";
-  public static final String PROVENANCE_STEP = "ProvenanceStep";
+  public static final String PROVENANCE_STEP = "Provenance_Step";
   public static ParallelStepElementConfig getParallelStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
     try {
       return YamlUtils.read(executionWrapperConfig.getParallel().toString(), ParallelStepElementConfig.class);

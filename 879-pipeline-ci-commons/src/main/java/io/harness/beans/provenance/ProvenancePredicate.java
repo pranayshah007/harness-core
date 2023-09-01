@@ -5,11 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.beans.execution;
+package io.harness.beans.provenance;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.provenance.ProvenancePredicate;
 
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +16,7 @@ import lombok.Data;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.SSCA)
-public class ProvenanceArtifact {
-  ProvenancePredicate predicate;
+public class ProvenancePredicate {
+  private BuildDefinition buildDefinition;
+  private RunDetails runDetails;
 }

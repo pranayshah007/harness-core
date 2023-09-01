@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ssca.beans.provenance;
+package io.harness.beans.provenance;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,7 +24,7 @@ public class ProvenanceGenerator {
   public ProvenancePredicate buildProvenancePredicate(ProvenanceBuilderData data) {
     Map<String, String> versionMap = new HashMap<>();
     versionMap.put("ci-manager", versionInfoManager.getFullVersion());
-    if (EmptyPredicate.isEmpty(data.getPluginInfo())) {
+    if (EmptyPredicate.isNotEmpty(data.getPluginInfo())) {
       String[] plugin = data.getPluginInfo().split(":");
       versionMap.put(plugin[0], plugin[1]);
     }
@@ -39,7 +39,7 @@ public class ProvenanceGenerator {
                                                      .build())
                              .build())
         .runDetails(RunDetails.builder()
-                        .builder(Builder.builder()
+                        .builder(ProvenanceBuilder.builder()
                                      .id("https://developer.harness.io/docs/continuous-integration")
                                      .version(versionMap)
                                      .build())

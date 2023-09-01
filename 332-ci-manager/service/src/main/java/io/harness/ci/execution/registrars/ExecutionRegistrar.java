@@ -32,6 +32,7 @@ import io.harness.ci.execution.states.SecurityStep;
 import io.harness.ci.execution.states.UploadToArtifactoryStep;
 import io.harness.ci.execution.states.UploadToGCSStep;
 import io.harness.ci.execution.states.UploadToS3Step;
+import io.harness.ci.execution.states.ssca.ProvenanceStep;
 import io.harness.ci.execution.states.ssca.SscaEnforcementStep;
 import io.harness.ci.execution.states.ssca.SscaOrchestrationStep;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
@@ -79,6 +80,7 @@ public class ExecutionRegistrar {
     engineSteps.put(CISpecStep.STEP_TYPE, CISpecStep.class);
     engineSteps.put(SscaOrchestrationStep.STEP_TYPE, SscaOrchestrationStep.class);
     engineSteps.put(SscaEnforcementStep.STEP_TYPE, SscaEnforcementStep.class);
+    engineSteps.put(ProvenanceStep.STEP_TYPE, ProvenanceStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }

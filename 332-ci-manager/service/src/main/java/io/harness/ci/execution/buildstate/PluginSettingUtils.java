@@ -151,6 +151,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
+  @Inject private ProvenancePluginHelper provenancePluginHelper;
 
   @Override
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
@@ -198,7 +199,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case IACM_APPROVAL:
         return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMApprovalInfo) stepInfo);
       case PROVENANCE:
-        return ProvenancePluginHelper.getProvenanceStepEnvVariables((ProvenanceStepInfo) stepInfo, identifier);
+        return provenancePluginHelper.getProvenanceStepEnvVariables((ProvenanceStepInfo) stepInfo, identifier);
       default:
         throw new IllegalStateException(
             "Unexpected value in getPluginCompatibleEnvVariables: " + stepInfo.getNonYamlInfo().getStepInfoType());
@@ -216,7 +217,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case IACM_TERRAFORM_PLUGIN:
         return iacmStepsUtils.getSecretVariablesForKubernetes((IACMTerraformPluginInfo) step);
       case PROVENANCE:
-        return ProvenancePluginHelper.getProvenanceStepSecretVariables((ProvenanceStepInfo) step);
+        return provenancePluginHelper.getProvenanceStepSecretVariables((ProvenanceStepInfo) step);
       default:
         return new HashMap<>();
     }
