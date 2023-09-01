@@ -46,17 +46,32 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureActionType;
 import io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.abort.v1.AbortFailureConfigV1;
 import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.ignore.v1.IgnoreFailureConfigV1;
 import io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig;
 import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.manualintervention.OnTimeoutConfig;
+import io.harness.yaml.core.failurestrategy.manualintervention.v1.ManualFailureSpecConfigV1;
+import io.harness.yaml.core.failurestrategy.manualintervention.v1.ManualInterventionFailureConfigV1;
 import io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.markFailure.v1.MarkAsFailFailureConfigV1;
 import io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.marksuccess.v1.MarkAsSuccessFailureConfigV1;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.v1.RetryFailureConfigV1;
+import io.harness.yaml.core.failurestrategy.retry.v1.RetryFailureSpecConfigV1;
+import io.harness.yaml.core.failurestrategy.retry.v1.RetrySGFailureConfigV1;
+import io.harness.yaml.core.failurestrategy.retry.v1.RetryStepGroupFailureSpecConfigV1;
 import io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.rollback.v1.PipelineRollbackFailureConfigV1;
+import io.harness.yaml.core.failurestrategy.rollback.v1.StageRollbackFailureConfigV1;
+import io.harness.yaml.core.failurestrategy.v1.NGFailureActionTypeV1;
+import io.harness.yaml.core.failurestrategy.v1.NGFailureTypeV1;
+import io.harness.yaml.core.failurestrategy.v1.OnConfigV1;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -116,5 +131,20 @@ public class PmsSdkCoreKryoRegistrar implements KryoRegistrar {
     kryo.register(PipelineRollbackFailureActionConfig.class, 878035);
     kryo.register(ProceedWithDefaultValuesFailureActionConfig.class, 878036);
     kryo.register(RetrySGFailureActionConfig.class, 878037);
+    kryo.register(OnConfigV1.class, 878038);
+    kryo.register(IgnoreFailureConfigV1.class, 878039);
+    kryo.register(AbortFailureConfigV1.class, 878040);
+    kryo.register(RetryFailureConfigV1.class, 878041);
+    kryo.register(ManualInterventionFailureConfigV1.class, 878042);
+    kryo.register(RetrySGFailureConfigV1.class, 878043);
+    kryo.register(MarkAsSuccessFailureConfigV1.class, 878044);
+    kryo.register(MarkAsFailFailureConfigV1.class, 878045);
+    kryo.register(StageRollbackFailureConfigV1.class, 878046);
+    kryo.register(PipelineRollbackFailureConfigV1.class, 878047);
+    kryo.register(NGFailureActionTypeV1.class, 878048);
+    kryo.register(NGFailureTypeV1.class, 878053);
+    kryo.register(ManualFailureSpecConfigV1.class, 878049);
+    kryo.register(RetryFailureSpecConfigV1.class, 878050);
+    kryo.register(RetryStepGroupFailureSpecConfigV1.class, 878051);
   }
 }

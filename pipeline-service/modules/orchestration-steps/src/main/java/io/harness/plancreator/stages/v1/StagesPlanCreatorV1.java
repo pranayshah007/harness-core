@@ -19,6 +19,7 @@ import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.HarnessStruct;
 import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -74,8 +75,8 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
                       .putDependencyMetadata(curr.getUuid(),
                           Dependency.newBuilder()
                               .putMetadata(
-                                  YAMLFieldNameConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
-                              .setNodeMetadata(HarnessStruct.newBuilder().putData(YAMLFieldNameConstants.NEXT_ID,
+                                  PlanCreatorConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
+                              .setNodeMetadata(HarnessStruct.newBuilder().putData(PlanCreatorConstants.NEXT_ID,
                                   HarnessValue.newBuilder().setStringValue(nextId).build()))
                               .build())
                       .build())

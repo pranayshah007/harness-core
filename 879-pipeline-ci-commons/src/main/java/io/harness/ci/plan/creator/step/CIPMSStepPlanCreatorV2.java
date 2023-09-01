@@ -49,6 +49,7 @@ import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.HarnessStruct;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviserParameters;
@@ -510,12 +511,12 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
   private List<AdviserObtainment> buildAdviserV1(Dependency dependency) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
-        || !dependency.getMetadataMap().containsKey(YAMLFieldNameConstants.NEXT_ID)) {
+        || !dependency.getMetadataMap().containsKey(PlanCreatorConstants.NEXT_ID)) {
       return adviserObtainments;
     }
 
     String nextId =
-        (String) kryoSerializer.asObject(dependency.getMetadataMap().get(YAMLFieldNameConstants.NEXT_ID).toByteArray());
+        (String) kryoSerializer.asObject(dependency.getMetadataMap().get(PlanCreatorConstants.NEXT_ID).toByteArray());
     adviserObtainments.add(
         AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())

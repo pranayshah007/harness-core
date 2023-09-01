@@ -16,8 +16,8 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.HarnessValue;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.protobuf.ByteString;
@@ -41,7 +41,7 @@ public class PlanCreatorUtilsV1 {
 
   public String getNextNodeUuid(KryoSerializer kryoSerializer, Dependency dependency) {
     Optional<Object> nextNodeIdOptional =
-        getDeserializedObjectFromDependency(dependency, kryoSerializer, YAMLFieldNameConstants.NEXT_ID, false);
+        getDeserializedObjectFromDependency(dependency, kryoSerializer, PlanCreatorConstants.NEXT_ID, false);
     if (nextNodeIdOptional.isPresent() && nextNodeIdOptional.get() instanceof String) {
       return (String) nextNodeIdOptional.get();
     }
