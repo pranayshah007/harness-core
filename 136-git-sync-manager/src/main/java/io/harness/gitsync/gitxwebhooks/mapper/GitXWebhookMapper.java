@@ -86,7 +86,7 @@ public class GitXWebhookMapper {
         .connectorRef(body.getConnectorRef())
         .repoName(body.getRepoName())
         .folderPaths(body.getFolderPaths())
-        .isEnabled(Boolean.TRUE.equals(body.isIsEnabled()))
+        .isEnabled(body.isIsEnabled())
         .build();
   }
 
@@ -112,7 +112,7 @@ public class GitXWebhookMapper {
         .build();
   }
 
-  public List<GitXWebhookResponse> buildListGitXWebhookResponse(
+  public Page<GitXWebhookResponse> buildListGitXWebhookResponse(
       ListGitXWebhookResponseDTO listGitXWebhookResponseDTO, Integer page, Integer limit) {
     List<GitXWebhookResponse> getGitXWebhookResponseList =
         emptyIfNull(listGitXWebhookResponseDTO.getGitXWebhooksList())
@@ -128,7 +128,17 @@ public class GitXWebhookMapper {
               return gitXWebhookResponse;
             })
             .collect(Collectors.toList());
-    Page<GitXWebhookResponse> gitXWebhookResponsePage = PageUtils.getPage(getGitXWebhookResponseList, page, limit);
-    return gitXWebhookResponsePage.getContent();
+    return PageUtils.getPage(getGitXWebhookResponseList, page, limit);
+  }
+
+  public GitXWebhookResponse buildGetGitXWebhookResponseDTO(GitXWebhookResponse gitXWebhook) {
+    GitXWebhookResponse responseBody = new GitXWebhookResponse();
+    responseBody.setWebhookIdentifier(gitXWebhook.getWebhookIdentifier());
+    responseBody.setWebhookName(gitXWebhook.getWebhookName());
+    responseBody.setRepoName(gitXWebhook.getRepoName());
+    responseBody.setConnectorRef(gitXWebhook.getConnectorRef());
+    responseBody.setFolderPaths(gitXWebhook.getFolderPaths());
+    responseBody.setIsEnabled(gitXWebhook.isIsEnabled());
+    return responseBody;
   }
 }

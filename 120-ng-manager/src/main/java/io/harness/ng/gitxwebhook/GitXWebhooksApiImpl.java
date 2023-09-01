@@ -25,16 +25,19 @@ import io.harness.spec.server.ng.v1.model.CreateGitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.GitXWebhookResponse;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookRequest;
 import io.harness.spec.server.ng.v1.model.UpdateGitXWebhookResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
-import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -99,8 +102,17 @@ public class GitXWebhooksApiImpl implements GitXWebhooksApi {
         GitXWebhookMapper.buildListGitXWebhookRequestDTO(harnessAccount, webhookIdentifier);
     ListGitXWebhookResponseDTO listGitXWebhookResponseDTO =
         gitXWebhookService.listGitXWebhooks(listGitXWebhookRequestDTO);
-    List<GitXWebhookResponse> responseBody =
+    Page<GitXWebhookResponse> gitXWebhooks =
         GitXWebhookMapper.buildListGitXWebhookResponse(listGitXWebhookResponseDTO, page, limit);
-    return Response.ok().entity(responseBody).build();
+
+    ResponseBuilder responseBuilder = Response.ok();
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, gitXWebhooks.getTotalElements(), page, limit);
+    return responseBuilderWithLinks
+        .entity(gitXWebhooks.getContent()
+                    .stream()
+                    .map(GitXWebhookMapper::buildGetGitXWebhookResponseDTO)
+                    .collect(Collectors.toList()))
+        .build();
   }
 }

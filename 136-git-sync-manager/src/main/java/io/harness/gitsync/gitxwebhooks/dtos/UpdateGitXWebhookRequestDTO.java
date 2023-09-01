@@ -33,5 +33,5 @@ public class UpdateGitXWebhookRequestDTO {
   String repoName;
   String connectorRef;
   List<String> folderPaths;
-  boolean isEnabled;
+  Boolean isEnabled;
 }

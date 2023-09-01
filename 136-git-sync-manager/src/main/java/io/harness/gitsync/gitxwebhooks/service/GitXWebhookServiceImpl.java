@@ -220,7 +220,9 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
     if (isNotEmpty(updateGitXWebhookRequestDTO.getWebhookName())) {
       update.set(GitXWebhookKeys.name, updateGitXWebhookRequestDTO.getWebhookName());
     }
-    update.set(GitXWebhookKeys.isEnabled, updateGitXWebhookRequestDTO.isEnabled());
+    if (updateGitXWebhookRequestDTO.getIsEnabled() != null) {
+      update.set(GitXWebhookKeys.isEnabled, Boolean.TRUE.equals(updateGitXWebhookRequestDTO.getIsEnabled()));
+    }
     update.set(GitXWebhookKeys.lastUpdatedAt, currentTimeInMilliseconds);
     return update;
   }
