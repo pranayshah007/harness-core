@@ -47,7 +47,6 @@ import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums.MetricSum;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums.TransactionMetricSums;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
-import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnomalousPatternsService;
@@ -257,13 +256,11 @@ public class TrendAnalysisServiceImpl implements TrendAnalysisService {
     analysis.setAnalysisStartTime(startTime);
     analysis.setAnalysisEndTime(endTime);
 
-    TimeSeriesShortTermHistory shortTermHistory = buildShortTermHistory(analysis);
     TimeSeriesCumulativeSums cumulativeSums = buildCumulativeSums(analysis, startTime, endTime);
     TimeSeriesRiskSummary riskSummary = buildRiskSummary(analysis, startTime, endTime);
 
     saveRisk(
         analysis, startTime, endTime, learningEngineTask.getVerificationTaskId(), logAnalysisTask.isBaselineWindow());
-    timeSeriesAnalysisService.saveShortTermHistory(shortTermHistory);
     timeSeriesAnomalousPatternsService.saveAnomalousPatterns(analysis, learningEngineTask.getVerificationTaskId());
     hPersistence.save(cumulativeSums);
     hPersistence.save(riskSummary);
@@ -424,21 +421,6 @@ public class TrendAnalysisServiceImpl implements TrendAnalysisService {
         .transactionMetricSums(transactionMetricSums)
         .analysisStartTime(startTime)
         .analysisEndTime(endTime)
-        .build();
-  }
-
-  private TimeSeriesShortTermHistory buildShortTermHistory(ServiceGuardTimeSeriesAnalysisDTO analysisDTO) {
-    Map<String, Map<String, List<Double>>> shortTermHistoryMap = new HashMap<>();
-    analysisDTO.getTxnMetricAnalysisData().forEach((txnName, metricMap) -> {
-      shortTermHistoryMap.put(txnName, new HashMap<>());
-      metricMap.forEach(
-          (metricIdentifier, txnMetricData)
-              -> shortTermHistoryMap.get(txnName).put(metricIdentifier, txnMetricData.getShortTermHistory()));
-    });
-
-    return TimeSeriesShortTermHistory.builder()
-        .verificationTaskId(analysisDTO.getVerificationTaskId())
-        .transactionMetricHistories(TimeSeriesShortTermHistory.convertFromMap(shortTermHistoryMap))
         .build();
   }
 

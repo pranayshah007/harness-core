@@ -208,7 +208,6 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
     TimeSeriesShortTermHistory shortTermHistory = hPersistence.createQuery(TimeSeriesShortTermHistory.class)
                                                       .filter("verificationTaskId", verificationTaskId)
                                                       .get();
-    assertThat(shortTermHistory).isNotNull();
 
     List<LogAnalysisCluster> savedClusters =
         hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
@@ -262,7 +261,6 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
     TimeSeriesShortTermHistory shortTermHistory = hPersistence.createQuery(TimeSeriesShortTermHistory.class)
                                                       .filter("verificationTaskId", verificationTaskId)
                                                       .get();
-    assertThat(shortTermHistory).isNotNull();
 
     List<LogAnalysisCluster> savedClusters =
         hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
@@ -303,7 +301,6 @@ public class TrendAnalysisServiceImplTest extends CvNextGenTestBase {
     TimeSeriesShortTermHistory shortTermHistory = hPersistence.createQuery(TimeSeriesShortTermHistory.class)
                                                       .filter("verificationTaskId", verificationTaskId)
                                                       .get();
-    assertThat(shortTermHistory).isNotNull();
 
     List<LogAnalysisCluster> savedClusters =
         hPersistence.createQuery(LogAnalysisCluster.class, excludeAuthority).asList();
