@@ -19,7 +19,6 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaService;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
 import io.harness.yaml.schema.beans.YamlSchemaDetailsWrapper;
 import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
@@ -55,7 +54,6 @@ import lombok.AllArgsConstructor;
     })
 public class CdPartialYamlSchemaResource implements YamlSchemaResource {
   CdYamlSchemaService cdYamlSchemaService;
-  CustomStageYamlSchemaService customStageYamlSchemaService;
 
   @GET
   @ApiOperation(value = "Get Partial Yaml Schema", nickname = "getPartialYamlSchema")
@@ -65,9 +63,6 @@ public class CdPartialYamlSchemaResource implements YamlSchemaResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("scope") Scope scope) {
     List<PartialSchemaDTO> schema =
         cdYamlSchemaService.getDeploymentStageYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, scope);
-    PartialSchemaDTO customStageYamlSchema = customStageYamlSchemaService.getCustomStageYamlSchema(
-        accountIdentifier, orgIdentifier, projectIdentifier, scope, Collections.EMPTY_LIST);
-    schema.add(customStageYamlSchema);
     return ResponseDTO.newResponse(schema);
   }
 

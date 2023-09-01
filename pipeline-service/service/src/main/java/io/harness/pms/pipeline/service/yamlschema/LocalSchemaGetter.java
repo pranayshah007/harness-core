@@ -16,7 +16,7 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaService;
-// import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaService;
+import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
 import io.harness.yaml.schema.YamlSchemaProvider;
@@ -35,20 +35,21 @@ public class LocalSchemaGetter implements SchemaGetter {
   private final ApprovalYamlSchemaService approvalYamlSchemaService;
 
   private final PipelineStageYamlSchemaService pipelineStageYamlSchemaService;
-  // private final CustomStageYamlSchemaService customStageYamlSchemaService;
+  private final CustomStageYamlSchemaService customStageYamlSchemaService;
   private final FeatureFlagYamlService featureFlagYamlService;
   private final PmsYamlSchemaHelper pmsYamlSchemaHelper;
 
   public LocalSchemaGetter(String accountIdentifier, ModuleType moduleType, YamlSchemaProvider yamlSchemaProvider,
       ApprovalYamlSchemaService approvalYamlSchemaService,
-      PipelineStageYamlSchemaService pipelineStageYamlSchemaService, FeatureFlagYamlService featureFlagYamlService,
+      PipelineStageYamlSchemaService pipelineStageYamlSchemaService,
+      CustomStageYamlSchemaService customStageYamlSchemaService, FeatureFlagYamlService featureFlagYamlService,
       PmsYamlSchemaHelper pmsYamlSchemaHelper) {
     this.accountIdentifier = accountIdentifier;
     this.moduleType = moduleType;
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.approvalYamlSchemaService = approvalYamlSchemaService;
     this.pipelineStageYamlSchemaService = pipelineStageYamlSchemaService;
-    // this.customStageYamlSchemaService = customStageYamlSchemaService;
+    this.customStageYamlSchemaService = customStageYamlSchemaService;
     this.featureFlagYamlService = featureFlagYamlService;
     this.pmsYamlSchemaHelper = pmsYamlSchemaHelper;
   }
@@ -60,8 +61,8 @@ public class LocalSchemaGetter implements SchemaGetter {
         accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
     partialSchemaDTOList.add(featureFlagYamlService.getFeatureFlagYamlSchema(
         accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
-    //    partialSchemaDTOList.add(customStageYamlSchemaService.getCustomStageYamlSchema(
-    //        accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
+    partialSchemaDTOList.add(customStageYamlSchemaService.getCustomStageYamlSchema(
+        accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
     partialSchemaDTOList.add(pipelineStageYamlSchemaService.getPipelineStageYamlSchema(
         accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
     return partialSchemaDTOList;
@@ -90,13 +91,12 @@ public class LocalSchemaGetter implements SchemaGetter {
             .getFeatureFlagYamlSchema(
                 accountIdentifier, projectIdentifier, orgIdentifier, scope, yamlSchemaWithDetailsList)
             .getSchema();
+      } else if (entityType.getYamlName().equals(EntityTypeConstants.CUSTOM_STAGE)) {
+        return customStageYamlSchemaService
+            .getCustomStageYamlSchema(
+                accountIdentifier, projectIdentifier, orgIdentifier, scope, yamlSchemaWithDetailsList)
+            .getSchema();
       }
-      //      else if (entityType.getYamlName().equals(EntityTypeConstants.CUSTOM_STAGE)) {
-      //                return customStageYamlSchemaService
-      //                    .getCustomStageYamlSchema(
-      //                        accountIdentifier, projectIdentifier, orgIdentifier, scope, yamlSchemaWithDetailsList)
-      //                    .getSchema();
-      //      }
       throw new InvalidRequestException(format("stage %s does not exist in module pms", entityType));
     }
     return yamlSchemaProvider.getYamlSchema(entityType, orgIdentifier, projectIdentifier, scope);

@@ -7,12 +7,15 @@
 
 package io.harness.cdng.creator.plan.customstage;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.stage.CustomStageNode;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -57,7 +60,7 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
 
   @Override
   public Set<String> getSupportedStageTypes() {
-    return Collections.singleton("Custom");
+    return Collections.singleton(CUSTOM);
   }
 
   @Override
@@ -142,8 +145,9 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     planCreationResponseMap.put(envNode.getUuid(), PlanCreationResponse.builder().planNode(envNode).build());
 
     EnvironmentYamlV2 finalEnvironmentYamlV2 = field.getCustomStageConfig().getEnvironment();
-    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(
-        finalEnvironmentYamlV2, getAdviserObtainmentFromMetaData(ctx.getCurrentField()));
+    PlanNode node = InfrastructurePmsPlanCreator.getInfraTaskExecutableStepV2PlanNode(finalEnvironmentYamlV2,
+        getAdviserObtainmentFromMetaData(ctx.getCurrentField()), ServiceDefinitionType.CUSTOM_DEPLOYMENT,
+        ParameterField.createValueField(false));
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
 
     return planCreationResponseMap;

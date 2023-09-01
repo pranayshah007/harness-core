@@ -7,6 +7,8 @@
 
 package io.harness.cdng.creator.plan.customstage;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
+
 import io.harness.cdng.creator.plan.stage.CustomStageNode;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.pms.pipeline.filter.PipelineFilter;
@@ -18,7 +20,7 @@ import java.util.Set;
 public class CustomStageFilterCreator extends GenericStageFilterJsonCreatorV2<CustomStageNode> {
   @Override
   public Set<String> getSupportedStageTypes() {
-    return Collections.singleton("Custom");
+    return Collections.singleton(CUSTOM);
   }
 
   @Override

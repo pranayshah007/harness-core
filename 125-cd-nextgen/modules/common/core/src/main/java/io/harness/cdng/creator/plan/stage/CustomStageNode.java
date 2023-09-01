@@ -8,6 +8,7 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -29,7 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("Custom")
+@JsonTypeName(CUSTOM)
 @TypeAlias("CustomStageNode")
 @OwnedBy(PIPELINE)
 @RecasterAlias("io.harness.steps.customstage.CustomStageNode")
@@ -41,7 +42,7 @@ public class CustomStageNode extends CustomAbstractStageNode {
   CustomStageConfig customStageConfig;
   @Override
   public String getType() {
-    return "Custom";
+    return CUSTOM;
   }
 
   @Override
@@ -50,7 +51,7 @@ public class CustomStageNode extends CustomAbstractStageNode {
   }
 
   public enum StepType {
-    Custom("Custom");
+    Custom(CUSTOM);
     @Getter String name;
     StepType(String name) {
       this.name = name;
