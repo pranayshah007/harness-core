@@ -5355,7 +5355,7 @@
             }
           ]
         },
-        "slsa": {
+        "slsa_provenance": {
           "$ref": "#/definitions/SlsaConfig"
         }
       },
