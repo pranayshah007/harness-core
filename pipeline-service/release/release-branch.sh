@@ -161,7 +161,7 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     sed -i "s:build.staticSchemaCommitId=${staticVersion}:build.staticSchemaCommitId=${head_static_commit}:g" ${VERSION_FILE}
 
     # Updating static-schema for pipeline.json
-    PIPELINE_JSON="pipeline-service/service/src/main/resources/static-schema/pipeline.json"
+    PIPELINE_JSON="pipeline-service/service/src/main/resources/static-schema/v0/pipeline.json"
     perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/pipeline.json" ${PIPELINE_JSON}
     pipeline_curl_result=$?
 
@@ -175,7 +175,7 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     fi
 
     # Updating static-schema for trigger.json
-    TRIGGER_JSON="pipeline-service/service/src/main/resources/static-schema/trigger.json"
+    TRIGGER_JSON="pipeline-service/service/src/main/resources/static-schema/v0/trigger.json"
     perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/trigger.json" ${TRIGGER_JSON}
     trigger_curl_result=$?
 
@@ -202,7 +202,7 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     git checkout -b release/${PURPOSE}/${newBranch}
 
     # Updating static-schema for pipeline in branch cut branch
-    PIPELINE_JSON="pipeline-service/service/src/main/resources/static-schema/pipeline.json"
+    PIPELINE_JSON="pipeline-service/service/src/main/resources/static-schema/v0/pipeline.json"
     perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/pipeline.json" ${PIPELINE_JSON}
     pipeline_curl_result=$?
 
@@ -216,7 +216,7 @@ if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
     fi
 
     # Updating static-schema for trigger.json in branch cut branch
-    TRIGGER_JSON="pipeline-service/service/src/main/resources/static-schema/trigger.json"
+    TRIGGER_JSON="pipeline-service/service/src/main/resources/static-schema/v0/trigger.json"
     perform_curl_with_retry "https://raw.githubusercontent.com/harness/harness-schema/${head_static_commit}/v0/trigger.json" ${TRIGGER_JSON}
     trigger_curl_result=$?
 
