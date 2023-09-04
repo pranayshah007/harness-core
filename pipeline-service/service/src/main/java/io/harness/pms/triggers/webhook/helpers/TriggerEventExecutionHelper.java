@@ -128,7 +128,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class TriggerEventExecutionHelper {
   private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-  private SecretManagerClientService ngSecretService;
+  @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   private TaskExecutionUtils taskExecutionUtils;
   private final NGSettingsClient settingsClient;
   private final NGTriggerRepository ngTriggerRepository;
