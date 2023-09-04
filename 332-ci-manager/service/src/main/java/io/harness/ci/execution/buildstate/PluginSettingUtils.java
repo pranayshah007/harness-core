@@ -152,6 +152,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
   @Inject private ProvenancePluginHelper provenancePluginHelper;
+  @Inject private SscaEnforcementPluginHelper sscaEnforcementPluginHelper;
 
   @Override
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
@@ -192,7 +193,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
             (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance, infraType);
       case SSCA_ENFORCEMENT:
-        return SscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
+        return sscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
             (SscaEnforcementStepInfo) stepInfo, identifier, ambiance, infraType);
       case IACM_TERRAFORM_PLUGIN:
         return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMTerraformPluginInfo) stepInfo);
@@ -212,7 +213,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case SSCA_ORCHESTRATION:
         return SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars((SscaOrchestrationStepInfo) step);
       case SSCA_ENFORCEMENT:
-        return SscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
+        return sscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
             (SscaEnforcementStepInfo) step, identifier);
       case IACM_TERRAFORM_PLUGIN:
         return iacmStepsUtils.getSecretVariablesForKubernetes((IACMTerraformPluginInfo) step);
