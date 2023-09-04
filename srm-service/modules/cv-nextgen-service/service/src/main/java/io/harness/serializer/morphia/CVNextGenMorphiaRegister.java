@@ -18,7 +18,6 @@ import io.harness.cvng.activity.entities.InternalChangeActivity;
 import io.harness.cvng.activity.entities.KubernetesActivity;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.ClusteredLog;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
@@ -258,7 +257,6 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(ActivityBucket.class);
     set.add(SLIRecordBucket.class);
     set.add(SimpleVerificationJob.class);
-    set.add(SRMStepAnalysisActivity.class);
     set.add(SRMAnalysisStepExecutionDetail.class);
   }
 

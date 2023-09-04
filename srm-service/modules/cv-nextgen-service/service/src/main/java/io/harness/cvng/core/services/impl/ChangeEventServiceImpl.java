@@ -38,7 +38,6 @@ import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.change.CustomChangeEvent;
 import io.harness.cvng.beans.change.CustomChangeEventMetadata;
-import io.harness.cvng.beans.change.HarnessSRMAnalysisEventMetadata;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO.CategoryCountDetails;
@@ -70,11 +69,6 @@ import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
-import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.ambiance.Level;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.utils.PageUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -149,33 +143,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
             .projectIdentifier(changeEventDTO.getProjectIdentifier())
             .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())
             .build();
-    if (changeEventDTO.getMetadata().getType().equals(ChangeSourceType.SRM_STEP_ANALYSIS)) {
-      HarnessSRMAnalysisEventMetadata metadata = (HarnessSRMAnalysisEventMetadata) changeEventDTO.getMetadata();
-      Ambiance ambiance =
-          Ambiance.newBuilder()
-              .setPlanExecutionId(metadata.getPlanExecutionId())
-              .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier(metadata.getPipelineId()).build())
-              .addLevels(Level.newBuilder()
-                             .setSetupId(metadata.getStageStepId())
-                             .setIdentifier(metadata.getStageId())
-                             .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
-                             .build())
-              .build();
-      ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
-                                                              .accountIdentifier(changeEventDTO.getAccountId())
-                                                              .orgIdentifier(changeEventDTO.getOrgIdentifier())
-                                                              .projectIdentifier(changeEventDTO.getProjectIdentifier())
-                                                              .serviceIdentifier(changeEventDTO.getServiceIdentifier())
-                                                              .environmentIdentifier(changeEventDTO.getEnvIdentifier())
-                                                              .build();
-      String executionDetailId = srmAnalysisStepService.createSRMAnalysisStepExecution(ambiance,
-          changeEventDTO.getMonitoredServiceIdentifier(), null, serviceEnvironmentParams,
-          metadata.getAnalysisDuration(), Optional.empty());
-      Activity activity = transformer.getEntity(changeEventDTO);
-      activity.setUuid(executionDetailId);
-      activityService.upsert(activity);
-      return true;
-    }
+
     if (changeEventDTO.getMetadata().getType().isInternal()) {
       String activityId = activityService.upsert(transformer.getEntity(changeEventDTO));
       if (changeEventDTO.getMetadata().getType().equals(ChangeSourceType.HARNESS_CD)) {
