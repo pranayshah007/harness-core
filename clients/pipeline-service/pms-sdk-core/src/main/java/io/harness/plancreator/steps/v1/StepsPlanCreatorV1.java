@@ -7,6 +7,8 @@
 
 package io.harness.plancreator.steps.v1;
 
+import static io.harness.pms.plan.creation.PlanCreatorConstants.YAML_VERSION;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -61,8 +63,9 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
     // TODO : Figure out corresponding failure stages and put that here as well
     for (i = 0; i < stages.size() - 1; i++) {
-      curr = stages.get(i);
-      String nextId = stages.get(i + 1).getUuid();
+      curr = getStepField(stages.get(i));
+      String version = getYamlVersionFromStepField(curr);
+      String nextId = getStepField(stages.get(i + 1)).getUuid();
       // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
       // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
       // bytes for complex objects. We will deprecate the first one in v1
@@ -79,19 +82,47 @@ public class StepsPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
                                                    .putData(PlanCreatorConstants.NEXT_ID,
                                                        HarnessValue.newBuilder().setStringValue(nextId).build())
                                                    .build())
+                              .setParentInfo(
+                                  HarnessStruct.newBuilder()
+                                      .putData(YAML_VERSION, HarnessValue.newBuilder().setStringValue(version).build())
+                                      .build())
                               .build())
                       .build())
               .build());
     }
 
-    curr = stages.get(i);
+    curr = getStepField(stages.get(i));
+    String version = getYamlVersionFromStepField(curr);
     responseMap.put(curr.getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(Dependencies.newBuilder().putDependencies(curr.getUuid(), curr.getYamlPath()).build())
+            .dependencies(Dependencies.newBuilder()
+                              .putDependencies(curr.getUuid(), curr.getYamlPath())
+                              .putDependencyMetadata(curr.getUuid(),
+                                  Dependency.newBuilder()
+                                      .setParentInfo(HarnessStruct.newBuilder()
+                                                         .putData(YAML_VERSION,
+                                                             HarnessValue.newBuilder().setStringValue(version).build())
+                                                         .build())
+                                      .build())
+                              .build())
             .build());
     return responseMap;
   }
 
+  private YamlField getStepField(YamlField currField) {
+    if (currField.getNode().getField(YAMLFieldNameConstants.STEP) != null) {
+      return currField.getNode().getField(YAMLFieldNameConstants.STEP);
+    }
+    return currField;
+  }
+
+  private String getYamlVersionFromStepField(YamlField currField) {
+    if (currField.getNode().getField(YAMLFieldNameConstants.STEP) != null
+        || YAMLFieldNameConstants.STEP.equals(currField.getNode().getFieldName())) {
+      return PipelineVersion.V0;
+    }
+    return PipelineVersion.V1;
+  }
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
     StepParameters stepParameters = NGSectionStepParameters.builder().childNodeId(childrenNodeIds.get(0)).build();
