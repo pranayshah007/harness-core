@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.jexl3.JexlException;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -32,12 +33,20 @@ public class GenericExpressionParser implements DataPointParser {
     IdpExpressionEvaluator evaluator = new IdpExpressionEvaluator(expressionData);
 
     Map<String, Object> dataPointResponse = new HashMap<>();
-    Object value = evaluator.evaluateExpression(outcomeExpression, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
-    if (value == null) {
-      log.warn("Could not evaluate expression for data point {}", dataPoint.getIdentifier());
+    Object value = null;
+    dataPointResponse.put(ERROR_MESSAGE_KEY, "");
+    try {
+      value = evaluator.evaluateExpression(outcomeExpression, ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+      if (value == null) {
+        log.warn(
+            "Could not find the required data by evaluating expression for data point {}", dataPoint.getIdentifier());
+        dataPointResponse.put(ERROR_MESSAGE_KEY, "Missing Data");
+      }
+    } catch (JexlException e) {
+      log.warn("Datapoint expression evaluation failed for data point {}", dataPoint.getIdentifier(), e);
+      dataPointResponse.put(ERROR_MESSAGE_KEY, "Datapoint extraction expression evaluation failed");
     }
     dataPointResponse.put(DATA_POINT_VALUE_KEY, value);
-    dataPointResponse.put(ERROR_MESSAGE_KEY, "");
     return dataPointResponse;
   }
 }

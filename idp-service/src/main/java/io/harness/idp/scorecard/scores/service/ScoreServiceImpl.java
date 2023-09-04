@@ -383,9 +383,11 @@ public class ScoreServiceImpl implements ScoreService {
           checkStatus.setName(check.getName());
           Pair<CheckStatus.StatusEnum, String> statusAndMessage = getCheckStatusAndFailureReason(evaluator, check);
           checkStatus.setStatus(statusAndMessage.getFirst());
-          checkStatus.setReason(statusAndMessage.getSecond());
-          log.info("Check status for {} : {}; Account: {} ", check.getIdentifier(), checkStatus.getStatus(),
-              accountIdentifier);
+          if (statusAndMessage.getSecond() != null) {
+            checkStatus.setReason(statusAndMessage.getSecond());
+          }
+          log.info("Check {}, Status : {}, Reason: {}, Account: {} ", check.getIdentifier(), checkStatus.getStatus(),
+              statusAndMessage.getSecond(), accountIdentifier);
 
           double weightage = scorecardCheckByIdentifier.get(check.getIdentifier()).getWeightage();
           totalPossibleScore += weightage;
@@ -439,24 +441,33 @@ public class ScoreServiceImpl implements ScoreService {
         log.warn("Expected boolean assertion, got {} value for check {}", value, checkEntity.getIdentifier());
         return new Pair<>(CheckStatus.StatusEnum.valueOf(checkEntity.getDefaultBehaviour().toString()), null);
       }
-
       if (!(boolean) value) {
-        StringBuilder reasonBuilder = new StringBuilder();
-        for (Rule rule : checkEntity.getRules()) {
-          String errorMessageExpression = constructExpressionFromRules(
-              Collections.singletonList(rule), checkEntity.getRuleStrategy(), ERROR_MESSAGE_KEY, true);
-          String lhsExpression = constructExpressionFromRules(
-              Collections.singletonList(rule), checkEntity.getRuleStrategy(), DATA_POINT_VALUE_KEY, true);
-          Object lhsValue = evaluator.evaluateExpression(lhsExpression, RETURN_NULL_IF_UNRESOLVED);
-          Object errorMessage = evaluator.evaluateExpression(errorMessageExpression, RETURN_NULL_IF_UNRESOLVED);
-          reasonBuilder.append(String.format(
-              "Expected %s %s. Actual %s. Reason: %s", rule.getOperator(), rule.getValue(), lhsValue, errorMessage));
-        }
-        return new Pair<>(CheckStatus.StatusEnum.FAIL, reasonBuilder.toString());
+        return new Pair<>(CheckStatus.StatusEnum.FAIL, getCheckFailureReason(evaluator, checkEntity));
       }
-
       return new Pair<>(CheckStatus.StatusEnum.PASS, null);
     }
+  }
+
+  private String getCheckFailureReason(IdpExpressionEvaluator evaluator, CheckEntity checkEntity) {
+    StringBuilder reasonBuilder = new StringBuilder();
+    for (Rule rule : checkEntity.getRules()) {
+      try {
+        String errorMessageExpression = constructExpressionFromRules(
+            Collections.singletonList(rule), checkEntity.getRuleStrategy(), ERROR_MESSAGE_KEY, true);
+        String lhsExpression = constructExpressionFromRules(
+            Collections.singletonList(rule), checkEntity.getRuleStrategy(), DATA_POINT_VALUE_KEY, true);
+        Object lhsValue = evaluator.evaluateExpression(lhsExpression, RETURN_NULL_IF_UNRESOLVED);
+        Object errorMessage = evaluator.evaluateExpression(errorMessageExpression, RETURN_NULL_IF_UNRESOLVED);
+        reasonBuilder.append(
+            String.format("Expected %s %s. Actual %s.", rule.getOperator(), rule.getValue(), lhsValue));
+        if ((errorMessage instanceof String) && !((String) errorMessage).isEmpty()) {
+          reasonBuilder.append(String.format(" Reason: %s", errorMessage));
+        }
+      } catch (JexlException e) {
+        log.warn("Reason expression evaluation failed", e);
+      }
+    }
+    return reasonBuilder.toString();
   }
 
   private Map<String, ScoreEntity> getScoreEntityAndScoreCardIdentifierMapping(
