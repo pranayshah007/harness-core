@@ -22,7 +22,9 @@ import io.harness.ssca.beans.provenance.ProvenanceSourceType;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,6 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Builder
+@JsonTypeName(SscaConstants.SLSA_PROVENANCE)
 @TypeAlias("ProvenanceStepInfo")
 @NoArgsConstructor
 @AllArgsConstructor
@@ -55,6 +58,7 @@ public class ProvenanceStepInfo implements PluginCompatibleStep {
   }
 
   @Override
+  @ApiModelProperty(hidden = true)
   public ParameterField<String> getConnectorRef() {
     if (source != null) {
       if (source.getType() == ProvenanceSourceType.DOCKER) {
@@ -65,11 +69,13 @@ public class ProvenanceStepInfo implements PluginCompatibleStep {
   }
 
   @Override
+  @ApiModelProperty(hidden = true)
   public ContainerResource getResources() {
     return null;
   }
 
   @Override
+  @ApiModelProperty(hidden = true)
   public ParameterField<Integer> getRunAsUser() {
     return null;
   }
@@ -77,5 +83,11 @@ public class ProvenanceStepInfo implements PluginCompatibleStep {
   @Override
   public String getFacilitatorType() {
     return OrchestrationFacilitatorType.ASYNC;
+  }
+
+  @Override
+  @ApiModelProperty(hidden = true)
+  public ParameterField<List<String>> getBaseImageConnectorRefs() {
+    return new ParameterField<>();
   }
 }
