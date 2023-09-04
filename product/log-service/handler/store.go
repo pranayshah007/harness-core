@@ -21,6 +21,7 @@ import (
 
 const (
 	filePathSuffix = "logs.zip"
+	filePathPrefix = "zips"
 )
 
 // HandleUpload returns an http.HandlerFunc that uploads
@@ -206,7 +207,7 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 		accountID := r.URL.Query().Get(accountIDParam)
 		prefix := r.URL.Query().Get(usePrefixParam)
 
-		zipPrefix := CreateAccountSeparatedKey(accountID, prefix) + "/" + filePathSuffix
+		zipPrefix := filePathPrefix + "/" + CreateAccountSeparatedKey(accountID, prefix) + "/" + filePathSuffix
 
 		link, err := s.DownloadLink(ctx, zipPrefix, cfg.CacheTTL)
 		if err != nil {
