@@ -9,6 +9,7 @@ package io.harness.idp.scorecard.datapoints.parser;
 
 import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_ADMIN_PERMISSION_ERROR;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -35,12 +36,15 @@ public class GithubIsBranchProtectedParser implements DataPointParser {
         (Map<String, Object>) CommonUtils.findObjectByName(data, "branchProtectionRule");
 
     boolean value = false;
+    String errorMessage = null;
     if (branchProtectionRule != null) {
       value = !(boolean) branchProtectionRule.get("allowsDeletions")
           && !(boolean) branchProtectionRule.get("allowsForcePushes");
+    } else {
+      errorMessage = GITHUB_ADMIN_PERMISSION_ERROR;
     }
     dataPointInfo.put(DATA_POINT_VALUE_KEY, value);
-    dataPointInfo.put(ERROR_MESSAGE_KEY, null);
+    dataPointInfo.put(ERROR_MESSAGE_KEY, errorMessage);
     return dataPointInfo;
   }
 }
