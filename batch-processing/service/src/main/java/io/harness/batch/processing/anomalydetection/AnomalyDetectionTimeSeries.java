@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @Slf4j
-@Singleton
 public class AnomalyDetectionTimeSeries extends Anomaly {
   public static AnomalyDetectionTimeSeries initialiseNewTimeSeries(TimeSeriesMetaData timeSeriesMetaData) {
     AnomalyDetectionTimeSeries timeSeries = AnomalyDetectionTimeSeries.builder()
