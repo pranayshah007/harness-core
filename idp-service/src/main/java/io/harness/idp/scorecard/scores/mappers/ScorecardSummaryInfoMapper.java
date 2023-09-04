@@ -23,6 +23,7 @@ public class ScorecardSummaryInfoMapper {
     scorecardSummaryInfo.setChecksStatuses(scoreEntity.getCheckStatus());
     scorecardSummaryInfo.setScorecardName(scoreCardName);
     scorecardSummaryInfo.setDescription(scoreCardDescription);
+    scorecardSummaryInfo.setScorecardIdentifier(scoreEntity.getScorecardIdentifier());
     return scorecardSummaryInfo;
   }
 }

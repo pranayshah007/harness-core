@@ -2733,12 +2733,17 @@ components:
           type: string
           x-stoplight:
             id: 9kth5poytqeum
+        data_point_identifier:
+          type: string
+          x-stoplight:
+            id: cpgj19ppw2qjm
       required:
         - type
         - name
         - description
         - is_conditional
         - conditional_input_description
+        - data_point_identifier
     DataPointsResponse:
       title: DataPointResponse
       x-stoplight:
@@ -2817,12 +2822,17 @@ components:
           type: string
           x-stoplight:
             id: mp6ecvb3rzwui
+        scorecard_identifier:
+          type: string
+          x-stoplight:
+            id: ajvvlct3rnppd
       required:
         - scorecard_name
         - timestamp
         - score
         - checks_statuses
         - description
+        - scorecard_identifier
     ScorecardSummaryResponse:
       title: ScorecardSummaryResponse
       x-stoplight:
