@@ -77,22 +77,62 @@ fi
 echo "INFO: Step 10: Bumping version in build.properties in ${BASE_BRANCH} branch."
 export SHA=$(git rev-parse HEAD)
 export VERSION_FILE=srm-service/build.properties
-export VERSION=$(cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g')
-export VERSION=${VERSION%??}
-export NEW_VERSION=$(( ${VERSION}+1 ))
-sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
+
+# break down the version number into it's components
+major=`cat ${VERSION_FILE} | grep 'build.majorVersion=' | sed -e 's: *build.majorVersion=::g'`
+minor=`cat ${VERSION_FILE} | grep 'build.minorVersion=' | sed -e 's: *build.minorVersion=::g'`
+patchVersion=`cat ${VERSION_FILE} | grep 'build.patchVersion=' | sed -e 's: *build.patchVersion=::g'`
+echo "INFO: Current Tag: $TAG: major.minor.patchVersion: ${major}.${minor}.${patchVersion}"
+# check ENV paramater RELEASE_TYPE to see which number to increment
+echo "INFO: Release Type: $RELEASE_TYPE"
+case $RELEASE_TYPE in
+  major)
+    echo "INFO: Incrementing major version."
+    newMajor=$(($major+1))
+    newMinor=0
+    newPatchVersion=0
+    ;;
+  minor)
+    echo "INFO: Incrementing minor version."
+    newMajor=$major
+    newMinor=$(($minor + 1))
+    newPatchVersion=0
+    ;;
+  patchVersion)
+    echo "INFO: Incrementing patchVersion version."
+    newMajor=$major
+    newMinor=$minor
+    newPatchVersion=$(($patchVersion + 1))
+    ;;
+  *)
+    echo "ERROR: Invalid Release Type. Release type can be [major,minor,patchVersion]. Exiting..."
+    exit 1
+    ;;
+esac
+# echo the new version number
+export VERSION=${major}.${minor}.${patchVersion}
+export NEW_VERSION=${newMajor}.${newMinor}.${newPatchVersion}
+echo "New version: major.minor.patchVersion: VERSION"
+sed -i "s:build.majorVersion=${major}:build.majorVersion=${newMajor}:g" ${VERSION_FILE}
+sed -i "s:build.minorVersion=${minor}:build.minorVersion=${newMinor}:g" ${VERSION_FILE}
+sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${newPatchVersion}:g" ${VERSION_FILE}
+
 git add ${VERSION_FILE}
-git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
+newBranch="${major}_${minor}"
+echo ${newBranch}
+git commit -m "Branching to release/${PURPOSE}/${newBranch}. New version ${NEW_VERSION}"
 git push origin ${BASE_BRANCH}
 print_err "$?" "Pushing build.properties to ${BASE_BRANCH} branch failed"
 
 echo "INFO: Step 11: Creating a release branch for ${PURPOSE}."
 git checkout ${SHA}
-git checkout -b release/${PURPOSE}/${VERSION}xx
-sed -i "s:build.number=???00:build.number=${VERSION}00:g" ${VERSION_FILE}
+git checkout -b release/${PURPOSE}/${newBranch}
+sed -i "s:build.majorVersion=${major}:build.majorVersion=${major}:g" ${VERSION_FILE}
+sed -i "s:build.minorVersion=${minor}:build.minorVersion=${minor}:g" ${VERSION_FILE}
+sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${patchVersion}:g" ${VERSION_FILE}
 git add ${VERSION_FILE}
-git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${VERSION}xx"
-git push origin release/${PURPOSE}/${VERSION}xx
+git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${newBranch}"
+git push origin release/${PURPOSE}/${newBranch}
 
 echo "INFO: Step 12: Creating the srm fix version."
 chmod +x srm-service/release/release-branch-create-srm-versions.sh
