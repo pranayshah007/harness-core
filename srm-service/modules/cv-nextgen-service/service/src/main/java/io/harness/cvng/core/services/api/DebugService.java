@@ -30,6 +30,8 @@ public interface DebugService {
 
   boolean forceDeleteSLI(ProjectParams projectParams, List<String> sliIdentifiers);
 
+  boolean forceDeleteCompositeSLO(ProjectParams projectParams, List<String> compositeSloIdentifiers);
+
   VerifyStepDebugResponse getVerifyStepDebugResponse(ProjectParams projectParams, String identifier);
 
   CompositeSLODebugResponse getCompositeSLODebugResponse(ProjectParams projectParams, String identifier);
