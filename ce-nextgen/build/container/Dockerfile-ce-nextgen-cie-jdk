@@ -44,5 +44,4 @@ USER root
 RUN microdnf install -y yum \
 && microdnf clean all
 RUN yum install -y procps vim hostname tar gzip python3 iputils nc
-RUN pip3 install setuptools-rust && pip3 install --upgrade pip
-RUN pip3 install c7n && pip3 install c7n_azure
+RUN pip3 install c7n
