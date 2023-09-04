@@ -92,6 +92,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.yaml.YamlField;
@@ -241,8 +242,8 @@ public class ServiceResourceV2 {
           "Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
           "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
-    Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
+    Optional<ServiceEntity> serviceEntity = serviceEntityService.get(accountId, orgIdentifier, projectIdentifier,
+        serviceIdentifier, deleted, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch);
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());

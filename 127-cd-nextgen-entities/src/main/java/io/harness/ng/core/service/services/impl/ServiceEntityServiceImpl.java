@@ -237,23 +237,33 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public Optional<ServiceEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
-    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
-
-    return getServiceByRef(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted);
+    // default behavior to not load from cache and fallback branch
+    return get(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false);
   }
 
-  private Optional<ServiceEntity> getServiceByRef(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
+  @Override
+  public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
+
+    return getServiceByRef(
+        accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache, loadFromFallbackBranch);
+  }
+
+  private Optional<ServiceEntity> getServiceByRef(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
     String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    // converted to service identifier
     if (serviceRefSplit == null || serviceRefSplit.length == 1) {
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
-          accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted);
+          accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted, loadFromCache, loadFromFallbackBranch);
     } else {
       IdentifierRef serviceIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-          serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted);
+          serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted, loadFromCache,
+          loadFromFallbackBranch);
     }
   }
 

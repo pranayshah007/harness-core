@@ -36,7 +36,6 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class ServiceElementMapper {
-  public static final String BOOLEAN_TRUE_VALUE = "true";
   public ServiceEntity toServiceEntity(String accountId, ServiceRequestDTO serviceRequestDTO) {
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .identifier(serviceRequestDTO.getIdentifier())
@@ -79,6 +78,7 @@ public class ServiceElementMapper {
                                                 .yaml(serviceEntity.getYaml())
                                                 .entityGitDetails(getEntityGitDetails(serviceEntity))
                                                 .storeType(serviceEntity.getStoreType())
+                                                .fallbackBranch(serviceEntity.getFallBackBranch())
                                                 .connectorRef(serviceEntity.getConnectorRef())
                                                 .cacheResponseMetadataDTO(getCacheResponse(serviceEntity))
                                                 .build();
@@ -89,9 +89,12 @@ public class ServiceElementMapper {
     return serviceResponseDTO;
   }
 
-  private EntityGitDetails getEntityGitDetails(ServiceEntity serviceEntity) {
+  public EntityGitDetails getEntityGitDetails(ServiceEntity serviceEntity) {
     if (serviceEntity.getStoreType() == StoreType.REMOTE) {
-      return GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata();
+      EntityGitDetails entityGitDetails = GitAwareContextHelper.getEntityGitDetails(serviceEntity);
+
+      // add additional details from scm metadata
+      return GitAwareContextHelper.updateEntityGitDetailsFromScmGitMetadata(entityGitDetails);
     }
     return null; // Default if storeType is not remote
   }
