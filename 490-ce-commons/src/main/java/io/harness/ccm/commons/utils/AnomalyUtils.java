@@ -24,7 +24,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class AnomalyUtils {
   private static final String SEPARATOR = "/";
   private static final String RELATIVE_TIME_TEMPLATE = "%s %s ago";
@@ -284,6 +286,7 @@ public class AnomalyUtils {
     if (!Strings.isNullOrEmpty(accountName)) {
       accountDetails = accountName + " (" + accountId + ")";
     }
+    log.info("Final merged aws account  id and name is {}", accountDetails);
     return accountDetails;
   }
 }

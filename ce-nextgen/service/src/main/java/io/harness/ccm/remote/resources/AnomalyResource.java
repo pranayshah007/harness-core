@@ -169,6 +169,7 @@ public class AnomalyResource {
           "perspectiveId") String perspectiveId,
       @RequestBody(required = true, description = "Perspective Query") PerspectiveQueryDTO perspectiveQueryDTO) {
     CEView perspective = ceViewService.get(perspectiveId);
+    log.info("perspective : {}", perspective);
     List<PerspectiveAnomalyData> perspectiveAnomalyData = null;
     if (perspective != null) {
       rbacHelper.checkAnomalyViewPermission(accountId, null, null, perspective.getFolderId());

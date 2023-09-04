@@ -264,8 +264,13 @@ public class PerspectiveToAnomalyQueryHelper {
                                         .collect(Collectors.toList()));
     }
 
+    log.info("Business Mapping Group By AFTER 1 IS {}", businessMappingGroupBy);
+
     convertedGroupBy =
         convertGroupBy(perspectiveQuery.getGroupBy() != null ? perspectiveQuery.getGroupBy() : Collections.emptyList());
+
+    log.info("Converted Group By are {}", convertedGroupBy);
+
     if (convertedGroupBy.isEmpty()) {
       List<QLCEViewGroupBy> defaultGroupBys = getPerspectiveDefaultGroupBy(view);
       businessMappingGroupBy.addAll(defaultGroupBys.stream()
@@ -274,15 +279,24 @@ public class PerspectiveToAnomalyQueryHelper {
                                                 && groupBy.getEntityGroupBy().getIdentifier() == BUSINESS_MAPPING)
                                         .collect(Collectors.toList()));
       convertedGroupBy = convertGroupBy(defaultGroupBys);
+
+      log.info("Default Group Bys are this inside if ", defaultGroupBys);
+      log.info("Business Mapping Group Bys are this inside if 2 ", businessMappingGroupBy);
     }
+
     List<CCMFilter> allFilters = new ArrayList<>();
+    log.info("All Filters 1 are {}", allFilters);
     // Filters from group by
     allFilters.add(covertGroupByToFilter(convertedGroupBy));
     // Filters from Cost categories group by
     allFilters.add(convertBusinessMappingGroupByToFilters(businessMappingGroupBy));
+    log.info("All Filters 2 are {}", allFilters);
     // Filters from perspective query
     allFilters.add(convertFilters(
         perspectiveQuery.getFilters() != null ? perspectiveQuery.getFilters() : Collections.emptyList()));
+    log.info("All Filters 3 are {}", allFilters);
+
+    log.info("Combine filters finally is ", combineFilters(allFilters));
 
     return combineFilters(allFilters);
   }
@@ -292,6 +306,7 @@ public class PerspectiveToAnomalyQueryHelper {
   }
 
   public List<CCMFilter> getConvertedRulesForPerspective(List<ViewRule> viewRules) {
+    log.info("View Rules are : {}", viewRules);
     List<CCMFilter> convertedRuleFilters = new ArrayList<>();
     if (viewRules != null) {
       for (ViewRule rule : viewRules) {
@@ -304,6 +319,8 @@ public class PerspectiveToAnomalyQueryHelper {
         convertedRuleFilters.add(convertFilters(ruleFilters));
       }
     }
+
+    log.info("Converted Rule Filters are {}", convertedRuleFilters);
 
     return convertedRuleFilters;
   }
