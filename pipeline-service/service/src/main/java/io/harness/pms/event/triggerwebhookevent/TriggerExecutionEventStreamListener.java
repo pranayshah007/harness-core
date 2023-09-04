@@ -8,6 +8,7 @@
 package io.harness.pms.event.triggerwebhookevent;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.pms.sdk.PmsSdkModuleUtils.SDK_SERVICE_NAME;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -24,6 +25,8 @@ import io.harness.pms.triggers.webhook.service.TriggerWebhookEventExecutionServi
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -42,6 +45,7 @@ public class TriggerExecutionEventStreamListener
   public boolean handleMessage(Message message, Long readTs) {
     if (message != null && message.hasMessage()) {
       try {
+        SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
         log.info("Started processing trigger webhook event for message id {}", message.getId());
         TriggerExecutionDTO triggerExecutionDTO = TriggerExecutionDTO.parseFrom(message.getMessage().getData());
         try (NgTriggerAutoLogContext ignore0 =
