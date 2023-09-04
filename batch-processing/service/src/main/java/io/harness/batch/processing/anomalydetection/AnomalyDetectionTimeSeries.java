@@ -10,7 +10,6 @@ package io.harness.batch.processing.anomalydetection;
 import io.harness.batch.processing.anomalydetection.helpers.AnomalyDetectionHelper;
 import io.harness.ccm.anomaly.entities.Anomaly;
 
-import com.google.inject.Singleton;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
