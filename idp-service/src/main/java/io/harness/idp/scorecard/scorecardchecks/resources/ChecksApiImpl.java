@@ -58,7 +58,7 @@ public class ChecksApiImpl implements ChecksApi {
   public Response getChecks(
       Boolean custom, String harnessAccount, Integer page, Integer limit, String sort, String searchTerm) {
     int pageIndex = page == null ? 0 : page;
-    int pageLimit = limit == null ? 1000 : limit;
+    int pageLimit = limit == null ? 10 : limit;
     Pageable pageRequest = isEmpty(sort)
         ? PageRequest.of(pageIndex, pageLimit, Sort.by(Sort.Direction.DESC, CheckEntity.CheckKeys.lastUpdatedAt))
         : PageUtils.getPageRequest(pageIndex, pageLimit, List.of(sort));
